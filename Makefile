@@ -1,4 +1,7 @@
 test:
 	@./node_modules/.bin/vows
 
-.PHONY: test
+perf:
+	@./perf/*-perf.js
+
+.PHONY: test perf
