@@ -13,7 +13,7 @@ You can install the n3 library as an [npm](http://npmjs.org/) package.
 ## Storing and finding items
 
 In this example below, we create a new store and add the triples `:Pluto a :Dog.` and `:Mickey a :Mouse`.  
-Then, we find all triples with `:Mickey` as subject.
+Then, we find a triple with `:Mickey` as subject.
 
     var n3 = require('n3');
     var store = new n3.Store();
@@ -21,5 +21,6 @@ Then, we find all triples with `:Mickey` as subject.
     store.add(':Pluto', 'a', ':Dog');
     store.add(':Mickey', 'a', ':Mouse');
 
-    store.find(':Mickey', null, null);
-    // [[':Mickey', 'a', ':Mouse']]
+    var mickey = store.find(':Mickey', null, null)[0];
+    console.log(mickey.subject, mickey.predicate, mickey.object, '.');
+    // :Mickey a :Mouse .

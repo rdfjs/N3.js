@@ -173,7 +173,10 @@ function shouldBeEmpty() {
 }
 
 function shouldIncludeAll() {
-  var items = arguments;
+  var items = Array.prototype.map.call(arguments, function (arg) {
+    return { subject: arg[0], predicate: arg[1], object: arg[2],
+             context: arg[3] || 'n3store/contexts#default' };
+  });
   return function (result) {
     result.should.have.length(items.length);
     for(var i=0; i<items.length; i++)
