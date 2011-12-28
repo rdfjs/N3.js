@@ -1,11 +1,11 @@
-#!/usr/bin/env node --max-old-space-size=1900
+#!/usr/bin/env node
 var n3 = require('../n3');
 var assert = require('assert');
 
 console.log('N3Store performance test');
 
 var TEST;
-var dim = 198;
+var dim = 256;
 var dimSquared = dim * dim;
 var dimCubed = dimSquared * dim;
 var prefix = 'http://example.org/#';
@@ -19,6 +19,8 @@ for(var i=0; i<dim; i++)
     for(var k=0; k<dim; k++)
       store.add(prefix + i, prefix + j, prefix + k);
 console.timeEnd(TEST);
+
+console.log('* Memory usage: ' + Math.round(process.memoryUsage().rss / 1024 / 1024) + 'MB');
 
 TEST = '- Finding all ' + dimCubed + ' triples ' + dimSquared * 3 + ' times';
 console.time(TEST);
