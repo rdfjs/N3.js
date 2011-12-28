@@ -181,6 +181,6 @@ function shouldIncludeAll() {
     result.should.have.length(items.length);
     for(var i=0; i<items.length; i++)
       should(result.some(function(x) { return eql(items[i], x); }),
-             util.inspect(items) + ' should contain ' + util.inspect(items[i]));
+             util.inspect(result) + ' should contain ' + util.inspect(items[i]));
   }
 }
