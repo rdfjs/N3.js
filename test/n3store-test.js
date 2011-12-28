@@ -63,7 +63,7 @@ vows.describe('N3Store').addBatch({
     'when searched with a non-existing subject parameter': {
       topic: function (n3Store) { return n3Store.find('s3', null, null); },
       
-      'should return no items': shouldBeEmpty
+      'should return no items': shouldBeEmpty()
     },
     
     'when searched with an existing predicate parameter': {
@@ -76,7 +76,7 @@ vows.describe('N3Store').addBatch({
     'when searched with a non-existing predicate parameter': {
       topic: function (n3Store) { return n3Store.find(null, 'p3', null); },
       
-      'should return no items': shouldBeEmpty
+      'should return no items': shouldBeEmpty()
     },
     
     'when searched with an existing object parameter': {
@@ -89,7 +89,7 @@ vows.describe('N3Store').addBatch({
     'when searched with a non-existing object parameter': {
       topic: function (n3Store) { return n3Store.find(null, null, 'o4'); },
       
-      'should return no items': shouldBeEmpty
+      'should return no items': shouldBeEmpty()
     },
     
     'when searched with existing subject and predicate parameters': {
@@ -102,7 +102,7 @@ vows.describe('N3Store').addBatch({
     'when searched with non-existing subject and predicate parameters': {
       topic: function (n3Store) { return n3Store.find('s2', 'p2', null); },
       
-      'should return no items': shouldBeEmpty
+      'should return no items': shouldBeEmpty()
     },
     
     'when searched with existing subject and object parameters': {
@@ -115,7 +115,7 @@ vows.describe('N3Store').addBatch({
     'when searched with non-existing subject and object parameters': {
       topic: function (n3Store) { return n3Store.find('s2', 'p2', null); },
       
-      'should return no items': shouldBeEmpty
+      'should return no items': shouldBeEmpty()
     },
     
     'when searched with existing predicate and object parameters': {
@@ -128,7 +128,7 @@ vows.describe('N3Store').addBatch({
     'when searched with non-existing predicate and object parameters': {
       topic: function (n3Store) { return n3Store.find(null, 'p2', 'o3'); },
       
-      'should return no items': shouldBeEmpty
+      'should return no items': shouldBeEmpty()
     },
     
     'when searched with existing subject, predicate, and object parameters': {
@@ -141,7 +141,7 @@ vows.describe('N3Store').addBatch({
     'when searched with non-existing subject, predicate, and object parameters': {
       topic: function (n3Store) { return n3Store.find('s2', 'p2', 'o2'); },
       
-      'should return no items': shouldBeEmpty
+      'should return no items': shouldBeEmpty()
     },
     
     'when searched with the default context parameter': {
@@ -161,13 +161,15 @@ vows.describe('N3Store').addBatch({
     'when searched with a non-existing non-default context parameter': {
       topic: function (n3Store) { return n3Store.find(null, null, null, 'c5'); },
       
-      'should return no items': shouldBeEmpty
+      'should return no items': shouldBeEmpty()
     },
   },
 }).export(module);
 
-function shouldBeEmpty(result) {
-  result.should.be.empty;
+function shouldBeEmpty() {
+  return function (result) {
+    result.should.be.empty;
+  }
 }
 
 function shouldIncludeAll() {
