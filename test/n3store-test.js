@@ -6,7 +6,7 @@ var vows = require('vows'),
 
 vows.describe('N3Store').addBatch({
   'The N3Store module': {
-    topic: function() { return N3Store; },
+    topic: function () { return N3Store; },
     
     'should be a function': function (N3Store) {
       N3Store.should.be.a('function');
@@ -169,7 +169,7 @@ vows.describe('N3Store').addBatch({
 function shouldBeEmpty() {
   return function (result) {
     result.should.be.empty;
-  }
+  };
 }
 
 function shouldIncludeAll() {
@@ -179,8 +179,8 @@ function shouldIncludeAll() {
   });
   return function (result) {
     result.should.have.length(items.length);
-    for(var i=0; i<items.length; i++)
-      should(result.some(function(x) { return eql(items[i], x); }),
+    for (var i = 0; i < items.length; i++)
+      should(result.some(function (x) { return eql(items[i], x); }),
              util.inspect(result) + ' should contain ' + util.inspect(items[i]));
-  }
+  };
 }

@@ -4,4 +4,7 @@ test:
 perf:
 	@./perf/*-perf.js
 
-.PHONY: test perf
+jshint:
+	@jshint lib perf test
+
+.PHONY: test perf jshint

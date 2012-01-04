@@ -1,0 +1,10 @@
+{
+  "node": true,     // Allow use of node.js globals.
+  "es5": true,      // Allow ES5 features.
+  "loopfunc": true, // Allow functions to be defined within loops.
+  "proto": true,    // Allow use of `__proto__`.
+  "expr": true,     // Allow expressions where statements are allowed.
+  "trailing": true, // Do not leave trailing whitespace.
+  "white": true,    // Enable scrict whitespace checking.
+  "indent": 2       // The code uses an indentation width of 2 spaces.
+}
