@@ -7,4 +7,7 @@ perf:
 jshint:
 	@jshint lib perf test
 
-.PHONY: test perf jshint
+docs:
+	@docco lib/*.js
+
+.PHONY: test perf jshint docs
