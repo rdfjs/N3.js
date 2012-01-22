@@ -5,7 +5,7 @@ var assert = require('assert');
 console.log('N3Store performance test');
 
 var TEST;
-var dim = 256;
+var dim = parseInt(process.argv[2], 10) || 256;
 var dimSquared = dim * dim;
 var dimCubed = dimSquared * dim;
 var prefix = 'http://example.org/#';
