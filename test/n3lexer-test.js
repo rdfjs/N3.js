@@ -25,14 +25,38 @@ vows.describe('N3Lexer').addBatch({
   'An N3Lexer instance': {
     topic: new N3Lexer(),
     
-    'should tokenize the empty string': shouldTokenize('', []),
+    'should tokenize the empty string':
+      shouldTokenize('',
+                     []),
     
-    'should tokenize a whitespace string': shouldTokenize(' \t \n  ', []),
+    'should tokenize a whitespace string':
+      shouldTokenize(' \t \n  ',
+                     []),
+    
+    'should tokenize an explicituri':
+      shouldTokenize('<http://ex.org/?bla#foo>',
+                     [{ type: 'explicituri', uri: 'http://ex.org/?bla#foo'}]),
+    
+    'should tokenize two explicituris separated by whitespace':
+      shouldTokenize(' \n\t<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t',
+                     [{ type: 'explicituri', uri: 'http://ex.org/?bla#foo'},
+                      { type: 'explicituri', uri: 'http://ex.org/?bla#bar'}]),
+    
+    'should not tokenize an invalid document':
+      shouldNotTokenize(' \n @!', 'Unexpected "@!" on line 2.')
   }
 }).export(module);
 
 function shouldTokenize(input, expected) {
   return function (n3lexer) {
     n3lexer.tokenize(input).should.eql(expected);
+  };
+}
+
+function shouldNotTokenize(input, expectedError) {
+  return function (n3lexer) {
+    (function () {
+      n3lexer.tokenize(input);
+    }).should.throw(expectedError);
   };
 }

@@ -4,6 +4,7 @@
   "loopfunc": true, // Allow functions to be defined within loops.
   "proto": true,    // Allow use of `__proto__`.
   "expr": true,     // Allow expressions where statements are allowed.
+  "boss": true,     // Allow assignments where expressions are allowed.
   "trailing": true, // Do not leave trailing whitespace.
   "white": true,    // Enable scrict whitespace checking.
   "indent": 2       // The code uses an indentation width of 2 spaces.
