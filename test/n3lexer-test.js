@@ -27,27 +27,30 @@ vows.describe('N3Lexer').addBatch({
     
     'should tokenize the empty string':
       shouldTokenize('',
-                     []),
+                     [{ type: 'eof' }]),
     
     'should tokenize a whitespace string':
       shouldTokenize(' \t \n  ',
-                     []),
+                     [{ type: 'eof' }]),
     
     'should tokenize an explicituri':
       shouldTokenize('<http://ex.org/?bla#foo>',
-                     [{ type: 'explicituri', uri: 'http://ex.org/?bla#foo'}]),
+                     [{ type: 'explicituri', uri: 'http://ex.org/?bla#foo'},
+                      { type: 'eof' }]),
     
     'should tokenize two explicituris separated by whitespace':
       shouldTokenize(' \n\t<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t',
                      [{ type: 'explicituri', uri: 'http://ex.org/?bla#foo'},
-                      { type: 'explicituri', uri: 'http://ex.org/?bla#bar'}]),
+                      { type: 'explicituri', uri: 'http://ex.org/?bla#bar'},
+                      { type: 'eof' }]),
     
     'should tokenize a statement with explicituris':
       shouldTokenize(' \n\t<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo> .',
                      [{ type: 'explicituri', uri: 'http://ex.org/?bla#foo'},
                       { type: 'explicituri', uri: 'http://ex.org/?bla#bar'},
                       { type: 'explicituri', uri: 'http://ex.org/?bla#boo'},
-                      { type: 'dot' }]),
+                      { type: 'dot' },
+                      { type: 'eof' }]),
     
     'should not tokenize an invalid document':
       shouldNotTokenize(' \n @!', 'Unexpected "@!" on line 2.')
@@ -56,14 +59,14 @@ vows.describe('N3Lexer').addBatch({
 
 function shouldTokenize(input, expected) {
   return function (n3lexer) {
-    n3lexer.tokenize(input).should.eql(expected);
+    n3lexer.tokenize(input).all().should.eql(expected);
   };
 }
 
 function shouldNotTokenize(input, expectedError) {
   return function (n3lexer) {
     (function () {
-      n3lexer.tokenize(input);
+      n3lexer.tokenize(input).all();
     }).should.throw(expectedError);
   };
 }
