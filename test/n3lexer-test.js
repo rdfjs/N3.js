@@ -42,6 +42,13 @@ vows.describe('N3Lexer').addBatch({
                      [{ type: 'explicituri', uri: 'http://ex.org/?bla#foo'},
                       { type: 'explicituri', uri: 'http://ex.org/?bla#bar'}]),
     
+    'should tokenize a statement with explicituris':
+      shouldTokenize(' \n\t<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo> .',
+                     [{ type: 'explicituri', uri: 'http://ex.org/?bla#foo'},
+                      { type: 'explicituri', uri: 'http://ex.org/?bla#bar'},
+                      { type: 'explicituri', uri: 'http://ex.org/?bla#boo'},
+                      { type: 'dot' }]),
+    
     'should not tokenize an invalid document':
       shouldNotTokenize(' \n @!', 'Unexpected "@!" on line 2.')
   }
