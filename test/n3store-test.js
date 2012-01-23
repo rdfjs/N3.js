@@ -26,6 +26,10 @@ vows.describe('N3Store').addBatch({
   'An empty N3Store': {
     topic: new N3Store(),
     
+    'should have size 0': function (n3Store) {
+      n3Store.size.should.eql(0);
+    },
+    
     'should be empty': function (n3Store) {
       n3Store.find().should.be.empty;
     },
@@ -35,7 +39,7 @@ vows.describe('N3Store').addBatch({
     },
   },
   
-  'An N3Store with 4 elements': {
+  'An N3Store with 5 elements': {
     topic: function () {
       var n3Store = new N3Store();
       n3Store.add('s1', 'p1', 'o1');
@@ -44,6 +48,10 @@ vows.describe('N3Store').addBatch({
       n3Store.add('s2', 'p1', 'o1');
       n3Store.add('s1', 'p2', 'o3', 'c4');
       return n3Store;
+    },
+    
+    'should have size 5': function (n3Store) {
+      n3Store.size.should.eql(5);
     },
     
     'when searched without parameters': {
