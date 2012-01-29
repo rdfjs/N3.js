@@ -27,30 +27,30 @@ vows.describe('N3Lexer').addBatch({
     
     'should tokenize the empty string':
       shouldTokenize('',
-                     [{ type: 'eof' }]),
+                     [{ type: 'eof', line: 1 }]),
     
     'should tokenize a whitespace string':
       shouldTokenize(' \t \n  ',
-                     [{ type: 'eof' }]),
+                     [{ type: 'eof', line: 2 }]),
     
     'should tokenize an explicituri':
       shouldTokenize('<http://ex.org/?bla#foo>',
-                     [{ type: 'explicituri', uri: 'http://ex.org/?bla#foo'},
-                      { type: 'eof' }]),
+                     [{ type: 'explicituri', uri: 'http://ex.org/?bla#foo', line: 1 },
+                      { type: 'eof', line: 1 }]),
     
     'should tokenize two explicituris separated by whitespace':
       shouldTokenize(' \n\t<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t',
-                     [{ type: 'explicituri', uri: 'http://ex.org/?bla#foo'},
-                      { type: 'explicituri', uri: 'http://ex.org/?bla#bar'},
-                      { type: 'eof' }]),
+                     [{ type: 'explicituri', uri: 'http://ex.org/?bla#foo', line: 2 },
+                      { type: 'explicituri', uri: 'http://ex.org/?bla#bar', line: 3 },
+                      { type: 'eof', line: 4 }]),
     
     'should tokenize a statement with explicituris':
       shouldTokenize(' \n\t<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo> .',
-                     [{ type: 'explicituri', uri: 'http://ex.org/?bla#foo'},
-                      { type: 'explicituri', uri: 'http://ex.org/?bla#bar'},
-                      { type: 'explicituri', uri: 'http://ex.org/?bla#boo'},
-                      { type: 'dot' },
-                      { type: 'eof' }]),
+                     [{ type: 'explicituri', uri: 'http://ex.org/?bla#foo', line: 2 },
+                      { type: 'explicituri', uri: 'http://ex.org/?bla#bar', line: 3 },
+                      { type: 'explicituri', uri: 'http://ex.org/?bla#boo', line: 4 },
+                      { type: 'dot', line: 4 },
+                      { type: 'eof', line: 4 }]),
     
     'should not tokenize an invalid document':
       shouldNotTokenize(' \n @!', 'Unexpected "@!" on line 2.')
