@@ -183,6 +183,12 @@ vows.describe('N3Store').addBatch({
       shouldIncludeAll(['toString', 'valueOf', 'toLocaleString', 'hasOwnProperty'])
         (n3Store.find(null, null, null, 'hasOwnProperty'));
     },
+    
+    'should be able to contain entities named "null"': function (n3Store) {
+      n3Store.add('null', 'null', 'null', 'null');
+      shouldIncludeAll(['null', 'null', 'null', 'null'])
+        (n3Store.find(null, null, null, 'null'));
+    },
   },
 }).export(module);
 
