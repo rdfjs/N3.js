@@ -37,6 +37,12 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'explicituri', uri: 'http://ex.org/?bla#foo', line: 1 },
                      { type: 'eof', line: 1 }),
     
+    'should ignore comments':
+      shouldTokenize('<http://ex.org/#foo>\n#comment\n   #comment \n# comment\n<http://ex.org/#bla>#',
+                     { type: 'explicituri', uri: 'http://ex.org/#foo', line: 1 },
+                     { type: 'explicituri', uri: 'http://ex.org/#bla', line: 5 },
+                     { type: 'eof', line: 5 }),
+    
     'should tokenize two explicituris separated by whitespace':
       shouldTokenize(' \n\t<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t',
                      { type: 'explicituri', uri: 'http://ex.org/?bla#foo', line: 2 },
