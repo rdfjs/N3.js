@@ -172,6 +172,18 @@ vows.describe('N3Store').addBatch({
       'should return no items': shouldBeEmpty()
     },
   },
+  
+  'An N3Store': {
+    topic: new N3Store(),
+    
+    // Test inspired by http://www.devthought.com/2012/01/18/an-object-is-not-a-hash/.
+    // The value `__proto__` is not supported however – fixing it introduces too much overhead.
+    'should be able to contain entities with JavaScript object property names': function (n3Store) {
+      n3Store.add('toString', 'valueOf', 'toLocaleString', 'hasOwnProperty');
+      shouldIncludeAll(['toString', 'valueOf', 'toLocaleString', 'hasOwnProperty'])
+        (n3Store.find(null, null, null, 'hasOwnProperty'));
+    },
+  },
 }).export(module);
 
 function shouldBeEmpty() {
