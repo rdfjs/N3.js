@@ -66,6 +66,21 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'explicituri', uri: '#bla', line: 5 },
                      { type: 'eof', line: 5 }),
     
+    'should tokenize a quoted string literal':
+      shouldTokenize('"string"',
+                     { type: 'literal', quotedValue: '"string"', line: 1 },
+                     { type: 'eof', line: 1 }),
+    
+    'should tokenize a triple quoted string literal':
+      shouldTokenize('"""string"""',
+                     { type: 'literal', quotedValue: '"string"', line: 1 },
+                     { type: 'eof', line: 1 }),
+    
+    'should tokenize a triple quoted string literal with quotes newlines inside':
+      shouldTokenize('"""st"r\ni""ng"""',
+                     { type: 'literal', quotedValue: '"st"r\ni""ng"', line: 1 },
+                     { type: 'eof', line: 2 }),
+    
     'should not tokenize an invalid document':
       shouldNotTokenize(' \n @!', 'Unexpected "@!" on line 2.')
   }
