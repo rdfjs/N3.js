@@ -44,6 +44,10 @@ vows.describe('N3Parser').addBatch({
                   ['d', 'e', 'f'],
                   ['g', 'h', 'i']),
     
+    'should parse a with a literal':
+      shouldParse('<a> <b> "string".',
+                  ['a', 'b', '"string"']),
+    
     'should error when a predicate is not there':
       shouldNotParse('<a>.',
                      'Expected predicate to follow "a" at line 1.'),
