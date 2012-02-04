@@ -81,6 +81,12 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'literal', quotedValue: '"st"r\ni""ng"', line: 1 },
                      { type: 'eof', line: 2 }),
     
+    'should tokenize a quoted string literal with language code':
+      shouldTokenize('"string"@en "string"@nl-be',
+                     { type: 'literal', quotedValue: '"string"', language: 'en', line: 1 },
+                     { type: 'literal', quotedValue: '"string"', language: 'nl-be', line: 1 },
+                     { type: 'eof', line: 1 }),
+    
     'should not tokenize an invalid document':
       shouldNotTokenize(' \n @!', 'Unexpected "@!" on line 2.')
   }
