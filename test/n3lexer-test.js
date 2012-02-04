@@ -37,12 +37,6 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'explicituri', uri: 'http://ex.org/?bla#foo', line: 1 },
                      { type: 'eof', line: 1 }),
     
-    'should ignore comments':
-      shouldTokenize('<http://ex.org/#foo>\n#comment\n   #comment \n# comment\n<http://ex.org/#bla>#',
-                     { type: 'explicituri', uri: 'http://ex.org/#foo', line: 1 },
-                     { type: 'explicituri', uri: 'http://ex.org/#bla', line: 5 },
-                     { type: 'eof', line: 5 }),
-    
     'should tokenize two explicituris separated by whitespace':
       shouldTokenize(' \n\t<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t',
                      { type: 'explicituri', uri: 'http://ex.org/?bla#foo', line: 2 },
@@ -56,6 +50,21 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'explicituri', uri: 'http://ex.org/?bla#boo', line: 4 },
                      { type: 'dot', line: 4 },
                      { type: 'eof', line: 4 }),
+    
+    'should correctly recognize different types of newlines':
+      shouldTokenize('<a>\r<b>\n<c>\r\n.',
+                     { type: 'explicituri', uri: 'a', line: 1 },
+                     { type: 'explicituri', uri: 'b', line: 2 },
+                     { type: 'explicituri', uri: 'c', line: 3 },
+                     { type: 'dot', line: 4 },
+                     { type: 'eof', line: 4 }),
+    
+    'should ignore comments':
+      shouldTokenize('<#foo> #comment\n <#foo>  #comment \r# comment\n\n<#bla>#',
+                     { type: 'explicituri', uri: '#foo', line: 1 },
+                     { type: 'explicituri', uri: '#foo', line: 2 },
+                     { type: 'explicituri', uri: '#bla', line: 5 },
+                     { type: 'eof', line: 5 }),
     
     'should not tokenize an invalid document':
       shouldNotTokenize(' \n @!', 'Unexpected "@!" on line 2.')
