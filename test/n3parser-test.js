@@ -48,6 +48,10 @@ vows.describe('N3Parser').addBatch({
       shouldParse('<a> <b> "string".',
                   ['a', 'b', '"string"']),
     
+    'should parse a with a literal and a language code':
+      shouldParse('<a> <b> "string"@en.',
+                  ['a', 'b', '"string"@en']),
+    
     'should error when a predicate is not there':
       shouldNotParse('<a>.',
                      'Expected predicate to follow "a" at line 1.'),
