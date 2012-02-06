@@ -2,7 +2,9 @@ test:
 	@./node_modules/.bin/vows
 
 perf:
-	@./perf/*-perf.js
+	@./perf/n3store-perf.js  $(dimension)
+	@./perf/n3lexer-perf.js  $(n3file)
+	@./perf/n3parser-perf.js $(n3file)
 
 jshint:
 	@jshint lib perf test
