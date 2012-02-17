@@ -7,9 +7,9 @@ perf:
 	@./perf/n3parser-perf.js $(n3file)
 
 jshint:
-	@jshint lib perf test
+	@./node_modules/jshint/bin/hint lib perf test
 
 docs:
-	@docco lib/*.js
+	@./node_modules/.bin/docco lib/*.js
 
 .PHONY: test perf jshint docs

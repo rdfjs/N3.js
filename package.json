@@ -10,7 +10,8 @@
   },
   "devDependencies": {
     "vows": "~0.6.0",
-    "should": "~0.5.1"
+    "should": "~0.5.1",
+    "docco": "~0.3.0"
   },
   "scripts": {
     "test": "make test"
