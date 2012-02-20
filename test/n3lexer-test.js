@@ -1,6 +1,7 @@
 var N3Lexer = require('../lib/n3lexer.js');
 var vows = require('vows'),
-    should = require('should');
+    should = require('should'),
+    events = require('events');
 
 vows.describe('N3Lexer').addBatch({
   'The N3Lexer module': {
@@ -87,6 +88,24 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'literal', quotedValue: '"string"', language: 'nl-be', line: 1 },
                      { type: 'eof', line: 1 }),
     
+    'should tokenize a stream':
+      shouldTokenize(streamOf('<a>\n<b', '> ', '"""', 'c\n', '"""', '.',
+                              '<d> <e', '> ', '""', '.',
+                              '<g> <h> "i"', '@en.'),
+                     { type: 'explicituri', uri: 'a', line: 1 },
+                     { type: 'explicituri', uri: 'b', line: 2 },
+                     { type: 'literal', quotedValue: '"c\n"', line: 2 },
+                     { type: 'dot', line: 3 },
+                     { type: 'explicituri', uri: 'd', line: 3 },
+                     { type: 'explicituri', uri: 'e', line: 3 },
+                     { type: 'literal', quotedValue: '""', line: 3 },
+                     { type: 'dot', line: 3 },
+                     { type: 'explicituri', uri: 'g', line: 3 },
+                     { type: 'explicituri', uri: 'h', line: 3 },
+                     { type: 'literal', quotedValue: '"i"', language: 'en', line: 3 },
+                     { type: 'dot', line: 3 },
+                     { type: 'eof', line: 3 }),
+    
     'should not tokenize an invalid document':
       shouldNotTokenize(' \n @!', 'Unexpected "@!" on line 2.')
   }
@@ -98,8 +117,8 @@ function shouldTokenize(input, expected) {
   expected = Array.prototype.slice.call(arguments, 1);
   
   function tokenCallback(error, token) {
-    should.exist(token);
     should.not.exist(error);
+    should.exist(token);
     result.push(token);
     if (token.type === 'eof')
       endCallback(null, result);
@@ -138,4 +157,26 @@ function shouldNotTokenize(input, expectedError) {
       error.should.eql(expectedError);
     }
   };
+}
+
+function streamOf() {
+  var elements = Array.prototype.slice.call(arguments),
+      stream = new events.EventEmitter();
+  
+  stream.setEncoding = function (encoding) {
+    if (encoding === 'utf8')
+      process.nextTick(next);
+  };
+  
+  function next() {
+    if (elements.length) {
+      stream.emit('data', elements.shift());
+      process.nextTick(next);
+    }
+    else {
+      stream.emit('end');
+    }
+  }
+  
+  return stream;
 }
