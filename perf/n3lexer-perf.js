@@ -13,11 +13,13 @@ fs.readFile(filename, 'utf-8', function (err, data) {
   
   var TEST = '- Lexing file ' + filename;
   console.time(TEST);
-  var lexer = new n3.Lexer().tokenize(data),
-      count = 0;
-  while (lexer.next())
-    count++;
-  console.timeEnd(TEST);
   
-  console.log('* Tokens lexed: ' + count);
+  var count = 0;
+  new n3.Lexer().tokenize(data, function (error, token) {
+    count++;
+    if (token.type === 'eof') {
+      console.timeEnd(TEST);
+      console.log('* Tokens lexed: ' + count);
+    }
+  });
 });

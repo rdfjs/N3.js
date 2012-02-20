@@ -93,16 +93,49 @@ vows.describe('N3Lexer').addBatch({
 }).export(module);
 
 function shouldTokenize(input, expected) {
+  var result = [],
+      endCallback;
   expected = Array.prototype.slice.call(arguments, 1);
-  return function (n3lexer) {
-    n3lexer.tokenize(input).all().should.eql(expected);
+  
+  function tokenCallback(error, token) {
+    should.exist(token);
+    should.not.exist(error);
+    result.push(token);
+    if (token.type === 'eof')
+      endCallback(null, result);
+  }
+  
+  return {
+    topic: function () {
+      endCallback = this.callback;
+      new N3Lexer().tokenize(input, tokenCallback);
+    },
+    
+    'should equal the expected value': function (result) {
+      result.should.eql(expected);
+    }
   };
 }
 
 function shouldNotTokenize(input, expectedError) {
-  return function (n3lexer) {
-    (function () {
-      n3lexer.tokenize(input).all();
-    }).should.throw(expectedError);
+  var endCallback;
+  
+  function tokenCallback(error, token) {
+    if (error)
+      endCallback(error, token);
+    else if (token.type === 'eof')
+      throw "Expected error " + expectedError;
+  }
+  
+  return {
+    topic: function () {
+      endCallback = this.callback;
+      new N3Lexer().tokenize(input, tokenCallback);
+    },
+    
+    'should equal the expected message': function (error, token) {
+      should.not.exist(token);
+      error.should.eql(expectedError);
+    }
   };
 }

@@ -62,30 +62,61 @@ vows.describe('N3Parser').addBatch({
     
     'should error when a dot is not there':
       shouldNotParse('<a> <b> <c>',
-                     'Unexpected eof at line 1.'),
+                     'Expected punctuation to follow "c" at line 1.'),
   },
 }).export(module);
 
 function shouldParse(input, expected) {
+  var result = [],
+      endCallback;
   expected = Array.prototype.slice.call(arguments, 1);
   var items = expected.map(function (item) {
     return { subject: item[0], predicate: item[1], object: item[2],
-             context: item[3] || 'n3store/contexts#default' };
+             context: item[3] || 'n3/contexts#default' };
   });
-  return function (n3parser) {
-    var store = n3parser.parse(input);
-    store.size.should.eql(expected.length);
-    var result = store.find();
-    for (var i = 0; i < items.length; i++)
-      should(result.some(function (x) { return eql(items[i], x); }),
-             util.inspect(result) + ' should contain ' + util.inspect(items[i]));
+  
+  function tripleCallback(error, triple) {
+    should.not.exist(error);
+    if (triple)
+      result.push(triple);
+    else
+      endCallback(null, result);
+  }
+  
+  return {
+    topic: function (n3parser) {
+      endCallback = this.callback;
+      new N3Parser().parse(input, tripleCallback);
+    },
+    
+    'should equal the expected value': function (result) {
+      result.should.have.lengthOf(expected.length);
+      for (var i = 0; i < items.length; i++)
+        should(result.some(function (x) { return eql(items[i], x); }),
+               util.inspect(result) + ' should contain ' + util.inspect(items[i]));
+    }
   };
 }
 
 function shouldNotParse(input, expectedError) {
-  return function (n3parser) {
-    (function () {
-      n3parser.parse(input);
-    }).should.throw(expectedError);
+  var endCallback;
+  
+  function tripleCallback(error, triple) {
+    if (error)
+      endCallback(error, triple);
+    else if (!triple)
+      throw "Expected error " + expectedError;
+  }
+  
+  return {
+    topic: function () {
+      endCallback = this.callback;
+      new N3Parser().parse(input, tripleCallback);
+    },
+    
+    'should equal the expected message': function (error, triple) {
+      should.not.exist(triple);
+      error.should.eql(expectedError);
+    }
   };
 }

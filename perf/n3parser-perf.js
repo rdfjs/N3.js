@@ -13,8 +13,15 @@ fs.readFile(filename, 'utf-8', function (err, data) {
   
   var TEST = '- Parsing file ' + filename;
   console.time(TEST);
-  var store = new n3.Parser().parse(data);
-  console.timeEnd(TEST);
   
-  console.log('* Triples stored: ' + store.size);
+  var count = 0;
+  new n3.Parser().parse(data, function (error, triple) {
+    if (triple) {
+      count++;
+    }
+    else {
+      console.timeEnd(TEST);
+      console.log('* Triples parsed: ' + count);
+    }
+  });
 });

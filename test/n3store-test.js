@@ -35,7 +35,7 @@ vows.describe('N3Store').addBatch({
     },
     
     'should have a default context': function (N3Store) {
-      N3Store.defaultContext.should.eql('n3store/contexts#default');
+      N3Store.defaultContext.should.eql('n3/contexts#default');
     },
   },
   
@@ -201,7 +201,7 @@ function shouldBeEmpty() {
 function shouldIncludeAll() {
   var items = Array.prototype.map.call(arguments, function (arg) {
     return { subject: arg[0], predicate: arg[1], object: arg[2],
-             context: arg[3] || 'n3store/contexts#default' };
+             context: arg[3] || 'n3/contexts#default' };
   });
   return function (result) {
     result.should.have.length(items.length);
