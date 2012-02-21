@@ -107,7 +107,7 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'eof', line: 3 }),
     
     'should not tokenize an invalid document':
-      shouldNotTokenize(' \n @!', 'Unexpected "@!" on line 2.')
+      shouldNotTokenize(' \n @!', 'Syntax error: unexpected "@!" on line 2.')
   }
 }).export(module);
 
