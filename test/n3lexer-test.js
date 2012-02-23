@@ -82,6 +82,12 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'literal', quotedValue: '"st"r\ni""ng"', line: 1 },
                      { type: 'eof', line: 2 }),
     
+    'should tokenize a string with escape characters':
+      shouldTokenize('"\\\\ \\\' \\" \\n \\r \\t \\ua1b2" \n """\\\\ \\\' \\" \\n \\r \\t \\ua1b2"""',
+                     { type: 'literal', quotedValue: '"\\ \' " \n \r \t \ua1b2"', line: 1 },
+                     { type: 'literal', quotedValue: '"\\ \' " \n \r \t \ua1b2"', line: 2 },
+                     { type: 'eof', line: 2 }),
+    
     'should tokenize a quoted string literal with language code':
       shouldTokenize('"string"@en "string"@nl-be',
                      { type: 'literal', quotedValue: '"string"', language: 'en', line: 1 },
