@@ -68,7 +68,7 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'eof', line: 5 }),
     
     'should tokenize a quoted string literal':
-      shouldTokenize('"string"',
+      shouldTokenize('"string" ',
                      { type: 'literal', quotedValue: '"string"', line: 1 },
                      { type: 'eof', line: 1 }),
     
@@ -89,15 +89,17 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'eof', line: 2 }),
     
     'should tokenize a quoted string literal with language code':
-      shouldTokenize('"string"@en "string"@nl-be',
-                     { type: 'literal', quotedValue: '"string"', language: 'en', line: 1 },
-                     { type: 'literal', quotedValue: '"string"', language: 'nl-be', line: 1 },
+      shouldTokenize('"string"@en "string"@nl-be ',
+                     { type: 'literal', quotedValue: '"string"', line: 1 },
+                     { type: 'langcode', language: 'en', line: 1 },
+                     { type: 'literal', quotedValue: '"string"', line: 1 },
+                     { type: 'langcode', language: 'nl-be', line: 1 },
                      { type: 'eof', line: 1 }),
     
     'should tokenize a stream':
       shouldTokenize(streamOf('<a>\n<b', '> ', '"""', 'c\n', '"""', '.',
                               '<d> <e', '> ', '""', '.',
-                              '<g> <h> "i"', '@en.'),
+                              '<g> <h> "i"', '@e', 'n.'),
                      { type: 'explicituri', uri: 'a', line: 1 },
                      { type: 'explicituri', uri: 'b', line: 2 },
                      { type: 'literal', quotedValue: '"c\n"', line: 2 },
@@ -108,7 +110,8 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'dot', line: 3 },
                      { type: 'explicituri', uri: 'g', line: 3 },
                      { type: 'explicituri', uri: 'h', line: 3 },
-                     { type: 'literal', quotedValue: '"i"', language: 'en', line: 3 },
+                     { type: 'literal', quotedValue: '"i"', line: 3 },
+                     { type: 'langcode', language: 'en', line: 3 },
                      { type: 'dot', line: 3 },
                      { type: 'eof', line: 3 }),
     
