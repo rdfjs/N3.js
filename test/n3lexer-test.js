@@ -115,6 +115,14 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'dot', line: 3 },
                      { type: 'eof', line: 3 }),
     
+    'should tokenize prefix declarations':
+      shouldTokenize('@prefix abc: <http://uri.org/#>.',
+                     { type: '@prefix', line: 1 },
+                     { type: 'prefix', prefix: 'abc', line: 1 },
+                     { type: 'explicituri', uri: 'http://uri.org/#', line: 1 },
+                     { type: 'dot', line: 1 },
+                     { type: 'eof', line: 1 }),
+    
     'should not tokenize an invalid document':
       shouldNotTokenize(' \n @!', 'Syntax error: unexpected "@!" on line 2.')
   }
