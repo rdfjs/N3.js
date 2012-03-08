@@ -137,6 +137,9 @@ function shouldTokenize(input, expected) {
     should.not.exist(error);
     should.exist(token);
     result.push(token);
+    for (var attribute in token)
+      if (token[attribute] === '')
+        delete token[attribute];
     if (token.type === 'eof')
       endCallback(null, result);
   }
