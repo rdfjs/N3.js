@@ -116,11 +116,16 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'eof', line: 3 }),
     
     'should tokenize prefix declarations':
-      shouldTokenize('@prefix abc: <http://uri.org/#>.',
+      shouldTokenize('@prefix : <http://uri.org/#>.\n@prefix abc: <http://uri.org/#>.',
                      { type: '@prefix', line: 1 },
-                     { type: 'prefix', value: 'abc', line: 1 },
+                     { type: 'prefix', value: '', line: 1 },
                      { type: 'explicituri', value: 'http://uri.org/#', line: 1 },
                      { type: 'dot', line: 1 },
+                     { type: '@prefix', line: 2 },
+                     { type: 'prefix', value: 'abc', line: 2 },
+                     { type: 'explicituri', value: 'http://uri.org/#', line: 2 },
+                     { type: 'dot', line: 2 },
+                     { type: 'eof', line: 2 }),
                      { type: 'eof', line: 1 }),
     
     'should not tokenize an invalid document':
