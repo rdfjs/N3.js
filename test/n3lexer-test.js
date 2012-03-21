@@ -35,64 +35,64 @@ vows.describe('N3Lexer').addBatch({
     
     'should tokenize an explicituri':
       shouldTokenize('<http://ex.org/?bla#foo>',
-                     { type: 'explicituri', uri: 'http://ex.org/?bla#foo', line: 1 },
+                     { type: 'explicituri', value: 'http://ex.org/?bla#foo', line: 1 },
                      { type: 'eof', line: 1 }),
     
     'should tokenize two explicituris separated by whitespace':
       shouldTokenize(' \n\t<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t',
-                     { type: 'explicituri', uri: 'http://ex.org/?bla#foo', line: 2 },
-                     { type: 'explicituri', uri: 'http://ex.org/?bla#bar', line: 3 },
+                     { type: 'explicituri', value: 'http://ex.org/?bla#foo', line: 2 },
+                     { type: 'explicituri', value: 'http://ex.org/?bla#bar', line: 3 },
                      { type: 'eof', line: 4 }),
     
     'should tokenize a statement with explicituris':
       shouldTokenize(' \n\t<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo> .',
-                     { type: 'explicituri', uri: 'http://ex.org/?bla#foo', line: 2 },
-                     { type: 'explicituri', uri: 'http://ex.org/?bla#bar', line: 3 },
-                     { type: 'explicituri', uri: 'http://ex.org/?bla#boo', line: 4 },
+                     { type: 'explicituri', value: 'http://ex.org/?bla#foo', line: 2 },
+                     { type: 'explicituri', value: 'http://ex.org/?bla#bar', line: 3 },
+                     { type: 'explicituri', value: 'http://ex.org/?bla#boo', line: 4 },
                      { type: 'dot', line: 4 },
                      { type: 'eof', line: 4 }),
     
     'should correctly recognize different types of newlines':
       shouldTokenize('<a>\r<b>\n<c>\r\n.',
-                     { type: 'explicituri', uri: 'a', line: 1 },
-                     { type: 'explicituri', uri: 'b', line: 2 },
-                     { type: 'explicituri', uri: 'c', line: 3 },
+                     { type: 'explicituri', value: 'a', line: 1 },
+                     { type: 'explicituri', value: 'b', line: 2 },
+                     { type: 'explicituri', value: 'c', line: 3 },
                      { type: 'dot', line: 4 },
                      { type: 'eof', line: 4 }),
     
     'should ignore comments':
       shouldTokenize('<#foo> #comment\n <#foo>  #comment \r# comment\n\n<#bla>#',
-                     { type: 'explicituri', uri: '#foo', line: 1 },
-                     { type: 'explicituri', uri: '#foo', line: 2 },
-                     { type: 'explicituri', uri: '#bla', line: 5 },
+                     { type: 'explicituri', value: '#foo', line: 1 },
+                     { type: 'explicituri', value: '#foo', line: 2 },
+                     { type: 'explicituri', value: '#bla', line: 5 },
                      { type: 'eof', line: 5 }),
     
     'should tokenize a quoted string literal':
       shouldTokenize('"string" ',
-                     { type: 'literal', quotedValue: '"string"', line: 1 },
+                     { type: 'literal', value: '"string"', line: 1 },
                      { type: 'eof', line: 1 }),
     
     'should tokenize a triple quoted string literal':
       shouldTokenize('"""string"""',
-                     { type: 'literal', quotedValue: '"string"', line: 1 },
+                     { type: 'literal', value: '"string"', line: 1 },
                      { type: 'eof', line: 1 }),
     
     'should tokenize a triple quoted string literal with quotes newlines inside':
       shouldTokenize('"""st"r\ni""ng"""',
-                     { type: 'literal', quotedValue: '"st"r\ni""ng"', line: 1 },
+                     { type: 'literal', value: '"st"r\ni""ng"', line: 1 },
                      { type: 'eof', line: 2 }),
     
     'should tokenize a string with escape characters':
       shouldTokenize('"\\\\ \\\' \\" \\n \\r \\t \\ua1b2" \n """\\\\ \\\' \\" \\n \\r \\t \\ua1b2"""',
-                     { type: 'literal', quotedValue: '"\\ \' " \n \r \t \ua1b2"', line: 1 },
-                     { type: 'literal', quotedValue: '"\\ \' " \n \r \t \ua1b2"', line: 2 },
+                     { type: 'literal', value: '"\\ \' " \n \r \t \ua1b2"', line: 1 },
+                     { type: 'literal', value: '"\\ \' " \n \r \t \ua1b2"', line: 2 },
                      { type: 'eof', line: 2 }),
     
     'should tokenize a quoted string literal with language code':
       shouldTokenize('"string"@en "string"@nl-be ',
-                     { type: 'literal', quotedValue: '"string"', line: 1 },
+                     { type: 'literal', value: '"string"', line: 1 },
                      { type: 'langcode', language: 'en', line: 1 },
-                     { type: 'literal', quotedValue: '"string"', line: 1 },
+                     { type: 'literal', value: '"string"', line: 1 },
                      { type: 'langcode', language: 'nl-be', line: 1 },
                      { type: 'eof', line: 1 }),
     
@@ -100,17 +100,17 @@ vows.describe('N3Lexer').addBatch({
       shouldTokenize(streamOf('<a>\n<b', '> ', '"""', 'c\n', '"""', '.',
                               '<d> <e', '> ', '""', '.',
                               '<g> <h> "i"', '@e', 'n.'),
-                     { type: 'explicituri', uri: 'a', line: 1 },
-                     { type: 'explicituri', uri: 'b', line: 2 },
-                     { type: 'literal', quotedValue: '"c\n"', line: 2 },
+                     { type: 'explicituri', value: 'a', line: 1 },
+                     { type: 'explicituri', value: 'b', line: 2 },
+                     { type: 'literal', value: '"c\n"', line: 2 },
                      { type: 'dot', line: 3 },
-                     { type: 'explicituri', uri: 'd', line: 3 },
-                     { type: 'explicituri', uri: 'e', line: 3 },
-                     { type: 'literal', quotedValue: '""', line: 3 },
+                     { type: 'explicituri', value: 'd', line: 3 },
+                     { type: 'explicituri', value: 'e', line: 3 },
+                     { type: 'literal', value: '""', line: 3 },
                      { type: 'dot', line: 3 },
-                     { type: 'explicituri', uri: 'g', line: 3 },
-                     { type: 'explicituri', uri: 'h', line: 3 },
-                     { type: 'literal', quotedValue: '"i"', line: 3 },
+                     { type: 'explicituri', value: 'g', line: 3 },
+                     { type: 'explicituri', value: 'h', line: 3 },
+                     { type: 'literal', value: '"i"', line: 3 },
                      { type: 'langcode', language: 'en', line: 3 },
                      { type: 'dot', line: 3 },
                      { type: 'eof', line: 3 }),
@@ -118,8 +118,8 @@ vows.describe('N3Lexer').addBatch({
     'should tokenize prefix declarations':
       shouldTokenize('@prefix abc: <http://uri.org/#>.',
                      { type: '@prefix', line: 1 },
-                     { type: 'prefix', prefix: 'abc', line: 1 },
-                     { type: 'explicituri', uri: 'http://uri.org/#', line: 1 },
+                     { type: 'prefix', value: 'abc', line: 1 },
+                     { type: 'explicituri', value: 'http://uri.org/#', line: 1 },
                      { type: 'dot', line: 1 },
                      { type: 'eof', line: 1 }),
     
