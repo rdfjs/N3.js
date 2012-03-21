@@ -126,6 +126,13 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'explicituri', value: 'http://uri.org/#', line: 2 },
                      { type: 'dot', line: 2 },
                      { type: 'eof', line: 2 }),
+                     
+    'should tokenize qnames':
+      shouldTokenize(':a b:c d-dd:e-ee.',
+                     { type: 'qname', prefix: '',      value: 'a',    line: 1 },
+                     { type: 'qname', prefix: 'b',     value: 'c',    line: 1 },
+                     { type: 'qname', prefix: 'd-dd',  value: 'e-ee', line: 1 },
+                     { type: 'dot', line: 1 },
                      { type: 'eof', line: 1 }),
     
     'should not tokenize an invalid document':
@@ -141,10 +148,10 @@ function shouldTokenize(input, expected) {
   function tokenCallback(error, token) {
     should.not.exist(error);
     should.exist(token);
-    result.push(token);
     for (var attribute in token)
-      if (token[attribute] === '')
+      if (token[attribute] === '' && expected[result.length][attribute] !== '')
         delete token[attribute];
+    result.push(token);
     if (token.type === 'eof')
       endCallback(null, result);
   }
