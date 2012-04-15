@@ -52,6 +52,12 @@ vows.describe('N3Parser').addBatch({
       shouldParse('<a> <b> "string"@en.',
                   ['a', 'b', '"string"@en']),
     
+    'should parse triples with prefixes':
+      shouldParse('@prefix : <#>.\n' +
+                  '@prefix a: <a#>.\n' +
+                  ':x a:a a:b.',
+                  ['#x', 'a#a', 'a#b']),
+    
     'should error when a predicate is not there':
       shouldNotParse('<a>.',
                      'Expected predicate to follow "a" at line 1.'),
