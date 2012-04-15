@@ -96,6 +96,27 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'langcode', language: 'nl-be', line: 1 },
                      { type: 'eof', line: 1 }),
     
+    'should tokenize statements with shared subjects':
+      shouldTokenize('<a> <b> <c>;\n<d> <e>.',
+                     { type: 'explicituri', value: 'a', line: 1 },
+                     { type: 'explicituri', value: 'b', line: 1 },
+                     { type: 'explicituri', value: 'c', line: 1 },
+                     { type: 'semicolon', line: 1 },
+                     { type: 'explicituri', value: 'd', line: 2 },
+                     { type: 'explicituri', value: 'e', line: 2 },
+                     { type: 'dot', line: 2 },
+                     { type: 'eof', line: 2 }),
+    
+    'should tokenize statements with shared subjects and predicates':
+      shouldTokenize('<a> <b> <c>,\n<d>.',
+                     { type: 'explicituri', value: 'a', line: 1 },
+                     { type: 'explicituri', value: 'b', line: 1 },
+                     { type: 'explicituri', value: 'c', line: 1 },
+                     { type: 'comma', line: 1 },
+                     { type: 'explicituri', value: 'd', line: 2 },
+                     { type: 'dot', line: 2 },
+                     { type: 'eof', line: 2 }),
+    
     'should tokenize a stream':
       shouldTokenize(streamOf('<a>\n<b', '> ', '"""', 'c\n', '"""', '.',
                               '<d> <e', '> ', '""', '.',
