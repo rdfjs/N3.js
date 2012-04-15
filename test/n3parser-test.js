@@ -70,6 +70,16 @@ vows.describe('N3Parser').addBatch({
       shouldNotParse('<a> <b> c:d ',
                      'Undefined prefix "c:" at line 1.'),
     
+    'should parse statements with shared subjects':
+      shouldParse('<a> <b> <c>;\n<d> <e>.',
+                  ['a', 'b', 'c'],
+                  ['a', 'd', 'e']),
+    
+    'should parse statements with shared subjects and predicates':
+      shouldParse('<a> <b> <c>, <d>.',
+                  ['a', 'b', 'c'],
+                  ['a', 'b', 'd']),
+    
     'should error when a predicate is not there':
       shouldNotParse('<a>.',
                      'Expected predicate to follow "a" at line 1.'),
