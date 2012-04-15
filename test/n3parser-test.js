@@ -57,6 +57,18 @@ vows.describe('N3Parser').addBatch({
                   '@prefix a: <a#>.\n' +
                   ':x a:a a:b.',
                   ['#x', 'a#a', 'a#b']),
+
+    'should not parse undefined prefix in subject':
+      shouldNotParse(':a ',
+                     'Undefined prefix ":" at line 1.'),
+    
+    'should not parse undefined prefix in predicate':
+      shouldNotParse('<a> b:c ',
+                     'Undefined prefix "b:" at line 1.'),
+    
+    'should not parse undefined prefix in object':
+      shouldNotParse('<a> <b> c:d ',
+                     'Undefined prefix "c:" at line 1.'),
     
     'should error when a predicate is not there':
       shouldNotParse('<a>.',
