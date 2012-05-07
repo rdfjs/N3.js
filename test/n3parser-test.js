@@ -80,6 +80,10 @@ vows.describe('N3Parser').addBatch({
                   ['a', 'b', 'c'],
                   ['a', 'b', 'd']),
     
+    'should parse statements with blank nodes':
+      shouldParse('_:a _:b _:c.',
+                  ['_:b0', '_:b1', '_:b2']),
+    
     'should error when a predicate is not there':
       shouldNotParse('<a>.',
                      'Expected predicate to follow "a" at line 1.'),
