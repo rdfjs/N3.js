@@ -80,9 +80,31 @@ vows.describe('N3Parser').addBatch({
                   ['a', 'b', 'c'],
                   ['a', 'b', 'd']),
     
-    'should parse statements with blank nodes':
+    'should parse statements with named blank nodes':
       shouldParse('_:a _:b _:c.',
                   ['_:b0', '_:b1', '_:b2']),
+    
+    'should parse statements with unnamed blank nodes in the subject':
+      shouldParse('[<a> <b>] <c> <d>.',
+                  ['_:b0', 'c', 'd'],
+                  ['_:b0', 'a', 'b']),
+    
+    'should parse statements with unnamed blank nodes in the object':
+      shouldParse('<a> <b> [<c> <d>].',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'c', 'd']),
+    
+    'should parse statements with nested blank nodes in the subject':
+      shouldParse('[<a> [<x> <y>]] <c> <d>.',
+                  ['_:b0', 'c', 'd'],
+                  ['_:b0', 'a', '_:b1'],
+                  ['_:b1', 'x', 'y']),
+    
+    'should parse statements with nexted blank nodes in the object':
+      shouldParse('<a> <b> [<c> [<d> <e>]].',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'c', '_:b1'],
+                  ['_:b1', 'd', 'e']),
     
     'should error when a predicate is not there':
       shouldNotParse('<a>.',
