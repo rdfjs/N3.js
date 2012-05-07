@@ -45,6 +45,12 @@ vows.describe('N3Store').addBatch({
       n3Store.add('_:b0', '_:b1', '_:b2');
       n3Store.createBlankNode().should.eql('_:b3');
     },
+    
+    'should be able to create named blank nodes': function (n3Store) {
+      n3Store.createBlankNode('blank').should.eql('_:blank');
+      n3Store.createBlankNode('blank').should.eql('_:blank1');
+      n3Store.createBlankNode('blank').should.eql('_:blank2');
+    },
   },
   
   'An N3Store with 5 elements': {
