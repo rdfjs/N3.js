@@ -34,8 +34,16 @@ vows.describe('N3Store').addBatch({
       n3Store.find().should.be.empty;
     },
     
-    'should have a default context': function (N3Store) {
-      N3Store.defaultContext.should.eql('n3/contexts#default');
+    'should have a default context': function (n3Store) {
+      n3Store.defaultContext.should.eql('n3/contexts#default');
+    },
+    
+    'should be able to create unnamed blank nodes': function (n3Store) {
+      n3Store.createBlankNode().should.eql('_:b0');
+      n3Store.createBlankNode().should.eql('_:b1');
+
+      n3Store.add('_:b0', '_:b1', '_:b2');
+      n3Store.createBlankNode().should.eql('_:b3');
     },
   },
   
