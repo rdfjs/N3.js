@@ -156,6 +156,16 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'dot', line: 1 },
                      { type: 'eof', line: 1 }),
     
+    'should tokenize blank nodes':
+      shouldTokenize('[] [<a> <b>]',
+                     { type: 'bracketopen', line: 1 },
+                     { type: 'bracketclose', line: 1 },
+                     { type: 'bracketopen', line: 1 },
+                     { type: 'explicituri', value: 'a', line: 1 },
+                     { type: 'explicituri', value: 'b', line: 1 },
+                     { type: 'bracketclose', line: 1 },
+                     { type: 'eof', line: 1 }),
+    
     'should not tokenize an invalid document':
       shouldNotTokenize(' \n @!', 'Syntax error: unexpected "@!" on line 2.')
   }
