@@ -91,9 +91,9 @@ vows.describe('N3Lexer').addBatch({
     'should tokenize a quoted string literal with language code':
       shouldTokenize('"string"@en "string"@nl-be ',
                      { type: 'literal', value: '"string"', line: 1 },
-                     { type: 'langcode', language: 'en', line: 1 },
+                     { type: 'langcode', value: 'en', line: 1 },
                      { type: 'literal', value: '"string"', line: 1 },
-                     { type: 'langcode', language: 'nl-be', line: 1 },
+                     { type: 'langcode', value: 'nl-be', line: 1 },
                      { type: 'eof', line: 1 }),
     
     'should tokenize statements with shared subjects':
@@ -132,7 +132,7 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'explicituri', value: 'g', line: 3 },
                      { type: 'explicituri', value: 'h', line: 3 },
                      { type: 'literal', value: '"i"', line: 3 },
-                     { type: 'langcode', language: 'en', line: 3 },
+                     { type: 'langcode', value: 'en', line: 3 },
                      { type: 'dot', line: 3 },
                      { type: 'eof', line: 3 }),
     
