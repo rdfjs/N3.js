@@ -48,6 +48,10 @@ vows.describe('N3Parser').addBatch({
       shouldParse('<a> <b> "string".',
                   ['a', 'b', '"string"']),
     
+    'should parse a triple with a numeric literal':
+      shouldParse('<a> <b> 3.0.',
+                  ['a', 'b', '3.0']),
+    
     'should parse a triple with a literal and a language code':
       shouldParse('<a> <b> "string"@en.',
                   ['a', 'b', '"string"@en']),
