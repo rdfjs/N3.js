@@ -105,11 +105,28 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'eof', line: 1 }),
     
     'should tokenize an integer literal':
-      shouldTokenize('10 +20 -30 40. ',
+      shouldTokenize('10, +20. -30, 40. ',
                      { type: 'literal', value: '10', line: 1 },
+                     { type: 'comma', line: 1},
                      { type: 'literal', value: '20', line: 1 },
+                     { type: 'dot', line: 1},
                      { type: 'literal', value: '-30', line: 1 },
+                     { type: 'comma', line: 1},
                      { type: 'literal', value: '40', line: 1 },
+                     { type: 'dot', line: 1 },
+                     { type: 'eof', line: 1 }),
+    
+    'should tokenize a decimal literal':
+      shouldTokenize('1.. 2.0, .3. -0.4, -.5. ',
+                     { type: 'literal', value: '1.', line: 1 },
+                     { type: 'dot', line: 1},
+                     { type: 'literal', value: '2.0', line: 1 },
+                     { type: 'comma', line: 1},
+                     { type: 'literal', value: '.3', line: 1 },
+                     { type: 'dot', line: 1},
+                     { type: 'literal', value: '-0.4', line: 1 },
+                     { type: 'comma', line: 1},
+                     { type: 'literal', value: '-.5', line: 1 },
                      { type: 'dot', line: 1 },
                      { type: 'eof', line: 1 }),
     
@@ -196,9 +213,11 @@ function shouldTokenize(input, expected) {
   function tokenCallback(error, token) {
     should.not.exist(error);
     should.exist(token);
-    for (var attribute in token)
-      if (token[attribute] === '' && expected[result.length][attribute] !== '')
-        delete token[attribute];
+    var expectedItem = expected[result.length];
+    if (expectedItem)
+      for (var attribute in token)
+        if (token[attribute] === '' && expectedItem[attribute] !== '')
+          delete token[attribute];
     result.push(token);
     if (token.type === 'eof')
       endCallback(null, result);
