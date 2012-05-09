@@ -96,6 +96,14 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'langcode', value: 'nl-be', line: 1 },
                      { type: 'eof', line: 1 }),
     
+    'should tokenize a quoted string literal with type':
+      shouldTokenize('"string"^^<type> "string"^^ns:mytype ',
+                     { type: 'literal', value: '"string"', line: 1 },
+                     { type: 'type', value: 'type', line: 1 },
+                     { type: 'literal', value: '"string"', line: 1 },
+                     { type: 'type', value: 'mytype', prefix: 'ns', line: 1 },
+                     { type: 'eof', line: 1 }),
+    
     'should tokenize statements with shared subjects':
       shouldTokenize('<a> <b> <c>;\n<d> <e>.',
                      { type: 'explicituri', value: 'a', line: 1 },
