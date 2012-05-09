@@ -44,20 +44,32 @@ vows.describe('N3Parser').addBatch({
                   ['d', 'e', 'f'],
                   ['g', 'h', 'i']),
     
-    'should parse a with a literal':
+    'should parse a triple with a literal':
       shouldParse('<a> <b> "string".',
                   ['a', 'b', '"string"']),
     
-    'should parse a with a literal and a language code':
+    'should parse a triple with a literal and a language code':
       shouldParse('<a> <b> "string"@en.',
                   ['a', 'b', '"string"@en']),
+    
+    'should parse a triple with a literal and a URI type':
+      shouldParse('<a> <b> "string"^^<type>.',
+                  ['a', 'b', '"string"^^type']),
+    
+    'should parse a triple with a literal and a qname type':
+      shouldParse('@prefix x: <y#>. <a> <b> "string"^^x:z.',
+                  ['a', 'b', '"string"^^y#z']),
+    
+    'should not parse a triple with a literal and a qname type with an inexistent prefix':
+      shouldNotParse('<a> <b> "string"^^x:z.',
+                     'Undefined prefix "x:" at line 1.'),
     
     'should parse triples with prefixes':
       shouldParse('@prefix : <#>.\n' +
                   '@prefix a: <a#>.\n' +
                   ':x a:a a:b.',
                   ['#x', 'a#a', 'a#b']),
-
+    
     'should not parse undefined prefix in subject':
       shouldNotParse(':a ',
                      'Undefined prefix ":" at line 1.'),
