@@ -130,6 +130,16 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'dot', line: 1 },
                      { type: 'eof', line: 1 }),
     
+    'should tokenize a double literal':
+      shouldTokenize('10e20, +30.40E+50. -60.70e-80. ',
+                     { type: 'literal', value: '10e20', line: 1 },
+                     { type: 'comma', line: 1},
+                     { type: 'literal', value: '30.40e50', line: 1 },
+                     { type: 'dot', line: 1},
+                     { type: 'literal', value: '-60.70e-80', line: 1 },
+                     { type: 'dot', line: 1 },
+                     { type: 'eof', line: 1 }),
+    
     'should tokenize statements with shared subjects':
       shouldTokenize('<a> <b> <c>;\n<d> <e>.',
                      { type: 'explicituri', value: 'a', line: 1 },
