@@ -126,6 +126,14 @@ vows.describe('N3Parser').addBatch({
                   ['_:b0', 'c', '_:b1'],
                   ['_:b1', 'd', 'e']),
     
+    'should parse statements with an empty list in the subject':
+      shouldParse('() <a> <b>.',
+                  ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'a', 'b']),
+    
+    'should parse statements with an empty list in the object':
+      shouldParse('<a> <b> ().',
+                  ['a', 'b', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+    
     'should not parse improperly nested square brackets':
        shouldNotParse('<a> <b> [<c> <d>]].',
                       'Expected punctuation to follow "_:b0" at line 1.'),
