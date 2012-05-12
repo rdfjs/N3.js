@@ -199,6 +199,14 @@ vows.describe('N3Parser').addBatch({
                            'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
                   ['_:b3', 'x', 'y']),
     
+    'should parse statements with a blank node containing a list':
+            shouldParse('[<a> (<b>)] <c> <d>.',
+                  ['_:b0', 'c', 'd'],
+                  ['_:b0', 'a', '_:b1'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'b'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
+                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+    
     'should not parse improperly nested square brackets':
        shouldNotParse('<a> <b> [<c> <d>]].',
                       'Expected punctuation to follow "_:b0" at line 1.'),
