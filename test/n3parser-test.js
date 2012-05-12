@@ -114,6 +114,11 @@ vows.describe('N3Parser').addBatch({
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'c', 'd']),
     
+    'should parse statements with unnamed blank nodes with a string object':
+      shouldParse('<a> <b> [<c> "x"].',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'c', '"x"']),
+    
     'should not parse a blank node with missing subject':
       shouldNotParse('<a> <b> [<c>].',
                      'Expected object to follow "c" at line 1.'),
@@ -168,6 +173,13 @@ vows.describe('N3Parser').addBatch({
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
+                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+    
+    'should parse statements with a list containing strings':
+      shouldParse('("y") <a> <b>.',
+                  ['_:b0', 'a', 'b'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"y"'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
                            'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     
     'should not parse improperly nested square brackets':
