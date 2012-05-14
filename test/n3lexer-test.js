@@ -106,44 +106,44 @@ vows.describe('N3Lexer').addBatch({
     
     'should tokenize an integer literal':
       shouldTokenize('10, +20. -30, 40. ',
-                     { type: 'literal', value: '10', line: 1 },
+                     { type: 'literal', value: '"10"', line: 1 },
                      { type: 'comma', line: 1},
-                     { type: 'literal', value: '20', line: 1 },
+                     { type: 'literal', value: '"20"', line: 1 },
                      { type: 'dot', line: 1},
-                     { type: 'literal', value: '-30', line: 1 },
+                     { type: 'literal', value: '"-30"', line: 1 },
                      { type: 'comma', line: 1},
-                     { type: 'literal', value: '40', line: 1 },
+                     { type: 'literal', value: '"40"', line: 1 },
                      { type: 'dot', line: 1 },
                      { type: 'eof', line: 1 }),
     
     'should tokenize a decimal literal':
       shouldTokenize('1.. 2.0, .3. -0.4, -.5. ',
-                     { type: 'literal', value: '1.', line: 1 },
+                     { type: 'literal', value: '"1."', line: 1 },
                      { type: 'dot', line: 1},
-                     { type: 'literal', value: '2.0', line: 1 },
+                     { type: 'literal', value: '"2.0"', line: 1 },
                      { type: 'comma', line: 1},
-                     { type: 'literal', value: '.3', line: 1 },
+                     { type: 'literal', value: '".3"', line: 1 },
                      { type: 'dot', line: 1},
-                     { type: 'literal', value: '-0.4', line: 1 },
+                     { type: 'literal', value: '"-0.4"', line: 1 },
                      { type: 'comma', line: 1},
-                     { type: 'literal', value: '-.5', line: 1 },
+                     { type: 'literal', value: '"-.5"', line: 1 },
                      { type: 'dot', line: 1 },
                      { type: 'eof', line: 1 }),
     
     'should tokenize a double literal':
       shouldTokenize('10e20, +30.40E+50. -60.70e-80. ',
-                     { type: 'literal', value: '10e20', line: 1 },
+                     { type: 'literal', value: '"10e20"', line: 1 },
                      { type: 'comma', line: 1},
-                     { type: 'literal', value: '30.40e50', line: 1 },
+                     { type: 'literal', value: '"30.40e50"', line: 1 },
                      { type: 'dot', line: 1},
-                     { type: 'literal', value: '-60.70e-80', line: 1 },
+                     { type: 'literal', value: '"-60.70e-80"', line: 1 },
                      { type: 'dot', line: 1 },
                      { type: 'eof', line: 1 }),
     
     'should tokenize booleans':
       shouldTokenize('true false ',
-                     { type: 'literal', value: 'true', line: 1 },
-                     { type: 'literal', value: 'false', line: 1 },
+                     { type: 'literal', value: '"true"', line: 1 },
+                     { type: 'literal', value: '"false"', line: 1 },
                      { type: 'eof', line: 1 }),
     
     'should tokenize statements with shared subjects':
