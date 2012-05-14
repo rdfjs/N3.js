@@ -167,6 +167,19 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'dot', line: 2 },
                      { type: 'eof', line: 2 }),
     
+    'should tokenize statements with shared subjects and predicates and qnames':
+      shouldTokenize('a:a b:b c:c;d:d e:e,f:f.',
+                     { type: 'qname', prefix: 'a', value: 'a', line: 1 },
+                     { type: 'qname', prefix: 'b', value: 'b', line: 1 },
+                     { type: 'qname', prefix: 'c', value: 'c', line: 1 },
+                     { type: 'semicolon', line: 1 },
+                     { type: 'qname', prefix: 'd', value: 'd', line: 1 },
+                     { type: 'qname', prefix: 'e', value: 'e', line: 1 },
+                     { type: 'comma', line: 1 },
+                     { type: 'qname', prefix: 'f', value: 'f', line: 1 },
+                     { type: 'dot', line: 1 },
+                     { type: 'eof', line: 1 }),
+    
     'should tokenize a stream':
       shouldTokenize(streamOf('<a>\n<b', '> ', '"""', 'c\n', '"""', '.',
                               '<d> <e', '> ', '""', '.',

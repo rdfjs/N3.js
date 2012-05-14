@@ -74,6 +74,14 @@ vows.describe('N3Parser').addBatch({
                   ':x a:a a:b.',
                   ['#x', 'a#a', 'a#b']),
     
+    'should parse triples with prefixes and different punctuation':
+      shouldParse('@prefix : <#>.\n' +
+                  '@prefix a: <a#>.\n' +
+                  ':x a:a a:b;a:c a:d,a:e.',
+                  ['#x', 'a#a', 'a#b'],
+                  ['#x', 'a#c', 'a#d'],
+                  ['#x', 'a#c', 'a#e']),
+    
     'should not parse undefined prefix in subject':
       shouldNotParse(':a ',
                      'Undefined prefix ":" at line 1.'),
