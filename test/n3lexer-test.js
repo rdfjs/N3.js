@@ -140,6 +140,12 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'dot', line: 1 },
                      { type: 'eof', line: 1 }),
     
+    'should tokenize booleans':
+      shouldTokenize('true false ',
+                     { type: 'literal', value: 'true', line: 1 },
+                     { type: 'literal', value: 'false', line: 1 },
+                     { type: 'eof', line: 1 }),
+    
     'should tokenize statements with shared subjects':
       shouldTokenize('<a> <b> <c>;\n<d> <e>.',
                      { type: 'explicituri', value: 'a', line: 1 },
