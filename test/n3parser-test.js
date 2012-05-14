@@ -205,14 +205,14 @@ vows.describe('N3Parser').addBatch({
                            'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     
     'should parse statements with a list containing a blank node':
-            shouldParse('([]) <a> <b>.',
+      shouldParse('([]) <a> <b>.',
                   ['_:b0', 'a', 'b'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
                            'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     
     'should parse statements with a list containing multiple blank nodes':
-            shouldParse('([] [<x> <y>]) <a> <b>.',
+      shouldParse('([] [<x> <y>]) <a> <b>.',
                   ['_:b0', 'a', 'b'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2'],
@@ -222,16 +222,24 @@ vows.describe('N3Parser').addBatch({
                   ['_:b3', 'x', 'y']),
     
     'should parse statements with a blank node containing a list':
-            shouldParse('[<a> (<b>)] <c> <d>.',
+      shouldParse('[<a> (<b>)] <c> <d>.',
                   ['_:b0', 'c', 'd'],
                   ['_:b0', 'a', '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'b'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
                            'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     
+    'should resolve URIs against @base':
+      shouldParse('@base <http://ex.org/>.\n' +
+                  '<a> <b> <c>.\n' +
+                  '@base <d/>.\n' +
+                  '<e> <f> <g>.',
+                  ['http://ex.org/a', 'http://ex.org/b', 'http://ex.org/c'],
+                  ['http://ex.org/d/e', 'http://ex.org/d/f', 'http://ex.org/d/g']),
+    
     'should not parse improperly nested square brackets':
-       shouldNotParse('<a> <b> [<c> <d>]].',
-                      'Expected punctuation to follow "_:b0" at line 1.'),
+      shouldNotParse('<a> <b> [<c> <d>]].',
+                     'Expected punctuation to follow "_:b0" at line 1.'),
     
     'should error when a predicate is not there':
       shouldNotParse('<a>.',
