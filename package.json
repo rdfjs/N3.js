@@ -1,6 +1,6 @@
 {
   "name": "n3",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Notation3 (N3) and RDF library.",
   "author": "Ruben Verborgh <ruben.verborgh@gmail.com>",
   "keywords": ["n3", "notation3", "rdf"],
