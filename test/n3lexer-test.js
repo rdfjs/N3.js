@@ -23,8 +23,6 @@ vows.describe('N3Lexer').addBatch({
   },
   
   'An N3Lexer instance': {
-    topic: new N3Lexer(),
-    
     'should tokenize the empty string':
       shouldTokenize('',
                      { type: 'eof', line: 1 }),

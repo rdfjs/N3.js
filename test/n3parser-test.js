@@ -24,8 +24,6 @@ vows.describe('N3Parser').addBatch({
   },
   
   'An N3Parser instance': {
-    topic: new N3Parser(),
-    
     'should parse the empty string':
       shouldParse(''
                   /* no triples */),
