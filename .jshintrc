@@ -6,6 +6,7 @@
   "expr": true,     // Allow expressions where statements are allowed.
   "boss": true,     // Allow assignments where expressions are allowed.
   "trailing": true, // Do not leave trailing whitespace.
+  "strict": false,  // Do not enforce strict mode.
   "white": true,    // Enable scrict whitespace checking.
   "indent": 2       // The code uses an indentation width of 2 spaces.
 }
