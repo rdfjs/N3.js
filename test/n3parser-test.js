@@ -131,6 +131,12 @@ vows.describe('N3Parser').addBatch({
       shouldNotParse('<a> <b> [<c>].',
                      'Expected object to follow "c" at line 1.'),
     
+    'should parse a multi-statement blank node':
+      shouldParse('<a> <b> [ <u> <v>; <w> <z> ].',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'u', 'v'],
+                  ['_:b0', 'w', 'z']),
+    
     'should parse statements with nested blank nodes in the subject':
       shouldParse('[<a> [<x> <y>]] <c> <d>.',
                   ['_:b0', 'c', 'd'],
