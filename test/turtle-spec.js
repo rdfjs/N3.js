@@ -97,6 +97,10 @@ function (error) {
   }
 });
 
+function unString(value) {
+  return value.replace(/^"(.*)"$/, '$1');
+}
+
 function toNTriple(triple) {
   var subject = triple.subject,
       predicate = triple.predicate,
@@ -113,7 +117,8 @@ function verifyResult(test, resultFile, correctFile) {
   },
   function (error, output) {
     var success = (output.result === output.correct);
-    console.log(test.name.bold, test.comment, (success ? 'OK'.green : 'FAIL'.red).bold);
+    console.log(unString(test.name).bold + ':', unString(test.comment),
+                (success ? 'OK'.green : 'FAIL'.red).bold);
     if (!success) {
       console.log(output.correct.replace(/^/gm, '      ').grey);
       console.log('  was expected, but got'.bold.grey);
