@@ -2,6 +2,7 @@ var N3Parser = require('../lib/n3parser.js'),
     N3Store = require('../lib/n3store.js');
 var fs = require('fs'),
     request = require('request'),
+    exec = require('child_process').exec,
     async = require('async');
 
 var turtleTestsUrl = "http://www.w3.org/2001/sw/DataAccess/df1/tests/";
@@ -14,13 +15,14 @@ var first = rdf + "first",
     rest = rdf + "rest",
     nil = rdf + "nil";
 
-var specFolder = './test/spec/';
-var testFolder = './test/spec/turtle/';
+var specFolder = './test/spec/',
+    testFolder = specFolder + 'turtle/',
+    outputFolder = testFolder + 'results/';
 
-if (!fs.existsSync(specFolder))
-  fs.mkdirSync(specFolder);
-if (!fs.existsSync(testFolder))
-  fs.mkdirSync(testFolder);
+[specFolder, testFolder, outputFolder].forEach(function (folder) {
+  if (!fs.existsSync(folder))
+    fs.mkdirSync(folder);
+});
 
 async.waterfall([
   function fetchManifest(callback) {
@@ -56,20 +58,32 @@ async.waterfall([
   },
   function performTests(tests) {
     tests.forEach(function (test) {
-      async.parallel([
-        function fetchData(callback) {
+      var outputFile = outputFolder + test.result.replace(/\.out$/, '.nt');
+      async.parallel({
+        fetchData: function (callback) {
           request.get(turtleTestsUrl + test.data, callback)
                  .pipe(fs.createWriteStream(testFolder + test.data));
         },
-        function fetchResult(callback) {
+        fetchResult: function (callback) {
           request.get(turtleTestsUrl + test.result, callback)
                  .pipe(fs.createWriteStream(testFolder + test.result));
         },
-      ],
-      function () {
+        createFile: function (callback) {
+          var stream = fs.createWriteStream(outputFile)
+                         .on('open', function () { callback(null, stream); });
+        }
+      },
+      function (err, results) {
+        var outputStream = results.createFile;
         new N3Parser().parse(fs.createReadStream(testFolder + test.data),
           function (error, triple) {
-            console.log(test.data, error, triple);
+            if (triple) {
+              outputStream.write(toNTriple(triple));
+            }
+            else {
+              outputStream.end();
+              verifyResult(test, outputFile, testFolder + test.result);
+            }
           });
       });
     });
@@ -81,3 +95,35 @@ function (error) {
     process.exit(1);
   }
 });
+
+function toNTriple(triple) {
+  var subject = triple.subject,
+      predicate = triple.predicate,
+      object = triple.object;
+  return (subject.match(/^_/)   ? subject   : '<' + subject   + '>') + ' ' +
+         (predicate.match(/^_/) ? predicate : '<' + predicate + '>') + ' ' +
+         (object.match(/^_|^"/) ? object    : '<' + object +    '>') + ' .\n';
+}
+
+function verifyResult(test, resultFile, correctFile) {
+  async.parallel({
+    result:  function (callback) { parseWithCwm(resultFile,  callback); },
+    correct: function (callback) { parseWithCwm(correctFile, callback); }
+  },
+  function (error, output) {
+    var success = (output.result === output.correct);
+    console.log(test.name, test.comment, success ? 'OK' : 'FAIL');
+    if (!success) {
+      console.log(output.correct.replace(/^/gm, '      '));
+      console.log('  was expected, but got');
+      console.log(output.result.replace(/^/gm, '      '));
+    }
+  });
+}
+
+function parseWithCwm(file, callback) {
+  exec('cwm ' + file + ' --ntriples', function (error, stdout, stderr) {
+    var result = stdout.replace(/^\s*#.*$/gm, '').trim();
+    callback(error, result);
+  });
+}
