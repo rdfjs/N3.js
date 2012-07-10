@@ -3,6 +3,7 @@ var N3Parser = require('../lib/n3parser.js'),
 var fs = require('fs'),
     request = require('request'),
     exec = require('child_process').exec,
+    colors = require('colors'),
     async = require('async');
 
 var turtleTestsUrl = "http://www.w3.org/2001/sw/DataAccess/df1/tests/";
@@ -112,11 +113,11 @@ function verifyResult(test, resultFile, correctFile) {
   },
   function (error, output) {
     var success = (output.result === output.correct);
-    console.log(test.name, test.comment, success ? 'OK' : 'FAIL');
+    console.log(test.name.bold, test.comment, (success ? 'OK'.green : 'FAIL'.red).bold);
     if (!success) {
-      console.log(output.correct.replace(/^/gm, '      '));
-      console.log('  was expected, but got');
-      console.log(output.result.replace(/^/gm, '      '));
+      console.log(output.correct.replace(/^/gm, '      ').grey);
+      console.log('  was expected, but got'.bold.grey);
+      console.log(output.result.replace(/^/gm, '      ').grey);
     }
   });
 }
