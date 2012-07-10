@@ -104,44 +104,44 @@ vows.describe('N3Lexer').addBatch({
     
     'should tokenize an integer literal':
       shouldTokenize('10, +20. -30, 40. ',
-                     { type: 'literal', value: '"10"', line: 1 },
+                     { type: 'literal', value: '"10"^^<http://www.w3.org/2001/XMLSchema#integer>', line: 1 },
                      { type: 'comma', line: 1},
-                     { type: 'literal', value: '"20"', line: 1 },
+                     { type: 'literal', value: '"20"^^<http://www.w3.org/2001/XMLSchema#integer>', line: 1 },
                      { type: 'dot', line: 1},
-                     { type: 'literal', value: '"-30"', line: 1 },
+                     { type: 'literal', value: '"-30"^^<http://www.w3.org/2001/XMLSchema#integer>', line: 1 },
                      { type: 'comma', line: 1},
-                     { type: 'literal', value: '"40"', line: 1 },
+                     { type: 'literal', value: '"40"^^<http://www.w3.org/2001/XMLSchema#integer>', line: 1 },
                      { type: 'dot', line: 1 },
                      { type: 'eof', line: 1 }),
     
     'should tokenize a decimal literal':
       shouldTokenize('1.. 2.0, .3. -0.4, -.5. ',
-                     { type: 'literal', value: '"1."', line: 1 },
+                     { type: 'literal', value: '"1."^^<http://www.w3.org/2001/XMLSchema#decimal>', line: 1 },
                      { type: 'dot', line: 1},
-                     { type: 'literal', value: '"2.0"', line: 1 },
+                     { type: 'literal', value: '"2.0"^^<http://www.w3.org/2001/XMLSchema#decimal>', line: 1 },
                      { type: 'comma', line: 1},
-                     { type: 'literal', value: '".3"', line: 1 },
+                     { type: 'literal', value: '".3"^^<http://www.w3.org/2001/XMLSchema#decimal>', line: 1 },
                      { type: 'dot', line: 1},
-                     { type: 'literal', value: '"-0.4"', line: 1 },
+                     { type: 'literal', value: '"-0.4"^^<http://www.w3.org/2001/XMLSchema#decimal>', line: 1 },
                      { type: 'comma', line: 1},
-                     { type: 'literal', value: '"-.5"', line: 1 },
+                     { type: 'literal', value: '"-.5"^^<http://www.w3.org/2001/XMLSchema#decimal>', line: 1 },
                      { type: 'dot', line: 1 },
                      { type: 'eof', line: 1 }),
     
     'should tokenize a double literal':
       shouldTokenize('10e20, +30.40E+50. -60.70e-80. ',
-                     { type: 'literal', value: '"10e20"', line: 1 },
+                     { type: 'literal', value: '"10e20"^^<http://www.w3.org/2001/XMLSchema#double>', line: 1 },
                      { type: 'comma', line: 1},
-                     { type: 'literal', value: '"30.40e50"', line: 1 },
+                     { type: 'literal', value: '"30.40e50"^^<http://www.w3.org/2001/XMLSchema#double>', line: 1 },
                      { type: 'dot', line: 1},
-                     { type: 'literal', value: '"-60.70e-80"', line: 1 },
+                     { type: 'literal', value: '"-60.70e-80"^^<http://www.w3.org/2001/XMLSchema#double>', line: 1 },
                      { type: 'dot', line: 1 },
                      { type: 'eof', line: 1 }),
     
     'should tokenize booleans':
       shouldTokenize('true false ',
-                     { type: 'literal', value: '"true"', line: 1 },
-                     { type: 'literal', value: '"false"', line: 1 },
+                     { type: 'literal', value: '"true"^^<http://www.w3.org/2001/XMLSchema#boolean>', line: 1 },
+                     { type: 'literal', value: '"false"^^<http://www.w3.org/2001/XMLSchema#boolean>', line: 1 },
                      { type: 'eof', line: 1 }),
     
     'should tokenize statements with shared subjects':
