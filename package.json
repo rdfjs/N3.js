@@ -12,7 +12,8 @@
     "vows": "~0.6.0",
     "should": "~0.5.1",
     "docco": "~0.3.0",
-    "request": "~2.9.203"
+    "request": "~2.9.203",
+    "async": "~0.1.22"
   },
   "scripts": {
     "test": "make test"

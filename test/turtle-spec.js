@@ -1,7 +1,8 @@
-var N3Parser = require('../lib/n3parser.js');
-var N3Store = require('../lib/n3store.js');
+var N3Parser = require('../lib/n3parser.js'),
+    N3Store = require('../lib/n3store.js');
 var fs = require('fs'),
-    request = require('request');
+    request = require('request'),
+    async = require('async');
 
 var turtleTestsUrl = "http://www.w3.org/2001/sw/DataAccess/df1/tests/";
 var goodTestsManifest = turtleTestsUrl + "manifest.ttl";
@@ -20,22 +21,14 @@ if (!fs.existsSync(specFolder))
   fs.mkdirSync(specFolder);
 if (!fs.existsSync(testFolder))
   fs.mkdirSync(testFolder);
-  
-fetchTestList(function (tests) {
-  fetchTestFiles(tests, function () {
-    performTests(tests);
-  });
-});
 
-function exit(error) {
-  console.error(error);
-  process.exit(1);
-}
-
-function fetchTestList(callback) {
-  request.get(goodTestsManifest, function (error, response, body) {
-    if (error || response.statusCode != 200)
-      return exit("Could not download " + goodTestsManifest);
+async.waterfall([
+  function fetchManifest(callback) {
+    request.get(goodTestsManifest, callback);
+  },
+  function parseManifest(response, body, callback) {
+    if (response.statusCode != 200)
+      return callback("Could not download " + goodTestsManifest);
     var manifestStore = new N3Store();
     new N3Parser().parse(body, function (err, triple) {
       if (err)
@@ -57,31 +50,34 @@ function fetchTestList(callback) {
           });
           entryHead = manifestStore.find(entryHead, rest, null)[0].object;
         }
-        return callback(tests);
+        return callback(null, tests);
       }
     });
-  });
-}
-
-function fetchTestFiles(tests, callback) {
-  var pending = tests.length * 2;
-  tests.forEach(function (test) {
-    request.get(turtleTestsUrl + test.data, fileFetched)
-           .pipe(fs.createWriteStream(testFolder + test.data));
-    request.get(turtleTestsUrl + test.result, fileFetched)
-           .pipe(fs.createWriteStream(testFolder + test.result));
-  });
-  function fileFetched() {
-    if (--pending === 0)
-      callback();
-  }
-}
-
-function performTests(tests) {
-  tests.forEach(function (test) {
-    new N3Parser().parse(fs.createReadStream(testFolder + test.data),
-      function (error, triple) {
-        console.log(test.data, error, triple);
+  },
+  function performTests(tests) {
+    tests.forEach(function (test) {
+      async.parallel([
+        function fetchData(callback) {
+          request.get(turtleTestsUrl + test.data, callback)
+                 .pipe(fs.createWriteStream(testFolder + test.data));
+        },
+        function fetchResult(callback) {
+          request.get(turtleTestsUrl + test.result, callback)
+                 .pipe(fs.createWriteStream(testFolder + test.result));
+        },
+      ],
+      function () {
+        new N3Parser().parse(fs.createReadStream(testFolder + test.data),
+          function (error, triple) {
+            console.log(test.data, error, triple);
+          });
       });
-  });
-}
+    });
+  }
+],
+function (error) {
+  if (error) {
+    console.error(error);
+    process.exit(1);
+  }
+});
