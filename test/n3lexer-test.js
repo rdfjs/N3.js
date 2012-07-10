@@ -178,6 +178,14 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'dot', line: 1 },
                      { type: 'eof', line: 1 }),
     
+    'should tokenize the colon qname':
+      shouldTokenize(': : :.',
+                     { type: 'qname', prefix: '', value: '', line: 1 },
+                     { type: 'qname', prefix: '', value: '', line: 1 },
+                     { type: 'qname', prefix: '', value: '', line: 1 },
+                     { type: 'dot', line: 1 },
+                     { type: 'eof', line: 1 }),
+    
     'should tokenize a stream':
       shouldTokenize(streamOf('<a>\n<b', '> ', '"""', 'c\n', '"""', '.',
                               '<d> <e', '> ', '""', '.',
