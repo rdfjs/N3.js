@@ -251,7 +251,7 @@ vows.describe('N3Lexer').addBatch({
     'should tokenize the "a" predicate':
       shouldTokenize('<x> a <y>.',
                      { type: 'explicituri', value: 'x', line: 1 },
-                     { type: 'explicituri', value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', line: 1 },
+                     { type: 'abbreviation', value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', line: 1 },
                      { type: 'explicituri', value: 'y', line: 1 },
                      { type: 'dot', line: 1 },
                      { type: 'eof', line: 1 }),
