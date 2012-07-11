@@ -276,6 +276,16 @@ vows.describe('N3Parser').addBatch({
                   ':e :f :g.',
                   ['doc/a', 'doc/b', 'doc/c'],
                   ['doc/#e', 'doc/#f', 'doc/#g']),
+    
+    'should respect @base statements':
+      shouldParse('<a> <b> <c>.\n' +
+                  '@base <http://ex.org/>.\n' +
+                  '<e> <f> <g>.\n' +
+                  '@base <d/>.\n' +
+                  '<h> <i> <j>.',
+                  ['doc/a', 'doc/b', 'doc/c'],
+                  ['http://ex.org/e', 'http://ex.org/f', 'http://ex.org/g'],
+                  ['http://ex.org/d/h', 'http://ex.org/d/i', 'http://ex.org/d/j']),
   }
 }).export(module);
 
