@@ -275,14 +275,14 @@ vows.describe('N3Parser').addBatch({
                      'Expected punctuation to follow "c" at line 1.'),
   },
   'An N3Parser instance with a document URI': {
-    topic: function () { return function () { return new N3Parser({ documentURI: 'doc/' }); }; },
+    topic: function () { return function () { return new N3Parser({ documentURI: 'doc/file.ttl' }); }; },
     
     'should resolve URIs against the document URI':
       shouldParse('@prefix : <#>.\n' +
                   '<a> <b> <c>.\n' +
                   ':e :f :g.',
                   ['doc/a', 'doc/b', 'doc/c'],
-                  ['doc/#e', 'doc/#f', 'doc/#g']),
+                  ['doc/file.ttl#e', 'doc/file.ttl#f', 'doc/file.ttl#g']),
     
     'should respect @base statements':
       shouldParse('<a> <b> <c>.\n' +
@@ -299,7 +299,7 @@ vows.describe('N3Parser').addBatch({
                   '<a> <b> <c>.\n' +
                   ':x :y :z.',
                   ['doc/base/a', 'doc/base/b', 'doc/base/c'],
-                  ['doc/#x', 'doc/#y', 'doc/#z']),
+                  ['doc/file.ttl#x', 'doc/file.ttl#y', 'doc/file.ttl#z']),
   }
 }).export(module);
 
