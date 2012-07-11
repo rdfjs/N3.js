@@ -7,7 +7,8 @@ var fs = require('fs'),
     async = require('async');
 
 var turtleTestsUrl = "http://www.w3.org/2001/sw/DataAccess/df1/tests/";
-var goodTestsManifest = turtleTestsUrl + "manifest.ttl";
+var positiveManifest = turtleTestsUrl + "manifest.ttl",
+    negativeManifest = turtleTestsUrl + "manifest-bad.ttl";
 var rdfs = "http://www.w3.org/2000/01/rdf-schema#",
     mf = "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#",
     qt = "http://www.w3.org/2001/sw/DataAccess/tests/test-query#",
@@ -26,39 +27,12 @@ var specFolder = './test/spec/',
 });
 
 async.waterfall([
-  function fetchManifest(callback) {
-    request.get(goodTestsManifest, callback);
+  function fetchPositiveManifest(callback) {
+    request.get(positiveManifest, callback);
   },
-  function parseManifest(response, body, callback) {
-    if (response.statusCode != 200)
-      return callback("Could not download " + goodTestsManifest);
-    var manifestStore = new N3Store();
-    new N3Parser().parse(body, function (err, triple) {
-      if (err)
-        return exit(err);
-      if (triple) {
-        manifestStore.add(triple.subject, triple.predicate, triple.object);
-      }
-      else {
-        var tests = [];
-        var entryHead = manifestStore.find('', mf + 'entries', null)[0].object;
-        while (entryHead && entryHead !== nil) {
-          var entryValue = manifestStore.find(entryHead, first, null)[0].object,
-              action = manifestStore.find(entryValue, mf + 'action', null)[0].object;
-          tests.push({
-            name:    manifestStore.find(entryValue, mf   + 'name',    null)[0].object,
-            comment: manifestStore.find(entryValue, rdfs + 'comment', null)[0].object,
-            data:    manifestStore.find(action,     qt   + 'data',    null)[0].object,
-            result:  manifestStore.find(entryValue, mf   + 'result',  null)[0].object,
-          });
-          entryHead = manifestStore.find(entryHead, rest, null)[0].object;
-        }
-        return callback(null, tests);
-      }
-    });
-  },
-  function performTests(tests) {
-    tests.forEach(function (test) {
+  parseManifest,
+  function performPositiveTests(tests, callback) {
+    async.forEach(tests, function (test, callback) {
       var outputFile = outputFolder + test.result.replace(/\.out$/, '.nt');
       async.parallel({
         fetchData: function (callback) {
@@ -85,10 +59,39 @@ async.waterfall([
             else {
               outputStream.end();
               verifyResult(test, outputFile, testFolder + test.result);
+              callback();
             }
           });
       });
-    });
+    }, callback);
+  },
+  function fetchNegativeManifest(callback) {
+    request.get(negativeManifest, callback);
+  },
+  parseManifest,
+  function performNegativeTests(tests, callback) {
+    async.forEach(tests, function (test, callback) {
+      async.parallel({
+        fetchData: function (callback) {
+          request.get(turtleTestsUrl + test.data, callback)
+                 .pipe(fs.createWriteStream(testFolder + test.data));
+        }
+      },
+      function (err, results) {
+        var config = { documentURI: turtleTestsUrl + test.data };
+        new N3Parser(config).parse(fs.createReadStream(testFolder + test.data),
+          function (error, triple) {
+            if (error) {
+              console.log(unString(test.name).bold + ':', unString(test.comment), 'OK'.green.bold);
+              callback();
+            }
+            else if (triple === null) {
+              console.log(unString(test.name).bold + ':', unString(test.comment), 'FAIL'.red.bold);
+              callback();
+            }
+          });
+      });
+    }, callback);
   }
 ],
 function (error) {
@@ -97,6 +100,35 @@ function (error) {
     process.exit(1);
   }
 });
+
+function parseManifest(response, body, callback) {
+  if (response.statusCode != 200)
+    return callback("Could not download manifest.");
+  var manifestStore = new N3Store();
+  new N3Parser().parse(body, function (err, triple) {
+    if (err)
+      return callback(err);
+    if (triple) {
+      manifestStore.add(triple.subject, triple.predicate, triple.object);
+    }
+    else {
+      var tests = [];
+      var entryHead = manifestStore.find('', mf + 'entries', null)[0].object;
+      while (entryHead && entryHead !== nil) {
+        var entryValue = manifestStore.find(entryHead, first, null)[0].object,
+            action = manifestStore.find(entryValue, mf + 'action', null)[0].object;
+        tests.push({
+          name:    manifestStore.find(entryValue, mf   + 'name',    null)[0].object,
+          comment: manifestStore.find(entryValue, rdfs + 'comment', null)[0].object,
+          data:    manifestStore.find(action,     qt   + 'data',    null)[0].object,
+          result:  (manifestStore.find(entryValue, mf   + 'result',  null)[0] || {}).object,
+        });
+        entryHead = manifestStore.find(entryHead, rest, null)[0].object;
+      }
+      return callback(null, tests);
+    }
+  });
+}
 
 function unString(value) {
   return value.replace(/^"(.*)"$/, '$1');
