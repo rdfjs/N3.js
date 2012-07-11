@@ -26,13 +26,14 @@ var specFolder = './test/spec/',
     fs.mkdirSync(folder);
 });
 
+console.log("Turtle Terse RDF Triple Language Test Cases".bold);
 async.waterfall([
   function fetchPositiveManifest(callback) {
     request.get(positiveManifest, callback);
   },
   parseManifest,
   function performPositiveTests(tests, callback) {
-    async.forEach(tests, function (test, callback) {
+    async.map(tests, function (test, callback) {
       var outputFile = outputFolder + test.result.replace(/\.out$/, '.nt');
       async.parallel({
         fetchData: function (callback) {
@@ -58,19 +59,22 @@ async.waterfall([
             }
             else {
               outputStream.end();
-              verifyResult(test, outputFile, testFolder + test.result);
-              callback();
+              verifyResult(test, outputFile, testFolder + test.result, callback);
             }
           });
       });
-    }, callback);
+    }, function (error, results) {
+      var score = results.reduce(function (sum, r) { return sum + r; }, 0);
+      console.log(("* passed " + score + " out of " + tests.length + " positive tests").bold);
+      callback();
+    });
   },
   function fetchNegativeManifest(callback) {
     request.get(negativeManifest, callback);
   },
   parseManifest,
   function performNegativeTests(tests, callback) {
-    async.forEach(tests, function (test, callback) {
+    async.map(tests, function (test, callback) {
       async.parallel({
         fetchData: function (callback) {
           request.get(turtleTestsUrl + test.data, callback)
@@ -83,15 +87,19 @@ async.waterfall([
           function (error, triple) {
             if (error) {
               console.log(unString(test.name).bold + ':', unString(test.comment), 'OK'.green.bold);
-              callback();
+              callback(null, true);
             }
             else if (triple === null) {
               console.log(unString(test.name).bold + ':', unString(test.comment), 'FAIL'.red.bold);
-              callback();
+              callback(null, false);
             }
           });
       });
-    }, callback);
+    }, function (error, results) {
+      var score = results.reduce(function (sum, r) { return sum + r; }, 0);
+      console.log(("* passed " + score + " out of " + tests.length + " negative tests").bold);
+      callback();
+    });
   }
 ],
 function (error) {
@@ -143,7 +151,7 @@ function toNTriple(triple) {
          (object.match(/^_|^"/) ? object    : '<' + object +    '>') + ' .\n';
 }
 
-function verifyResult(test, resultFile, correctFile) {
+function verifyResult(test, resultFile, correctFile, callback) {
   async.parallel({
     result:  function (callback) { parseWithCwm(resultFile,  callback); },
     correct: function (callback) { parseWithCwm(correctFile, callback); }
@@ -157,6 +165,7 @@ function verifyResult(test, resultFile, correctFile) {
       console.log('  was expected, but got'.bold.grey);
       console.log(output.result.replace(/^/gm, '      ').grey);
     }
+    callback(null, success);
   });
 }
 
