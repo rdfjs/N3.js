@@ -83,8 +83,8 @@ vows.describe('N3Parser').addBatch({
                   ['#x', 'a#c', 'a#e']),
     
     'should not parse undefined prefix in subject':
-      shouldNotParse(':a ',
-                     'Undefined prefix ":" at line 1.'),
+      shouldNotParse('a:a ',
+                     'Undefined prefix "a:" at line 1.'),
     
     'should not parse undefined prefix in predicate':
       shouldNotParse('<a> b:c ',
@@ -243,6 +243,13 @@ vows.describe('N3Parser').addBatch({
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
                            'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     
+    'should resolve the colon prefix against the hash URI':
+      shouldParse('@base <base/>.\n' +
+                  '<a> <b> <c>.\n' +
+                  ':x :y :z.',
+                  ['base/a', 'base/b', 'base/c'],
+                  ['#x', '#y', '#z']),
+    
     'should resolve URIs against @base':
       shouldParse('@base <http://ex.org/>.\n' +
                   '<a> <b> <c>.\n' +
@@ -286,6 +293,13 @@ vows.describe('N3Parser').addBatch({
                   ['doc/a', 'doc/b', 'doc/c'],
                   ['http://ex.org/e', 'http://ex.org/f', 'http://ex.org/g'],
                   ['http://ex.org/d/h', 'http://ex.org/d/i', 'http://ex.org/d/j']),
+    
+    'should resolve the colon prefix against the document URI':
+      shouldParse('@base <base/>.\n' +
+                  '<a> <b> <c>.\n' +
+                  ':x :y :z.',
+                  ['doc/base/a', 'doc/base/b', 'doc/base/c'],
+                  ['doc/#x', 'doc/#y', 'doc/#z']),
   }
 }).export(module);
 
