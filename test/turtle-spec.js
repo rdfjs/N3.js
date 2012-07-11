@@ -76,7 +76,8 @@ async.waterfall([
       },
       function (err, results) {
         var outputStream = results.createFile;
-        new N3Parser().parse(fs.createReadStream(testFolder + test.data),
+        var config = { documentURI: turtleTestsUrl + test.data };
+        new N3Parser(config).parse(fs.createReadStream(testFolder + test.data),
           function (error, triple) {
             if (triple) {
               outputStream.write(toNTriple(triple));

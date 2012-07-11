@@ -24,6 +24,8 @@ vows.describe('N3Parser').addBatch({
   },
   
   'An N3Parser instance': {
+    topic: function () { return function () { return new N3Parser(); }; },
+    
     'should parse the empty string':
       shouldParse(''
                   /* no triples */),
@@ -265,6 +267,16 @@ vows.describe('N3Parser').addBatch({
       shouldNotParse('<a> <b> <c>',
                      'Expected punctuation to follow "c" at line 1.'),
   },
+  'An N3Parser instance with a document URI': {
+    topic: function () { return function () { return new N3Parser({ documentURI: 'doc/' }); }; },
+    
+    'should resolve URIs against the document URI':
+      shouldParse('@prefix : <#>.\n' +
+                  '<a> <b> <c>.\n' +
+                  ':e :f :g.',
+                  ['doc/a', 'doc/b', 'doc/c'],
+                  ['doc/#e', 'doc/#f', 'doc/#g']),
+  }
 }).export(module);
 
 function shouldParse(input, expected) {
@@ -285,9 +297,9 @@ function shouldParse(input, expected) {
   }
   
   return {
-    topic: function (n3parser) {
+    topic: function (n3parserFactory) {
       endCallback = this.callback;
-      new N3Parser().parse(input, tripleCallback);
+      n3parserFactory().parse(input, tripleCallback);
     },
     
     'should equal the expected value': function (result) {
@@ -310,9 +322,9 @@ function shouldNotParse(input, expectedError) {
   }
   
   return {
-    topic: function () {
+    topic: function (n3parserFactory) {
       endCallback = this.callback;
-      new N3Parser().parse(input, tripleCallback);
+      n3parserFactory().parse(input, tripleCallback);
     },
     
     'should equal the expected message': function (error, triple) {
