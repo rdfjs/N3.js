@@ -58,11 +58,11 @@ vows.describe('N3Parser').addBatch({
     
     'should parse a triple with a literal and a URI type':
       shouldParse('<a> <b> "string"^^<type>.',
-                  ['a', 'b', '"string"^^type']),
+                  ['a', 'b', '"string"^^<type>']),
     
     'should parse a triple with a literal and a qname type':
       shouldParse('@prefix x: <y#>. <a> <b> "string"^^x:z.',
-                  ['a', 'b', '"string"^^y#z']),
+                  ['a', 'b', '"string"^^<y#z>']),
     
     'should not parse a triple with a literal and a qname type with an inexistent prefix':
       shouldNotParse('<a> <b> "string"^^x:z.',
