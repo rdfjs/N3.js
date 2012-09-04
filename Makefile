@@ -1,5 +1,5 @@
 test:
-	@./node_modules/.bin/vows
+	@./node_modules/.bin/vows test/*-test.js
 
 spec:
 	node test/turtle-spec.js
