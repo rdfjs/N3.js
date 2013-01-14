@@ -1,8 +1,10 @@
 var N3Parser = require('../lib/n3parser.js');
 var vows = require('vows'),
-    should = require('should'),
-    eql = require('../node_modules/should/lib/eql.js'),
+    chai = require('chai'),
+    expect = chai.expect,
     util = require('util');
+chai.should();
+chai.use(require('chai-things'));
 
 vows.describe('N3Parser').addBatch({
   'The N3Parser module': {
@@ -319,7 +321,7 @@ function shouldParse(input, expected) {
   });
 
   function tripleCallback(error, triple) {
-    should.not.exist(error);
+    expect(error).not.to.exist;
     if (triple)
       result.push(triple);
     else
@@ -335,8 +337,7 @@ function shouldParse(input, expected) {
     'should equal the expected value': function (result) {
       result.should.have.lengthOf(expected.length);
       for (var i = 0; i < items.length; i++)
-        should(result.some(function (x) { return eql(items[i], x); }),
-               util.inspect(result) + ' should contain ' + util.inspect(items[i]));
+        result.should.contain.something.that.deep.equals(items[i]);
     }
   };
 }
@@ -358,7 +359,7 @@ function shouldNotParse(input, expectedError) {
     },
 
     'should equal the expected message': function (error, triple) {
-      should.not.exist(triple);
+      expect(triple).not.to.exist;
       error.should.eql(expectedError);
     }
   };

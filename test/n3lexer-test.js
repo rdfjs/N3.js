@@ -1,7 +1,10 @@
 var N3Lexer = require('../lib/n3lexer.js');
 var vows = require('vows'),
-    should = require('should'),
+    chai = require('chai'),
+    expect = chai.expect,
     events = require('events');
+chai.should();
+chai.use(require('chai-things'));
 
 vows.describe('N3Lexer').addBatch({
   'The N3Lexer module': {
@@ -267,8 +270,8 @@ function shouldTokenize(input, expected) {
   expected = Array.prototype.slice.call(arguments, 1);
 
   function tokenCallback(error, token) {
-    should.not.exist(error);
-    should.exist(token);
+    expect(error).not.to.exist;
+    expect(token).to.exist;
     var expectedItem = expected[result.length];
     if (expectedItem)
       for (var attribute in token)
@@ -308,7 +311,7 @@ function shouldNotTokenize(input, expectedError) {
     },
 
     'should equal the expected message': function (error, token) {
-      should.not.exist(token);
+      expect(token).not.to.exist;
       error.should.eql(expectedError);
     }
   };

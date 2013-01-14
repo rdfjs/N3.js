@@ -1,8 +1,9 @@
 var N3Store = require('../lib/n3store.js');
 var vows = require('vows'),
-    should = require('should'),
-    eql = require('../node_modules/should/lib/eql.js'),
+    chai = require('chai'),
     util = require('util');
+chai.should();
+chai.use(require('chai-things'));
 
 vows.describe('N3Store').addBatch({
   'The N3Store module': {
@@ -220,7 +221,6 @@ function shouldIncludeAll() {
   return function (result) {
     result.should.have.length(items.length);
     for (var i = 0; i < items.length; i++)
-      should(result.some(function (x) { return eql(items[i], x); }),
-             util.inspect(result) + ' should contain ' + util.inspect(items[i]));
+      result.should.include.something.that.deep.equals(items[i]);
   };
 }
