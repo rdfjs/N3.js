@@ -1,6 +1,6 @@
 # Node-n3 is a Notation3 and RDF library for node.js.
 
-[**Notation3 or N3**](http://www.w3.org/TeamSubmission/n3/) is a superset of [RDF](http://www.w3.org/TR/rdf-primer/), the [Semantic Web](http://www.w3.org/2001/sw/) language.  
+[**Notation3 or N3**](http://www.w3.org/TeamSubmission/n3/) is a superset of [RDF](http://www.w3.org/TR/rdf-primer/), the [Semantic Web](http://www.w3.org/2001/sw/) language.
 This library will provide a high-performance N3 store, parser, and generator (when finished).
 
 Currently implemented:
@@ -20,7 +20,7 @@ $ npm install n3
 
 ## Storing and finding items
 
-In this example below, we create a new store and add the triples `:Pluto a :Dog.` and `:Mickey a :Mouse`.  
+In this example below, we create a new store and add the triples `:Pluto a :Dog.` and `:Mickey a :Mouse`.
 Then, we find a triple with `:Mickey` as subject.
 
 ``` js
