@@ -54,13 +54,30 @@ vows.describe('N3Store').addBatch({
     },
   },
 
+  'An N3Store with initialized with 3 elements': {
+    topic: function () {
+      var n3Store = new N3Store([
+        { subject: 's1', predicate: 'p1', object: 'o1'},
+        { subject: 's1', predicate: 'p1', object: 'o2'},
+        { subject: 's1', predicate: 'p1', object: 'o3'},
+      ]);
+      return n3Store;
+    },
+
+    'should have size 3': function (n3Store) {
+      n3Store.size.should.eql(3);
+    },
+  },
+
   'An N3Store with 5 elements': {
     topic: function () {
       var n3Store = new N3Store();
       n3Store.add('s1', 'p1', 'o1');
-      n3Store.add('s1', 'p1', 'o2');
-      n3Store.add('s1', 'p2', 'o2');
-      n3Store.add('s2', 'p1', 'o1');
+      n3Store.addTriple({ subject: 's1', predicate: 'p1', object: 'o2'});
+      n3Store.addTriples([
+        { subject: 's1', predicate: 'p2', object: 'o2'},
+        { subject: 's2', predicate: 'p1', object: 'o1'},
+      ]);
       n3Store.add('s1', 'p2', 'o3', 'c4');
       return n3Store;
     },
