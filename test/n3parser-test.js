@@ -58,6 +58,10 @@ vows.describe('N3Parser').addBatch({
       shouldParse('<a> <b> "string"@en.',
                   ['a', 'b', '"string"@en']),
 
+    'should normalize language codes to lowercase':
+      shouldParse('<a> <b> "string"@EN.',
+                  ['a', 'b', '"string"@en']),
+
     'should parse a triple with a literal and a URI type':
       shouldParse('<a> <b> "string"^^<type>.',
                   ['a', 'b', '"string"^^<type>']),
