@@ -90,11 +90,13 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'eof', line: 2 }),
 
     'should tokenize a quoted string literal with language code':
-      shouldTokenize('"string"@en "string"@nl-be ',
+      shouldTokenize('"string"@en "string"@nl-be "string"@EN ',
                      { type: 'literal', value: '"string"', line: 1 },
                      { type: 'langcode', value: 'en', line: 1 },
                      { type: 'literal', value: '"string"', line: 1 },
                      { type: 'langcode', value: 'nl-be', line: 1 },
+                     { type: 'literal', value: '"string"', line: 1 },
+                     { type: 'langcode', value: 'EN', line: 1 },
                      { type: 'eof', line: 1 }),
 
     'should tokenize a quoted string literal with type':
