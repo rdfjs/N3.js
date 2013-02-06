@@ -1,9 +1,9 @@
 {
   "name": "n3",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Notation3 (N3) and RDF library.",
   "author": "Ruben Verborgh <ruben.verborgh@gmail.com>",
-  "keywords": ["n3", "notation3", "rdf"],
+  "keywords": ["n3", "notation3", "turtle", "rdf"],
   "main": "./n3.js",
   "engines": {
     "node": ">=0.6.0"
