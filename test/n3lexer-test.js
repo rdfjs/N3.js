@@ -39,8 +39,13 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'explicituri', value: 'http://ex.org/?bla#foo', line: 1 },
                      { type: 'eof', line: 1 }),
 
-    'should tokenize an explicituri with escape characters':
+    'should tokenize an explicituri with four-digit unicode characters':
       shouldTokenize('<http://a.example/\\u0073>',
+                     { type: 'explicituri', value: 'http://a.example/s', line: 1 },
+                     { type: 'eof', line: 1 }),
+
+    'should tokenize an explicituri with eight-digit unicode characters':
+      shouldTokenize('<http://a.example/\\U00000073>',
                      { type: 'explicituri', value: 'http://a.example/s', line: 1 },
                      { type: 'eof', line: 1 }),
 
@@ -89,7 +94,7 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'eof', line: 2 }),
 
     'should tokenize a string with escape characters':
-      shouldTokenize('"\\\\ \\\' \\" \\n \\r \\t \\ua1b2" \n """\\\\ \\\' \\" \\n \\r \\t \\ua1b2"""',
+      shouldTokenize('"\\\\ \\\' \\" \\n \\r \\t \\ua1b2" \n """\\\\ \\\' \\" \\n \\r \\t \\U0000a1b2"""',
                      { type: 'literal', value: '"\\ \' " \n \r \t \ua1b2"', line: 1 },
                      { type: 'literal', value: '"\\ \' " \n \r \t \ua1b2"', line: 2 },
                      { type: 'eof', line: 2 }),
