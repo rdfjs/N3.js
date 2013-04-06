@@ -98,7 +98,7 @@ function parseManifest(manifest, callback) {
 function performTest(test, action, result, callback) {
   var outputFile = outputFolder + test.action.replace(/\.ttl$/, '.nt'),
     outputStream = fs.createWriteStream(outputFile).once('open', function () {
-      var config = { documentURI: testPath + test.data };
+      var config = { documentURI: testPath + test.action };
       new N3Parser(config).parse(action,
         function (error, triple) {
           if (error) {
