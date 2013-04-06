@@ -105,6 +105,11 @@ vows.describe('N3Parser').addBatch({
                   ['a', 'b', 'c'],
                   ['a', 'd', 'e']),
 
+    'should parse statements with shared subjects and trailing semicolon':
+      shouldParse('<a> <b> <c>;\n<d> <e>;\n.',
+                  ['a', 'b', 'c'],
+                  ['a', 'd', 'e']),
+
     'should parse statements with shared subjects and predicates':
       shouldParse('<a> <b> <c>, <d>.',
                   ['a', 'b', 'c'],
@@ -273,10 +278,6 @@ vows.describe('N3Parser').addBatch({
     'should not parse improperly nested square brackets':
       shouldNotParse('<a> <b> [<c> <d>]].',
                      'Expected punctuation to follow "_:b0" at line 1.'),
-
-    'should error when a predicate is not there':
-      shouldNotParse('<a>.',
-                     'Expected predicate to follow "a" at line 1.'),
 
     'should error when an object is not there':
       shouldNotParse('<a> <b>.',
