@@ -120,7 +120,8 @@ function performTest(test, action, result, callback) {
 function toNTriple(triple) {
   var subject = triple.subject,
       predicate = triple.predicate,
-      object = triple.object;
+      object = escape(triple.object);
+
   return (subject.match(/^_/)   ? subject   : '<' + subject   + '>') + ' ' +
          (predicate.match(/^_/) ? predicate : '<' + predicate + '>') + ' ' +
          (object.match(/^_|^"/) ? object    : '<' + object +    '>') + ' .\n';
@@ -166,4 +167,27 @@ function parseWithCwm(file, callback) {
 
 function unString(value) {
   return value.replace(/^"(.*)"$/, '$1');
+}
+
+function escape(value) {
+  var result = '';
+  for (var i = 0; i < value.length; i++) {
+    var code = value.charCodeAt(i);
+    if (code < 128) {
+      result += value[i];
+    }
+    else {
+      var hexCode = code.toString(16);
+      while (hexCode.length < 4)
+        hexCode = '0' + hexCode;
+      result += '\\u' + hexCode;
+    }
+  }
+
+  // these are equivalent for JavaScript, which uses surrogates on chars outside the BMP
+  // (source: http://inimino.org/~inimino/blog/javascript_cset)
+  result = result.replace('\\ud800\\udc00\\udb40\\uddef', '\\U00010000\\U000e01ef');
+  result = result.replace('\\ud800\\udc00\\udb7f\\udffd', '\\U00010000\\U000efffd');
+
+  return result;
 }
