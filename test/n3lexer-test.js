@@ -39,6 +39,11 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'explicituri', value: 'http://ex.org/?bla#foo', line: 1 },
                      { type: 'eof', line: 1 }),
 
+    'should tokenize an explicituri with escape characters':
+      shouldTokenize('<http://a.example/\\u0073>',
+                     { type: 'explicituri', value: 'http://a.example/s', line: 1 },
+                     { type: 'eof', line: 1 }),
+
     'should tokenize two explicituris separated by whitespace':
       shouldTokenize(' \n\t<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t',
                      { type: 'explicituri', value: 'http://ex.org/?bla#foo', line: 2 },
