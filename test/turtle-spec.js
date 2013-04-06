@@ -132,7 +132,17 @@ function verifyResult(test, resultFile, correctFile, callback) {
     correct: function (callback) { parseWithCwm(correctFile, callback); }
   },
   function (error, output) {
-    var success = (output.result === output.correct);
+    var negativeTest = (test.type === rdft + 'TestTurtleNegativeSyntax'),
+        succes;
+    // Positive tests are successful if the results are equal,
+    // or if the correct solution is not given but no error occurred
+    if (!negativeTest)
+      success = (output.result === output.correct) ||
+                (typeof output.correct === 'undefined' && typeof output.result !== 'undefined');
+    // Negative tests are successful if an error occurred
+    else
+      success = (typeof output.result === 'undefined');
+
     console.log(unString(test.name).bold + ':', unString(test.comment),
                 (success ? 'OK'.green : 'FAIL'.red).bold);
     if (!success) {
