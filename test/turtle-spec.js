@@ -102,6 +102,7 @@ function performTest(test, action, result, callback) {
       new N3Parser(config).parse(action,
         function (error, triple) {
           if (error) {
+            test.error = error;
             fs.unlink(outputFile);
             outputFile = undefined;
           }
@@ -138,6 +139,7 @@ function verifyResult(test, resultFile, correctFile, callback) {
       console.log((output.correct + '').replace(/^/gm, '      ').grey);
       console.log('  was expected, but got'.bold.grey);
       console.log((output.result + '').replace(/^/gm, '      ').grey);
+      console.log(('  error: '.bold + (test.error || '(none)')).grey);
     }
     callback(null, success);
   });
