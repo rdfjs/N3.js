@@ -220,7 +220,7 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'dot', line: 3 },
                      { type: 'eof', line: 3 }),
 
-    'should tokenize prefix declarations':
+    'should tokenize @prefix declarations':
       shouldTokenize('@prefix : <http://uri.org/#>.\n@prefix abc: <http://uri.org/#>.',
                      { type: '@prefix', line: 1 },
                      { type: 'prefix', value: '', line: 1 },
@@ -230,6 +230,34 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'prefix', value: 'abc', line: 2 },
                      { type: 'explicituri', value: 'http://uri.org/#', line: 2 },
                      { type: 'dot', line: 2 },
+                     { type: 'eof', line: 2 }),
+
+    'should tokenize @base declarations':
+      shouldTokenize('@base <http://uri.org/#>.\n@base <http://uri.org/#>.',
+                     { type: '@base', line: 1 },
+                     { type: 'explicituri', value: 'http://uri.org/#', line: 1 },
+                     { type: 'dot', line: 1 },
+                     { type: '@base', line: 2 },
+                     { type: 'explicituri', value: 'http://uri.org/#', line: 2 },
+                     { type: 'dot', line: 2 },
+                     { type: 'eof', line: 2 }),
+
+    'should tokenize PREFIX declarations':
+      shouldTokenize('PREFIX : <http://uri.org/#>\npreFiX abc: <http://uri.org/#>',
+                     { type: 'PREFIX', line: 1 },
+                     { type: 'prefix', value: '', line: 1 },
+                     { type: 'explicituri', value: 'http://uri.org/#', line: 1 },
+                     { type: 'PREFIX', line: 2 },
+                     { type: 'prefix', value: 'abc', line: 2 },
+                     { type: 'explicituri', value: 'http://uri.org/#', line: 2 },
+                     { type: 'eof', line: 2 }),
+
+    'should tokenize BASE declarations':
+      shouldTokenize('BASE <http://uri.org/#>\nbAsE <http://uri.org/#>',
+                     { type: 'BASE', line: 1 },
+                     { type: 'explicituri', value: 'http://uri.org/#', line: 1 },
+                     { type: 'BASE', line: 2 },
+                     { type: 'explicituri', value: 'http://uri.org/#', line: 2 },
                      { type: 'eof', line: 2 }),
 
     'should tokenize qnames':

@@ -100,6 +100,12 @@ vows.describe('N3Parser').addBatch({
       shouldNotParse('<a> <b> c:d ',
                      'Undefined prefix "c:" at line 1.'),
 
+    'should parse triples with SPARQL prefixes':
+      shouldParse('PREFIX : <#>\n' +
+                  'PrEfIX a: <a#> ' +
+                  ':x a:a a:b.',
+                  ['#x', 'a#a', 'a#b']),
+
     'should parse statements with shared subjects':
       shouldParse('<a> <b> <c>;\n<d> <e>.',
                   ['a', 'b', 'c'],
@@ -271,6 +277,14 @@ vows.describe('N3Parser').addBatch({
       shouldParse('@base <http://ex.org/>.\n' +
                   '<a> <b> <c>.\n' +
                   '@base <d/>.\n' +
+                  '<e> <f> <g>.',
+                  ['http://ex.org/a', 'http://ex.org/b', 'http://ex.org/c'],
+                  ['http://ex.org/d/e', 'http://ex.org/d/f', 'http://ex.org/d/g']),
+
+    'should resolve URIs against SPARQL base':
+      shouldParse('BASE <http://ex.org/>\n' +
+                  '<a> <b> <c>. ' +
+                  'BASE <d/> ' +
                   '<e> <f> <g>.',
                   ['http://ex.org/a', 'http://ex.org/b', 'http://ex.org/c'],
                   ['http://ex.org/d/e', 'http://ex.org/d/f', 'http://ex.org/d/g']),
