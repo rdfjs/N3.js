@@ -224,6 +224,7 @@ function escape(value) {
 // Escapes characters in a string
 function escapeString(value) {
   value = escape(unString(value));
+  value = value.replace(/\\([^uU])|\\$/g, '\\\\$1');
   value = value.replace(/"/g, '\\"');
   return '"""' + value + '"""';
 }
