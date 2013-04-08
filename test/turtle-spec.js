@@ -200,6 +200,8 @@ function escape(value) {
   // (source: http://inimino.org/~inimino/blog/javascript_cset)
   result = result.replace('\\ud800\\udc00\\udb40\\uddef', '\\U00010000\\U000e01ef');
   result = result.replace('\\ud800\\udc00\\udb7f\\udffd', '\\U00010000\\U000efffd');
+  result = result.replace('\\ud800\\udc00\\ud8bf\\udfff\\ud8c0\\udc00\\udbbf\\udfff\\udbc0\\udc00\\udbff\\udffd',
+                          '\\U00010000\\U0003ffff\\U00040000\\U000fffff\\U00100000\\U0010fffd');
 
   return result;
 }
