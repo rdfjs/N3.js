@@ -128,40 +128,52 @@ function toNTriple(triple) {
 }
 
 function verifyResult(test, resultFile, correctFile, callback) {
-  async.parallel({
-    result:  function (callback) { parseWithCwm(resultFile,  callback); },
-    correct: function (callback) { parseWithCwm(correctFile, callback); }
-  },
-  function (error, output) {
-    var negativeTest = (test.type === rdft + 'TestTurtleNegativeSyntax'),
-        succes;
-    // Positive tests are successful if the results are equal,
-    // or if the correct solution is not given but no error occurred
-    if (!negativeTest)
-      success = (output.result === output.correct) ||
-                (typeof output.correct === 'undefined' && typeof output.result !== 'undefined');
-    // Negative tests are successful if an error occurred
+  // Negative tests are successful if an error occurred
+  var negativeTest = (test.type === rdft + 'TestTurtleNegativeSyntax');
+  if (negativeTest) {
+    reportResult(null, !!test.error);
+  }
+  // Positive tests are successful if the results are equal,
+  // or if the correct solution is not given but no error occurred
+  else {
+    if (!correctFile)
+      reportResult(null, !test.error);
+    else if (resultFile)
+      compareGraphs(resultFile, correctFile, reportResult);
     else
-      success = (typeof output.result === 'undefined');
+      callback(null, false);
+  }
 
+  function reportResult(error, success, comparison) {
     console.log(unString(test.name).bold + ':', unString(test.comment),
                 (success ? 'OK'.green : 'FAIL'.red).bold);
     if (!success) {
-      console.log((output.correct + '').replace(/^/gm, '      ').grey);
+      console.log((correctFile ? fs.readFileSync(correctFile, 'utf8') : '(empty)').grey);
       console.log('  was expected, but got'.bold.grey);
-      console.log((output.result + '').replace(/^/gm, '      ').grey);
+      console.log((resultFile ? fs.readFileSync(resultFile, 'utf8') : '(empty)').grey);
       console.log(('  error: '.bold + (test.error || '(none)')).grey);
+      if (comparison)
+        console.log(('  comparison: ' + comparison).grey);
     }
     callback(null, success);
-  });
+  }
 }
 
-function parseWithCwm(file, callback) {
-  if (!file)
-    return callback();
-  exec('cwm ' + file + ' --ntriples', function (error, stdout, stderr) {
-    var result = stdout.replace(/^\s*#.*$/gm, '').trim();
-    callback(error, result);
+function compareGraphs(actual, expected, callback) {
+  // Try a full-text comparison (fastest)
+  async.parallel([
+    fs.readFile.bind(fs, actual, 'utf8'),
+    fs.readFile.bind(fs, expected, 'utf8'),
+  ],
+  function (error, results) {
+    // If the full-text comparison was successful, graphs are certainly equal
+    if (results[0] === results[1])
+      callback(null, true);
+    // If not, we check for proper graph equality with SWObjects
+    else
+      exec('sparql -d ' + expected + ' --compare ' + actual, function (error, stdout, stderr) {
+        callback(error, /^matched\s*$/.test(stdout), stdout);
+      });
   });
 }
 
@@ -173,7 +185,7 @@ function escape(value) {
   var result = '';
   for (var i = 0; i < value.length; i++) {
     var code = value.charCodeAt(i);
-    if (code < 128) {
+    if (code >= 32 && code < 128) {
       result += value[i];
     }
     else {
