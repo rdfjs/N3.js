@@ -12,7 +12,8 @@ var rdfs = "http://www.w3.org/2000/01/rdf-schema#",
     mf = "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#",
     qt = "http://www.w3.org/2001/sw/DataAccess/tests/test-query#",
     rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-    rdft = "http://www.w3.org/ns/rdftest#";
+    rdft = "http://www.w3.org/ns/rdftest#",
+    base = "http://example/base/";
 var first = rdf + "first",
     rest = rdf + "rest",
     nil = rdf + "nil";
@@ -98,7 +99,7 @@ function parseManifest(manifest, callback) {
 function performTest(test, action, result, callback) {
   var outputFile = outputFolder + test.action.replace(/\.ttl$/, '.nt'),
     outputStream = fs.createWriteStream(outputFile).once('open', function () {
-      var config = { documentURI: testPath + test.action };
+      var config = { documentURI: base + test.action };
       new N3Parser(config).parse(action,
         function (error, triple) {
           if (error) {
