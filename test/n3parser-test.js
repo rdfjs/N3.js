@@ -126,12 +126,12 @@ vows.describe('N3Parser').addBatch({
                   ['a', 'b', 'd']),
 
     'should parse statements with named blank nodes':
-      shouldParse('_:a _:b _:c.',
-                  ['_:b0', '_:b1', '_:b2']),
+      shouldParse('_:a <b> _:c.',
+                  ['_:b0', 'b', '_:b1']),
 
     'should parse statements with empty blank nodes':
-      shouldParse('[] _:b [].',
-                  ['_:b0', '_:b1', '_:b2']),
+      shouldParse('[] <b> [].',
+                  ['_:b0', 'b', '_:b1']),
 
     'should parse statements with unnamed blank nodes in the subject':
       shouldParse('[<a> <b>] <c> <d>.',
