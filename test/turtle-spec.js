@@ -148,7 +148,7 @@ function verifyResult(test, resultFile, correctFile, callback) {
     else if (resultFile)
       compareGraphs(resultFile, correctFile, reportResult);
     else
-      callback(null, false);
+      reportResult(null, false);
   }
 
   function reportResult(error, success, comparison) {
