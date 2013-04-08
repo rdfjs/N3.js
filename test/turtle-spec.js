@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 var N3Parser = require('../lib/n3parser.js'),
     N3Store = require('../lib/n3store.js');
 var fs = require('fs'),
