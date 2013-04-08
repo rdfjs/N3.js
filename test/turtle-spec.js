@@ -120,7 +120,12 @@ function performTest(test, action, result, callback) {
 function toNTriple(triple) {
   var subject = triple.subject,
       predicate = triple.predicate,
-      object = escape(triple.object);
+      object = triple.object;
+
+  if (/^".*"$/.test(object))
+    object = escapeString(object);
+  else
+    object = escape(object);
 
   return (subject.match(/^_/)   ? subject   : '<' + subject   + '>') + ' ' +
          (predicate.match(/^_/) ? predicate : '<' + predicate + '>') + ' ' +
@@ -177,10 +182,12 @@ function compareGraphs(actual, expected, callback) {
   });
 }
 
+// Removes the quotes from a string
 function unString(value) {
-  return value.replace(/^"(.*)"$/, '$1');
+  return value.replace(/^("""|")(.*)\1$/, '$2');
 }
 
+// Escapes unicode characters in a value
 function escape(value) {
   var result = '';
   for (var i = 0; i < value.length; i++) {
@@ -196,12 +203,26 @@ function escape(value) {
     }
   }
 
-  // these are equivalent for JavaScript, which uses surrogates on chars outside the BMP
-  // (source: http://inimino.org/~inimino/blog/javascript_cset)
-  result = result.replace('\\ud800\\udc00\\udb40\\uddef', '\\U00010000\\U000e01ef');
-  result = result.replace('\\ud800\\udc00\\udb7f\\udffd', '\\U00010000\\U000efffd');
-  result = result.replace('\\ud800\\udc00\\ud8bf\\udfff\\ud8c0\\udc00\\udbbf\\udfff\\udbc0\\udc00\\udbff\\udffd',
-                          '\\U00010000\\U0003ffff\\U00040000\\U000fffff\\U00100000\\U0010fffd');
+  // Convert surrogate pairs to actual unicode (http://mathiasbynens.be/notes/javascript-encoding)
+  result = result.replace(/\\u([a-z0-9]{4})\\u([a-z0-9]{4})/gi, function (all, high, low) {
+    high = parseInt(high, 16);
+    low = parseInt(low, 16);
+    if (high >= 0xD800 && high <= 0xDBFF && low >= 0xDC00 && low <= 0xDFFF) {
+      var result = (high - 0xD800) * 0x400 + low - 0xDC00 + 0x10000;
+      result = result.toString(16);
+      while (result.length < 8)
+        result = '0' + result;
+      return '\\U' + result;
+    }
+    return all;
+  });
 
   return result;
+}
+
+// Escapes characters in a string
+function escapeString(value) {
+  value = escape(unString(value));
+  value = value.replace(/"/g, '\\"');
+  return '"""' + value + '"""';
 }
