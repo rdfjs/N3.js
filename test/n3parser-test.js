@@ -120,6 +120,11 @@ vows.describe('N3Parser').addBatch({
                   ['a', 'b', 'c'],
                   ['a', 'd', 'e']),
 
+    'should parse statements with shared subjects and multiple semicolons':
+      shouldParse('<a> <b> <c>;;\n<d> <e>.',
+                  ['a', 'b', 'c'],
+                  ['a', 'd', 'e']),
+
     'should parse statements with shared subjects and predicates':
       shouldParse('<a> <b> <c>, <d>.',
                   ['a', 'b', 'c'],
