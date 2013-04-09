@@ -19,7 +19,7 @@ var first = rdf + "first",
     rest = rdf + "rest",
     nil = rdf + "nil";
 
-var specFolder = './test/spec/',
+var specFolder = './spec/',
     testFolder = specFolder + 'turtle/',
     outputFolder = testFolder + 'results/';
 
