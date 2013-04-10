@@ -15,17 +15,22 @@ var testPath = "https://dvcs.w3.org/hg/rdf/raw-file/default/rdf-turtle/tests-ttl
     manifest = "manifest.ttl";
 
 // Prefixes
-var rdfs = "http://www.w3.org/2000/01/rdf-schema#",
-    mf = "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#",
-    qt = "http://www.w3.org/2001/sw/DataAccess/tests/test-query#",
-    rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-    rdft = "http://www.w3.org/ns/rdftest#",
-    base = "http://example/base/";
+var prefixes = {
+  mf: "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#",
+  rdf: "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+  rdft: "http://www.w3.org/ns/rdftest#",
+  base: "http://example/base/",
+  dc: "http://purl.org/dc/terms/",
+  doap: "http://usefulinc.com/ns/doap#",
+  earl: "http://www.w3.org/ns/earl#",
+  foaf: "http://xmlns.com/foaf/0.1/",
+  manifest: testPath + manifest + '#',
+};
 
 // List predicates
-var first = rdf + "first",
-    rest = rdf + "rest",
-    nil = rdf + "nil";
+var first = prefixes.rdf + "first",
+    rest = prefixes.rdf + "rest",
+    nil = prefixes.rdf + "nil";
 
 // Create the folders that will contain the spec files and results
 var specFolder = './spec/',
@@ -69,9 +74,12 @@ function runSpecTest() {
       function showSummary(error, tests) {
         var score = tests.reduce(function (sum, test) { return sum + test.success; }, 0);
         console.log(("* passed " + score + " out of " + manifest.tests.length + " tests").bold);
-        callback();
+        callback(error, tests);
       });
     },
+
+    // Generate the EARL report
+    generateEarlReport,
   ],
   function (error) {
     if (error) {
@@ -98,13 +106,13 @@ function parseManifest(manifestContents, callback) {
 
     // Once all triples are there, get the first item of the test list
     var tests = manifest.tests = [],
-        itemHead = testStore.find('', mf + 'entries', null)[0].object;
+        itemHead = testStore.find('', prefixes.mf + 'entries', null)[0].object;
     // Loop through all test items
     while (itemHead && itemHead !== nil) {
       // Find and store the item's properties
-      var test = {},
-          itemValue = testStore.find(itemHead, first, null)[0].object,
-          itemTriples = testStore.find(itemValue, null, null);
+      var itemValue = testStore.find(itemHead, first, null)[0].object,
+          itemTriples = testStore.find(itemValue, null, null),
+          test = { id: itemValue.replace(/^#/, '') };
       itemTriples.forEach(function (triple) {
         var propertyMatch = triple.predicate.match(/#(.+)/);
         if (propertyMatch)
@@ -152,7 +160,7 @@ function performTest(test, actionTurtle, callback) {
 
   resultStream.once('open', function () {
     // Try to parse the specified document
-    var config = { documentURI: base + test.action };
+    var config = { documentURI: prefixes.base + test.action };
     new N3Parser(config).parse(actionTurtle,
       function (error, triple) {
         if (error)
@@ -175,7 +183,7 @@ function performTest(test, actionTurtle, callback) {
 // Verifies and reports the test result
 function verifyResult(test, resultFile, correctFile, callback) {
   // Negative tests are successful if an error occurred
-  var negativeTest = (test.type === rdft + 'TestTurtleNegativeSyntax');
+  var negativeTest = (test.type === prefixes.rdft + 'TestTurtleNegativeSyntax');
   if (negativeTest) {
     displayResult(null, !!test.error);
   }
@@ -253,7 +261,7 @@ function toNTriple(triple) {
 
 // Removes the quotes around a string
 function unString(value) {
-  return value.replace(/^("""|")(.*)\1$/, '$2');
+  return value ? value.replace(/^("""|")(.*)\1$/, '$2') : '';
 }
 
 // Escapes unicode characters in a URI
@@ -293,8 +301,100 @@ function escape(value) {
 
 // Escapes characters in a string
 function escapeString(value) {
+  value = value.replace(/\\/g, '\\\\');
   value = escape(unString(value));
-  value = value.replace(/\\([^uU])|\\$/g, '\\\\$1');
   value = value.replace(/"/g, '\\"');
   return '"""' + value + '"""';
+}
+
+
+
+/*************************************************
+
+  EARL report generation
+
+**************************************************/
+
+var homepage = 'https://github.com/RubenVerborgh/node-n3',
+    application = homepage + '#node-n3',
+    developer = 'http://ruben.verborgh.org/#me';
+
+function generateEarlReport(tests, callback) {
+  // Create the report file
+  var reportFile = outputFolder + 'earl-report.ttl',
+      report = fs.createWriteStream(reportFile);
+
+  report.once('open', function () {
+    for (var prefix in prefixes)
+      writeln('@prefix ', prefix, ': <', prefixes[prefix], '>.');
+    writeln();
+
+    writeln('<> a earl:Software, doap:Project;');
+    writeln('  doap:name "Turtle";');
+    writeln('  dc:bibliographicCitation "[[TURTLE]]";');
+    writeln('  earl:generatedBy <' , application , '>;');
+    writeln('  earl:testSubjects (<' , application , '>);');
+    writeln('  mf:entries (<', testPath, manifest, '>).');
+    writeln();
+
+    writeln('<', application, '> a earl:Software, earl:TestSubject, doap:Project;');
+    writeln('  doap:name "node-n3";');
+    writeln('  doap:homepage <', homepage, '>;');
+    writeln('  doap:license <http://opensource.org/licenses/MIT>;');
+    writeln('  doap:programming-language "JavaScript";');
+    writeln('  doap:implements <http://www.w3.org/TR/turtle/>;');
+    writeln('  doap:category <http://dbpedia.org/resource/Resource_Description_Framework>;');
+    writeln('  doap:download-page <https://npmjs.org/package/n3>;');
+    writeln('  doap:bug-database <', homepage, '/issues>;');
+    writeln('  doap:blog <http://ruben.verborgh.org/blog/>;');
+    writeln('  doap:developer <', developer, '>;');
+    writeln('  doap:maintainer <', developer, '>;');
+    writeln('  doap:documenter <', developer, '>;');
+    writeln('  doap:maker <', developer, '>;');
+    writeln('  dc:title "node-n3";');
+    writeln('  dc:description "node-n3 is an asynchronous, streaming JavaScript parser of Turtle."@en;');
+    writeln('  dc:creator <', developer, '>.');
+    writeln();
+
+    writeln('<', developer, '> a foaf:Person, earl:Assertor;');
+    writeln('  foaf:name "Ruben Verborgh";');
+    writeln('  foaf:homepage <http://ruben.verborgh.org/>.');
+
+    writeln('<', testPath, manifest, '> a earl:Report, mf:Manifest;');
+    writeln('  dc:title "Turtle tests";');
+    writeln('  mf:name "Turtle tests";');
+    writeln('  mf:entries (');
+    tests.forEach(function (test) { writeln('    manifest:', test.id); });
+    writeln('  ).');
+
+    tests.forEach(function (test) {
+      writeln();
+      writeln('manifest:', test.id, ' a earl:TestCriterion, earl:TestCase;');
+      writeln('  dc:title ', escapeString(unString(test.name)), ';');
+      writeln('  dc:description ', escapeString(unString(test.comment)), ';');
+      writeln('  mf:action <', testPath, test.action, '>;');
+      if (test.result)
+        writeln('  mf:result <', testPath, test.result, '>;');
+      writeln('  earl:assertions (');
+      writeln('     [ a earl:Assertion;');
+      writeln('       earl:assertedBy <', developer, '>;');
+      writeln('       earl:test manifest:', test.id, ';');
+      writeln('       earl:subject <', application, '>;');
+      writeln('       earl:mode earl:automatic;');
+      writeln('       earl:result [ a earl:TestResult; ',
+                        'earl:outcome earl:', (test.success ? 'passed' : 'failed'),
+                      ' ]]');
+      writeln('  ).');
+    });
+
+    report.end();
+  });
+
+  report.once('close', callback);
+
+  function writeln() {
+    for(var i = 0; i < arguments.length; i++)
+      report.write(arguments[i]);
+    report.write('\n');
+  }
 }
