@@ -329,14 +329,6 @@ function generateEarlReport(tests, callback) {
       writeln('@prefix ', prefix, ': <', prefixes[prefix], '>.');
     writeln();
 
-    writeln('<> a earl:Software, doap:Project;');
-    writeln('  doap:name "Turtle";');
-    writeln('  dc:bibliographicCitation "[[TURTLE]]";');
-    writeln('  earl:generatedBy <' , application , '>;');
-    writeln('  earl:testSubjects (<' , application , '>);');
-    writeln('  mf:entries (<', testPath, manifest, '>).');
-    writeln();
-
     writeln('<', application, '> a earl:Software, earl:TestSubject, doap:Project;');
     writeln('  doap:name "node-n3";');
     writeln('  doap:homepage <', homepage, '>;');
@@ -359,13 +351,6 @@ function generateEarlReport(tests, callback) {
     writeln('<', developer, '> a foaf:Person, earl:Assertor;');
     writeln('  foaf:name "Ruben Verborgh";');
     writeln('  foaf:homepage <http://ruben.verborgh.org/>.');
-
-    writeln('<', testPath, manifest, '> a earl:Report, mf:Manifest;');
-    writeln('  dc:title "Turtle tests";');
-    writeln('  mf:name "Turtle tests";');
-    writeln('  mf:entries (');
-    tests.forEach(function (test) { writeln('    manifest:', test.id); });
-    writeln('  ).');
 
     tests.forEach(function (test) {
       writeln();
