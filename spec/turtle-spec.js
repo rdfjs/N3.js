@@ -304,7 +304,7 @@ function escapeString(value) {
   value = value.replace(/\\/g, '\\\\');
   value = escape(unString(value));
   value = value.replace(/"/g, '\\"');
-  return '"""' + value + '"""';
+  return '"' + value + '"';
 }
 
 
