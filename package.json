@@ -4,6 +4,7 @@
   "description": "Lightning fast, asynchronous, streaming Turtle / N3 / RDF library.",
   "author": "Ruben Verborgh <ruben.verborgh@gmail.com>",
   "keywords": ["turtle", "rdf", "n3", "streaming", "asynchronous"],
+  "license": "MIT",
   "main": "./n3.js",
   "engines": {
     "node": ">=0.6.0"
