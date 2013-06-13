@@ -183,7 +183,7 @@ function performTest(test, actionTurtle, callback) {
 // Verifies and reports the test result
 function verifyResult(test, resultFile, correctFile, callback) {
   // Negative tests are successful if an error occurred
-  var negativeTest = (test.type === prefixes.rdft + 'TestTurtleNegativeSyntax');
+  var negativeTest = /TestTurtleNegative/.test(test.type);
   if (negativeTest) {
     displayResult(null, !!test.error);
   }
