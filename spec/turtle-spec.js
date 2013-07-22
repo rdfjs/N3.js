@@ -11,7 +11,7 @@ var fs = require('fs'),
 var parallel = false;
 
 // Path to the tests and the tests' manifest
-var testPath = "https://dvcs.w3.org/hg/rdf/raw-file/default/rdf-turtle/tests-ttl/",
+var testPath = "http://www.w3.org/2013/TurtleTests/",
     manifest = "manifest.ttl";
 
 // Prefixes
@@ -19,7 +19,6 @@ var prefixes = {
   mf: "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#",
   rdf: "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
   rdft: "http://www.w3.org/ns/rdftest#",
-  base: "http://example/base/",
   dc: "http://purl.org/dc/terms/",
   doap: "http://usefulinc.com/ns/doap#",
   earl: "http://www.w3.org/ns/earl#",
@@ -160,7 +159,7 @@ function performTest(test, actionTurtle, callback) {
 
   resultStream.once('open', function () {
     // Try to parse the specified document
-    var config = { documentURI: prefixes.base + test.action };
+    var config = { documentURI: testPath + test.action };
     new N3Parser(config).parse(actionTurtle,
       function (error, triple) {
         if (error)
