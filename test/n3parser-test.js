@@ -163,6 +163,24 @@ vows.describe('N3Parser').addBatch({
                   ['_:b0', 'u', 'v'],
                   ['_:b0', 'w', 'z']),
 
+    'should parse a multi-statement blank node ending with a literal':
+      shouldParse('<a> <b> [ <u> <v>; <w> "z" ].',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'u', 'v'],
+                  ['_:b0', 'w', '"z"']),
+
+    'should parse a multi-statement blank node ending with a typed literal':
+      shouldParse('<a> <b> [ <u> <v>; <w> "z"^^<t> ].',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'u', 'v'],
+                  ['_:b0', 'w', '"z"^^<t>']),
+
+    'should parse a multi-statement blank node ending with a string with language':
+      shouldParse('<a> <b> [ <u> <v>; <w> "z"^^<t> ].',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'u', 'v'],
+                  ['_:b0', 'w', '"z"^^<t>']),
+
     'should parse a multi-statement blank node with trailing semicolon':
       shouldParse('<a> <b> [ <u> <v>; <w> <z>; ].',
                   ['a', 'b', '_:b0'],
