@@ -137,7 +137,7 @@ function fetch(testFile, callback) {
       fs.readFile(localFile, 'utf8', callback);
     else
       request.get(testPath + testFile,
-                  function (error, response, body) { callback(error, body || ""); })
+                  function (error, response, body) { callback(error, body); })
              .pipe(fs.createWriteStream(localFile));
   });
 }

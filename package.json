@@ -15,8 +15,8 @@
     "chai-things": "~0.1.1",
     "colors": "~0.6.0",
     "docco": "~0.3.0",
-    "jshint": "1.1.x",
-    "request": "~2.9.203",
+    "jshint": "~1.1.0",
+    "request": "~2.22.0",
     "vows": "~0.6.0"
   },
   "scripts": {
