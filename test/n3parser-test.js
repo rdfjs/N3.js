@@ -58,7 +58,7 @@ vows.describe('N3Parser').addBatch({
       shouldParse('<a> <b> 3.',
                   ['a', 'b', '"3"^^<http://www.w3.org/2001/XMLSchema#integer>']),
 
-    'should parse a triple with an floating point literal':
+    'should parse a triple with a floating point literal':
       shouldParse('<a> <b> 1.3e2.',
                   ['a', 'b', '"1.3e2"^^<http://www.w3.org/2001/XMLSchema#double>']),
 
