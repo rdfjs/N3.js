@@ -54,6 +54,10 @@ vows.describe('N3Parser').addBatch({
       shouldParse('<a> <b> 3.0.',
                   ['a', 'b', '"3.0"^^<http://www.w3.org/2001/XMLSchema#decimal>']),
 
+    'should parse a triple with an integer literal':
+      shouldParse('<a> <b> 3.',
+                  ['a', 'b', '"3"^^<http://www.w3.org/2001/XMLSchema#integer>']),
+
     'should parse a triple with a literal and a language code':
       shouldParse('<a> <b> "string"@en.',
                   ['a', 'b', '"string"@en']),
