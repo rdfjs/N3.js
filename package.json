@@ -17,7 +17,7 @@
     "docco": "~0.3.0",
     "jshint": "~1.1.0",
     "request": "~2.22.0",
-    "vows": "~0.6.0"
+    "vows": ">=0.7.0"
   },
   "scripts": {
     "test": "make test"
