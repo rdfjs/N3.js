@@ -343,7 +343,7 @@ function generateEarlReport(tests, callback) {
     writeln('  doap:documenter <', developer, '>;');
     writeln('  doap:maker <', developer, '>;');
     writeln('  dc:title "node-n3";');
-    writeln('  dc:description "node-n3 is an asynchronous, streaming JavaScript parser of Turtle."@en;');
+    writeln('  dc:description "node-n3 is an asynchronous, streaming Turtle parser for JavaScript."@en;');
     writeln('  dc:creator <', developer, '>.');
     writeln();
 
