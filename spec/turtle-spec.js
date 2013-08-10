@@ -23,6 +23,7 @@ var prefixes = {
   doap: "http://usefulinc.com/ns/doap#",
   earl: "http://www.w3.org/ns/earl#",
   foaf: "http://xmlns.com/foaf/0.1/",
+  xsd: "http://www.w3.org/2001/XMLSchema#",
   manifest: testPath + manifest + '#',
 };
 
@@ -321,11 +322,17 @@ var homepage = 'https://github.com/RubenVerborgh/node-n3',
 function generateEarlReport(tests, callback) {
   // Create the report file
   var reportFile = outputFolder + 'earl-report.ttl',
-      report = fs.createWriteStream(reportFile);
+      report = fs.createWriteStream(reportFile),
+      date = new Date().toISOString();
 
   report.once('open', function () {
     for (var prefix in prefixes)
       writeln('@prefix ', prefix, ': <', prefixes[prefix], '>.');
+    writeln();
+
+    writeln('<> foaf:primaryTopic <', application, '>;');
+    writeln('  dc:issued "', date, '"^^xsd:dateTime;');
+    writeln('  foaf:maker <', developer, '>.');
     writeln();
 
     writeln('<', application, '> a earl:Software, earl:TestSubject, doap:Project;');
@@ -366,7 +373,8 @@ function generateEarlReport(tests, callback) {
       writeln('       earl:subject <', application, '>;');
       writeln('       earl:mode earl:automatic;');
       writeln('       earl:result [ a earl:TestResult; ',
-                        'earl:outcome earl:', (test.success ? 'passed' : 'failed'),
+                        'earl:outcome earl:', (test.success ? 'passed' : 'failed'), '; ',
+                        'dc:date "', date, '"^^xsd:dateTime',
                       ' ]]');
       writeln('  ).');
     });
