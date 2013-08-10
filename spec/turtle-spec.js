@@ -18,6 +18,7 @@ var testPath = "http://www.w3.org/2013/TurtleTests/",
 var prefixes = {
   mf: "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#",
   rdf: "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+  rdfs: "http://www.w3.org/2000/01/rdf-schema#",
   rdft: "http://www.w3.org/ns/rdftest#",
   dc: "http://purl.org/dc/terms/",
   doap: "http://usefulinc.com/ns/doap#",
@@ -356,7 +357,9 @@ function generateEarlReport(tests, callback) {
 
     writeln('<', developer, '> a foaf:Person, earl:Assertor;');
     writeln('  foaf:name "Ruben Verborgh";');
-    writeln('  foaf:homepage <http://ruben.verborgh.org/>.');
+    writeln('  foaf:homepage <http://ruben.verborgh.org/>;');
+    writeln('  foaf:primaryTopicOf <http://ruben.verborgh.org/profile/>;');
+    writeln('  rdfs:isDefinedBy <http://ruben.verborgh.org/profile/>.');
 
     tests.forEach(function (test) {
       writeln();
