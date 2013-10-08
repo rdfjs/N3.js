@@ -71,6 +71,10 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'dot', line: 4 },
                      { type: 'eof', line: 4 }),
 
+    'should tokenize a single comment':
+      shouldTokenize(streamOf('#comment'),
+                     { type: 'eof', line: 1 }),
+
     'should ignore comments':
       shouldTokenize('<#foo> #comment\n <#foo>  #comment \r# comment\n\n<#bla>#',
                      { type: 'explicituri', value: '#foo', line: 1 },
@@ -258,6 +262,10 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'langcode', value: 'en', line: 3 },
                      { type: 'dot', line: 3 },
                      { type: 'eof', line: 3 }),
+
+    'should tokenize a stream with split comment':
+      shouldTokenize(streamOf('#com', 'ment'),
+                     { type: 'eof', line: 1 }),
 
     'should tokenize @prefix declarations':
       shouldTokenize('@prefix : <http://uri.org/#>.\n@prefix abc: <http://uri.org/#>.',
