@@ -15,12 +15,10 @@ vows.describe('N3Parser').addBatch({
     },
 
     'should make N3Parser objects': function (N3Parser) {
-      N3Parser().constructor.should.eql(N3Parser);
       N3Parser().should.be.an.instanceof(N3Parser);
     },
 
     'should be an N3Parser constructor': function (N3Parser) {
-      new N3Parser().constructor.should.eql(N3Parser);
       new N3Parser().should.be.an.instanceof(N3Parser);
     },
   },

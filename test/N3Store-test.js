@@ -14,12 +14,10 @@ vows.describe('N3Store').addBatch({
     },
 
     'should make N3Store objects': function (N3Store) {
-      N3Store().constructor.should.eql(N3Store);
       N3Store().should.be.an.instanceof(N3Store);
     },
 
     'should be an N3Store constructor': function (N3Store) {
-      new N3Store().constructor.should.eql(N3Store);
       new N3Store().should.be.an.instanceof(N3Store);
     },
   },
