@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-var N3Parser = require('../lib/n3parser.js'),
-    N3Store = require('../lib/n3store.js');
+var N3Parser = require('../lib/N3Parser.js'),
+    N3Store = require('../lib/N3Store.js');
 var fs = require('fs'),
     request = require('request'),
     exec = require('child_process').exec,

@@ -4,22 +4,20 @@ var fs = require('fs'),
     assert = require('assert');
 
 if (process.argv.length !== 3)
-  return console.error('Usage: n3parser-perf.js filename');
+  return console.error('Usage: N3Lexer-perf.js filename');
 
 var filename = process.argv[2];
 
-var TEST = '- Parsing file ' + filename;
+var TEST = '- Lexing file ' + filename;
 console.time(TEST);
 
 var count = 0;
-new n3.Parser().parse(fs.createReadStream(filename), function (error, triple) {
+new n3.Lexer().tokenize(fs.createReadStream(filename), function (error, token) {
   assert(!error, error);
-  if (triple) {
-    count++;
-  }
-  else {
+  count++;
+  if (token.type === 'eof') {
     console.timeEnd(TEST);
-    console.log('* Triples parsed: ' + count);
+    console.log('* Tokens lexed: ' + count);
     console.log('* Memory usage: ' + Math.round(process.memoryUsage().rss / 1024 / 1024) + 'MB');
   }
 });

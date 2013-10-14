@@ -5,7 +5,7 @@
   "author": "Ruben Verborgh <ruben.verborgh@gmail.com>",
   "keywords": ["turtle", "rdf", "n3", "streaming", "asynchronous"],
   "license": "MIT",
-  "main": "./n3.js",
+  "main": "./N3.js",
   "engines": {
     "node": ">=0.6.0"
   },

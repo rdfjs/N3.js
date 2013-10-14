@@ -8,9 +8,9 @@ spec-clean:
 	@rm -r spec/turtle
 
 perf:
-	@./perf/n3store-perf.js  $(dimension)
-	@./perf/n3lexer-perf.js  $(n3file)
-	@./perf/n3parser-perf.js $(n3file)
+	@./perf/N3Store-perf.js  $(dimension)
+	@./perf/N3Lexer-perf.js  $(n3file)
+	@./perf/N3Parser-perf.js $(n3file)
 
 jshint:
 	@./node_modules/jshint/bin/jshint lib perf test

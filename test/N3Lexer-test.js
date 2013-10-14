@@ -1,4 +1,4 @@
-var N3Lexer = require('../lib/n3lexer.js');
+var N3Lexer = require('../lib/N3Lexer.js');
 var vows = require('vows'),
     chai = require('chai'),
     expect = chai.expect,

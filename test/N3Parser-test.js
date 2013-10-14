@@ -1,4 +1,4 @@
-var N3Parser = require('../lib/n3parser.js');
+var N3Parser = require('../lib/N3Parser.js');
 var vows = require('vows'),
     chai = require('chai'),
     expect = chai.expect,
