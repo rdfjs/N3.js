@@ -1,4 +1,4 @@
-var N3Store = require('../lib/N3Store.js');
+var N3Store = require('../N3').Store;
 var vows = require('vows'),
     chai = require('chai'),
     util = require('util');
