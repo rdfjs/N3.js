@@ -5,12 +5,11 @@ This library will provide a high-performance N3 store, parser, and generator (wh
 
 Currently implemented:
 - streaming Turtle parser, [fully compliant](https://github.com/RubenVerborgh/node-n3/tree/master/spec) with the [latest candidate recommendation](http://www.w3.org/TR/turtle/)
-- high-performance N3 store
+- high-performance in-memory N3 store
 
-## Parsing Turtle
+## Parsing Turtle from a string or stream
 
-The node-n3 library features a streaming Turtle parser,
-processing Turtle documents as they grow.
+The _node-n3_ library can parse Turtle strings.
 
 ``` js
 var parser = new n3.Parser();
@@ -22,8 +21,41 @@ parser.parse('@prefix c: <http://example.org/cartoons#>.\n' +
                if (triple)
                  console.log(triple.subject, triple.predicate, triple.object, '.');
                else
-                 console.log("# That's it, folks!")
+                 console.log("# That's all, folks!")
              });
+```
+
+Additionally, it can parse streams as they grow, returning triples as soon as they're ready.
+<br>
+This behavior sets _node-n3_ apart from most other Turtle libraries.
+
+``` js
+var parser = new n3.Parser(),
+    turtleStream = fs.createReadStream('cartoons.ttl');
+parser.parse(turtleStream, console.log);
+```
+
+## Transforming a stream into triples
+
+_node-n3_ offers a _Transform_ interface to the Node _Stream_ system,
+so you can transform Turtle streams and pipe them to anywhere.
+This solution is ideal if your consumer is slower,
+as it avoids backpressure from the parser.
+
+``` js
+var transform = new n3.Transform(),
+    turtleStream = fs.createReadStream('cartoons.ttl');
+turtleStream.pipe(transform);
+transform.pipe(new SlowWriter());
+
+function SlowWriter() {
+  var writer = new Writable({ objectMode: true });
+  writer._write = function (triple, encoding, done) {
+    console.log(triple);
+    setTimeout(done, 1000);
+  };
+  return writer;
+}
 ```
 
 ## Storing and finding items
@@ -44,7 +76,7 @@ console.log(mickey.subject, mickey.predicate, mickey.object, '.');
 ```
 
 ## Installation
-You can install the n3 library as an [npm](http://npmjs.org/) package.
+You can install the _n3_ library as an [npm](http://npmjs.org/) package.
 
 ``` bash
 $ npm install n3
