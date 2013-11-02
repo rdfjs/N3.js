@@ -80,6 +80,30 @@ vows.describe('N3Util').addBatch({
       },
     },
 
+    'isBlank': {
+      topic: function (N3Util) { return N3Util.isBlank; },
+
+      'matches a blank node': function (isBlank) {
+        isBlank('_:x').should.be.true;
+      },
+
+      'does not match a URI': function (isBlank) {
+        isBlank('http://example.org/').should.be.false;
+      },
+
+      'does not match a literal': function (isBlank) {
+        isBlank('"http://example.org/"').should.be.false;
+      },
+
+      'does not match null': function (isBlank) {
+        expect(isBlank(null)).to.be.null;
+      },
+
+      'does not match undefined': function (isBlank) {
+        expect(isBlank(undefined)).to.be.undefined;
+      },
+    },
+
     'getLiteralValue': {
       topic: function (N3Util) { return N3Util.getLiteralValue; },
 
