@@ -64,7 +64,7 @@ vows.describe('N3Util').addBatch({
       },
 
       'matches a literal with a type': function (isLiteral) {
-        isLiteral('"3"^^xsd:integer').should.be.true;
+        isLiteral('"3"^^<http://www.w3.org/2001/XMLSchema#integer>').should.be.true;
       },
 
       'does not match a URI': function (isLiteral) {
@@ -77,6 +77,94 @@ vows.describe('N3Util').addBatch({
 
       'does not match undefined': function (isLiteral) {
         expect(isLiteral(undefined)).to.be.undefined;
+      },
+    },
+
+    'getLiteralValue': {
+      topic: function (N3Util) { return N3Util.getLiteralValue; },
+
+      'gets the value of a literal': function (getLiteralValue) {
+        getLiteralValue('"Mickey"').should.equal('Mickey');
+      },
+
+      'gets the value of a literal with a language': function (getLiteralValue) {
+        getLiteralValue('"English"@en').should.equal('English');
+      },
+
+      'gets the value of a literal with a type': function (getLiteralValue) {
+        getLiteralValue('"3"^^<http://www.w3.org/2001/XMLSchema#integer>').should.equal('3');
+      },
+
+      'does not work with non-literals': function (getLiteralValue) {
+        getLiteralValue.bind(null, 'http://example.org/').should.throw('http://example.org/ is not a literal');
+      },
+
+      'does not work with null': function (getLiteralValue) {
+        getLiteralValue.bind(null, null).should.throw('null is not a literal');
+      },
+
+      'does not work with undefined': function (getLiteralValue) {
+        getLiteralValue.bind(null, undefined).should.throw('undefined is not a literal');
+      },
+    },
+
+    'getLiteralType': {
+      topic: function (N3Util) { return N3Util.getLiteralType; },
+
+      'gets the type of a literal': function (getLiteralType) {
+        getLiteralType('"Mickey"').should.equal('http://www.w3.org/2001/XMLSchema#string');
+      },
+
+      'gets the type of a literal with a language': function (getLiteralType) {
+        getLiteralType('"English"@en').should.equal('http://www.w3.org/2001/XMLSchema#string');
+      },
+
+      'gets the type of a literal with a type': function (getLiteralType) {
+        getLiteralType('"3"^^<http://www.w3.org/2001/XMLSchema#integer>').should.equal('http://www.w3.org/2001/XMLSchema#integer');
+      },
+
+      'does not work with non-literals': function (getLiteralType) {
+        getLiteralType.bind(null, 'http://example.org/').should.throw('http://example.org/ is not a literal');
+      },
+
+      'does not work with null': function (getLiteralType) {
+        getLiteralType.bind(null, null).should.throw('null is not a literal');
+      },
+
+      'does not work with undefined': function (getLiteralType) {
+        getLiteralType.bind(null, undefined).should.throw('undefined is not a literal');
+      },
+    },
+
+    'getLiteralLanguage': {
+      topic: function (N3Util) { return N3Util.getLiteralLanguage; },
+
+      'gets the language of a literal': function (getLiteralLanguage) {
+        getLiteralLanguage('"Mickey"').should.equal('');
+      },
+
+      'gets the language of a literal with a language': function (getLiteralLanguage) {
+        getLiteralLanguage('"English"@en').should.equal('en');
+      },
+
+      'normalizes the language to lowercase': function (getLiteralLanguage) {
+        getLiteralLanguage('"English"@en-GB').should.equal('en-gb');
+      },
+
+      'gets the language of a literal with a type': function (getLiteralLanguage) {
+        getLiteralLanguage('"3"^^<http://www.w3.org/2001/XMLSchema#integer>').should.equal('');
+      },
+
+      'does not work with non-literals': function (getLiteralLanguage) {
+        getLiteralLanguage.bind(null, 'http://example.org/').should.throw('http://example.org/ is not a literal');
+      },
+
+      'does not work with null': function (getLiteralLanguage) {
+        getLiteralLanguage.bind(null, null).should.throw('null is not a literal');
+      },
+
+      'does not work with undefined': function (getLiteralLanguage) {
+        getLiteralLanguage.bind(null, undefined).should.throw('undefined is not a literal');
       },
     },
 
