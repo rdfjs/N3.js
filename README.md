@@ -75,6 +75,50 @@ console.log(mickey.subject, mickey.predicate, mickey.object, '.');
 // :Mickey a :Mouse .
 ```
 
+## Representing URIs and literals
+_node-n3_ has a special syntax to represent URIs and literals,
+making code efficient to write and execute.
+<br>
+As URIs are most common, they are represented as simple strings:
+``` js
+var N3Util = require('n3').Util;
+N3Util.isUri('http://example.org/cartoons#Mickey'); // true
+```
+Literals are represented as double quoted strings:
+``` js
+N3Util.isLiteral('"Mickey Mouse"'); // true
+N3Util.isLiteral('"Mickey Mouse"@en'); // true
+N3Util.isLiteral('"3"^^<http://www.w3.org/2001/XMLSchema#integer>'); // true
+N3Util.isLiteral('"http://example.org/"'); // true
+```
+Note the difference between `'http://example.org/'` (URI) and `'"http://example.org/"'` (literal).
+<br>
+Also note that the double quoted literals are _not_ raw Turtle syntax:
+``` js
+N3Util.isLiteral('"This word is "quoted"!"'); // true
+```
+The above string represents the string _This word is "quoted"!_,
+even though the correct Turtle syntax for that is `"This word is \"quoted\"!"`
+_node-n3_ thus always parses literals, but adds quotes to differentiate from URIs:
+``` js
+new n3.Parser().parse('<a> <b> "This word is \\"quoted\\"!".', console.log);
+// { subject: 'a', predicate: 'b', object: '"This word is "quoted"!"' }
+```
+
+For convenience, `N3Util` can also be loaded globally:
+``` js
+require('n3').Util(global);
+isUri('http://example.org/cartoons#Mickey'); // true
+isLiteral('"Mickey Mouse"'); // true
+```
+
+If desired, the methods can even be added directly on all strings:
+``` js
+require('n3').Util(String, true);
+'http://example.org/cartoons#Mickey'.isUri(); // true
+'"Mickey Mouse"'.isLiteral(); // true
+```
+
 ## Installation
 You can install the _n3_ library as an [npm](http://npmjs.org/) package.
 
