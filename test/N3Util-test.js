@@ -144,11 +144,11 @@ vows.describe('N3Util').addBatch({
       topic: function (N3Util) { return N3Util.getLiteralType; },
 
       'gets the type of a literal': function (getLiteralType) {
-        getLiteralType('"Mickey"').should.equal('http://www.w3.org/2001/XMLSchema#string');
+        getLiteralType('"Mickey"').should.equal('http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral');
       },
 
       'gets the type of a literal with a language': function (getLiteralType) {
-        getLiteralType('"English"@en').should.equal('http://www.w3.org/2001/XMLSchema#string');
+        getLiteralType('"English"@en').should.equal('http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral');
       },
 
       'gets the type of a literal with a type': function (getLiteralType) {
