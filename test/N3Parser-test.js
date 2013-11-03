@@ -332,24 +332,33 @@ vows.describe('N3Parser').addBatch({
                      'Expected punctuation to follow "c" at line 1.'),
   },
   'An N3Parser instance with a document URI': {
-    topic: function () { return function () { return new N3Parser({ documentURI: 'doc/file.ttl' }); }; },
+    topic: function () {
+      return function () { return new N3Parser({ documentURI: 'http://ex.org/doc/f.ttl' }); };
+    },
 
     'should resolve URIs against the document URI':
       shouldParse('@prefix : <#>.\n' +
                   '<a> <b> <c>.\n' +
                   ':e :f :g.',
-                  ['doc/a', 'doc/b', 'doc/c'],
-                  ['doc/file.ttl#e', 'doc/file.ttl#f', 'doc/file.ttl#g']),
+                  ['http://ex.org/doc/a', 'http://ex.org/doc/b', 'http://ex.org/doc/c'],
+                  ['http://ex.org/doc/f.ttl#e', 'http://ex.org/doc/f.ttl#f', 'http://ex.org/doc/f.ttl#g']),
+
+    'should resolve URIs with a trailing slashes against the document URI':
+      shouldParse('</a> </a/b> </a/b/c>.\n',
+                  ['http://ex.org/a', 'http://ex.org/a/b', 'http://ex.org/a/b/c']),
 
     'should respect @base statements':
       shouldParse('<a> <b> <c>.\n' +
-                  '@base <http://ex.org/>.\n' +
+                  '@base <http://ex.org/x/>.\n' +
                   '<e> <f> <g>.\n' +
                   '@base <d/>.\n' +
-                  '<h> <i> <j>.',
-                  ['doc/a', 'doc/b', 'doc/c'],
-                  ['http://ex.org/e', 'http://ex.org/f', 'http://ex.org/g'],
-                  ['http://ex.org/d/h', 'http://ex.org/d/i', 'http://ex.org/d/j']),
+                  '<h> <i> <j>.\n' +
+                  '@base </e/>.\n' +
+                  '<k> <l> <m>.',
+                  ['http://ex.org/doc/a', 'http://ex.org/doc/b', 'http://ex.org/doc/c'],
+                  ['http://ex.org/x/e', 'http://ex.org/x/f', 'http://ex.org/x/g'],
+                  ['http://ex.org/x/d/h', 'http://ex.org/x/d/i', 'http://ex.org/x/d/j'],
+                  ['http://ex.org/e/k', 'http://ex.org/e/l', 'http://ex.org/e/m']),
   }
 }).export(module);
 
