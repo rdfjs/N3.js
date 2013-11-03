@@ -43,6 +43,10 @@ vows.describe('N3Util').addBatch({
         isUri('"http://example.org/"').should.be.false;
       },
 
+      'does not match a blank node': function (isUri) {
+        isUri('_:x').should.be.false;
+      },
+
       'does not match null': function (isUri) {
         expect(isUri(null)).to.be.null;
       },
@@ -69,6 +73,10 @@ vows.describe('N3Util').addBatch({
 
       'does not match a URI': function (isLiteral) {
         isLiteral('http://example.org/').should.be.false;
+      },
+
+      'does not match a blank node': function (isLiteral) {
+        isLiteral('_:x').should.be.false;
       },
 
       'does not match null': function (isLiteral) {
