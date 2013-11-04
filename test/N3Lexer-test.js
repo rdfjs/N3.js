@@ -265,6 +265,23 @@ vows.describe('N3Lexer').addBatch({
       shouldTokenize(streamOf('#com', 'ment'),
                      { type: 'eof', line: 1 }),
 
+    'should immediately signal an error if a linebreak occurs anywhere outside a triple-quoted literal':
+      shouldNotTokenize(streamOf('abc\n', null), 'Syntax error: unexpected "abc" on line 1.'),
+
+    'should immediately signal an error if a linebreak occurs inside a single-quoted literal':
+      shouldNotTokenize(streamOf('"abc\n', null), 'Syntax error: unexpected ""abc" on line 1.'),
+
+    'should immediately signal an error if a carriage return occurs anywhere outside a triple-quoted literal':
+      shouldNotTokenize(streamOf('abc\r', null), 'Syntax error: unexpected "abc" on line 1.'),
+
+    'should immediately signal an error if a carriage return occurs inside a single-quoted literal':
+      shouldNotTokenize(streamOf('"abc\r', null), 'Syntax error: unexpected ""abc" on line 1.'),
+
+    'should tokenize a split triple-quoted string':
+      shouldTokenize(streamOf('"""abc\n', 'def"""'),
+                     { type: 'literal', value: '"abc\ndef"', line: 1 },
+                     { type: 'eof', line: 2 }),
+
     'should tokenize @prefix declarations':
       shouldTokenize('@prefix : <http://uri.org/#>.\n@prefix abc: <http://uri.org/#>.',
                      { type: '@prefix', line: 1 },
@@ -424,8 +441,12 @@ function streamOf() {
 
   function next() {
     if (elements.length) {
-      stream.emit('data', elements.shift());
-      process.nextTick(next);
+      var element = elements.shift();
+      // use "null" to stall the stream
+      if (element !== null) {
+        stream.emit('data', element);
+        process.nextTick(next);
+      }
     }
     else {
       stream.emit('end');
