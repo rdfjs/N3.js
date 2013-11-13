@@ -58,6 +58,14 @@ vows.describe('N3Parser').addBatch({
     'should serialize a literal with a language':
       shouldSerialize([['a', 'b', '"cde"@en-us']],
                       '<a> <b> "cde"@en-us.\n'),
+
+    'should not serialize a literal in the subject':
+      shouldNotSerialize([['"a"', 'b', '"c']],
+                          'A literal as subject is not allowed: "a"'),
+
+    'should not serialize a literal in the predicate':
+      shouldNotSerialize([['a', '"b"', '"c']],
+                          'A literal as predicate is not allowed: "b"'),
   },
 }).export(module);
 
@@ -74,6 +82,27 @@ function shouldSerialize(tripleArrays, expectedResult) {
     },
     'should equal the expected result': function (actual) {
       actual.should.equal(expectedResult);
+    },
+  };
+}
+
+function shouldNotSerialize(tripleArrays, expectedMessage) {
+  return {
+    topic: function (n3writerFactory) {
+      var outputStream = new QuickStream(),
+          writer = n3writerFactory(outputStream);
+      try {
+        tripleArrays.forEach(function (t) {
+          writer.addTriple({ subject: t[0], predicate: t[1], object: t[2] });
+        });
+        writer.end();
+      }
+      catch (error) {
+        return error;
+      }
+    },
+    'should produce the right error message': function (error) {
+      error.message.should.equal(expectedMessage);
     },
   };
 }
