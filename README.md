@@ -35,7 +35,7 @@ var parser = new n3.Parser(),
 parser.parse(turtleStream, console.log);
 ```
 
-## Transforming a stream into triples
+## From text stream to triple stream
 
 _node-n3_ offers a _Transform_ interface to the Node _Stream_ system,
 so you can transform Turtle streams and pipe them to anywhere.
@@ -43,10 +43,10 @@ This solution is ideal if your consumer is slower,
 as it avoids backpressure from the parser.
 
 ``` js
-var transform = new n3.Transform(),
+var streamParser = new n3.StreamParser(),
     turtleStream = fs.createReadStream('cartoons.ttl');
-turtleStream.pipe(transform);
-transform.pipe(new SlowWriter());
+turtleStream.pipe(streamParser);
+streamParser.pipe(new SlowWriter());
 
 function SlowWriter() {
   var writer = new Writable({ objectMode: true });

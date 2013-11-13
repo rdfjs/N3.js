@@ -1,4 +1,4 @@
-var N3Transform = require('../N3').Transform;
+var N3StreamParser = require('../N3').StreamParser;
 var vows = require('vows'),
     chai = require('chai'),
     expect = chai.expect,
@@ -11,25 +11,25 @@ chai.use(require('chai-things'));
 util.inherits(ArrayReader, Readable);
 util.inherits(ArrayWriter, Writable);
 
-vows.describe('N3Transform').addBatch({
-  'The N3Transform module': {
-    topic: function () { return N3Transform; },
+vows.describe('N3StreamParser').addBatch({
+  'The N3StreamParser module': {
+    topic: function () { return N3StreamParser; },
 
-    'should be a function': function (N3Transform) {
-      N3Transform.should.be.a('function');
+    'should be a function': function (N3StreamParser) {
+      N3StreamParser.should.be.a('function');
     },
 
-    'should make N3Lexer objects': function (N3Transform) {
-      N3Transform().should.be.an.instanceof(N3Transform);
+    'should make N3Lexer objects': function (N3StreamParser) {
+      N3StreamParser().should.be.an.instanceof(N3StreamParser);
     },
 
-    'should be an N3Lexer constructor': function (N3Transform) {
-      new N3Transform().should.be.an.instanceof(N3Transform);
+    'should be an N3Lexer constructor': function (N3StreamParser) {
+      new N3StreamParser().should.be.an.instanceof(N3StreamParser);
     },
   },
 
-  'An N3Transform instance': {
-    topic: function () { return function () { return new N3Transform(); }; },
+  'An N3StreamParser instance': {
+    topic: function () { return function () { return new N3StreamParser(); }; },
 
     'parses the empty stream': shouldParse([], 0),
 
@@ -44,11 +44,11 @@ vows.describe('N3Transform').addBatch({
 
 function shouldParse(chunks, expectedLength) {
   return {
-    topic: function (n3TransformFactory) {
+    topic: function (n3streamparserFactory) {
       var output = [],
           inputStream = new ArrayReader(chunks),
           outputStream = new ArrayWriter(output),
-          transform = n3TransformFactory(),
+          transform = n3streamparserFactory(),
           callback = this.callback;
       inputStream.pipe(transform);
       transform.pipe(outputStream);
