@@ -71,6 +71,14 @@ vows.describe('N3Util').addBatch({
         isLiteral('"3"^^<http://www.w3.org/2001/XMLSchema#integer>').should.be.true;
       },
 
+      'matches a literal with a newline': function (isLiteral) {
+        isLiteral('"a\nb"').should.be.true;
+      },
+
+      'matches a literal with a cariage return': function (isLiteral) {
+        isLiteral('"a\rb"').should.be.true;
+      },
+
       'does not match a URI': function (isLiteral) {
         isLiteral('http://example.org/').should.be.false;
       },
@@ -127,6 +135,14 @@ vows.describe('N3Util').addBatch({
         getLiteralValue('"3"^^<http://www.w3.org/2001/XMLSchema#integer>').should.equal('3');
       },
 
+      'gets the value of a literal with a newline': function (getLiteralValue) {
+        getLiteralValue('"Mickey\nMouse"').should.equal('Mickey\nMouse');
+      },
+
+      'gets the value of a literal with a cariage return': function (getLiteralValue) {
+        getLiteralValue('"Mickey\rMouse"').should.equal('Mickey\rMouse');
+      },
+
       'does not work with non-literals': function (getLiteralValue) {
         getLiteralValue.bind(null, 'http://example.org/').should.throw('http://example.org/ is not a literal');
       },
@@ -153,6 +169,14 @@ vows.describe('N3Util').addBatch({
 
       'gets the type of a literal with a type': function (getLiteralType) {
         getLiteralType('"3"^^<http://www.w3.org/2001/XMLSchema#integer>').should.equal('http://www.w3.org/2001/XMLSchema#integer');
+      },
+
+      'gets the type of a literal with a newline': function (getLiteralValue) {
+        getLiteralValue('"Mickey\nMouse"^^<abc>').should.equal('abc');
+      },
+
+      'gets the type of a literal with a cariage return': function (getLiteralValue) {
+        getLiteralValue('"Mickey\rMouse"^^<abc>').should.equal('abc');
       },
 
       'does not work with non-literals': function (getLiteralType) {
@@ -185,6 +209,14 @@ vows.describe('N3Util').addBatch({
 
       'gets the language of a literal with a type': function (getLiteralLanguage) {
         getLiteralLanguage('"3"^^<http://www.w3.org/2001/XMLSchema#integer>').should.equal('');
+      },
+
+      'gets the language of a literal with a newline': function (getLiteralValue) {
+        getLiteralValue('"Mickey\nMouse"@en').should.equal('en');
+      },
+
+      'gets the language of a literal with a cariage return': function (getLiteralValue) {
+        getLiteralValue('"Mickey\rMouse"@en').should.equal('en');
       },
 
       'does not work with non-literals': function (getLiteralLanguage) {
