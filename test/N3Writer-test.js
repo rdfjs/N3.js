@@ -59,6 +59,38 @@ vows.describe('N3Parser').addBatch({
       shouldSerialize([['a', 'b', '"cde"@en-us']],
                       '<a> <b> "cde"@en-us.\n'),
 
+    'should serialize a literal containing a single quote':
+      shouldSerialize([['a', 'b', '"c\'de"']],
+                      '<a> <b> "c\'de".\n'),
+
+    'should serialize a literal containing a double quote':
+      shouldSerialize([['a', 'b', '"c"de"']],
+                      '<a> <b> "c\\"de".\n'),
+
+    'should serialize a literal containing a backspace':
+      shouldSerialize([['a', 'b', '"c\\de"']],
+                      '<a> <b> "c\\\\de".\n'),
+
+    'should serialize a literal containing a tab character':
+      shouldSerialize([['a', 'b', '"c\tde"']],
+                      '<a> <b> "c\\tde".\n'),
+
+    'should serialize a literal containing a newline character':
+      shouldSerialize([['a', 'b', '"c\nde"']],
+                      '<a> <b> "c\\nde".\n'),
+
+    'should serialize a literal containing a cariage return character':
+      shouldSerialize([['a', 'b', '"c\rde"']],
+                      '<a> <b> "c\\rde".\n'),
+
+    'should serialize a literal containing a backspace character':
+      shouldSerialize([['a', 'b', '"c\bde"']],
+                      '<a> <b> "c\\bde".\n'),
+
+    'should serialize a literal containing a form feed character':
+      shouldSerialize([['a', 'b', '"c\fde"']],
+                      '<a> <b> "c\\fde".\n'),
+
     'should not serialize a literal in the subject':
       shouldNotSerialize([['"a"', 'b', '"c']],
                           'A literal as subject is not allowed: "a"'),
