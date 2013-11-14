@@ -38,6 +38,8 @@ vows.describe('N3StreamParser').addBatch({
     'parses one triple': shouldParse(['<a> <b> <c>.'], 1),
 
     'parses two triples': shouldParse(['<a> <b>', ' <c>. <d> <e> ', '<f>.'], 2),
+
+    "doesn't parse an invalid stream": shouldNotParse(['z.'], 'Syntax error: unexpected "z." on line 1.'),
   },
 }).export(module);
 
@@ -52,10 +54,30 @@ function shouldParse(chunks, expectedLength) {
           callback = this.callback;
       inputStream.pipe(transform);
       transform.pipe(outputStream);
+      transform.on('error', callback);
       transform.on('end', function () { callback(null, output); });
     },
     'yields the expected number of triples': function (triples) {
       triples.should.have.length(expectedLength);
+    },
+  };
+}
+
+function shouldNotParse(chunks, expectedMessage) {
+  return {
+    topic: function (n3streamparserFactory) {
+      var output = [],
+          inputStream = new ArrayReader(chunks),
+          outputStream = new ArrayWriter(output),
+          transform = n3streamparserFactory(),
+          callback = this.callback;
+      inputStream.pipe(transform);
+      transform.pipe(outputStream);
+      transform.on('error', function (error) { callback(null, error); callback = null; });
+      transform.on('end', function () { callback && callback('no error raised'); });
+    },
+    'should produce the right error message': function (error) {
+      error.message.should.equal(expectedMessage);
     },
   };
 }
