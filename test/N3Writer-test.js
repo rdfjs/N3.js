@@ -72,13 +72,16 @@ vows.describe('N3Parser').addBatch({
 function shouldSerialize(tripleArrays, expectedResult) {
   return {
     topic: function (n3writerFactory) {
-      var outputStream = new QuickStream(),
+      var callback = this.callback,
+          outputStream = new QuickStream(),
           writer = n3writerFactory(outputStream);
-      tripleArrays.forEach(function (t) {
-        writer.addTriple({ subject: t[0], predicate: t[1], object: t[2] });
-      });
-      writer.end();
-      return outputStream.result;
+      (function next() {
+        var item = tripleArrays.shift();
+        if (item)
+          writer.addTriple({ subject: item[0], predicate: item[1], object: item[2] }, next);
+        else
+          writer.end(function () { callback(null, outputStream.result); });
+      })();
     },
     'should equal the expected result': function (actual) {
       actual.should.equal(expectedResult);
@@ -91,15 +94,9 @@ function shouldNotSerialize(tripleArrays, expectedMessage) {
     topic: function (n3writerFactory) {
       var outputStream = new QuickStream(),
           writer = n3writerFactory(outputStream);
-      try {
-        tripleArrays.forEach(function (t) {
-          writer.addTriple({ subject: t[0], predicate: t[1], object: t[2] });
-        });
-        writer.end();
-      }
-      catch (error) {
-        return error;
-      }
+      var item = tripleArrays.shift();
+      writer.addTriple({ subject: item[0], predicate: item[1], object: item[2] },
+                       this.callback.bind(this, null));
     },
     'should produce the right error message': function (error) {
       error.message.should.equal(expectedMessage);
@@ -109,7 +106,7 @@ function shouldNotSerialize(tripleArrays, expectedMessage) {
 
 function QuickStream() {
   var stream = {}, buffer = '';
-  stream.write = function (chunk) { buffer += chunk; };
-  stream.end = function () { stream.result = buffer; buffer = null; };
+  stream.write = function (chunk, encoding, callback) { buffer += chunk; callback && callback(); };
+  stream.end = function (callback) { stream.result = buffer; buffer = null; callback(); };
   return stream;
 }

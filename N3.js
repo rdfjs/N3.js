@@ -3,4 +3,5 @@ exports.Lexer  = require('./lib/N3Lexer');
 exports.Parser = require('./lib/N3Parser');
 exports.StreamParser = require('./lib/N3StreamParser');
 exports.Writer = require('./lib/N3Writer');
-exports.Util = require('./lib/N3Util');
+exports.StreamWriter = require('./lib/N3StreamWriter');
+exports.Util   = require('./lib/N3Util');
