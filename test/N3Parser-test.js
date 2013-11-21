@@ -356,6 +356,29 @@ vows.describe('N3Parser').addBatch({
         prefixes.should.have.property('b', 'URIb');
       },
     },
+
+    'should return prefixes at the last triple callback': {
+      topic: function (n3parserFactory) {
+        var callback = this.callback;
+        n3parserFactory().parse('@prefix a: <URIa>. a:a a:b a:c. @prefix b: <URIb>.', tripleCallback);
+
+        function tripleCallback(error, triple, prefixes) {
+          expect(error).not.to.exist;
+          if (triple)
+            expect(prefixes).not.to.exist;
+          else {
+            expect(prefixes).to.exist;
+            callback(null, prefixes);
+          }
+        }
+      },
+
+      'should contain the correct prefixes': function (prefixes) {
+        Object.keys(prefixes).should.have.length(2);
+        prefixes.should.have.property('a', 'URIa');
+        prefixes.should.have.property('b', 'URIb');
+      },
+    },
   },
   'An N3Parser instance with a document URI': {
     topic: function () {
