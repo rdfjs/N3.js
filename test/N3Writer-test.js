@@ -137,6 +137,10 @@ vows.describe('N3Parser').addBatch({
                       '<abc> <def> <ghi>, <pqr>;\n' +
                       '    <bef> <ghi>, <pqr>.\n' +
                       '<stu> <bef> <yz>.\n'),
+
+    'should write rdf:type as "a"':
+      shouldSerialize([['abc', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'def']],
+                      '<abc> a <def>.\n'),
   },
 }).export(module);
 
