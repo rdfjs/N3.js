@@ -91,6 +91,10 @@ vows.describe('N3Parser').addBatch({
       shouldSerialize([['a', 'b', '"c\fde"']],
                       '<a> <b> "c\\fde".\n'),
 
+    'should serialize blank nodes':
+      shouldSerialize([['_:a', 'b', '_:c']],
+                      '_:a <b> _:c.\n'),
+
     'should not serialize a literal in the subject':
       shouldNotSerialize([['"a"', 'b', '"c']],
                           'A literal as subject is not allowed: "a"'),
