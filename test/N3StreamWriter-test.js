@@ -26,7 +26,7 @@ vows.describe('N3StreamWriter').addBatch({
   },
 
   'An N3StreamWriter instance': {
-    topic: function () { return function () { return new N3StreamWriter(); }; },
+    topic: function () { return function (prefixes) { return new N3StreamWriter(prefixes); }; },
 
     'should serialize 0 triples':
       shouldSerialize([], ''),
@@ -56,16 +56,31 @@ vows.describe('N3StreamWriter').addBatch({
     'should not serialize a literal in the predicate':
       shouldNotSerialize([['a', '"b"', '"c']],
                           'A literal as predicate is not allowed: "b"'),
+
+    'should use prefixes when possible':
+      shouldSerialize({ a: 'http://a.org/',
+                        b: 'http://a.org/b#',
+                        c: 'http://a.org/b' },
+                      [['http://a.org/bc', 'http://a.org/b#ef', 'http://a.org/bhi'],
+                       ['http://a.org/bc/de', 'http://a.org/b#e#f', 'http://a.org/b#x/t'],
+                       ['http://a.org/3a', 'http://a.org/b#3a', 'http://a.org/b#a3']],
+                      '@prefix a: <http://a.org/>.\n' +
+                      '@prefix b: <http://a.org/b#>.\n\n' +
+                      'a:bc b:ef a:bhi.\n' +
+                      '<http://a.org/bc/de> <http://a.org/b#e#f> <http://a.org/b#x/t>.\n' +
+                      '<http://a.org/3a> <http://a.org/b#3a> b:a3.\n'),
   },
 }).export(module);
 
 
-function shouldSerialize(tripleArrays, expectedResult) {
+function shouldSerialize(prefixes, tripleArrays, expectedResult) {
+  if (!expectedResult)
+    expectedResult = tripleArrays, tripleArrays = prefixes, prefixes = null;
   return {
     topic: function (n3streamwriterFactory) {
       var callback = this.callback,
           inputStream = new ArrayReader(tripleArrays),
-          transform = n3streamwriterFactory(),
+          transform = n3streamwriterFactory(prefixes),
           outputStream = new StringWriter();
       inputStream.pipe(transform);
       transform.pipe(outputStream);
