@@ -92,7 +92,6 @@ the second is a triple.
 If there are no more triples,
 the callback is invoked one last time with `null` as `triple` value
 and a hash of prefixes as the third argument.
->>>>>>> Stashed changes
 
 ``` js
 var parser = N3.Parser();
@@ -100,13 +99,15 @@ parser.parse('@prefix c: <http://example.org/cartoons#>.\n' +
              'c:Tom a c:Cat.\n' +
              'c:Jerry a c:Mouse;\n' +
              '        c:smarterThan c:Tom.',
-             function (error, triple) {
+             function (error, triple, prefixes) {
                if (triple)
                  console.log(triple.subject, triple.predicate, triple.object, '.');
                else
-                 console.log("# That's all, folks!")
+                 console.log("# That's all, folks!", prefixes)
              });
 ```
+
+Addionally, a second callback `function (prefix, uri)` can be passed to `parse`.
 
 ### From a Turtle stream to triples
 
@@ -140,6 +141,8 @@ function SlowConsumer() {
   return writer;
 }
 ```
+
+A dedicated `prefix` event signals every prefix with `prefix` and `uri` arguments.
 
 ## Storing
 
