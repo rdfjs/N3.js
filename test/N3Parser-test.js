@@ -330,6 +330,32 @@ vows.describe('N3Parser').addBatch({
     'should error when a dot is not there':
       shouldNotParse('<a> <b> <c>',
                      'Expected punctuation to follow "c" at line 1.'),
+
+    'should return prefixes through a callback': {
+      topic: function (n3parserFactory) {
+        var prefixes = {}, callback = this.callback;
+        n3parserFactory().parse('@prefix a: <URIa>. a:a a:b a:c. @prefix b: <URIb>.',
+          tripleCallback, prefixCallback);
+
+        function tripleCallback(error, triple) {
+          expect(error).not.to.exist;
+          if (!triple)
+            callback(null, prefixes);
+        }
+
+        function prefixCallback(prefix, uri) {
+          expect(prefix).to.exist;
+          expect(uri).to.exist;
+          prefixes[prefix] = uri;
+        }
+      },
+
+      'should contain the correct prefixes': function (prefixes) {
+        Object.keys(prefixes).should.have.length(2);
+        prefixes.should.have.property('a', 'URIa');
+        prefixes.should.have.property('b', 'URIb');
+      },
+    },
   },
   'An N3Parser instance with a document URI': {
     topic: function () {
