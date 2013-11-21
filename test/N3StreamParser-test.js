@@ -40,6 +40,10 @@ vows.describe('N3StreamParser').addBatch({
     'parses two triples': shouldParse(['<a> <b>', ' <c>. <d> <e> ', '<f>.'], 2),
 
     "doesn't parse an invalid stream": shouldNotParse(['z.'], 'Syntax error: unexpected "z." on line 1.'),
+
+    'emits "prefix" events':
+      shouldEmitPrefixes(['@prefix a: <URIa>. a:a a:b a:c. @prefix b: <URIb>.'],
+                         { a: 'URIa', b: 'URIb' }),
   },
 }).export(module);
 
@@ -78,6 +82,25 @@ function shouldNotParse(chunks, expectedMessage) {
     },
     'should produce the right error message': function (error) {
       error.message.should.equal(expectedMessage);
+    },
+  };
+}
+
+function shouldEmitPrefixes(chunks, expectedPrefixes) {
+  return {
+    topic: function (n3streamparserFactory) {
+      var prefixes = {},
+          inputStream = new ArrayReader(chunks),
+          transform = n3streamparserFactory(),
+          callback = this.callback;
+      inputStream.pipe(transform);
+      transform.on('data', function () {});
+      transform.on('prefix', function (prefix, uri) { prefixes[prefix] = uri; });
+      transform.on('error', callback);
+      transform.on('end', function () { callback(null, prefixes); });
+    },
+    'should emit the correct prefixes': function (prefixes) {
+      prefixes.should.deep.equal(expectedPrefixes);
     },
   };
 }
