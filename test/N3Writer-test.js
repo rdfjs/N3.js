@@ -24,7 +24,7 @@ vows.describe('N3Parser').addBatch({
   },
 
   'An N3Writer instance': {
-    topic: function () { return function (outputStream) { return new N3Writer(outputStream); }; },
+    topic: function () { return function (stream, prefixes) { return new N3Writer(stream, prefixes); }; },
 
     'should serialize 0 triples':
       shouldSerialize([], ''),
@@ -98,15 +98,38 @@ vows.describe('N3Parser').addBatch({
     'should not serialize a literal in the predicate':
       shouldNotSerialize([['a', '"b"', '"c']],
                           'A literal as predicate is not allowed: "b"'),
+
+    'should serialize valid prefixes':
+      shouldSerialize({ a: 'http://a.org/',
+                        b: 'http://a.org/b#',
+                        c: 'http://a.org/b' },
+                      [],
+                      '@prefix a: <http://a.org/>.\n' +
+                      '@prefix b: <http://a.org/b#>.\n\n'),
+
+    'should use prefixes when possible':
+      shouldSerialize({ a: 'http://a.org/',
+                        b: 'http://a.org/b#',
+                        c: 'http://a.org/b' },
+                      [['http://a.org/bc', 'http://a.org/b#ef', 'http://a.org/bhi'],
+                       ['http://a.org/bc/de', 'http://a.org/b#e#f', 'http://a.org/b#x/t'],
+                       ['http://a.org/3a', 'http://a.org/b#3a', 'http://a.org/b#a3']],
+                      '@prefix a: <http://a.org/>.\n' +
+                      '@prefix b: <http://a.org/b#>.\n\n' +
+                      'a:bc b:ef a:bhi.\n' +
+                      '<http://a.org/bc/de> <http://a.org/b#e#f> <http://a.org/b#x/t>.\n' +
+                      '<http://a.org/3a> <http://a.org/b#3a> b:a3.\n'),
   },
 }).export(module);
 
-function shouldSerialize(tripleArrays, expectedResult) {
+function shouldSerialize(prefixes, tripleArrays, expectedResult) {
+  if (!expectedResult)
+    expectedResult = tripleArrays, tripleArrays = prefixes, prefixes = null;
   return {
     topic: function (n3writerFactory) {
       var callback = this.callback,
           outputStream = new QuickStream(),
-          writer = n3writerFactory(outputStream);
+          writer = n3writerFactory(outputStream, prefixes);
       (function next() {
         var item = tripleArrays.shift();
         if (item)
