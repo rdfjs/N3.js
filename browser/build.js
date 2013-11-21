@@ -24,6 +24,9 @@ var scriptFile = destinationPath + 'n3-browser.js',
     minifiedFile = destinationPath + 'n3-browser.min.js',
     script = fs.createWriteStream(scriptFile, { encoding: 'utf8' });
 
+// Add license information
+script.write('/** @license MIT - node-n3 library (browser version) - ©Ruben Verborgh */\n');
+
 // Start main wrapping function
 script.write('(function (N3) {\n');
 
