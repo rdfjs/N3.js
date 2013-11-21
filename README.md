@@ -1,6 +1,6 @@
 # Lightning fast, asynchronous, streaming Turtle for JavaScript
 
-The _node-n3_ library lets you handle [Turtle](http://www.w3.org/TR/turtle/) and [RDF](http://www.w3.org/TR/rdf-primer/) in JavaScript easily.
+The _node-n3_ library lets you handle [Turtle](http://www.w3.org/TR/turtle/) and [RDF](http://www.w3.org/TR/rdf-primer/) in JavaScript _([Node](http://nodejs.org/) and browser)_ easily.
 It offers:
 
 - [**Turtle parsing**](#parsing) _([fully compliant](https://github.com/RubenVerborgh/node-n3/tree/master/spec) with the [latest candidate recommendation](http://www.w3.org/TR/turtle/))_
@@ -23,8 +23,21 @@ $ npm install n3
 ```
 
 ``` js
-var n3 = require('n3');
+var N3 = require('n3');
 ```
+
+Alternatively, you can build a browser version:
+
+``` bash
+$ make browser
+```
+
+``` html
+<script src="n3-browser.min.js"></script>
+```
+
+The browser version includes all functionality, except Node specifics such as streams.
+
 
 ## Triple representation
 For maximum performance and easy of use,
@@ -72,10 +85,17 @@ The [Utility](#utility) section details entity representation in more depth.
 
 ### From a Turtle string to triples
 
-`n3.Parser` parses strings into triples using a callback.
+`N3.Parser` parses strings into triples using a callback.
+<br>
+The callback's first argument is an error value,
+the second is a triple.
+If there are no more triples,
+the callback is invoked one last time with `null` as `triple` value
+and a hash of prefixes as the third argument.
+>>>>>>> Stashed changes
 
 ``` js
-var parser = new require('n3').Parser();
+var parser = N3.Parser();
 parser.parse('@prefix c: <http://example.org/cartoons#>.\n' +
              'c:Tom a c:Cat.\n' +
              'c:Jerry a c:Mouse;\n' +
@@ -90,23 +110,23 @@ parser.parse('@prefix c: <http://example.org/cartoons#>.\n' +
 
 ### From a Turtle stream to triples
 
-`n3.Parser` can parse streams as they grow, returning triples as soon as they're ready.
+`N3.Parser` can parse streams as they grow, returning triples as soon as they're ready.
 <br>
 This behavior sets _node-n3_ apart from most other Turtle libraries.
 
 ``` js
-var parser = new require('n3').Parser(),
+var parser = N3.Parser(),
     turtleStream = fs.createReadStream('cartoons.ttl');
 parser.parse(turtleStream, console.log);
 ```
 
-In addition, `n3.StreamParser` offers a [Node Stream](http://nodejs.org/api/stream.html) implementation,
+In addition, `N3.StreamParser` offers a [Node Stream](http://nodejs.org/api/stream.html) implementation,
 so you can transform Turtle streams and pipe them to anywhere.
 This solution is ideal if your consumer is slower,
 as it avoids parser backpressure.
 
 ``` js
-var streamParser = new require('n3').StreamParser(),
+var streamParser = N3.StreamParser(),
     turtleStream = fs.createReadStream('cartoons.ttl');
 turtleStream.pipe(streamParser);
 streamParser.pipe(new SlowConsumer());
@@ -127,7 +147,7 @@ In this example below, we create a new store and add the triples `:Pluto a :Dog.
 Then, we find a triple with `:Mickey` as subject.
 
 ``` js
-var store = new require('n3').Store();
+var store = N3.Store();
 store.add(':Pluto', 'a', ':Dog');
 store.add(':Mickey', 'a', ':Mouse');
 
@@ -139,10 +159,10 @@ console.log(mickey.subject, mickey.predicate, mickey.object, '.');
 
 ### From triples to a Turtle stream
 
-`n3.Writer` writes triples to an output stream.
+`N3.Writer` writes triples to an output stream.
 
 ``` js
-var writer = new require('n3').Writer(process.stdout);
+var writer = N3.Writer(process.stdout);
 writer.addTriple({
   subject:   'http://example.org/cartoons#Tom',
   predicate: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
@@ -158,24 +178,23 @@ writer.end();
 
 ### From a triple stream to a Turtle stream
 
-`n3.StreamWriter` is a Turtle writer implementation as a [Node Stream](http://nodejs.org/api/stream.html).
+`N3.StreamWriter` is a Turtle writer implementation as a [Node Stream](http://nodejs.org/api/stream.html).
 
 ``` js
-var n3 = require('n3'),
-    streamParser = new n3.StreamParser(),
+var streamParser = new N3.StreamParser(),
     inputStream = fs.createReadStream('cartoons.ttl'),
-    streamWriter = new n3.StreamWriter();
+    streamWriter = new N3.StreamWriter();
 inputStream.pipe(streamParser);
 streamParser.pipe(streamWriter);
 streamWriter.pipe(process.stdout);
 ```
 
 ## Utility
-`n3.Util` offers helpers for URI and literal representations.
+`N3.Util` offers helpers for URI and literal representations.
 <br>
 As URIs are most common, they are represented as simple strings:
 ``` js
-var N3Util = require('n3').Util;
+var N3Util = N3.Util;
 N3Util.isUri('http://example.org/cartoons#Mickey'); // true
 ```
 Literals are represented as double quoted strings:
@@ -199,7 +218,7 @@ The above string represents the string _This word is "quoted"!_,
 even though the correct Turtle syntax for that is `"This word is \"quoted\"!"`
 _node-n3_ thus always parses literals, but adds quotes to differentiate from URIs:
 ``` js
-new n3.Parser().parse('<a> <b> "This word is \\"quoted\\"!".', console.log);
+new N3.Parser().parse('<a> <b> "This word is \\"quoted\\"!".', console.log);
 // { subject: 'a', predicate: 'b', object: '"This word is "quoted"!"' }
 ```
 
