@@ -1,3 +1,6 @@
+browser:
+	@node browser/build.js
+
 test:
 	@./node_modules/.bin/vows test/*-test.js
 
@@ -18,4 +21,4 @@ jshint:
 docs:
 	@./node_modules/.bin/docco lib/*.js
 
-.PHONY: test spec perf jshint docs
+.PHONY: browser test spec perf jshint docs
