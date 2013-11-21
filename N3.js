@@ -1,7 +1,20 @@
-exports.Store  = require('./lib/N3Store');
-exports.Lexer  = require('./lib/N3Lexer');
-exports.Parser = require('./lib/N3Parser');
-exports.StreamParser = require('./lib/N3StreamParser');
-exports.Writer = require('./lib/N3Writer');
-exports.StreamWriter = require('./lib/N3StreamWriter');
-exports.Util   = require('./lib/N3Util');
+// Expose the following N3 submodules lazily
+[
+  'Lexer',
+  'Parser',
+  'Writer',
+  'Store',
+  'StreamParser',
+  'StreamWriter',
+  'Util',
+]
+.forEach(function (submodule) {
+  Object.defineProperty(exports, submodule, {
+    configurable: true,
+    enumerable: true,
+    get: function () {
+      delete exports[submodule];
+      return exports[submodule] = require('./lib/N3' + submodule);
+    },
+  });
+});
