@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 var fs = require('fs'),
-    path = require('path');
+    path = require('path'),
+    spawn = require('child_process').spawn;
 
 // Modules to be included in the browser version
 var submodules = [
@@ -14,11 +15,13 @@ var submodules = [
 
 // Set up paths
 var sourcePath = path.join(__dirname, '../lib/'),
-    destinationPath = path.join(__dirname, '../build/');
+    destinationPath = path.join(__dirname, '../build/'),
+    uglifyjsPath = path.join(__dirname, '../node_modules/uglify-js/bin/uglifyjs');
 if (!fs.existsSync(destinationPath))
   fs.mkdirSync(destinationPath);
 
 var scriptFile = destinationPath + 'n3-browser.js',
+    minifiedFile = destinationPath + 'n3-browser.min.js',
     script = fs.createWriteStream(scriptFile, { encoding: 'utf8' });
 
 // Start main wrapping function
@@ -31,7 +34,7 @@ script.write('var process = { nextTick: function(f) { setTimeout(f, 0); } };\n')
 submodules.forEach(function (name) {
   var submodule = fs.readFileSync(sourcePath + 'N3' + name + '.js', { encoding: 'utf8' });
   // Remove imports
-  submodule = submodule.replace(/(\w+)\s*=\s*require\([^)]+\)/g, '$1unused');
+  submodule = submodule.replace(/(\w+)\s*=\s*require\([^)]+\)/g, '$1_Unused');
   // Replace exports by assignments on the N3 object
   submodule = submodule.replace(/module.exports/g, '\nN3.' + name);
   script.write(submodule);
@@ -39,5 +42,13 @@ submodules.forEach(function (name) {
 
 // End and execute main wrapping function
 script.write('})(typeof exports !== "undefined" ? exports : this.N3 = {});\n');
-script.end();
-console.log('browser version written to', scriptFile);
+script.end(function () {
+  console.log('browser version written to', scriptFile);
+  // Write minified file
+  var minifier = spawn('node',
+                       [ uglifyjsPath, scriptFile, '--comments', '-m', '-c', '-o', minifiedFile ],
+                       { stdio: 'inherit' });
+  minifier.on('exit', function () {
+    console.log('minified version written to', minifiedFile);
+  });
+});

@@ -17,6 +17,7 @@
     "docco": "~0.3.0",
     "jshint": "~2.1.10",
     "request": "~2.22.0",
+    "uglify-js": "~2.4.3",
     "vows": ">=0.7.0"
   },
   "scripts": {
