@@ -165,7 +165,7 @@ console.log(mickey.subject, mickey.predicate, mickey.object, '.');
 `N3.Writer` writes triples to an output stream.
 
 ``` js
-var writer = N3.Writer(process.stdout);
+var writer = N3.Writer(process.stdout, { 'c': 'http://example.org/cartoons#' });
 writer.addTriple({
   subject:   'http://example.org/cartoons#Tom',
   predicate: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
@@ -186,7 +186,7 @@ writer.end();
 ``` js
 var streamParser = new N3.StreamParser(),
     inputStream = fs.createReadStream('cartoons.ttl'),
-    streamWriter = new N3.StreamWriter();
+    streamWriter = new N3.StreamWriter({ 'c': 'http://example.org/cartoons#' });
 inputStream.pipe(streamParser);
 streamParser.pipe(streamWriter);
 streamWriter.pipe(process.stdout);
