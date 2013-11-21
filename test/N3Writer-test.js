@@ -119,6 +119,24 @@ vows.describe('N3Parser').addBatch({
                       'a:bc b:ef a:bhi.\n' +
                       '<http://a.org/bc/de> <http://a.org/b#e#f> <http://a.org/b#x/t>.\n' +
                       '<http://a.org/3a> <http://a.org/b#3a> b:a3.\n'),
+
+    'should not repeat the same subjects':
+      shouldSerialize([['abc', 'def', 'ghi'],
+                       ['abc', 'mno', 'pqr'],
+                       ['stu', 'vwx', 'yz']],
+                      '<abc> <def> <ghi>;\n' +
+                      '    <mno> <pqr>.\n' +
+                      '<stu> <vwx> <yz>.\n'),
+
+    'should not repeat the same predicates':
+      shouldSerialize([['abc', 'def', 'ghi'],
+                       ['abc', 'def', 'pqr'],
+                       ['abc', 'bef', 'ghi'],
+                       ['abc', 'bef', 'pqr'],
+                       ['stu', 'bef', 'yz']],
+                      '<abc> <def> <ghi>, <pqr>;\n' +
+                      '    <bef> <ghi>, <pqr>.\n' +
+                      '<stu> <bef> <yz>.\n'),
   },
 }).export(module);
 
