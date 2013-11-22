@@ -145,6 +145,19 @@ vows.describe('N3Parser').addBatch({
     'should write rdf:type as "a"':
       shouldSerialize([['abc', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'def']],
                       '<abc> a <def>.\n'),
+
+    'calls the done callback when ending the outputstream errors': {
+      topic: function (n3writerFactory) {
+        var writer = n3writerFactory({
+          end: function () { throw 'error'; },
+        });
+        writer.end(this.callback.bind(null, null, 'called'));
+      },
+
+      'the callback should have been called': function (result) {
+        result.should.equal('called');
+      },
+    },
   },
 }).export(module);
 
