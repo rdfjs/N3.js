@@ -14,7 +14,7 @@
     "chai": "~1.4.2",
     "chai-things": "~0.1.1",
     "colors": "~0.6.0",
-    "docco": "~0.3.0",
+    "docco": "~0.6.2",
     "jshint": "~2.1.10",
     "request": "~2.22.0",
     "uglify-js": "~2.4.3",
