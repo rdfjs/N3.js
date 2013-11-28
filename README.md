@@ -29,6 +29,8 @@ var N3 = require('n3');
 Alternatively, you can build a browser version:
 
 ``` bash
+$ cd n3
+$ npm install
 $ make browser
 ```
 
