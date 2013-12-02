@@ -375,7 +375,7 @@ vows.describe('N3Lexer').addBatch({
     'should not tokenize an invalid document':
       shouldNotTokenize(' \n @!', 'Syntax error: unexpected "@!" on line 2.')
   }
-}).export(module);
+}).export(module, { reporter: require('vows/lib/vows/reporters/tap') });
 
 function shouldTokenize(input, expected) {
   var result = [],

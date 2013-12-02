@@ -159,7 +159,7 @@ vows.describe('N3Parser').addBatch({
       },
     },
   },
-}).export(module);
+}).export(module, { reporter: require('vows/lib/vows/reporters/tap') });
 
 function shouldSerialize(prefixes, tripleArrays, expectedResult) {
   if (!expectedResult)

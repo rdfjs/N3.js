@@ -220,7 +220,7 @@ vows.describe('N3Store').addBatch({
         (n3Store.find(null, null, null, 'null'));
     },
   },
-}).export(module);
+}).export(module, { reporter: require('vows/lib/vows/reporters/tap') });
 
 function shouldBeEmpty() {
   return function (result) {

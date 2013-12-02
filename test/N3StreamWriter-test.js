@@ -70,7 +70,7 @@ vows.describe('N3StreamWriter').addBatch({
                       '<http://a.org/bc/de> <http://a.org/b#e#f> <http://a.org/b#x/t>.\n' +
                       '<http://a.org/3a> <http://a.org/b#3a> b:a3.\n'),
   },
-}).export(module);
+}).export(module, { reporter: require('vows/lib/vows/reporters/tap') });
 
 
 function shouldSerialize(prefixes, tripleArrays, expectedResult) {

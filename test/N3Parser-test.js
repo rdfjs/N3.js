@@ -409,7 +409,7 @@ vows.describe('N3Parser').addBatch({
                   ['http://ex.org/x/d/h', 'http://ex.org/x/d/i', 'http://ex.org/x/d/j'],
                   ['http://ex.org/e/k', 'http://ex.org/e/l', 'http://ex.org/e/m']),
   }
-}).export(module);
+}).export(module, { reporter: require('vows/lib/vows/reporters/tap') });
 
 function shouldParse(input, expected) {
   var result = [],

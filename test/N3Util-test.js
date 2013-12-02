@@ -280,4 +280,4 @@ vows.describe('N3Util').addBatch({
       },
     },
   },
-}).export(module);
+}).export(module, { reporter: require('vows/lib/vows/reporters/tap') });

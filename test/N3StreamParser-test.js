@@ -45,7 +45,7 @@ vows.describe('N3StreamParser').addBatch({
       shouldEmitPrefixes(['@prefix a: <URIa>. a:a a:b a:c. @prefix b: <URIb>.'],
                          { a: 'URIa', b: 'URIb' }),
   },
-}).export(module);
+}).export(module, { reporter: require('vows/lib/vows/reporters/tap') });
 
 
 function shouldParse(chunks, expectedLength) {
