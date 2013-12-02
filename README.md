@@ -113,6 +113,24 @@ parser.parse('@prefix c: <http://example.org/cartoons#>.\n' +
 
 Addionally, a second callback `function (prefix, uri)` can be passed to `parse`.
 
+### From Turtle fragments to triples
+
+`N3.Parser` can also parse triples from a Turtle document that arrives in fragments.
+
+``` js
+var parser = N3.Parser(), triples = [];
+parser.parse(function (error, triple, prefixes) { triple && triples.push(triple); });
+
+parser.addChunk('@prefix c: <http://example.org/cartoons#>.\n');
+parser.addChunk('c:Tom a ');
+parser.addChunk('c:Cat. c:Jerry a');
+console.log(triples); // First triple
+
+parser.addChunk(' c:Mouse.');
+parser.end();
+console.log(triples); // Both triples
+```
+
 ### From a Turtle stream to triples
 
 `N3.Parser` can parse streams as they grow, returning triples as soon as they're ready.
