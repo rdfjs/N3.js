@@ -183,6 +183,17 @@ vows.describe('N3Parser').addBatch({
         output.should.equal('@prefix a: <b#>.\n\na:a a:b a:c.\n');
       },
     },
+
+    'accepts triples with separated components': {
+      topic: function (n3writerFactory) {
+        var writer = n3writerFactory({ a: 'b#' }), callback = this.callback;
+        writer.addTriple('b#a', 'b#b', 'b#c', function () { callback(null, writer._output); });
+      },
+
+      'sends the correct output': function (output) {
+        output.should.equal('@prefix a: <b#>.\n\na:a a:b a:c');
+      },
+    },
   },
 }).export(module, { reporter: require('vows/lib/vows/reporters/tap') });
 
