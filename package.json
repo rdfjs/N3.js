@@ -29,5 +29,15 @@
   },
   "bugs": {
     "url": "https://github.com/RubenVerborgh/node-n3/issues"
+  },
+  "testling": {
+    "files": "test/*.js",
+    "browsers": {
+      "ie":      [ 8, 9, 10 ],
+      "firefox": [ 25, "nightly" ],
+      "chrome":  [ 31, "canary" ],
+      "safari":  [ 5.1, 6.0 ],
+      "opera":   [ 17 ]
+    }
   }
 }
