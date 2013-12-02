@@ -149,6 +149,7 @@ vows.describe('N3Parser').addBatch({
     'calls the done callback when ending the outputstream errors': {
       topic: function (n3writerFactory) {
         var writer = n3writerFactory({
+          write: function () {},
           end: function () { throw 'error'; },
         });
         writer.end(this.callback.bind(null, null, 'called'));
@@ -156,6 +157,30 @@ vows.describe('N3Parser').addBatch({
 
       'the callback should have been called': function (result) {
         result.should.equal('called');
+      },
+    },
+
+    'when no stream argument is given': {
+      topic: function (n3writerFactory) {
+        var writer = n3writerFactory();
+        writer.addTriple({ subject: 'a', predicate: 'b', object: 'c' });
+        writer.end(this.callback);
+      },
+
+      'sends output through end': function (output) {
+        output.should.equal('<a> <b> <c>.\n');
+      },
+    },
+
+    'when no stream argument is given, but prefixes are present': {
+      topic: function (n3writerFactory) {
+        var writer = n3writerFactory({ a: 'b#' });
+        writer.addTriple({ subject: 'b#a', predicate: 'b#b', object: 'b#c' });
+        writer.end(this.callback);
+      },
+
+      'respects the prefixes argument': function (output) {
+        output.should.equal('@prefix a: <b#>.\n\na:a a:b a:c.\n');
       },
     },
   },
