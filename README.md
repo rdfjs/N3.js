@@ -26,7 +26,9 @@ $ npm install n3
 var N3 = require('n3');
 ```
 
-Alternatively, you can build a browser version:
+It is also fully compatible with [browserify](http://browserify.org/).
+<br>
+Alternatively, you can build a browser-specific version:
 
 ``` bash
 $ cd n3
@@ -38,7 +40,7 @@ $ make browser
 <script src="n3-browser.min.js"></script>
 ```
 
-The browser version includes all functionality, except Node specifics such as streams.
+This browser version includes all functionality, except Node specifics such as streams.
 
 
 ## Triple representation
