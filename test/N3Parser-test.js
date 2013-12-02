@@ -379,6 +379,21 @@ vows.describe('N3Parser').addBatch({
         prefixes.should.have.property('b', 'URIb');
       },
     },
+
+    'when no input argument is given and chunks are passed to addChunk': {
+      topic: function () {
+        var triples = [], parser = new N3Parser();
+        parser.parse(function (error, triple) { triple && triples.push(triple); });
+        parser.addChunk('<a> <b> <c>.');
+        parser.addChunk('<a> <b> <d>.');
+        parser.end();
+        return triples;
+      },
+
+      'parses all chunks': function (triples) {
+        triples.should.have.length(2);
+      }
+    },
   },
   'An N3Parser instance with a document URI': {
     topic: function () {

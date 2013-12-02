@@ -373,7 +373,23 @@ vows.describe('N3Lexer').addBatch({
                      { type: 'eof', line: 1 }),
 
     'should not tokenize an invalid document':
-      shouldNotTokenize(' \n @!', 'Syntax error: unexpected "@!" on line 2.')
+      shouldNotTokenize(' \n @!', 'Syntax error: unexpected "@!" on line 2.'),
+
+    'when no input argument is given and chunks are passed to addChunk': {
+      topic: function () {
+        var tokens = [], lexer = new N3Lexer();
+        lexer.tokenize(function (error, token) { tokens.push(token); });
+        lexer.addChunk('<a> ');
+        lexer.addChunk('<b> ');
+        lexer.addChunk('<c>.');
+        lexer.end();
+        return tokens;
+      },
+
+      'parses all chunks': function (tokens) {
+        tokens.should.have.length(5);
+      }
+    },
   }
 }).export(module, { reporter: require('vows/lib/vows/reporters/tap') });
 
