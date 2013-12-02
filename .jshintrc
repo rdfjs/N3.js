@@ -6,7 +6,9 @@
   "boss": true,     // Allow assignments where expressions are allowed.
   "trailing": true, // Do not leave trailing whitespace.
   "strict": false,  // Do not enforce strict mode.
+  "undef": true,    // Don't use undefined variables
   "-W100": true,    // Allow special characters (required for regular expressions in lexer)
+  "-W086": true,    // Allow fall-through in switch statement
   "white": true,    // Enable strict whitespace checking.
   "indent": 2       // The code uses an indentation width of 2 spaces.
 }
