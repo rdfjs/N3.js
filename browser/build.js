@@ -30,9 +30,6 @@ script.write('/** @license MIT - N3.js library (browser version) - ©Ruben Verbo
 // Start main wrapping function
 script.write('(function (N3) {\n');
 
-// Shim for setImmediate
-script.write('function setImmediate(f) { setTimeout(f, 0); }\n');
-
 // Add modules
 submodules.forEach(function (name) {
   var submodule = fs.readFileSync(sourcePath + 'N3' + name + '.js', { encoding: 'utf8' });
