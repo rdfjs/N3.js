@@ -87,21 +87,13 @@ function shouldEmitPrefixes(chunks, expectedPrefixes) {
 }
 
 function ArrayReader(items) {
-  var reader = new Readable({ objectMode: true });
-  reader._read = function () {
-    if (items.length)
-      this.push(new Buffer(items.shift(), 'utf8'));
-    else
-      this.push(null);
-  };
+  var reader = new Readable();
+  reader._read = function () { this.push(items.shift()); };
   return reader;
 }
 
 function ArrayWriter(items) {
   var writer = new Writable({ objectMode: true });
-  writer._write = function (chunk, encoding, done) {
-    items.push(chunk);
-    done();
-  };
+  writer._write = function (chunk, encoding, done) { items.push(chunk); done(); };
   return writer;
 }

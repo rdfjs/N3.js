@@ -100,23 +100,14 @@ function shouldNotSerialize(tripleArrays, expectedMessage) {
 
 function ArrayReader(items) {
   var reader = new Readable({ objectMode: true });
-  reader._read = function () {
-    var item = items.shift();
-    if (item)
-      this.push({ subject: item[0], predicate: item[1], object: item[2] });
-    else
-      this.push(null);
-  };
+  items = items.map(function (i) { return { subject: i[0], predicate: i[1], object: i[2] }; });
+  reader._read = function () { this.push(items.shift()); };
   return reader;
 }
 
 function StringWriter() {
   var writer = new Writable({ encoding: 'utf-8', decodeStrings: false });
   writer.result = '';
-  writer._write = function (chunk, encoding, done) {
-    encoding.should.equal('utf8');
-    this.result += chunk;
-    done();
-  };
+  writer._write = function (chunk, encoding, done) { this.result += chunk; done(); };
   return writer;
 }
