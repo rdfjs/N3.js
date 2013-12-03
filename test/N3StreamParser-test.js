@@ -2,12 +2,8 @@ var N3StreamParser = require('../N3').StreamParser;
 var chai = require('chai'),
     expect = chai.expect,
     Readable = require('stream').Readable,
-    Writable = require('stream').Writable,
-    util = require('util');
+    Writable = require('stream').Writable;
 chai.should();
-
-util.inherits(ArrayReader, Readable);
-util.inherits(ArrayWriter, Writable);
 
 describe('N3StreamParser', function () {
   describe('The N3StreamParser module', function () {
@@ -91,19 +87,21 @@ function shouldEmitPrefixes(chunks, expectedPrefixes) {
 }
 
 function ArrayReader(items) {
-  Readable.call(this);
-  this._read = function () {
+  var reader = new Readable({ objectMode: true });
+  reader._read = function () {
     if (items.length)
       this.push(new Buffer(items.shift(), 'utf8'));
     else
       this.push(null);
   };
+  return reader;
 }
 
 function ArrayWriter(items) {
-  Writable.call(this, { objectMode: true });
-  this._write = function (chunk, encoding, done) {
+  var writer = new Writable({ objectMode: true });
+  writer._write = function (chunk, encoding, done) {
     items.push(chunk);
     done();
   };
+  return writer;
 }

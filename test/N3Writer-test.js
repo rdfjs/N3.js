@@ -1,7 +1,6 @@
 var N3Writer = require('../N3').Writer;
 var chai = require('chai'),
-    expect = chai.expect,
-    util = require('util');
+    expect = chai.expect;
 chai.should();
 
 describe('N3Parser', function () {

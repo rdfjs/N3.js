@@ -1,6 +1,5 @@
 var N3Store = require('../N3').Store;
-var chai = require('chai'),
-    util = require('util');
+var chai = require('chai');
 chai.should();
 chai.use(require('chai-things'));
 

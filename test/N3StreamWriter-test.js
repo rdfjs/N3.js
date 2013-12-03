@@ -2,8 +2,7 @@ var N3StreamWriter = require('../N3').StreamWriter;
 var chai = require('chai'),
     expect = chai.expect,
     Readable = require('stream').Readable,
-    Writable = require('stream').Writable,
-    util = require('util');
+    Writable = require('stream').Writable;
 chai.should();
 chai.use(require('chai-things'));
 

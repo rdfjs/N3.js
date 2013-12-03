@@ -1,7 +1,6 @@
 var N3Parser = require('../N3').Parser;
 var chai = require('chai'),
-    expect = chai.expect,
-    util = require('util');
+    expect = chai.expect;
 chai.should();
 chai.use(require('chai-things'));
 
