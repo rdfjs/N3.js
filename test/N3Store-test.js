@@ -162,6 +162,117 @@ describe('N3Store', function () {
     });
   });
 
+  describe('An N3Store initialized with prefixes', function () {
+    var n3Store = new N3Store([
+      { subject: 'http://foo.org/#s1', predicate: 'http://bar.org/p1', object: 'http://foo.org/#o1' },
+      { subject: 'http://foo.org/#s1', predicate: 'http://bar.org/p2', object: 'http://foo.org/#o1' },
+      { subject: 'http://foo.org/#s2', predicate: 'http://bar.org/p1', object: 'http://foo.org/#o2' },
+    ],
+    {
+      'a': 'http://foo.org/#',
+      'b': 'http://bar.org/',
+      'ctx': 'n3/contexts#',
+    });
+
+    describe('should allow to query subjects with prefixes', function () {
+      it('should return all triples with that subject',
+        shouldIncludeAll(n3Store.find('a:s1', null, null),
+                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
+                         ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
+    });
+
+    describe('should allow to query predicates with prefixes', function () {
+      it('should return all triples with that predicate',
+        shouldIncludeAll(n3Store.find(null, 'b:p1', null),
+                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
+                         ['http://foo.org/#s2', 'http://bar.org/p1', 'http://foo.org/#o2']));
+    });
+
+    describe('should allow to query objects with prefixes', function () {
+      it('should return all triples with that object',
+        shouldIncludeAll(n3Store.find(null, null, 'a:o1'),
+                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
+                         ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
+    });
+
+    describe('should allow to query contexts with prefixes', function () {
+      it('should return all triples with that context',
+        shouldIncludeAll(n3Store.find(null, null, null, 'ctx:default'),
+                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
+                         ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1'],
+                         ['http://foo.org/#s2', 'http://bar.org/p1', 'http://foo.org/#o2']));
+    });
+  });
+
+  describe('An N3Store with prefixes added later on', function () {
+    var n3Store = new N3Store([
+      { subject: 'http://foo.org/#s1', predicate: 'http://bar.org/p1', object: 'http://foo.org/#o1' },
+      { subject: 'http://foo.org/#s1', predicate: 'http://bar.org/p2', object: 'http://foo.org/#o1' },
+      { subject: 'http://foo.org/#s2', predicate: 'http://bar.org/p1', object: 'http://foo.org/#o2' },
+    ]);
+
+    n3Store.addPrefix('a', 'http://foo.org/#');
+    n3Store.addPrefixes({ 'b': 'http://bar.org/', 'ctx': 'n3/contexts#'});
+
+    describe('should allow to query subjects with prefixes', function () {
+      it('should return all triples with that subject',
+        shouldIncludeAll(n3Store.find('a:s1', null, null),
+                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
+                         ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
+    });
+
+    describe('should allow to query predicates with prefixes', function () {
+      it('should return all triples with that predicate',
+        shouldIncludeAll(n3Store.find(null, 'b:p1', null),
+                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
+                         ['http://foo.org/#s2', 'http://bar.org/p1', 'http://foo.org/#o2']));
+    });
+
+    describe('should allow to query objects with prefixes', function () {
+      it('should return all triples with that object',
+        shouldIncludeAll(n3Store.find(null, null, 'a:o1'),
+                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
+                         ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
+    });
+
+    describe('should allow to query contexts with prefixes', function () {
+      it('should return all triples with that context',
+        shouldIncludeAll(n3Store.find(null, null, null, 'ctx:default'),
+                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
+                         ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1'],
+                         ['http://foo.org/#s2', 'http://bar.org/p1', 'http://foo.org/#o2']));
+    });
+  });
+
+  describe('An N3Store with the http prefix', function () {
+    var n3Store = new N3Store([
+      { subject: 'http://foo.org/#s1', predicate: 'http://bar.org/p1', object: 'http://foo.org/#o1' },
+      { subject: 'http://foo.org/#s1', predicate: 'http://bar.org/p2', object: 'http://foo.org/#o1' },
+      { subject: 'http://foo.org/#s2', predicate: 'http://bar.org/p1', object: 'http://foo.org/#o2' },
+    ],
+    {
+      'http': 'http://www.w3.org/2006/http#'
+    });
+
+    describe('should allow to query subjects without prefixes', function () {
+      it('should return all triples with that subject',
+        shouldIncludeAll(n3Store.find('http://foo.org/#s1', null, null),
+                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
+                         ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
+    });
+  });
+
+  describe('An N3Store created without triples but with prefixes', function () {
+    var n3Store = new N3Store({ 'http': 'http://www.w3.org/2006/http#' });
+    n3Store.addTriple('a', 'http://www.w3.org/2006/http#b', 'c');
+
+    describe('should allow to query predicates with prefixes', function () {
+      it('should return all triples with that predicate',
+        shouldIncludeAll(n3Store.find(null, 'http:b', null),
+                         ['a', 'http://www.w3.org/2006/http#b', 'c']));
+    });
+  });
+
   describe('An N3Store', function () {
     var n3Store = new N3Store();
 
