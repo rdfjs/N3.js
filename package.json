@@ -34,11 +34,12 @@
     "files": "test/*.js",
     "harness": "mocha",
     "browsers": {
-      "ie":      [ 8, 9, 10 ],
-      "firefox": [ 25, "nightly" ],
-      "chrome":  [ 31, "canary" ],
-      "safari":  [ 5.1, 6.0 ],
-      "opera":   [ 17 ]
+      "ie":      [ 9, 10 ],
+      "firefox": [ 24, 25 ],
+      "chrome":  [ 30, 31, "canary" ],
+      "safari":  [ 6.0 ],
+      "iphone":  [ 6 ],
+      "ipad":    [ 6 ]
     }
   }
 }
