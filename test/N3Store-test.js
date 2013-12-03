@@ -1,5 +1,6 @@
 var N3Store = require('../N3').Store;
-var chai = require('chai');
+var chai = require('chai'),
+    expect = chai.expect;
 chai.should();
 chai.use(require('chai-things'));
 
@@ -22,7 +23,7 @@ describe('N3Store', function () {
     var n3Store = new N3Store();
 
     it('should have size 0', function () {
-      n3Store.size.should.eql(0);
+      expect(n3Store.size).to.eql(0); // special test format for IE9
     });
 
     it('should be empty', function () {
