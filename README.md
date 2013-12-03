@@ -278,6 +278,8 @@ The N3.js library is copyrighted by [Ruben Verborgh](http://ruben.verborgh.org/)
 and released under the [MIT License](https://github.com/RubenVerborgh/N3.js/blob/master/LICENSE.md).
 
 [![Build Status](https://travis-ci.org/RubenVerborgh/N3.js.png?branch=master)](https://travis-ci.org/RubenVerborgh/N3.js)
+<br>
+[![Browser Build Status](https://ci.testling.com/RubenVerborgh/N3.js.png)](https://ci.testling.com/RubenVerborgh/N3.js)
 
 Contributions are welcome, and bug reports or pull requests are always helpful.
 If you plan to implement larger features, it's best to contact me first.
