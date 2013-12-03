@@ -25,10 +25,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/RubenVerborgh/node-n3.git"
+    "url": "https://github.com/RubenVerborgh/N3.js.git"
   },
   "bugs": {
-    "url": "https://github.com/RubenVerborgh/node-n3/issues"
+    "url": "https://github.com/RubenVerborgh/N3.js/issues"
   },
   "testling": {
     "files": "test/*.js",

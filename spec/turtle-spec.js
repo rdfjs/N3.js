@@ -316,8 +316,8 @@ function escapeString(value) {
 
 **************************************************/
 
-var homepage = 'https://github.com/RubenVerborgh/node-n3',
-    application = homepage + '#node-n3',
+var homepage = 'https://github.com/RubenVerborgh/N3.js',
+    application = homepage + '#n3js',
     developer = 'http://ruben.verborgh.org/#me';
 
 function generateEarlReport(tests, callback) {
@@ -337,7 +337,7 @@ function generateEarlReport(tests, callback) {
     writeln();
 
     writeln('<', application, '> a earl:Software, earl:TestSubject, doap:Project;');
-    writeln('  doap:name "node-n3";');
+    writeln('  doap:name "N3.js";');
     writeln('  doap:homepage <', homepage, '>;');
     writeln('  doap:license <http://opensource.org/licenses/MIT>;');
     writeln('  doap:programming-language "JavaScript";');
@@ -350,8 +350,8 @@ function generateEarlReport(tests, callback) {
     writeln('  doap:maintainer <', developer, '>;');
     writeln('  doap:documenter <', developer, '>;');
     writeln('  doap:maker <', developer, '>;');
-    writeln('  dc:title "node-n3";');
-    writeln('  dc:description "node-n3 is an asynchronous, streaming Turtle parser for JavaScript."@en;');
+    writeln('  dc:title "N3.js";');
+    writeln('  dc:description "N3.js is an asynchronous, streaming Turtle parser for JavaScript."@en;');
     writeln('  dc:creator <', developer, '>.');
     writeln();
 

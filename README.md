@@ -1,14 +1,14 @@
 # Lightning fast, asynchronous, streaming Turtle for JavaScript
 
-The _node-n3_ library lets you handle [Turtle](http://www.w3.org/TR/turtle/) and [RDF](http://www.w3.org/TR/rdf-primer/) in JavaScript _([Node](http://nodejs.org/) and browser)_ easily.
+The N3.js library lets you handle [Turtle](http://www.w3.org/TR/turtle/) and [RDF](http://www.w3.org/TR/rdf-primer/) in JavaScript _([Node](http://nodejs.org/) and browser)_ easily.
 It offers:
 
-- [**Turtle parsing**](#parsing) _([fully compliant](https://github.com/RubenVerborgh/node-n3/tree/master/spec) with the [latest candidate recommendation](http://www.w3.org/TR/turtle/))_
+- [**Turtle parsing**](#parsing) _([fully compliant](https://github.com/RubenVerborgh/N3.js/tree/master/spec) with the [latest candidate recommendation](http://www.w3.org/TR/turtle/))_
 - [**in-memory storage and manipulation**](#storing)
 - [**Turtle writing**](#writing)
 
 It has the following characteristics:
-- extreme performance – by far the [fastest parser in JavaScript](https://github.com/RubenVerborgh/node-n3/tree/master/perf)
+- extreme performance – by far the [fastest parser in JavaScript](https://github.com/RubenVerborgh/N3.js/tree/master/perf)
 - asynchronous – triples arrive as soon as possible
 - streaming – streams are parsed as data comes in, so you can easily parse files that don't fit into memory
 
@@ -16,7 +16,7 @@ At a later stage, this library will support [Notation3 (N3)](http://www.w3.org/T
 a Turtle superset.
 
 ## Installation
-_node-n3_ comes as an [npm package](https://npmjs.org/package/n3).
+N3.js comes as an [npm package](https://npmjs.org/package/n3).
 
 ``` bash
 $ npm install n3
@@ -135,7 +135,7 @@ console.log(triples); // Both triples
 
 `N3.Parser` can parse streams as they grow, returning triples as soon as they're ready.
 <br>
-This behavior sets _node-n3_ apart from most other Turtle libraries.
+This behavior sets N3.js apart from most other Turtle libraries.
 
 ``` js
 var parser = N3.Parser(),
@@ -256,7 +256,7 @@ N3Util.isLiteral('"This word is "quoted"!"'); // true
 ```
 The above string represents the string _This word is "quoted"!_,
 even though the correct Turtle syntax for that is `"This word is \"quoted\"!"`
-_node-n3_ thus always parses literals, but adds quotes to differentiate from URIs:
+N3.js thus always parses literals, but adds quotes to differentiate from URIs:
 ``` js
 new N3.Parser().parse('<a> <b> "This word is \\"quoted\\"!".', console.log);
 // { subject: 'a', predicate: 'b', object: '"This word is "quoted"!"' }
@@ -277,11 +277,10 @@ require('n3').Util(String, true);
 ```
 
 # License, status and contributions
-The _node-n3_ library is copyrighted by [Ruben Verborgh](http://ruben.verborgh.org/)
-and released under the [MIT License](https://github.com/RubenVerborgh/node-n3/blob/master/LICENSE.md).
+The N3.js library is copyrighted by [Ruben Verborgh](http://ruben.verborgh.org/)
+and released under the [MIT License](https://github.com/RubenVerborgh/N3.js/blob/master/LICENSE.md).
 
-Current versions are considered beta, so the API might change from release to release.
-As such, it is best to depend on a specific version of the package.
+[![Build Status](https://travis-ci.org/RubenVerborgh/N3.js.png?branch=master)](https://travis-ci.org/RubenVerborgh/N3.js)
 
 Contributions are welcome, and bug reports or pull requests are always helpful.
 If you plan to implement larger features, it's best to contact me first.
