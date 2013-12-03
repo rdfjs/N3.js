@@ -38,7 +38,7 @@ describe('N3Store', function () {
       n3Store.createBlankNode().should.eql('_:b0');
       n3Store.createBlankNode().should.eql('_:b1');
 
-      n3Store.add('_:b0', '_:b1', '_:b2');
+      n3Store.addTriple('_:b0', '_:b1', '_:b2');
       n3Store.createBlankNode().should.eql('_:b3');
     });
 
@@ -63,13 +63,13 @@ describe('N3Store', function () {
 
   describe('An N3Store with 5 elements', function () {
     var n3Store = new N3Store();
-    n3Store.add('s1', 'p1', 'o1');
+    n3Store.addTriple('s1', 'p1', 'o1');
     n3Store.addTriple({ subject: 's1', predicate: 'p1', object: 'o2'});
     n3Store.addTriples([
       { subject: 's1', predicate: 'p2', object: 'o2'},
       { subject: 's2', predicate: 'p1', object: 'o1'},
     ]);
-    n3Store.add('s1', 'p2', 'o3', 'c4');
+    n3Store.addTriple('s1', 'p2', 'o3', 'c4');
 
     it('should have size 5', function () {
       n3Store.size.should.eql(5);
@@ -168,13 +168,13 @@ describe('N3Store', function () {
     // Test inspired by http://www.devthought.com/2012/01/18/an-object-is-not-a-hash/.
     // The value `__proto__` is not supported however – fixing it introduces too much overhead.
     it('should be able to contain entities with JavaScript object property names', function () {
-      n3Store.add('toString', 'valueOf', 'toLocaleString', 'hasOwnProperty');
+      n3Store.addTriple('toString', 'valueOf', 'toLocaleString', 'hasOwnProperty');
       shouldIncludeAll(n3Store.find(null, null, null, 'hasOwnProperty'),
                        ['toString', 'valueOf', 'toLocaleString', 'hasOwnProperty'])();
     });
 
     it('should be able to contain entities named "null"', function () {
-      n3Store.add('null', 'null', 'null', 'null');
+      n3Store.addTriple('null', 'null', 'null', 'null');
       shouldIncludeAll(n3Store.find(null, null, null, 'null'), ['null', 'null', 'null', 'null'])();
     });
   });

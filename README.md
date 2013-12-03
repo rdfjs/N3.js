@@ -173,8 +173,8 @@ Then, we find a triple with `:Mickey` as subject.
 
 ``` js
 var store = N3.Store();
-store.add(':Pluto', 'a', ':Dog');
-store.add(':Mickey', 'a', ':Mouse');
+store.addTriple(':Pluto', 'a', ':Dog');
+store.addTriple(':Mickey', 'a', ':Mouse');
 
 var mickey = store.find(':Mickey', null, null)[0];
 console.log(mickey.subject, mickey.predicate, mickey.object, '.');
