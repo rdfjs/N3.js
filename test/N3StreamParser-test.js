@@ -1,107 +1,92 @@
 var N3StreamParser = require('../N3').StreamParser;
-var vows = require('vows'),
-    chai = require('chai'),
+var chai = require('chai'),
     expect = chai.expect,
     Readable = require('stream').Readable,
     Writable = require('stream').Writable,
     util = require('util');
 chai.should();
-chai.use(require('chai-things'));
 
 util.inherits(ArrayReader, Readable);
 util.inherits(ArrayWriter, Writable);
 
-vows.describe('N3StreamParser').addBatch({
-  'The N3StreamParser module': {
-    topic: function () { return N3StreamParser; },
-
-    'should be a function': function (N3StreamParser) {
+describe('N3StreamParser', function () {
+  describe('The N3StreamParser module', function () {
+    it('should be a function', function () {
       N3StreamParser.should.be.a('function');
-    },
+    });
 
-    'should make N3Lexer objects': function (N3StreamParser) {
+    it('should make N3Lexer objects', function () {
       N3StreamParser().should.be.an.instanceof(N3StreamParser);
-    },
+    });
 
-    'should be an N3Lexer constructor': function (N3StreamParser) {
+    it('should be an N3Lexer constructor', function () {
       new N3StreamParser().should.be.an.instanceof(N3StreamParser);
-    },
-  },
+    });
+  });
 
-  'An N3StreamParser instance': {
-    topic: function () { return function () { return new N3StreamParser(); }; },
+  describe('An N3StreamParser instance', function () {
+    it('parses the empty stream', shouldParse([], 0));
 
-    'parses the empty stream': shouldParse([], 0),
+    it('parses the zero-length stream', shouldParse([''], 0));
 
-    'parses the zero-length stream': shouldParse([''], 0),
+    it('parses one triple', shouldParse(['<a> <b> <c>.'], 1));
 
-    'parses one triple': shouldParse(['<a> <b> <c>.'], 1),
+    it('parses two triples', shouldParse(['<a> <b>', ' <c>. <d> <e> ', '<f>.'], 2));
 
-    'parses two triples': shouldParse(['<a> <b>', ' <c>. <d> <e> ', '<f>.'], 2),
+    it("doesn't parse an invalid stream",
+      shouldNotParse(['z.'], 'Syntax error: unexpected "z." on line 1.'));
 
-    "doesn't parse an invalid stream": shouldNotParse(['z.'], 'Syntax error: unexpected "z." on line 1.'),
-
-    'emits "prefix" events':
+    it('emits "prefix" events',
       shouldEmitPrefixes(['@prefix a: <URIa>. a:a a:b a:c. @prefix b: <URIb>.'],
-                         { a: 'URIa', b: 'URIb' }),
-  },
-}).export(module, { reporter: require('vows/lib/vows/reporters/tap') });
+                         { a: 'URIa', b: 'URIb' }));
+  });
+});
 
 
 function shouldParse(chunks, expectedLength) {
-  return {
-    topic: function (n3streamparserFactory) {
-      var output = [],
-          inputStream = new ArrayReader(chunks),
-          outputStream = new ArrayWriter(output),
-          transform = n3streamparserFactory(),
-          callback = this.callback;
-      inputStream.pipe(transform);
-      transform.pipe(outputStream);
-      transform.on('error', callback);
-      transform.on('end', function () { callback(null, output); });
-    },
-    'yields the expected number of triples': function (triples) {
+  return function (done) {
+    var triples = [],
+        inputStream = new ArrayReader(chunks),
+        outputStream = new ArrayWriter(triples),
+        transform = new N3StreamParser();
+    inputStream.pipe(transform);
+    transform.pipe(outputStream);
+    transform.on('error', done);
+    transform.on('end', function () {
       triples.should.have.length(expectedLength);
-    },
+      done();
+    });
   };
 }
 
 function shouldNotParse(chunks, expectedMessage) {
-  return {
-    topic: function (n3streamparserFactory) {
-      var output = [],
-          inputStream = new ArrayReader(chunks),
-          outputStream = new ArrayWriter(output),
-          transform = n3streamparserFactory(),
-          callback = this.callback;
-      inputStream.pipe(transform);
-      transform.pipe(outputStream);
-      transform.on('error', function (error) { callback(null, error); callback = null; });
-      transform.on('end', function () { callback && callback('no error raised'); });
-    },
-    'should produce the right error message': function (error) {
+  return function (done) {
+    var inputStream = new ArrayReader(chunks),
+        outputStream = new ArrayWriter([]),
+        transform = N3StreamParser();
+    inputStream.pipe(transform);
+    transform.pipe(outputStream);
+    transform.on('error', function (error) {
       error.message.should.equal(expectedMessage);
-    },
+      done();
+    });
   };
 }
 
 function shouldEmitPrefixes(chunks, expectedPrefixes) {
-  return {
-    topic: function (n3streamparserFactory) {
-      var prefixes = {},
-          inputStream = new ArrayReader(chunks),
-          transform = n3streamparserFactory(),
-          callback = this.callback;
-      inputStream.pipe(transform);
-      transform.on('data', function () {});
-      transform.on('prefix', function (prefix, uri) { prefixes[prefix] = uri; });
-      transform.on('error', callback);
-      transform.on('end', function () { callback(null, prefixes); });
-    },
-    'should emit the correct prefixes': function (prefixes) {
+  return function (done) {
+    var prefixes = {},
+        inputStream = new ArrayReader(chunks),
+        transform = N3StreamParser(),
+        callback = this.callback;
+    inputStream.pipe(transform);
+    transform.on('data', function () {});
+    transform.on('prefix', function (prefix, uri) { prefixes[prefix] = uri; });
+    transform.on('error', done);
+    transform.on('end', function (error) {
       prefixes.should.deep.equal(expectedPrefixes);
-    },
+      done();
+    });
   };
 }
 

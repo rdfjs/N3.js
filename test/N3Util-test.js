@@ -1,27 +1,23 @@
 var N3Util = require('../N3').Util;
-var vows = require('vows'),
-    chai = require('chai'),
+var chai = require('chai'),
     expect = chai.expect;
 chai.should();
-chai.use(require('chai-things'));
 
-vows.describe('N3Util').addBatch({
-  'The N3Util module': {
-    topic: function () { return N3Util; },
-
-    'is a function': function (N3Util) {
+describe('N3Util', function () {
+  describe('The N3Util module', function () {
+    it('is a function', function () {
       N3Util.should.be.a('function');
-    },
+    });
 
-    'can attach functions to an object': function (N3Util) {
+    it('can attach functions to an object', function () {
       var host = {};
       N3Util(host).should.equal(host);
       host.isUri.should.be.a('function');
       host.isLiteral.should.be.a('function');
       host.isQName('a:b').should.be.true;
-    },
+    });
 
-    "can attach functions to an object's prototype": function (N3Util) {
+    it("can attach functions to an object's prototype", function () {
       function Constructor() {}
       Constructor.prototype = { toString: function () { return 'a:b'; } };
       N3Util(Constructor, true).should.equal(Constructor);
@@ -30,254 +26,238 @@ vows.describe('N3Util').addBatch({
 
       var host = new Constructor();
       host.isQName().should.be.true;
-    },
+    });
+  });
 
-    'isUri': {
-      topic: function (N3Util) { return N3Util.isUri; },
+  describe('isUri', function () {
+    it('matches a URI', function () {
+      N3Util.isUri('http://example.org/').should.be.true;
+    });
 
-      'matches a URI': function (isUri) {
-        isUri('http://example.org/').should.be.true;
-      },
+    it('does not match a literal', function () {
+      N3Util.isUri('"http://example.org/"').should.be.false;
+    });
 
-      'does not match a literal': function (isUri) {
-        isUri('"http://example.org/"').should.be.false;
-      },
+    it('does not match a blank node', function () {
+      N3Util.isUri('_:x').should.be.false;
+    });
 
-      'does not match a blank node': function (isUri) {
-        isUri('_:x').should.be.false;
-      },
+    it('does not match null', function () {
+      expect(N3Util.isUri(null)).to.be.null;
+    });
 
-      'does not match null': function (isUri) {
-        expect(isUri(null)).to.be.null;
-      },
+    it('does not match undefined', function () {
+      expect(N3Util.isUri(undefined)).to.be.undefined;
+    });
+  });
 
-      'does not match undefined': function (isUri) {
-        expect(isUri(undefined)).to.be.undefined;
-      },
-    },
+  describe('isLiteral', function () {
+    it('matches a literal', function () {
+      N3Util.isLiteral('"http://example.org/"').should.be.true;
+    });
 
-    'isLiteral': {
-      topic: function (N3Util) { return N3Util.isLiteral; },
+    it('matches a literal with a language', function () {
+      N3Util.isLiteral('"English"@en').should.be.true;
+    });
 
-      'matches a literal': function (isLiteral) {
-        isLiteral('"http://example.org/"').should.be.true;
-      },
+    it('matches a literal with a type', function () {
+      N3Util.isLiteral('"3"^^<http://www.w3.org/2001/XMLSchema#integer>').should.be.true;
+    });
 
-      'matches a literal with a language': function (isLiteral) {
-        isLiteral('"English"@en').should.be.true;
-      },
+    it('matches a literal with a newline', function () {
+      N3Util.isLiteral('"a\nb"').should.be.true;
+    });
 
-      'matches a literal with a type': function (isLiteral) {
-        isLiteral('"3"^^<http://www.w3.org/2001/XMLSchema#integer>').should.be.true;
-      },
+    it('matches a literal with a cariage return', function () {
+      N3Util.isLiteral('"a\rb"').should.be.true;
+    });
 
-      'matches a literal with a newline': function (isLiteral) {
-        isLiteral('"a\nb"').should.be.true;
-      },
+    it('does not match a URI', function () {
+      N3Util.isLiteral('http://example.org/').should.be.false;
+    });
 
-      'matches a literal with a cariage return': function (isLiteral) {
-        isLiteral('"a\rb"').should.be.true;
-      },
+    it('does not match a blank node', function () {
+      N3Util.isLiteral('_:x').should.be.false;
+    });
 
-      'does not match a URI': function (isLiteral) {
-        isLiteral('http://example.org/').should.be.false;
-      },
+    it('does not match null', function () {
+      expect(N3Util.isLiteral(null)).to.be.null;
+    });
 
-      'does not match a blank node': function (isLiteral) {
-        isLiteral('_:x').should.be.false;
-      },
+    it('does not match undefined', function () {
+      expect(N3Util.isLiteral(undefined)).to.be.undefined;
+    });
+  });
 
-      'does not match null': function (isLiteral) {
-        expect(isLiteral(null)).to.be.null;
-      },
+  describe('isBlank', function () {
+    it('matches a blank node', function () {
+      N3Util.isBlank('_:x').should.be.true;
+    });
 
-      'does not match undefined': function (isLiteral) {
-        expect(isLiteral(undefined)).to.be.undefined;
-      },
-    },
+    it('does not match a URI', function () {
+      N3Util.isBlank('http://example.org/').should.be.false;
+    });
 
-    'isBlank': {
-      topic: function (N3Util) { return N3Util.isBlank; },
+    it('does not match a literal', function () {
+      N3Util.isBlank('"http://example.org/"').should.be.false;
+    });
 
-      'matches a blank node': function (isBlank) {
-        isBlank('_:x').should.be.true;
-      },
+    it('does not match null', function () {
+      expect(N3Util.isBlank(null)).to.be.null;
+    });
 
-      'does not match a URI': function (isBlank) {
-        isBlank('http://example.org/').should.be.false;
-      },
+    it('does not match undefined', function () {
+      expect(N3Util.isBlank(undefined)).to.be.undefined;
+    });
+  });
 
-      'does not match a literal': function (isBlank) {
-        isBlank('"http://example.org/"').should.be.false;
-      },
+  describe('getLiteralValue', function () {
+    it('gets the value of a literal', function () {
+      N3Util.getLiteralValue('"Mickey"').should.equal('Mickey');
+    });
 
-      'does not match null': function (isBlank) {
-        expect(isBlank(null)).to.be.null;
-      },
+    it('gets the value of a literal with a language', function () {
+      N3Util.getLiteralValue('"English"@en').should.equal('English');
+    });
 
-      'does not match undefined': function (isBlank) {
-        expect(isBlank(undefined)).to.be.undefined;
-      },
-    },
+    it('gets the value of a literal with a type', function () {
+      N3Util.getLiteralValue('"3"^^<http://www.w3.org/2001/XMLSchema#integer>').should.equal('3');
+    });
 
-    'getLiteralValue': {
-      topic: function (N3Util) { return N3Util.getLiteralValue; },
+    it('gets the value of a literal with a newline', function () {
+      N3Util.getLiteralValue('"Mickey\nMouse"').should.equal('Mickey\nMouse');
+    });
 
-      'gets the value of a literal': function (getLiteralValue) {
-        getLiteralValue('"Mickey"').should.equal('Mickey');
-      },
+    it('gets the value of a literal with a cariage return', function () {
+      N3Util.getLiteralValue('"Mickey\rMouse"').should.equal('Mickey\rMouse');
+    });
 
-      'gets the value of a literal with a language': function (getLiteralValue) {
-        getLiteralValue('"English"@en').should.equal('English');
-      },
+    it('does not work with non-literals', function () {
+      N3Util.getLiteralValue.bind(null, 'http://ex.org/').should.throw('http://ex.org/ is not a literal');
+    });
 
-      'gets the value of a literal with a type': function (getLiteralValue) {
-        getLiteralValue('"3"^^<http://www.w3.org/2001/XMLSchema#integer>').should.equal('3');
-      },
+    it('does not work with null', function () {
+      N3Util.getLiteralValue.bind(null, null).should.throw('null is not a literal');
+    });
 
-      'gets the value of a literal with a newline': function (getLiteralValue) {
-        getLiteralValue('"Mickey\nMouse"').should.equal('Mickey\nMouse');
-      },
+    it('does not work with undefined', function () {
+      N3Util.getLiteralValue.bind(null, undefined).should.throw('undefined is not a literal');
+    });
+  });
 
-      'gets the value of a literal with a cariage return': function (getLiteralValue) {
-        getLiteralValue('"Mickey\rMouse"').should.equal('Mickey\rMouse');
-      },
+  describe('getLiteralType', function () {
+    it('gets the type of a literal', function () {
+      N3Util.getLiteralType('"Mickey"').should.equal('http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral');
+    });
 
-      'does not work with non-literals': function (getLiteralValue) {
-        getLiteralValue.bind(null, 'http://example.org/').should.throw('http://example.org/ is not a literal');
-      },
+    it('gets the type of a literal with a language', function () {
+      N3Util.getLiteralType('"English"@en').should.equal('http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral');
+    });
 
-      'does not work with null': function (getLiteralValue) {
-        getLiteralValue.bind(null, null).should.throw('null is not a literal');
-      },
+    it('gets the type of a literal with a type', function () {
+      N3Util.getLiteralType('"3"^^<http://www.w3.org/2001/XMLSchema#integer>').should.equal('http://www.w3.org/2001/XMLSchema#integer');
+    });
 
-      'does not work with undefined': function (getLiteralValue) {
-        getLiteralValue.bind(null, undefined).should.throw('undefined is not a literal');
-      },
-    },
+    it('gets the type of a literal with a newline', function () {
+      N3Util.getLiteralType('"Mickey\nMouse"^^<abc>').should.equal('abc');
+    });
 
-    'getLiteralType': {
-      topic: function (N3Util) { return N3Util.getLiteralType; },
+    it('gets the type of a literal with a cariage return', function () {
+      N3Util.getLiteralType('"Mickey\rMouse"^^<abc>').should.equal('abc');
+    });
 
-      'gets the type of a literal': function (getLiteralType) {
-        getLiteralType('"Mickey"').should.equal('http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral');
-      },
+    it('does not work with non-literals', function () {
+      N3Util.getLiteralType.bind(null, 'http://example.org/').should.throw('http://example.org/ is not a literal');
+    });
 
-      'gets the type of a literal with a language': function (getLiteralType) {
-        getLiteralType('"English"@en').should.equal('http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral');
-      },
+    it('does not work with null', function () {
+      N3Util.getLiteralType.bind(null, null).should.throw('null is not a literal');
+    });
 
-      'gets the type of a literal with a type': function (getLiteralType) {
-        getLiteralType('"3"^^<http://www.w3.org/2001/XMLSchema#integer>').should.equal('http://www.w3.org/2001/XMLSchema#integer');
-      },
+    it('does not work with undefined', function () {
+      N3Util.getLiteralType.bind(null, undefined).should.throw('undefined is not a literal');
+    });
+  });
 
-      'gets the type of a literal with a newline': function (getLiteralValue) {
-        getLiteralValue('"Mickey\nMouse"^^<abc>').should.equal('abc');
-      },
+  describe('getLiteralLanguage', function () {
+    it('gets the language of a literal', function () {
+      N3Util.getLiteralLanguage('"Mickey"').should.equal('');
+    });
 
-      'gets the type of a literal with a cariage return': function (getLiteralValue) {
-        getLiteralValue('"Mickey\rMouse"^^<abc>').should.equal('abc');
-      },
+    it('gets the language of a literal with a language', function () {
+      N3Util.getLiteralLanguage('"English"@en').should.equal('en');
+    });
 
-      'does not work with non-literals': function (getLiteralType) {
-        getLiteralType.bind(null, 'http://example.org/').should.throw('http://example.org/ is not a literal');
-      },
+    it('normalizes the language to lowercase', function () {
+      N3Util.getLiteralLanguage('"English"@en-GB').should.equal('en-gb');
+    });
 
-      'does not work with null': function (getLiteralType) {
-        getLiteralType.bind(null, null).should.throw('null is not a literal');
-      },
+    it('gets the language of a literal with a type', function () {
+      N3Util.getLiteralLanguage('"3"^^<http://www.w3.org/2001/XMLSchema#integer>').should.equal('');
+    });
 
-      'does not work with undefined': function (getLiteralType) {
-        getLiteralType.bind(null, undefined).should.throw('undefined is not a literal');
-      },
-    },
+    it('gets the language of a literal with a newline', function () {
+      N3Util.getLiteralLanguage('"Mickey\nMouse"@en').should.equal('en');
+    });
 
-    'getLiteralLanguage': {
-      topic: function (N3Util) { return N3Util.getLiteralLanguage; },
+    it('gets the language of a literal with a cariage return', function () {
+      N3Util.getLiteralLanguage('"Mickey\rMouse"@en').should.equal('en');
+    });
 
-      'gets the language of a literal': function (getLiteralLanguage) {
-        getLiteralLanguage('"Mickey"').should.equal('');
-      },
+    it('does not work with non-literals', function () {
+      N3Util.getLiteralLanguage.bind(null, 'http://example.org/').should.throw('http://example.org/ is not a literal');
+    });
 
-      'gets the language of a literal with a language': function (getLiteralLanguage) {
-        getLiteralLanguage('"English"@en').should.equal('en');
-      },
+    it('does not work with null', function () {
+      N3Util.getLiteralLanguage.bind(null, null).should.throw('null is not a literal');
+    });
 
-      'normalizes the language to lowercase': function (getLiteralLanguage) {
-        getLiteralLanguage('"English"@en-GB').should.equal('en-gb');
-      },
+    it('does not work with undefined', function () {
+      N3Util.getLiteralLanguage.bind(null, undefined).should.throw('undefined is not a literal');
+    });
+  });
 
-      'gets the language of a literal with a type': function (getLiteralLanguage) {
-        getLiteralLanguage('"3"^^<http://www.w3.org/2001/XMLSchema#integer>').should.equal('');
-      },
+  describe('isQName', function () {
+    it('matches a QName', function () {
+      N3Util.isQName('ex:Test').should.be.true;
+    });
 
-      'gets the language of a literal with a newline': function (getLiteralValue) {
-        getLiteralValue('"Mickey\nMouse"@en').should.equal('en');
-      },
+    it('does not match a URI', function () {
+      N3Util.isQName('http://example.org/').should.be.false;
+    });
 
-      'gets the language of a literal with a cariage return': function (getLiteralValue) {
-        getLiteralValue('"Mickey\rMouse"@en').should.equal('en');
-      },
+    it('does not match a literal', function () {
+      N3Util.isQName('"http://example.org/"').should.be.false;
+    });
 
-      'does not work with non-literals': function (getLiteralLanguage) {
-        getLiteralLanguage.bind(null, 'http://example.org/').should.throw('http://example.org/ is not a literal');
-      },
+    it('does not match null', function () {
+      expect(N3Util.isQName(null)).to.be.null;
+    });
 
-      'does not work with null': function (getLiteralLanguage) {
-        getLiteralLanguage.bind(null, null).should.throw('null is not a literal');
-      },
+    it('does not match undefined', function () {
+      expect(N3Util.isQName(undefined)).to.be.undefined;
+    });
+  });
 
-      'does not work with undefined': function (getLiteralLanguage) {
-        getLiteralLanguage.bind(null, undefined).should.throw('undefined is not a literal');
-      },
-    },
+  describe('expandQName', function () {
+    it('expands a QName', function () {
+      N3Util.expandQName('ex:Test', { 'ex': 'http://ex.org/#' }).should.equal('http://ex.org/#Test');
+    });
 
-    'isQName': {
-      topic: function (N3Util) { return N3Util.isQName; },
+    it('expands a QName with the empty prefix', function () {
+      N3Util.expandQName(':Test', { '': 'http://ex.org/#' }).should.equal('http://ex.org/#Test');
+    });
 
-      'matches a QName': function (isQName) {
-        isQName('ex:Test').should.be.true;
-      },
+    it('does not expand a QName if the prefix is missing', function () {
+      N3Util.expandQName.bind(null, 'a:Test', { 'b': 'http://ex.org/#' }).should.throw('Unknown prefix: a');
+    });
 
-      'does not match a URI': function (isQName) {
-        isQName('http://example.org/').should.be.false;
-      },
+    it('does not work with null', function () {
+      N3Util.expandQName.bind(null, null).should.throw('null is not a QName');
+    });
 
-      'does not match a literal': function (isQName) {
-        isQName('"http://example.org/"').should.be.false;
-      },
-
-      'does not match null': function (isQName) {
-        expect(isQName(null)).to.be.null;
-      },
-
-      'does not match undefined': function (isQName) {
-        expect(isQName(undefined)).to.be.undefined;
-      },
-    },
-
-    'expandQName': {
-      topic: function (N3Util) { return N3Util.expandQName; },
-
-      'expands a QName': function (expandQName) {
-        expandQName('ex:Test', { 'ex': 'http://ex.org/#' }).should.equal('http://ex.org/#Test');
-      },
-
-      'expands a QName with the empty prefix': function (expandQName) {
-        expandQName(':Test', { '': 'http://ex.org/#' }).should.equal('http://ex.org/#Test');
-      },
-
-      'does not expand a QName if the prefix is missing': function (expandQName) {
-        expandQName.bind(null, 'a:Test', { 'b': 'http://ex.org/#' }).should.throw('Unknown prefix: a');
-      },
-
-      'does not work with null': function (expandQName) {
-        expandQName.bind(null, null).should.throw('null is not a QName');
-      },
-
-      'does not work with undefined': function (expandQName) {
-        expandQName.bind(null, undefined).should.throw('undefined is not a QName');
-      },
-    },
-  },
-}).export(module, { reporter: require('vows/lib/vows/reporters/tap') });
+    it('does not work with undefined', function () {
+      N3Util.expandQName.bind(null, undefined).should.throw('undefined is not a QName');
+    });
+  });
+});

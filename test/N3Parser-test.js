@@ -1,262 +1,257 @@
 var N3Parser = require('../N3').Parser;
-var vows = require('vows'),
-    chai = require('chai'),
+var chai = require('chai'),
     expect = chai.expect,
     util = require('util');
 chai.should();
 chai.use(require('chai-things'));
 
-vows.describe('N3Parser').addBatch({
-  'The N3Parser module': {
-    topic: function () { return N3Parser; },
-
-    'should be a function': function (N3Parser) {
+describe('N3Parser', function () {
+  describe('The N3Parser module', function () {
+    it('should be a function', function () {
       N3Parser.should.be.a('function');
-    },
+    });
 
-    'should make N3Parser objects': function (N3Parser) {
+    it('should make N3Parser objects', function () {
       N3Parser().should.be.an.instanceof(N3Parser);
-    },
+    });
 
-    'should be an N3Parser constructor': function (N3Parser) {
+    it('should be an N3Parser constructor', function () {
       new N3Parser().should.be.an.instanceof(N3Parser);
-    },
-  },
+    });
+  });
 
-  'An N3Parser instance': {
-    topic: function () { return function () { return new N3Parser(); }; },
-
-    'should parse the empty string':
+  describe('An N3Parser instance', function () {
+    it('should parse the empty string',
       shouldParse(''
-                  /* no triples */),
+                  /* no triples */));
 
-    'should parse a whitespace string':
+    it('should parse a whitespace string',
       shouldParse(' \t \n  '
-                  /* no triples */),
+                  /* no triples */));
 
-    'should parse a single triple':
+    it('should parse a single triple',
       shouldParse('<a> <b> <c>.',
-                  ['a', 'b', 'c']),
+                  ['a', 'b', 'c']));
 
-    'should parse three triples':
+    it('should parse three triples',
       shouldParse('<a> <b> <c>.\n<d> <e> <f>.\n<g> <h> <i>.',
                   ['a', 'b', 'c'],
                   ['d', 'e', 'f'],
-                  ['g', 'h', 'i']),
+                  ['g', 'h', 'i']));
 
-    'should parse a triple with a literal':
+    it('should parse a triple with a literal',
       shouldParse('<a> <b> "string".',
-                  ['a', 'b', '"string"']),
+                  ['a', 'b', '"string"']));
 
-    'should parse a triple with a numeric literal':
+    it('should parse a triple with a numeric literal',
       shouldParse('<a> <b> 3.0.',
-                  ['a', 'b', '"3.0"^^<http://www.w3.org/2001/XMLSchema#decimal>']),
+                  ['a', 'b', '"3.0"^^<http://www.w3.org/2001/XMLSchema#decimal>']));
 
-    'should parse a triple with an integer literal':
+    it('should parse a triple with an integer literal',
       shouldParse('<a> <b> 3.',
-                  ['a', 'b', '"3"^^<http://www.w3.org/2001/XMLSchema#integer>']),
+                  ['a', 'b', '"3"^^<http://www.w3.org/2001/XMLSchema#integer>']));
 
-    'should parse a triple with a floating point literal':
+    it('should parse a triple with a floating point literal',
       shouldParse('<a> <b> 1.3e2.',
-                  ['a', 'b', '"1.3e2"^^<http://www.w3.org/2001/XMLSchema#double>']),
+                  ['a', 'b', '"1.3e2"^^<http://www.w3.org/2001/XMLSchema#double>']));
 
-    'should parse a triple with a boolean literal':
+    it('should parse a triple with a boolean literal',
       shouldParse('<a> <b> true.',
-                  ['a', 'b', '"true"^^<http://www.w3.org/2001/XMLSchema#boolean>']),
+                  ['a', 'b', '"true"^^<http://www.w3.org/2001/XMLSchema#boolean>']));
 
-    'should parse a triple with a literal and a language code':
+    it('should parse a triple with a literal and a language code',
       shouldParse('<a> <b> "string"@en.',
-                  ['a', 'b', '"string"@en']),
+                  ['a', 'b', '"string"@en']));
 
-    'should normalize language codes to lowercase':
+    it('should normalize language codes to lowercase',
       shouldParse('<a> <b> "string"@EN.',
-                  ['a', 'b', '"string"@en']),
+                  ['a', 'b', '"string"@en']));
 
-    'should parse a triple with a literal and a URI type':
+    it('should parse a triple with a literal and a URI type',
       shouldParse('<a> <b> "string"^^<type>.',
-                  ['a', 'b', '"string"^^<type>']),
+                  ['a', 'b', '"string"^^<type>']));
 
-    'should parse a triple with a literal and a qname type':
+    it('should parse a triple with a literal and a qname type',
       shouldParse('@prefix x: <y#>. <a> <b> "string"^^x:z.',
-                  ['a', 'b', '"string"^^<y#z>']),
+                  ['a', 'b', '"string"^^<y#z>']));
 
-    'should not parse a triple with a literal and a qname type with an inexistent prefix':
+    it('should not parse a triple with a literal and a qname type with an inexistent prefix',
       shouldNotParse('<a> <b> "string"^^x:z.',
-                     'Undefined prefix "x:" at line 1.'),
+                     'Undefined prefix "x:" at line 1.'));
 
-    'should parse triples with prefixes':
+    it('should parse triples with prefixes',
       shouldParse('@prefix : <#>.\n' +
                   '@prefix a: <a#>.\n' +
                   ':x a:a a:b.',
-                  ['#x', 'a#a', 'a#b']),
+                  ['#x', 'a#a', 'a#b']));
 
-    'should parse triples with prefixes and different punctuation':
+    it('should parse triples with prefixes and different punctuation',
       shouldParse('@prefix : <#>.\n' +
                   '@prefix a: <a#>.\n' +
                   ':x a:a a:b;a:c a:d,a:e.',
                   ['#x', 'a#a', 'a#b'],
                   ['#x', 'a#c', 'a#d'],
-                  ['#x', 'a#c', 'a#e']),
+                  ['#x', 'a#c', 'a#e']));
 
-    'should not parse undefined empty prefix in subject':
+    it('should not parse undefined empty prefix in subject',
       shouldNotParse(':a ',
-                     'Undefined prefix ":" at line 1.'),
+                     'Undefined prefix ":" at line 1.'));
 
-    'should not parse undefined prefix in subject':
+    it('should not parse undefined prefix in subject',
       shouldNotParse('a:a ',
-                     'Undefined prefix "a:" at line 1.'),
+                     'Undefined prefix "a:" at line 1.'));
 
-    'should not parse undefined prefix in predicate':
+    it('should not parse undefined prefix in predicate',
       shouldNotParse('<a> b:c ',
-                     'Undefined prefix "b:" at line 1.'),
+                     'Undefined prefix "b:" at line 1.'));
 
-    'should not parse undefined prefix in object':
+    it('should not parse undefined prefix in object',
       shouldNotParse('<a> <b> c:d ',
-                     'Undefined prefix "c:" at line 1.'),
+                     'Undefined prefix "c:" at line 1.'));
 
-    'should parse triples with SPARQL prefixes':
+    it('should parse triples with SPARQL prefixes',
       shouldParse('PREFIX : <#>\n' +
                   'PrEfIX a: <a#> ' +
                   ':x a:a a:b.',
-                  ['#x', 'a#a', 'a#b']),
+                  ['#x', 'a#a', 'a#b']));
 
-    'should parse statements with shared subjects':
+    it('should parse statements with shared subjects',
       shouldParse('<a> <b> <c>;\n<d> <e>.',
                   ['a', 'b', 'c'],
-                  ['a', 'd', 'e']),
+                  ['a', 'd', 'e']));
 
-    'should parse statements with shared subjects and trailing semicolon':
+    it('should parse statements with shared subjects and trailing semicolon',
       shouldParse('<a> <b> <c>;\n<d> <e>;\n.',
                   ['a', 'b', 'c'],
-                  ['a', 'd', 'e']),
+                  ['a', 'd', 'e']));
 
-    'should parse statements with shared subjects and multiple semicolons':
+    it('should parse statements with shared subjects and multiple semicolons',
       shouldParse('<a> <b> <c>;;\n<d> <e>.',
                   ['a', 'b', 'c'],
-                  ['a', 'd', 'e']),
+                  ['a', 'd', 'e']));
 
-    'should parse statements with shared subjects and predicates':
+    it('should parse statements with shared subjects and predicates',
       shouldParse('<a> <b> <c>, <d>.',
                   ['a', 'b', 'c'],
-                  ['a', 'b', 'd']),
+                  ['a', 'b', 'd']));
 
-    'should parse statements with named blank nodes':
+    it('should parse statements with named blank nodes',
       shouldParse('_:a <b> _:c.',
-                  ['_:b0', 'b', '_:b1']),
+                  ['_:b0', 'b', '_:b1']));
 
-    'should parse statements with empty blank nodes':
+    it('should parse statements with empty blank nodes',
       shouldParse('[] <b> [].',
-                  ['_:b0', 'b', '_:b1']),
+                  ['_:b0', 'b', '_:b1']));
 
-    'should parse statements with unnamed blank nodes in the subject':
+    it('should parse statements with unnamed blank nodes in the subject',
       shouldParse('[<a> <b>] <c> <d>.',
                   ['_:b0', 'c', 'd'],
-                  ['_:b0', 'a', 'b']),
+                  ['_:b0', 'a', 'b']));
 
-    'should parse statements with unnamed blank nodes in the object':
+    it('should parse statements with unnamed blank nodes in the object',
       shouldParse('<a> <b> [<c> <d>].',
                   ['a', 'b', '_:b0'],
-                  ['_:b0', 'c', 'd']),
+                  ['_:b0', 'c', 'd']));
 
-    'should parse statements with unnamed blank nodes with a string object':
+    it('should parse statements with unnamed blank nodes with a string object',
       shouldParse('<a> <b> [<c> "x"].',
                   ['a', 'b', '_:b0'],
-                  ['_:b0', 'c', '"x"']),
+                  ['_:b0', 'c', '"x"']));
 
-    'should not parse a blank node with missing subject':
+    it('should not parse a blank node with missing subject',
       shouldNotParse('<a> <b> [<c>].',
-                     'Expected object to follow "c" at line 1.'),
+                     'Expected object to follow "c" at line 1.'));
 
-    'should parse a multi-statement blank node':
+    it('should parse a multi-statement blank node',
       shouldParse('<a> <b> [ <u> <v>; <w> <z> ].',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'u', 'v'],
-                  ['_:b0', 'w', 'z']),
+                  ['_:b0', 'w', 'z']));
 
-    'should parse a multi-statement blank node ending with a literal':
+    it('should parse a multi-statement blank node ending with a literal',
       shouldParse('<a> <b> [ <u> <v>; <w> "z" ].',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'u', 'v'],
-                  ['_:b0', 'w', '"z"']),
+                  ['_:b0', 'w', '"z"']));
 
-    'should parse a multi-statement blank node ending with a typed literal':
+    it('should parse a multi-statement blank node ending with a typed literal',
       shouldParse('<a> <b> [ <u> <v>; <w> "z"^^<t> ].',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'u', 'v'],
-                  ['_:b0', 'w', '"z"^^<t>']),
+                  ['_:b0', 'w', '"z"^^<t>']));
 
-    'should parse a multi-statement blank node ending with a string with language':
+    it('should parse a multi-statement blank node ending with a string with language',
       shouldParse('<a> <b> [ <u> <v>; <w> "z"^^<t> ].',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'u', 'v'],
-                  ['_:b0', 'w', '"z"^^<t>']),
+                  ['_:b0', 'w', '"z"^^<t>']));
 
-    'should parse a multi-statement blank node with trailing semicolon':
+    it('should parse a multi-statement blank node with trailing semicolon',
       shouldParse('<a> <b> [ <u> <v>; <w> <z>; ].',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'u', 'v'],
-                  ['_:b0', 'w', 'z']),
+                  ['_:b0', 'w', 'z']));
 
-    'should parse statements with nested blank nodes in the subject':
+    it('should parse statements with nested blank nodes in the subject',
       shouldParse('[<a> [<x> <y>]] <c> <d>.',
                   ['_:b0', 'c', 'd'],
                   ['_:b0', 'a', '_:b1'],
-                  ['_:b1', 'x', 'y']),
+                  ['_:b1', 'x', 'y']));
 
-    'should parse statements with nested blank nodes in the object':
+    it('should parse statements with nested blank nodes in the object',
       shouldParse('<a> <b> [<c> [<d> <e>]].',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'c', '_:b1'],
-                  ['_:b1', 'd', 'e']),
+                  ['_:b1', 'd', 'e']));
 
-    'should parse statements with an empty list in the subject':
+    it('should parse statements with an empty list in the subject',
       shouldParse('() <a> <b>.',
-                  ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'a', 'b']),
+                  ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'a', 'b']));
 
-    'should parse statements with an empty list in the object':
+    it('should parse statements with an empty list in the object',
       shouldParse('<a> <b> ().',
-                  ['a', 'b', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+                  ['a', 'b', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
-    'should parse statements with a single-element list in the subject':
+    it('should parse statements with a single-element list in the subject',
       shouldParse('(<x>) <a> <b>.',
                   ['_:b0', 'a', 'b'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
-    'should parse statements with a single-element list in the object':
+    it('should parse statements with a single-element list in the object',
       shouldParse('<a> <b> (<x>).',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
-    'should parse statements with a multi-element list in the subject':
+    it('should parse statements with a multi-element list in the subject',
       shouldParse('(<x> <y>) <a> <b>.',
                   ['_:b0', 'a', 'b'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
-    'should parse statements with a multi-element list in the object':
+    it('should parse statements with a multi-element list in the object',
       shouldParse('<a> <b> (<x> <y>).',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
-    'should parse statements with a list containing strings':
+    it('should parse statements with a list containing strings',
       shouldParse('("y") <a> <b>.',
                   ['_:b0', 'a', 'b'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"y"'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
-    'should parse statements with a nested empty list':
+    it('should parse statements with a nested empty list',
       shouldParse('<a> <b> (<x> ()).',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
@@ -264,9 +259,9 @@ vows.describe('N3Parser').addBatch({
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first',
                            'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
-    'should parse statements with non-empty nested lists':
+    it('should parse statements with non-empty nested lists',
       shouldParse('<a> <b> (<x> (<y>)).',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
@@ -276,16 +271,16 @@ vows.describe('N3Parser').addBatch({
                            'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
-    'should parse statements with a list containing a blank node':
+    it('should parse statements with a list containing a blank node',
       shouldParse('([]) <a> <b>.',
                   ['_:b0', 'a', 'b'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
-    'should parse statements with a list containing multiple blank nodes':
+    it('should parse statements with a list containing multiple blank nodes',
       shouldParse('([] [<x> <y>]) <a> <b>.',
                   ['_:b0', 'a', 'b'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
@@ -293,126 +288,116 @@ vows.describe('N3Parser').addBatch({
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3'],
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
                            'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                  ['_:b3', 'x', 'y']),
+                  ['_:b3', 'x', 'y']));
 
-    'should parse statements with a blank node containing a list':
+    it('should parse statements with a blank node containing a list',
       shouldParse('[<a> (<b>)] <c> <d>.',
                   ['_:b0', 'c', 'd'],
                   ['_:b0', 'a', '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'b'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
-    'should resolve URIs against @base':
+    it('should resolve URIs against @base',
       shouldParse('@base <http://ex.org/>.\n' +
                   '<a> <b> <c>.\n' +
                   '@base <d/>.\n' +
                   '<e> <f> <g>.',
                   ['http://ex.org/a', 'http://ex.org/b', 'http://ex.org/c'],
-                  ['http://ex.org/d/e', 'http://ex.org/d/f', 'http://ex.org/d/g']),
+                  ['http://ex.org/d/e', 'http://ex.org/d/f', 'http://ex.org/d/g']));
 
-    'should resolve URIs against SPARQL base':
+    it('should resolve URIs against SPARQL base',
       shouldParse('BASE <http://ex.org/>\n' +
                   '<a> <b> <c>. ' +
                   'BASE <d/> ' +
                   '<e> <f> <g>.',
                   ['http://ex.org/a', 'http://ex.org/b', 'http://ex.org/c'],
-                  ['http://ex.org/d/e', 'http://ex.org/d/f', 'http://ex.org/d/g']),
+                  ['http://ex.org/d/e', 'http://ex.org/d/f', 'http://ex.org/d/g']));
 
-    'should not parse improperly nested square brackets':
+    it('should not parse improperly nested square brackets',
       shouldNotParse('<a> <b> [<c> <d>]].',
-                     'Expected punctuation to follow "_:b0" at line 1.'),
+                     'Expected punctuation to follow "_:b0" at line 1.'));
 
-    'should error when an object is not there':
+    it('should error when an object is not there',
       shouldNotParse('<a> <b>.',
-                     'Expected object to follow "b" at line 1.'),
+                     'Expected object to follow "b" at line 1.'));
 
-    'should error when a dot is not there':
+    it('should error when a dot is not there',
       shouldNotParse('<a> <b> <c>',
-                     'Expected punctuation to follow "c" at line 1.'),
+                     'Expected punctuation to follow "c" at line 1.'));
 
-    'should return prefixes through a callback': {
-      topic: function (n3parserFactory) {
-        var prefixes = {}, callback = this.callback;
-        n3parserFactory().parse('@prefix a: <URIa>. a:a a:b a:c. @prefix b: <URIb>.',
-          tripleCallback, prefixCallback);
+    it('should return prefixes through a callback', function (done) {
+      var prefixes = {};
+      new N3Parser().parse('@prefix a: <URIa>. a:a a:b a:c. @prefix b: <URIb>.',
+                           tripleCallback, prefixCallback);
 
-        function tripleCallback(error, triple) {
-          expect(error).not.to.exist;
-          if (!triple)
-            callback(null, prefixes);
+      function tripleCallback(error, triple) {
+        expect(error).not.to.exist;
+        if (!triple) {
+          Object.keys(prefixes).should.have.length(2);
+          prefixes.should.have.property('a', 'URIa');
+          prefixes.should.have.property('b', 'URIb');
+          done();
         }
+      }
 
-        function prefixCallback(prefix, uri) {
-          expect(prefix).to.exist;
-          expect(uri).to.exist;
-          prefixes[prefix] = uri;
+      function prefixCallback(prefix, uri) {
+        expect(prefix).to.exist;
+        expect(uri).to.exist;
+        prefixes[prefix] = uri;
+      }
+    });
+
+    it('should return prefixes at the last triple callback', function (done) {
+      new N3Parser().parse('@prefix a: <URIa>. a:a a:b a:c. @prefix b: <URIb>.', tripleCallback);
+
+      function tripleCallback(error, triple, prefixes) {
+        expect(error).not.to.exist;
+        if (triple)
+          expect(prefixes).not.to.exist;
+        else {
+          expect(prefixes).to.exist;
+          Object.keys(prefixes).should.have.length(2);
+          prefixes.should.have.property('a', 'URIa');
+          prefixes.should.have.property('b', 'URIb');
+          done();
         }
-      },
+      }
+    });
 
-      'should contain the correct prefixes': function (prefixes) {
-        Object.keys(prefixes).should.have.length(2);
-        prefixes.should.have.property('a', 'URIa');
-        prefixes.should.have.property('b', 'URIb');
-      },
-    },
-
-    'should return prefixes at the last triple callback': {
-      topic: function (n3parserFactory) {
-        var callback = this.callback;
-        n3parserFactory().parse('@prefix a: <URIa>. a:a a:b a:c. @prefix b: <URIb>.', tripleCallback);
-
-        function tripleCallback(error, triple, prefixes) {
-          expect(error).not.to.exist;
-          if (triple)
-            expect(prefixes).not.to.exist;
-          else {
-            expect(prefixes).to.exist;
-            callback(null, prefixes);
-          }
-        }
-      },
-
-      'should contain the correct prefixes': function (prefixes) {
-        Object.keys(prefixes).should.have.length(2);
-        prefixes.should.have.property('a', 'URIa');
-        prefixes.should.have.property('b', 'URIb');
-      },
-    },
-
-    'when no input argument is given and chunks are passed to addChunk': {
-      topic: function () {
+    describe('when the addChunk/end interface is used', function () {
+      it('should return the parsed triples', function () {
         var triples = [], parser = new N3Parser();
         parser.parse(function (error, triple) { triple && triples.push(triple); });
         parser.addChunk('<a> <b> <c>.');
+        triples.should.have.length(1);
         parser.addChunk('<a> <b> <d>.');
-        parser.end();
-        return triples;
-      },
-
-      'parses all chunks': function (triples) {
         triples.should.have.length(2);
-      }
-    },
-  },
-  'An N3Parser instance with a document URI': {
-    topic: function () {
-      return function () { return new N3Parser({ documentURI: 'http://ex.org/doc/f.ttl' }); };
-    },
+        parser.end();
+        triples.should.have.length(2);
+      });
+    });
+  });
 
-    'should resolve URIs against the document URI':
-      shouldParse('@prefix : <#>.\n' +
+  describe('An N3Parser instance with a document URI', function () {
+    var parser = new N3Parser({ documentURI: 'http://ex.org/doc/f.ttl' });
+
+    it('should resolve URIs against the document URI',
+      shouldParse(parser,
+                  '@prefix : <#>.\n' +
                   '<a> <b> <c>.\n' +
                   ':e :f :g.',
                   ['http://ex.org/doc/a', 'http://ex.org/doc/b', 'http://ex.org/doc/c'],
-                  ['http://ex.org/doc/f.ttl#e', 'http://ex.org/doc/f.ttl#f', 'http://ex.org/doc/f.ttl#g']),
+                  ['http://ex.org/doc/f.ttl#e', 'http://ex.org/doc/f.ttl#f', 'http://ex.org/doc/f.ttl#g']));
 
-    'should resolve URIs with a trailing slashes against the document URI':
-      shouldParse('</a> </a/b> </a/b/c>.\n',
-                  ['http://ex.org/a', 'http://ex.org/a/b', 'http://ex.org/a/b/c']),
+    it('should resolve URIs with a trailing slashes against the document URI',
+      shouldParse(parser,
+                  '</a> </a/b> </a/b/c>.\n',
+                  ['http://ex.org/a', 'http://ex.org/a/b', 'http://ex.org/a/b/c']));
 
-    'should respect @base statements':
-      shouldParse('<a> <b> <c>.\n' +
+    it('should respect @base statements',
+      shouldParse(parser,
+                  '<a> <b> <c>.\n' +
                   '@base <http://ex.org/x/>.\n' +
                   '<e> <f> <g>.\n' +
                   '@base <d/>.\n' +
@@ -422,60 +407,47 @@ vows.describe('N3Parser').addBatch({
                   ['http://ex.org/doc/a', 'http://ex.org/doc/b', 'http://ex.org/doc/c'],
                   ['http://ex.org/x/e', 'http://ex.org/x/f', 'http://ex.org/x/g'],
                   ['http://ex.org/x/d/h', 'http://ex.org/x/d/i', 'http://ex.org/x/d/j'],
-                  ['http://ex.org/e/k', 'http://ex.org/e/l', 'http://ex.org/e/m']),
-  }
-}).export(module, { reporter: require('vows/lib/vows/reporters/tap') });
-
-function shouldParse(input, expected) {
-  var result = [],
-      endCallback;
-  expected = Array.prototype.slice.call(arguments, 1);
-  var items = expected.map(function (item) {
-    return { subject: item[0], predicate: item[1], object: item[2],
-             context: item[3] || 'n3/contexts#default' };
+                  ['http://ex.org/e/k', 'http://ex.org/e/l', 'http://ex.org/e/m']));
   });
+});
 
-  function tripleCallback(error, triple) {
-    expect(error).not.to.exist;
-    if (triple)
-      result.push(triple);
-    else
-      endCallback(null, result);
-  }
+function shouldParse(parser, input) {
+  var hasParser = parser instanceof N3Parser,
+      expected = Array.prototype.slice.call(arguments, hasParser ? 2 : 1),
+      items = expected.map(function (item) {
+        return { subject: item[0], predicate: item[1], object: item[2],
+                 context: item[3] || 'n3/contexts#default' };
+      });
+  // Shift parameters if necessary
+  if (!hasParser)
+    input = parser, parser = new N3Parser();
 
-  return {
-    topic: function (n3parserFactory) {
-      endCallback = this.callback;
-      n3parserFactory().parse(input, tripleCallback);
-    },
-
-    'should equal the expected value': function (result) {
-      result.should.have.lengthOf(expected.length);
-      for (var i = 0; i < items.length; i++)
-        result.should.contain.something.that.deep.equals(items[i]);
-    }
+  return function (done) {
+    var results = [];
+    parser.parse(input, function (error, triple) {
+      expect(error).not.to.exist;
+      if (triple)
+        results.push(triple);
+      else {
+        results.should.have.lengthOf(expected.length);
+        for (var i = 0; i < items.length; i++)
+          results.should.contain.something.that.deep.equals(items[i]);
+        done();
+      }
+    });
   };
 }
 
 function shouldNotParse(input, expectedError) {
-  var endCallback;
-
-  function tripleCallback(error, triple) {
-    if (error)
-      endCallback(error, triple);
-    else if (!triple)
-      throw "Expected error " + expectedError;
-  }
-
-  return {
-    topic: function (n3parserFactory) {
-      endCallback = this.callback;
-      n3parserFactory().parse(input, tripleCallback);
-    },
-
-    'should equal the expected message': function (error, triple) {
-      expect(triple).not.to.exist;
-      error.should.eql(expectedError);
-    }
+  return function (done) {
+    new N3Parser().parse(input, function (error, triple) {
+      if (error) {
+        expect(triple).not.to.exist;
+        error.should.eql(expectedError);
+        done();
+      }
+      else if (!triple)
+        throw new Error("Expected error " + expectedError);
+    });
   };
 }

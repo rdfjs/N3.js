@@ -2,7 +2,7 @@ browser:
 	@node browser/build.js
 
 test:
-	@./node_modules/.bin/vows test/*-test.js
+	@./node_modules/mocha/bin/mocha
 
 spec:
 	@node spec/turtle-spec.js

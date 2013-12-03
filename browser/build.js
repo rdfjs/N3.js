@@ -30,8 +30,8 @@ script.write('/** @license MIT - node-n3 library (browser version) - ©Ruben Ver
 // Start main wrapping function
 script.write('(function (N3) {\n');
 
-// Shim for process.nextTick
-script.write('var process = { nextTick: function(f) { setTimeout(f, 0); } };\n');
+// Shim for setImmediate
+script.write('function setImmediate(f) { setTimeout(f, 0); }\n');
 
 // Add modules
 submodules.forEach(function (name) {
