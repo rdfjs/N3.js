@@ -1,0 +1,3953 @@
+@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix rdft: <http://www.w3.org/ns/rdftest#>.
+@prefix dc: <http://purl.org/dc/terms/>.
+@prefix doap: <http://usefulinc.com/ns/doap#>.
+@prefix earl: <http://www.w3.org/ns/earl#>.
+@prefix foaf: <http://xmlns.com/foaf/0.1/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix manifest: <http://www.w3.org/2013/TurtleTests/manifest.ttl#>.
+
+<> foaf:primaryTopic <https://github.com/RubenVerborgh/N3.js#n3js>;
+  dc:issued "2013-12-03T11:45:37.089Z"^^xsd:dateTime;
+  foaf:maker <http://ruben.verborgh.org/#me>.
+
+<https://github.com/RubenVerborgh/N3.js#n3js> a earl:Software, earl:TestSubject, doap:Project;
+  doap:name "N3.js";
+  doap:homepage <https://github.com/RubenVerborgh/N3.js>;
+  doap:license <http://opensource.org/licenses/MIT>;
+  doap:programming-language "JavaScript";
+  doap:implements <http://www.w3.org/TR/turtle/>;
+  doap:category <http://dbpedia.org/resource/Resource_Description_Framework>;
+  doap:download-page <https://npmjs.org/package/n3>;
+  doap:bug-database <https://github.com/RubenVerborgh/N3.js/issues>;
+  doap:blog <http://ruben.verborgh.org/blog/>;
+  doap:developer <http://ruben.verborgh.org/#me>;
+  doap:maintainer <http://ruben.verborgh.org/#me>;
+  doap:documenter <http://ruben.verborgh.org/#me>;
+  doap:maker <http://ruben.verborgh.org/#me>;
+  dc:title "N3.js";
+  dc:description "N3.js is an asynchronous, streaming Turtle parser for JavaScript."@en;
+  dc:creator <http://ruben.verborgh.org/#me>.
+
+<http://ruben.verborgh.org/#me> a foaf:Person, earl:Assertor;
+  foaf:name "Ruben Verborgh";
+  foaf:homepage <http://ruben.verborgh.org/>;
+  foaf:primaryTopicOf <http://ruben.verborgh.org/profile/>;
+  rdfs:isDefinedBy <http://ruben.verborgh.org/profile/>.
+
+manifest:IRI_subject a earl:TestCriterion, earl:TestCase;
+  dc:title "IRI_subject";
+  dc:description "IRI subject";
+  mf:action <http://www.w3.org/2013/TurtleTests/IRI_subject.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/IRI_spo.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:IRI_subject;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:IRI_with_four_digit_numeric_escape a earl:TestCriterion, earl:TestCase;
+  dc:title "IRI_with_four_digit_numeric_escape";
+  dc:description "IRI with four digit numeric escape (\\u)";
+  mf:action <http://www.w3.org/2013/TurtleTests/IRI_with_four_digit_numeric_escape.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/IRI_spo.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:IRI_with_four_digit_numeric_escape;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:IRI_with_eight_digit_numeric_escape a earl:TestCriterion, earl:TestCase;
+  dc:title "IRI_with_eight_digit_numeric_escape";
+  dc:description "IRI with eight digit numeric escape (\\U)";
+  mf:action <http://www.w3.org/2013/TurtleTests/IRI_with_eight_digit_numeric_escape.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/IRI_spo.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:IRI_with_eight_digit_numeric_escape;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:IRI_with_all_punctuation a earl:TestCriterion, earl:TestCase;
+  dc:title "IRI_with_all_punctuation";
+  dc:description "IRI with all punctuation";
+  mf:action <http://www.w3.org/2013/TurtleTests/IRI_with_all_punctuation.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/IRI_with_all_punctuation.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:IRI_with_all_punctuation;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:bareword_a_predicate a earl:TestCriterion, earl:TestCase;
+  dc:title "bareword_a_predicate";
+  dc:description "bareword a predicate";
+  mf:action <http://www.w3.org/2013/TurtleTests/bareword_a_predicate.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/bareword_a_predicate.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:bareword_a_predicate;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:old_style_prefix a earl:TestCriterion, earl:TestCase;
+  dc:title "old_style_prefix";
+  dc:description "old-style prefix";
+  mf:action <http://www.w3.org/2013/TurtleTests/old_style_prefix.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/IRI_spo.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:old_style_prefix;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:SPARQL_style_prefix a earl:TestCriterion, earl:TestCase;
+  dc:title "SPARQL_style_prefix";
+  dc:description "SPARQL-style prefix";
+  mf:action <http://www.w3.org/2013/TurtleTests/SPARQL_style_prefix.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/IRI_spo.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:SPARQL_style_prefix;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:prefixed_IRI_predicate a earl:TestCriterion, earl:TestCase;
+  dc:title "prefixed_IRI_predicate";
+  dc:description "prefixed IRI predicate";
+  mf:action <http://www.w3.org/2013/TurtleTests/prefixed_IRI_predicate.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/IRI_spo.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:prefixed_IRI_predicate;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:prefixed_IRI_object a earl:TestCriterion, earl:TestCase;
+  dc:title "prefixed_IRI_object";
+  dc:description "prefixed IRI object";
+  mf:action <http://www.w3.org/2013/TurtleTests/prefixed_IRI_object.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/IRI_spo.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:prefixed_IRI_object;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:prefix_only_IRI a earl:TestCriterion, earl:TestCase;
+  dc:title "prefix_only_IRI";
+  dc:description "prefix-only IRI (p:)";
+  mf:action <http://www.w3.org/2013/TurtleTests/prefix_only_IRI.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/IRI_spo.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:prefix_only_IRI;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:prefix_with_PN_CHARS_BASE_character_boundaries a earl:TestCriterion, earl:TestCase;
+  dc:title "prefix_with_PN_CHARS_BASE_character_boundaries";
+  dc:description "prefix with PN CHARS BASE character boundaries (prefix: AZaz\u00c0\u00d6\u00d8\u00f6\u00f8...:)";
+  mf:action <http://www.w3.org/2013/TurtleTests/prefix_with_PN_CHARS_BASE_character_boundaries.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/IRI_spo.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:prefix_with_PN_CHARS_BASE_character_boundaries;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:prefix_with_non_leading_extras a earl:TestCriterion, earl:TestCase;
+  dc:title "prefix_with_non_leading_extras";
+  dc:description "prefix with_non_leading_extras (_:a\u00b7\u0300\u036f\u203f.\u2040)";
+  mf:action <http://www.w3.org/2013/TurtleTests/prefix_with_non_leading_extras.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/IRI_spo.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:prefix_with_non_leading_extras;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:default_namespace_IRI a earl:TestCriterion, earl:TestCase;
+  dc:title "default_namespace_IRI";
+  dc:description "default namespace IRI (:ln)";
+  mf:action <http://www.w3.org/2013/TurtleTests/default_namespace_IRI.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/IRI_spo.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:default_namespace_IRI;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:prefix_reassigned_and_used a earl:TestCriterion, earl:TestCase;
+  dc:title "prefix_reassigned_and_used";
+  dc:description "prefix reassigned and used";
+  mf:action <http://www.w3.org/2013/TurtleTests/prefix_reassigned_and_used.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/prefix_reassigned_and_used.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:prefix_reassigned_and_used;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:reserved_escaped_localName a earl:TestCriterion, earl:TestCase;
+  dc:title "reserved_escaped_localName";
+  dc:description "reserved-escaped local name";
+  mf:action <http://www.w3.org/2013/TurtleTests/reserved_escaped_localName.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/reserved_escaped_localName.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:reserved_escaped_localName;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:percent_escaped_localName a earl:TestCriterion, earl:TestCase;
+  dc:title "percent_escaped_localName";
+  dc:description "percent-escaped local name";
+  mf:action <http://www.w3.org/2013/TurtleTests/percent_escaped_localName.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/percent_escaped_localName.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:percent_escaped_localName;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:HYPHEN_MINUS_in_localName a earl:TestCriterion, earl:TestCase;
+  dc:title "HYPHEN_MINUS_in_localName";
+  dc:description "HYPHEN-MINUS in local name";
+  mf:action <http://www.w3.org/2013/TurtleTests/HYPHEN_MINUS_in_localName.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/HYPHEN_MINUS_in_localName.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:HYPHEN_MINUS_in_localName;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:underscore_in_localName a earl:TestCriterion, earl:TestCase;
+  dc:title "underscore_in_localName";
+  dc:description "underscore in local name";
+  mf:action <http://www.w3.org/2013/TurtleTests/underscore_in_localName.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/underscore_in_localName.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:underscore_in_localName;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:localname_with_COLON a earl:TestCriterion, earl:TestCase;
+  dc:title "localname_with_COLON";
+  dc:description "localname with COLON";
+  mf:action <http://www.w3.org/2013/TurtleTests/localname_with_COLON.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/localname_with_COLON.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:localname_with_COLON;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:localName_with_assigned_nfc_bmp_PN_CHARS_BASE_character_boundaries a earl:TestCriterion, earl:TestCase;
+  dc:title "localName_with_assigned_nfc_bmp_PN_CHARS_BASE_character_boundaries";
+  dc:description "localName with assigned, NFC-normalized, basic-multilingual-plane PN CHARS BASE character boundaries (p:AZaz\u00c0\u00d6\u00d8\u00f6\u00f8...)";
+  mf:action <http://www.w3.org/2013/TurtleTests/localName_with_assigned_nfc_bmp_PN_CHARS_BASE_character_boundaries.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/localName_with_assigned_nfc_bmp_PN_CHARS_BASE_character_boundaries.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:localName_with_assigned_nfc_bmp_PN_CHARS_BASE_character_boundaries;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:localName_with_assigned_nfc_PN_CHARS_BASE_character_boundaries a earl:TestCriterion, earl:TestCase;
+  dc:title "localName_with_assigned_nfc_PN_CHARS_BASE_character_boundaries";
+  dc:description "localName with assigned, NFC-normalized PN CHARS BASE character boundaries (p:AZaz\u00c0\u00d6\u00d8\u00f6\u00f8...)";
+  mf:action <http://www.w3.org/2013/TurtleTests/localName_with_assigned_nfc_PN_CHARS_BASE_character_boundaries.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/localName_with_assigned_nfc_PN_CHARS_BASE_character_boundaries.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:localName_with_assigned_nfc_PN_CHARS_BASE_character_boundaries;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:localName_with_nfc_PN_CHARS_BASE_character_boundaries a earl:TestCriterion, earl:TestCase;
+  dc:title "localName_with_nfc_PN_CHARS_BASE_character_boundaries";
+  dc:description "localName with nfc-normalize PN CHARS BASE character boundaries (p:AZaz\u00c0\u00d6\u00d8\u00f6\u00f8...)";
+  mf:action <http://www.w3.org/2013/TurtleTests/localName_with_nfc_PN_CHARS_BASE_character_boundaries.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/localName_with_nfc_PN_CHARS_BASE_character_boundaries.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:localName_with_nfc_PN_CHARS_BASE_character_boundaries;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:localName_with_leading_underscore a earl:TestCriterion, earl:TestCase;
+  dc:title "localName_with_leading_underscore";
+  dc:description "localName with leading underscore (p:_)";
+  mf:action <http://www.w3.org/2013/TurtleTests/localName_with_leading_underscore.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/localName_with_leading_underscore.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:localName_with_leading_underscore;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:localName_with_leading_digit a earl:TestCriterion, earl:TestCase;
+  dc:title "localName_with_leading_digit";
+  dc:description "localName with leading digit (p:_)";
+  mf:action <http://www.w3.org/2013/TurtleTests/localName_with_leading_digit.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/localName_with_leading_digit.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:localName_with_leading_digit;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:localName_with_non_leading_extras a earl:TestCriterion, earl:TestCase;
+  dc:title "localName_with_non_leading_extras";
+  dc:description "localName with_non_leading_extras (_:a\u00b7\u0300\u036f\u203f.\u2040)";
+  mf:action <http://www.w3.org/2013/TurtleTests/localName_with_non_leading_extras.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/localName_with_non_leading_extras.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:localName_with_non_leading_extras;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:old_style_base a earl:TestCriterion, earl:TestCase;
+  dc:title "old_style_base";
+  dc:description "old-style base";
+  mf:action <http://www.w3.org/2013/TurtleTests/old_style_base.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/IRI_spo.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:old_style_base;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:SPARQL_style_base a earl:TestCriterion, earl:TestCase;
+  dc:title "SPARQL_style_base";
+  dc:description "SPARQL-style base";
+  mf:action <http://www.w3.org/2013/TurtleTests/SPARQL_style_base.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/IRI_spo.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:SPARQL_style_base;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:labeled_blank_node_subject a earl:TestCriterion, earl:TestCase;
+  dc:title "labeled_blank_node_subject";
+  dc:description "labeled blank node subject";
+  mf:action <http://www.w3.org/2013/TurtleTests/labeled_blank_node_subject.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/labeled_blank_node_subject.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:labeled_blank_node_subject;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:labeled_blank_node_object a earl:TestCriterion, earl:TestCase;
+  dc:title "labeled_blank_node_object";
+  dc:description "labeled blank node object";
+  mf:action <http://www.w3.org/2013/TurtleTests/labeled_blank_node_object.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/labeled_blank_node_object.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:labeled_blank_node_object;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:labeled_blank_node_with_PN_CHARS_BASE_character_boundaries a earl:TestCriterion, earl:TestCase;
+  dc:title "labeled_blank_node_with_PN_CHARS_BASE_character_boundaries";
+  dc:description "labeled blank node with PN_CHARS_BASE character boundaries (_:AZaz\u00c0\u00d6\u00d8\u00f6\u00f8...)";
+  mf:action <http://www.w3.org/2013/TurtleTests/labeled_blank_node_with_PN_CHARS_BASE_character_boundaries.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/labeled_blank_node_object.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:labeled_blank_node_with_PN_CHARS_BASE_character_boundaries;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:labeled_blank_node_with_leading_underscore a earl:TestCriterion, earl:TestCase;
+  dc:title "labeled_blank_node_with_leading_underscore";
+  dc:description "labeled blank node with_leading_underscore (_:_)";
+  mf:action <http://www.w3.org/2013/TurtleTests/labeled_blank_node_with_leading_underscore.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/labeled_blank_node_object.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:labeled_blank_node_with_leading_underscore;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:labeled_blank_node_with_leading_digit a earl:TestCriterion, earl:TestCase;
+  dc:title "labeled_blank_node_with_leading_digit";
+  dc:description "labeled blank node with_leading_digit (_:0)";
+  mf:action <http://www.w3.org/2013/TurtleTests/labeled_blank_node_with_leading_digit.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/labeled_blank_node_object.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:labeled_blank_node_with_leading_digit;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:labeled_blank_node_with_non_leading_extras a earl:TestCriterion, earl:TestCase;
+  dc:title "labeled_blank_node_with_non_leading_extras";
+  dc:description "labeled blank node with_non_leading_extras (_:a\u00b7\u0300\u036f\u203f.\u2040)";
+  mf:action <http://www.w3.org/2013/TurtleTests/labeled_blank_node_with_non_leading_extras.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/labeled_blank_node_object.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:labeled_blank_node_with_non_leading_extras;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:anonymous_blank_node_subject a earl:TestCriterion, earl:TestCase;
+  dc:title "anonymous_blank_node_subject";
+  dc:description "anonymous blank node subject";
+  mf:action <http://www.w3.org/2013/TurtleTests/anonymous_blank_node_subject.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/labeled_blank_node_subject.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:anonymous_blank_node_subject;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:anonymous_blank_node_object a earl:TestCriterion, earl:TestCase;
+  dc:title "anonymous_blank_node_object";
+  dc:description "anonymous blank node object";
+  mf:action <http://www.w3.org/2013/TurtleTests/anonymous_blank_node_object.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/labeled_blank_node_object.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:anonymous_blank_node_object;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:sole_blankNodePropertyList a earl:TestCriterion, earl:TestCase;
+  dc:title "sole_blankNodePropertyList";
+  dc:description "sole blankNodePropertyList [ <p> <o> ] .";
+  mf:action <http://www.w3.org/2013/TurtleTests/sole_blankNodePropertyList.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/labeled_blank_node_subject.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:sole_blankNodePropertyList;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:blankNodePropertyList_as_subject a earl:TestCriterion, earl:TestCase;
+  dc:title "blankNodePropertyList_as_subject";
+  dc:description "blankNodePropertyList as subject [ \u2026 ] <p> <o> .";
+  mf:action <http://www.w3.org/2013/TurtleTests/blankNodePropertyList_as_subject.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/blankNodePropertyList_as_subject.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:blankNodePropertyList_as_subject;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:blankNodePropertyList_as_object a earl:TestCriterion, earl:TestCase;
+  dc:title "blankNodePropertyList_as_object";
+  dc:description "blankNodePropertyList as object <s> <p> [ \u2026 ] .";
+  mf:action <http://www.w3.org/2013/TurtleTests/blankNodePropertyList_as_object.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/blankNodePropertyList_as_object.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:blankNodePropertyList_as_object;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:blankNodePropertyList_with_multiple_triples a earl:TestCriterion, earl:TestCase;
+  dc:title "blankNodePropertyList_with_multiple_triples";
+  dc:description "blankNodePropertyList with multiple triples [ <s> <p> ; <s2> <p2> ]";
+  mf:action <http://www.w3.org/2013/TurtleTests/blankNodePropertyList_with_multiple_triples.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/blankNodePropertyList_with_multiple_triples.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:blankNodePropertyList_with_multiple_triples;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:nested_blankNodePropertyLists a earl:TestCriterion, earl:TestCase;
+  dc:title "nested_blankNodePropertyLists";
+  dc:description "nested blankNodePropertyLists [ <p1> [ <p2> <o2> ] ; <p3> <o3> ]";
+  mf:action <http://www.w3.org/2013/TurtleTests/nested_blankNodePropertyLists.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/nested_blankNodePropertyLists.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:nested_blankNodePropertyLists;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:blankNodePropertyList_containing_collection a earl:TestCriterion, earl:TestCase;
+  dc:title "blankNodePropertyList_containing_collection";
+  dc:description "blankNodePropertyList containing collection [ <p1> ( \u2026 ) ]";
+  mf:action <http://www.w3.org/2013/TurtleTests/blankNodePropertyList_containing_collection.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/blankNodePropertyList_containing_collection.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:blankNodePropertyList_containing_collection;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:collection_subject a earl:TestCriterion, earl:TestCase;
+  dc:title "collection_subject";
+  dc:description "collection subject";
+  mf:action <http://www.w3.org/2013/TurtleTests/collection_subject.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/collection_subject.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:collection_subject;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:collection_object a earl:TestCriterion, earl:TestCase;
+  dc:title "collection_object";
+  dc:description "collection object";
+  mf:action <http://www.w3.org/2013/TurtleTests/collection_object.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/collection_object.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:collection_object;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:empty_collection a earl:TestCriterion, earl:TestCase;
+  dc:title "empty_collection";
+  dc:description "empty collection ()";
+  mf:action <http://www.w3.org/2013/TurtleTests/empty_collection.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/empty_collection.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:empty_collection;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:nested_collection a earl:TestCriterion, earl:TestCase;
+  dc:title "nested_collection";
+  dc:description "nested collection (())";
+  mf:action <http://www.w3.org/2013/TurtleTests/nested_collection.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/nested_collection.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:nested_collection;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:first a earl:TestCriterion, earl:TestCase;
+  dc:title "first";
+  dc:description "first, not last, non-empty nested collection";
+  mf:action <http://www.w3.org/2013/TurtleTests/first.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/first.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:first;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:last a earl:TestCriterion, earl:TestCase;
+  dc:title "last";
+  dc:description "last, not first, non-empty nested collection";
+  mf:action <http://www.w3.org/2013/TurtleTests/last.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/last.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:last;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:LITERAL1 a earl:TestCriterion, earl:TestCase;
+  dc:title "LITERAL1";
+  dc:description "LITERAL1 'x'";
+  mf:action <http://www.w3.org/2013/TurtleTests/LITERAL1.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/LITERAL1.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:LITERAL1;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:LITERAL1_ascii_boundaries a earl:TestCriterion, earl:TestCase;
+  dc:title "LITERAL1_ascii_boundaries";
+  dc:description "LITERAL1_ascii_boundaries '\\x00\\x09\\x0b\\x0c\\x0e\\x26\\x28...'";
+  mf:action <http://www.w3.org/2013/TurtleTests/LITERAL1_ascii_boundaries.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/LITERAL1_ascii_boundaries.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:LITERAL1_ascii_boundaries;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:LITERAL1_with_UTF8_boundaries a earl:TestCriterion, earl:TestCase;
+  dc:title "LITERAL1_with_UTF8_boundaries";
+  dc:description "LITERAL1_with_UTF8_boundaries '\\x80\\x7ff\\x800\\xfff...'";
+  mf:action <http://www.w3.org/2013/TurtleTests/LITERAL1_with_UTF8_boundaries.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/LITERAL_with_UTF8_boundaries.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:LITERAL1_with_UTF8_boundaries;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:LITERAL1_all_controls a earl:TestCriterion, earl:TestCase;
+  dc:title "LITERAL1_all_controls";
+  dc:description "LITERAL1_all_controls '\\x00\\x01\\x02\\x03\\x04...'";
+  mf:action <http://www.w3.org/2013/TurtleTests/LITERAL1_all_controls.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/LITERAL1_all_controls.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:LITERAL1_all_controls;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:LITERAL1_all_punctuation a earl:TestCriterion, earl:TestCase;
+  dc:title "LITERAL1_all_punctuation";
+  dc:description "LITERAL1_all_punctuation '!\"#$%&()...'";
+  mf:action <http://www.w3.org/2013/TurtleTests/LITERAL1_all_punctuation.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/LITERAL1_all_punctuation.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:LITERAL1_all_punctuation;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:LITERAL_LONG1 a earl:TestCriterion, earl:TestCase;
+  dc:title "LITERAL_LONG1";
+  dc:description "LITERAL_LONG1 '''x'''";
+  mf:action <http://www.w3.org/2013/TurtleTests/LITERAL_LONG1.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/LITERAL1.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:LITERAL_LONG1;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:LITERAL_LONG1_ascii_boundaries a earl:TestCriterion, earl:TestCase;
+  dc:title "LITERAL_LONG1_ascii_boundaries";
+  dc:description "LITERAL_LONG1_ascii_boundaries '\\x00\\x26\\x28...'";
+  mf:action <http://www.w3.org/2013/TurtleTests/LITERAL_LONG1_ascii_boundaries.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/LITERAL_LONG1_ascii_boundaries.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:LITERAL_LONG1_ascii_boundaries;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:LITERAL_LONG1_with_UTF8_boundaries a earl:TestCriterion, earl:TestCase;
+  dc:title "LITERAL_LONG1_with_UTF8_boundaries";
+  dc:description "LITERAL_LONG1_with_UTF8_boundaries '\\x80\\x7ff\\x800\\xfff...'";
+  mf:action <http://www.w3.org/2013/TurtleTests/LITERAL_LONG1_with_UTF8_boundaries.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/LITERAL_with_UTF8_boundaries.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:LITERAL_LONG1_with_UTF8_boundaries;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:LITERAL_LONG1_with_1_squote a earl:TestCriterion, earl:TestCase;
+  dc:title "LITERAL_LONG1_with_1_squote";
+  dc:description "LITERAL_LONG1 with 1 squote '''a'b'''";
+  mf:action <http://www.w3.org/2013/TurtleTests/LITERAL_LONG1_with_1_squote.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/LITERAL_LONG1_with_1_squote.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:LITERAL_LONG1_with_1_squote;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:LITERAL_LONG1_with_2_squotes a earl:TestCriterion, earl:TestCase;
+  dc:title "LITERAL_LONG1_with_2_squotes";
+  dc:description "LITERAL_LONG1 with 2 squotes '''a''b'''";
+  mf:action <http://www.w3.org/2013/TurtleTests/LITERAL_LONG1_with_2_squotes.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/LITERAL_LONG1_with_2_squotes.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:LITERAL_LONG1_with_2_squotes;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:LITERAL2 a earl:TestCriterion, earl:TestCase;
+  dc:title "LITERAL2";
+  dc:description "LITERAL2 \"x\"";
+  mf:action <http://www.w3.org/2013/TurtleTests/LITERAL2.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/LITERAL1.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:LITERAL2;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:LITERAL2_ascii_boundaries a earl:TestCriterion, earl:TestCase;
+  dc:title "LITERAL2_ascii_boundaries";
+  dc:description "LITERAL2_ascii_boundaries '\\x00\\x09\\x0b\\x0c\\x0e\\x21\\x23...'";
+  mf:action <http://www.w3.org/2013/TurtleTests/LITERAL2_ascii_boundaries.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/LITERAL2_ascii_boundaries.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:LITERAL2_ascii_boundaries;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:LITERAL2_with_UTF8_boundaries a earl:TestCriterion, earl:TestCase;
+  dc:title "LITERAL2_with_UTF8_boundaries";
+  dc:description "LITERAL2_with_UTF8_boundaries '\\x80\\x7ff\\x800\\xfff...'";
+  mf:action <http://www.w3.org/2013/TurtleTests/LITERAL2_with_UTF8_boundaries.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/LITERAL_with_UTF8_boundaries.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:LITERAL2_with_UTF8_boundaries;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:LITERAL_LONG2 a earl:TestCriterion, earl:TestCase;
+  dc:title "LITERAL_LONG2";
+  dc:description "LITERAL_LONG2 \"\"\"x\"\"\"";
+  mf:action <http://www.w3.org/2013/TurtleTests/LITERAL_LONG2.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/LITERAL1.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:LITERAL_LONG2;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:LITERAL_LONG2_ascii_boundaries a earl:TestCriterion, earl:TestCase;
+  dc:title "LITERAL_LONG2_ascii_boundaries";
+  dc:description "LITERAL_LONG2_ascii_boundaries '\\x00\\x21\\x23...'";
+  mf:action <http://www.w3.org/2013/TurtleTests/LITERAL_LONG2_ascii_boundaries.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/LITERAL_LONG2_ascii_boundaries.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:LITERAL_LONG2_ascii_boundaries;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:LITERAL_LONG2_with_UTF8_boundaries a earl:TestCriterion, earl:TestCase;
+  dc:title "LITERAL_LONG2_with_UTF8_boundaries";
+  dc:description "LITERAL_LONG2_with_UTF8_boundaries '\\x80\\x7ff\\x800\\xfff...'";
+  mf:action <http://www.w3.org/2013/TurtleTests/LITERAL_LONG2_with_UTF8_boundaries.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/LITERAL_with_UTF8_boundaries.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:LITERAL_LONG2_with_UTF8_boundaries;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:LITERAL_LONG2_with_1_squote a earl:TestCriterion, earl:TestCase;
+  dc:title "LITERAL_LONG2_with_1_squote";
+  dc:description "LITERAL_LONG2 with 1 squote \"\"\"a\"b\"\"\"";
+  mf:action <http://www.w3.org/2013/TurtleTests/LITERAL_LONG2_with_1_squote.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/LITERAL_LONG2_with_1_squote.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:LITERAL_LONG2_with_1_squote;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:LITERAL_LONG2_with_2_squotes a earl:TestCriterion, earl:TestCase;
+  dc:title "LITERAL_LONG2_with_2_squotes";
+  dc:description "LITERAL_LONG2 with 2 squotes \"\"\"a\"\"b\"\"\"";
+  mf:action <http://www.w3.org/2013/TurtleTests/LITERAL_LONG2_with_2_squotes.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/LITERAL_LONG2_with_2_squotes.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:LITERAL_LONG2_with_2_squotes;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:literal_with_CHARACTER_TABULATION a earl:TestCriterion, earl:TestCase;
+  dc:title "literal_with_CHARACTER_TABULATION";
+  dc:description "literal with CHARACTER TABULATION";
+  mf:action <http://www.w3.org/2013/TurtleTests/literal_with_CHARACTER_TABULATION.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/literal_with_CHARACTER_TABULATION.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:literal_with_CHARACTER_TABULATION;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:literal_with_BACKSPACE a earl:TestCriterion, earl:TestCase;
+  dc:title "literal_with_BACKSPACE";
+  dc:description "literal with BACKSPACE";
+  mf:action <http://www.w3.org/2013/TurtleTests/literal_with_BACKSPACE.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/literal_with_BACKSPACE.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:literal_with_BACKSPACE;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:literal_with_LINE_FEED a earl:TestCriterion, earl:TestCase;
+  dc:title "literal_with_LINE_FEED";
+  dc:description "literal with LINE FEED";
+  mf:action <http://www.w3.org/2013/TurtleTests/literal_with_LINE_FEED.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/literal_with_LINE_FEED.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:literal_with_LINE_FEED;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:literal_with_CARRIAGE_RETURN a earl:TestCriterion, earl:TestCase;
+  dc:title "literal_with_CARRIAGE_RETURN";
+  dc:description "literal with CARRIAGE RETURN";
+  mf:action <http://www.w3.org/2013/TurtleTests/literal_with_CARRIAGE_RETURN.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/literal_with_CARRIAGE_RETURN.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:literal_with_CARRIAGE_RETURN;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:literal_with_FORM_FEED a earl:TestCriterion, earl:TestCase;
+  dc:title "literal_with_FORM_FEED";
+  dc:description "literal with FORM FEED";
+  mf:action <http://www.w3.org/2013/TurtleTests/literal_with_FORM_FEED.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/literal_with_FORM_FEED.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:literal_with_FORM_FEED;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:literal_with_REVERSE_SOLIDUS a earl:TestCriterion, earl:TestCase;
+  dc:title "literal_with_REVERSE_SOLIDUS";
+  dc:description "literal with REVERSE SOLIDUS";
+  mf:action <http://www.w3.org/2013/TurtleTests/literal_with_REVERSE_SOLIDUS.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/literal_with_REVERSE_SOLIDUS.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:literal_with_REVERSE_SOLIDUS;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:literal_with_escaped_CHARACTER_TABULATION a earl:TestCriterion, earl:TestCase;
+  dc:title "literal_with_escaped_CHARACTER_TABULATION";
+  dc:description "literal with escaped CHARACTER TABULATION";
+  mf:action <http://www.w3.org/2013/TurtleTests/literal_with_escaped_CHARACTER_TABULATION.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/literal_with_CHARACTER_TABULATION.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:literal_with_escaped_CHARACTER_TABULATION;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:literal_with_escaped_BACKSPACE a earl:TestCriterion, earl:TestCase;
+  dc:title "literal_with_escaped_BACKSPACE";
+  dc:description "literal with escaped BACKSPACE";
+  mf:action <http://www.w3.org/2013/TurtleTests/literal_with_escaped_BACKSPACE.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/literal_with_BACKSPACE.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:literal_with_escaped_BACKSPACE;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:literal_with_escaped_LINE_FEED a earl:TestCriterion, earl:TestCase;
+  dc:title "literal_with_escaped_LINE_FEED";
+  dc:description "literal with escaped LINE FEED";
+  mf:action <http://www.w3.org/2013/TurtleTests/literal_with_escaped_LINE_FEED.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/literal_with_LINE_FEED.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:literal_with_escaped_LINE_FEED;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:literal_with_escaped_CARRIAGE_RETURN a earl:TestCriterion, earl:TestCase;
+  dc:title "literal_with_escaped_CARRIAGE_RETURN";
+  dc:description "literal with escaped CARRIAGE RETURN";
+  mf:action <http://www.w3.org/2013/TurtleTests/literal_with_escaped_CARRIAGE_RETURN.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/literal_with_CARRIAGE_RETURN.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:literal_with_escaped_CARRIAGE_RETURN;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:literal_with_escaped_FORM_FEED a earl:TestCriterion, earl:TestCase;
+  dc:title "literal_with_escaped_FORM_FEED";
+  dc:description "literal with escaped FORM FEED";
+  mf:action <http://www.w3.org/2013/TurtleTests/literal_with_escaped_FORM_FEED.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/literal_with_FORM_FEED.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:literal_with_escaped_FORM_FEED;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:literal_with_numeric_escape4 a earl:TestCriterion, earl:TestCase;
+  dc:title "literal_with_numeric_escape4";
+  dc:description "literal with numeric escape4 \\u";
+  mf:action <http://www.w3.org/2013/TurtleTests/literal_with_numeric_escape4.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/literal_with_numeric_escape4.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:literal_with_numeric_escape4;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:literal_with_numeric_escape8 a earl:TestCriterion, earl:TestCase;
+  dc:title "literal_with_numeric_escape8";
+  dc:description "literal with numeric escape8 \\U";
+  mf:action <http://www.w3.org/2013/TurtleTests/literal_with_numeric_escape8.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/literal_with_numeric_escape4.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:literal_with_numeric_escape8;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:IRIREF_datatype a earl:TestCriterion, earl:TestCase;
+  dc:title "IRIREF_datatype";
+  dc:description "IRIREF datatype \"\"^^<t>";
+  mf:action <http://www.w3.org/2013/TurtleTests/IRIREF_datatype.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/IRIREF_datatype.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:IRIREF_datatype;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:prefixed_name_datatype a earl:TestCriterion, earl:TestCase;
+  dc:title "prefixed_name_datatype";
+  dc:description "prefixed name datatype \"\"^^p:t";
+  mf:action <http://www.w3.org/2013/TurtleTests/prefixed_name_datatype.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/IRIREF_datatype.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:prefixed_name_datatype;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:bareword_integer a earl:TestCriterion, earl:TestCase;
+  dc:title "bareword_integer";
+  dc:description "bareword integer";
+  mf:action <http://www.w3.org/2013/TurtleTests/bareword_integer.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/IRIREF_datatype.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:bareword_integer;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:bareword_decimal a earl:TestCriterion, earl:TestCase;
+  dc:title "bareword_decimal";
+  dc:description "bareword decimal";
+  mf:action <http://www.w3.org/2013/TurtleTests/bareword_decimal.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/bareword_decimal.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:bareword_decimal;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:bareword_double a earl:TestCriterion, earl:TestCase;
+  dc:title "bareword_double";
+  dc:description "bareword double";
+  mf:action <http://www.w3.org/2013/TurtleTests/bareword_double.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/bareword_double.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:bareword_double;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:double_lower_case_e a earl:TestCriterion, earl:TestCase;
+  dc:title "double_lower_case_e";
+  dc:description "double lower case e";
+  mf:action <http://www.w3.org/2013/TurtleTests/double_lower_case_e.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/double_lower_case_e.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:double_lower_case_e;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:negative_numeric a earl:TestCriterion, earl:TestCase;
+  dc:title "negative_numeric";
+  dc:description "negative numeric";
+  mf:action <http://www.w3.org/2013/TurtleTests/negative_numeric.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/negative_numeric.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:negative_numeric;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:positive_numeric a earl:TestCriterion, earl:TestCase;
+  dc:title "positive_numeric";
+  dc:description "positive numeric";
+  mf:action <http://www.w3.org/2013/TurtleTests/positive_numeric.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/positive_numeric.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:positive_numeric;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:numeric_with_leading_0 a earl:TestCriterion, earl:TestCase;
+  dc:title "numeric_with_leading_0";
+  dc:description "numeric with leading 0";
+  mf:action <http://www.w3.org/2013/TurtleTests/numeric_with_leading_0.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/numeric_with_leading_0.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:numeric_with_leading_0;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:literal_true a earl:TestCriterion, earl:TestCase;
+  dc:title "literal_true";
+  dc:description "literal true";
+  mf:action <http://www.w3.org/2013/TurtleTests/literal_true.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/literal_true.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:literal_true;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:literal_false a earl:TestCriterion, earl:TestCase;
+  dc:title "literal_false";
+  dc:description "literal false";
+  mf:action <http://www.w3.org/2013/TurtleTests/literal_false.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/literal_false.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:literal_false;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:langtagged_non_LONG a earl:TestCriterion, earl:TestCase;
+  dc:title "langtagged_non_LONG";
+  dc:description "langtagged non-LONG \"x\"@en";
+  mf:action <http://www.w3.org/2013/TurtleTests/langtagged_non_LONG.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/langtagged_non_LONG.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:langtagged_non_LONG;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:langtagged_LONG a earl:TestCriterion, earl:TestCase;
+  dc:title "langtagged_LONG";
+  dc:description "langtagged LONG \"\"\"x\"\"\"@en";
+  mf:action <http://www.w3.org/2013/TurtleTests/langtagged_LONG.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/langtagged_non_LONG.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:langtagged_LONG;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:lantag_with_subtag a earl:TestCriterion, earl:TestCase;
+  dc:title "lantag_with_subtag";
+  dc:description "lantag with subtag \"x\"@en-us";
+  mf:action <http://www.w3.org/2013/TurtleTests/lantag_with_subtag.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/lantag_with_subtag.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:lantag_with_subtag;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:objectList_with_two_objects a earl:TestCriterion, earl:TestCase;
+  dc:title "objectList_with_two_objects";
+  dc:description "objectList with two objects \u2026 <o1>,<o2>";
+  mf:action <http://www.w3.org/2013/TurtleTests/objectList_with_two_objects.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/objectList_with_two_objects.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:objectList_with_two_objects;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:predicateObjectList_with_two_objectLists a earl:TestCriterion, earl:TestCase;
+  dc:title "predicateObjectList_with_two_objectLists";
+  dc:description "predicateObjectList with two objectLists \u2026 <o1>,<o2>";
+  mf:action <http://www.w3.org/2013/TurtleTests/predicateObjectList_with_two_objectLists.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/predicateObjectList_with_two_objectLists.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:predicateObjectList_with_two_objectLists;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:repeated_semis_at_end a earl:TestCriterion, earl:TestCase;
+  dc:title "repeated_semis_at_end";
+  dc:description "repeated semis at end <s> <p> <o> ;; <p2> <o2> .";
+  mf:action <http://www.w3.org/2013/TurtleTests/repeated_semis_at_end.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/predicateObjectList_with_two_objectLists.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:repeated_semis_at_end;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:repeated_semis_not_at_end a earl:TestCriterion, earl:TestCase;
+  dc:title "repeated_semis_not_at_end";
+  dc:description "repeated semis not at end <s> <p> <o> ;;.";
+  mf:action <http://www.w3.org/2013/TurtleTests/repeated_semis_not_at_end.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/repeated_semis_not_at_end.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:repeated_semis_not_at_end;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:comment_following_localName a earl:TestCriterion, earl:TestCase;
+  dc:title "comment_following_localName";
+  dc:description "comment following localName";
+  mf:action <http://www.w3.org/2013/TurtleTests/comment_following_localName.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/IRI_spo.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:comment_following_localName;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:number_sign_following_localName a earl:TestCriterion, earl:TestCase;
+  dc:title "number_sign_following_localName";
+  dc:description "number sign following localName";
+  mf:action <http://www.w3.org/2013/TurtleTests/number_sign_following_localName.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/number_sign_following_localName.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:number_sign_following_localName;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:comment_following_PNAME_NS a earl:TestCriterion, earl:TestCase;
+  dc:title "comment_following_PNAME_NS";
+  dc:description "comment following PNAME_NS";
+  mf:action <http://www.w3.org/2013/TurtleTests/comment_following_PNAME_NS.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/comment_following_PNAME_NS.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:comment_following_PNAME_NS;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:number_sign_following_PNAME_NS a earl:TestCriterion, earl:TestCase;
+  dc:title "number_sign_following_PNAME_NS";
+  dc:description "number sign following PNAME_NS";
+  mf:action <http://www.w3.org/2013/TurtleTests/number_sign_following_PNAME_NS.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/number_sign_following_PNAME_NS.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:number_sign_following_PNAME_NS;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:LITERAL_LONG2_with_REVERSE_SOLIDUS a earl:TestCriterion, earl:TestCase;
+  dc:title "LITERAL_LONG2_with_REVERSE_SOLIDUS";
+  dc:description "REVERSE SOLIDUS at end of LITERAL_LONG2";
+  mf:action <http://www.w3.org/2013/TurtleTests/LITERAL_LONG2_with_REVERSE_SOLIDUS.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/LITERAL_LONG2_with_REVERSE_SOLIDUS.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:LITERAL_LONG2_with_REVERSE_SOLIDUS;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-LITERAL2_with_langtag_and_datatype a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-num-05";
+  dc:description "Bad number format (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-LITERAL2_with_langtag_and_datatype.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-LITERAL2_with_langtag_and_datatype;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:two_LITERAL_LONG2s a earl:TestCriterion, earl:TestCase;
+  dc:title "two_LITERAL_LONG2s";
+  dc:description "two LITERAL_LONG2s testing quote delimiter overrun";
+  mf:action <http://www.w3.org/2013/TurtleTests/two_LITERAL_LONG2s.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/two_LITERAL_LONG2s.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:two_LITERAL_LONG2s;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:langtagged_LONG_with_subtag a earl:TestCriterion, earl:TestCase;
+  dc:title "langtagged_LONG_with_subtag";
+  dc:description "langtagged LONG with subtag \"\"\"Cheers\"\"\"@en-UK";
+  mf:action <http://www.w3.org/2013/TurtleTests/langtagged_LONG_with_subtag.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/langtagged_LONG_with_subtag.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:langtagged_LONG_with_subtag;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-file-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-file-01";
+  dc:description "Empty file";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-file-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-file-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-file-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-file-02";
+  dc:description "Only comment";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-file-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-file-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-file-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-file-03";
+  dc:description "One comment, one empty line";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-file-03.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-file-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-uri-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-uri-01";
+  dc:description "Only IRIs";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-uri-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-uri-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-uri-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-uri-02";
+  dc:description "IRIs with Unicode escape";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-uri-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-uri-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-uri-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-uri-03";
+  dc:description "IRIs with long Unicode escape";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-uri-03.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-uri-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-uri-04 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-uri-04";
+  dc:description "Legal IRIs";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-uri-04.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-uri-04;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-base-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-base-01";
+  dc:description "@base";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-base-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-base-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-base-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-base-02";
+  dc:description "BASE";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-base-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-base-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-base-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-base-03";
+  dc:description "@base with relative IRIs";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-base-03.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-base-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-base-04 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-base-04";
+  dc:description "base with relative IRIs";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-base-04.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-base-04;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-prefix-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-prefix-01";
+  dc:description "@prefix";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-prefix-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-prefix-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-prefix-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-prefix-02";
+  dc:description "PreFIX";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-prefix-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-prefix-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-prefix-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-prefix-03";
+  dc:description "Empty PREFIX";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-prefix-03.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-prefix-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-prefix-04 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-prefix-04";
+  dc:description "Empty @prefix with % escape";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-prefix-04.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-prefix-04;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-prefix-05 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-prefix-05";
+  dc:description "@prefix with no suffix";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-prefix-05.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-prefix-05;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-prefix-06 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-prefix-06";
+  dc:description "colon is a legal pname character";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-prefix-06.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-prefix-06;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-prefix-07 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-prefix-07";
+  dc:description "dash is a legal pname character";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-prefix-07.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-prefix-07;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-prefix-08 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-prefix-08";
+  dc:description "underscore is a legal pname character";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-prefix-08.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-prefix-08;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-prefix-09 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-prefix-09";
+  dc:description "percents in pnames";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-prefix-09.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-prefix-09;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-string-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-string-01";
+  dc:description "string literal";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-string-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-string-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-string-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-string-02";
+  dc:description "langString literal";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-string-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-string-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-string-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-string-03";
+  dc:description "langString literal with region";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-string-03.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-string-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-string-04 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-string-04";
+  dc:description "squote string literal";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-string-04.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-string-04;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-string-05 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-string-05";
+  dc:description "squote langString literal";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-string-05.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-string-05;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-string-06 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-string-06";
+  dc:description "squote langString literal with region";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-string-06.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-string-06;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-string-07 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-string-07";
+  dc:description "long string literal with embedded single- and double-quotes";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-string-07.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-string-07;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-string-08 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-string-08";
+  dc:description "long string literal with embedded newline";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-string-08.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-string-08;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-string-09 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-string-09";
+  dc:description "squote long string literal with embedded single- and double-quotes";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-string-09.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-string-09;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-string-10 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-string-10";
+  dc:description "long langString literal with embedded newline";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-string-10.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-string-10;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-string-11 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-string-11";
+  dc:description "squote long langString literal with embedded newline";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-string-11.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-string-11;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-str-esc-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-str-esc-01";
+  dc:description "string literal with escaped newline";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-str-esc-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-str-esc-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-str-esc-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-str-esc-02";
+  dc:description "string literal with Unicode escape";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-str-esc-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-str-esc-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-str-esc-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-str-esc-03";
+  dc:description "string literal with long Unicode escape";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-str-esc-03.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-str-esc-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-pname-esc-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-pname-esc-01";
+  dc:description "pname with back-slash escapes";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-pname-esc-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-pname-esc-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-pname-esc-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-pname-esc-02";
+  dc:description "pname with back-slash escapes (2)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-pname-esc-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-pname-esc-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-pname-esc-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-pname-esc-03";
+  dc:description "pname with back-slash escapes (3)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-pname-esc-03.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-pname-esc-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bnode-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bnode-01";
+  dc:description "bnode subject";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bnode-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bnode-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bnode-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bnode-02";
+  dc:description "bnode object";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bnode-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bnode-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bnode-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bnode-03";
+  dc:description "bnode property list object";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bnode-03.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bnode-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bnode-04 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bnode-04";
+  dc:description "bnode property list object (2)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bnode-04.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bnode-04;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bnode-05 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bnode-05";
+  dc:description "bnode property list subject";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bnode-05.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bnode-05;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bnode-06 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bnode-06";
+  dc:description "labeled bnode subject";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bnode-06.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bnode-06;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bnode-07 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bnode-07";
+  dc:description "labeled bnode subject and object";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bnode-07.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bnode-07;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bnode-08 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bnode-08";
+  dc:description "bare bnode property list";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bnode-08.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bnode-08;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bnode-09 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bnode-09";
+  dc:description "bnode property list";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bnode-09.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bnode-09;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bnode-10 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bnode-10";
+  dc:description "mixed bnode property list and triple";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bnode-10.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bnode-10;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-number-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-number-01";
+  dc:description "integer literal";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-number-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-number-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-number-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-number-02";
+  dc:description "negative integer literal";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-number-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-number-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-number-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-number-03";
+  dc:description "positive integer literal";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-number-03.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-number-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-number-04 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-number-04";
+  dc:description "decimal literal";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-number-04.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-number-04;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-number-05 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-number-05";
+  dc:description "decimal literal (no leading digits)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-number-05.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-number-05;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-number-06 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-number-06";
+  dc:description "negative decimal literal";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-number-06.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-number-06;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-number-07 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-number-07";
+  dc:description "positive decimal literal";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-number-07.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-number-07;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-number-08 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-number-08";
+  dc:description "integer literal with decimal lexical confusion";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-number-08.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-number-08;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-number-09 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-number-09";
+  dc:description "double literal";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-number-09.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-number-09;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-number-10 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-number-10";
+  dc:description "negative double literal";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-number-10.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-number-10;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-number-11 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-number-11";
+  dc:description "double literal no fraction";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-number-11.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-number-11;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-datatypes-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-datatypes-01";
+  dc:description "xsd:byte literal";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-datatypes-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-datatypes-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-datatypes-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-datatypes-02";
+  dc:description "integer as xsd:string";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-datatypes-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-datatypes-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-kw-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-kw-01";
+  dc:description "boolean literal (true)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-kw-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-kw-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-kw-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-kw-02";
+  dc:description "boolean literal (false)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-kw-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-kw-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-kw-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-kw-03";
+  dc:description "'a' as keyword";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-kw-03.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-kw-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-struct-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-struct-01";
+  dc:description "object list";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-struct-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-struct-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-struct-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-struct-02";
+  dc:description "predicate list with object list";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-struct-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-struct-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-struct-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-struct-03";
+  dc:description "predicate list with object list and dangling ';'";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-struct-03.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-struct-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-struct-04 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-struct-04";
+  dc:description "predicate list with multiple ;;";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-struct-04.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-struct-04;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-struct-05 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-struct-05";
+  dc:description "predicate list with multiple ;;";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-struct-05.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-struct-05;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-lists-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-lists-01";
+  dc:description "empty list";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-lists-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-lists-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-lists-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-lists-02";
+  dc:description "mixed list";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-lists-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-lists-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-lists-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-lists-03";
+  dc:description "isomorphic list as subject and object";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-lists-03.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-lists-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-lists-04 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-lists-04";
+  dc:description "lists of lists";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-lists-04.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-lists-04;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-lists-05 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-lists-05";
+  dc:description "mixed lists with embedded lists";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-lists-05.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-lists-05;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-uri-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-uri-01";
+  dc:description "Bad IRI : space (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-uri-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-uri-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-uri-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-uri-02";
+  dc:description "Bad IRI : bad escape (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-uri-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-uri-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-uri-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-uri-03";
+  dc:description "Bad IRI : bad long escape (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-uri-03.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-uri-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-uri-04 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-uri-04";
+  dc:description "Bad IRI : character escapes not allowed (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-uri-04.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-uri-04;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-uri-05 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-uri-05";
+  dc:description "Bad IRI : character escapes not allowed (2) (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-uri-05.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-uri-05;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-prefix-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-prefix-01";
+  dc:description "No prefix (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-prefix-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-prefix-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-prefix-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-prefix-02";
+  dc:description "No prefix (2) (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-prefix-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-prefix-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-prefix-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-prefix-03";
+  dc:description "@prefix without URI (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-prefix-03.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-prefix-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-prefix-04 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-prefix-04";
+  dc:description "@prefix without prefix name (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-prefix-04.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-prefix-04;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-prefix-05 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-prefix-05";
+  dc:description "@prefix without ':' (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-prefix-05.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-prefix-05;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-base-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-base-01";
+  dc:description "@base without URI (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-base-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-base-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-base-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-base-02";
+  dc:description "@base in wrong case (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-base-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-base-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-base-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-base-03";
+  dc:description "BASE without URI (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-base-03.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-base-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-struct-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-struct-01";
+  dc:description "Turtle is not TriG (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-struct-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-struct-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-struct-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-struct-02";
+  dc:description "Turtle is not N3 (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-struct-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-struct-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-struct-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-struct-03";
+  dc:description "Turtle is not NQuads (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-struct-03.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-struct-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-struct-04 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-struct-04";
+  dc:description "Turtle does not allow literals-as-subjects (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-struct-04.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-struct-04;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-struct-05 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-struct-05";
+  dc:description "Turtle does not allow literals-as-predicates (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-struct-05.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-struct-05;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-struct-06 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-struct-06";
+  dc:description "Turtle does not allow bnodes-as-predicates (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-struct-06.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-struct-06;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-struct-07 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-struct-07";
+  dc:description "Turtle does not allow labeled bnodes-as-predicates (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-struct-07.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-struct-07;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-kw-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-kw-01";
+  dc:description "'A' is not a keyword (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-kw-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-kw-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-kw-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-kw-02";
+  dc:description "'a' cannot be used as subject (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-kw-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-kw-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-kw-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-kw-03";
+  dc:description "'a' cannot be used as object (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-kw-03.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-kw-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-kw-04 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-kw-04";
+  dc:description "'true' cannot be used as subject (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-kw-04.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-kw-04;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-kw-05 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-kw-05";
+  dc:description "'true' cannot be used as object (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-kw-05.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-kw-05;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-n3-extras-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-n3-extras-01";
+  dc:description "{} fomulae not in Turtle (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-n3-extras-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-n3-extras-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-n3-extras-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-n3-extras-02";
+  dc:description "= is not Turtle (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-n3-extras-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-n3-extras-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-n3-extras-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-n3-extras-03";
+  dc:description "N3 paths not in Turtle (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-n3-extras-03.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-n3-extras-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-n3-extras-04 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-n3-extras-04";
+  dc:description "N3 paths not in Turtle (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-n3-extras-04.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-n3-extras-04;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-n3-extras-05 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-n3-extras-05";
+  dc:description "N3 is...of not in Turtle (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-n3-extras-05.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-n3-extras-05;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-n3-extras-06 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-n3-extras-06";
+  dc:description "N3 paths not in Turtle (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-n3-extras-06.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-n3-extras-06;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-n3-extras-07 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-n3-extras-07";
+  dc:description "@keywords is not Turtle (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-n3-extras-07.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-n3-extras-07;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-n3-extras-08 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-n3-extras-08";
+  dc:description "@keywords is not Turtle (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-n3-extras-08.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-n3-extras-08;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-n3-extras-09 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-n3-extras-09";
+  dc:description "=> is not Turtle (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-n3-extras-09.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-n3-extras-09;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-n3-extras-10 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-n3-extras-10";
+  dc:description "<= is not Turtle (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-n3-extras-10.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-n3-extras-10;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-n3-extras-11 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-n3-extras-11";
+  dc:description "@forSome is not Turtle (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-n3-extras-11.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-n3-extras-11;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-n3-extras-12 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-n3-extras-12";
+  dc:description "@forAll is not Turtle (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-n3-extras-12.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-n3-extras-12;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-n3-extras-13 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-n3-extras-13";
+  dc:description "@keywords is not Turtle (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-n3-extras-13.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-n3-extras-13;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-struct-08 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-struct-08";
+  dc:description "missing '.' (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-struct-08.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-struct-08;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-struct-09 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-struct-09";
+  dc:description "extra '.' (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-struct-09.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-struct-09;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-struct-10 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-struct-10";
+  dc:description "extra '.' (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-struct-10.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-struct-10;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-struct-11 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-struct-11";
+  dc:description "trailing ';' no '.' (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-struct-11.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-struct-11;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-struct-12 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-struct-12";
+  dc:description "subject, predicate, no object (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-struct-12.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-struct-12;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-struct-13 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-struct-13";
+  dc:description "subject, predicate, no object (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-struct-13.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-struct-13;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-struct-14 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-struct-14";
+  dc:description "literal as subject (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-struct-14.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-struct-14;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-struct-15 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-struct-15";
+  dc:description "literal as predicate (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-struct-15.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-struct-15;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-struct-16 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-struct-16";
+  dc:description "bnode as predicate (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-struct-16.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-struct-16;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-struct-17 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-struct-17";
+  dc:description "labeled bnode as predicate (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-struct-17.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-struct-17;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-lang-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-lang-01";
+  dc:description "langString with bad lang (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-lang-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-lang-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-esc-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-esc-01";
+  dc:description "Bad string escape (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-esc-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-esc-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-esc-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-esc-02";
+  dc:description "Bad string escape (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-esc-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-esc-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-esc-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-esc-03";
+  dc:description "Bad string escape (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-esc-03.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-esc-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-esc-04 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-esc-04";
+  dc:description "Bad string escape (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-esc-04.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-esc-04;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-pname-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-pname-01";
+  dc:description "'~' must be escaped in pname (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-pname-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-pname-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-pname-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-pname-02";
+  dc:description "Bad %-sequence in pname (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-pname-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-pname-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-pname-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-pname-03";
+  dc:description "Bad unicode escape in pname (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-pname-03.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-pname-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-string-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-string-01";
+  dc:description "mismatching string literal open/close (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-string-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-string-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-string-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-string-02";
+  dc:description "mismatching string literal open/close (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-string-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-string-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-string-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-string-03";
+  dc:description "mismatching string literal long/short (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-string-03.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-string-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-string-04 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-string-04";
+  dc:description "mismatching long string literal open/close (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-string-04.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-string-04;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-string-05 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-string-05";
+  dc:description "Long literal with missing end (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-string-05.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-string-05;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-string-06 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-string-06";
+  dc:description "Long literal with extra quote (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-string-06.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-string-06;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-string-07 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-string-07";
+  dc:description "Long literal with extra squote (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-string-07.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-string-07;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-num-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-num-01";
+  dc:description "Bad number format (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-num-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-num-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-num-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-num-02";
+  dc:description "Bad number format (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-num-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-num-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-num-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-num-03";
+  dc:description "Bad number format (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-num-03.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-num-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-num-04 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-num-04";
+  dc:description "Bad number format (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-num-04.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-num-04;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-num-05 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-num-05";
+  dc:description "Bad number format (negative test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-num-05.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-num-05;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-eval-struct-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-eval-struct-01";
+  dc:description "triple with IRIs";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-eval-struct-01.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-eval-struct-01.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-eval-struct-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-eval-struct-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-eval-struct-02";
+  dc:description "triple with IRIs and embedded whitespace";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-eval-struct-02.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-eval-struct-02.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-eval-struct-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-01";
+  dc:description "Blank subject";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-01.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-01.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-02";
+  dc:description "@prefix and qnames";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-02.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-02.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-03";
+  dc:description ", operator";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-03.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-03.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-04 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-04";
+  dc:description "; operator";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-04.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-04.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-04;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-05 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-05";
+  dc:description "empty [] as subject and object";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-05.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-05.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-05;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-06 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-06";
+  dc:description "non-empty [] as subject and object";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-06.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-06.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-06;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-07 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-07";
+  dc:description "'a' as predicate";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-07.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-07.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-07;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-08 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-08";
+  dc:description "simple collection";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-08.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-08.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-08;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-09 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-09";
+  dc:description "empty collection";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-09.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-09.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-09;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-10 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-10";
+  dc:description "integer datatyped literal";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-10.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-10.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-10;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-11 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-11";
+  dc:description "decimal integer canonicalization";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-11.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-11.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-11;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-12 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-12";
+  dc:description "- and _ in names and qnames";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-12.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-12.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-12;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-13 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-13";
+  dc:description "tests for rdf:_<numbers> and other qnames starting with _";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-13.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-13.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-13;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-14 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-14";
+  dc:description "bare : allowed";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-14.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-14.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-14;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-15 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-15";
+  dc:description "simple long literal";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-15.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-15.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-15;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-16 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-16";
+  dc:description "long literals with escapes";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-16.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-16.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-16;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-17 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-17";
+  dc:description "floating point number";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-17.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-17.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-17;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-18 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-18";
+  dc:description "empty literals, normal and long variant";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-18.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-18.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-18;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-19 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-19";
+  dc:description "positive integer, decimal and doubles";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-19.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-19.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-19;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-20 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-20";
+  dc:description "negative integer, decimal and doubles";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-20.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-20.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-20;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-21 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-21";
+  dc:description "long literal ending in double quote";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-21.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-21.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-21;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-22 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-22";
+  dc:description "boolean literals";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-22.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-22.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-22;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-23 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-23";
+  dc:description "comments";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-23.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-23.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-23;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-24 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-24";
+  dc:description "no final mewline";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-24.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-24.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-24;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-25 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-25";
+  dc:description "repeating a @prefix changes pname definition";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-25.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-25.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-25;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-26 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-26";
+  dc:description "Variations on decimal canonicalization";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-26.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-26.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-26;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-subm-27 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-subm-27";
+  dc:description "Repeating @base changes base for relative IRI lookup";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-subm-27.ttl>;
+  mf:result <http://www.w3.org/2013/TurtleTests/turtle-subm-27.nt>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-subm-27;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-eval-bad-01 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-eval-bad-01";
+  dc:description "Bad IRI : good escape, bad charcater (negative evaluation test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-eval-bad-01.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-eval-bad-01;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-eval-bad-02 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-eval-bad-02";
+  dc:description "Bad IRI : hex 3C is < (negative evaluation test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-eval-bad-02.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-eval-bad-02;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-eval-bad-03 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-eval-bad-03";
+  dc:description "Bad IRI : hex 3E is  (negative evaluation test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-eval-bad-03.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-eval-bad-03;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-eval-bad-04 a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-eval-bad-04";
+  dc:description "Bad IRI : {abc} (negative evaluation test)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-eval-bad-04.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-eval-bad-04;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-blank-label-dot-end a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-blank-label-dot-end";
+  dc:description "Blank node label must not end in dot";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-blank-label-dot-end.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-blank-label-dot-end;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-ln-dash-start a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-ln-dash-start";
+  dc:description "Local name must not begin with dash";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-ln-dash-start.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-ln-dash-start;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-ln-escape-start a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-ln-escape-start";
+  dc:description "Bad hex escape at start of local name";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-ln-escape-start.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-ln-escape-start;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-ln-escape a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-ln-escape";
+  dc:description "Bad hex escape in local name";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-ln-escape.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-ln-escape;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-missing-ns-dot-end a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-missing-ns-dot-end";
+  dc:description "Prefix must not end in dot (error in triple, not prefix directive like turtle-syntax-bad-ns-dot-end)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-missing-ns-dot-end.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-missing-ns-dot-end;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-missing-ns-dot-start a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-missing-ns-dot-start";
+  dc:description "Prefix must not start with dot (error in triple, not prefix directive like turtle-syntax-bad-ns-dot-end)";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-missing-ns-dot-start.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-missing-ns-dot-start;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-ns-dot-end a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-ns-dot-end";
+  dc:description "Prefix must not end in dot";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-ns-dot-end.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-ns-dot-end;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-ns-dot-start a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-ns-dot-start";
+  dc:description "Prefix must not start with dot";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-ns-dot-start.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-ns-dot-start;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-bad-number-dot-in-anon a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-bad-number-dot-in-anon";
+  dc:description "Dot delimeter may not appear in anonymous nodes";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-bad-number-dot-in-anon.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-bad-number-dot-in-anon;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-blank-label a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-blank-label";
+  dc:description "Characters allowed in blank node labels";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-blank-label.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-blank-label;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-ln-colons a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-ln-colons";
+  dc:description "Colons in pname local names";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-ln-colons.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-ln-colons;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-ln-dots a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-ln-dots";
+  dc:description "Dots in pname local names";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-ln-dots.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-ln-dots;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
+
+manifest:turtle-syntax-ns-dots a earl:TestCriterion, earl:TestCase;
+  dc:title "turtle-syntax-ns-dots";
+  dc:description "Dots in namespace names";
+  mf:action <http://www.w3.org/2013/TurtleTests/turtle-syntax-ns-dots.ttl>;
+  earl:assertions (
+     [ a earl:Assertion;
+       earl:assertedBy <http://ruben.verborgh.org/#me>;
+       earl:test manifest:turtle-syntax-ns-dots;
+       earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+       earl:mode earl:automatic;
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+  ).
