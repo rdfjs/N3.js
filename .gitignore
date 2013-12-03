@@ -1,4 +1,4 @@
 docs
-build
+browser/n3*
 node_modules
 spec/turtle/

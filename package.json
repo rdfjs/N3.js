@@ -18,7 +18,8 @@
     "jshint": "~2.1.10",
     "request": "~2.22.0",
     "uglify-js": "~2.4.3",
-    "mocha": ">=1.15.0"
+    "mocha": ">=1.15.0",
+    "browserify": ">=2.36.1"
   },
   "scripts": {
     "test": "make test"

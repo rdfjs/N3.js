@@ -1,24 +1,31 @@
 #!/usr/bin/env node
-
+/* build-browser-versions.js builds a browserify version and a minimal browser version */
 var fs = require('fs'),
     path = require('path'),
     spawn = require('child_process').spawn;
 
-// Modules to be included in the browser version
+// Modules to be included in the minimal browser version
 var submodules = [
   'Lexer',
   'Parser',
   'Writer',
   'Store',
   'Util',
-]
+];
 
-// Set up paths
-var sourcePath = path.join(__dirname, '../lib/'),
-    destinationPath = path.join(__dirname, '../build/'),
-    uglifyjsPath = path.join(__dirname, '../node_modules/uglify-js/bin/uglifyjs');
+
+/* Set up paths */
+var rootPath = path.join(__dirname, '../'),
+    sourcePath = path.join(rootPath, 'lib/'),
+    destinationPath = path.join(rootPath, 'browser/'),
+    uglifyjsPath = path.join(rootPath, 'node_modules/uglify-js/bin/uglifyjs'),
+    browserifyPath = path.join(rootPath, 'node_modules/browserify/bin/cmd.js');
+
 if (!fs.existsSync(destinationPath))
   fs.mkdirSync(destinationPath);
+
+
+/* Create minimal browser version */
 
 var scriptFile = destinationPath + 'n3-browser.js',
     minifiedFile = destinationPath + 'n3-browser.min.js',
@@ -43,12 +50,23 @@ submodules.forEach(function (name) {
 // End and execute main wrapping function
 script.write('})(typeof exports !== "undefined" ? exports : this.N3 = {});\n');
 script.end(function () {
-  console.log('browser version written to', scriptFile);
+  console.log('minimal browser version written to', scriptFile);
   // Write minified file
   var minifier = spawn('node',
                        [ uglifyjsPath, scriptFile, '--comments', '-m', '-c', '-o', minifiedFile ],
                        { stdio: 'inherit' });
   minifier.on('exit', function () {
-    console.log('minified version written to', minifiedFile);
+    console.log('minimal browser version (minified) written to', minifiedFile);
   });
+});
+
+
+/* Build browserify version */
+
+var browserifiedFile = destinationPath + 'n3-browserify.js',
+    browserify = spawn('node',
+                       [ browserifyPath, scriptFile, '-s', 'N3', '-o', browserifiedFile ],
+                       { stdio: 'inherit' });
+browserify.on('exit', function () {
+  console.log('browserify version written to', browserifiedFile);
 });

@@ -28,7 +28,7 @@ var N3 = require('n3');
 
 It is also fully compatible with [browserify](http://browserify.org/).
 <br>
-Alternatively, you can build a browser-specific version:
+Alternatively, it offers a minimal browser version (without Node stream support).
 
 ``` bash
 $ cd n3
@@ -39,9 +39,6 @@ $ make browser
 ``` html
 <script src="n3-browser.min.js"></script>
 ```
-
-This browser version includes all functionality, except Node specifics such as streams.
-
 
 ## Triple representation
 For maximum performance and easy of use,
@@ -196,7 +193,7 @@ writer.addTriple({
   predicate: 'http://example.org/cartoons#name',
   object:    '"Tom"'
 });
-writer.end(console.log);
+writer.end(function (error, result) { console.log(result); });
 ```
 
 ### From triples to a Turtle stream

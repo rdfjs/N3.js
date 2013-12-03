@@ -1,5 +1,5 @@
 browser:
-	@node browser/build.js
+	@node browser/build-browser-versions
 
 test:
 	@./node_modules/mocha/bin/mocha
