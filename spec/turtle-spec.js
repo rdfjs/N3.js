@@ -103,7 +103,7 @@ function parseManifest(manifestContents, callback) {
 
     // Store triples until there are no more
     if (triple)
-      return testStore.add(triple.subject, triple.predicate, triple.object);
+      return testStore.addTriple(triple.subject, triple.predicate, triple.object);
 
     // Once all triples are there, get the first item of the test list
     var tests = manifest.tests = [],
