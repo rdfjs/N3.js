@@ -65,7 +65,7 @@ script.end(function () {
 
 var browserifiedFile = destinationPath + 'n3-browserify.js',
     browserify = spawn('node',
-                       [ browserifyPath, scriptFile, '-s', 'N3', '-o', browserifiedFile ],
+                       [ browserifyPath, rootPath + 'N3.js', '-s', 'N3', '-o', browserifiedFile ],
                        { stdio: 'inherit' });
 browserify.on('exit', function () {
   console.log('browserify version written to', browserifiedFile);
