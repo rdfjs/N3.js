@@ -108,11 +108,27 @@ describe('N3Parser', function () {
       shouldNotParse('<a> <b> c:d ',
                      'Undefined prefix "c:" at line 1.'));
 
+    it('should not parse undefined prefix in datatype',
+      shouldNotParse('<a> <b> "c"^^d:e ',
+                     'Undefined prefix "d:" at line 1.'));
+
     it('should parse triples with SPARQL prefixes',
       shouldParse('PREFIX : <#>\n' +
                   'PrEfIX a: <a#> ' +
                   ':x a:a a:b.',
                   ['#x', 'a#a', 'a#b']));
+
+    it('should not parse prefix declarations without prefix',
+      shouldNotParse('@prefix <a> ',
+                     'Expected prefix to follow @prefix at line 1.'));
+
+    it('should not parse prefix declarations without IRI',
+      shouldNotParse('@prefix : .',
+                     'Expected explicituri to follow prefix ":" at line 1.'));
+
+    it('should not parse prefix declarations without a dot',
+      shouldNotParse('@prefix : <a> ;',
+                     'Expected declaration to end with a dot at line 1.'));
 
     it('should parse statements with shared subjects',
       shouldParse('<a> <b> <c>;\n<d> <e>.',
@@ -137,6 +153,10 @@ describe('N3Parser', function () {
     it('should parse statements with named blank nodes',
       shouldParse('_:a <b> _:c.',
                   ['_:b0', 'b', '_:b1']));
+
+    it('should not parse statements with named blank nodes',
+      shouldNotParse('<a> _:b <c>.',
+                     'Disallowed blank node as predicate at line 1.'));
 
     it('should parse statements with empty blank nodes',
       shouldParse('[] <b> [].',
@@ -243,6 +263,28 @@ describe('N3Parser', function () {
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
                            'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
+    it('should parse statements with qnames in lists',
+      shouldParse('@prefix a: <a#>. <a> <b> (a:x a:y).',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a#x'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a#y'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
+                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
+    it('should not parse statements with undefined prefixes in lists',
+      shouldNotParse('<a> <b> (a:x a:y).',
+                     'Undefined prefix "a:" at line 1.'));
+
+    it('should parse statements with blank nodes in lists',
+      shouldParse('<a> <b> (_:x _:y).',
+                  ['a', 'b', '_:b1'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b0'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b3'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
+                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
     it('should parse statements with a list containing strings',
       shouldParse('("y") <a> <b>.',
                   ['_:b0', 'a', 'b'],
@@ -297,6 +339,10 @@ describe('N3Parser', function () {
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
                            'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
+    it('should not parse an invalid list',
+      shouldNotParse('<a> <b> (]).',
+                     'Expected list item instead of "bracketclose" at line 1.'));
+
     it('should resolve URIs against @base',
       shouldParse('@base <http://ex.org/>.\n' +
                   '<a> <b> <c>.\n' +
@@ -313,6 +359,10 @@ describe('N3Parser', function () {
                   ['http://ex.org/a', 'http://ex.org/b', 'http://ex.org/c'],
                   ['http://ex.org/d/e', 'http://ex.org/d/f', 'http://ex.org/d/g']));
 
+    it('should not parse base declarations without IRI',
+      shouldNotParse('@base a: ',
+                     'Expected explicituri to follow base declaration at line 1.'));
+
     it('should not parse improperly nested square brackets',
       shouldNotParse('<a> <b> [<c> <d>]].',
                      'Expected punctuation to follow "_:b0" at line 1.'));
@@ -324,6 +374,26 @@ describe('N3Parser', function () {
     it('should error when a dot is not there',
       shouldNotParse('<a> <b> <c>',
                      'Expected punctuation to follow "c" at line 1.'));
+
+    it('should error with an abbreviation in the subject',
+      shouldNotParse('a <a> <a>.',
+                     'Expected subject but got abbreviation at line 1.'));
+
+    it('should error with an abbreviation in the object',
+      shouldNotParse('<a> <a> a .',
+                     'Expected object to follow "a" at line 1.'));
+
+    it('should error if punctuation follows a subject',
+      shouldNotParse('<a> .',
+                     'Unexpected dot at line 1.'));
+
+    it('should error if an unexpected token follows a subject',
+      shouldNotParse('<a> [',
+                     'Expected predicate to follow "a" at line 1.'));
+
+    it('should not error if there is no triple callback', function () {
+      new N3Parser().parse('');
+    });
 
     it('should return prefixes through a callback', function (done) {
       var prefixes = {};

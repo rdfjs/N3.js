@@ -1,6 +1,5 @@
 var N3Writer = require('../N3').Writer;
-var chai = require('chai'),
-    expect = chai.expect;
+var chai = require('chai');
 chai.should();
 
 describe('N3Parser', function () {
@@ -148,11 +147,11 @@ describe('N3Parser', function () {
     });
 
     it('sends output through end when no stream argument is given', function (done) {
-      var writer = new N3Writer();
-      writer.addTriple({ subject: 'a', predicate: 'b', object: 'c' });
+      var writer = new N3Writer(), notCalled = true;
+      writer.addTriple({ subject: 'a', predicate: 'b', object: 'c' }, function () { notCalled = false; });
       writer.end(function (error, output) {
         output.should.equal('<a> <b> <c>.\n');
-        done(error);
+        done(notCalled || error);
       });
     });
 
@@ -164,6 +163,26 @@ describe('N3Parser', function () {
         done(error);
       });
     });
+
+    it('should accept triples with separated components', function (done) {
+      var writer = N3Writer();
+      writer.addTriple('a', 'b', 'c');
+      writer.addTriple('a', 'b', 'd');
+      writer.end(function (error, output) {
+        output.should.equal('<a> <b> <c>, <d>.\n');
+        done(error);
+      });
+    });
+
+    it('should accept triples in bulk', function (done) {
+      var writer = N3Writer();
+      writer.addTriples([{ subject: 'a', predicate: 'b', object: 'c' },
+                         { subject: 'a', predicate: 'b', object: 'd' }]);
+      writer.end(function (error, output) {
+        output.should.equal('<a> <b> <c>, <d>.\n');
+        done(error);
+      });
+    });
   });
 });
 
@@ -171,8 +190,7 @@ function shouldSerialize(prefixes, tripleArrays, expectedResult) {
   if (!expectedResult)
     expectedResult = tripleArrays, tripleArrays = prefixes, prefixes = null;
   return function (done) {
-    var callback = this.callback,
-        outputStream = new QuickStream(),
+    var outputStream = new QuickStream(),
         writer = N3Writer(outputStream, prefixes);
     (function next() {
       var item = tripleArrays.shift();

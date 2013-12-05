@@ -17,6 +17,20 @@ describe('N3Lexer', function () {
     it('should be an N3Lexer constructor', function () {
       new N3Lexer().should.be.an.instanceof(N3Lexer);
     });
+
+    it('should provide a shim for setImmediate', function (done) {
+      // Delete global setImmediate
+      var setImmediate = global.setImmediate;
+      global.setImmediate = null;
+      // Clear require cache
+      for (var key in require.cache)
+        delete require.cache[key];
+      // N3Lexer must now fall back to shim
+      var N3LexerWithShim = require('../N3').Lexer;
+      new N3LexerWithShim().tokenize('', done);
+      // Restore global setImmediate
+      global.setImmediate = setImmediate;
+    });
   });
 
   describe('An N3Lexer instance', function () {
@@ -33,12 +47,54 @@ describe('N3Lexer', function () {
                      { type: 'explicituri', value: 'http://ex.org/?bla#foo', line: 1 },
                      { type: 'eof', line: 1 }));
 
-    it('should tokenize an explicituri with four-digit unicode characters',
+    it('should not tokenize an IRI with invalid characters',
+      shouldNotTokenize('<http://ex.org/bla\\u0020foo>',
+                        'Syntax error: unexpected "<http://ex.org/bla\\u0020foo>" on line 1.'));
+
+    it('should not tokenize an IRI with invalid 4-digit unicode escapes',
+      shouldNotTokenize('<http://ex.org/bla\\uXYZZfoo>',
+                        'Syntax error: unexpected "<http://ex.org/bla\\uXYZZfoo>" on line 1.'));
+
+    it('should not tokenize an IRI with invalid 8-digit unicode escapes',
+      shouldNotTokenize('<http://ex.org/bla\\uXYZZxyzzfoo>',
+                        'Syntax error: unexpected "<http://ex.org/bla\\uXYZZxyzzfoo>" on line 1.'));
+
+    it('should not tokenize an IRI with a non-numeric 4-digit unicode escapes', function (done) {
+      // Replace global isNaN
+      var isNaN = global.isNaN;
+      global.isNaN = function () { return true; };
+      // Try parsing
+      var lexer = new N3Lexer();
+      lexer.tokenize(function (error, token) {
+        error.should.equal('Syntax error: unexpected "<\\u1234>" on line 1.');
+        done(token);
+      });
+      lexer.addChunk('<\\u1234>');
+      // Restore global isNaN
+      global.isNaN = isNaN;
+    });
+
+    it('should not tokenize an IRI with a non-numeric 8-digit unicode escapes', function (done) {
+      // Replace global isNaN
+      var isNaN = global.isNaN;
+      global.isNaN = function () { return true; };
+      // Try parsing
+      var lexer = new N3Lexer();
+      lexer.tokenize(function (error, token) {
+        error.should.equal('Syntax error: unexpected "<\\U12345678>" on line 1.');
+        done(token);
+      });
+      lexer.addChunk('<\\U12345678>');
+      // Restore global isNaN
+      global.isNaN = isNaN;
+    });
+
+    it('should tokenize an explicituri with four-digit unicode escapes',
       shouldTokenize('<http://a.example/\\u0073>',
                      { type: 'explicituri', value: 'http://a.example/s', line: 1 },
                      { type: 'eof', line: 1 }));
 
-    it('should tokenize an explicituri with eight-digit unicode characters',
+    it('should tokenize an explicituri with eight-digit unicode escapes',
       shouldTokenize('<http://a.example/\\U00000073>',
                      { type: 'explicituri', value: 'http://a.example/s', line: 1 },
                      { type: 'eof', line: 1 }));
@@ -97,6 +153,14 @@ describe('N3Lexer', function () {
                      { type: 'literal', value: '"\\ \' " \n \r \t \ua1b2"', line: 2 },
                      { type: 'eof', line: 2 }));
 
+    it('should not tokenize a string with invalid characters',
+      shouldNotTokenize('"\\uXYZX" ',
+                        'Syntax error: unexpected ""\\uXYZX"" on line 1.'));
+
+    it('should not tokenize a triple-quoted string with invalid characters',
+      shouldNotTokenize('"""\\uXYZX""" ',
+                        'Syntax error: unexpected """"\\uXYZX"""" on line 1.'));
+
     it('should tokenize a quoted string literal with language code',
       shouldTokenize('"string"@en "string"@nl-be "string"@EN ',
                      { type: 'literal', value: '"string"', line: 1 },
@@ -115,6 +179,10 @@ describe('N3Lexer', function () {
                      { type: 'type', value: 'mytype', prefix: 'ns', line: 1 },
                      { type: 'eof', line: 1 }));
 
+    it('should not tokenize a quoted string literal with incorrect type',
+      shouldNotTokenize('"stringA"^<type> "stringB"^^ns:mytype ',
+                        'Syntax error: unexpected "^<type>" on line 1.'));
+
     it('should tokenize a single-quoted string literal',
       shouldTokenize("'string' ",
                      { type: 'literal', value: '"string"', line: 1 },
@@ -131,9 +199,9 @@ describe('N3Lexer', function () {
                      { type: 'eof', line: 2 }));
 
     it('should tokenize a single-quoted string with escape characters',
-      shouldTokenize("'\\\\ \\\" \\' \\n \\r \\t \\ua1b2' \n '''\\\\ \\\" \\' \\n \\r \\t \\U0000a1b2'''",
+      shouldTokenize("'\\\\ \\\" \\' \\n \\r \\t \\ua1b2' \n '''\\\\ \\\" \\' \\n \\r \\t \\U0020a1b2'''",
                      { type: 'literal', value: '"\\ " \' \n \r \t \ua1b2"', line: 1 },
-                     { type: 'literal', value: '"\\ " \' \n \r \t \ua1b2"', line: 2 },
+                     { type: 'literal', value: '"\\ " \' \n \r \t \udfe8\uddb2"', line: 2 },
                      { type: 'eof', line: 2 }));
 
     it('should tokenize a single-quoted string literal with language code',
@@ -189,6 +257,10 @@ describe('N3Lexer', function () {
                      { type: 'literal', value: '"-60.70e-80"^^<http://www.w3.org/2001/XMLSchema#double>', line: 1 },
                      { type: 'dot', line: 1 },
                      { type: 'eof', line: 1 }));
+
+    it('should not tokenize an invalid number',
+      shouldNotTokenize('10-10 ',
+                        'Syntax error: unexpected "10-10" on line 1.'));
 
     it('should tokenize booleans',
       shouldTokenize('true false ',
@@ -370,6 +442,10 @@ describe('N3Lexer', function () {
 
     it('should not tokenize an invalid document',
       shouldNotTokenize(' \n @!', 'Syntax error: unexpected "@!" on line 2.'));
+
+    it('does not call setEncoding if not available', function () {
+      new N3Lexer().tokenize({ on: function () {} });
+    });
 
     describe('using the addChunk/end interface', function () {
       var tokens = [], lexer = new N3Lexer();

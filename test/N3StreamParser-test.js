@@ -1,6 +1,5 @@
 var N3StreamParser = require('../N3').StreamParser;
 var chai = require('chai'),
-    expect = chai.expect,
     Readable = require('stream').Readable,
     Writable = require('stream').Writable;
 chai.should();
@@ -73,15 +72,14 @@ function shouldEmitPrefixes(chunks, expectedPrefixes) {
   return function (done) {
     var prefixes = {},
         inputStream = new ArrayReader(chunks),
-        transform = N3StreamParser(),
-        callback = this.callback;
+        transform = N3StreamParser();
     inputStream.pipe(transform);
     transform.on('data', function () {});
     transform.on('prefix', function (prefix, uri) { prefixes[prefix] = uri; });
     transform.on('error', done);
     transform.on('end', function (error) {
       prefixes.should.deep.equal(expectedPrefixes);
-      done();
+      done(error);
     });
   };
 }

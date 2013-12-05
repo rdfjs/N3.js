@@ -91,6 +91,10 @@ describe('N3Store', function () {
       itShouldBeEmpty(n3Store.find('s3', null, null));
     });
 
+    describe('when searched with a non-existing subject parameter that exists elsewhere', function () {
+      itShouldBeEmpty(n3Store.find('p1', null, null));
+    });
+
     describe('when searched with an existing predicate parameter', function () {
       it('should return all items with this predicate in the default context',
         shouldIncludeAll(n3Store.find(null, 'p1', null),
