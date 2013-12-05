@@ -17,8 +17,9 @@
     "docco": "~0.6.2",
     "jshint": "~2.1.10",
     "request": "~2.22.0",
-    "uglify-js": "~2.4.3",
     "mocha": ">=1.15.0",
+    "istanbul": "~0.1.46",
+    "uglify-js": "~2.4.3",
     "browserify": ">=2.36.1"
   },
   "scripts": {

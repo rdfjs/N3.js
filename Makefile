@@ -1,8 +1,11 @@
 browser:
-	@node browser/build-browser-versions
+	@./browser/build-browser-versions
 
 test:
 	@./node_modules/mocha/bin/mocha
+
+coverage:
+	@./node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- -R spec --timeout 100
 
 spec:
 	@node spec/turtle-spec.js
@@ -21,4 +24,4 @@ jshint:
 docs:
 	@./node_modules/.bin/docco lib/*.js
 
-.PHONY: browser test spec perf jshint docs
+.PHONY: browser test coverage spec perf jshint docs
