@@ -148,7 +148,7 @@ describe('N3Parser', function () {
 
     it('sends output through end when no stream argument is given', function (done) {
       var writer = new N3Writer(), notCalled = true;
-      writer.addTriple({ subject: 'a', predicate: 'b', object: 'c' }, function () { notCalled = false; });
+      writer.addTriple({ subject: 'a', predicate: 'b', object: 'c' }, function () { notCalled = false; });
       writer.end(function (error, output) {
         output.should.equal('<a> <b> <c>.\n');
         done(notCalled || error);
@@ -195,7 +195,7 @@ function shouldSerialize(prefixes, tripleArrays, expectedResult) {
     (function next() {
       var item = tripleArrays.shift();
       if (item)
-        writer.addTriple({ subject: item[0], predicate: item[1], object: item[2] }, next);
+        writer.addTriple({ subject: item[0], predicate: item[1], object: item[2] }, next);
       else
         writer.end(function (error) {
           try {
@@ -215,7 +215,7 @@ function shouldNotSerialize(tripleArrays, expectedMessage) {
     var outputStream = new QuickStream(),
         writer = N3Writer(outputStream),
         item = tripleArrays.shift();
-    writer.addTriple({ subject: item[0], predicate: item[1], object: item[2] },
+    writer.addTriple({ subject: item[0], predicate: item[1], object: item[2] },
                       function (error) {
                         if (error) {
                           error.message.should.equal(expectedMessage);
