@@ -478,6 +478,18 @@ describe('N3Parser', function () {
                   ['http://ex.org/x/d/h', 'http://ex.org/x/d/i', 'http://ex.org/x/d/j'],
                   ['http://ex.org/e/k', 'http://ex.org/e/l', 'http://ex.org/e/m']));
   });
+
+  describe('An N3Parser instance with an invalid document URI', function () {
+    it('cannot be created', function (done) {
+      try {
+        new N3Parser({ documentURI: 'http://ex.org/doc/f#' });
+      }
+      catch (error) {
+        error.message.should.equal('Invalid document URI');
+        done();
+      }
+    });
+  });
 });
 
 function shouldParse(parser, input) {
