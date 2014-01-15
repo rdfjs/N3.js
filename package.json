@@ -1,9 +1,15 @@
 {
   "name": "n3",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Lightning fast, asynchronous, streaming Turtle / N3 / RDF library.",
   "author": "Ruben Verborgh <ruben.verborgh@gmail.com>",
-  "keywords": ["turtle", "rdf", "n3", "streaming", "asynchronous"],
+  "keywords": [
+    "turtle",
+    "rdf",
+    "n3",
+    "streaming",
+    "asynchronous"
+  ],
   "license": "MIT",
   "main": "./N3.js",
   "engines": {
@@ -36,12 +42,28 @@
     "files": "test/*.js",
     "harness": "mocha",
     "browsers": {
-      "ie":      [ 9, 10 ],
-      "firefox": [ 24, 25 ],
-      "chrome":  [ 30, 31, "canary" ],
-      "safari":  [ 6.0 ],
-      "iphone":  [ 6 ],
-      "ipad":    [ 6 ]
+      "ie": [
+        9,
+        10
+      ],
+      "firefox": [
+        24,
+        25
+      ],
+      "chrome": [
+        30,
+        31,
+        "canary"
+      ],
+      "safari": [
+        6
+      ],
+      "iphone": [
+        6
+      ],
+      "ipad": [
+        6
+      ]
     }
   }
 }
