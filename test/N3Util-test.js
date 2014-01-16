@@ -151,7 +151,7 @@ describe('N3Util', function () {
     });
 
     it('gets the type of a literal with a language', function () {
-      N3Util.getLiteralType('"English"@en').should.equal('http://www.w3.org/2001/XMLSchema#string');
+      N3Util.getLiteralType('"English"@en').should.equal('http://www.w3.org/1999/02/22-rdf-syntax-ns#langString');
     });
 
     it('gets the type of a literal with a type', function () {
