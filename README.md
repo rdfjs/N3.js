@@ -234,7 +234,7 @@ As URIs are most common, they are represented as simple strings:
 var N3Util = N3.Util;
 N3Util.isUri('http://example.org/cartoons#Mickey'); // true
 ```
-Literals are represented as double quoted strings:
+**Literals** are represented as double quoted strings:
 ``` js
 N3Util.isLiteral('"Mickey Mouse"'); // true
 N3Util.getLiteralValue('"Mickey Mouse"'); // 'Mickey Mouse'
@@ -259,6 +259,21 @@ new N3.Parser().parse('<a> <b> "This word is \\"quoted\\"!".', console.log);
 // { subject: 'a', predicate: 'b', object: '"This word is "quoted"!"' }
 ```
 
+**Blank nodes** start with `_:`, and can be tested for as follows:
+``` js
+N3Util.isBlank('_:b1'); // true
+N3Util.isUri('_:b1'); // false
+N3Util.isLiteral('_:b1'); // false
+```
+
+**QNames** can be tested and expanded:
+``` js
+var prefixes = { 'rdfs': 'http://www.w3.org/2000/01/rdf-schema#' };
+N3Util.isQName('rdfs:label'); // true;
+N3Util.expandQName('rdfs:label', prefixes); // http://www.w3.org/2000/01/rdf-schema#label
+```
+
+### Loading the utility globally
 For convenience, `N3Util` can also be loaded globally:
 ``` js
 require('n3').Util(global);
