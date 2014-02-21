@@ -62,6 +62,7 @@ function shouldNotParse(chunks, expectedMessage) {
     inputStream.pipe(transform);
     transform.pipe(outputStream);
     transform.on('error', function (error) {
+      error.should.be.an.instanceof(Error);
       error.message.should.equal(expectedMessage);
       done();
     });

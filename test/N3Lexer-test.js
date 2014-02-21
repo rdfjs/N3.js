@@ -66,7 +66,8 @@ describe('N3Lexer', function () {
       // Try parsing
       var lexer = new N3Lexer();
       lexer.tokenize(function (error, token) {
-        error.should.equal('Syntax error: unexpected "<\\u1234>" on line 1.');
+        error.should.be.an.instanceof(Error);
+        error.message.should.equal('Syntax error: unexpected "<\\u1234>" on line 1.');
         done(token);
       });
       lexer.addChunk('<\\u1234>');
@@ -81,7 +82,8 @@ describe('N3Lexer', function () {
       // Try parsing
       var lexer = new N3Lexer();
       lexer.tokenize(function (error, token) {
-        error.should.equal('Syntax error: unexpected "<\\U12345678>" on line 1.');
+        error.should.be.an.instanceof(Error);
+        error.message.should.equal('Syntax error: unexpected "<\\U12345678>" on line 1.');
         done(token);
       });
       lexer.addChunk('<\\U12345678>');
@@ -491,7 +493,9 @@ function shouldNotTokenize(input, expectedError) {
     function tokenCallback(error, token) {
       if (error) {
         expect(token).not.to.exist;
-        error.should.eql(expectedError);
+        error.should.be.an.instanceof(Error);
+        error.message.should.eql(expectedError);
+        error.should.be.an.instanceof(Error);
         done();
       }
       else if (token.type === 'eof')

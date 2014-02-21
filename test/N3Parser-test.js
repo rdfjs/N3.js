@@ -524,7 +524,8 @@ function shouldNotParse(input, expectedError) {
     new N3Parser().parse(input, function (error, triple) {
       if (error) {
         expect(triple).not.to.exist;
-        error.should.eql(expectedError);
+        error.should.be.an.instanceof(Error);
+        error.message.should.eql(expectedError);
         done();
       }
       else if (!triple)
