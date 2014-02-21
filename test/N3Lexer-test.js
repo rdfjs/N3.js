@@ -451,7 +451,7 @@ describe('N3Lexer', function () {
 
     describe('using the addChunk/end interface', function () {
       var tokens = [], lexer = new N3Lexer();
-      lexer.tokenize(function (error, token) { tokens.push(token); });
+      lexer.tokenize(function (error, token) { !error && tokens.push(token); });
       lexer.addChunk('<a> ');
       lexer.addChunk('<b> ');
       lexer.addChunk('<c>.');
@@ -459,6 +459,31 @@ describe('N3Lexer', function () {
 
       it('parses all chunks', function () {
         tokens.should.have.length(5);
+      });
+    });
+
+    describe('passing data after the stream has been finished', function () {
+      var tokens = [], lexer = new N3Lexer();
+      lexer.tokenize(function (error, token) { !error && tokens.push(token); });
+      lexer.addChunk('<a> ');
+      lexer.end();
+      lexer.addChunk('<b> ');
+
+      it('parses only the first chunk (plus EOF)', function () {
+        tokens.should.have.length(2);
+      });
+    });
+
+    describe('passing data after an error has occured', function () {
+      var tokens = [], lexer = new N3Lexer();
+      lexer.tokenize(function (error, token) { !error && tokens.push(token); });
+      lexer.addChunk('<a> ');
+      lexer.addChunk('error ');
+      lexer.end();
+      lexer.addChunk('<b> ');
+
+      it('parses only the first chunk', function () {
+        tokens.should.have.length(1);
       });
     });
   });
