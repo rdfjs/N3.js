@@ -468,6 +468,7 @@ describe('N3Lexer', function () {
       lexer.addChunk('<a> ');
       lexer.end();
       lexer.addChunk('<b> ');
+      lexer.end();
 
       it('parses only the first chunk (plus EOF)', function () {
         tokens.should.have.length(2);
