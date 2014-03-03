@@ -3,7 +3,7 @@
 The N3.js library lets you handle [Turtle](http://www.w3.org/TR/turtle/) and [RDF](http://www.w3.org/TR/rdf-primer/) in JavaScript _([Node](http://nodejs.org/) and browser)_ easily.
 It offers:
 
-- [**Turtle parsing**](#parsing) _([fully compliant](https://github.com/RubenVerborgh/N3.js/tree/master/spec) with the [latest candidate recommendation](http://www.w3.org/TR/turtle/))_
+- [**Turtle parsing**](#parsing) _([fully compliant](https://github.com/RubenVerborgh/N3.js/tree/master/spec) with the [Turtle standard](http://www.w3.org/TR/turtle/))_
 - [**in-memory storage and manipulation**](#storing)
 - [**Turtle writing**](#writing)
 
