@@ -2,6 +2,7 @@
 var N3Parser = require('../lib/N3Parser.js'),
     N3Store = require('../lib/N3Store.js');
 var fs = require('fs'),
+    path = require('path'),
     request = require('request'),
     exec = require('child_process').exec,
     colors = require('colors'),
@@ -34,9 +35,9 @@ var first = prefixes.rdf + "first",
     nil = prefixes.rdf + "nil";
 
 // Create the folders that will contain the spec files and results
-var specFolder = './spec/',
-    testFolder = specFolder + 'turtle/',
-    outputFolder = testFolder + 'results/';
+var specFolder = __dirname,
+    testFolder = path.join(specFolder, 'turtle'),
+    outputFolder = path.join(testFolder, 'results');
 [specFolder, testFolder, outputFolder].forEach(function (folder) {
   if (!fs.existsSync(folder))
     fs.mkdirSync(folder);
@@ -133,7 +134,7 @@ function fetch(testFile, callback) {
   if (!testFile)
     return callback(null, null);
 
-  var localFile = testFolder + testFile;
+  var localFile = path.join(testFolder, testFile);
   fs.exists(localFile, function (exists) {
     if (exists)
       fs.readFile(localFile, 'utf8', callback);
@@ -156,7 +157,7 @@ function fetch(testFile, callback) {
 // Performs the specified test by parsing the specified Turtle document
 function performTest(test, actionTurtle, callback) {
   // Create the results file
-  var resultFile = outputFolder + test.action.replace(/\.ttl$/, '.nt'),
+  var resultFile = path.join(outputFolder, test.action.replace(/\.ttl$/, '.nt')),
       resultStream = fs.createWriteStream(resultFile);
 
   resultStream.once('open', function () {
@@ -322,7 +323,7 @@ var homepage = 'https://github.com/RubenVerborgh/N3.js',
 
 function generateEarlReport(tests, callback) {
   // Create the report file
-  var reportFile = outputFolder + 'earl-report.ttl',
+  var reportFile = path.join(outputFolder, 'earl-report.ttl'),
       report = fs.createWriteStream(reportFile),
       date = new Date().toISOString();
 
