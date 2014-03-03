@@ -10,7 +10,7 @@
 @prefix manifest: <http://www.w3.org/2013/TurtleTests/manifest.ttl#>.
 
 <> foaf:primaryTopic <https://github.com/RubenVerborgh/N3.js#n3js>;
-  dc:issued "2013-12-03T11:45:37.089Z"^^xsd:dateTime;
+  dc:issued "2014-03-03T13:14:11.981Z"^^xsd:dateTime;
   foaf:maker <http://ruben.verborgh.org/#me>.
 
 <https://github.com/RubenVerborgh/N3.js#n3js> a earl:Software, earl:TestSubject, doap:Project;
@@ -28,7 +28,8 @@
   doap:documenter <http://ruben.verborgh.org/#me>;
   doap:maker <http://ruben.verborgh.org/#me>;
   dc:title "N3.js";
-  dc:description "N3.js is an asynchronous, streaming Turtle parser for JavaScript."@en;
+  dc:description   "N3.js is an asynchronous, streaming Turtle parser for JavaScript."@en;
+  doap:description "N3.js is an asynchronous, streaming Turtle parser for JavaScript."@en;
   dc:creator <http://ruben.verborgh.org/#me>.
 
 <http://ruben.verborgh.org/#me> a foaf:Person, earl:Assertor;
@@ -48,7 +49,7 @@ manifest:IRI_subject a earl:TestCriterion, earl:TestCase;
        earl:test manifest:IRI_subject;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:IRI_with_four_digit_numeric_escape a earl:TestCriterion, earl:TestCase;
@@ -62,7 +63,7 @@ manifest:IRI_with_four_digit_numeric_escape a earl:TestCriterion, earl:TestCase;
        earl:test manifest:IRI_with_four_digit_numeric_escape;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:IRI_with_eight_digit_numeric_escape a earl:TestCriterion, earl:TestCase;
@@ -76,7 +77,7 @@ manifest:IRI_with_eight_digit_numeric_escape a earl:TestCriterion, earl:TestCase
        earl:test manifest:IRI_with_eight_digit_numeric_escape;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:IRI_with_all_punctuation a earl:TestCriterion, earl:TestCase;
@@ -90,7 +91,7 @@ manifest:IRI_with_all_punctuation a earl:TestCriterion, earl:TestCase;
        earl:test manifest:IRI_with_all_punctuation;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:bareword_a_predicate a earl:TestCriterion, earl:TestCase;
@@ -104,7 +105,7 @@ manifest:bareword_a_predicate a earl:TestCriterion, earl:TestCase;
        earl:test manifest:bareword_a_predicate;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:old_style_prefix a earl:TestCriterion, earl:TestCase;
@@ -118,7 +119,7 @@ manifest:old_style_prefix a earl:TestCriterion, earl:TestCase;
        earl:test manifest:old_style_prefix;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:SPARQL_style_prefix a earl:TestCriterion, earl:TestCase;
@@ -132,7 +133,7 @@ manifest:SPARQL_style_prefix a earl:TestCriterion, earl:TestCase;
        earl:test manifest:SPARQL_style_prefix;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:prefixed_IRI_predicate a earl:TestCriterion, earl:TestCase;
@@ -146,7 +147,7 @@ manifest:prefixed_IRI_predicate a earl:TestCriterion, earl:TestCase;
        earl:test manifest:prefixed_IRI_predicate;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:prefixed_IRI_object a earl:TestCriterion, earl:TestCase;
@@ -160,7 +161,7 @@ manifest:prefixed_IRI_object a earl:TestCriterion, earl:TestCase;
        earl:test manifest:prefixed_IRI_object;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:prefix_only_IRI a earl:TestCriterion, earl:TestCase;
@@ -174,7 +175,7 @@ manifest:prefix_only_IRI a earl:TestCriterion, earl:TestCase;
        earl:test manifest:prefix_only_IRI;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:prefix_with_PN_CHARS_BASE_character_boundaries a earl:TestCriterion, earl:TestCase;
@@ -188,7 +189,7 @@ manifest:prefix_with_PN_CHARS_BASE_character_boundaries a earl:TestCriterion, ea
        earl:test manifest:prefix_with_PN_CHARS_BASE_character_boundaries;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:prefix_with_non_leading_extras a earl:TestCriterion, earl:TestCase;
@@ -202,7 +203,7 @@ manifest:prefix_with_non_leading_extras a earl:TestCriterion, earl:TestCase;
        earl:test manifest:prefix_with_non_leading_extras;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:default_namespace_IRI a earl:TestCriterion, earl:TestCase;
@@ -216,7 +217,7 @@ manifest:default_namespace_IRI a earl:TestCriterion, earl:TestCase;
        earl:test manifest:default_namespace_IRI;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:prefix_reassigned_and_used a earl:TestCriterion, earl:TestCase;
@@ -230,7 +231,7 @@ manifest:prefix_reassigned_and_used a earl:TestCriterion, earl:TestCase;
        earl:test manifest:prefix_reassigned_and_used;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:reserved_escaped_localName a earl:TestCriterion, earl:TestCase;
@@ -244,7 +245,7 @@ manifest:reserved_escaped_localName a earl:TestCriterion, earl:TestCase;
        earl:test manifest:reserved_escaped_localName;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:percent_escaped_localName a earl:TestCriterion, earl:TestCase;
@@ -258,7 +259,7 @@ manifest:percent_escaped_localName a earl:TestCriterion, earl:TestCase;
        earl:test manifest:percent_escaped_localName;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:HYPHEN_MINUS_in_localName a earl:TestCriterion, earl:TestCase;
@@ -272,7 +273,7 @@ manifest:HYPHEN_MINUS_in_localName a earl:TestCriterion, earl:TestCase;
        earl:test manifest:HYPHEN_MINUS_in_localName;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:underscore_in_localName a earl:TestCriterion, earl:TestCase;
@@ -286,7 +287,7 @@ manifest:underscore_in_localName a earl:TestCriterion, earl:TestCase;
        earl:test manifest:underscore_in_localName;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:localname_with_COLON a earl:TestCriterion, earl:TestCase;
@@ -300,7 +301,7 @@ manifest:localname_with_COLON a earl:TestCriterion, earl:TestCase;
        earl:test manifest:localname_with_COLON;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:localName_with_assigned_nfc_bmp_PN_CHARS_BASE_character_boundaries a earl:TestCriterion, earl:TestCase;
@@ -314,7 +315,7 @@ manifest:localName_with_assigned_nfc_bmp_PN_CHARS_BASE_character_boundaries a ea
        earl:test manifest:localName_with_assigned_nfc_bmp_PN_CHARS_BASE_character_boundaries;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:localName_with_assigned_nfc_PN_CHARS_BASE_character_boundaries a earl:TestCriterion, earl:TestCase;
@@ -328,7 +329,7 @@ manifest:localName_with_assigned_nfc_PN_CHARS_BASE_character_boundaries a earl:T
        earl:test manifest:localName_with_assigned_nfc_PN_CHARS_BASE_character_boundaries;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:localName_with_nfc_PN_CHARS_BASE_character_boundaries a earl:TestCriterion, earl:TestCase;
@@ -342,7 +343,7 @@ manifest:localName_with_nfc_PN_CHARS_BASE_character_boundaries a earl:TestCriter
        earl:test manifest:localName_with_nfc_PN_CHARS_BASE_character_boundaries;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:localName_with_leading_underscore a earl:TestCriterion, earl:TestCase;
@@ -356,7 +357,7 @@ manifest:localName_with_leading_underscore a earl:TestCriterion, earl:TestCase;
        earl:test manifest:localName_with_leading_underscore;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:localName_with_leading_digit a earl:TestCriterion, earl:TestCase;
@@ -370,7 +371,7 @@ manifest:localName_with_leading_digit a earl:TestCriterion, earl:TestCase;
        earl:test manifest:localName_with_leading_digit;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:localName_with_non_leading_extras a earl:TestCriterion, earl:TestCase;
@@ -384,7 +385,7 @@ manifest:localName_with_non_leading_extras a earl:TestCriterion, earl:TestCase;
        earl:test manifest:localName_with_non_leading_extras;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:old_style_base a earl:TestCriterion, earl:TestCase;
@@ -398,7 +399,7 @@ manifest:old_style_base a earl:TestCriterion, earl:TestCase;
        earl:test manifest:old_style_base;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:SPARQL_style_base a earl:TestCriterion, earl:TestCase;
@@ -412,7 +413,7 @@ manifest:SPARQL_style_base a earl:TestCriterion, earl:TestCase;
        earl:test manifest:SPARQL_style_base;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:labeled_blank_node_subject a earl:TestCriterion, earl:TestCase;
@@ -426,7 +427,7 @@ manifest:labeled_blank_node_subject a earl:TestCriterion, earl:TestCase;
        earl:test manifest:labeled_blank_node_subject;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:labeled_blank_node_object a earl:TestCriterion, earl:TestCase;
@@ -440,7 +441,7 @@ manifest:labeled_blank_node_object a earl:TestCriterion, earl:TestCase;
        earl:test manifest:labeled_blank_node_object;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:labeled_blank_node_with_PN_CHARS_BASE_character_boundaries a earl:TestCriterion, earl:TestCase;
@@ -454,7 +455,7 @@ manifest:labeled_blank_node_with_PN_CHARS_BASE_character_boundaries a earl:TestC
        earl:test manifest:labeled_blank_node_with_PN_CHARS_BASE_character_boundaries;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:labeled_blank_node_with_leading_underscore a earl:TestCriterion, earl:TestCase;
@@ -468,7 +469,7 @@ manifest:labeled_blank_node_with_leading_underscore a earl:TestCriterion, earl:T
        earl:test manifest:labeled_blank_node_with_leading_underscore;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:labeled_blank_node_with_leading_digit a earl:TestCriterion, earl:TestCase;
@@ -482,7 +483,7 @@ manifest:labeled_blank_node_with_leading_digit a earl:TestCriterion, earl:TestCa
        earl:test manifest:labeled_blank_node_with_leading_digit;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:labeled_blank_node_with_non_leading_extras a earl:TestCriterion, earl:TestCase;
@@ -496,7 +497,7 @@ manifest:labeled_blank_node_with_non_leading_extras a earl:TestCriterion, earl:T
        earl:test manifest:labeled_blank_node_with_non_leading_extras;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:anonymous_blank_node_subject a earl:TestCriterion, earl:TestCase;
@@ -510,7 +511,7 @@ manifest:anonymous_blank_node_subject a earl:TestCriterion, earl:TestCase;
        earl:test manifest:anonymous_blank_node_subject;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:anonymous_blank_node_object a earl:TestCriterion, earl:TestCase;
@@ -524,7 +525,7 @@ manifest:anonymous_blank_node_object a earl:TestCriterion, earl:TestCase;
        earl:test manifest:anonymous_blank_node_object;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:sole_blankNodePropertyList a earl:TestCriterion, earl:TestCase;
@@ -538,7 +539,7 @@ manifest:sole_blankNodePropertyList a earl:TestCriterion, earl:TestCase;
        earl:test manifest:sole_blankNodePropertyList;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:blankNodePropertyList_as_subject a earl:TestCriterion, earl:TestCase;
@@ -552,7 +553,7 @@ manifest:blankNodePropertyList_as_subject a earl:TestCriterion, earl:TestCase;
        earl:test manifest:blankNodePropertyList_as_subject;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:blankNodePropertyList_as_object a earl:TestCriterion, earl:TestCase;
@@ -566,7 +567,7 @@ manifest:blankNodePropertyList_as_object a earl:TestCriterion, earl:TestCase;
        earl:test manifest:blankNodePropertyList_as_object;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:blankNodePropertyList_with_multiple_triples a earl:TestCriterion, earl:TestCase;
@@ -580,7 +581,7 @@ manifest:blankNodePropertyList_with_multiple_triples a earl:TestCriterion, earl:
        earl:test manifest:blankNodePropertyList_with_multiple_triples;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:nested_blankNodePropertyLists a earl:TestCriterion, earl:TestCase;
@@ -594,7 +595,7 @@ manifest:nested_blankNodePropertyLists a earl:TestCriterion, earl:TestCase;
        earl:test manifest:nested_blankNodePropertyLists;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:blankNodePropertyList_containing_collection a earl:TestCriterion, earl:TestCase;
@@ -608,7 +609,7 @@ manifest:blankNodePropertyList_containing_collection a earl:TestCriterion, earl:
        earl:test manifest:blankNodePropertyList_containing_collection;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:collection_subject a earl:TestCriterion, earl:TestCase;
@@ -622,7 +623,7 @@ manifest:collection_subject a earl:TestCriterion, earl:TestCase;
        earl:test manifest:collection_subject;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:collection_object a earl:TestCriterion, earl:TestCase;
@@ -636,7 +637,7 @@ manifest:collection_object a earl:TestCriterion, earl:TestCase;
        earl:test manifest:collection_object;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:empty_collection a earl:TestCriterion, earl:TestCase;
@@ -650,7 +651,7 @@ manifest:empty_collection a earl:TestCriterion, earl:TestCase;
        earl:test manifest:empty_collection;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:nested_collection a earl:TestCriterion, earl:TestCase;
@@ -664,7 +665,7 @@ manifest:nested_collection a earl:TestCriterion, earl:TestCase;
        earl:test manifest:nested_collection;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:first a earl:TestCriterion, earl:TestCase;
@@ -678,7 +679,7 @@ manifest:first a earl:TestCriterion, earl:TestCase;
        earl:test manifest:first;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:last a earl:TestCriterion, earl:TestCase;
@@ -692,7 +693,7 @@ manifest:last a earl:TestCriterion, earl:TestCase;
        earl:test manifest:last;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:LITERAL1 a earl:TestCriterion, earl:TestCase;
@@ -706,7 +707,7 @@ manifest:LITERAL1 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:LITERAL1;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:LITERAL1_ascii_boundaries a earl:TestCriterion, earl:TestCase;
@@ -720,7 +721,7 @@ manifest:LITERAL1_ascii_boundaries a earl:TestCriterion, earl:TestCase;
        earl:test manifest:LITERAL1_ascii_boundaries;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:LITERAL1_with_UTF8_boundaries a earl:TestCriterion, earl:TestCase;
@@ -734,7 +735,7 @@ manifest:LITERAL1_with_UTF8_boundaries a earl:TestCriterion, earl:TestCase;
        earl:test manifest:LITERAL1_with_UTF8_boundaries;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:LITERAL1_all_controls a earl:TestCriterion, earl:TestCase;
@@ -748,7 +749,7 @@ manifest:LITERAL1_all_controls a earl:TestCriterion, earl:TestCase;
        earl:test manifest:LITERAL1_all_controls;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:LITERAL1_all_punctuation a earl:TestCriterion, earl:TestCase;
@@ -762,7 +763,7 @@ manifest:LITERAL1_all_punctuation a earl:TestCriterion, earl:TestCase;
        earl:test manifest:LITERAL1_all_punctuation;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:LITERAL_LONG1 a earl:TestCriterion, earl:TestCase;
@@ -776,7 +777,7 @@ manifest:LITERAL_LONG1 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:LITERAL_LONG1;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:LITERAL_LONG1_ascii_boundaries a earl:TestCriterion, earl:TestCase;
@@ -790,7 +791,7 @@ manifest:LITERAL_LONG1_ascii_boundaries a earl:TestCriterion, earl:TestCase;
        earl:test manifest:LITERAL_LONG1_ascii_boundaries;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:LITERAL_LONG1_with_UTF8_boundaries a earl:TestCriterion, earl:TestCase;
@@ -804,7 +805,7 @@ manifest:LITERAL_LONG1_with_UTF8_boundaries a earl:TestCriterion, earl:TestCase;
        earl:test manifest:LITERAL_LONG1_with_UTF8_boundaries;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:LITERAL_LONG1_with_1_squote a earl:TestCriterion, earl:TestCase;
@@ -818,7 +819,7 @@ manifest:LITERAL_LONG1_with_1_squote a earl:TestCriterion, earl:TestCase;
        earl:test manifest:LITERAL_LONG1_with_1_squote;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:LITERAL_LONG1_with_2_squotes a earl:TestCriterion, earl:TestCase;
@@ -832,7 +833,7 @@ manifest:LITERAL_LONG1_with_2_squotes a earl:TestCriterion, earl:TestCase;
        earl:test manifest:LITERAL_LONG1_with_2_squotes;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:LITERAL2 a earl:TestCriterion, earl:TestCase;
@@ -846,7 +847,7 @@ manifest:LITERAL2 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:LITERAL2;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:LITERAL2_ascii_boundaries a earl:TestCriterion, earl:TestCase;
@@ -860,7 +861,7 @@ manifest:LITERAL2_ascii_boundaries a earl:TestCriterion, earl:TestCase;
        earl:test manifest:LITERAL2_ascii_boundaries;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:LITERAL2_with_UTF8_boundaries a earl:TestCriterion, earl:TestCase;
@@ -874,7 +875,7 @@ manifest:LITERAL2_with_UTF8_boundaries a earl:TestCriterion, earl:TestCase;
        earl:test manifest:LITERAL2_with_UTF8_boundaries;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:LITERAL_LONG2 a earl:TestCriterion, earl:TestCase;
@@ -888,7 +889,7 @@ manifest:LITERAL_LONG2 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:LITERAL_LONG2;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:LITERAL_LONG2_ascii_boundaries a earl:TestCriterion, earl:TestCase;
@@ -902,7 +903,7 @@ manifest:LITERAL_LONG2_ascii_boundaries a earl:TestCriterion, earl:TestCase;
        earl:test manifest:LITERAL_LONG2_ascii_boundaries;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:LITERAL_LONG2_with_UTF8_boundaries a earl:TestCriterion, earl:TestCase;
@@ -916,7 +917,7 @@ manifest:LITERAL_LONG2_with_UTF8_boundaries a earl:TestCriterion, earl:TestCase;
        earl:test manifest:LITERAL_LONG2_with_UTF8_boundaries;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:LITERAL_LONG2_with_1_squote a earl:TestCriterion, earl:TestCase;
@@ -930,7 +931,7 @@ manifest:LITERAL_LONG2_with_1_squote a earl:TestCriterion, earl:TestCase;
        earl:test manifest:LITERAL_LONG2_with_1_squote;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:LITERAL_LONG2_with_2_squotes a earl:TestCriterion, earl:TestCase;
@@ -944,7 +945,7 @@ manifest:LITERAL_LONG2_with_2_squotes a earl:TestCriterion, earl:TestCase;
        earl:test manifest:LITERAL_LONG2_with_2_squotes;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:literal_with_CHARACTER_TABULATION a earl:TestCriterion, earl:TestCase;
@@ -958,7 +959,7 @@ manifest:literal_with_CHARACTER_TABULATION a earl:TestCriterion, earl:TestCase;
        earl:test manifest:literal_with_CHARACTER_TABULATION;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:literal_with_BACKSPACE a earl:TestCriterion, earl:TestCase;
@@ -972,7 +973,7 @@ manifest:literal_with_BACKSPACE a earl:TestCriterion, earl:TestCase;
        earl:test manifest:literal_with_BACKSPACE;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:literal_with_LINE_FEED a earl:TestCriterion, earl:TestCase;
@@ -986,7 +987,7 @@ manifest:literal_with_LINE_FEED a earl:TestCriterion, earl:TestCase;
        earl:test manifest:literal_with_LINE_FEED;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:literal_with_CARRIAGE_RETURN a earl:TestCriterion, earl:TestCase;
@@ -1000,7 +1001,7 @@ manifest:literal_with_CARRIAGE_RETURN a earl:TestCriterion, earl:TestCase;
        earl:test manifest:literal_with_CARRIAGE_RETURN;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:literal_with_FORM_FEED a earl:TestCriterion, earl:TestCase;
@@ -1014,7 +1015,7 @@ manifest:literal_with_FORM_FEED a earl:TestCriterion, earl:TestCase;
        earl:test manifest:literal_with_FORM_FEED;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:literal_with_REVERSE_SOLIDUS a earl:TestCriterion, earl:TestCase;
@@ -1028,7 +1029,7 @@ manifest:literal_with_REVERSE_SOLIDUS a earl:TestCriterion, earl:TestCase;
        earl:test manifest:literal_with_REVERSE_SOLIDUS;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:literal_with_escaped_CHARACTER_TABULATION a earl:TestCriterion, earl:TestCase;
@@ -1042,7 +1043,7 @@ manifest:literal_with_escaped_CHARACTER_TABULATION a earl:TestCriterion, earl:Te
        earl:test manifest:literal_with_escaped_CHARACTER_TABULATION;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:literal_with_escaped_BACKSPACE a earl:TestCriterion, earl:TestCase;
@@ -1056,7 +1057,7 @@ manifest:literal_with_escaped_BACKSPACE a earl:TestCriterion, earl:TestCase;
        earl:test manifest:literal_with_escaped_BACKSPACE;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:literal_with_escaped_LINE_FEED a earl:TestCriterion, earl:TestCase;
@@ -1070,7 +1071,7 @@ manifest:literal_with_escaped_LINE_FEED a earl:TestCriterion, earl:TestCase;
        earl:test manifest:literal_with_escaped_LINE_FEED;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:literal_with_escaped_CARRIAGE_RETURN a earl:TestCriterion, earl:TestCase;
@@ -1084,7 +1085,7 @@ manifest:literal_with_escaped_CARRIAGE_RETURN a earl:TestCriterion, earl:TestCas
        earl:test manifest:literal_with_escaped_CARRIAGE_RETURN;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:literal_with_escaped_FORM_FEED a earl:TestCriterion, earl:TestCase;
@@ -1098,7 +1099,7 @@ manifest:literal_with_escaped_FORM_FEED a earl:TestCriterion, earl:TestCase;
        earl:test manifest:literal_with_escaped_FORM_FEED;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:literal_with_numeric_escape4 a earl:TestCriterion, earl:TestCase;
@@ -1112,7 +1113,7 @@ manifest:literal_with_numeric_escape4 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:literal_with_numeric_escape4;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:literal_with_numeric_escape8 a earl:TestCriterion, earl:TestCase;
@@ -1126,7 +1127,7 @@ manifest:literal_with_numeric_escape8 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:literal_with_numeric_escape8;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:IRIREF_datatype a earl:TestCriterion, earl:TestCase;
@@ -1140,7 +1141,7 @@ manifest:IRIREF_datatype a earl:TestCriterion, earl:TestCase;
        earl:test manifest:IRIREF_datatype;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:prefixed_name_datatype a earl:TestCriterion, earl:TestCase;
@@ -1154,7 +1155,7 @@ manifest:prefixed_name_datatype a earl:TestCriterion, earl:TestCase;
        earl:test manifest:prefixed_name_datatype;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:bareword_integer a earl:TestCriterion, earl:TestCase;
@@ -1168,7 +1169,7 @@ manifest:bareword_integer a earl:TestCriterion, earl:TestCase;
        earl:test manifest:bareword_integer;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:bareword_decimal a earl:TestCriterion, earl:TestCase;
@@ -1182,7 +1183,7 @@ manifest:bareword_decimal a earl:TestCriterion, earl:TestCase;
        earl:test manifest:bareword_decimal;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:bareword_double a earl:TestCriterion, earl:TestCase;
@@ -1196,7 +1197,7 @@ manifest:bareword_double a earl:TestCriterion, earl:TestCase;
        earl:test manifest:bareword_double;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:double_lower_case_e a earl:TestCriterion, earl:TestCase;
@@ -1210,7 +1211,7 @@ manifest:double_lower_case_e a earl:TestCriterion, earl:TestCase;
        earl:test manifest:double_lower_case_e;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:negative_numeric a earl:TestCriterion, earl:TestCase;
@@ -1224,7 +1225,7 @@ manifest:negative_numeric a earl:TestCriterion, earl:TestCase;
        earl:test manifest:negative_numeric;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:positive_numeric a earl:TestCriterion, earl:TestCase;
@@ -1238,7 +1239,7 @@ manifest:positive_numeric a earl:TestCriterion, earl:TestCase;
        earl:test manifest:positive_numeric;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:numeric_with_leading_0 a earl:TestCriterion, earl:TestCase;
@@ -1252,7 +1253,7 @@ manifest:numeric_with_leading_0 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:numeric_with_leading_0;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:literal_true a earl:TestCriterion, earl:TestCase;
@@ -1266,7 +1267,7 @@ manifest:literal_true a earl:TestCriterion, earl:TestCase;
        earl:test manifest:literal_true;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:literal_false a earl:TestCriterion, earl:TestCase;
@@ -1280,7 +1281,7 @@ manifest:literal_false a earl:TestCriterion, earl:TestCase;
        earl:test manifest:literal_false;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:langtagged_non_LONG a earl:TestCriterion, earl:TestCase;
@@ -1294,7 +1295,7 @@ manifest:langtagged_non_LONG a earl:TestCriterion, earl:TestCase;
        earl:test manifest:langtagged_non_LONG;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:langtagged_LONG a earl:TestCriterion, earl:TestCase;
@@ -1308,7 +1309,7 @@ manifest:langtagged_LONG a earl:TestCriterion, earl:TestCase;
        earl:test manifest:langtagged_LONG;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:lantag_with_subtag a earl:TestCriterion, earl:TestCase;
@@ -1322,7 +1323,7 @@ manifest:lantag_with_subtag a earl:TestCriterion, earl:TestCase;
        earl:test manifest:lantag_with_subtag;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:objectList_with_two_objects a earl:TestCriterion, earl:TestCase;
@@ -1336,7 +1337,7 @@ manifest:objectList_with_two_objects a earl:TestCriterion, earl:TestCase;
        earl:test manifest:objectList_with_two_objects;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:predicateObjectList_with_two_objectLists a earl:TestCriterion, earl:TestCase;
@@ -1350,7 +1351,7 @@ manifest:predicateObjectList_with_two_objectLists a earl:TestCriterion, earl:Tes
        earl:test manifest:predicateObjectList_with_two_objectLists;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:repeated_semis_at_end a earl:TestCriterion, earl:TestCase;
@@ -1364,7 +1365,7 @@ manifest:repeated_semis_at_end a earl:TestCriterion, earl:TestCase;
        earl:test manifest:repeated_semis_at_end;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:repeated_semis_not_at_end a earl:TestCriterion, earl:TestCase;
@@ -1378,7 +1379,7 @@ manifest:repeated_semis_not_at_end a earl:TestCriterion, earl:TestCase;
        earl:test manifest:repeated_semis_not_at_end;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:comment_following_localName a earl:TestCriterion, earl:TestCase;
@@ -1392,7 +1393,7 @@ manifest:comment_following_localName a earl:TestCriterion, earl:TestCase;
        earl:test manifest:comment_following_localName;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:number_sign_following_localName a earl:TestCriterion, earl:TestCase;
@@ -1406,7 +1407,7 @@ manifest:number_sign_following_localName a earl:TestCriterion, earl:TestCase;
        earl:test manifest:number_sign_following_localName;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:comment_following_PNAME_NS a earl:TestCriterion, earl:TestCase;
@@ -1420,7 +1421,7 @@ manifest:comment_following_PNAME_NS a earl:TestCriterion, earl:TestCase;
        earl:test manifest:comment_following_PNAME_NS;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:number_sign_following_PNAME_NS a earl:TestCriterion, earl:TestCase;
@@ -1434,7 +1435,7 @@ manifest:number_sign_following_PNAME_NS a earl:TestCriterion, earl:TestCase;
        earl:test manifest:number_sign_following_PNAME_NS;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:LITERAL_LONG2_with_REVERSE_SOLIDUS a earl:TestCriterion, earl:TestCase;
@@ -1448,7 +1449,7 @@ manifest:LITERAL_LONG2_with_REVERSE_SOLIDUS a earl:TestCriterion, earl:TestCase;
        earl:test manifest:LITERAL_LONG2_with_REVERSE_SOLIDUS;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-LITERAL2_with_langtag_and_datatype a earl:TestCriterion, earl:TestCase;
@@ -1461,7 +1462,7 @@ manifest:turtle-syntax-bad-LITERAL2_with_langtag_and_datatype a earl:TestCriteri
        earl:test manifest:turtle-syntax-bad-LITERAL2_with_langtag_and_datatype;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:two_LITERAL_LONG2s a earl:TestCriterion, earl:TestCase;
@@ -1475,7 +1476,7 @@ manifest:two_LITERAL_LONG2s a earl:TestCriterion, earl:TestCase;
        earl:test manifest:two_LITERAL_LONG2s;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:langtagged_LONG_with_subtag a earl:TestCriterion, earl:TestCase;
@@ -1489,7 +1490,7 @@ manifest:langtagged_LONG_with_subtag a earl:TestCriterion, earl:TestCase;
        earl:test manifest:langtagged_LONG_with_subtag;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-file-01 a earl:TestCriterion, earl:TestCase;
@@ -1502,7 +1503,7 @@ manifest:turtle-syntax-file-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-file-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-file-02 a earl:TestCriterion, earl:TestCase;
@@ -1515,7 +1516,7 @@ manifest:turtle-syntax-file-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-file-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-file-03 a earl:TestCriterion, earl:TestCase;
@@ -1528,7 +1529,7 @@ manifest:turtle-syntax-file-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-file-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-uri-01 a earl:TestCriterion, earl:TestCase;
@@ -1541,7 +1542,7 @@ manifest:turtle-syntax-uri-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-uri-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-uri-02 a earl:TestCriterion, earl:TestCase;
@@ -1554,7 +1555,7 @@ manifest:turtle-syntax-uri-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-uri-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-uri-03 a earl:TestCriterion, earl:TestCase;
@@ -1567,7 +1568,7 @@ manifest:turtle-syntax-uri-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-uri-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-uri-04 a earl:TestCriterion, earl:TestCase;
@@ -1580,7 +1581,7 @@ manifest:turtle-syntax-uri-04 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-uri-04;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-base-01 a earl:TestCriterion, earl:TestCase;
@@ -1593,7 +1594,7 @@ manifest:turtle-syntax-base-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-base-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-base-02 a earl:TestCriterion, earl:TestCase;
@@ -1606,7 +1607,7 @@ manifest:turtle-syntax-base-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-base-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-base-03 a earl:TestCriterion, earl:TestCase;
@@ -1619,7 +1620,7 @@ manifest:turtle-syntax-base-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-base-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-base-04 a earl:TestCriterion, earl:TestCase;
@@ -1632,7 +1633,7 @@ manifest:turtle-syntax-base-04 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-base-04;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-prefix-01 a earl:TestCriterion, earl:TestCase;
@@ -1645,7 +1646,7 @@ manifest:turtle-syntax-prefix-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-prefix-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-prefix-02 a earl:TestCriterion, earl:TestCase;
@@ -1658,7 +1659,7 @@ manifest:turtle-syntax-prefix-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-prefix-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-prefix-03 a earl:TestCriterion, earl:TestCase;
@@ -1671,7 +1672,7 @@ manifest:turtle-syntax-prefix-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-prefix-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-prefix-04 a earl:TestCriterion, earl:TestCase;
@@ -1684,7 +1685,7 @@ manifest:turtle-syntax-prefix-04 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-prefix-04;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-prefix-05 a earl:TestCriterion, earl:TestCase;
@@ -1697,7 +1698,7 @@ manifest:turtle-syntax-prefix-05 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-prefix-05;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-prefix-06 a earl:TestCriterion, earl:TestCase;
@@ -1710,7 +1711,7 @@ manifest:turtle-syntax-prefix-06 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-prefix-06;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-prefix-07 a earl:TestCriterion, earl:TestCase;
@@ -1723,7 +1724,7 @@ manifest:turtle-syntax-prefix-07 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-prefix-07;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-prefix-08 a earl:TestCriterion, earl:TestCase;
@@ -1736,7 +1737,7 @@ manifest:turtle-syntax-prefix-08 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-prefix-08;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-prefix-09 a earl:TestCriterion, earl:TestCase;
@@ -1749,7 +1750,7 @@ manifest:turtle-syntax-prefix-09 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-prefix-09;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-string-01 a earl:TestCriterion, earl:TestCase;
@@ -1762,7 +1763,7 @@ manifest:turtle-syntax-string-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-string-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-string-02 a earl:TestCriterion, earl:TestCase;
@@ -1775,7 +1776,7 @@ manifest:turtle-syntax-string-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-string-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-string-03 a earl:TestCriterion, earl:TestCase;
@@ -1788,7 +1789,7 @@ manifest:turtle-syntax-string-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-string-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-string-04 a earl:TestCriterion, earl:TestCase;
@@ -1801,7 +1802,7 @@ manifest:turtle-syntax-string-04 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-string-04;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-string-05 a earl:TestCriterion, earl:TestCase;
@@ -1814,7 +1815,7 @@ manifest:turtle-syntax-string-05 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-string-05;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-string-06 a earl:TestCriterion, earl:TestCase;
@@ -1827,7 +1828,7 @@ manifest:turtle-syntax-string-06 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-string-06;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-string-07 a earl:TestCriterion, earl:TestCase;
@@ -1840,7 +1841,7 @@ manifest:turtle-syntax-string-07 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-string-07;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-string-08 a earl:TestCriterion, earl:TestCase;
@@ -1853,7 +1854,7 @@ manifest:turtle-syntax-string-08 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-string-08;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-string-09 a earl:TestCriterion, earl:TestCase;
@@ -1866,7 +1867,7 @@ manifest:turtle-syntax-string-09 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-string-09;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-string-10 a earl:TestCriterion, earl:TestCase;
@@ -1879,7 +1880,7 @@ manifest:turtle-syntax-string-10 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-string-10;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-string-11 a earl:TestCriterion, earl:TestCase;
@@ -1892,7 +1893,7 @@ manifest:turtle-syntax-string-11 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-string-11;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-str-esc-01 a earl:TestCriterion, earl:TestCase;
@@ -1905,7 +1906,7 @@ manifest:turtle-syntax-str-esc-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-str-esc-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-str-esc-02 a earl:TestCriterion, earl:TestCase;
@@ -1918,7 +1919,7 @@ manifest:turtle-syntax-str-esc-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-str-esc-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-str-esc-03 a earl:TestCriterion, earl:TestCase;
@@ -1931,7 +1932,7 @@ manifest:turtle-syntax-str-esc-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-str-esc-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-pname-esc-01 a earl:TestCriterion, earl:TestCase;
@@ -1944,7 +1945,7 @@ manifest:turtle-syntax-pname-esc-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-pname-esc-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-pname-esc-02 a earl:TestCriterion, earl:TestCase;
@@ -1957,7 +1958,7 @@ manifest:turtle-syntax-pname-esc-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-pname-esc-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-pname-esc-03 a earl:TestCriterion, earl:TestCase;
@@ -1970,7 +1971,7 @@ manifest:turtle-syntax-pname-esc-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-pname-esc-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bnode-01 a earl:TestCriterion, earl:TestCase;
@@ -1983,7 +1984,7 @@ manifest:turtle-syntax-bnode-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bnode-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bnode-02 a earl:TestCriterion, earl:TestCase;
@@ -1996,7 +1997,7 @@ manifest:turtle-syntax-bnode-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bnode-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bnode-03 a earl:TestCriterion, earl:TestCase;
@@ -2009,7 +2010,7 @@ manifest:turtle-syntax-bnode-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bnode-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bnode-04 a earl:TestCriterion, earl:TestCase;
@@ -2022,7 +2023,7 @@ manifest:turtle-syntax-bnode-04 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bnode-04;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bnode-05 a earl:TestCriterion, earl:TestCase;
@@ -2035,7 +2036,7 @@ manifest:turtle-syntax-bnode-05 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bnode-05;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bnode-06 a earl:TestCriterion, earl:TestCase;
@@ -2048,7 +2049,7 @@ manifest:turtle-syntax-bnode-06 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bnode-06;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bnode-07 a earl:TestCriterion, earl:TestCase;
@@ -2061,7 +2062,7 @@ manifest:turtle-syntax-bnode-07 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bnode-07;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bnode-08 a earl:TestCriterion, earl:TestCase;
@@ -2074,7 +2075,7 @@ manifest:turtle-syntax-bnode-08 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bnode-08;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bnode-09 a earl:TestCriterion, earl:TestCase;
@@ -2087,7 +2088,7 @@ manifest:turtle-syntax-bnode-09 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bnode-09;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bnode-10 a earl:TestCriterion, earl:TestCase;
@@ -2100,7 +2101,7 @@ manifest:turtle-syntax-bnode-10 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bnode-10;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-number-01 a earl:TestCriterion, earl:TestCase;
@@ -2113,7 +2114,7 @@ manifest:turtle-syntax-number-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-number-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-number-02 a earl:TestCriterion, earl:TestCase;
@@ -2126,7 +2127,7 @@ manifest:turtle-syntax-number-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-number-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-number-03 a earl:TestCriterion, earl:TestCase;
@@ -2139,7 +2140,7 @@ manifest:turtle-syntax-number-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-number-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-number-04 a earl:TestCriterion, earl:TestCase;
@@ -2152,7 +2153,7 @@ manifest:turtle-syntax-number-04 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-number-04;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-number-05 a earl:TestCriterion, earl:TestCase;
@@ -2165,7 +2166,7 @@ manifest:turtle-syntax-number-05 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-number-05;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-number-06 a earl:TestCriterion, earl:TestCase;
@@ -2178,7 +2179,7 @@ manifest:turtle-syntax-number-06 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-number-06;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-number-07 a earl:TestCriterion, earl:TestCase;
@@ -2191,7 +2192,7 @@ manifest:turtle-syntax-number-07 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-number-07;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-number-08 a earl:TestCriterion, earl:TestCase;
@@ -2204,7 +2205,7 @@ manifest:turtle-syntax-number-08 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-number-08;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-number-09 a earl:TestCriterion, earl:TestCase;
@@ -2217,7 +2218,7 @@ manifest:turtle-syntax-number-09 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-number-09;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-number-10 a earl:TestCriterion, earl:TestCase;
@@ -2230,7 +2231,7 @@ manifest:turtle-syntax-number-10 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-number-10;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-number-11 a earl:TestCriterion, earl:TestCase;
@@ -2243,7 +2244,7 @@ manifest:turtle-syntax-number-11 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-number-11;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-datatypes-01 a earl:TestCriterion, earl:TestCase;
@@ -2256,7 +2257,7 @@ manifest:turtle-syntax-datatypes-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-datatypes-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-datatypes-02 a earl:TestCriterion, earl:TestCase;
@@ -2269,7 +2270,7 @@ manifest:turtle-syntax-datatypes-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-datatypes-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-kw-01 a earl:TestCriterion, earl:TestCase;
@@ -2282,7 +2283,7 @@ manifest:turtle-syntax-kw-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-kw-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-kw-02 a earl:TestCriterion, earl:TestCase;
@@ -2295,7 +2296,7 @@ manifest:turtle-syntax-kw-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-kw-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-kw-03 a earl:TestCriterion, earl:TestCase;
@@ -2308,7 +2309,7 @@ manifest:turtle-syntax-kw-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-kw-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-struct-01 a earl:TestCriterion, earl:TestCase;
@@ -2321,7 +2322,7 @@ manifest:turtle-syntax-struct-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-struct-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-struct-02 a earl:TestCriterion, earl:TestCase;
@@ -2334,7 +2335,7 @@ manifest:turtle-syntax-struct-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-struct-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-struct-03 a earl:TestCriterion, earl:TestCase;
@@ -2347,7 +2348,7 @@ manifest:turtle-syntax-struct-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-struct-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-struct-04 a earl:TestCriterion, earl:TestCase;
@@ -2360,7 +2361,7 @@ manifest:turtle-syntax-struct-04 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-struct-04;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-struct-05 a earl:TestCriterion, earl:TestCase;
@@ -2373,7 +2374,7 @@ manifest:turtle-syntax-struct-05 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-struct-05;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-lists-01 a earl:TestCriterion, earl:TestCase;
@@ -2386,7 +2387,7 @@ manifest:turtle-syntax-lists-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-lists-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-lists-02 a earl:TestCriterion, earl:TestCase;
@@ -2399,7 +2400,7 @@ manifest:turtle-syntax-lists-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-lists-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-lists-03 a earl:TestCriterion, earl:TestCase;
@@ -2412,7 +2413,7 @@ manifest:turtle-syntax-lists-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-lists-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-lists-04 a earl:TestCriterion, earl:TestCase;
@@ -2425,7 +2426,7 @@ manifest:turtle-syntax-lists-04 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-lists-04;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-lists-05 a earl:TestCriterion, earl:TestCase;
@@ -2438,7 +2439,7 @@ manifest:turtle-syntax-lists-05 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-lists-05;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-uri-01 a earl:TestCriterion, earl:TestCase;
@@ -2451,7 +2452,7 @@ manifest:turtle-syntax-bad-uri-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-uri-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-uri-02 a earl:TestCriterion, earl:TestCase;
@@ -2464,7 +2465,7 @@ manifest:turtle-syntax-bad-uri-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-uri-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-uri-03 a earl:TestCriterion, earl:TestCase;
@@ -2477,7 +2478,7 @@ manifest:turtle-syntax-bad-uri-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-uri-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-uri-04 a earl:TestCriterion, earl:TestCase;
@@ -2490,7 +2491,7 @@ manifest:turtle-syntax-bad-uri-04 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-uri-04;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-uri-05 a earl:TestCriterion, earl:TestCase;
@@ -2503,7 +2504,7 @@ manifest:turtle-syntax-bad-uri-05 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-uri-05;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-prefix-01 a earl:TestCriterion, earl:TestCase;
@@ -2516,7 +2517,7 @@ manifest:turtle-syntax-bad-prefix-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-prefix-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-prefix-02 a earl:TestCriterion, earl:TestCase;
@@ -2529,7 +2530,7 @@ manifest:turtle-syntax-bad-prefix-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-prefix-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-prefix-03 a earl:TestCriterion, earl:TestCase;
@@ -2542,7 +2543,7 @@ manifest:turtle-syntax-bad-prefix-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-prefix-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-prefix-04 a earl:TestCriterion, earl:TestCase;
@@ -2555,7 +2556,7 @@ manifest:turtle-syntax-bad-prefix-04 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-prefix-04;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-prefix-05 a earl:TestCriterion, earl:TestCase;
@@ -2568,7 +2569,7 @@ manifest:turtle-syntax-bad-prefix-05 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-prefix-05;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-base-01 a earl:TestCriterion, earl:TestCase;
@@ -2581,7 +2582,7 @@ manifest:turtle-syntax-bad-base-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-base-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-base-02 a earl:TestCriterion, earl:TestCase;
@@ -2594,7 +2595,7 @@ manifest:turtle-syntax-bad-base-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-base-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-base-03 a earl:TestCriterion, earl:TestCase;
@@ -2607,7 +2608,7 @@ manifest:turtle-syntax-bad-base-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-base-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-struct-01 a earl:TestCriterion, earl:TestCase;
@@ -2620,7 +2621,7 @@ manifest:turtle-syntax-bad-struct-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-struct-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-struct-02 a earl:TestCriterion, earl:TestCase;
@@ -2633,7 +2634,7 @@ manifest:turtle-syntax-bad-struct-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-struct-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-struct-03 a earl:TestCriterion, earl:TestCase;
@@ -2646,7 +2647,7 @@ manifest:turtle-syntax-bad-struct-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-struct-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-struct-04 a earl:TestCriterion, earl:TestCase;
@@ -2659,7 +2660,7 @@ manifest:turtle-syntax-bad-struct-04 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-struct-04;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-struct-05 a earl:TestCriterion, earl:TestCase;
@@ -2672,7 +2673,7 @@ manifest:turtle-syntax-bad-struct-05 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-struct-05;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-struct-06 a earl:TestCriterion, earl:TestCase;
@@ -2685,7 +2686,7 @@ manifest:turtle-syntax-bad-struct-06 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-struct-06;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-struct-07 a earl:TestCriterion, earl:TestCase;
@@ -2698,7 +2699,7 @@ manifest:turtle-syntax-bad-struct-07 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-struct-07;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-kw-01 a earl:TestCriterion, earl:TestCase;
@@ -2711,7 +2712,7 @@ manifest:turtle-syntax-bad-kw-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-kw-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-kw-02 a earl:TestCriterion, earl:TestCase;
@@ -2724,7 +2725,7 @@ manifest:turtle-syntax-bad-kw-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-kw-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-kw-03 a earl:TestCriterion, earl:TestCase;
@@ -2737,7 +2738,7 @@ manifest:turtle-syntax-bad-kw-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-kw-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-kw-04 a earl:TestCriterion, earl:TestCase;
@@ -2750,7 +2751,7 @@ manifest:turtle-syntax-bad-kw-04 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-kw-04;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-kw-05 a earl:TestCriterion, earl:TestCase;
@@ -2763,7 +2764,7 @@ manifest:turtle-syntax-bad-kw-05 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-kw-05;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-n3-extras-01 a earl:TestCriterion, earl:TestCase;
@@ -2776,7 +2777,7 @@ manifest:turtle-syntax-bad-n3-extras-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-n3-extras-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-n3-extras-02 a earl:TestCriterion, earl:TestCase;
@@ -2789,7 +2790,7 @@ manifest:turtle-syntax-bad-n3-extras-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-n3-extras-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-n3-extras-03 a earl:TestCriterion, earl:TestCase;
@@ -2802,7 +2803,7 @@ manifest:turtle-syntax-bad-n3-extras-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-n3-extras-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-n3-extras-04 a earl:TestCriterion, earl:TestCase;
@@ -2815,7 +2816,7 @@ manifest:turtle-syntax-bad-n3-extras-04 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-n3-extras-04;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-n3-extras-05 a earl:TestCriterion, earl:TestCase;
@@ -2828,7 +2829,7 @@ manifest:turtle-syntax-bad-n3-extras-05 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-n3-extras-05;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-n3-extras-06 a earl:TestCriterion, earl:TestCase;
@@ -2841,7 +2842,7 @@ manifest:turtle-syntax-bad-n3-extras-06 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-n3-extras-06;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-n3-extras-07 a earl:TestCriterion, earl:TestCase;
@@ -2854,7 +2855,7 @@ manifest:turtle-syntax-bad-n3-extras-07 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-n3-extras-07;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-n3-extras-08 a earl:TestCriterion, earl:TestCase;
@@ -2867,7 +2868,7 @@ manifest:turtle-syntax-bad-n3-extras-08 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-n3-extras-08;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-n3-extras-09 a earl:TestCriterion, earl:TestCase;
@@ -2880,7 +2881,7 @@ manifest:turtle-syntax-bad-n3-extras-09 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-n3-extras-09;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-n3-extras-10 a earl:TestCriterion, earl:TestCase;
@@ -2893,7 +2894,7 @@ manifest:turtle-syntax-bad-n3-extras-10 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-n3-extras-10;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-n3-extras-11 a earl:TestCriterion, earl:TestCase;
@@ -2906,7 +2907,7 @@ manifest:turtle-syntax-bad-n3-extras-11 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-n3-extras-11;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-n3-extras-12 a earl:TestCriterion, earl:TestCase;
@@ -2919,7 +2920,7 @@ manifest:turtle-syntax-bad-n3-extras-12 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-n3-extras-12;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-n3-extras-13 a earl:TestCriterion, earl:TestCase;
@@ -2932,7 +2933,7 @@ manifest:turtle-syntax-bad-n3-extras-13 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-n3-extras-13;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-struct-08 a earl:TestCriterion, earl:TestCase;
@@ -2945,7 +2946,7 @@ manifest:turtle-syntax-bad-struct-08 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-struct-08;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-struct-09 a earl:TestCriterion, earl:TestCase;
@@ -2958,7 +2959,7 @@ manifest:turtle-syntax-bad-struct-09 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-struct-09;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-struct-10 a earl:TestCriterion, earl:TestCase;
@@ -2971,7 +2972,7 @@ manifest:turtle-syntax-bad-struct-10 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-struct-10;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-struct-11 a earl:TestCriterion, earl:TestCase;
@@ -2984,7 +2985,7 @@ manifest:turtle-syntax-bad-struct-11 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-struct-11;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-struct-12 a earl:TestCriterion, earl:TestCase;
@@ -2997,7 +2998,7 @@ manifest:turtle-syntax-bad-struct-12 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-struct-12;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-struct-13 a earl:TestCriterion, earl:TestCase;
@@ -3010,7 +3011,7 @@ manifest:turtle-syntax-bad-struct-13 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-struct-13;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-struct-14 a earl:TestCriterion, earl:TestCase;
@@ -3023,7 +3024,7 @@ manifest:turtle-syntax-bad-struct-14 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-struct-14;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-struct-15 a earl:TestCriterion, earl:TestCase;
@@ -3036,7 +3037,7 @@ manifest:turtle-syntax-bad-struct-15 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-struct-15;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-struct-16 a earl:TestCriterion, earl:TestCase;
@@ -3049,7 +3050,7 @@ manifest:turtle-syntax-bad-struct-16 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-struct-16;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-struct-17 a earl:TestCriterion, earl:TestCase;
@@ -3062,7 +3063,7 @@ manifest:turtle-syntax-bad-struct-17 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-struct-17;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-lang-01 a earl:TestCriterion, earl:TestCase;
@@ -3075,7 +3076,7 @@ manifest:turtle-syntax-bad-lang-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-lang-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-esc-01 a earl:TestCriterion, earl:TestCase;
@@ -3088,7 +3089,7 @@ manifest:turtle-syntax-bad-esc-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-esc-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-esc-02 a earl:TestCriterion, earl:TestCase;
@@ -3101,7 +3102,7 @@ manifest:turtle-syntax-bad-esc-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-esc-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-esc-03 a earl:TestCriterion, earl:TestCase;
@@ -3114,7 +3115,7 @@ manifest:turtle-syntax-bad-esc-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-esc-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-esc-04 a earl:TestCriterion, earl:TestCase;
@@ -3127,7 +3128,7 @@ manifest:turtle-syntax-bad-esc-04 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-esc-04;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-pname-01 a earl:TestCriterion, earl:TestCase;
@@ -3140,7 +3141,7 @@ manifest:turtle-syntax-bad-pname-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-pname-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-pname-02 a earl:TestCriterion, earl:TestCase;
@@ -3153,7 +3154,7 @@ manifest:turtle-syntax-bad-pname-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-pname-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-pname-03 a earl:TestCriterion, earl:TestCase;
@@ -3166,7 +3167,7 @@ manifest:turtle-syntax-bad-pname-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-pname-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-string-01 a earl:TestCriterion, earl:TestCase;
@@ -3179,7 +3180,7 @@ manifest:turtle-syntax-bad-string-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-string-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-string-02 a earl:TestCriterion, earl:TestCase;
@@ -3192,7 +3193,7 @@ manifest:turtle-syntax-bad-string-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-string-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-string-03 a earl:TestCriterion, earl:TestCase;
@@ -3205,7 +3206,7 @@ manifest:turtle-syntax-bad-string-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-string-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-string-04 a earl:TestCriterion, earl:TestCase;
@@ -3218,7 +3219,7 @@ manifest:turtle-syntax-bad-string-04 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-string-04;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-string-05 a earl:TestCriterion, earl:TestCase;
@@ -3231,7 +3232,7 @@ manifest:turtle-syntax-bad-string-05 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-string-05;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-string-06 a earl:TestCriterion, earl:TestCase;
@@ -3244,7 +3245,7 @@ manifest:turtle-syntax-bad-string-06 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-string-06;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-string-07 a earl:TestCriterion, earl:TestCase;
@@ -3257,7 +3258,7 @@ manifest:turtle-syntax-bad-string-07 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-string-07;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-num-01 a earl:TestCriterion, earl:TestCase;
@@ -3270,7 +3271,7 @@ manifest:turtle-syntax-bad-num-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-num-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-num-02 a earl:TestCriterion, earl:TestCase;
@@ -3283,7 +3284,7 @@ manifest:turtle-syntax-bad-num-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-num-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-num-03 a earl:TestCriterion, earl:TestCase;
@@ -3296,7 +3297,7 @@ manifest:turtle-syntax-bad-num-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-num-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-num-04 a earl:TestCriterion, earl:TestCase;
@@ -3309,7 +3310,7 @@ manifest:turtle-syntax-bad-num-04 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-num-04;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-num-05 a earl:TestCriterion, earl:TestCase;
@@ -3322,7 +3323,7 @@ manifest:turtle-syntax-bad-num-05 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-num-05;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-eval-struct-01 a earl:TestCriterion, earl:TestCase;
@@ -3336,7 +3337,7 @@ manifest:turtle-eval-struct-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-eval-struct-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-eval-struct-02 a earl:TestCriterion, earl:TestCase;
@@ -3350,7 +3351,7 @@ manifest:turtle-eval-struct-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-eval-struct-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-01 a earl:TestCriterion, earl:TestCase;
@@ -3364,7 +3365,7 @@ manifest:turtle-subm-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-02 a earl:TestCriterion, earl:TestCase;
@@ -3378,7 +3379,7 @@ manifest:turtle-subm-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-03 a earl:TestCriterion, earl:TestCase;
@@ -3392,7 +3393,7 @@ manifest:turtle-subm-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-04 a earl:TestCriterion, earl:TestCase;
@@ -3406,7 +3407,7 @@ manifest:turtle-subm-04 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-04;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-05 a earl:TestCriterion, earl:TestCase;
@@ -3420,7 +3421,7 @@ manifest:turtle-subm-05 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-05;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-06 a earl:TestCriterion, earl:TestCase;
@@ -3434,7 +3435,7 @@ manifest:turtle-subm-06 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-06;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-07 a earl:TestCriterion, earl:TestCase;
@@ -3448,7 +3449,7 @@ manifest:turtle-subm-07 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-07;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-08 a earl:TestCriterion, earl:TestCase;
@@ -3462,7 +3463,7 @@ manifest:turtle-subm-08 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-08;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-09 a earl:TestCriterion, earl:TestCase;
@@ -3476,7 +3477,7 @@ manifest:turtle-subm-09 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-09;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-10 a earl:TestCriterion, earl:TestCase;
@@ -3490,7 +3491,7 @@ manifest:turtle-subm-10 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-10;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-11 a earl:TestCriterion, earl:TestCase;
@@ -3504,7 +3505,7 @@ manifest:turtle-subm-11 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-11;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-12 a earl:TestCriterion, earl:TestCase;
@@ -3518,7 +3519,7 @@ manifest:turtle-subm-12 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-12;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-13 a earl:TestCriterion, earl:TestCase;
@@ -3532,7 +3533,7 @@ manifest:turtle-subm-13 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-13;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-14 a earl:TestCriterion, earl:TestCase;
@@ -3546,7 +3547,7 @@ manifest:turtle-subm-14 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-14;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-15 a earl:TestCriterion, earl:TestCase;
@@ -3560,7 +3561,7 @@ manifest:turtle-subm-15 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-15;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-16 a earl:TestCriterion, earl:TestCase;
@@ -3574,7 +3575,7 @@ manifest:turtle-subm-16 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-16;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-17 a earl:TestCriterion, earl:TestCase;
@@ -3588,7 +3589,7 @@ manifest:turtle-subm-17 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-17;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-18 a earl:TestCriterion, earl:TestCase;
@@ -3602,7 +3603,7 @@ manifest:turtle-subm-18 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-18;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-19 a earl:TestCriterion, earl:TestCase;
@@ -3616,7 +3617,7 @@ manifest:turtle-subm-19 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-19;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-20 a earl:TestCriterion, earl:TestCase;
@@ -3630,7 +3631,7 @@ manifest:turtle-subm-20 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-20;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-21 a earl:TestCriterion, earl:TestCase;
@@ -3644,7 +3645,7 @@ manifest:turtle-subm-21 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-21;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-22 a earl:TestCriterion, earl:TestCase;
@@ -3658,7 +3659,7 @@ manifest:turtle-subm-22 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-22;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-23 a earl:TestCriterion, earl:TestCase;
@@ -3672,7 +3673,7 @@ manifest:turtle-subm-23 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-23;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-24 a earl:TestCriterion, earl:TestCase;
@@ -3686,7 +3687,7 @@ manifest:turtle-subm-24 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-24;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-25 a earl:TestCriterion, earl:TestCase;
@@ -3700,7 +3701,7 @@ manifest:turtle-subm-25 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-25;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-26 a earl:TestCriterion, earl:TestCase;
@@ -3714,7 +3715,7 @@ manifest:turtle-subm-26 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-26;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-subm-27 a earl:TestCriterion, earl:TestCase;
@@ -3728,7 +3729,7 @@ manifest:turtle-subm-27 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-subm-27;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-eval-bad-01 a earl:TestCriterion, earl:TestCase;
@@ -3741,7 +3742,7 @@ manifest:turtle-eval-bad-01 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-eval-bad-01;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-eval-bad-02 a earl:TestCriterion, earl:TestCase;
@@ -3754,7 +3755,7 @@ manifest:turtle-eval-bad-02 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-eval-bad-02;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-eval-bad-03 a earl:TestCriterion, earl:TestCase;
@@ -3767,7 +3768,7 @@ manifest:turtle-eval-bad-03 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-eval-bad-03;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-eval-bad-04 a earl:TestCriterion, earl:TestCase;
@@ -3780,7 +3781,7 @@ manifest:turtle-eval-bad-04 a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-eval-bad-04;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-blank-label-dot-end a earl:TestCriterion, earl:TestCase;
@@ -3793,7 +3794,7 @@ manifest:turtle-syntax-bad-blank-label-dot-end a earl:TestCriterion, earl:TestCa
        earl:test manifest:turtle-syntax-bad-blank-label-dot-end;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-ln-dash-start a earl:TestCriterion, earl:TestCase;
@@ -3806,7 +3807,7 @@ manifest:turtle-syntax-bad-ln-dash-start a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-ln-dash-start;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-ln-escape-start a earl:TestCriterion, earl:TestCase;
@@ -3819,7 +3820,7 @@ manifest:turtle-syntax-bad-ln-escape-start a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-ln-escape-start;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-ln-escape a earl:TestCriterion, earl:TestCase;
@@ -3832,7 +3833,7 @@ manifest:turtle-syntax-bad-ln-escape a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-ln-escape;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-missing-ns-dot-end a earl:TestCriterion, earl:TestCase;
@@ -3845,7 +3846,7 @@ manifest:turtle-syntax-bad-missing-ns-dot-end a earl:TestCriterion, earl:TestCas
        earl:test manifest:turtle-syntax-bad-missing-ns-dot-end;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-missing-ns-dot-start a earl:TestCriterion, earl:TestCase;
@@ -3858,7 +3859,7 @@ manifest:turtle-syntax-bad-missing-ns-dot-start a earl:TestCriterion, earl:TestC
        earl:test manifest:turtle-syntax-bad-missing-ns-dot-start;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-ns-dot-end a earl:TestCriterion, earl:TestCase;
@@ -3871,7 +3872,7 @@ manifest:turtle-syntax-bad-ns-dot-end a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-ns-dot-end;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-ns-dot-start a earl:TestCriterion, earl:TestCase;
@@ -3884,7 +3885,7 @@ manifest:turtle-syntax-bad-ns-dot-start a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-bad-ns-dot-start;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-bad-number-dot-in-anon a earl:TestCriterion, earl:TestCase;
@@ -3897,7 +3898,7 @@ manifest:turtle-syntax-bad-number-dot-in-anon a earl:TestCriterion, earl:TestCas
        earl:test manifest:turtle-syntax-bad-number-dot-in-anon;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-blank-label a earl:TestCriterion, earl:TestCase;
@@ -3910,7 +3911,7 @@ manifest:turtle-syntax-blank-label a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-blank-label;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-ln-colons a earl:TestCriterion, earl:TestCase;
@@ -3923,7 +3924,7 @@ manifest:turtle-syntax-ln-colons a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-ln-colons;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-ln-dots a earl:TestCriterion, earl:TestCase;
@@ -3936,7 +3937,7 @@ manifest:turtle-syntax-ln-dots a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-ln-dots;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
 
 manifest:turtle-syntax-ns-dots a earl:TestCriterion, earl:TestCase;
@@ -3949,5 +3950,5 @@ manifest:turtle-syntax-ns-dots a earl:TestCriterion, earl:TestCase;
        earl:test manifest:turtle-syntax-ns-dots;
        earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
        earl:mode earl:automatic;
-       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2013-12-03T11:45:37.089Z"^^xsd:dateTime ]]
+       earl:result [ a earl:TestResult; earl:outcome earl:passed; dc:date "2014-03-03T13:14:11.981Z"^^xsd:dateTime ]]
   ).
