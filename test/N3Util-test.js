@@ -230,6 +230,10 @@ describe('N3Util', function () {
       N3Util.isQName('"http://example.org/"').should.be.false;
     });
 
+    it('does not match a literal with a colon', function () {
+      N3Util.isQName('"a:b"').should.be.false;
+    });
+
     it('does not match null', function () {
       expect(N3Util.isQName(null)).to.be.null;
     });
