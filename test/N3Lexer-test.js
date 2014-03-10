@@ -312,6 +312,16 @@ describe('N3Lexer', function () {
                      { type: 'dot', line: 1 },
                      { type: 'eof', line: 1 }));
 
+    it('should tokenize a qname with a dot, split in half while streaming',
+      shouldTokenize(streamOf('dbpedia:Anthony_J._Batt', 'aglia '),
+                     { type: 'qname', prefix: 'dbpedia', value: 'Anthony_J._Battaglia', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize a qname with a dot, split after the dot while streaming',
+      shouldTokenize(streamOf('dbpedia:Anthony_J.', '_Battaglia '),
+                     { type: 'qname', prefix: 'dbpedia', value: 'Anthony_J._Battaglia', line: 1 },
+                     { type: 'eof', line: 1 }));
+
     it('should tokenize a stream',
       shouldTokenize(streamOf('<a>\n<b', '> ', '"""', 'c\n', '"""', '.',
                               '<d> <e', '> ', '""', '.',
