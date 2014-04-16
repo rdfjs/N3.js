@@ -371,6 +371,11 @@ describe('N3Parser', function () {
       shouldNotParse('@base a: ',
                      'Expected explicituri to follow base declaration at line 1.'));
 
+    it('should not parse invalid @base statements',
+      shouldNotParse('@base <http://ex.org/foo#bar>.\n' +
+                     '<a> <b> <c>.\n',
+                     'Invalid base URI at line 1.'));
+
     it('should not parse improperly nested square brackets',
       shouldNotParse('<a> <b> [<c> <d>]].',
                      'Expected punctuation to follow "_:b0" at line 1.'));
