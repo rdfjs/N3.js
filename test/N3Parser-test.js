@@ -367,6 +367,17 @@ describe('N3Parser', function () {
                   ['http://ex.org/?foo', 'http://ex.org/b', 'http://ex.org/c'],
                   ['http://ex.org/d/?bar', 'http://ex.org/d/f', 'http://ex.org/d/g']));
 
+    it('should resolve URIs with query string against @base',
+      shouldParse('@base <http://ex.org/>.\n' +
+                  '<?> <?a> <?a=b>.\n' +
+                  '@base <d>.\n' +
+                  '<?> <?a> <?a=b>.' +
+                  '@base <?e>.\n' +
+                  '<> <?a> <?a=b>.',
+                  ['http://ex.org/?', 'http://ex.org/?a', 'http://ex.org/?a=b'],
+                  ['http://ex.org/d?', 'http://ex.org/d?a', 'http://ex.org/d?a=b'],
+                  ['http://ex.org/d?e', 'http://ex.org/d?a', 'http://ex.org/d?a=b']));
+
     it('should not parse base declarations without IRI',
       shouldNotParse('@base a: ',
                      'Expected explicituri to follow base declaration at line 1.'));
