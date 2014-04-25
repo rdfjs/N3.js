@@ -363,7 +363,7 @@ describe('N3Lexer', function () {
                      { type: 'eof', line: 2 }));
 
     it('should tokenize @prefix declarations',
-      shouldTokenize('@prefix : <http://uri.org/#>.\n@prefix abc: <http://uri.org/#>.',
+      shouldTokenize('@prefix : <http://uri.org/#>.\n@prefix abc:<http://uri.org/#>.',
                      { type: '@prefix', line: 1 },
                      { type: 'prefix', value: '', line: 1 },
                      { type: 'explicituri', value: 'http://uri.org/#', line: 1 },
