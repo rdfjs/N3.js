@@ -97,8 +97,8 @@ describe('N3Lexer', function () {
                      { type: 'eof', line: 1 }));
 
     it('should tokenize an explicituri with eight-digit unicode escapes',
-      shouldTokenize('<http://a.example/\\U00000073>',
-                     { type: 'explicituri', value: 'http://a.example/s', line: 1 },
+      shouldTokenize('<http://a.example/\\U00000073\\U00A00073>',
+                     { type: 'explicituri', value: 'http://a.example/s\uffc0\udc73', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should tokenize two explicituris separated by whitespace',
