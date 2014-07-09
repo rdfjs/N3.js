@@ -14,7 +14,7 @@ describe('N3Util', function () {
       N3Util(host).should.equal(host);
       host.isUri.should.be.a('function');
       host.isLiteral.should.be.a('function');
-      host.isQName('a:b').should.be.true;
+      host.isPrefixedName('a:b').should.be.true;
     });
 
     it("can attach functions to an object's prototype", function () {
@@ -25,7 +25,7 @@ describe('N3Util', function () {
       Constructor.prototype.isLiteral.should.be.a('function');
 
       var host = new Constructor();
-      host.isQName().should.be.true;
+      host.isPrefixedName().should.be.true;
     });
   });
 
@@ -217,51 +217,51 @@ describe('N3Util', function () {
     });
   });
 
-  describe('isQName', function () {
-    it('matches a QName', function () {
-      N3Util.isQName('ex:Test').should.be.true;
+  describe('isPrefixedName', function () {
+    it('matches a prefixed name', function () {
+      N3Util.isPrefixedName('ex:Test').should.be.true;
     });
 
     it('does not match a URI', function () {
-      N3Util.isQName('http://example.org/').should.be.false;
+      N3Util.isPrefixedName('http://example.org/').should.be.false;
     });
 
     it('does not match a literal', function () {
-      N3Util.isQName('"http://example.org/"').should.be.false;
+      N3Util.isPrefixedName('"http://example.org/"').should.be.false;
     });
 
     it('does not match a literal with a colon', function () {
-      N3Util.isQName('"a:b"').should.be.false;
+      N3Util.isPrefixedName('"a:b"').should.be.false;
     });
 
     it('does not match null', function () {
-      expect(N3Util.isQName(null)).to.be.null;
+      expect(N3Util.isPrefixedName(null)).to.be.null;
     });
 
     it('does not match undefined', function () {
-      expect(N3Util.isQName(undefined)).to.be.undefined;
+      expect(N3Util.isPrefixedName(undefined)).to.be.undefined;
     });
   });
 
-  describe('expandQName', function () {
-    it('expands a QName', function () {
-      N3Util.expandQName('ex:Test', { 'ex': 'http://ex.org/#' }).should.equal('http://ex.org/#Test');
+  describe('expandPrefixedName', function () {
+    it('expands a prefixed name', function () {
+      N3Util.expandPrefixedName('ex:Test', { 'ex': 'http://ex.org/#' }).should.equal('http://ex.org/#Test');
     });
 
-    it('expands a QName with the empty prefix', function () {
-      N3Util.expandQName(':Test', { '': 'http://ex.org/#' }).should.equal('http://ex.org/#Test');
+    it('expands a prefixed name with the empty prefix', function () {
+      N3Util.expandPrefixedName(':Test', { '': 'http://ex.org/#' }).should.equal('http://ex.org/#Test');
     });
 
-    it('does not expand a QName if the prefix is missing', function () {
-      N3Util.expandQName.bind(null, 'a:Test', { 'b': 'http://ex.org/#' }).should.throw('Unknown prefix: a');
+    it('does not expand a prefixed name if the prefix is missing', function () {
+      N3Util.expandPrefixedName.bind(null, 'a:Test', { 'b': 'http://ex.org/#' }).should.throw('Unknown prefix: a');
     });
 
     it('does not work with null', function () {
-      N3Util.expandQName.bind(null, null).should.throw('null is not a QName');
+      N3Util.expandPrefixedName.bind(null, null).should.throw('null is not a prefixed name');
     });
 
     it('does not work with undefined', function () {
-      N3Util.expandQName.bind(null, undefined).should.throw('undefined is not a QName');
+      N3Util.expandPrefixedName.bind(null, undefined).should.throw('undefined is not a prefixed name');
     });
   });
 });

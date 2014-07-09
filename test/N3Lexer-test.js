@@ -291,35 +291,35 @@ describe('N3Lexer', function () {
                      { type: 'dot', line: 2 },
                      { type: 'eof', line: 2 }));
 
-    it('should tokenize statements with shared subjects and predicates and qnames',
+    it('should tokenize statements with shared subjects and predicates and prefixed names',
       shouldTokenize('a:a b:b c:c;d:d e:e,f:f.',
-                     { type: 'qname', prefix: 'a', value: 'a', line: 1 },
-                     { type: 'qname', prefix: 'b', value: 'b', line: 1 },
-                     { type: 'qname', prefix: 'c', value: 'c', line: 1 },
+                     { type: 'prefixed', prefix: 'a', value: 'a', line: 1 },
+                     { type: 'prefixed', prefix: 'b', value: 'b', line: 1 },
+                     { type: 'prefixed', prefix: 'c', value: 'c', line: 1 },
                      { type: 'semicolon', line: 1 },
-                     { type: 'qname', prefix: 'd', value: 'd', line: 1 },
-                     { type: 'qname', prefix: 'e', value: 'e', line: 1 },
+                     { type: 'prefixed', prefix: 'd', value: 'd', line: 1 },
+                     { type: 'prefixed', prefix: 'e', value: 'e', line: 1 },
                      { type: 'comma', line: 1 },
-                     { type: 'qname', prefix: 'f', value: 'f', line: 1 },
+                     { type: 'prefixed', prefix: 'f', value: 'f', line: 1 },
                      { type: 'dot', line: 1 },
                      { type: 'eof', line: 1 }));
 
-    it('should tokenize the colon qname',
+    it('should tokenize the colon prefixed name',
       shouldTokenize(': : :.',
-                     { type: 'qname', prefix: '', value: '', line: 1 },
-                     { type: 'qname', prefix: '', value: '', line: 1 },
-                     { type: 'qname', prefix: '', value: '', line: 1 },
+                     { type: 'prefixed', prefix: '', value: '', line: 1 },
+                     { type: 'prefixed', prefix: '', value: '', line: 1 },
+                     { type: 'prefixed', prefix: '', value: '', line: 1 },
                      { type: 'dot', line: 1 },
                      { type: 'eof', line: 1 }));
 
-    it('should tokenize a qname with a dot, split in half while streaming',
+    it('should tokenize a prefixed name with a dot, split in half while streaming',
       shouldTokenize(streamOf('dbpedia:Anthony_J._Batt', 'aglia '),
-                     { type: 'qname', prefix: 'dbpedia', value: 'Anthony_J._Battaglia', line: 1 },
+                     { type: 'prefixed', prefix: 'dbpedia', value: 'Anthony_J._Battaglia', line: 1 },
                      { type: 'eof', line: 1 }));
 
-    it('should tokenize a qname with a dot, split after the dot while streaming',
+    it('should tokenize a prefixed name with a dot, split after the dot while streaming',
       shouldTokenize(streamOf('dbpedia:Anthony_J.', '_Battaglia '),
-                     { type: 'qname', prefix: 'dbpedia', value: 'Anthony_J._Battaglia', line: 1 },
+                     { type: 'prefixed', prefix: 'dbpedia', value: 'Anthony_J._Battaglia', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should tokenize a stream',
@@ -402,11 +402,11 @@ describe('N3Lexer', function () {
                      { type: 'explicituri', value: 'http://uri.org/#', line: 2 },
                      { type: 'eof', line: 2 }));
 
-    it('should tokenize qnames',
+    it('should tokenize prefixed names',
       shouldTokenize(':a b:c d-dd:e-ee.',
-                     { type: 'qname', prefix: '',      value: 'a',    line: 1 },
-                     { type: 'qname', prefix: 'b',     value: 'c',    line: 1 },
-                     { type: 'qname', prefix: 'd-dd',  value: 'e-ee', line: 1 },
+                     { type: 'prefixed', prefix: '',      value: 'a',    line: 1 },
+                     { type: 'prefixed', prefix: 'b',     value: 'c',    line: 1 },
+                     { type: 'prefixed', prefix: 'd-dd',  value: 'e-ee', line: 1 },
                      { type: 'dot', line: 1 },
                      { type: 'eof', line: 1 }));
 
@@ -440,7 +440,7 @@ describe('N3Lexer', function () {
                      { type: 'liststart', line: 1 },
                      { type: 'literal', value: '"1"^^<http://www.w3.org/2001/XMLSchema#integer>', line: 1 },
                      { type: 'literal', value: '"2"', line: 1 },
-                     { type: 'qname', value: 'o', line: 1 },
+                     { type: 'prefixed', value: 'o', line: 1 },
                      { type: 'listend', line: 1 },
                      { type: 'eof', line: 1 }));
 

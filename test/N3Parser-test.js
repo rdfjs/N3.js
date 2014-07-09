@@ -70,11 +70,11 @@ describe('N3Parser', function () {
       shouldParse('<a> <b> "string"^^<type>.',
                   ['a', 'b', '"string"^^<type>']));
 
-    it('should parse a triple with a literal and a qname type',
+    it('should parse a triple with a literal and a prefixed name type',
       shouldParse('@prefix x: <y#>. <a> <b> "string"^^x:z.',
                   ['a', 'b', '"string"^^<y#z>']));
 
-    it('should not parse a triple with a literal and a qname type with an inexistent prefix',
+    it('should not parse a triple with a literal and a prefixed name type with an inexistent prefix',
       shouldNotParse('<a> <b> "string"^^x:z.',
                      'Undefined prefix "x:" at line 1.'));
 
@@ -263,7 +263,7 @@ describe('N3Parser', function () {
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
                            'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
-    it('should parse statements with qnames in lists',
+    it('should parse statements with prefixed names in lists',
       shouldParse('@prefix a: <a#>. <a> <b> (a:x a:y).',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a#x'],
