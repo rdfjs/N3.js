@@ -124,7 +124,7 @@ describe('N3Parser', function () {
 
     it('should not parse prefix declarations without IRI',
       shouldNotParse('@prefix : .',
-                     'Expected explicituri to follow prefix ":" at line 1.'));
+                     'Expected IRI to follow prefix ":" at line 1.'));
 
     it('should not parse prefix declarations without a dot',
       shouldNotParse('@prefix : <a> ;',
@@ -380,7 +380,7 @@ describe('N3Parser', function () {
 
     it('should not parse base declarations without IRI',
       shouldNotParse('@base a: ',
-                     'Expected explicituri to follow base declaration at line 1.'));
+                     'Expected IRI to follow base declaration at line 1.'));
 
     it('should not parse invalid @base statements',
       shouldNotParse('@base <http://ex.org/foo#bar>.\n' +

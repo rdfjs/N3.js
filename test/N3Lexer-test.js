@@ -42,9 +42,9 @@ describe('N3Lexer', function () {
       shouldTokenize(' \t \n  ',
                      { type: 'eof', line: 2 }));
 
-    it('should tokenize an explicituri',
+    it('should tokenize an IRI',
       shouldTokenize('<http://ex.org/?bla#foo>',
-                     { type: 'explicituri', value: 'http://ex.org/?bla#foo', line: 1 },
+                     { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should not tokenize an IRI with invalid characters',
@@ -91,40 +91,40 @@ describe('N3Lexer', function () {
       global.isNaN = isNaN;
     });
 
-    it('should tokenize an explicituri with four-digit unicode escapes',
+    it('should tokenize an IRI with four-digit unicode escapes',
       shouldTokenize('<http://a.example/\\u0073>',
-                     { type: 'explicituri', value: 'http://a.example/s', line: 1 },
+                     { type: 'IRI', value: 'http://a.example/s', line: 1 },
                      { type: 'eof', line: 1 }));
 
-    it('should tokenize an explicituri with eight-digit unicode escapes',
+    it('should tokenize an IRI with eight-digit unicode escapes',
       shouldTokenize('<http://a.example/\\U00000073\\U00A00073>',
-                     { type: 'explicituri', value: 'http://a.example/s\uffc0\udc73', line: 1 },
+                     { type: 'IRI', value: 'http://a.example/s\uffc0\udc73', line: 1 },
                      { type: 'eof', line: 1 }));
 
-    it('should not decode an explicituri',
+    it('should not decode an IRI',
       shouldTokenize('<http://a.example/%66oo-bar>',
-                     { type: 'explicituri', value: 'http://a.example/%66oo-bar', line: 1 },
+                     { type: 'IRI', value: 'http://a.example/%66oo-bar', line: 1 },
                      { type: 'eof', line: 1 }));
 
-    it('should tokenize two explicituris separated by whitespace',
+    it('should tokenize two IRIs separated by whitespace',
       shouldTokenize(' \n\t<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t',
-                     { type: 'explicituri', value: 'http://ex.org/?bla#foo', line: 2 },
-                     { type: 'explicituri', value: 'http://ex.org/?bla#bar', line: 3 },
+                     { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 2 },
+                     { type: 'IRI', value: 'http://ex.org/?bla#bar', line: 3 },
                      { type: 'eof', line: 4 }));
 
-    it('should tokenize a statement with explicituris',
+    it('should tokenize a statement with IRIs',
       shouldTokenize(' \n\t<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo> .',
-                     { type: 'explicituri', value: 'http://ex.org/?bla#foo', line: 2 },
-                     { type: 'explicituri', value: 'http://ex.org/?bla#bar', line: 3 },
-                     { type: 'explicituri', value: 'http://ex.org/?bla#boo', line: 4 },
+                     { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 2 },
+                     { type: 'IRI', value: 'http://ex.org/?bla#bar', line: 3 },
+                     { type: 'IRI', value: 'http://ex.org/?bla#boo', line: 4 },
                      { type: 'dot', line: 4 },
                      { type: 'eof', line: 4 }));
 
     it('should correctly recognize different types of newlines',
       shouldTokenize('<a>\r<b>\n<c>\r\n.',
-                     { type: 'explicituri', value: 'a', line: 1 },
-                     { type: 'explicituri', value: 'b', line: 2 },
-                     { type: 'explicituri', value: 'c', line: 3 },
+                     { type: 'IRI', value: 'a', line: 1 },
+                     { type: 'IRI', value: 'b', line: 2 },
+                     { type: 'IRI', value: 'c', line: 3 },
                      { type: 'dot', line: 4 },
                      { type: 'eof', line: 4 }));
 
@@ -134,9 +134,9 @@ describe('N3Lexer', function () {
 
     it('should ignore comments',
       shouldTokenize('<#foo> #comment\n <#foo>  #comment \r# comment\n\n<#bla>#',
-                     { type: 'explicituri', value: '#foo', line: 1 },
-                     { type: 'explicituri', value: '#foo', line: 2 },
-                     { type: 'explicituri', value: '#bla', line: 5 },
+                     { type: 'IRI', value: '#foo', line: 1 },
+                     { type: 'IRI', value: '#foo', line: 2 },
+                     { type: 'IRI', value: '#bla', line: 5 },
                      { type: 'eof', line: 5 }));
 
     it('should tokenize a quoted string literal',
@@ -277,22 +277,22 @@ describe('N3Lexer', function () {
 
     it('should tokenize statements with shared subjects',
       shouldTokenize('<a> <b> <c>;\n<d> <e>.',
-                     { type: 'explicituri', value: 'a', line: 1 },
-                     { type: 'explicituri', value: 'b', line: 1 },
-                     { type: 'explicituri', value: 'c', line: 1 },
+                     { type: 'IRI', value: 'a', line: 1 },
+                     { type: 'IRI', value: 'b', line: 1 },
+                     { type: 'IRI', value: 'c', line: 1 },
                      { type: 'semicolon', line: 1 },
-                     { type: 'explicituri', value: 'd', line: 2 },
-                     { type: 'explicituri', value: 'e', line: 2 },
+                     { type: 'IRI', value: 'd', line: 2 },
+                     { type: 'IRI', value: 'e', line: 2 },
                      { type: 'dot', line: 2 },
                      { type: 'eof', line: 2 }));
 
     it('should tokenize statements with shared subjects and predicates',
       shouldTokenize('<a> <b> <c>,\n<d>.',
-                     { type: 'explicituri', value: 'a', line: 1 },
-                     { type: 'explicituri', value: 'b', line: 1 },
-                     { type: 'explicituri', value: 'c', line: 1 },
+                     { type: 'IRI', value: 'a', line: 1 },
+                     { type: 'IRI', value: 'b', line: 1 },
+                     { type: 'IRI', value: 'c', line: 1 },
                      { type: 'comma', line: 1 },
-                     { type: 'explicituri', value: 'd', line: 2 },
+                     { type: 'IRI', value: 'd', line: 2 },
                      { type: 'dot', line: 2 },
                      { type: 'eof', line: 2 }));
 
@@ -336,16 +336,16 @@ describe('N3Lexer', function () {
       shouldTokenize(streamOf('<a>\n<b', '> ', '"""', 'c\n', '"""', '.',
                               '<d> <e', '> ', '""', '.',
                               '<g> <h> "i"', '@e', 'n.'),
-                     { type: 'explicituri', value: 'a', line: 1 },
-                     { type: 'explicituri', value: 'b', line: 2 },
+                     { type: 'IRI', value: 'a', line: 1 },
+                     { type: 'IRI', value: 'b', line: 2 },
                      { type: 'literal', value: '"c\n"', line: 2 },
                      { type: 'dot', line: 3 },
-                     { type: 'explicituri', value: 'd', line: 3 },
-                     { type: 'explicituri', value: 'e', line: 3 },
+                     { type: 'IRI', value: 'd', line: 3 },
+                     { type: 'IRI', value: 'e', line: 3 },
                      { type: 'literal', value: '""', line: 3 },
                      { type: 'dot', line: 3 },
-                     { type: 'explicituri', value: 'g', line: 3 },
-                     { type: 'explicituri', value: 'h', line: 3 },
+                     { type: 'IRI', value: 'g', line: 3 },
+                     { type: 'IRI', value: 'h', line: 3 },
                      { type: 'literal', value: '"i"', line: 3 },
                      { type: 'langcode', value: 'en', line: 3 },
                      { type: 'dot', line: 3 },
@@ -376,21 +376,21 @@ describe('N3Lexer', function () {
       shouldTokenize('@prefix : <http://uri.org/#>.\n@prefix abc:<http://uri.org/#>.',
                      { type: '@prefix', line: 1 },
                      { type: 'prefix', value: '', line: 1 },
-                     { type: 'explicituri', value: 'http://uri.org/#', line: 1 },
+                     { type: 'IRI', value: 'http://uri.org/#', line: 1 },
                      { type: 'dot', line: 1 },
                      { type: '@prefix', line: 2 },
                      { type: 'prefix', value: 'abc', line: 2 },
-                     { type: 'explicituri', value: 'http://uri.org/#', line: 2 },
+                     { type: 'IRI', value: 'http://uri.org/#', line: 2 },
                      { type: 'dot', line: 2 },
                      { type: 'eof', line: 2 }));
 
     it('should tokenize @base declarations',
       shouldTokenize('@base <http://uri.org/#>.\n@base <http://uri.org/#>.',
                      { type: '@base', line: 1 },
-                     { type: 'explicituri', value: 'http://uri.org/#', line: 1 },
+                     { type: 'IRI', value: 'http://uri.org/#', line: 1 },
                      { type: 'dot', line: 1 },
                      { type: '@base', line: 2 },
-                     { type: 'explicituri', value: 'http://uri.org/#', line: 2 },
+                     { type: 'IRI', value: 'http://uri.org/#', line: 2 },
                      { type: 'dot', line: 2 },
                      { type: 'eof', line: 2 }));
 
@@ -398,18 +398,18 @@ describe('N3Lexer', function () {
       shouldTokenize('PREFIX : <http://uri.org/#>\npreFiX abc: <http://uri.org/#>',
                      { type: 'PREFIX', line: 1 },
                      { type: 'prefix', value: '', line: 1 },
-                     { type: 'explicituri', value: 'http://uri.org/#', line: 1 },
+                     { type: 'IRI', value: 'http://uri.org/#', line: 1 },
                      { type: 'PREFIX', line: 2 },
                      { type: 'prefix', value: 'abc', line: 2 },
-                     { type: 'explicituri', value: 'http://uri.org/#', line: 2 },
+                     { type: 'IRI', value: 'http://uri.org/#', line: 2 },
                      { type: 'eof', line: 2 }));
 
     it('should tokenize BASE declarations',
       shouldTokenize('BASE <http://uri.org/#>\nbAsE <http://uri.org/#>',
                      { type: 'BASE', line: 1 },
-                     { type: 'explicituri', value: 'http://uri.org/#', line: 1 },
+                     { type: 'IRI', value: 'http://uri.org/#', line: 1 },
                      { type: 'BASE', line: 2 },
-                     { type: 'explicituri', value: 'http://uri.org/#', line: 2 },
+                     { type: 'IRI', value: 'http://uri.org/#', line: 2 },
                      { type: 'eof', line: 2 }));
 
     it('should tokenize prefixed names',
@@ -441,8 +441,8 @@ describe('N3Lexer', function () {
                      { type: 'bracketopen', line: 1 },
                      { type: 'bracketclose', line: 1 },
                      { type: 'bracketopen', line: 1 },
-                     { type: 'explicituri', value: 'a', line: 1 },
-                     { type: 'explicituri', value: 'b', line: 1 },
+                     { type: 'IRI', value: 'a', line: 1 },
+                     { type: 'IRI', value: 'b', line: 1 },
                      { type: 'bracketclose', line: 1 },
                      { type: 'eof', line: 1 }));
 
@@ -451,18 +451,18 @@ describe('N3Lexer', function () {
                      { type: 'liststart', line: 1 },
                      { type: 'listend', line: 1 },
                      { type: 'liststart', line: 1 },
-                     { type: 'explicituri', value: 'a', line: 1 },
+                     { type: 'IRI', value: 'a', line: 1 },
                      { type: 'listend', line: 1 },
                      { type: 'liststart', line: 1 },
-                     { type: 'explicituri', value: 'a', line: 1 },
-                     { type: 'explicituri', value: 'b', line: 1 },
+                     { type: 'IRI', value: 'a', line: 1 },
+                     { type: 'IRI', value: 'b', line: 1 },
                      { type: 'listend', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should tokenize mixed lists',
       shouldTokenize('<a> <b> (1 "2" :o)',
-                     { type: 'explicituri', value: 'a', line: 1 },
-                     { type: 'explicituri', value: 'b', line: 1 },
+                     { type: 'IRI', value: 'a', line: 1 },
+                     { type: 'IRI', value: 'b', line: 1 },
                      { type: 'liststart', line: 1 },
                      { type: 'literal', value: '"1"^^<http://www.w3.org/2001/XMLSchema#integer>', line: 1 },
                      { type: 'literal', value: '"2"', line: 1 },
@@ -472,9 +472,9 @@ describe('N3Lexer', function () {
 
     it('should tokenize the "a" predicate',
       shouldTokenize('<x> a <y>.',
-                     { type: 'explicituri', value: 'x', line: 1 },
+                     { type: 'IRI', value: 'x', line: 1 },
                      { type: 'abbreviation', value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', line: 1 },
-                     { type: 'explicituri', value: 'y', line: 1 },
+                     { type: 'IRI', value: 'y', line: 1 },
                      { type: 'dot', line: 1 },
                      { type: 'eof', line: 1 }));
 
