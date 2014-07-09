@@ -101,6 +101,11 @@ describe('N3Lexer', function () {
                      { type: 'explicituri', value: 'http://a.example/s\uffc0\udc73', line: 1 },
                      { type: 'eof', line: 1 }));
 
+    it('should not decode an explicituri',
+      shouldTokenize('<http://a.example/%66oo-bar>',
+                     { type: 'explicituri', value: 'http://a.example/%66oo-bar', line: 1 },
+                     { type: 'eof', line: 1 }));
+
     it('should tokenize two explicituris separated by whitespace',
       shouldTokenize(' \n\t<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t',
                      { type: 'explicituri', value: 'http://ex.org/?bla#foo', line: 2 },
@@ -320,6 +325,11 @@ describe('N3Lexer', function () {
     it('should tokenize a prefixed name with a dot, split after the dot while streaming',
       shouldTokenize(streamOf('dbpedia:Anthony_J.', '_Battaglia '),
                      { type: 'prefixed', prefix: 'dbpedia', value: 'Anthony_J._Battaglia', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should not decode a prefixed name',
+      shouldTokenize('ex:%66oo-bar ',
+                     { type: 'prefixed', prefix: 'ex', value: '%66oo-bar', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should tokenize a stream',
