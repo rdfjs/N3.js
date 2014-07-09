@@ -410,6 +410,22 @@ describe('N3Lexer', function () {
                      { type: 'dot', line: 1 },
                      { type: 'eof', line: 1 }));
 
+    it('should tokenize prefix names with leading digits',
+      shouldTokenize('leg:3032571 isbn13:9780136019701 ',
+                     { type: 'prefixed', prefix: 'leg',    value: '3032571',       line: 1 },
+                     { type: 'prefixed', prefix: 'isbn13', value: '9780136019701', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize prefix names with non-leading colons',
+      shouldTokenize('og:video:height ',
+                     { type: 'prefixed', prefix: 'og', value: 'video:height', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize prefix names with reserved escape sequences',
+      shouldTokenize('wgs:lat\\-long ',
+                     { type: 'prefixed', prefix: 'wgs', value: 'lat-long', line: 1 },
+                     { type: 'eof', line: 1 }));
+
     it('should tokenize blank nodes',
       shouldTokenize('[] [<a> <b>]',
                      { type: 'bracketopen', line: 1 },
