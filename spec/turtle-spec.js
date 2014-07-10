@@ -36,8 +36,8 @@ var first = prefixes.rdf + "first",
 
 // Create the folders that will contain the spec files and results
 var specFolder = __dirname,
-    testFolder = path.join(specFolder, 'turtle'),
-    outputFolder = path.join(testFolder, 'results');
+    testFolder = path.join(specFolder, 'turtle/'),
+    outputFolder = path.join(testFolder, 'results/');
 [specFolder, testFolder, outputFolder].forEach(function (folder) {
   if (!fs.existsSync(folder))
     fs.mkdirSync(folder);
