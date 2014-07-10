@@ -204,7 +204,7 @@ function verifyResult(test, resultFile, correctFile, callback) {
   function displayResult(error, success, comparison) {
     console.log(unString(test.name).bold + ':', unString(test.comment),
                 (success ? 'OK'.green : 'FAIL'.red).bold);
-    if (!success) {
+    if (error || !success) {
       console.log((correctFile ? fs.readFileSync(correctFile, 'utf8') : '(empty)').grey);
       console.log('  was expected, but got'.bold.grey);
       console.log((resultFile ? fs.readFileSync(resultFile, 'utf8') : '(empty)').grey);
@@ -227,7 +227,7 @@ function compareGraphs(actual, expected, callback) {
   function (error, results) {
     // If the full-text comparison was successful, graphs are certainly equal
     if (results.actualContents === results.expectedContents)
-      callback(null, true);
+      callback(error, !error);
     // If not, we check for proper graph equality with SWObjects
     else
       exec('sparql -d ' + expected + ' --compare ' + actual, function (error, stdout, stderr) {
