@@ -227,6 +227,21 @@ describe('N3Store', function () {
 
       itShouldBeEmpty(function () { return n3Store.find(null, null, null, 'c4'); });
     });
+
+    describe('when removing multiple triples', function () {
+      before(function () {
+        n3Store.removeTriples([
+          { subject: 's1', predicate: 'p2', object: 'o2'},
+          { subject: 's2', predicate: 'p1', object: 'o1'},
+        ]);
+      });
+
+      it('should have size 1', function () { n3Store.size.should.eql(1); });
+
+      it('should not contain those triples anymore',
+        shouldIncludeAll(function () { return n3Store.find(); },
+                         ['s1', 'p1', 'o2']));
+    });
   });
 
   describe('An N3Store initialized with prefixes', function () {
