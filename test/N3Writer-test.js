@@ -44,7 +44,7 @@ describe('N3Parser', function () {
                       '<a> <b> "cde".\n'));
 
     it('should serialize a literal with a type',
-      shouldSerialize([['a', 'b', '"cde"^^<fgh>']],
+      shouldSerialize([['a', 'b', '"cde"^^fgh']],
                       '<a> <b> "cde"^^<fgh>.\n'));
 
     it('should serialize a literal with a language',
