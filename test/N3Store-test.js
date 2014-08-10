@@ -258,6 +258,7 @@ describe('N3Store', function () {
       { subject: 'http://foo.org/#s1', predicate: 'http://bar.org/p1', object: 'http://foo.org/#o1' },
       { subject: 'http://foo.org/#s1', predicate: 'http://bar.org/p2', object: 'http://foo.org/#o1' },
       { subject: 'http://foo.org/#s2', predicate: 'http://bar.org/p1', object: 'http://foo.org/#o2' },
+      { subject: 'http://foo.org/#s3', predicate: 'http://bar.org/p3', object: '"a"^^http://foo.org/#t1' },
     ],
     {
       'a': 'http://foo.org/#',
@@ -286,12 +287,19 @@ describe('N3Store', function () {
                          ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
     });
 
+    describe('should allow to query object literals with prefixed types', function () {
+      it('should return all triples with that object',
+        shouldIncludeAll(n3Store.find(null, null, '"a"^^a:t1'),
+                         ['http://foo.org/#s3', 'http://bar.org/p3', '"a"^^http://foo.org/#t1']));
+    });
+
     describe('should allow to query contexts with prefixes', function () {
       it('should return all triples with that context',
         shouldIncludeAll(n3Store.find(null, null, null, 'ctx:default'),
                          ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
                          ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1'],
-                         ['http://foo.org/#s2', 'http://bar.org/p1', 'http://foo.org/#o2']));
+                         ['http://foo.org/#s2', 'http://bar.org/p1', 'http://foo.org/#o2'],
+                         ['http://foo.org/#s3', 'http://bar.org/p3', '"a"^^http://foo.org/#t1']));
     });
   });
 
