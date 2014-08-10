@@ -6,11 +6,11 @@ var fs = require('fs'),
 
 // Modules to be included in the minimal browser version
 var submodules = [
+  'Util',
   'Lexer',
   'Parser',
   'Writer',
   'Store',
-  'Util',
 ];
 
 
@@ -41,7 +41,7 @@ script.write('(function (N3) {\n');
 submodules.forEach(function (name) {
   var submodule = fs.readFileSync(sourcePath + 'N3' + name + '.js', { encoding: 'utf8' });
   // Remove imports
-  submodule = submodule.replace(/(\w+)\s*=\s*require\([^)]+\)/g, '$1_Unused');
+  submodule = submodule.replace(/require\(['"]\.\/([^)]+)['"]\)/g, '$1');
   // Replace exports by assignments on the N3 object
   submodule = submodule.replace(/module.exports/g, '\nN3.' + name);
   script.write(submodule);
