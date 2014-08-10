@@ -13,6 +13,7 @@
   "indent": 2,      // The code uses an indentation width of 2 spaces.
   "globals": {      // Allow mocha globals in tests.
     "describe": true,
-    "it": true
+    "it": true,
+    "before": true
   }
 }

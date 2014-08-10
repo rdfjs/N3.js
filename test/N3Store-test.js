@@ -164,6 +164,69 @@ describe('N3Store', function () {
     describe('when searched with a non-existing non-default context parameter', function () {
       itShouldBeEmpty(n3Store.find(null, null, null, 'c5'));
     });
+
+    describe('when trying to remove a triple with a non-existing subject', function () {
+      before(function () { n3Store.removeTriple('s0', 'p1', 'o1'); });
+      it('should still have size 5', function () { n3Store.size.should.eql(5); });
+    });
+
+    describe('when trying to remove a triple with a non-existing predicate', function () {
+      before(function () { n3Store.removeTriple('s1', 'p0', 'o1'); });
+      it('should still have size 5', function () { n3Store.size.should.eql(5); });
+    });
+
+    describe('when trying to remove a triple with a non-existing object', function () {
+      before(function () { n3Store.removeTriple('s1', 'p1', 'o0'); });
+      it('should still have size 5', function () { n3Store.size.should.eql(5); });
+    });
+
+    describe('when trying to remove a triple for which no subjects exist', function () {
+      before(function () { n3Store.removeTriple('o1', 'p1', 'o1'); });
+      it('should still have size 5', function () { n3Store.size.should.eql(5); });
+    });
+
+    describe('when trying to remove a triple for which no predicates exist', function () {
+      before(function () { n3Store.removeTriple('s1', 's1', 'o1'); });
+      it('should still have size 5', function () { n3Store.size.should.eql(5); });
+    });
+
+    describe('when trying to remove a triple for which no objects exist', function () {
+      before(function () { n3Store.removeTriple('s1', 'p1', 's1'); });
+      it('should still have size 5', function () { n3Store.size.should.eql(5); });
+    });
+
+    describe('when trying to remove a triple that does not exist', function () {
+      before(function () { n3Store.removeTriple('s1', 'p2', 'o1'); });
+      it('should still have size 5', function () { n3Store.size.should.eql(5); });
+    });
+
+    describe('when trying to remove an incomplete triple', function () {
+      before(function () { n3Store.removeTriple('s1', null, null); });
+      it('should still have size 5', function () { n3Store.size.should.eql(5); });
+    });
+
+    describe('when trying to remove a triple with a non-existing context', function () {
+      before(function () { n3Store.removeTriple('s1', 'p1', 'o1', 'c0'); });
+      it('should still have size 5', function () { n3Store.size.should.eql(5); });
+    });
+
+    describe('when removing an existing triple', function () {
+      before(function () { n3Store.removeTriple('s1', 'p1', 'o1'); });
+
+      it('should have size 4', function () { n3Store.size.should.eql(4); });
+
+      it('should not contain that triple anymore',
+        shouldIncludeAll(function () { return n3Store.find(); },
+                         ['s1', 'p1', 'o2'], ['s1', 'p2', 'o2'], ['s2', 'p1', 'o1']));
+    });
+
+    describe('when removing an existing triple from a non-default context', function () {
+      before(function () { n3Store.removeTriple('s1', 'p2', 'o3', 'c4'); });
+
+      it('should have size 3', function () { n3Store.size.should.eql(3); });
+
+      itShouldBeEmpty(function () { return n3Store.find(null, null, null, 'c4'); });
+    });
   });
 
   describe('An N3Store initialized with prefixes', function () {
@@ -296,7 +359,10 @@ describe('N3Store', function () {
 });
 
 function itShouldBeEmpty(result) {
-  it('should be empty', function () { result.should.be.empty; });
+  it('should be empty', function () {
+    if (typeof result === 'function') result = result();
+    result.should.be.empty;
+  });
 }
 
 function shouldIncludeAll(result) {
@@ -305,6 +371,7 @@ function shouldIncludeAll(result) {
              context: arg[3] || 'n3/contexts#default' };
   });
   return function () {
+    if (typeof result === 'function') result = result();
     result.should.have.length(items.length);
     for (var i = 0; i < items.length; i++)
       result.should.include.something.that.deep.equals(items[i]);
