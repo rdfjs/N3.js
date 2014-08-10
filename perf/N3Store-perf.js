@@ -17,7 +17,7 @@ console.time(TEST);
 for (var i = 0; i < dim; i++)
   for (var j = 0; j < dim; j++)
     for (var k = 0; k < dim; k++)
-      store.add(prefix + i, prefix + j, prefix + k);
+      store.addTriple(prefix + i, prefix + j, prefix + k);
 console.timeEnd(TEST);
 
 console.log('* Memory usage: ' + Math.round(process.memoryUsage().rss / 1024 / 1024) + 'MB');
