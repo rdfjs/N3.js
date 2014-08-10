@@ -254,7 +254,7 @@ function toNTriple(triple) {
   if (/^".*"$/.test(object))
     object = escapeString(object);
   else
-    object = escape(object);
+    object = escape(object).replace(/"\^\^(.*)$/, '"^^<$1>');
 
   return (subject.match(/^_/)   ? subject   : '<' + subject   + '>') + ' ' +
          (predicate.match(/^_/) ? predicate : '<' + predicate + '>') + ' ' +
