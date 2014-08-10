@@ -61,7 +61,7 @@ describe('N3Util', function () {
     });
 
     it('matches a literal with a type', function () {
-      N3Util.isLiteral('"3"^^<http://www.w3.org/2001/XMLSchema#integer>').should.be.true;
+      N3Util.isLiteral('"3"^^http://www.w3.org/2001/XMLSchema#integer').should.be.true;
     });
 
     it('matches a literal with a newline', function () {
@@ -121,7 +121,7 @@ describe('N3Util', function () {
     });
 
     it('gets the value of a literal with a type', function () {
-      N3Util.getLiteralValue('"3"^^<http://www.w3.org/2001/XMLSchema#integer>').should.equal('3');
+      N3Util.getLiteralValue('"3"^^http://www.w3.org/2001/XMLSchema#integer').should.equal('3');
     });
 
     it('gets the value of a literal with a newline', function () {
@@ -155,15 +155,15 @@ describe('N3Util', function () {
     });
 
     it('gets the type of a literal with a type', function () {
-      N3Util.getLiteralType('"3"^^<http://www.w3.org/2001/XMLSchema#integer>').should.equal('http://www.w3.org/2001/XMLSchema#integer');
+      N3Util.getLiteralType('"3"^^http://www.w3.org/2001/XMLSchema#integer').should.equal('http://www.w3.org/2001/XMLSchema#integer');
     });
 
     it('gets the type of a literal with a newline', function () {
-      N3Util.getLiteralType('"Mickey\nMouse"^^<abc>').should.equal('abc');
+      N3Util.getLiteralType('"Mickey\nMouse"^^abc').should.equal('abc');
     });
 
     it('gets the type of a literal with a cariage return', function () {
-      N3Util.getLiteralType('"Mickey\rMouse"^^<abc>').should.equal('abc');
+      N3Util.getLiteralType('"Mickey\rMouse"^^abc').should.equal('abc');
     });
 
     it('does not work with non-literals', function () {
@@ -193,7 +193,7 @@ describe('N3Util', function () {
     });
 
     it('gets the language of a literal with a type', function () {
-      N3Util.getLiteralLanguage('"3"^^<http://www.w3.org/2001/XMLSchema#integer>').should.equal('');
+      N3Util.getLiteralLanguage('"3"^^http://www.w3.org/2001/XMLSchema#integer').should.equal('');
     });
 
     it('gets the language of a literal with a newline', function () {

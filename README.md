@@ -240,8 +240,8 @@ N3Util.isLiteral('"Mickey Mouse"'); // true
 N3Util.getLiteralValue('"Mickey Mouse"'); // 'Mickey Mouse'
 N3Util.isLiteral('"Mickey Mouse"@en'); // true
 N3Util.getLiteralLanguage('"Mickey Mouse"@en'); // 'en'
-N3Util.isLiteral('"3"^^<http://www.w3.org/2001/XMLSchema#integer>'); // true
-N3Util.getLiteralType('"3"^^<http://www.w3.org/2001/XMLSchema#integer>'); // 'http://www.w3.org/2001/XMLSchema#integer'
+N3Util.isLiteral('"3"^^http://www.w3.org/2001/XMLSchema#integer'); // true
+N3Util.getLiteralType('"3"^^http://www.w3.org/2001/XMLSchema#integer'); // 'http://www.w3.org/2001/XMLSchema#integer'
 N3Util.isLiteral('"http://example.org/"'); // true
 N3Util.getLiteralValue('"http://example.org/"'); // 'http://example.org/'
 ```
@@ -250,6 +250,7 @@ Note the difference between `'http://example.org/'` (URI) and `'"http://example.
 Also note that the double quoted literals are _not_ raw Turtle syntax:
 ``` js
 N3Util.isLiteral('"This word is "quoted"!"'); // true
+N3Util.isLiteral('"3"^^http://www.w3.org/2001/XMLSchema#integer'); // true
 ```
 The above string represents the string _This word is "quoted"!_,
 even though the correct Turtle syntax for that is `"This word is \"quoted\"!"`

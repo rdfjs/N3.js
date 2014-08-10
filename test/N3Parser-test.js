@@ -44,19 +44,19 @@ describe('N3Parser', function () {
 
     it('should parse a triple with a numeric literal',
       shouldParse('<a> <b> 3.0.',
-                  ['a', 'b', '"3.0"^^<http://www.w3.org/2001/XMLSchema#decimal>']));
+                  ['a', 'b', '"3.0"^^http://www.w3.org/2001/XMLSchema#decimal']));
 
     it('should parse a triple with an integer literal',
       shouldParse('<a> <b> 3.',
-                  ['a', 'b', '"3"^^<http://www.w3.org/2001/XMLSchema#integer>']));
+                  ['a', 'b', '"3"^^http://www.w3.org/2001/XMLSchema#integer']));
 
     it('should parse a triple with a floating point literal',
       shouldParse('<a> <b> 1.3e2.',
-                  ['a', 'b', '"1.3e2"^^<http://www.w3.org/2001/XMLSchema#double>']));
+                  ['a', 'b', '"1.3e2"^^http://www.w3.org/2001/XMLSchema#double']));
 
     it('should parse a triple with a boolean literal',
       shouldParse('<a> <b> true.',
-                  ['a', 'b', '"true"^^<http://www.w3.org/2001/XMLSchema#boolean>']));
+                  ['a', 'b', '"true"^^http://www.w3.org/2001/XMLSchema#boolean']));
 
     it('should parse a triple with a literal and a language code',
       shouldParse('<a> <b> "string"@en.',
@@ -68,11 +68,11 @@ describe('N3Parser', function () {
 
     it('should parse a triple with a literal and a URI type',
       shouldParse('<a> <b> "string"^^<type>.',
-                  ['a', 'b', '"string"^^<type>']));
+                  ['a', 'b', '"string"^^type']));
 
     it('should parse a triple with a literal and a prefixed name type',
       shouldParse('@prefix x: <y#>. <a> <b> "string"^^x:z.',
-                  ['a', 'b', '"string"^^<y#z>']));
+                  ['a', 'b', '"string"^^y#z']));
 
     it('should not parse a triple with a literal and a prefixed name type with an inexistent prefix',
       shouldNotParse('<a> <b> "string"^^x:z.',
@@ -197,13 +197,13 @@ describe('N3Parser', function () {
       shouldParse('<a> <b> [ <u> <v>; <w> "z"^^<t> ].',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'u', 'v'],
-                  ['_:b0', 'w', '"z"^^<t>']));
+                  ['_:b0', 'w', '"z"^^t']));
 
     it('should parse a multi-statement blank node ending with a string with language',
       shouldParse('<a> <b> [ <u> <v>; <w> "z"^^<t> ].',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'u', 'v'],
-                  ['_:b0', 'w', '"z"^^<t>']));
+                  ['_:b0', 'w', '"z"^^t']));
 
     it('should parse a multi-statement blank node with trailing semicolon',
       shouldParse('<a> <b> [ <u> <v>; <w> <z>; ].',
