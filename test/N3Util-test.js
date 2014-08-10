@@ -248,6 +248,10 @@ describe('N3Util', function () {
       N3Util.expandPrefixedName('ex:Test', { 'ex': 'http://ex.org/#' }).should.equal('http://ex.org/#Test');
     });
 
+    it('expands a type with a prefixed name', function () {
+      N3Util.expandPrefixedName('"a"^^ex:type', { 'ex': 'http://ex.org/#' }).should.equal('"a"^^http://ex.org/#type');
+    });
+
     it('expands a prefixed name with the empty prefix', function () {
       N3Util.expandPrefixedName(':Test', { '': 'http://ex.org/#' }).should.equal('http://ex.org/#Test');
     });
@@ -256,12 +260,8 @@ describe('N3Util', function () {
       N3Util.expandPrefixedName.bind(null, 'a:Test', { 'b': 'http://ex.org/#' }).should.throw('Unknown prefix: a');
     });
 
-    it('does not work with null', function () {
-      N3Util.expandPrefixedName.bind(null, null).should.throw('null is not a prefixed name');
-    });
-
-    it('does not work with undefined', function () {
-      N3Util.expandPrefixedName.bind(null, undefined).should.throw('undefined is not a prefixed name');
+    it('returns the input if it is not a prefixed name', function () {
+      N3Util.expandPrefixedName('abc', null).should.equal('abc');
     });
   });
 });

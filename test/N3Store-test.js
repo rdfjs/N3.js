@@ -146,8 +146,8 @@ describe('N3Store', function () {
         shouldIncludeAll(n3Store.find('s1', 'p1', 'o1'), ['s1', 'p1', 'o1']));
     });
 
-    describe('when searched with non-existing subject, predicate, and object parameters', function () {
-      itShouldBeEmpty(n3Store.find('s2', 'p2', 'o2'));
+    describe('when searched with a non-existing triple', function () {
+      itShouldBeEmpty(n3Store.find('s2', 'p2', 'o1'));
     });
 
     describe('when searched with the default context parameter', function () {
@@ -163,6 +163,120 @@ describe('N3Store', function () {
 
     describe('when searched with a non-existing non-default context parameter', function () {
       itShouldBeEmpty(n3Store.find(null, null, null, 'c5'));
+    });
+
+    describe('when counted without parameters', function () {
+      it('should count all items in the default context', function () {
+        n3Store.count().should.equal(4);
+      });
+    });
+
+    describe('when counted with an existing subject parameter', function () {
+      it('should count all items with this subject in the default context', function () {
+        n3Store.count('s1', null, null).should.equal(3);
+      });
+    });
+
+    describe('when counted with a non-existing subject parameter', function () {
+      it('should be empty', function () {
+        n3Store.count('s3', null, null).should.equal(0);
+      });
+    });
+
+    describe('when counted with a non-existing subject parameter that exists elsewhere', function () {
+      it('should be empty', function () {
+        n3Store.count('p1', null, null).should.equal(0);
+      });
+    });
+
+    describe('when counted with an existing predicate parameter', function () {
+      it('should count all items with this predicate in the default context', function () {
+        n3Store.count(null, 'p1', null).should.equal(3);
+      });
+    });
+
+    describe('when counted with a non-existing predicate parameter', function () {
+      it('should be empty', function () {
+        n3Store.count(null, 'p3', null).should.equal(0);
+      });
+    });
+
+    describe('when counted with an existing object parameter', function () {
+      it('should count all items with this object in the default context', function () {
+        n3Store.count(null, null, 'o1').should.equal(2);
+      });
+    });
+
+    describe('when counted with a non-existing object parameter', function () {
+      it('should be empty', function () {
+        n3Store.count(null, null, 'o4').should.equal(0);
+      });
+    });
+
+    describe('when counted with existing subject and predicate parameters', function () {
+      it('should count all items with this subject and predicate in the default context', function () {
+        n3Store.count('s1', 'p1', null).should.equal(2);
+      });
+    });
+
+    describe('when counted with non-existing subject and predicate parameters', function () {
+      it('should be empty', function () {
+        n3Store.count('s2', 'p2', null).should.equal(0);
+      });
+    });
+
+    describe('when counted with existing subject and object parameters', function () {
+      it('should count all items with this subject and object in the default context', function () {
+        n3Store.count('s1', null, 'o2').should.equal(2);
+      });
+    });
+
+    describe('when counted with non-existing subject and object parameters', function () {
+      it('should be empty', function () {
+        n3Store.count('s2', 'p2', null).should.equal(0);
+      });
+    });
+
+    describe('when counted with existing predicate and object parameters', function () {
+      it('should count all items with this predicate and object in the default context', function () {
+        n3Store.count(null, 'p1', 'o1').should.equal(2);
+      });
+    });
+
+    describe('when counted with non-existing predicate and object parameters', function () {
+      it('should be empty', function () {
+        n3Store.count(null, 'p2', 'o3').should.equal(0);
+      });
+    });
+
+    describe('when counted with existing subject, predicate, and object parameters', function () {
+      it('should count all items with this subject, predicate, and object in the default context', function () {
+        n3Store.count('s1', 'p1', 'o1').should.equal(1);
+      });
+    });
+
+    describe('when counted with a non-existing triple', function () {
+      it('should be empty', function () {
+        n3Store.count('s2', 'p2', 'o1').should.equal(0);
+      });
+    });
+
+    describe('when counted with the default context parameter', function () {
+      it('should count all items in the default context', function () {
+        n3Store.count().should.equal(4);
+      });
+    });
+
+    describe('when counted with an existing non-default context parameter', function () {
+      it('should count all items in that context', function () {
+        n3Store.count(null, null, null, 'c4').should.equal(1);
+      });
+    });
+
+    describe('when counted with a non-existing non-default context parameter', function () {
+      it('should be empty', function () {
+        n3Store.count(null, null, null, 'c5').should.equal(0);
+      });
     });
 
     describe('when trying to remove a triple with a non-existing subject', function () {
@@ -285,12 +399,6 @@ describe('N3Store', function () {
         shouldIncludeAll(n3Store.find(null, null, 'a:o1'),
                          ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
                          ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
-    });
-
-    describe('should allow to query object literals with prefixed types', function () {
-      it('should return all triples with that object',
-        shouldIncludeAll(n3Store.find(null, null, '"a"^^a:t1'),
-                         ['http://foo.org/#s3', 'http://bar.org/p3', '"a"^^http://foo.org/#t1']));
     });
 
     describe('should allow to query contexts with prefixes', function () {
