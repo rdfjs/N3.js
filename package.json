@@ -29,7 +29,13 @@
     "browserify": ">=3.x"
   },
   "scripts": {
-    "test": "make test"
+    "test": "./node_modules/mocha/bin/mocha",
+    "hint": "./node_modules/jshint/bin/jshint lib perf test",
+    "browser": "./browser/build-browser-versions",
+    "coverage": "./node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- -R spec --timeout 100",
+    "spec": "./spec/turtle-spec.js",
+    "spec-clean": "rm -r spec/turtle",
+    "docs": "./node_modules/.bin/docco lib/*.js"
   },
   "repository": {
     "type": "git",
