@@ -26,7 +26,8 @@
     "mocha": ">=1.15.0",
     "istanbul": "~0.1.46",
     "uglify-js": "~2.4.3",
-    "browserify": ">=3.x"
+    "browserify": ">=3.x",
+    "pre-commit": "~0.0.9"
   },
   "scripts": {
     "test": "./node_modules/mocha/bin/mocha",
@@ -55,5 +56,9 @@
       "iphone/6..latest",
       "ipad/6..latest"
     ]
-  }
+  },
+  "pre-commit": [
+    "hint",
+    "test"
+  ]
 }
