@@ -170,10 +170,10 @@ Then, we find a triple with `:Mickey` as subject.
 
 ``` js
 var store = N3.Store();
-store.addTriple(':Pluto', 'a', ':Dog');
-store.addTriple(':Mickey', 'a', ':Mouse');
+store.addTriple('http://example.org/Pluto',  'a', 'http://example.org/Dog');
+store.addTriple('http://example.org/Mickey', 'a', 'http://example.org/Mouse');
 
-var mickey = store.find(':Mickey', null, null)[0];
+var mickey = store.find('http://example.org/Mickey', null, null)[0];
 console.log(mickey.subject, mickey.predicate, mickey.object, '.');
 ```
 
