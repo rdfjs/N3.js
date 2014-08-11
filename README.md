@@ -33,7 +33,7 @@ Alternatively, it offers a minimal browser version (without Node stream support
 ``` bash
 $ cd n3
 $ npm install
-$ make browser
+$ npm run browser
 ```
 
 ``` html
