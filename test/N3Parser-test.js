@@ -378,6 +378,15 @@ describe('N3Parser', function () {
                   ['http://ex.org/d?', 'http://ex.org/d?a', 'http://ex.org/d?a=b'],
                   ['http://ex.org/d?e', 'http://ex.org/d?a', 'http://ex.org/d?a=b']));
 
+    it('should not resolve URIs with colons',
+      shouldParse('@base <http://ex.org/>.\n' +
+                  '<a>   <b>   <c>.\n' +
+                  '<A:>  <b:>  <c:>.\n' +
+                  '<a:a> <b:B> <C-D:c>.',
+                  ['http://ex.org/a', 'http://ex.org/b', 'http://ex.org/c'],
+                  ['A:',  'b:',  'c:'],
+                  ['a:a', 'b:B', 'C-D:c']));
+
     it('should not parse base declarations without IRI',
       shouldNotParse('@base a: ',
                      'Expected IRI to follow base declaration at line 1.'));
