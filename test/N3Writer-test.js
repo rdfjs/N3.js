@@ -95,6 +95,11 @@ describe('N3Parser', function () {
       shouldNotSerialize([['a', '"b"', '"c']],
                           'A literal as predicate is not allowed: "b"'));
 
+    it('should not leave leading whitespace if the prefix set is empty',
+      shouldSerialize({},
+                      [['a', 'b', 'c']],
+                      '<a> <b> <c>.\n'));
+
     it('should serialize valid prefixes',
       shouldSerialize({ a: 'http://a.org/',
                         b: 'http://a.org/b#',
