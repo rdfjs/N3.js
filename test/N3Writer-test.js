@@ -183,6 +183,17 @@ describe('N3Parser', function () {
         done(error);
       });
     });
+
+    it('should not allow writing after end', function (done) {
+      var writer = N3Writer();
+      writer.addTriple({ subject: 'a', predicate: 'b', object: 'c' });
+      writer.end();
+      writer.addTriple({ subject: 'd', predicate: 'e', object: 'f' }, function (error) {
+        error.should.be.an.instanceof(Error);
+        error.should.have.property('message', 'Cannot write because the writer has been closed.');
+        done();
+      });
+    });
   });
 });
 
