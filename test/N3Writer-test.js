@@ -169,6 +169,22 @@ describe('N3Parser', function () {
       });
     });
 
+    it('does not repeat identical prefixes', function (done) {
+      var writer = new N3Writer();
+      writer.addPrefix('a', 'b#');
+      writer.addPrefix('a', 'b#');
+      writer.addTriple({ subject: 'b#a', predicate: 'b#b', object: 'b#c' });
+      writer.addPrefix('a', 'b#');
+      writer.addPrefix('a', 'b#');
+      writer.addPrefix('b', 'b#');
+      writer.addPrefix('a', 'c#');
+      writer.end(function (error, output) {
+        output.should.equal('@prefix a: <b#>.\n\na:a a:b a:c.\n' +
+                            '@prefix b: <b#>.\n\n@prefix a: <c#>.\n\n');
+        done(error);
+      });
+    });
+
     it('should accept triples with separated components', function (done) {
       var writer = N3Writer();
       writer.addTriple('a', 'b', 'c');
