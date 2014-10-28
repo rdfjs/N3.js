@@ -83,6 +83,14 @@ describe('N3Parser', function () {
       shouldSerialize([['a', 'b', '"c\fde"']],
                       '<a> <b> "c\\fde".\n'));
 
+    it('should serialize a literal containing a line separator',
+      shouldSerialize([['a', 'b', '"c\u2028de"']],
+                      '<a> <b> "c\u2028de".\n'));
+
+    it('should serialize a literal containing a paragraph separator',
+      shouldSerialize([['a', 'b', '"c\u2029de"']],
+                      '<a> <b> "c\u2029de".\n'));
+
     it('should serialize blank nodes',
       shouldSerialize([['_:a', 'b', '_:c']],
                       '_:a <b> _:c.\n'));
