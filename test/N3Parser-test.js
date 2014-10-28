@@ -20,6 +20,8 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance', function () {
+    beforeEach(N3Parser._resetBlankNodeIds);
+
     it('should parse the empty string',
       shouldParse(''
                   /* no triples */));
