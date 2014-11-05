@@ -60,6 +60,10 @@ describe('N3Util', function () {
       N3Util.isLiteral('"English"@en').should.be.true;
     });
 
+    it('matches a literal with a language that contains a number', function () {
+      N3Util.isLiteral('"English"@es-419').should.be.true;
+    });
+
     it('matches a literal with a type', function () {
       N3Util.isLiteral('"3"^^http://www.w3.org/2001/XMLSchema#integer').should.be.true;
     });
@@ -120,6 +124,10 @@ describe('N3Util', function () {
       N3Util.getLiteralValue('"English"@en').should.equal('English');
     });
 
+    it('gets the value of a literal with a language that contains a number', function () {
+      N3Util.getLiteralValue('"English"@es-419').should.equal('English');
+    });
+
     it('gets the value of a literal with a type', function () {
       N3Util.getLiteralValue('"3"^^http://www.w3.org/2001/XMLSchema#integer').should.equal('3');
     });
@@ -154,6 +162,10 @@ describe('N3Util', function () {
       N3Util.getLiteralType('"English"@en').should.equal('http://www.w3.org/1999/02/22-rdf-syntax-ns#langString');
     });
 
+    it('gets the type of a literal with a language that contains a number', function () {
+      N3Util.getLiteralType('"English"@es-419').should.equal('http://www.w3.org/1999/02/22-rdf-syntax-ns#langString');
+    });
+
     it('gets the type of a literal with a type', function () {
       N3Util.getLiteralType('"3"^^http://www.w3.org/2001/XMLSchema#integer').should.equal('http://www.w3.org/2001/XMLSchema#integer');
     });
@@ -186,6 +198,10 @@ describe('N3Util', function () {
 
     it('gets the language of a literal with a language', function () {
       N3Util.getLiteralLanguage('"English"@en').should.equal('en');
+    });
+
+    it('gets the language of a literal with a language that contains a number', function () {
+      N3Util.getLiteralLanguage('"English"@es-419').should.equal('es-419');
     });
 
     it('normalizes the language to lowercase', function () {
