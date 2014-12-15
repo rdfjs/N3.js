@@ -445,7 +445,7 @@ describe('N3Lexer', function () {
                      { type: 'eof', line: 1 }));
 
     it('should tokenize blank nodes',
-      shouldTokenize('[] [<a> <b>] [a:b "c"^^d:e]',
+      shouldTokenize('[] [<a> <b>] [a:b "c"^^d:e][a:b[]]',
                      { type: 'bracketopen', line: 1 },
                      { type: 'bracketclose', line: 1 },
                      { type: 'bracketopen', line: 1 },
@@ -456,6 +456,11 @@ describe('N3Lexer', function () {
                      { type: 'prefixed', prefix: 'a', value: 'b', line: 1 },
                      { type: 'literal', value: '"c"', line: 1 },
                      { type: 'type', prefix: 'd', value: 'e', line: 1 },
+                     { type: 'bracketclose', line: 1 },
+                     { type: 'bracketopen', line: 1 },
+                     { type: 'prefixed', prefix: 'a', value: 'b', line: 1 },
+                     { type: 'bracketopen', line: 1 },
+                     { type: 'bracketclose', line: 1 },
                      { type: 'bracketclose', line: 1 },
                      { type: 'eof', line: 1 }));
 
@@ -473,13 +478,21 @@ describe('N3Lexer', function () {
                      { type: 'eof', line: 1 }));
 
     it('should tokenize mixed lists',
-      shouldTokenize('<a> <b> (1 "2" :o)',
+      shouldTokenize('<a> <b> (1 "2" :o)(1()(1))',
                      { type: 'IRI', value: 'a', line: 1 },
                      { type: 'IRI', value: 'b', line: 1 },
                      { type: 'liststart', line: 1 },
                      { type: 'literal', value: '"1"^^http://www.w3.org/2001/XMLSchema#integer', line: 1 },
                      { type: 'literal', value: '"2"', line: 1 },
                      { type: 'prefixed', value: 'o', line: 1 },
+                     { type: 'listend', line: 1 },
+                     { type: 'liststart', line: 1 },
+                     { type: 'literal', value: '"1"^^http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                     { type: 'liststart', line: 1 },
+                     { type: 'listend', line: 1 },
+                     { type: 'liststart', line: 1 },
+                     { type: 'literal', value: '"1"^^http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                     { type: 'listend', line: 1 },
                      { type: 'listend', line: 1 },
                      { type: 'eof', line: 1 }));
 
