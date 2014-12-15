@@ -190,6 +190,14 @@ describe('N3Lexer', function () {
       shouldNotTokenize('"stringA"^<type> "stringB"^^ns:mytype ',
                         'Syntax error: unexpected "^<type>" on line 1.'));
 
+    it('should not tokenize a single hat',
+      shouldNotTokenize('^',
+                        'Syntax error: unexpected "^" on line 1.'));
+
+    it('should not tokenize a double hat followed by a non-IRI',
+      shouldNotTokenize('^^1',
+                        'Syntax error: unexpected "1" on line 1.'));
+
     it('should tokenize a single-quoted string literal',
       shouldTokenize("'string' ",
                      { type: 'literal', value: '"string"', line: 1 },
@@ -437,12 +445,17 @@ describe('N3Lexer', function () {
                      { type: 'eof', line: 1 }));
 
     it('should tokenize blank nodes',
-      shouldTokenize('[] [<a> <b>]',
+      shouldTokenize('[] [<a> <b>] [a:b "c"^^d:e]',
                      { type: 'bracketopen', line: 1 },
                      { type: 'bracketclose', line: 1 },
                      { type: 'bracketopen', line: 1 },
                      { type: 'IRI', value: 'a', line: 1 },
                      { type: 'IRI', value: 'b', line: 1 },
+                     { type: 'bracketclose', line: 1 },
+                     { type: 'bracketopen', line: 1 },
+                     { type: 'prefixed', prefix: 'a', value: 'b', line: 1 },
+                     { type: 'literal', value: '"c"', line: 1 },
+                     { type: 'type', prefix: 'd', value: 'e', line: 1 },
                      { type: 'bracketclose', line: 1 },
                      { type: 'eof', line: 1 }));
 
