@@ -359,6 +359,11 @@ describe('N3Lexer', function () {
                      { type: 'dot', line: 3 },
                      { type: 'eof', line: 3 }));
 
+    it('should tokenize a stream with split number',
+      shouldTokenize(streamOf('.', '1 '),
+                     { type: 'literal', value: '".1"^^http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
+                     { type: 'eof', line: 1 }));
+
     it('should tokenize a stream with split comment',
       shouldTokenize(streamOf('#com', 'ment'),
                      { type: 'eof', line: 1 }));
