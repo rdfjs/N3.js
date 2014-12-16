@@ -47,7 +47,15 @@ describe('N3Lexer', function () {
                      { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
                      { type: 'eof', line: 1 }));
 
-    it('should not tokenize an IRI with invalid characters',
+    it('should not tokenize an IRI with disallowed characters',
+      shouldNotTokenize('<http://ex.org/bla"foo>',
+                        'Syntax error: unexpected "<http://ex.org/bla"foo>" on line 1.'));
+
+    it('should not tokenize an IRI with escaped characters',
+      shouldNotTokenize('<http://ex.org/bla\\"foo>',
+                        'Syntax error: unexpected "<http://ex.org/bla\\"foo>" on line 1.'));
+
+    it('should not tokenize an IRI with disallowed escaped characters',
       shouldNotTokenize('<http://ex.org/bla\\u0020foo>',
                         'Syntax error: unexpected "<http://ex.org/bla\\u0020foo>" on line 1.'));
 
@@ -117,6 +125,95 @@ describe('N3Lexer', function () {
                      { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 2 },
                      { type: 'IRI', value: 'http://ex.org/?bla#bar', line: 3 },
                      { type: 'IRI', value: 'http://ex.org/?bla#boo', line: 4 },
+                     { type: '.', line: 4 },
+                     { type: 'eof', line: 4 }));
+
+    it('should tokenize prefixed names',
+      shouldTokenize(':a b:c d-dd:e-ee.',
+                     { type: 'prefixed', prefix: '',      value: 'a',    line: 1 },
+                     { type: 'prefixed', prefix: 'b',     value: 'c',    line: 1 },
+                     { type: 'prefixed', prefix: 'd-dd',  value: 'e-ee', line: 1 },
+                     { type: '.', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize prefixed names with leading digits',
+      shouldTokenize('leg:3032571 isbn13:9780136019701 ',
+                     { type: 'prefixed', prefix: 'leg',    value: '3032571',       line: 1 },
+                     { type: 'prefixed', prefix: 'isbn13', value: '9780136019701', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize prefixed names with non-leading colons',
+      shouldTokenize('og:video:height ',
+                     { type: 'prefixed', prefix: 'og', value: 'video:height', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize prefixed names with reserved escape sequences',
+      shouldTokenize('wgs:lat\\-long ',
+                     { type: 'prefixed', prefix: 'wgs', value: 'lat-long', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize the colon prefixed name',
+      shouldTokenize(': : :.',
+                     { type: 'prefixed', prefix: '', value: '', line: 1 },
+                     { type: 'prefixed', prefix: '', value: '', line: 1 },
+                     { type: 'prefixed', prefix: '', value: '', line: 1 },
+                     { type: '.', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize a prefixed name with a dot, split in half while streaming',
+      shouldTokenize(streamOf('dbpedia:Anthony_J._Batt', 'aglia '),
+                     { type: 'prefixed', prefix: 'dbpedia', value: 'Anthony_J._Battaglia', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize a prefixed name with a dot, split after the dot while streaming',
+      shouldTokenize(streamOf('dbpedia:Anthony_J.', '_Battaglia '),
+                     { type: 'prefixed', prefix: 'dbpedia', value: 'Anthony_J._Battaglia', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should not decode a prefixed name',
+      shouldTokenize('ex:%66oo-bar ',
+                     { type: 'prefixed', prefix: 'ex', value: '%66oo-bar', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should not tokenize a prefixed name with disallowed characters',
+      shouldNotTokenize('ex:bla"foo',
+                        'Syntax error: unexpected "ex:bla"foo" on line 1.'));
+
+    it('should not tokenize a prefixed name with escaped characters',
+      shouldNotTokenize('ex:bla\\"foo',
+                        'Syntax error: unexpected "ex:bla\\"foo" on line 1.'));
+
+    it('should not tokenize a prefixed name with disallowed escaped characters',
+      shouldNotTokenize('ex:bla\\u0020foo',
+                        'Syntax error: unexpected "ex:bla\\u0020foo" on line 1.'));
+
+    it('should not tokenize a prefixed name with invalid 4-digit unicode escapes',
+      shouldNotTokenize('ex:bla\\uXYZZfoo',
+                        'Syntax error: unexpected "ex:bla\\uXYZZfoo" on line 1.'));
+
+    it('should not tokenize a prefixed name with invalid 8-digit unicode escapes',
+      shouldNotTokenize('ex:bla\\uXYZZxyzzfoo',
+                        'Syntax error: unexpected "ex:bla\\uXYZZxyzzfoo" on line 1.'));
+
+    it('should not tokenize a prefixed name with four-digit unicode escapes',
+      shouldNotTokenize('ex:foo\\u0073bar',
+                        'Syntax error: unexpected "ex:foo\\u0073bar" on line 1.'));
+
+    it('should not tokenize a prefixed name with eight-digit unicode escapes',
+      shouldNotTokenize('ex:foo\\U00000073\\U00A00073bar',
+                        'Syntax error: unexpected "ex:foo\\U00000073\\U00A00073bar" on line 1.'));
+
+    it('should tokenize two prefixed names separated by whitespace',
+      shouldTokenize(' \n\tex:foo \n\tex:bar \n\t',
+                     { type: 'prefixed', prefix: 'ex', value: 'foo', line: 2 },
+                     { type: 'prefixed', prefix: 'ex', value: 'bar', line: 3 },
+                     { type: 'eof', line: 4 }));
+
+    it('should tokenize a statement with prefixed names',
+      shouldTokenize(' \n\tex:foo \n\tex:bar \n\tex:baz .',
+                     { type: 'prefixed', prefix: 'ex', value: 'foo', line: 2 },
+                     { type: 'prefixed', prefix: 'ex', value: 'bar', line: 3 },
+                     { type: 'prefixed', prefix: 'ex', value: 'baz', line: 4 },
                      { type: '.', line: 4 },
                      { type: 'eof', line: 4 }));
 
@@ -317,29 +414,6 @@ describe('N3Lexer', function () {
                      { type: '.', line: 1 },
                      { type: 'eof', line: 1 }));
 
-    it('should tokenize the colon prefixed name',
-      shouldTokenize(': : :.',
-                     { type: 'prefixed', prefix: '', value: '', line: 1 },
-                     { type: 'prefixed', prefix: '', value: '', line: 1 },
-                     { type: 'prefixed', prefix: '', value: '', line: 1 },
-                     { type: '.', line: 1 },
-                     { type: 'eof', line: 1 }));
-
-    it('should tokenize a prefixed name with a dot, split in half while streaming',
-      shouldTokenize(streamOf('dbpedia:Anthony_J._Batt', 'aglia '),
-                     { type: 'prefixed', prefix: 'dbpedia', value: 'Anthony_J._Battaglia', line: 1 },
-                     { type: 'eof', line: 1 }));
-
-    it('should tokenize a prefixed name with a dot, split after the dot while streaming',
-      shouldTokenize(streamOf('dbpedia:Anthony_J.', '_Battaglia '),
-                     { type: 'prefixed', prefix: 'dbpedia', value: 'Anthony_J._Battaglia', line: 1 },
-                     { type: 'eof', line: 1 }));
-
-    it('should not decode a prefixed name',
-      shouldTokenize('ex:%66oo-bar ',
-                     { type: 'prefixed', prefix: 'ex', value: '%66oo-bar', line: 1 },
-                     { type: 'eof', line: 1 }));
-
     it('should tokenize a stream',
       shouldTokenize(streamOf('<a>\n<b', '> ', '"""', 'c\n', '"""', '.',
                               '<d> <e', '> ', '""', '.',
@@ -424,30 +498,6 @@ describe('N3Lexer', function () {
                      { type: 'BASE', line: 2 },
                      { type: 'IRI', value: 'http://uri.org/#', line: 2 },
                      { type: 'eof', line: 2 }));
-
-    it('should tokenize prefixed names',
-      shouldTokenize(':a b:c d-dd:e-ee.',
-                     { type: 'prefixed', prefix: '',      value: 'a',    line: 1 },
-                     { type: 'prefixed', prefix: 'b',     value: 'c',    line: 1 },
-                     { type: 'prefixed', prefix: 'd-dd',  value: 'e-ee', line: 1 },
-                     { type: '.', line: 1 },
-                     { type: 'eof', line: 1 }));
-
-    it('should tokenize prefix names with leading digits',
-      shouldTokenize('leg:3032571 isbn13:9780136019701 ',
-                     { type: 'prefixed', prefix: 'leg',    value: '3032571',       line: 1 },
-                     { type: 'prefixed', prefix: 'isbn13', value: '9780136019701', line: 1 },
-                     { type: 'eof', line: 1 }));
-
-    it('should tokenize prefix names with non-leading colons',
-      shouldTokenize('og:video:height ',
-                     { type: 'prefixed', prefix: 'og', value: 'video:height', line: 1 },
-                     { type: 'eof', line: 1 }));
-
-    it('should tokenize prefix names with reserved escape sequences',
-      shouldTokenize('wgs:lat\\-long ',
-                     { type: 'prefixed', prefix: 'wgs', value: 'lat-long', line: 1 },
-                     { type: 'eof', line: 1 }));
 
     it('should tokenize blank nodes',
       shouldTokenize('[] [<a> <b>] [a:b "c"^^d:e][a:b[]]',
