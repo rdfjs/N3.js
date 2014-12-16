@@ -343,7 +343,7 @@ describe('N3Parser', function () {
 
     it('should not parse an invalid list',
       shouldNotParse('<a> <b> (]).',
-                     'Expected list item instead of "bracketclose" at line 1.'));
+                     'Expected list item instead of "]" at line 1.'));
 
     it('should resolve URIs against @base',
       shouldParse('@base <http://ex.org/>.\n' +
