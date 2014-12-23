@@ -530,8 +530,7 @@ function shouldParse(parser, input) {
   var hasParser = parser instanceof N3Parser,
       expected = Array.prototype.slice.call(arguments, hasParser ? 2 : 1),
       items = expected.map(function (item) {
-        return { subject: item[0], predicate: item[1], object: item[2],
-                 context: item[3] || 'n3/contexts#default' };
+        return { subject: item[0], predicate: item[1], object: item[2], graph: item[3] || '' };
       });
   // Shift parameters if necessary
   if (!hasParser)

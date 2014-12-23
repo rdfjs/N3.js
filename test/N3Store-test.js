@@ -30,10 +30,6 @@ describe('N3Store', function () {
       n3Store.find().should.be.empty;
     });
 
-    it('should have a default context', function () {
-      n3Store.defaultContext.should.eql('n3/contexts#default');
-    });
-
     it('should be able to create unnamed blank nodes', function () {
       n3Store.createBlankNode().should.eql('_:b0');
       n3Store.createBlankNode().should.eql('_:b1');
@@ -76,13 +72,13 @@ describe('N3Store', function () {
     });
 
     describe('when searched without parameters', function () {
-      it('should return all items in the default context',
+      it('should return all items in the default graph',
         shouldIncludeAll(n3Store.find(),
                          ['s1', 'p1', 'o1'], ['s1', 'p1', 'o2'], ['s1', 'p2', 'o2'], ['s2', 'p1', 'o1']));
     });
 
     describe('when searched with an existing subject parameter', function () {
-      it('should return all items with this subject in the default context',
+      it('should return all items with this subject in the default graph',
         shouldIncludeAll(n3Store.find('s1', null, null),
                          ['s1', 'p1', 'o1'], ['s1', 'p1', 'o2'], ['s1', 'p2', 'o2']));
     });
@@ -96,7 +92,7 @@ describe('N3Store', function () {
     });
 
     describe('when searched with an existing predicate parameter', function () {
-      it('should return all items with this predicate in the default context',
+      it('should return all items with this predicate in the default graph',
         shouldIncludeAll(n3Store.find(null, 'p1', null),
                          ['s1', 'p1', 'o1'], ['s1', 'p1', 'o2'], ['s2', 'p1', 'o1']));
     });
@@ -106,7 +102,7 @@ describe('N3Store', function () {
     });
 
     describe('when searched with an existing object parameter', function () {
-      it('should return all items with this object in the default context',
+      it('should return all items with this object in the default graph',
         shouldIncludeAll(n3Store.find(null, null, 'o1'), ['s1', 'p1', 'o1'], ['s2', 'p1', 'o1']));
     });
 
@@ -115,7 +111,7 @@ describe('N3Store', function () {
     });
 
     describe('when searched with existing subject and predicate parameters', function () {
-      it('should return all items with this subject and predicate in the default context',
+      it('should return all items with this subject and predicate in the default graph',
         shouldIncludeAll(n3Store.find('s1', 'p1', null), ['s1', 'p1', 'o1'], ['s1', 'p1', 'o2']));
     });
 
@@ -124,7 +120,7 @@ describe('N3Store', function () {
     });
 
     describe('when searched with existing subject and object parameters', function () {
-      it('should return all items with this subject and object in the default context',
+      it('should return all items with this subject and object in the default graph',
         shouldIncludeAll(n3Store.find('s1', null, 'o2'), ['s1', 'p1', 'o2'], ['s1', 'p2', 'o2']));
     });
 
@@ -133,7 +129,7 @@ describe('N3Store', function () {
     });
 
     describe('when searched with existing predicate and object parameters', function () {
-      it('should return all items with this predicate and object in the default context',
+      it('should return all items with this predicate and object in the default graph',
         shouldIncludeAll(n3Store.find(null, 'p1', 'o1'), ['s1', 'p1', 'o1'], ['s2', 'p1', 'o1']));
     });
 
@@ -142,7 +138,7 @@ describe('N3Store', function () {
     });
 
     describe('when searched with existing subject, predicate, and object parameters', function () {
-      it('should return all items with this subject, predicate, and object in the default context',
+      it('should return all items with this subject, predicate, and object in the default graph',
         shouldIncludeAll(n3Store.find('s1', 'p1', 'o1'), ['s1', 'p1', 'o1']));
     });
 
@@ -150,29 +146,29 @@ describe('N3Store', function () {
       itShouldBeEmpty(n3Store.find('s2', 'p2', 'o1'));
     });
 
-    describe('when searched with the default context parameter', function () {
-      it('should return all items in the default context',
+    describe('when searched with the default graph parameter', function () {
+      it('should return all items in the default graph',
         shouldIncludeAll(n3Store.find(),
                          ['s1', 'p1', 'o1'], ['s1', 'p1', 'o2'], ['s1', 'p2', 'o2'], ['s2', 'p1', 'o1']));
     });
 
-    describe('when searched with an existing non-default context parameter', function () {
-      it('should return all items in that context',
+    describe('when searched with an existing non-default graph parameter', function () {
+      it('should return all items in that graph',
         shouldIncludeAll(n3Store.find(null, null, null, 'c4'), ['s1', 'p2', 'o3', 'c4']));
     });
 
-    describe('when searched with a non-existing non-default context parameter', function () {
+    describe('when searched with a non-existing non-default graph parameter', function () {
       itShouldBeEmpty(n3Store.find(null, null, null, 'c5'));
     });
 
     describe('when counted without parameters', function () {
-      it('should count all items in the default context', function () {
+      it('should count all items in the default graph', function () {
         n3Store.count().should.equal(4);
       });
     });
 
     describe('when counted with an existing subject parameter', function () {
-      it('should count all items with this subject in the default context', function () {
+      it('should count all items with this subject in the default graph', function () {
         n3Store.count('s1', null, null).should.equal(3);
       });
     });
@@ -190,7 +186,7 @@ describe('N3Store', function () {
     });
 
     describe('when counted with an existing predicate parameter', function () {
-      it('should count all items with this predicate in the default context', function () {
+      it('should count all items with this predicate in the default graph', function () {
         n3Store.count(null, 'p1', null).should.equal(3);
       });
     });
@@ -202,7 +198,7 @@ describe('N3Store', function () {
     });
 
     describe('when counted with an existing object parameter', function () {
-      it('should count all items with this object in the default context', function () {
+      it('should count all items with this object in the default graph', function () {
         n3Store.count(null, null, 'o1').should.equal(2);
       });
     });
@@ -214,7 +210,7 @@ describe('N3Store', function () {
     });
 
     describe('when counted with existing subject and predicate parameters', function () {
-      it('should count all items with this subject and predicate in the default context', function () {
+      it('should count all items with this subject and predicate in the default graph', function () {
         n3Store.count('s1', 'p1', null).should.equal(2);
       });
     });
@@ -226,7 +222,7 @@ describe('N3Store', function () {
     });
 
     describe('when counted with existing subject and object parameters', function () {
-      it('should count all items with this subject and object in the default context', function () {
+      it('should count all items with this subject and object in the default graph', function () {
         n3Store.count('s1', null, 'o2').should.equal(2);
       });
     });
@@ -238,7 +234,7 @@ describe('N3Store', function () {
     });
 
     describe('when counted with existing predicate and object parameters', function () {
-      it('should count all items with this predicate and object in the default context', function () {
+      it('should count all items with this predicate and object in the default graph', function () {
         n3Store.count(null, 'p1', 'o1').should.equal(2);
       });
     });
@@ -250,7 +246,7 @@ describe('N3Store', function () {
     });
 
     describe('when counted with existing subject, predicate, and object parameters', function () {
-      it('should count all items with this subject, predicate, and object in the default context', function () {
+      it('should count all items with this subject, predicate, and object in the default graph', function () {
         n3Store.count('s1', 'p1', 'o1').should.equal(1);
       });
     });
@@ -261,19 +257,19 @@ describe('N3Store', function () {
       });
     });
 
-    describe('when counted with the default context parameter', function () {
-      it('should count all items in the default context', function () {
+    describe('when counted with the default graph parameter', function () {
+      it('should count all items in the default graph', function () {
         n3Store.count().should.equal(4);
       });
     });
 
-    describe('when counted with an existing non-default context parameter', function () {
-      it('should count all items in that context', function () {
+    describe('when counted with an existing non-default graph parameter', function () {
+      it('should count all items in that graph', function () {
         n3Store.count(null, null, null, 'c4').should.equal(1);
       });
     });
 
-    describe('when counted with a non-existing non-default context parameter', function () {
+    describe('when counted with a non-existing non-default graph parameter', function () {
       it('should be empty', function () {
         n3Store.count(null, null, null, 'c5').should.equal(0);
       });
@@ -319,7 +315,7 @@ describe('N3Store', function () {
       it('should still have size 5', function () { n3Store.size.should.eql(5); });
     });
 
-    describe('when trying to remove a triple with a non-existing context', function () {
+    describe('when trying to remove a triple with a non-existing graph', function () {
       before(function () { n3Store.removeTriple('s1', 'p1', 'o1', 'c0'); });
       it('should still have size 5', function () { n3Store.size.should.eql(5); });
     });
@@ -334,7 +330,7 @@ describe('N3Store', function () {
                          ['s1', 'p1', 'o2'], ['s1', 'p2', 'o2'], ['s2', 'p1', 'o1']));
     });
 
-    describe('when removing an existing triple from a non-default context', function () {
+    describe('when removing an existing triple from a non-default graph', function () {
       before(function () { n3Store.removeTriple('s1', 'p2', 'o3', 'c4'); });
 
       it('should have size 3', function () { n3Store.size.should.eql(3); });
@@ -373,11 +369,12 @@ describe('N3Store', function () {
       { subject: 'http://foo.org/#s1', predicate: 'http://bar.org/p2', object: 'http://foo.org/#o1' },
       { subject: 'http://foo.org/#s2', predicate: 'http://bar.org/p1', object: 'http://foo.org/#o2' },
       { subject: 'http://foo.org/#s3', predicate: 'http://bar.org/p3', object: '"a"^^http://foo.org/#t1' },
+      { subject: 'http://foo.org/#s1', predicate: 'http://bar.org/p1', object: 'http://foo.org/#o1', graph: 'http://graphs.org/#g1' },
     ],
     {
       'a': 'http://foo.org/#',
       'b': 'http://bar.org/',
-      'ctx': 'n3/contexts#',
+      'g': 'http://graphs.org/#',
     });
 
     describe('should allow to query subjects with prefixes', function () {
@@ -401,13 +398,10 @@ describe('N3Store', function () {
                          ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
     });
 
-    describe('should allow to query contexts with prefixes', function () {
-      it('should return all triples with that context',
-        shouldIncludeAll(n3Store.find(null, null, null, 'ctx:default'),
-                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
-                         ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1'],
-                         ['http://foo.org/#s2', 'http://bar.org/p1', 'http://foo.org/#o2'],
-                         ['http://foo.org/#s3', 'http://bar.org/p3', '"a"^^http://foo.org/#t1']));
+    describe('should allow to query graphs with prefixes', function () {
+      it('should return all triples with that graph',
+        shouldIncludeAll(n3Store.find(null, null, null, 'http://graphs.org/#g1'),
+          ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
     });
   });
 
@@ -416,10 +410,11 @@ describe('N3Store', function () {
       { subject: 'http://foo.org/#s1', predicate: 'http://bar.org/p1', object: 'http://foo.org/#o1' },
       { subject: 'http://foo.org/#s1', predicate: 'http://bar.org/p2', object: 'http://foo.org/#o1' },
       { subject: 'http://foo.org/#s2', predicate: 'http://bar.org/p1', object: 'http://foo.org/#o2' },
+      { subject: 'http://foo.org/#s1', predicate: 'http://bar.org/p1', object: 'http://foo.org/#o1', graph: 'http://graphs.org/#g1' },
     ]);
 
     n3Store.addPrefix('a', 'http://foo.org/#');
-    n3Store.addPrefixes({ 'b': 'http://bar.org/', 'ctx': 'n3/contexts#'});
+    n3Store.addPrefixes({ 'b': 'http://bar.org/', 'g': 'http://graphs.org/#' });
 
     describe('should allow to query subjects with prefixes', function () {
       it('should return all triples with that subject',
@@ -442,12 +437,10 @@ describe('N3Store', function () {
                          ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
     });
 
-    describe('should allow to query contexts with prefixes', function () {
-      it('should return all triples with that context',
-        shouldIncludeAll(n3Store.find(null, null, null, 'ctx:default'),
-                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
-                         ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1'],
-                         ['http://foo.org/#s2', 'http://bar.org/p1', 'http://foo.org/#o2']));
+    describe('should allow to query graphs with prefixes', function () {
+      it('should return all triples with that graph',
+        shouldIncludeAll(n3Store.find(null, null, null, 'http://graphs.org/#g1'),
+          ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
     });
   });
 
@@ -507,8 +500,7 @@ function itShouldBeEmpty(result) {
 
 function shouldIncludeAll(result) {
   var items = Array.prototype.slice.call(arguments, 1).map(function (arg) {
-    return { subject: arg[0], predicate: arg[1], object: arg[2],
-             context: arg[3] || 'n3/contexts#default' };
+    return { subject: arg[0], predicate: arg[1], object: arg[2], graph: arg[3] || '' };
   });
   return function () {
     if (typeof result === 'function') result = result();
