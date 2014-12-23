@@ -389,6 +389,41 @@ describe('N3Parser', function () {
                   ['A:',  'b:',  'c:'],
                   ['a:a', 'b:B', 'C-D:c']));
 
+    it('should parse an empty default graph',
+      shouldParse('{}'));
+
+    it('should parse a one-triple default graph ending without a dot',
+      shouldParse('{<a> <b> <c>}',
+                  ['a', 'b', 'c']));
+
+    it('should parse a one-triple default graph ending with a dot',
+      shouldParse('{<a> <b> <c>.}',
+                  ['a', 'b', 'c']));
+
+    it('should parse a three-triple default graph ending without a dot',
+      shouldParse('{<a> <b> <c>;<d> <e>,<f>}',
+                  ['a', 'b', 'c'],
+                  ['a', 'd', 'e'],
+                  ['a', 'd', 'f']));
+
+    it('should parse a three-triple default graph ending with a dot',
+      shouldParse('{<a> <b> <c>;<d> <e>,<f>.}',
+                  ['a', 'b', 'c'],
+                  ['a', 'd', 'e'],
+                  ['a', 'd', 'f']));
+
+    it('should not parse a single closing brace',
+      shouldNotParse('}',
+                     'Unexpected graph closing at line 1.'));
+
+    it('should not parse a superfluous closing brace ',
+      shouldNotParse('{}}',
+                     'Unexpected graph closing at line 1.'));
+
+    it('should not parse a graph with only punctuation',
+      shouldNotParse('{.}',
+                     'Expected subject but got . at line 1.'));
+
     it('should not parse base declarations without IRI',
       shouldNotParse('@base a: ',
                      'Expected IRI to follow base declaration at line 1.'));
