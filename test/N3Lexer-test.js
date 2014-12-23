@@ -599,8 +599,27 @@ describe('N3Lexer', function () {
                      { type: 'eof', line: 1 }));
 
     it('should tokenize a non-empty graph identified by a blank node',
-      shouldTokenize('_:g{<a> <b> c:d}',
+      shouldTokenize('_:g {<a> <b> c:d}',
                      { type: 'prefixed', prefix: '_', value: 'g', line: 1 },
+                     { type: '{', line: 1 },
+                     { type: 'IRI', value: 'a', line: 1 },
+                     { type: 'IRI', value: 'b', line: 1 },
+                     { type: 'prefixed', prefix: 'c', value: 'd', line: 1 },
+                     { type: '}', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize an empty graph with the GRAPH keyword',
+      shouldTokenize('GRAPH<g>{}',
+                     { type: 'GRAPH', line: 1 },
+                     { type: 'IRI', value: 'g', line: 1 },
+                     { type: '{', line: 1 },
+                     { type: '}', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize a non-empty graph with the GRAPH keyword',
+      shouldTokenize('graph <g> {<a> <b> c:d}',
+                     { type: 'GRAPH', line: 1 },
+                     { type: 'IRI', value: 'g', line: 1 },
                      { type: '{', line: 1 },
                      { type: 'IRI', value: 'a', line: 1 },
                      { type: 'IRI', value: 'b', line: 1 },
