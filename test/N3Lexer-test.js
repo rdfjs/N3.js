@@ -177,7 +177,7 @@ describe('N3Lexer', function () {
 
     it('should not tokenize a prefixed name with disallowed characters',
       shouldNotTokenize('ex:bla"foo',
-                        'Syntax error: unexpected "ex:bla"foo" on line 1.'));
+                        'Syntax error: unexpected ""foo" on line 1.'));
 
     it('should not tokenize a prefixed name with escaped characters',
       shouldNotTokenize('ex:bla\\"foo',
@@ -557,6 +557,55 @@ describe('N3Lexer', function () {
                      { type: 'abbreviation', value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', line: 1 },
                      { type: 'IRI', value: 'y', line: 1 },
                      { type: '.', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize an empty default graph',
+      shouldTokenize('{}',
+                     { type: '{', line: 1 },
+                     { type: '}', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize a non-empty default graph',
+      shouldTokenize('{<a> <b> c:d}',
+                     { type: '{', line: 1 },
+                     { type: 'IRI', value: 'a', line: 1 },
+                     { type: 'IRI', value: 'b', line: 1 },
+                     { type: 'prefixed', prefix: 'c', value: 'd', line: 1 },
+                     { type: '}', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize an empty graph identified by an IRI',
+      shouldTokenize('<g>{}',
+                     { type: 'IRI', value: 'g', line: 1 },
+                     { type: '{', line: 1 },
+                     { type: '}', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize a non-empty graph identified by an IRI',
+      shouldTokenize('<g> {<a> <b> c:d}',
+                     { type: 'IRI', value: 'g', line: 1 },
+                     { type: '{', line: 1 },
+                     { type: 'IRI', value: 'a', line: 1 },
+                     { type: 'IRI', value: 'b', line: 1 },
+                     { type: 'prefixed', prefix: 'c', value: 'd', line: 1 },
+                     { type: '}', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize an empty graph identified by a blank node',
+      shouldTokenize('_:g{}',
+                     { type: 'prefixed', prefix: '_', value: 'g', line: 1 },
+                     { type: '{', line: 1 },
+                     { type: '}', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize a non-empty graph identified by a blank node',
+      shouldTokenize('_:g{<a> <b> c:d}',
+                     { type: 'prefixed', prefix: '_', value: 'g', line: 1 },
+                     { type: '{', line: 1 },
+                     { type: 'IRI', value: 'a', line: 1 },
+                     { type: 'IRI', value: 'b', line: 1 },
+                     { type: 'prefixed', prefix: 'c', value: 'd', line: 1 },
+                     { type: '}', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should not tokenize an invalid document',
