@@ -412,6 +412,52 @@ describe('N3Parser', function () {
                   ['a', 'd', 'e'],
                   ['a', 'd', 'f']));
 
+    it('should parse an empty named graph with an IRI',
+      shouldParse('<g>{}'));
+
+    it('should parse a one-triple named graph with an IRI ending without a dot',
+      shouldParse('<g> {<a> <b> <c>}',
+                  ['a', 'b', 'c', 'g']));
+
+    it('should parse a one-triple named graph with an IRI ending with a dot',
+      shouldParse('<g>{<a> <b> <c>.}',
+                  ['a', 'b', 'c', 'g']));
+
+    it('should parse a three-triple named graph with an IRI ending without a dot',
+      shouldParse('<g> {<a> <b> <c>;<d> <e>,<f>}',
+                  ['a', 'b', 'c', 'g'],
+                  ['a', 'd', 'e', 'g'],
+                  ['a', 'd', 'f', 'g']));
+
+    it('should parse a three-triple named graph with an IRI ending with a dot',
+      shouldParse('<g>{<a> <b> <c>;<d> <e>,<f>.}',
+                  ['a', 'b', 'c', 'g'],
+                  ['a', 'd', 'e', 'g'],
+                  ['a', 'd', 'f', 'g']));
+
+    it('should parse an empty named graph with a prefixed name',
+      shouldParse('@prefix g: <g#>.\ng:h {}'));
+
+    it('should parse a one-triple named graph with a prefixed name ending without a dot',
+      shouldParse('@prefix g: <g#>.\ng:h {<a> <b> <c>}',
+                  ['a', 'b', 'c', 'g#h']));
+
+    it('should parse a one-triple named graph with a prefixed name ending with a dot',
+      shouldParse('@prefix g: <g#>.\ng:h{<a> <b> <c>.}',
+                  ['a', 'b', 'c', 'g#h']));
+
+    it('should parse a three-triple named graph with a prefixed name ending without a dot',
+      shouldParse('@prefix g: <g#>.\ng:h {<a> <b> <c>;<d> <e>,<f>}',
+                  ['a', 'b', 'c', 'g#h'],
+                  ['a', 'd', 'e', 'g#h'],
+                  ['a', 'd', 'f', 'g#h']));
+
+    it('should parse a three-triple named graph with a prefixed name ending with a dot',
+      shouldParse('@prefix g: <g#>.\ng:h{<a> <b> <c>;<d> <e>,<f>.}',
+                  ['a', 'b', 'c', 'g#h'],
+                  ['a', 'd', 'e', 'g#h'],
+                  ['a', 'd', 'f', 'g#h']));
+
     it('should not parse a single closing brace',
       shouldNotParse('}',
                      'Unexpected graph closing at line 1.'));
@@ -588,8 +634,11 @@ describe('N3Parser', function () {
     it('should parse a single triple',
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
 
-    it('should not parse a graph',
+    it('should not parse a default graph',
       shouldNotParse(parser, '{}', 'Expected subject but got { at line 1.'));
+
+    it('should not parse a named graph',
+      shouldNotParse(parser, '<g> {}', 'Expected predicate to follow "g" at line 1.'));
   });
 });
 
