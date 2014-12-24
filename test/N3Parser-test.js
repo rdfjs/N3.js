@@ -416,6 +416,10 @@ describe('N3Parser', function () {
       shouldNotParse('}',
                      'Unexpected graph closing at line 1.'));
 
+    it('should not parse a single opening brace',
+      shouldNotParse('{',
+                     'Expected subject but got eof at line 1.'));
+
     it('should not parse a superfluous closing brace ',
       shouldNotParse('{}}',
                      'Unexpected graph closing at line 1.'));
@@ -423,6 +427,10 @@ describe('N3Parser', function () {
     it('should not parse a graph with only punctuation',
       shouldNotParse('{.}',
                      'Expected subject but got . at line 1.'));
+
+    it('should not parse an unclosed graph',
+      shouldNotParse('{<a> <b> <c>.',
+                     'Unclosed graph at line 1.'));
 
     it('should not parse base declarations without IRI',
       shouldNotParse('@base a: ',
@@ -432,6 +440,10 @@ describe('N3Parser', function () {
       shouldNotParse('@base <http://ex.org/foo#bar>.\n' +
                      '<a> <b> <c>.\n',
                      'Invalid base URI at line 1.'));
+
+    it('should not parse improperly nested parentheses and brackets',
+      shouldNotParse('<a> <b> [<c> (<d>]).',
+                     'Expected list item instead of "]" at line 1.'));
 
     it('should not parse improperly nested square brackets',
       shouldNotParse('<a> <b> [<c> <d>]].',
