@@ -98,7 +98,7 @@ function parseManifest(manifestContents, callback) {
       testStore = new N3Store();
 
   // Parse the manifest into triples
-  new N3Parser().parse(manifestContents, function (err, triple) {
+  new N3Parser({ format: 'text/turtle' }).parse(manifestContents, function (err, triple) {
     if (err)
       return callback(err);
 
@@ -162,7 +162,7 @@ function performTest(test, actionTurtle, callback) {
 
   resultStream.once('open', function () {
     // Try to parse the specified document
-    var config = { documentURI: testPath + test.action };
+    var config = { format: 'text/turtle', documentURI: testPath + test.action };
     new N3Parser(config).parse(actionTurtle,
       function (error, triple) {
         if (error)

@@ -571,6 +571,26 @@ describe('N3Parser', function () {
       }
     });
   });
+
+  describe('An N3Parser instance with a non-string format', function () {
+    var parser = new N3Parser({ format: 1 });
+
+    it('should parse a single triple',
+      shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
+
+    it('should parse a graph',
+      shouldParse(parser, '{<a> <b> <c>}', ['a', 'b', 'c']));
+  });
+
+  describe('An N3Parser instance for the Turtle format', function () {
+    var parser = new N3Parser({ format: 'Turtle' });
+
+    it('should parse a single triple',
+      shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
+
+    it('should not parse a graph',
+      shouldNotParse(parser, '{}', 'Expected subject but got { at line 1.'));
+  });
 });
 
 function shouldParse(parser, input) {
@@ -599,9 +619,13 @@ function shouldParse(parser, input) {
   };
 }
 
-function shouldNotParse(input, expectedError) {
+function shouldNotParse(parser, input, expectedError) {
+  // Shift parameters if necessary
+  if (!(parser instanceof N3Parser))
+    expectedError = input, input = parser, parser = new N3Parser();
+
   return function (done) {
-    new N3Parser().parse(input, function (error, triple) {
+    parser.parse(input, function (error, triple) {
       if (error) {
         expect(triple).not.to.exist;
         error.should.be.an.instanceof(Error);
