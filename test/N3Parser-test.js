@@ -458,6 +458,29 @@ describe('N3Parser', function () {
                   ['a', 'd', 'e', 'g#h'],
                   ['a', 'd', 'f', 'g#h']));
 
+    it('should parse an empty anonymous graph',
+      shouldParse('[] {}'));
+
+    it('should parse a one-triple anonymous graph ending without a dot',
+      shouldParse('[] {<a> <b> <c>}',
+                  ['a', 'b', 'c', '_:b0']));
+
+    it('should parse a one-triple anonymous graph ending with a dot',
+      shouldParse('[]{<a> <b> <c>.}',
+                  ['a', 'b', 'c', '_:b0']));
+
+    it('should parse a three-triple anonymous graph ending without a dot',
+      shouldParse('[] {<a> <b> <c>;<d> <e>,<f>}',
+                  ['a', 'b', 'c', '_:b0'],
+                  ['a', 'd', 'e', '_:b0'],
+                  ['a', 'd', 'f', '_:b0']));
+
+    it('should parse a three-triple anonymous graph ending with a dot',
+      shouldParse('[]{<a> <b> <c>;<d> <e>,<f>.}',
+                  ['a', 'b', 'c', '_:b0'],
+                  ['a', 'd', 'e', '_:b0'],
+                  ['a', 'd', 'f', '_:b0']));
+
     it('should not parse a single closing brace',
       shouldNotParse('}',
                      'Unexpected graph closing at line 1.'));
@@ -477,6 +500,14 @@ describe('N3Parser', function () {
     it('should not parse an unclosed graph',
       shouldNotParse('{<a> <b> <c>.',
                      'Unclosed graph at line 1.'));
+
+    it('should not parse a named graph with a list node as label',
+      shouldNotParse('() {}',
+                     'Expected predicate to follow "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil" at line 1.'));
+
+    it('should not parse a named graph with a non-empty blank node as label',
+      shouldNotParse('[<a> <b>] {}',
+                     'Expected predicate to follow "_:b0" at line 1.'));
 
     it('should not parse base declarations without IRI',
       shouldNotParse('@base a: ',
