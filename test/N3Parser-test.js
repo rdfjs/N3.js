@@ -481,6 +481,27 @@ describe('N3Parser', function () {
                   ['a', 'd', 'e', '_:b0'],
                   ['a', 'd', 'f', '_:b0']));
 
+    it('should parse an empty named graph with an IRI and the GRAPH keyword',
+      shouldParse('GRAPH <g> {}'));
+
+    it('should parse an empty named graph with a prefixed name and the GRAPH keyword',
+      shouldParse('@prefix g: <g#>.\nGRAPH g:h {}'));
+
+    it('should parse an empty anonymous graph and the GRAPH keyword',
+      shouldParse('GRAPH [] {}'));
+
+    it('should parse a one-triple named graph with an IRI and the GRAPH keyword',
+      shouldParse('GRAPH <g> {<a> <b> <c>}',
+                  ['a', 'b', 'c', 'g']));
+
+    it('should parse a one-triple named graph with a prefixed name and the GRAPH keyword',
+      shouldParse('@prefix g: <g#>.\nGRAPH g:h {<a> <b> <c>}',
+                  ['a', 'b', 'c', 'g#h']));
+
+    it('should parse a one-triple anonymous graph and the GRAPH keyword',
+      shouldParse('GRAPH [] {<a> <b> <c>}',
+                  ['a', 'b', 'c', '_:b0']));
+
     it('should not parse a single closing brace',
       shouldNotParse('}',
                      'Unexpected graph closing at line 1.'));
@@ -508,6 +529,18 @@ describe('N3Parser', function () {
     it('should not parse a named graph with a non-empty blank node as label',
       shouldNotParse('[<a> <b>] {}',
                      'Expected predicate to follow "_:b0" at line 1.'));
+
+    it('should not parse a named graph with the GRAPH keyword and a non-empty blank node as label',
+      shouldNotParse('GRAPH [<a> <b>] {}',
+                     'Invalid graph label at line 1.'));
+
+    it('should not parse a triple after the GRAPH keyword',
+      shouldNotParse('GRAPH <a> <b> <c>.',
+                     'Expected graph but got IRI at line 1.'));
+
+    it('should not parse repeated GRAPH keywords',
+      shouldNotParse('GRAPH GRAPH <g> {}',
+                     'Invalid graph label at line 1.'));
 
     it('should not parse base declarations without IRI',
       shouldNotParse('@base a: ',
@@ -670,6 +703,9 @@ describe('N3Parser', function () {
 
     it('should not parse a named graph',
       shouldNotParse(parser, '<g> {}', 'Expected predicate to follow "g" at line 1.'));
+
+    it('should not parse a named graph with the GRAPH keyword',
+      shouldNotParse(parser, 'GRAPH <g> {}', 'Expected subject but got GRAPH at line 1.'));
   });
 });
 
