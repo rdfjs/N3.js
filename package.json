@@ -31,7 +31,7 @@
   },
   "scripts": {
     "test": "mocha",
-    "hint": "jshint lib perf test",
+    "hint": "jshint lib perf test spec",
     "browser": "node browser/build-browser-versions",
     "coverage": "istanbul cover node_modules/.bin/_mocha -- -R spec --timeout 100",
     "spec": "node spec/turtle-spec.js",
