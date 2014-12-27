@@ -81,6 +81,11 @@ SpecTester.prototype.run = function () {
 
     // 2. Generate the EARL report
     function (tests, callback) { self._generateEarlReport(tests, callback); },
+
+    // 3. Return with the proper exit code
+    function (tests) {
+      process.exit(tests.every(function (test) { return test.success; }) ? 0 : 1);
+    }
   ],
   function (error) {
     if (error) {
@@ -292,7 +297,7 @@ SpecTester.prototype._generateEarlReport = function (tests, callback) {
     });
     report.end();
   });
-  report.once('close', callback);
+  report.once('close', function () { callback(null, tests); });
 
   function writeln() {
     for (var i = 0; i < arguments.length; i++)

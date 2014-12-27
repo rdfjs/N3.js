@@ -34,7 +34,7 @@
     "hint": "jshint lib perf test spec",
     "browser": "node browser/build-browser-versions",
     "coverage": "istanbul cover node_modules/.bin/_mocha -- -R spec --timeout 100",
-    "spec": "node spec/turtle-spec;node spec/trig-spec",
+    "spec": "node spec/turtle-spec && node spec/trig-spec",
     "spec-clean": "rm -r spec/turtle spec/trig",
     "docs": "docco lib/*.js"
   },
