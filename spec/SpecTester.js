@@ -2,43 +2,46 @@
 var N3Parser = require('../lib/N3Parser.js'),
     N3Store = require('../lib/N3Store.js');
 var fs = require('fs'),
+    url = require('url'),
     path = require('path'),
     request = require('request'),
     exec = require('child_process').exec,
     async = require('async');
 require('colors');
 
-// Should the tests run in parallel?
-var parallel = false;
-
-// Path to the tests and the tests' manifest
-var testPath = "http://www.w3.org/2013/TurtleTests/",
-    manifest = "manifest.ttl";
+// How many test cases may run in parallel?
+var workers = 4;
 
 // Prefixes
 var prefixes = {
-  mf: "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#",
-  rdf: "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-  rdfs: "http://www.w3.org/2000/01/rdf-schema#",
-  rdft: "http://www.w3.org/ns/rdftest#",
-  dc: "http://purl.org/dc/terms/",
-  doap: "http://usefulinc.com/ns/doap#",
-  earl: "http://www.w3.org/ns/earl#",
-  foaf: "http://xmlns.com/foaf/0.1/",
-  xsd: "http://www.w3.org/2001/XMLSchema#",
-  manifest: testPath + manifest + '#',
+  mf:   'http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#',
+  rdf:  'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+  rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
+  rdft: 'http://www.w3.org/ns/rdftest#',
+  dc:   'http://purl.org/dc/terms/',
+  doap: 'http://usefulinc.com/ns/doap#',
+  earl: 'http://www.w3.org/ns/earl#',
+  foaf: 'http://xmlns.com/foaf/0.1/',
+  xsd:  'http://www.w3.org/2001/XMLSchema#',
 };
 
 // List predicates
-var first = prefixes.rdf + "first",
-    rest = prefixes.rdf + "rest",
-    nil = prefixes.rdf + "nil";
+var first = prefixes.rdf + 'first',
+    rest = prefixes.rdf + 'rest',
+    nil = prefixes.rdf + 'nil';
 
 // Base class for objects that execute W3C spec test cases
 function SpecTester(settings) {
   settings = settings || {};
   for (var key in settings)
     this['_' + key] = settings[key];
+
+  // Create the folders that will contain the spec files and results
+  [
+    this._testFolder   = path.join(__dirname, this._name),
+    this._outputFolder = path.join(this._testFolder, 'results'),
+  ]
+  .forEach(function (folder) { fs.existsSync(folder) || fs.mkdirSync(folder); });
 }
 // Makes the specified class inherit from the current class
 SpecTester.isPrototypeOf = function (Class) {
@@ -46,75 +49,72 @@ SpecTester.isPrototypeOf = function (Class) {
 };
 
 
-/*************************************************
-
-  Test suite execution
-
-**************************************************/
+// # Test suite execution
 
 // Fetches the manifest, executes all tests, and reports results
 SpecTester.prototype.run = function () {
+  var self = this;
   console.log(this._title.bold);
 
-  // Create the folders that will contain the spec files and results
-  var testFolder = path.join(__dirname, 'turtle'),
-      outputFolder = path.join(testFolder, 'results/');
-  [testFolder, outputFolder].forEach(function (folder) {
-    if (!fs.existsSync(folder))
-      fs.mkdirSync(folder);
-  });
-
-  // Fetch the tests, execute them, and generate the report
+  // 1. Fetch the tests, execute them, and generate the report
   async.waterfall([
-    // Fetch and parse the manifest
-    fetch.bind(null, testFolder, manifest),
-    parseManifest,
+    // 1.1 Fetch and parse the manifest
+    self._fetch.bind(self, self._manifest.match(/[^\/]*$/)[0]),
+    self._parseManifest.bind(self),
 
-    // Perform the tests in the manifest
-    function performTests(manifest, callback) {
-      async[parallel ? 'map' : 'mapSeries'](manifest.tests, function (test, callback) {
-        async.parallel({ actionTurtle: fetch.bind(null, testFolder, test.action),
-                         resultTurtle: fetch.bind(null, testFolder, test.result) },
-          function (err, results) {
-            performTest(test, results.actionTurtle, testFolder, callback);
-          });
-      },
-
-      // Show the summary of the performed tests
-      function showSummary(error, tests) {
-        var score = tests.reduce(function (sum, test) { return sum + test.success; }, 0);
-        console.log(('* passed ' + score + ' out of ' + manifest.tests.length + ' tests').bold);
-        callback(error, tests);
-      });
+    // 1.2 Execute all tests in the manifest
+    function executeTests(manifest, callback) {
+      async.mapLimit(manifest.tests, workers,
+        // 1.2.1 Execute an individual test
+        function (test, callback) {
+          async.parallel({ actionStream: self._fetch.bind(self, test.action),
+                           resultStream: self._fetch.bind(self, test.result), },
+            function (err, results) {
+              self._performTest(test, results.actionStream, callback);
+            });
+        },
+        // 1.2.2 Show the summary of all performed tests
+        function showSummary(error, tests) {
+          var score = tests.reduce(function (sum, test) { return sum + test.success; }, 0);
+          console.log(('* passed ' + score + ' out of ' + manifest.tests.length + ' tests').bold);
+          callback(error, tests);
+        });
     },
 
-    // Generate the EARL report
-    function (tests, callback) {
-      generateEarlReport(outputFolder, tests, callback);
-    },
+    // 2. Generate the EARL report
+    function (tests, callback) { self._generateEarlReport(tests, callback); },
   ],
   function (error) {
     if (error) {
       console.error('ERROR'.red);
-      console.error(error.red);
+      console.error((error.stack || error.toString()).red);
       process.exit(1);
     }
   });
 };
 
+// Fetches and caches the specified file, or retrieves it from disk
+SpecTester.prototype._fetch = function (filename, callback) {
+  if (!filename) return callback(null, null);
+  var localFile = path.join(this._testFolder, filename), self = this;
+  fs.exists(localFile, function (exists) {
+    if (exists)
+      fs.readFile(localFile, 'utf8', callback);
+    else
+      request.get(url.resolve(self._manifest, filename),
+                  function (error, response, body) { callback(error, body); })
+             .pipe(fs.createWriteStream(localFile));
+  });
+};
+
 // Parses the tests manifest into tests
-function parseManifest(manifestContents, callback) {
-  var manifest = {},
-      testStore = new N3Store();
-
+SpecTester.prototype._parseManifest = function (manifestContents, callback) {
   // Parse the manifest into triples
-  new N3Parser({ format: 'text/turtle' }).parse(manifestContents, function (err, triple) {
-    if (err)
-      return callback(err);
-
+  var manifest = {}, testStore = new N3Store();
+  new N3Parser({ format: 'text/turtle' }).parse(manifestContents, function (error, triple) {
     // Store triples until there are no more
-    if (triple)
-      return testStore.addTriple(triple.subject, triple.predicate, triple.object);
+    if (error)  return callback(error);
+    if (triple) return testStore.addTriple(triple.subject, triple.predicate, triple.object);
 
     // Once all triples are there, get the first item of the test list
     var tests = manifest.tests = [],
@@ -137,65 +137,37 @@ function parseManifest(manifestContents, callback) {
     }
     return callback(null, manifest);
   });
-}
-
-// Fetches and caches the specified file, or retrieves it from disk
-function fetch(destination, filename, callback) {
-  if (!filename)
-    return callback(null, null);
-
-  var localFile = path.join(destination, filename);
-  fs.exists(localFile, function (exists) {
-    if (exists)
-      fs.readFile(localFile, 'utf8', callback);
-    else
-      request.get(testPath + filename,
-                  function (error, response, body) { callback(error, body); })
-             .pipe(fs.createWriteStream(localFile));
-  });
-}
+};
 
 
+// # Individual test execution
 
-/*************************************************
-
-  Individual test execution
-
-**************************************************/
-
-
-// Performs the specified test by parsing the specified Turtle document
-function performTest(test, actionTurtle, resultFolder, callback) {
+// Performs the test by parsing the specified document
+SpecTester.prototype._performTest = function (test, actionStream, callback) {
   // Create the results file
-  var resultFile = path.join(resultFolder, test.action.replace(/\.ttl$/, '.nt')),
-      resultStream = fs.createWriteStream(resultFile);
-
+  var resultFile = path.join(this._testFolder, test.action.replace(/\.ttl$/, '.nt')),
+      resultStream = fs.createWriteStream(resultFile), self = this;
   resultStream.once('open', function () {
     // Try to parse the specified document
-    var config = { format: 'text/turtle', documentURI: testPath + test.action };
-    new N3Parser(config).parse(actionTurtle,
+    var config = { format: self._name, documentURI: url.resolve(self._manifest, test.action) };
+    new N3Parser(config).parse(actionStream,
       function (error, triple) {
-        if (error)
-          test.error = error;
-
-        // Write the triple to the results file, or end if none are left
-        if (triple)
-          resultStream.write(toNTriple(triple));
-        else
-          resultStream.end();
+        if (error) test.error = error;
+        if (triple) resultStream.write(toNTriple(triple));
+        else resultStream.end();
       });
   });
-
   // Verify the result if the result has been written
   resultStream.once('close', function () {
-    verifyResult(test, resultFile, test.result && path.join(resultFolder, test.result), callback);
+    self._verifyResult(test, resultFile,
+                       test.result && path.join(self._testFolder, test.result), callback);
   });
-}
+};
 
 // Verifies and reports the test result
-function verifyResult(test, resultFile, correctFile, callback) {
+SpecTester.prototype._verifyResult = function (test, resultFile, correctFile, callback) {
   // Negative tests are successful if an error occurred
-  var negativeTest = /TestTurtleNegative/.test(test.type);
+  var negativeTest = /Negative/.test(test.type);
   if (negativeTest) {
     displayResult(null, !!test.error);
   }
@@ -204,10 +176,10 @@ function verifyResult(test, resultFile, correctFile, callback) {
   else {
     if (!correctFile)
       displayResult(null, !test.error);
-    else if (resultFile)
-      compareGraphs(resultFile, correctFile, displayResult);
-    else
+    else if (!resultFile)
       displayResult(null, false);
+    else
+      this._compareResultFiles(resultFile, correctFile, displayResult);
   }
 
   // Display the test result
@@ -225,42 +197,115 @@ function verifyResult(test, resultFile, correctFile, callback) {
     test.success = success;
     callback(null, test);
   }
-}
+};
 
-// Verifies whether the two graphs are equal
-function compareGraphs(actual, expected, callback) {
+// Verifies whether the two result files are equivalent
+SpecTester.prototype._compareResultFiles = function (actual, expected, callback) {
   // Try a full-text comparison (fastest)
   async.parallel({
-    actualContents: fs.readFile.bind(fs, actual, 'utf8'),
+    actualContents:   fs.readFile.bind(fs,   actual, 'utf8'),
     expectedContents: fs.readFile.bind(fs, expected, 'utf8'),
   },
   function (error, results) {
     // If the full-text comparison was successful, graphs are certainly equal
     if (results.actualContents === results.expectedContents)
       callback(error, !error);
-    // If not, we check for proper graph equality with SWObjects
+    // If not, we check for proper equality with SWObjects
     else
       exec('sparql -d ' + expected + ' --compare ' + actual, function (error, stdout) {
         callback(error, /^matched\s*$/.test(stdout), stdout);
       });
   });
-}
+};
 
 
 
-/*************************************************
+// # EARL report generation
 
-  Conversion routines
+// Generate an EARL report with the given test results
+SpecTester.prototype._generateEarlReport = function (tests, callback) {
+  // Create the report file
+  var reportFile = path.join(this._outputFolder, 'earl-report.ttl'),
+      report = fs.createWriteStream(reportFile),
+      date = new Date().toISOString(), self = this;
+  var homepage = 'https://github.com/RubenVerborgh/N3.js',
+      application = homepage + '#n3js',
+      developer = 'http://ruben.verborgh.org/#me';
 
-**************************************************/
+  report.once('open', function () {
+    for (var prefix in prefixes)
+      writeln('@prefix ', prefix, ': <', prefixes[prefix], '>.');
+    writeln('@prefix manifest: <', self._manifest, '#>.');
+    writeln();
 
+    writeln('<> foaf:primaryTopic <', application, '>;');
+    writeln('  dc:issued "', date, '"^^xsd:dateTime;');
+    writeln('  foaf:maker <', developer, '>.');
+    writeln();
+
+    writeln('<', application, '> a earl:Software, earl:TestSubject, doap:Project;');
+    writeln('  doap:name "N3.js";');
+    writeln('  doap:homepage <', homepage, '>;');
+    writeln('  doap:license <http://opensource.org/licenses/MIT>;');
+    writeln('  doap:programming-language "JavaScript";');
+    writeln('  doap:implements <http://www.w3.org/TR/turtle/>;');
+    writeln('  doap:category <http://dbpedia.org/resource/Resource_Description_Framework>;');
+    writeln('  doap:download-page <https://npmjs.org/package/n3>;');
+    writeln('  doap:bug-database <', homepage, '/issues>;');
+    writeln('  doap:blog <http://ruben.verborgh.org/blog/>;');
+    writeln('  doap:developer <', developer, '>;');
+    writeln('  doap:maintainer <', developer, '>;');
+    writeln('  doap:documenter <', developer, '>;');
+    writeln('  doap:maker <', developer, '>;');
+    writeln('  dc:title "N3.js";');
+    writeln('  dc:description   "N3.js is an asynchronous, streaming RDF parser for JavaScript."@en;');
+    writeln('  doap:description "N3.js is an asynchronous, streaming RDF parser for JavaScript."@en;');
+    writeln('  dc:creator <', developer, '>.');
+    writeln();
+
+    writeln('<', developer, '> a foaf:Person, earl:Assertor;');
+    writeln('  foaf:name "Ruben Verborgh";');
+    writeln('  foaf:homepage <http://ruben.verborgh.org/>;');
+    writeln('  foaf:primaryTopicOf <http://ruben.verborgh.org/profile/>;');
+    writeln('  rdfs:isDefinedBy <http://ruben.verborgh.org/profile/>.');
+
+    tests.forEach(function (test) {
+      writeln();
+      writeln('manifest:', test.id, ' a earl:TestCriterion, earl:TestCase;');
+      writeln('  dc:title ', escapeString(unString(test.name)), ';');
+      writeln('  dc:description ', escapeString(unString(test.comment)), ';');
+      writeln('  mf:action <', url.resolve(self._manifest, test.action), '>;');
+      if (test.result)
+        writeln('  mf:result <', url.resolve(self._manifest, test.result), '>;');
+      writeln('  earl:assertions (');
+      writeln('     [ a earl:Assertion;');
+      writeln('       earl:assertedBy <', developer, '>;');
+      writeln('       earl:test manifest:', test.id, ';');
+      writeln('       earl:subject <', application, '>;');
+      writeln('       earl:mode earl:automatic;');
+      writeln('       earl:result [ a earl:TestResult; ',
+                        'earl:outcome earl:', (test.success ? 'passed' : 'failed'), '; ',
+                        'dc:date "', date, '"^^xsd:dateTime',
+                      ' ]]');
+      writeln('  ).');
+    });
+    report.end();
+  });
+  report.once('close', callback);
+
+  function writeln() {
+    for (var i = 0; i < arguments.length; i++)
+      report.write(arguments[i]);
+    report.write('\n');
+  }
+};
+
+
+// # Conversion routines
 
 // Converts the triple to NTriples format (primitive and incomplete)
 function toNTriple(triple) {
-  var subject = triple.subject,
-      predicate = triple.predicate,
-      object = triple.object;
-
+  var subject = triple.subject, predicate = triple.predicate, object = triple.object;
   if (/^".*"$/.test(object))
     object = escapeString(object);
   else
@@ -278,9 +323,8 @@ function unString(value) {
 
 // Escapes unicode characters in a URI
 function escape(value) {
+  // Add all characters, converting to a unicode escape code if necessary
   var result = '';
-
-  // Add all characters, converting to an unicode escape code if necessary
   for (var i = 0; i < value.length; i++) {
     var code = value.charCodeAt(i);
     if (code >= 32 && code < 128) {
@@ -317,93 +361,6 @@ function escapeString(value) {
   value = escape(unString(value));
   value = value.replace(/"/g, '\\"');
   return '"' + value + '"';
-}
-
-
-
-/*************************************************
-
-  EARL report generation
-
-**************************************************/
-
-var homepage = 'https://github.com/RubenVerborgh/N3.js',
-    application = homepage + '#n3js',
-    developer = 'http://ruben.verborgh.org/#me';
-
-function generateEarlReport(destination, tests, callback) {
-  // Create the report file
-  var reportFile = path.join(destination, 'earl-report.ttl'),
-      report = fs.createWriteStream(reportFile),
-      date = new Date().toISOString();
-
-  report.once('open', function () {
-    for (var prefix in prefixes)
-      writeln('@prefix ', prefix, ': <', prefixes[prefix], '>.');
-    writeln();
-
-    writeln('<> foaf:primaryTopic <', application, '>;');
-    writeln('  dc:issued "', date, '"^^xsd:dateTime;');
-    writeln('  foaf:maker <', developer, '>.');
-    writeln();
-
-    writeln('<', application, '> a earl:Software, earl:TestSubject, doap:Project;');
-    writeln('  doap:name "N3.js";');
-    writeln('  doap:homepage <', homepage, '>;');
-    writeln('  doap:license <http://opensource.org/licenses/MIT>;');
-    writeln('  doap:programming-language "JavaScript";');
-    writeln('  doap:implements <http://www.w3.org/TR/turtle/>;');
-    writeln('  doap:category <http://dbpedia.org/resource/Resource_Description_Framework>;');
-    writeln('  doap:download-page <https://npmjs.org/package/n3>;');
-    writeln('  doap:bug-database <', homepage, '/issues>;');
-    writeln('  doap:blog <http://ruben.verborgh.org/blog/>;');
-    writeln('  doap:developer <', developer, '>;');
-    writeln('  doap:maintainer <', developer, '>;');
-    writeln('  doap:documenter <', developer, '>;');
-    writeln('  doap:maker <', developer, '>;');
-    writeln('  dc:title "N3.js";');
-    writeln('  dc:description   "N3.js is an asynchronous, streaming Turtle parser for JavaScript."@en;');
-    writeln('  doap:description "N3.js is an asynchronous, streaming Turtle parser for JavaScript."@en;');
-    writeln('  dc:creator <', developer, '>.');
-    writeln();
-
-    writeln('<', developer, '> a foaf:Person, earl:Assertor;');
-    writeln('  foaf:name "Ruben Verborgh";');
-    writeln('  foaf:homepage <http://ruben.verborgh.org/>;');
-    writeln('  foaf:primaryTopicOf <http://ruben.verborgh.org/profile/>;');
-    writeln('  rdfs:isDefinedBy <http://ruben.verborgh.org/profile/>.');
-
-    tests.forEach(function (test) {
-      writeln();
-      writeln('manifest:', test.id, ' a earl:TestCriterion, earl:TestCase;');
-      writeln('  dc:title ', escapeString(unString(test.name)), ';');
-      writeln('  dc:description ', escapeString(unString(test.comment)), ';');
-      writeln('  mf:action <', testPath, test.action, '>;');
-      if (test.result)
-        writeln('  mf:result <', testPath, test.result, '>;');
-      writeln('  earl:assertions (');
-      writeln('     [ a earl:Assertion;');
-      writeln('       earl:assertedBy <', developer, '>;');
-      writeln('       earl:test manifest:', test.id, ';');
-      writeln('       earl:subject <', application, '>;');
-      writeln('       earl:mode earl:automatic;');
-      writeln('       earl:result [ a earl:TestResult; ',
-                        'earl:outcome earl:', (test.success ? 'passed' : 'failed'), '; ',
-                        'dc:date "', date, '"^^xsd:dateTime',
-                      ' ]]');
-      writeln('  ).');
-    });
-
-    report.end();
-  });
-
-  report.once('close', callback);
-
-  function writeln() {
-    for (var i = 0; i < arguments.length; i++)
-      report.write(arguments[i]);
-    report.write('\n');
-  }
 }
 
 module.exports = SpecTester;

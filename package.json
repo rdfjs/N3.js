@@ -16,17 +16,17 @@
     "node": ">=0.10.0"
   },
   "devDependencies": {
-    "async": "~0.1.22",
+    "async": "~0.9.0",
     "chai": "~1.4.2",
     "chai-things": "~0.1.1",
     "colors": "~0.6.0",
     "docco": "~0.6.2",
     "jshint": "~2.1.10",
     "request": "~2.22.0",
-    "mocha": ">=1.15.0",
+    "mocha": "~1.15.0",
     "istanbul": "~0.3.0",
     "uglify-js": "~2.4.3",
-    "browserify": ">=3.x",
+    "browserify": "~3.x",
     "pre-commit": "~0.0.9"
   },
   "scripts": {
