@@ -210,7 +210,10 @@ SpecTester.prototype._compareResultFiles = function (actual, expected, callback)
     // If the full-text comparison was successful, graphs are certainly equal
     if (results.actualContents === results.expectedContents)
       callback(error, !error);
-    // If not, we check for proper equality with SWObjects
+    // Try renaming blank nodes
+    else if (renameBlankNodes(results.actualContents) === renameBlankNodes(results.expectedContents))
+      callback(error, !error);
+    // Otherwise, check for proper equality with SWObjects
     else
       exec('sparql -d ' + expected + ' --compare ' + actual, function (error, stdout) {
         callback(error, /^matched\s*$/.test(stdout), stdout);
@@ -363,6 +366,16 @@ function escapeString(value) {
   value = escape(unString(value));
   value = value.replace(/"/g, '\\"');
   return '"' + value + '"';
+}
+
+// Assigns incrementing IDs to blank nodes in an N-Quads fragment
+function renameBlankNodes(nquads) {
+  var id = 0, blanks = {};
+  return nquads.replace(/(^|\s)_:([^\s\.]+)/g, function (match, head, name) {
+    if (!(name in blanks))
+      blanks[name] = '_:b' + id++;
+    return head + blanks[name];
+  });
 }
 
 module.exports = SpecTester;
