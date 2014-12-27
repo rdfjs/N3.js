@@ -156,7 +156,7 @@ describe('N3Parser', function () {
       shouldParse('_:a <b> _:c.',
                   ['_:b0', 'b', '_:b1']));
 
-    it('should not parse statements with named blank nodes',
+    it('should not parse statements with blank predicates',
       shouldNotParse('<a> _:b <c>.',
                      'Disallowed blank node as predicate at line 1.'));
 
@@ -206,6 +206,10 @@ describe('N3Parser', function () {
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'u', 'v'],
                   ['_:b0', 'w', '"z"^^t']));
+
+    it('should not parse a blank node with only a semicolon',
+      shouldNotParse('<a> <b> [;].',
+                     'Unexpected ] at line 1.'));
 
     it('should parse a multi-statement blank node with trailing semicolon',
       shouldParse('<a> <b> [ <u> <v>; <w> <z>; ].',
@@ -412,6 +416,12 @@ describe('N3Parser', function () {
                   ['a', 'd', 'e'],
                   ['a', 'd', 'f']));
 
+    it('should parse a three-triple default graph ending with a semicolon',
+      shouldParse('{<a> <b> <c>;<d> <e>,<f>;}',
+                  ['a', 'b', 'c'],
+                  ['a', 'd', 'e'],
+                  ['a', 'd', 'f']));
+
     it('should parse an empty named graph with an IRI',
       shouldParse('<g>{}'));
 
@@ -514,9 +524,13 @@ describe('N3Parser', function () {
       shouldNotParse('{}}',
                      'Unexpected graph closing at line 1.'));
 
-    it('should not parse a graph with only punctuation',
+    it('should not parse a graph with only a dot',
       shouldNotParse('{.}',
                      'Expected subject but got . at line 1.'));
+
+    it('should not parse a graph with only a semicolon',
+      shouldNotParse('{;}',
+                     'Expected subject but got ; at line 1.'));
 
     it('should not parse an unclosed graph',
       shouldNotParse('{<a> <b> <c>.',
@@ -577,7 +591,7 @@ describe('N3Parser', function () {
 
     it('should error if punctuation follows a subject',
       shouldNotParse('<a> .',
-                     'Unexpected dot at line 1.'));
+                     'Unexpected . at line 1.'));
 
     it('should error if an unexpected token follows a subject',
       shouldNotParse('<a> [',
