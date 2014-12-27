@@ -145,7 +145,7 @@ SpecTester.prototype._parseManifest = function (manifestContents, callback) {
 // Performs the test by parsing the specified document
 SpecTester.prototype._performTest = function (test, actionStream, callback) {
   // Create the results file
-  var resultFile = path.join(this._testFolder, test.action.replace(/\.ttl$/, '.nt')),
+  var resultFile = path.join(this._testFolder, test.action.replace(/\.\w+$/, '.nq')),
       resultStream = fs.createWriteStream(resultFile), self = this;
   resultStream.once('open', function () {
     // Try to parse the specified document
@@ -153,7 +153,7 @@ SpecTester.prototype._performTest = function (test, actionStream, callback) {
     new N3Parser(config).parse(actionStream,
       function (error, triple) {
         if (error) test.error = error;
-        if (triple) resultStream.write(toNTriple(triple));
+        if (triple) resultStream.write(toNQuads(triple));
         else resultStream.end();
       });
   });
@@ -303,17 +303,19 @@ SpecTester.prototype._generateEarlReport = function (tests, callback) {
 
 // # Conversion routines
 
-// Converts the triple to NTriples format (primitive and incomplete)
-function toNTriple(triple) {
-  var subject = triple.subject, predicate = triple.predicate, object = triple.object;
+// Converts the triple to N-Quads format (primitive and incomplete)
+function toNQuads(triple) {
+  var subject = triple.subject, predicate = triple.predicate,
+      object = triple.object, graph = triple.graph;
   if (/^".*"$/.test(object))
     object = escapeString(object);
   else
     object = escape(object).replace(/"\^\^(.*)$/, '"^^<$1>');
 
-  return (subject.match(/^_/)   ? subject   : '<' + subject   + '>') + ' ' +
-         (predicate.match(/^_/) ? predicate : '<' + predicate + '>') + ' ' +
-         (object.match(/^_|^"/) ? object    : '<' + object +    '>') + ' .\n';
+  return (subject.match(/^_/)     ? subject   : '<' + subject   + '>') + ' ' +
+         (predicate.match(/^_/)   ? predicate : '<' + predicate + '>') + ' ' +
+         (object.match(/^_|^"/)   ? object    : '<' + object    + '>') + ' ' +
+         (graph.match(/^_|^"|^$/) ? graph     : '<' + graph     + '>') + (graph ? ' .\n' : '.\n');
 }
 
 // Removes the quotes around a string
