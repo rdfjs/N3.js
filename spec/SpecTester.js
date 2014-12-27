@@ -32,6 +32,8 @@ var first = prefixes.rdf + 'first',
 
 // Base class for objects that execute W3C spec test cases
 function SpecTester(settings) {
+  if (!(this instanceof SpecTester))
+    return new SpecTester(settings);
   settings = settings || {};
   for (var key in settings)
     this['_' + key] = settings[key];
@@ -43,10 +45,6 @@ function SpecTester(settings) {
   ]
   .forEach(function (folder) { fs.existsSync(folder) || fs.mkdirSync(folder); });
 }
-// Makes the specified class inherit from the current class
-SpecTester.isPrototypeOf = function (Class) {
-  Class.prototype = Object.create(this.prototype);
-};
 
 
 // # Test suite execution
