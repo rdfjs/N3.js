@@ -155,6 +155,30 @@ describe('N3Parser', function () {
       shouldSerialize([['abc', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'def']],
                       '<abc> a <def>.\n'));
 
+    it('should serialize a graph with 1 triple',
+      shouldSerialize([['abc', 'def', 'ghi', 'xyz']],
+                      '<xyz> {\n' +
+                      '<abc> <def> <ghi>\n' +
+                      '}\n'));
+
+    it('should serialize a graph with 3 triples',
+      shouldSerialize([['abc', 'def', 'ghi', 'xyz'],
+                       ['jkl', 'mno', 'pqr', 'xyz'],
+                       ['stu', 'vwx', 'yz',  'xyz']],
+                      '<xyz> {\n' +
+                      '<abc> <def> <ghi>.\n' +
+                      '<jkl> <mno> <pqr>.\n' +
+                      '<stu> <vwx> <yz>\n' +
+                      '}\n'));
+
+    it('should serialize three graphs',
+      shouldSerialize([['abc', 'def', 'ghi', 'xyz'],
+                       ['jkl', 'mno', 'pqr', ''],
+                       ['stu', 'vwx', 'yz',  'abc']],
+                      '<xyz> {\n<abc> <def> <ghi>\n}\n' +
+                      '<jkl> <mno> <pqr>.\n' +
+                      '<abc> {\n<stu> <vwx> <yz>\n}\n'));
+
     it('calls the done callback when ending the outputstream errors', function (done) {
       var writer = new N3Writer({
         write: function () {},
@@ -197,12 +221,35 @@ describe('N3Parser', function () {
       });
     });
 
+    it('serializes triples of a graph with a prefix declaration in between', function (done) {
+      var writer = new N3Writer();
+      writer.addPrefix('a', 'b#');
+      writer.addTriple({ subject: 'b#a', predicate: 'b#b', object: 'b#c', graph: 'b#g' });
+      writer.addPrefix('d', 'e#');
+      writer.addTriple({ subject: 'b#a', predicate: 'b#b', object: 'b#d', graph: 'b#g' });
+      writer.end(function (error, output) {
+        output.should.equal('@prefix a: <b#>.\n\na:g {\na:a a:b a:c\n}\n' +
+                            '@prefix d: <e#>.\n\na:g {\na:a a:b a:d\n}\n');
+        done(error);
+      });
+    });
+
     it('should accept triples with separated components', function (done) {
       var writer = N3Writer();
       writer.addTriple('a', 'b', 'c');
       writer.addTriple('a', 'b', 'd');
       writer.end(function (error, output) {
         output.should.equal('<a> <b> <c>, <d>.\n');
+        done(error);
+      });
+    });
+
+    it('should accept quads with separated components', function (done) {
+      var writer = N3Writer();
+      writer.addTriple('a', 'b', 'c', 'g');
+      writer.addTriple('a', 'b', 'd', 'g');
+      writer.end(function (error, output) {
+        output.should.equal('<g> {\n<a> <b> <c>, <d>\n}\n');
         done(error);
       });
     });
@@ -239,7 +286,7 @@ function shouldSerialize(prefixes, tripleArrays, expectedResult) {
     (function next() {
       var item = tripleArrays.shift();
       if (item)
-        writer.addTriple({ subject: item[0], predicate: item[1], object: item[2] }, next);
+        writer.addTriple({ subject: item[0], predicate: item[1], object: item[2], graph: item[3] }, next);
       else
         writer.end(function (error) {
           try {
@@ -259,7 +306,7 @@ function shouldNotSerialize(tripleArrays, expectedMessage) {
     var outputStream = new QuickStream(),
         writer = N3Writer(outputStream),
         item = tripleArrays.shift();
-    writer.addTriple({ subject: item[0], predicate: item[1], object: item[2] },
+    writer.addTriple({ subject: item[0], predicate: item[1], object: item[2], graph: item[3] },
                       function (error) {
                         if (error) {
                           error.message.should.equal(expectedMessage);
