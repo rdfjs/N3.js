@@ -512,6 +512,10 @@ describe('N3Parser', function () {
       shouldParse('GRAPH [] {<a> <b> <c>}',
                   ['a', 'b', 'c', '_:b0']));
 
+    it('should parse a graph with 8-bit unicode escape sequences',
+      shouldParse('<\\U0001d400> {\n<\\U0001d400> <\\U0001d400> "\\U0001d400"^^<\\U0001d400>\n}\n',
+                  ['\ud835\udC00', '\ud835\udc00', '"\ud835\udc00"^^\ud835\udc00', '\ud835\udc00']));
+
     it('should not parse a single closing brace',
       shouldNotParse('}',
                      'Unexpected graph closing at line 1.'));

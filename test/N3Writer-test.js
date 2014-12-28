@@ -179,6 +179,10 @@ describe('N3Parser', function () {
                       '<jkl> <mno> <pqr>.\n' +
                       '<abc> {\n<stu> <vwx> <yz>\n}\n'));
 
+    it('should output 8-bit unicode characters as escape sequences',
+      shouldSerialize([['\ud835\udc00', '\ud835\udc00', '"\ud835\udc00"^^\ud835\udc00', '\ud835\udc00']],
+                      '<\\U0001d400> {\n<\\U0001d400> <\\U0001d400> "\\U0001d400"^^<\\U0001d400>\n}\n'));
+
     it('calls the done callback when ending the outputstream errors', function (done) {
       var writer = new N3Writer({
         write: function () {},
