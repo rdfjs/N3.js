@@ -471,6 +471,10 @@ describe('N3Lexer', function () {
                      { type: '.', line: 2 },
                      { type: 'eof', line: 2 }));
 
+    it('should not tokenize prefixes that end with a dot',
+      shouldNotTokenize('@prefix abc.: <def>.',
+                        'Syntax error: unexpected "abc.:" on line 1.'));
+
     it('should tokenize @base declarations',
       shouldTokenize('@base <http://uri.org/#>.\n@base <http://uri.org/#>.',
                      { type: '@base', line: 1 },
@@ -500,7 +504,7 @@ describe('N3Lexer', function () {
                      { type: 'eof', line: 2 }));
 
     it('should tokenize blank nodes',
-      shouldTokenize('[] [<a> <b>] [a:b "c"^^d:e][a:b[]]',
+      shouldTokenize('[] [<a> <b>] [a:b "c"^^d:e][a:b[]] _:a:b.',
                      { type: '[', line: 1 },
                      { type: ']', line: 1 },
                      { type: '[', line: 1 },
@@ -517,7 +521,14 @@ describe('N3Lexer', function () {
                      { type: '[', line: 1 },
                      { type: ']', line: 1 },
                      { type: ']', line: 1 },
+                     { type: 'prefixed', prefix: '_', value: 'a', line: 1 },
+                     { type: 'prefixed', prefix: '',  value: 'b', line: 1 },
+                     { type: '.', line: 1 },
                      { type: 'eof', line: 1 }));
+
+    it('should not tokenize invalid blank nodes',
+      shouldNotTokenize('_::',
+                        'Syntax error: unexpected "_::" on line 1.'));
 
     it('should tokenize lists',
       shouldTokenize('() (<a>) (<a> <b>)',
