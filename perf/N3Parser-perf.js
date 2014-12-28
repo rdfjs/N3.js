@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-var n3 = require('../N3');
+var N3 = require('../N3');
 var fs = require('fs'),
     assert = require('assert');
 
@@ -12,7 +12,7 @@ var TEST = '- Parsing file ' + filename;
 console.time(TEST);
 
 var count = 0;
-new n3.Parser().parse(fs.createReadStream(filename), function (error, triple) {
+new N3.Parser().parse(fs.createReadStream(filename), function (error, triple) {
   assert(!error, error);
   if (triple) {
     count++;

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-var n3 = require('../N3');
+var N3 = require('../N3');
 var assert = require('assert');
 
 console.log('N3Store performance test');
@@ -10,7 +10,7 @@ var dimSquared = dim * dim;
 var dimCubed = dimSquared * dim;
 var prefix = 'http://example.org/#';
 
-var store = new n3.Store();
+var store = new N3.Store();
 
 TEST = '- Adding ' + dimCubed + ' triples';
 console.time(TEST);

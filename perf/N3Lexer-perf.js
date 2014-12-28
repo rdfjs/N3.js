@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-var n3 = require('../N3');
+var N3 = require('../N3');
 var fs = require('fs'),
     assert = require('assert');
 
@@ -12,7 +12,7 @@ var TEST = '- Lexing file ' + filename;
 console.time(TEST);
 
 var count = 0;
-new n3.Lexer().tokenize(fs.createReadStream(filename), function (error, token) {
+new N3.Lexer().tokenize(fs.createReadStream(filename), function (error, token) {
   assert(!error, error);
   count++;
   if (token.type === 'eof') {
