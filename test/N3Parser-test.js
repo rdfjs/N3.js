@@ -752,6 +752,28 @@ describe('N3Parser', function () {
 
     it('should not parse a named graph with the GRAPH keyword',
       shouldNotParse(parser, 'GRAPH <g> {}', 'Expected subject but got GRAPH at line 1.'));
+
+    it('should not parse a quad',
+      shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "c" at line 1.'));
+  });
+
+  describe('An N3Parser instance for the TriG format', function () {
+    var parser = new N3Parser({ format: 'TriG' });
+
+    it('should parse a single triple',
+      shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
+
+    it('should parse a default graph',
+      shouldParse(parser, '{}'));
+
+    it('should parse a named graph',
+      shouldParse(parser, '<g> {}'));
+
+    it('should parse a named graph with the GRAPH keyword',
+      shouldParse(parser, 'GRAPH <g> {}'));
+
+    it('should not parse a quad',
+      shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "c" at line 1.'));
   });
 });
 
