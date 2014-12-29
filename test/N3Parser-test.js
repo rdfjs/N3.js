@@ -614,8 +614,8 @@ describe('N3Parser', function () {
         expect(error).not.to.exist;
         if (!triple) {
           Object.keys(prefixes).should.have.length(2);
-          prefixes.should.have.property('a', 'IRIa');
-          prefixes.should.have.property('b', 'IRIb');
+          expect(prefixes).to.have.property('a', 'IRIa');
+          expect(prefixes).to.have.property('b', 'IRIb');
           done();
         }
       }
@@ -637,8 +637,8 @@ describe('N3Parser', function () {
         else {
           expect(prefixes).to.exist;
           Object.keys(prefixes).should.have.length(2);
-          prefixes.should.have.property('a', 'IRIa');
-          prefixes.should.have.property('b', 'IRIb');
+          expect(prefixes).to.have.property('a', 'IRIa');
+          expect(prefixes).to.have.property('b', 'IRIb');
           done();
         }
       }
