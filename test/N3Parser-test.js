@@ -393,6 +393,14 @@ describe('N3Parser', function () {
                   ['A:',  'b:',  'c:'],
                   ['a:a', 'b:B', 'C-D:c']));
 
+    it('should resolve datatype IRIs against @base',
+      shouldParse('@base <http://ex.org/>.\n' +
+                  '<a> <b> "c"^^<d>.\n' +
+                  '@base <d/>.\n' +
+                  '<e> <f> "g"^^<h>.',
+                  ['http://ex.org/a', 'http://ex.org/b', '"c"^^http://ex.org/d'],
+                  ['http://ex.org/d/e', 'http://ex.org/d/f', '"g"^^http://ex.org/d/h']));
+
     it('should parse an empty default graph',
       shouldParse('{}'));
 
@@ -700,6 +708,11 @@ describe('N3Parser', function () {
       shouldParse(parser,
                   '</a> </a/b> </a/b/c>.\n',
                   ['http://ex.org/a', 'http://ex.org/a/b', 'http://ex.org/a/b/c']));
+
+    it('should resolve datatype IRIs against the document IRI',
+      shouldParse(parser,
+                  '<a> <b> "c"^^<d>.',
+                  ['http://ex.org/doc/a', 'http://ex.org/doc/b', '"c"^^http://ex.org/doc/d']));
 
     it('should respect @base statements',
       shouldParse(parser,
