@@ -74,7 +74,10 @@ SpecTester.prototype.run = function () {
         // 1.2.2 Show the summary of all performed tests
         function showSummary(error, tests) {
           var score = tests.reduce(function (sum, test) { return sum + test.success; }, 0);
-          console.log(('* passed ' + score + ' out of ' + manifest.tests.length + ' tests').bold);
+          manifest.skipped.forEach(function (test) { self._verifyResult(test); });
+          console.log(('* passed ' + score +
+                       ' out of ' + manifest.tests.length + ' tests' +
+                       ' (' + manifest.skipped.length + ' skipped)').bold);
           callback(error, tests);
         });
     },
@@ -113,7 +116,7 @@ SpecTester.prototype._fetch = function (filename, callback) {
 // Parses the tests manifest into tests
 SpecTester.prototype._parseManifest = function (manifestContents, callback) {
   // Parse the manifest into triples
-  var manifest = {}, testStore = new N3Store();
+  var manifest = {}, testStore = new N3Store(), self = this;
   new N3Parser({ format: 'text/turtle' }).parse(manifestContents, function (error, triple) {
     // Store triples until there are no more
     if (error)  return callback(error);
@@ -121,6 +124,7 @@ SpecTester.prototype._parseManifest = function (manifestContents, callback) {
 
     // Once all triples are there, get the first item of the test list
     var tests = manifest.tests = [],
+        skipped = manifest.skipped = [],
         itemHead = testStore.find('', prefixes.mf + 'entries', null)[0].object;
     // Loop through all test items
     while (itemHead && itemHead !== nil) {
@@ -133,7 +137,9 @@ SpecTester.prototype._parseManifest = function (manifestContents, callback) {
         if (propertyMatch)
           test[propertyMatch[1]] = triple.object;
       });
-      tests.push(test);
+      test.negative = /Negative/.test(test.type);
+      test.skipped = self._skipNegative && test.negative;
+      (!test.skipped ? tests : skipped).push(test);
 
       // Find the next test item
       itemHead = testStore.find(itemHead, rest, null)[0].object;
@@ -170,8 +176,7 @@ SpecTester.prototype._performTest = function (test, actionStream, callback) {
 // Verifies and reports the test result
 SpecTester.prototype._verifyResult = function (test, resultFile, correctFile, callback) {
   // Negative tests are successful if an error occurred
-  var negativeTest = /Negative/.test(test.type);
-  if (negativeTest) {
+  if (test.skipped || test.negative) {
     displayResult(null, !!test.error);
   }
   // Positive tests are successful if the results are equal,
@@ -188,8 +193,8 @@ SpecTester.prototype._verifyResult = function (test, resultFile, correctFile, ca
   // Display the test result
   function displayResult(error, success, comparison) {
     console.log(unString(test.name).bold + ':', unString(test.comment),
-                (success ? 'OK'.green : 'FAIL'.red).bold);
-    if (error || !success) {
+                (test.skipped ? 'SKIP'.yellow : (success ? 'ok'.green : 'FAIL'.red)).bold);
+    if (!test.skipped && (error || !success)) {
       console.log((correctFile ? fs.readFileSync(correctFile, 'utf8') : '(empty)').grey);
       console.log('  was expected, but got'.bold.grey);
       console.log((resultFile ? fs.readFileSync(resultFile, 'utf8') : '(empty)').grey);
@@ -198,7 +203,7 @@ SpecTester.prototype._verifyResult = function (test, resultFile, correctFile, ca
         console.log(('  comparison: ' + comparison).grey);
     }
     test.success = success;
-    callback(null, test);
+    callback && callback(null, test);
   }
 };
 
