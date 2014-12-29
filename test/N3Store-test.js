@@ -371,11 +371,7 @@ describe('N3Store', function () {
       { subject: 'http://foo.org/#s3', predicate: 'http://bar.org/p3', object: '"a"^^http://foo.org/#t1' },
       { subject: 'http://foo.org/#s1', predicate: 'http://bar.org/p1', object: 'http://foo.org/#o1', graph: 'http://graphs.org/#g1' },
     ],
-    {
-      'a': 'http://foo.org/#',
-      'b': 'http://bar.org/',
-      'g': 'http://graphs.org/#',
-    });
+    { prefixes: { 'a': 'http://foo.org/#', 'b': 'http://bar.org/', 'g': 'http://graphs.org/#' } });
 
     describe('should allow to query subjects with prefixes', function () {
       it('should return all triples with that subject',
@@ -450,9 +446,7 @@ describe('N3Store', function () {
       { subject: 'http://foo.org/#s1', predicate: 'http://bar.org/p2', object: 'http://foo.org/#o1' },
       { subject: 'http://foo.org/#s2', predicate: 'http://bar.org/p1', object: 'http://foo.org/#o2' },
     ],
-    {
-      'http': 'http://www.w3.org/2006/http#'
-    });
+    { prefixes: { 'http': 'http://www.w3.org/2006/http#' } });
 
     describe('should allow to query subjects without prefixes', function () {
       it('should return all triples with that subject',
@@ -463,7 +457,7 @@ describe('N3Store', function () {
   });
 
   describe('An N3Store created without triples but with prefixes', function () {
-    var store = new N3Store({ 'http': 'http://www.w3.org/2006/http#' });
+    var store = new N3Store({ prefixes: { 'http': 'http://www.w3.org/2006/http#' } });
     store.addTriple('a', 'http://www.w3.org/2006/http#b', 'c');
 
     describe('should allow to query predicates with prefixes', function () {

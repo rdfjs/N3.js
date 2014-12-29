@@ -51,9 +51,7 @@ describe('N3StreamWriter', function () {
                           'A literal as predicate is not allowed: "b"'));
 
     it('should use prefixes when possible',
-      shouldSerialize({ a: 'http://a.org/',
-                        b: 'http://a.org/b#',
-                        c: 'http://a.org/b' },
+      shouldSerialize({ prefixes: { a: 'http://a.org/', b: 'http://a.org/b#', c: 'http://a.org/b' } },
                       [['http://a.org/bc', 'http://a.org/b#ef', 'http://a.org/bhi'],
                        ['http://a.org/bc/de', 'http://a.org/b#e#f', 'http://a.org/b#x/t'],
                        ['http://a.org/3a', 'http://a.org/b#3a', 'http://a.org/b#a3']],
@@ -66,12 +64,12 @@ describe('N3StreamWriter', function () {
 });
 
 
-function shouldSerialize(prefixes, tripleArrays, expectedResult) {
+function shouldSerialize(options, tripleArrays, expectedResult) {
   if (!expectedResult)
-    expectedResult = tripleArrays, tripleArrays = prefixes, prefixes = null;
+    expectedResult = tripleArrays, tripleArrays = options, options = null;
   return function (done) {
     var inputStream = new ArrayReader(tripleArrays),
-        transform = new N3StreamWriter(prefixes),
+        transform = new N3StreamWriter(options),
         outputStream = new StringWriter();
     inputStream.pipe(transform);
     transform.pipe(outputStream);

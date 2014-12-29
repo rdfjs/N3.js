@@ -113,17 +113,13 @@ describe('N3Parser', function () {
                       '<a> <b> <c>.\n'));
 
     it('should serialize valid prefixes',
-      shouldSerialize({ a: 'http://a.org/',
-                        b: 'http://a.org/b#',
-                        c: 'http://a.org/b' },
+      shouldSerialize({ prefixes: { a: 'http://a.org/', b: 'http://a.org/b#', c: 'http://a.org/b' } },
                       [],
                       '@prefix a: <http://a.org/>.\n' +
                       '@prefix b: <http://a.org/b#>.\n\n'));
 
     it('should use prefixes when possible',
-      shouldSerialize({ a: 'http://a.org/',
-                        b: 'http://a.org/b#',
-                        c: 'http://a.org/b' },
+      shouldSerialize({ prefixes: { a: 'http://a.org/', b: 'http://a.org/b#', c: 'http://a.org/b' } },
                       [['http://a.org/bc', 'http://a.org/b#ef', 'http://a.org/bhi'],
                        ['http://a.org/bc/de', 'http://a.org/b#e#f', 'http://a.org/b#x/t'],
                        ['http://a.org/3a', 'http://a.org/b#3a', 'http://a.org/b#a3']],
@@ -205,7 +201,7 @@ describe('N3Parser', function () {
     });
 
     it('respects the prefixes argument when no stream argument is given', function (done) {
-      var writer = new N3Writer({ a: 'b#' });
+      var writer = new N3Writer({ prefixes: { a: 'b#' } });
       writer.addTriple({ subject: 'b#a', predicate: 'b#b', object: 'b#c' });
       writer.end(function (error, output) {
         output.should.equal('@prefix a: <b#>.\n\na:a a:b a:c.\n');
@@ -284,7 +280,7 @@ describe('N3Parser', function () {
     });
 
     it('should write simple triples in N-Triples mode', function (done) {
-      var writer = N3Writer({}, { format: 'N-Triples' });
+      var writer = N3Writer({ format: 'N-Triples' });
       writer.addTriple('a', 'b', 'c');
       writer.addTriple('a', 'b', 'd');
       writer.end(function (error, output) {
@@ -294,7 +290,7 @@ describe('N3Parser', function () {
     });
 
     it('should not write an invalid literal in N-Triples mode', function (done) {
-      var writer = N3Writer({}, { format: 'N-Triples' });
+      var writer = N3Writer({ format: 'N-Triples' });
       writer.addTriple('a', 'b', '"c', function (error) {
         error.should.be.an.instanceof(Error);
         error.should.have.property('message', 'Invalid literal: "c');
@@ -303,7 +299,7 @@ describe('N3Parser', function () {
     });
 
     it('should write simple quads in N-Quads mode', function (done) {
-      var writer = N3Writer({}, { format: 'N-Quads' });
+      var writer = N3Writer({ format: 'N-Quads' });
       writer.addTriple('a', 'b', 'c');
       writer.addTriple('a', 'b', 'd', 'g');
       writer.end(function (error, output) {
@@ -313,7 +309,7 @@ describe('N3Parser', function () {
     });
 
     it('should not write an invalid literal in N-Quads mode', function (done) {
-      var writer = N3Writer({}, { format: 'N-Triples' });
+      var writer = N3Writer({ format: 'N-Triples' });
       writer.addTriple('a', 'b', '"c', function (error) {
         error.should.be.an.instanceof(Error);
         error.should.have.property('message', 'Invalid literal: "c');
