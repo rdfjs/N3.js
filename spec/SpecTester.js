@@ -331,6 +331,9 @@ function unString(value) {
 
 // Escapes unicode characters in a URI
 function escape(value) {
+  // Don't escape blank nodes
+  if (value[0] === '_')
+    return value;
   // Add all characters, converting to a unicode escape code if necessary
   var result = '';
   for (var i = 0; i < value.length; i++) {
@@ -374,7 +377,7 @@ function escapeString(value) {
 // Assigns incrementing IDs to blank nodes in an N-Quads fragment
 function renameBlankNodes(nquads) {
   var id = 0, blanks = {};
-  return nquads.replace(/(^|\s)_:([^\s\.]+)/g, function (match, head, name) {
+  return nquads.replace(/(^|\s)_:((?:\.?[^\s])+)/g, function (match, head, name) {
     if (!(name in blanks))
       blanks[name] = '_:b' + id++;
     return head + blanks[name];

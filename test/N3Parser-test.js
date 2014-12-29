@@ -154,7 +154,7 @@ describe('N3Parser', function () {
 
     it('should parse statements with named blank nodes',
       shouldParse('_:a <b> _:c.',
-                  ['_:b0', 'b', '_:b1']));
+                  ['_:b0_a', 'b', '_:b0_c']));
 
     it('should not parse statements with blank predicates',
       shouldNotParse('<a> _:b <c>.',
@@ -284,11 +284,11 @@ describe('N3Parser', function () {
 
     it('should parse statements with blank nodes in lists',
       shouldParse('<a> <b> (_:x _:y).',
-                  ['a', 'b', '_:b1'],
-                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b0'],
-                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b3'],
-                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
-                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b0_x'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'  ],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b0_y'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
                            'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
     it('should parse statements with a list containing strings',
@@ -733,6 +733,7 @@ function shouldParse(parser, input) {
       items = expected.map(function (item) {
         return { subject: item[0], predicate: item[1], object: item[2], graph: item[3] || '' };
       });
+  N3Parser._resetBlankNodeIds();
   // Shift parameters if necessary
   if (!hasParser)
     input = parser, parser = new N3Parser();

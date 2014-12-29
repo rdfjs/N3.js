@@ -183,6 +183,10 @@ describe('N3Parser', function () {
       shouldSerialize([['\ud835\udc00', '\ud835\udc00', '"\ud835\udc00"^^\ud835\udc00', '\ud835\udc00']],
                       '<\\U0001d400> {\n<\\U0001d400> <\\U0001d400> "\\U0001d400"^^<\\U0001d400>\n}\n'));
 
+    it('should not use escape sequences in blank nodes',
+      shouldSerialize([['_:\ud835\udc00', '_:\ud835\udc00', '_:\ud835\udc00', '_:\ud835\udc00']],
+                      '_:\ud835\udc00 {\n_:\ud835\udc00 _:\ud835\udc00 _:\ud835\udc00\n}\n'));
+
     it('calls the done callback when ending the outputstream errors', function (done) {
       var writer = new N3Writer({
         write: function () {},
