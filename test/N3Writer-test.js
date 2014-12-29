@@ -282,6 +282,44 @@ describe('N3Parser', function () {
         done();
       });
     });
+
+    it('should write simple triples in N-Triples mode', function (done) {
+      var writer = N3Writer({}, { format: 'N-Triples' });
+      writer.addTriple('a', 'b', 'c');
+      writer.addTriple('a', 'b', 'd');
+      writer.end(function (error, output) {
+        output.should.equal('<a> <b> <c>.\n<a> <b> <d>.\n');
+        done(error);
+      });
+    });
+
+    it('should not write an invalid literal in N-Triples mode', function (done) {
+      var writer = N3Writer({}, { format: 'N-Triples' });
+      writer.addTriple('a', 'b', '"c', function (error) {
+        error.should.be.an.instanceof(Error);
+        error.should.have.property('message', 'Invalid literal: "c');
+        done();
+      });
+    });
+
+    it('should write simple quads in N-Quads mode', function (done) {
+      var writer = N3Writer({}, { format: 'N-Quads' });
+      writer.addTriple('a', 'b', 'c');
+      writer.addTriple('a', 'b', 'd', 'g');
+      writer.end(function (error, output) {
+        output.should.equal('<a> <b> <c>.\n<a> <b> <d> <g>.\n');
+        done(error);
+      });
+    });
+
+    it('should not write an invalid literal in N-Quads mode', function (done) {
+      var writer = N3Writer({}, { format: 'N-Triples' });
+      writer.addTriple('a', 'b', '"c', function (error) {
+        error.should.be.an.instanceof(Error);
+        error.should.have.property('message', 'Invalid literal: "c');
+        done();
+      });
+    });
   });
 });
 
