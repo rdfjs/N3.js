@@ -560,6 +560,34 @@ describe('N3Parser', function () {
       shouldNotParse('GRAPH GRAPH <g> {}',
                      'Invalid graph label at line 1.'));
 
+    it('should parse a quad with 4 IRIs',
+      shouldParse('<a> <b> <c> <g>.',
+                  ['a', 'b', 'c', 'g']));
+
+    it('should parse a quad with 4 prefixed names',
+      shouldParse('@prefix p: <p#>.\np:a p:b p:c p:g.',
+                  ['p#a', 'p#b', 'p#c', 'p#g']));
+
+    it('should not parse a quad with an undefined prefix',
+      shouldNotParse('<a> <b> <c> p:g.',
+                     'Undefined prefix "p:" at line 1.'));
+
+    it('should parse a quad with 3 IRIs and a literal',
+      shouldParse('<a> <b> "c"^^<d> <g>.',
+                  ['a', 'b', '"c"^^d', 'g']));
+
+    it('should parse a quad with 2 blank nodes and a literal',
+      shouldParse('_:a <b> "c"^^<d> _:g.',
+                  ['_:b0_a', 'b', '"c"^^d', '_:b0_g']));
+
+    it('should not parse a quad in a graph',
+      shouldNotParse('{<a> <b> <c> <g>.}',
+                     'Expected punctuation to follow "c" at line 1.'));
+
+    it('should not parse a quad with different punctuation',
+      shouldNotParse('<a> <b> <c> <g>;',
+                     'Expected dot to follow quad at line 1.'));
+
     it('should not parse base declarations without IRI',
       shouldNotParse('@base a: ',
                      'Expected IRI to follow base declaration at line 1.'));
@@ -663,10 +691,10 @@ describe('N3Parser', function () {
     it('should resolve IRIs against the document IRI',
       shouldParse(parser,
                   '@prefix : <#>.\n' +
-                  '<a> <b> <c>.\n' +
-                  ':e :f :g.',
-                  ['http://ex.org/doc/a', 'http://ex.org/doc/b', 'http://ex.org/doc/c'],
-                  ['http://ex.org/doc/f.ttl#e', 'http://ex.org/doc/f.ttl#f', 'http://ex.org/doc/f.ttl#g']));
+                  '<a> <b> <c> <g>.\n' +
+                  ':d :e :f :g.',
+                  ['http://ex.org/doc/a', 'http://ex.org/doc/b', 'http://ex.org/doc/c', 'http://ex.org/doc/g'],
+                  ['http://ex.org/doc/f.ttl#d', 'http://ex.org/doc/f.ttl#e', 'http://ex.org/doc/f.ttl#f', 'http://ex.org/doc/f.ttl#g']));
 
     it('should resolve IRIs with a trailing slashes against the document IRI',
       shouldParse(parser,
