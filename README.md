@@ -44,7 +44,7 @@ $ npm run browser
 For maximum performance and easy of use,
 triples are represented as simple objects.
 <br>
-Since URIs are most common when dealing with RDF,
+Since IRIs are most common when dealing with RDF,
 they are represented as simple strings.
 
 ``` Turtle
@@ -108,7 +108,7 @@ parser.parse('@prefix c: <http://example.org/cartoons#>.\n' +
              });
 ```
 
-Addionally, a second callback `function (prefix, uri)` can be passed to `parse`.
+Addionally, a second callback `function (prefix, iri)` can be passed to `parse`.
 
 ### From Turtle fragments to triples
 
@@ -161,7 +161,7 @@ function SlowConsumer() {
 }
 ```
 
-A dedicated `prefix` event signals every prefix with `prefix` and `uri` arguments.
+A dedicated `prefix` event signals every prefix with `prefix` and `iri` arguments.
 
 ## Storing
 
@@ -227,12 +227,12 @@ streamWriter.pipe(process.stdout);
 ```
 
 ## Utility
-`N3.Util` offers helpers for URI and literal representations.
+`N3.Util` offers helpers for IRI and literal representations.
 <br>
-As URIs are most common, they are represented as simple strings:
+As IRIs are most common, they are represented as simple strings:
 ``` js
 var N3Util = N3.Util;
-N3Util.isUri('http://example.org/cartoons#Mickey'); // true
+N3Util.isIRI('http://example.org/cartoons#Mickey'); // true
 ```
 **Literals** are represented as double quoted strings:
 ``` js
@@ -245,7 +245,7 @@ N3Util.getLiteralType('"3"^^http://www.w3.org/2001/XMLSchema#integer'); // 'http
 N3Util.isLiteral('"http://example.org/"'); // true
 N3Util.getLiteralValue('"http://example.org/"'); // 'http://example.org/'
 ```
-Note the difference between `'http://example.org/'` (URI) and `'"http://example.org/"'` (literal).
+Note the difference between `'http://example.org/'` (IRI) and `'"http://example.org/"'` (literal).
 <br>
 Also note that the double quoted literals are _not_ raw Turtle syntax:
 ``` js
@@ -254,7 +254,7 @@ N3Util.isLiteral('"3"^^http://www.w3.org/2001/XMLSchema#integer'); // true
 ```
 The above string represents the string _This word is "quoted"!_,
 even though the correct Turtle syntax for that is `"This word is \"quoted\"!"`
-N3.js thus always parses literals, but adds quotes to differentiate from URIs:
+N3.js thus always parses literals, but adds quotes to differentiate from IRIs:
 ``` js
 new N3.Parser().parse('<a> <b> "This word is \\"quoted\\"!".', console.log);
 // { subject: 'a', predicate: 'b', object: '"This word is "quoted"!"' }
@@ -263,7 +263,7 @@ new N3.Parser().parse('<a> <b> "This word is \\"quoted\\"!".', console.log);
 **Blank nodes** start with `_:`, and can be tested for as follows:
 ``` js
 N3Util.isBlank('_:b1'); // true
-N3Util.isUri('_:b1'); // false
+N3Util.isIRI('_:b1'); // false
 N3Util.isLiteral('_:b1'); // false
 ```
 
@@ -278,14 +278,14 @@ N3Util.expandPrefixedName('rdfs:label', prefixes); // http://www.w3.org/2000/01/
 For convenience, `N3Util` can also be loaded globally:
 ``` js
 require('n3').Util(global);
-isUri('http://example.org/cartoons#Mickey'); // true
+isIRI('http://example.org/cartoons#Mickey'); // true
 isLiteral('"Mickey Mouse"'); // true
 ```
 
 If desired, the methods can even be added directly on all strings:
 ``` js
 require('n3').Util(String, true);
-'http://example.org/cartoons#Mickey'.isUri(); // true
+'http://example.org/cartoons#Mickey'.isIRI(); // true
 '"Mickey Mouse"'.isLiteral(); // true
 ```
 

@@ -460,14 +460,14 @@ describe('N3Lexer', function () {
                      { type: 'eof', line: 2 }));
 
     it('should tokenize @prefix declarations',
-      shouldTokenize('@prefix : <http://uri.org/#>.\n@prefix abc:<http://uri.org/#>.',
+      shouldTokenize('@prefix : <http://iri.org/#>.\n@prefix abc:<http://iri.org/#>.',
                      { type: '@prefix', line: 1 },
                      { type: 'prefix', value: '', line: 1 },
-                     { type: 'IRI', value: 'http://uri.org/#', line: 1 },
+                     { type: 'IRI', value: 'http://iri.org/#', line: 1 },
                      { type: '.', line: 1 },
                      { type: '@prefix', line: 2 },
                      { type: 'prefix', value: 'abc', line: 2 },
-                     { type: 'IRI', value: 'http://uri.org/#', line: 2 },
+                     { type: 'IRI', value: 'http://iri.org/#', line: 2 },
                      { type: '.', line: 2 },
                      { type: 'eof', line: 2 }));
 
@@ -476,31 +476,31 @@ describe('N3Lexer', function () {
                         'Syntax error: unexpected "abc.:" on line 1.'));
 
     it('should tokenize @base declarations',
-      shouldTokenize('@base <http://uri.org/#>.\n@base <http://uri.org/#>.',
+      shouldTokenize('@base <http://iri.org/#>.\n@base <http://iri.org/#>.',
                      { type: '@base', line: 1 },
-                     { type: 'IRI', value: 'http://uri.org/#', line: 1 },
+                     { type: 'IRI', value: 'http://iri.org/#', line: 1 },
                      { type: '.', line: 1 },
                      { type: '@base', line: 2 },
-                     { type: 'IRI', value: 'http://uri.org/#', line: 2 },
+                     { type: 'IRI', value: 'http://iri.org/#', line: 2 },
                      { type: '.', line: 2 },
                      { type: 'eof', line: 2 }));
 
     it('should tokenize PREFIX declarations',
-      shouldTokenize('PREFIX : <http://uri.org/#>\npreFiX abc: <http://uri.org/#>',
+      shouldTokenize('PREFIX : <http://iri.org/#>\npreFiX abc: <http://iri.org/#>',
                      { type: 'PREFIX', line: 1 },
                      { type: 'prefix', value: '', line: 1 },
-                     { type: 'IRI', value: 'http://uri.org/#', line: 1 },
+                     { type: 'IRI', value: 'http://iri.org/#', line: 1 },
                      { type: 'PREFIX', line: 2 },
                      { type: 'prefix', value: 'abc', line: 2 },
-                     { type: 'IRI', value: 'http://uri.org/#', line: 2 },
+                     { type: 'IRI', value: 'http://iri.org/#', line: 2 },
                      { type: 'eof', line: 2 }));
 
     it('should tokenize BASE declarations',
-      shouldTokenize('BASE <http://uri.org/#>\nbAsE <http://uri.org/#>',
+      shouldTokenize('BASE <http://iri.org/#>\nbAsE <http://iri.org/#>',
                      { type: 'BASE', line: 1 },
-                     { type: 'IRI', value: 'http://uri.org/#', line: 1 },
+                     { type: 'IRI', value: 'http://iri.org/#', line: 1 },
                      { type: 'BASE', line: 2 },
-                     { type: 'IRI', value: 'http://uri.org/#', line: 2 },
+                     { type: 'IRI', value: 'http://iri.org/#', line: 2 },
                      { type: 'eof', line: 2 }));
 
     it('should tokenize blank nodes',

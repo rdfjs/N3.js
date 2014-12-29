@@ -68,7 +68,7 @@ describe('N3Parser', function () {
       shouldParse('<a> <b> "string"@EN.',
                   ['a', 'b', '"string"@en']));
 
-    it('should parse a triple with a literal and a URI type',
+    it('should parse a triple with a literal and an IRI type',
       shouldParse('<a> <b> "string"^^<type>.',
                   ['a', 'b', '"string"^^type']));
 
@@ -349,7 +349,7 @@ describe('N3Parser', function () {
       shouldNotParse('<a> <b> (]).',
                      'Expected list item instead of "]" at line 1.'));
 
-    it('should resolve URIs against @base',
+    it('should resolve IRIs against @base',
       shouldParse('@base <http://ex.org/>.\n' +
                   '<a> <b> <c>.\n' +
                   '@base <d/>.\n' +
@@ -357,7 +357,7 @@ describe('N3Parser', function () {
                   ['http://ex.org/a', 'http://ex.org/b', 'http://ex.org/c'],
                   ['http://ex.org/d/e', 'http://ex.org/d/f', 'http://ex.org/d/g']));
 
-    it('should resolve URIs against SPARQL base',
+    it('should resolve IRIs against SPARQL base',
       shouldParse('BASE <http://ex.org/>\n' +
                   '<a> <b> <c>. ' +
                   'BASE <d/> ' +
@@ -365,7 +365,7 @@ describe('N3Parser', function () {
                   ['http://ex.org/a', 'http://ex.org/b', 'http://ex.org/c'],
                   ['http://ex.org/d/e', 'http://ex.org/d/f', 'http://ex.org/d/g']));
 
-    it('should resolve URIs against a @base with query string',
+    it('should resolve IRIs against a @base with query string',
       shouldParse('@base <http://ex.org/?foo>.\n' +
                   '<> <b> <c>.\n' +
                   '@base <d/?bar>.\n' +
@@ -373,7 +373,7 @@ describe('N3Parser', function () {
                   ['http://ex.org/?foo', 'http://ex.org/b', 'http://ex.org/c'],
                   ['http://ex.org/d/?bar', 'http://ex.org/d/f', 'http://ex.org/d/g']));
 
-    it('should resolve URIs with query string against @base',
+    it('should resolve IRIs with query string against @base',
       shouldParse('@base <http://ex.org/>.\n' +
                   '<?> <?a> <?a=b>.\n' +
                   '@base <d>.\n' +
@@ -384,7 +384,7 @@ describe('N3Parser', function () {
                   ['http://ex.org/d?', 'http://ex.org/d?a', 'http://ex.org/d?a=b'],
                   ['http://ex.org/d?e', 'http://ex.org/d?a', 'http://ex.org/d?a=b']));
 
-    it('should not resolve URIs with colons',
+    it('should not resolve IRIs with colons',
       shouldParse('@base <http://ex.org/>.\n' +
                   '<a>   <b>   <c>.\n' +
                   '<A:>  <b:>  <c:>.\n' +
@@ -567,7 +567,7 @@ describe('N3Parser', function () {
     it('should not parse invalid @base statements',
       shouldNotParse('@base <http://ex.org/foo#bar>.\n' +
                      '<a> <b> <c>.\n',
-                     'Invalid base URI at line 1.'));
+                     'Invalid base IRI at line 1.'));
 
     it('should not parse improperly nested parentheses and brackets',
       shouldNotParse('<a> <b> [<c> (<d>]).',
@@ -607,28 +607,28 @@ describe('N3Parser', function () {
 
     it('should return prefixes through a callback', function (done) {
       var prefixes = {};
-      new N3Parser().parse('@prefix a: <URIa>. a:a a:b a:c. @prefix b: <URIb>.',
+      new N3Parser().parse('@prefix a: <IRIa>. a:a a:b a:c. @prefix b: <IRIb>.',
                            tripleCallback, prefixCallback);
 
       function tripleCallback(error, triple) {
         expect(error).not.to.exist;
         if (!triple) {
           Object.keys(prefixes).should.have.length(2);
-          prefixes.should.have.property('a', 'URIa');
-          prefixes.should.have.property('b', 'URIb');
+          prefixes.should.have.property('a', 'IRIa');
+          prefixes.should.have.property('b', 'IRIb');
           done();
         }
       }
 
-      function prefixCallback(prefix, uri) {
+      function prefixCallback(prefix, iri) {
         expect(prefix).to.exist;
-        expect(uri).to.exist;
-        prefixes[prefix] = uri;
+        expect(iri).to.exist;
+        prefixes[prefix] = iri;
       }
     });
 
     it('should return prefixes at the last triple callback', function (done) {
-      new N3Parser().parse('@prefix a: <URIa>. a:a a:b a:c. @prefix b: <URIb>.', tripleCallback);
+      new N3Parser().parse('@prefix a: <IRIa>. a:a a:b a:c. @prefix b: <IRIb>.', tripleCallback);
 
       function tripleCallback(error, triple, prefixes) {
         expect(error).not.to.exist;
@@ -637,8 +637,8 @@ describe('N3Parser', function () {
         else {
           expect(prefixes).to.exist;
           Object.keys(prefixes).should.have.length(2);
-          prefixes.should.have.property('a', 'URIa');
-          prefixes.should.have.property('b', 'URIb');
+          prefixes.should.have.property('a', 'IRIa');
+          prefixes.should.have.property('b', 'IRIb');
           done();
         }
       }
@@ -657,10 +657,10 @@ describe('N3Parser', function () {
     });
   });
 
-  describe('An N3Parser instance with a document URI', function () {
-    var parser = new N3Parser({ documentURI: 'http://ex.org/doc/f.ttl' });
+  describe('An N3Parser instance with a document IRI', function () {
+    var parser = new N3Parser({ documentIRI: 'http://ex.org/doc/f.ttl' });
 
-    it('should resolve URIs against the document URI',
+    it('should resolve IRIs against the document IRI',
       shouldParse(parser,
                   '@prefix : <#>.\n' +
                   '<a> <b> <c>.\n' +
@@ -668,7 +668,7 @@ describe('N3Parser', function () {
                   ['http://ex.org/doc/a', 'http://ex.org/doc/b', 'http://ex.org/doc/c'],
                   ['http://ex.org/doc/f.ttl#e', 'http://ex.org/doc/f.ttl#f', 'http://ex.org/doc/f.ttl#g']));
 
-    it('should resolve URIs with a trailing slashes against the document URI',
+    it('should resolve IRIs with a trailing slashes against the document IRI',
       shouldParse(parser,
                   '</a> </a/b> </a/b/c>.\n',
                   ['http://ex.org/a', 'http://ex.org/a/b', 'http://ex.org/a/b/c']));
@@ -688,13 +688,13 @@ describe('N3Parser', function () {
                   ['http://ex.org/e/k', 'http://ex.org/e/l', 'http://ex.org/e/m']));
   });
 
-  describe('An N3Parser instance with an invalid document URI', function () {
+  describe('An N3Parser instance with an invalid document IRI', function () {
     it('cannot be created', function (done) {
       try {
-        new N3Parser({ documentURI: 'http://ex.org/doc/f#' });
+        new N3Parser({ documentIRI: 'http://ex.org/doc/f#' });
       }
       catch (error) {
-        error.message.should.equal('Invalid document URI');
+        error.message.should.equal('Invalid document IRI');
         done();
       }
     });

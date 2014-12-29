@@ -152,7 +152,7 @@ SpecTester.prototype._performTest = function (test, actionStream, callback) {
       resultStream = fs.createWriteStream(resultFile), self = this;
   resultStream.once('open', function () {
     // Try to parse the specified document
-    var config = { format: self._name, documentURI: url.resolve(self._manifest, test.action) };
+    var config = { format: self._name, documentIRI: url.resolve(self._manifest, test.action) };
     new N3Parser(config).parse(actionStream,
       function (error, triple) {
         if (error) test.error = error;
@@ -329,7 +329,7 @@ function unString(value) {
   return value ? value.replace(/^("""|")(.*)\1$/, '$2') : '';
 }
 
-// Escapes unicode characters in a URI
+// Escapes unicode characters in an IRI
 function escape(value) {
   // Don't escape blank nodes
   if (value[0] === '_')

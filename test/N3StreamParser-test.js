@@ -32,8 +32,8 @@ describe('N3StreamParser', function () {
       shouldNotParse(['z.'], 'Syntax error: unexpected "z." on line 1.'));
 
     it('emits "prefix" events',
-      shouldEmitPrefixes(['@prefix a: <URIa>. a:a a:b a:c. @prefix b: <URIb>.'],
-                         { a: 'URIa', b: 'URIb' }));
+      shouldEmitPrefixes(['@prefix a: <IRIa>. a:a a:b a:c. @prefix b: <IRIb>.'],
+                         { a: 'IRIa', b: 'IRIb' }));
   });
 });
 
@@ -76,7 +76,7 @@ function shouldEmitPrefixes(chunks, expectedPrefixes) {
         transform = N3StreamParser();
     inputStream.pipe(transform);
     transform.on('data', function () {});
-    transform.on('prefix', function (prefix, uri) { prefixes[prefix] = uri; });
+    transform.on('prefix', function (prefix, iri) { prefixes[prefix] = iri; });
     transform.on('error', done);
     transform.on('end', function (error) {
       prefixes.should.deep.equal(expectedPrefixes);

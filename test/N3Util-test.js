@@ -12,7 +12,7 @@ describe('N3Util', function () {
     it('can attach functions to an object', function () {
       var host = {};
       N3Util(host).should.equal(host);
-      host.isUri.should.be.a('function');
+      host.isIRI.should.be.a('function');
       host.isLiteral.should.be.a('function');
       host.isPrefixedName('a:b').should.be.true;
     });
@@ -21,7 +21,7 @@ describe('N3Util', function () {
       function Constructor() {}
       Constructor.prototype = { toString: function () { return 'a:b'; } };
       N3Util(Constructor, true).should.equal(Constructor);
-      Constructor.prototype.isUri.should.be.a('function');
+      Constructor.prototype.isIRI.should.be.a('function');
       Constructor.prototype.isLiteral.should.be.a('function');
 
       var host = new Constructor();
@@ -29,25 +29,25 @@ describe('N3Util', function () {
     });
   });
 
-  describe('isUri', function () {
-    it('matches a URI', function () {
-      N3Util.isUri('http://example.org/').should.be.true;
+  describe('isIRI', function () {
+    it('matches an IRI', function () {
+      N3Util.isIRI('http://example.org/').should.be.true;
     });
 
     it('does not match a literal', function () {
-      N3Util.isUri('"http://example.org/"').should.be.false;
+      N3Util.isIRI('"http://example.org/"').should.be.false;
     });
 
     it('does not match a blank node', function () {
-      N3Util.isUri('_:x').should.be.false;
+      N3Util.isIRI('_:x').should.be.false;
     });
 
     it('does not match null', function () {
-      expect(N3Util.isUri(null)).to.be.null;
+      expect(N3Util.isIRI(null)).to.be.null;
     });
 
     it('does not match undefined', function () {
-      expect(N3Util.isUri(undefined)).to.be.undefined;
+      expect(N3Util.isIRI(undefined)).to.be.undefined;
     });
   });
 
@@ -76,7 +76,7 @@ describe('N3Util', function () {
       N3Util.isLiteral('"a\rb"').should.be.true;
     });
 
-    it('does not match a URI', function () {
+    it('does not match an IRI', function () {
       N3Util.isLiteral('http://example.org/').should.be.false;
     });
 
@@ -98,7 +98,7 @@ describe('N3Util', function () {
       N3Util.isBlank('_:x').should.be.true;
     });
 
-    it('does not match a URI', function () {
+    it('does not match an IRI', function () {
       N3Util.isBlank('http://example.org/').should.be.false;
     });
 
@@ -238,7 +238,7 @@ describe('N3Util', function () {
       N3Util.isPrefixedName('ex:Test').should.be.true;
     });
 
-    it('does not match a URI', function () {
+    it('does not match an IRI', function () {
       N3Util.isPrefixedName('http://example.org/').should.be.false;
     });
 
