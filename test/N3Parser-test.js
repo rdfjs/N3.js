@@ -788,6 +788,42 @@ describe('N3Parser', function () {
     it('should not parse a quad',
       shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "c" at line 1.'));
   });
+
+  describe('An N3Parser instance for the N-Triples format', function () {
+    var parser = new N3Parser({ format: 'N-Triples' });
+
+    it('should parse a single triple',
+      shouldParse(parser, '<http://ex.org/a> <http://ex.org/b> "c".',
+                          ['http://ex.org/a', 'http://ex.org/b', '"c"']));
+
+    it('should not parse a single quad',
+      shouldNotParse(parser, '<http://ex.org/a> <http://ex.org/b> "c" <http://ex.org/g>.',
+                             'Expected punctuation to follow ""c"" at line 1.'));
+
+    it('should not parse relative IRIs',
+      shouldNotParse(parser, '<a> <b> <c>.', 'Disallowed relative IRI at line 1.'));
+
+    it('should not parse a prefix declaration',
+      shouldNotParse(parser, '@prefix : <p#>.', 'Syntax error: unexpected "@prefix" on line 1.'));
+  });
+
+  describe('An N3Parser instance for the N-Quads format', function () {
+    var parser = new N3Parser({ format: 'N-Quads' });
+
+    it('should parse a single triple',
+      shouldParse(parser, '<http://ex.org/a> <http://ex.org/b> <http://ex.org/c>.',
+                          ['http://ex.org/a', 'http://ex.org/b', 'http://ex.org/c']));
+
+    it('should parse a single quad',
+      shouldParse(parser, '<http://ex.org/a> <http://ex.org/b> "c" <http://ex.org/g>.',
+                          ['http://ex.org/a', 'http://ex.org/b', '"c"', 'http://ex.org/g']));
+
+    it('should not parse relative IRIs',
+      shouldNotParse(parser, '<a> <b> <c>.', 'Disallowed relative IRI at line 1.'));
+
+    it('should not parse a prefix declaration',
+      shouldNotParse(parser, '@prefix : <p#>.', 'Syntax error: unexpected "@prefix" on line 1.'));
+  });
 });
 
 function shouldParse(parser, input) {

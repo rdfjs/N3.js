@@ -154,7 +154,7 @@ SpecTester.prototype._parseManifest = function (manifestContents, callback) {
 // Performs the test by parsing the specified document
 SpecTester.prototype._performTest = function (test, actionStream, callback) {
   // Create the results file
-  var resultFile = path.join(this._testFolder, test.action.replace(/\.\w+$/, '.nq')),
+  var resultFile = path.join(this._testFolder, test.action.replace(/\.\w+$/, '-result.nq')),
       resultStream = fs.createWriteStream(resultFile), self = this;
   resultStream.once('open', function () {
     // Try to parse the specified document
