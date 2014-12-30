@@ -1,0 +1,1398 @@
+@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix rdft: <http://www.w3.org/ns/rdftest#>.
+@prefix dc: <http://purl.org/dc/terms/>.
+@prefix doap: <http://usefulinc.com/ns/doap#>.
+@prefix earl: <http://www.w3.org/ns/earl#>.
+@prefix foaf: <http://xmlns.com/foaf/0.1/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+
+@prefix manifest: <http://www.w3.org/2013/N-QuadsTests/manifest.ttl#>.
+
+<> foaf:primaryTopic <https://github.com/RubenVerborgh/N3.js#n3js>;
+    dc:issued "2014-12-30T23:37:57.876Z"^^xsd:dateTime;
+    foaf:maker <http://ruben.verborgh.org/#me>.
+<https://github.com/RubenVerborgh/N3.js#n3js> a earl:Software, earl:TestSubject, doap:Project;
+    doap:name "N3.js";
+    doap:homepage <https://github.com/RubenVerborgh/N3.js>;
+    doap:license <http://opensource.org/licenses/MIT>;
+    doap:programming-language "JavaScript";
+    doap:implements <http://www.w3.org/TR/turtle/>, <http://www.w3.org/TR/trig/>, <http://www.w3.org/TR/n-triples/>, <http://www.w3.org/TR/n-quads/>;
+    doap:category <http://dbpedia.org/resource/Resource_Description_Framework>;
+    doap:download-page <https://npmjs.org/package/n3>;
+    doap:bug-database <https://github.com/RubenVerborgh/N3.js/issues>;
+    doap:blog <http://ruben.verborgh.org/blog/>;
+    doap:developer <http://ruben.verborgh.org/#me>;
+    doap:maintainer <http://ruben.verborgh.org/#me>;
+    doap:documenter <http://ruben.verborgh.org/#me>;
+    doap:maker <http://ruben.verborgh.org/#me>;
+    dc:title "N3.js";
+    dc:description "N3.js is an asynchronous, streaming RDF parser for JavaScript."@en;
+    doap:description "N3.js is an asynchronous, streaming RDF parser for JavaScript."@en;
+    dc:creator <http://ruben.verborgh.org/#me>.
+<http://ruben.verborgh.org/#me> a foaf:Person, earl:Assertor;
+    foaf:name "Ruben Verborgh";
+    foaf:homepage <http://ruben.verborgh.org/>;
+    foaf:primaryTopicOf <http://ruben.verborgh.org/profile/>;
+    rdfs:isDefinedBy <http://ruben.verborgh.org/profile/>.
+manifest:nq-syntax-uri-01 a earl:TestCriterion, earl:TestCase;
+    dc:title "nq-syntax-uri-01";
+    dc:description "URI graph with URI triple";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nq-syntax-uri-01.nq>;
+    earl:assertions _:assertions0.
+_:assertions0 rdf:first _:assertion0;
+    rdf:rest rdf:nil.
+_:assertion0 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nq-syntax-uri-01;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result0.
+_:result0 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nq-syntax-uri-02 a earl:TestCriterion, earl:TestCase;
+    dc:title "nq-syntax-uri-02";
+    dc:description "URI graph with BNode subject";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nq-syntax-uri-02.nq>;
+    earl:assertions _:assertions1.
+_:assertions1 rdf:first _:assertion1;
+    rdf:rest rdf:nil.
+_:assertion1 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nq-syntax-uri-02;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result1.
+_:result1 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nq-syntax-uri-03 a earl:TestCriterion, earl:TestCase;
+    dc:title "nq-syntax-uri-03";
+    dc:description "URI graph with BNode object";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nq-syntax-uri-03.nq>;
+    earl:assertions _:assertions2.
+_:assertions2 rdf:first _:assertion2;
+    rdf:rest rdf:nil.
+_:assertion2 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nq-syntax-uri-03;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result2.
+_:result2 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nq-syntax-uri-04 a earl:TestCriterion, earl:TestCase;
+    dc:title "nq-syntax-uri-04";
+    dc:description "URI graph with simple literal";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nq-syntax-uri-04.nq>;
+    earl:assertions _:assertions3.
+_:assertions3 rdf:first _:assertion3;
+    rdf:rest rdf:nil.
+_:assertion3 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nq-syntax-uri-04;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result3.
+_:result3 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nq-syntax-uri-05 a earl:TestCriterion, earl:TestCase;
+    dc:title "nq-syntax-uri-05";
+    dc:description "URI graph with language tagged literal";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nq-syntax-uri-05.nq>;
+    earl:assertions _:assertions4.
+_:assertions4 rdf:first _:assertion4;
+    rdf:rest rdf:nil.
+_:assertion4 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nq-syntax-uri-05;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result4.
+_:result4 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nq-syntax-uri-06 a earl:TestCriterion, earl:TestCase;
+    dc:title "nq-syntax-uri-06";
+    dc:description "URI graph with datatyped literal";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nq-syntax-uri-06.nq>;
+    earl:assertions _:assertions5.
+_:assertions5 rdf:first _:assertion5;
+    rdf:rest rdf:nil.
+_:assertion5 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nq-syntax-uri-06;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result5.
+_:result5 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nq-syntax-bnode-01 a earl:TestCriterion, earl:TestCase;
+    dc:title "nq-syntax-bnode-01";
+    dc:description "BNode graph with URI triple";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nq-syntax-bnode-01.nq>;
+    earl:assertions _:assertions6.
+_:assertions6 rdf:first _:assertion6;
+    rdf:rest rdf:nil.
+_:assertion6 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nq-syntax-bnode-01;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result6.
+_:result6 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nq-syntax-bnode-02 a earl:TestCriterion, earl:TestCase;
+    dc:title "nq-syntax-bnode-02";
+    dc:description "BNode graph with BNode subject";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nq-syntax-bnode-02.nq>;
+    earl:assertions _:assertions7.
+_:assertions7 rdf:first _:assertion7;
+    rdf:rest rdf:nil.
+_:assertion7 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nq-syntax-bnode-02;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result7.
+_:result7 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nq-syntax-bnode-03 a earl:TestCriterion, earl:TestCase;
+    dc:title "nq-syntax-bnode-03";
+    dc:description "BNode graph with BNode object";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nq-syntax-bnode-03.nq>;
+    earl:assertions _:assertions8.
+_:assertions8 rdf:first _:assertion8;
+    rdf:rest rdf:nil.
+_:assertion8 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nq-syntax-bnode-03;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result8.
+_:result8 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nq-syntax-bnode-04 a earl:TestCriterion, earl:TestCase;
+    dc:title "nq-syntax-bnode-04";
+    dc:description "BNode graph with simple literal";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nq-syntax-bnode-04.nq>;
+    earl:assertions _:assertions9.
+_:assertions9 rdf:first _:assertion9;
+    rdf:rest rdf:nil.
+_:assertion9 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nq-syntax-bnode-04;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result9.
+_:result9 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nq-syntax-bnode-05 a earl:TestCriterion, earl:TestCase;
+    dc:title "nq-syntax-bnode-05";
+    dc:description "BNode graph with language tagged literal";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nq-syntax-bnode-05.nq>;
+    earl:assertions _:assertions10.
+_:assertions10 rdf:first _:assertion10;
+    rdf:rest rdf:nil.
+_:assertion10 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nq-syntax-bnode-05;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result10.
+_:result10 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nq-syntax-bnode-06 a earl:TestCriterion, earl:TestCase;
+    dc:title "nq-syntax-bnode-06";
+    dc:description "BNode graph with datatyped literal";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nq-syntax-bnode-06.nq>;
+    earl:assertions _:assertions11.
+_:assertions11 rdf:first _:assertion11;
+    rdf:rest rdf:nil.
+_:assertion11 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nq-syntax-bnode-06;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result11.
+_:result11 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nq-syntax-bad-literal-01 a earl:TestCriterion, earl:TestCase;
+    dc:title "nq-syntax-bad-literal-01";
+    dc:description "Graph name may not be a simple literal (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nq-syntax-bad-literal-01.nq>;
+    earl:assertions _:assertions12.
+_:assertions12 rdf:first _:assertion12;
+    rdf:rest rdf:nil.
+_:assertion12 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nq-syntax-bad-literal-01;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result12.
+_:result12 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nq-syntax-bad-literal-02 a earl:TestCriterion, earl:TestCase;
+    dc:title "nq-syntax-bad-literal-02";
+    dc:description "Graph name may not be a language tagged literal (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nq-syntax-bad-literal-02.nq>;
+    earl:assertions _:assertions13.
+_:assertions13 rdf:first _:assertion13;
+    rdf:rest rdf:nil.
+_:assertion13 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nq-syntax-bad-literal-02;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result13.
+_:result13 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nq-syntax-bad-literal-03 a earl:TestCriterion, earl:TestCase;
+    dc:title "nq-syntax-bad-literal-03";
+    dc:description "Graph name may not be a datatyped literal (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nq-syntax-bad-literal-03.nq>;
+    earl:assertions _:assertions14.
+_:assertions14 rdf:first _:assertion14;
+    rdf:rest rdf:nil.
+_:assertion14 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nq-syntax-bad-literal-03;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result14.
+_:result14 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nq-syntax-bad-uri-01 a earl:TestCriterion, earl:TestCase;
+    dc:title "nq-syntax-bad-uri-01";
+    dc:description "Graph name URI must be absolute (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nq-syntax-bad-uri-01.nq>;
+    earl:assertions _:assertions15.
+_:assertions15 rdf:first _:assertion15;
+    rdf:rest rdf:nil.
+_:assertion15 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nq-syntax-bad-uri-01;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result15.
+_:result15 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nq-syntax-bad-quint-01 a earl:TestCriterion, earl:TestCase;
+    dc:title "nq-syntax-bad-quint-01";
+    dc:description "N-Quads does not have a fifth element (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nq-syntax-bad-quint-01.nq>;
+    earl:assertions _:assertions16.
+_:assertions16 rdf:first _:assertion16;
+    rdf:rest rdf:nil.
+_:assertion16 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nq-syntax-bad-quint-01;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result16.
+_:result16 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-file-01 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-file-01";
+    dc:description "Empty file";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-file-01.nq>;
+    earl:assertions _:assertions17.
+_:assertions17 rdf:first _:assertion17;
+    rdf:rest rdf:nil.
+_:assertion17 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-file-01;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result17.
+_:result17 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-file-02 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-file-02";
+    dc:description "Only comment";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-file-02.nq>;
+    earl:assertions _:assertions18.
+_:assertions18 rdf:first _:assertion18;
+    rdf:rest rdf:nil.
+_:assertion18 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-file-02;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result18.
+_:result18 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-file-03 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-file-03";
+    dc:description "One comment, one empty line";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-file-03.nq>;
+    earl:assertions _:assertions19.
+_:assertions19 rdf:first _:assertion19;
+    rdf:rest rdf:nil.
+_:assertion19 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-file-03;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result19.
+_:result19 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-uri-01 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-uri-01";
+    dc:description "Only IRIs";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-uri-01.nq>;
+    earl:assertions _:assertions20.
+_:assertions20 rdf:first _:assertion20;
+    rdf:rest rdf:nil.
+_:assertion20 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-uri-01;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result20.
+_:result20 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-uri-02 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-uri-02";
+    dc:description "IRIs with Unicode escape";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-uri-02.nq>;
+    earl:assertions _:assertions21.
+_:assertions21 rdf:first _:assertion21;
+    rdf:rest rdf:nil.
+_:assertion21 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-uri-02;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result21.
+_:result21 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-uri-03 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-uri-03";
+    dc:description "IRIs with long Unicode escape";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-uri-03.nq>;
+    earl:assertions _:assertions22.
+_:assertions22 rdf:first _:assertion22;
+    rdf:rest rdf:nil.
+_:assertion22 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-uri-03;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result22.
+_:result22 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-uri-04 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-uri-04";
+    dc:description "Legal IRIs";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-uri-04.nq>;
+    earl:assertions _:assertions23.
+_:assertions23 rdf:first _:assertion23;
+    rdf:rest rdf:nil.
+_:assertion23 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-uri-04;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result23.
+_:result23 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-string-01 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-string-01";
+    dc:description "string literal";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-string-01.nq>;
+    earl:assertions _:assertions24.
+_:assertions24 rdf:first _:assertion24;
+    rdf:rest rdf:nil.
+_:assertion24 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-string-01;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result24.
+_:result24 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-string-02 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-string-02";
+    dc:description "langString literal";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-string-02.nq>;
+    earl:assertions _:assertions25.
+_:assertions25 rdf:first _:assertion25;
+    rdf:rest rdf:nil.
+_:assertion25 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-string-02;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result25.
+_:result25 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-string-03 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-string-03";
+    dc:description "langString literal with region";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-string-03.nq>;
+    earl:assertions _:assertions26.
+_:assertions26 rdf:first _:assertion26;
+    rdf:rest rdf:nil.
+_:assertion26 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-string-03;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result26.
+_:result26 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-str-esc-01 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-str-esc-01";
+    dc:description "string literal with escaped newline";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-str-esc-01.nq>;
+    earl:assertions _:assertions27.
+_:assertions27 rdf:first _:assertion27;
+    rdf:rest rdf:nil.
+_:assertion27 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-str-esc-01;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result27.
+_:result27 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-str-esc-02 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-str-esc-02";
+    dc:description "string literal with Unicode escape";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-str-esc-02.nq>;
+    earl:assertions _:assertions28.
+_:assertions28 rdf:first _:assertion28;
+    rdf:rest rdf:nil.
+_:assertion28 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-str-esc-02;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result28.
+_:result28 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-str-esc-03 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-str-esc-03";
+    dc:description "string literal with long Unicode escape";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-str-esc-03.nq>;
+    earl:assertions _:assertions29.
+_:assertions29 rdf:first _:assertion29;
+    rdf:rest rdf:nil.
+_:assertion29 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-str-esc-03;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result29.
+_:result29 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bnode-01 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bnode-01";
+    dc:description "bnode subject";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bnode-01.nq>;
+    earl:assertions _:assertions30.
+_:assertions30 rdf:first _:assertion30;
+    rdf:rest rdf:nil.
+_:assertion30 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bnode-01;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result30.
+_:result30 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bnode-02 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bnode-02";
+    dc:description "bnode object";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bnode-02.nq>;
+    earl:assertions _:assertions31.
+_:assertions31 rdf:first _:assertion31;
+    rdf:rest rdf:nil.
+_:assertion31 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bnode-02;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result31.
+_:result31 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bnode-03 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bnode-03";
+    dc:description "Blank node labels may start with a digit";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bnode-03.nq>;
+    earl:assertions _:assertions32.
+_:assertions32 rdf:first _:assertion32;
+    rdf:rest rdf:nil.
+_:assertion32 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bnode-03;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result32.
+_:result32 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-datatypes-01 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-datatypes-01";
+    dc:description "xsd:byte literal";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-datatypes-01.nq>;
+    earl:assertions _:assertions33.
+_:assertions33 rdf:first _:assertion33;
+    rdf:rest rdf:nil.
+_:assertion33 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-datatypes-01;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result33.
+_:result33 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-datatypes-02 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-datatypes-02";
+    dc:description "integer as xsd:string";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-datatypes-02.nq>;
+    earl:assertions _:assertions34.
+_:assertions34 rdf:first _:assertion34;
+    rdf:rest rdf:nil.
+_:assertion34 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-datatypes-02;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result34.
+_:result34 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-uri-01 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-uri-01";
+    dc:description "Bad IRI : space (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-uri-01.nq>;
+    earl:assertions _:assertions35.
+_:assertions35 rdf:first _:assertion35;
+    rdf:rest rdf:nil.
+_:assertion35 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-uri-01;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result35.
+_:result35 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-uri-02 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-uri-02";
+    dc:description "Bad IRI : bad escape (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-uri-02.nq>;
+    earl:assertions _:assertions36.
+_:assertions36 rdf:first _:assertion36;
+    rdf:rest rdf:nil.
+_:assertion36 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-uri-02;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result36.
+_:result36 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-uri-03 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-uri-03";
+    dc:description "Bad IRI : bad long escape (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-uri-03.nq>;
+    earl:assertions _:assertions37.
+_:assertions37 rdf:first _:assertion37;
+    rdf:rest rdf:nil.
+_:assertion37 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-uri-03;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result37.
+_:result37 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-uri-04 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-uri-04";
+    dc:description "Bad IRI : character escapes not allowed (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-uri-04.nq>;
+    earl:assertions _:assertions38.
+_:assertions38 rdf:first _:assertion38;
+    rdf:rest rdf:nil.
+_:assertion38 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-uri-04;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result38.
+_:result38 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-uri-05 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-uri-05";
+    dc:description "Bad IRI : character escapes not allowed (2) (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-uri-05.nq>;
+    earl:assertions _:assertions39.
+_:assertions39 rdf:first _:assertion39;
+    rdf:rest rdf:nil.
+_:assertion39 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-uri-05;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result39.
+_:result39 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-uri-06 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-uri-06";
+    dc:description "Bad IRI : relative IRI not allowed in subject (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-uri-06.nq>;
+    earl:assertions _:assertions40.
+_:assertions40 rdf:first _:assertion40;
+    rdf:rest rdf:nil.
+_:assertion40 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-uri-06;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result40.
+_:result40 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-uri-07 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-uri-07";
+    dc:description "Bad IRI : relative IRI not allowed in predicate (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-uri-07.nq>;
+    earl:assertions _:assertions41.
+_:assertions41 rdf:first _:assertion41;
+    rdf:rest rdf:nil.
+_:assertion41 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-uri-07;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result41.
+_:result41 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-uri-08 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-uri-08";
+    dc:description "Bad IRI : relative IRI not allowed in object (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-uri-08.nq>;
+    earl:assertions _:assertions42.
+_:assertions42 rdf:first _:assertion42;
+    rdf:rest rdf:nil.
+_:assertion42 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-uri-08;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result42.
+_:result42 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-uri-09 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-uri-09";
+    dc:description "Bad IRI : relative IRI not allowed in datatype (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-uri-09.nq>;
+    earl:assertions _:assertions43.
+_:assertions43 rdf:first _:assertion43;
+    rdf:rest rdf:nil.
+_:assertion43 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-uri-09;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result43.
+_:result43 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-prefix-01 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-prefix-01";
+    dc:description "@prefix not allowed in n-triples (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-prefix-01.nq>;
+    earl:assertions _:assertions44.
+_:assertions44 rdf:first _:assertion44;
+    rdf:rest rdf:nil.
+_:assertion44 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-prefix-01;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result44.
+_:result44 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-base-01 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-base-01";
+    dc:description "@base not allowed in N-Triples (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-base-01.nq>;
+    earl:assertions _:assertions45.
+_:assertions45 rdf:first _:assertion45;
+    rdf:rest rdf:nil.
+_:assertion45 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-base-01;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result45.
+_:result45 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-struct-01 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-struct-01";
+    dc:description "N-Triples does not have objectList (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-struct-01.nq>;
+    earl:assertions _:assertions46.
+_:assertions46 rdf:first _:assertion46;
+    rdf:rest rdf:nil.
+_:assertion46 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-struct-01;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result46.
+_:result46 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-struct-02 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-struct-02";
+    dc:description "N-Triples does not have predicateObjectList (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-struct-02.nq>;
+    earl:assertions _:assertions47.
+_:assertions47 rdf:first _:assertion47;
+    rdf:rest rdf:nil.
+_:assertion47 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-struct-02;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result47.
+_:result47 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-lang-01 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-lang-01";
+    dc:description "langString with bad lang (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-lang-01.nq>;
+    earl:assertions _:assertions48.
+_:assertions48 rdf:first _:assertion48;
+    rdf:rest rdf:nil.
+_:assertion48 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-lang-01;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result48.
+_:result48 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-esc-01 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-esc-01";
+    dc:description "Bad string escape (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-esc-01.nq>;
+    earl:assertions _:assertions49.
+_:assertions49 rdf:first _:assertion49;
+    rdf:rest rdf:nil.
+_:assertion49 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-esc-01;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result49.
+_:result49 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-esc-02 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-esc-02";
+    dc:description "Bad string escape (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-esc-02.nq>;
+    earl:assertions _:assertions50.
+_:assertions50 rdf:first _:assertion50;
+    rdf:rest rdf:nil.
+_:assertion50 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-esc-02;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result50.
+_:result50 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-esc-03 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-esc-03";
+    dc:description "Bad string escape (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-esc-03.nq>;
+    earl:assertions _:assertions51.
+_:assertions51 rdf:first _:assertion51;
+    rdf:rest rdf:nil.
+_:assertion51 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-esc-03;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result51.
+_:result51 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-string-01 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-string-01";
+    dc:description "mismatching string literal open/close (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-string-01.nq>;
+    earl:assertions _:assertions52.
+_:assertions52 rdf:first _:assertion52;
+    rdf:rest rdf:nil.
+_:assertion52 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-string-01;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result52.
+_:result52 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-string-02 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-string-02";
+    dc:description "mismatching string literal open/close (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-string-02.nq>;
+    earl:assertions _:assertions53.
+_:assertions53 rdf:first _:assertion53;
+    rdf:rest rdf:nil.
+_:assertion53 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-string-02;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result53.
+_:result53 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-string-03 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-string-03";
+    dc:description "single quotes (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-string-03.nq>;
+    earl:assertions _:assertions54.
+_:assertions54 rdf:first _:assertion54;
+    rdf:rest rdf:nil.
+_:assertion54 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-string-03;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result54.
+_:result54 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-string-04 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-string-04";
+    dc:description "long single string literal (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-string-04.nq>;
+    earl:assertions _:assertions55.
+_:assertions55 rdf:first _:assertion55;
+    rdf:rest rdf:nil.
+_:assertion55 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-string-04;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result55.
+_:result55 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-string-05 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-string-05";
+    dc:description "long double string literal (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-string-05.nq>;
+    earl:assertions _:assertions56.
+_:assertions56 rdf:first _:assertion56;
+    rdf:rest rdf:nil.
+_:assertion56 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-string-05;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result56.
+_:result56 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-string-06 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-string-06";
+    dc:description "string literal with no end (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-string-06.nq>;
+    earl:assertions _:assertions57.
+_:assertions57 rdf:first _:assertion57;
+    rdf:rest rdf:nil.
+_:assertion57 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-string-06;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result57.
+_:result57 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-string-07 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-string-07";
+    dc:description "string literal with no start (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-string-07.nq>;
+    earl:assertions _:assertions58.
+_:assertions58 rdf:first _:assertion58;
+    rdf:rest rdf:nil.
+_:assertion58 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-string-07;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result58.
+_:result58 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-num-01 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-num-01";
+    dc:description "no numbers in N-Triples (integer) (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-num-01.nq>;
+    earl:assertions _:assertions59.
+_:assertions59 rdf:first _:assertion59;
+    rdf:rest rdf:nil.
+_:assertion59 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-num-01;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result59.
+_:result59 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-num-02 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-num-02";
+    dc:description "no numbers in N-Triples (decimal) (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-num-02.nq>;
+    earl:assertions _:assertions60.
+_:assertions60 rdf:first _:assertion60;
+    rdf:rest rdf:nil.
+_:assertion60 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-num-02;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result60.
+_:result60 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-bad-num-03 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-bad-num-03";
+    dc:description "no numbers in N-Triples (float) (negative test)";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-bad-num-03.nq>;
+    earl:assertions _:assertions61.
+_:assertions61 rdf:first _:assertion61;
+    rdf:rest rdf:nil.
+_:assertion61 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-bad-num-03;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result61.
+_:result61 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:nt-syntax-subm-01 a earl:TestCriterion, earl:TestCase;
+    dc:title "nt-syntax-subm-01";
+    dc:description "Submission test from Original RDF Test Cases";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/nt-syntax-subm-01.nq>;
+    earl:assertions _:assertions62.
+_:assertions62 rdf:first _:assertion62;
+    rdf:rest rdf:nil.
+_:assertion62 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:nt-syntax-subm-01;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result62.
+_:result62 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:comment_following_triple a earl:TestCriterion, earl:TestCase;
+    dc:title "comment_following_triple";
+    dc:description "Tests comments after a triple";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/comment_following_triple.nq>;
+    earl:assertions _:assertions63.
+_:assertions63 rdf:first _:assertion63;
+    rdf:rest rdf:nil.
+_:assertion63 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:comment_following_triple;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result63.
+_:result63 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:literal a earl:TestCriterion, earl:TestCase;
+    dc:title "literal";
+    dc:description "literal \"\"\"x\"\"\"";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/literal.nq>;
+    earl:assertions _:assertions64.
+_:assertions64 rdf:first _:assertion64;
+    rdf:rest rdf:nil.
+_:assertion64 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:literal;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result64.
+_:result64 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:literal_all_controls a earl:TestCriterion, earl:TestCase;
+    dc:title "literal_all_controls";
+    dc:description "literal_all_controls '\\x00\\x01\\x02\\x03\\x04...'";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/literal_all_controls.nq>;
+    earl:assertions _:assertions65.
+_:assertions65 rdf:first _:assertion65;
+    rdf:rest rdf:nil.
+_:assertion65 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:literal_all_controls;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result65.
+_:result65 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:literal_all_punctuation a earl:TestCriterion, earl:TestCase;
+    dc:title "literal_all_punctuation";
+    dc:description "literal_all_punctuation '!\"#$%&()...'";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/literal_all_punctuation.nq>;
+    earl:assertions _:assertions66.
+_:assertions66 rdf:first _:assertion66;
+    rdf:rest rdf:nil.
+_:assertion66 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:literal_all_punctuation;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result66.
+_:result66 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:literal_ascii_boundaries a earl:TestCriterion, earl:TestCase;
+    dc:title "literal_ascii_boundaries";
+    dc:description "literal_ascii_boundaries '\\x00\\x26\\x28...'";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/literal_ascii_boundaries.nq>;
+    earl:assertions _:assertions67.
+_:assertions67 rdf:first _:assertion67;
+    rdf:rest rdf:nil.
+_:assertion67 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:literal_ascii_boundaries;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result67.
+_:result67 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:literal_with_2_dquotes a earl:TestCriterion, earl:TestCase;
+    dc:title "literal_with_2_dquotes";
+    dc:description "literal with 2 squotes \"\"\"a\"\"b\"\"\"";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/literal_with_2_dquotes.nq>;
+    earl:assertions _:assertions68.
+_:assertions68 rdf:first _:assertion68;
+    rdf:rest rdf:nil.
+_:assertion68 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:literal_with_2_dquotes;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result68.
+_:result68 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:literal_with_2_squotes a earl:TestCriterion, earl:TestCase;
+    dc:title "literal_with_2_squotes";
+    dc:description "literal with 2 squotes \"x''y\"";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/literal_with_2_squotes.nq>;
+    earl:assertions _:assertions69.
+_:assertions69 rdf:first _:assertion69;
+    rdf:rest rdf:nil.
+_:assertion69 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:literal_with_2_squotes;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result69.
+_:result69 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:literal_with_BACKSPACE a earl:TestCriterion, earl:TestCase;
+    dc:title "literal_with_BACKSPACE";
+    dc:description "literal with BACKSPACE";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/literal_with_BACKSPACE.nq>;
+    earl:assertions _:assertions70.
+_:assertions70 rdf:first _:assertion70;
+    rdf:rest rdf:nil.
+_:assertion70 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:literal_with_BACKSPACE;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result70.
+_:result70 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:literal_with_CARRIAGE_RETURN a earl:TestCriterion, earl:TestCase;
+    dc:title "literal_with_CARRIAGE_RETURN";
+    dc:description "literal with CARRIAGE RETURN";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/literal_with_CARRIAGE_RETURN.nq>;
+    earl:assertions _:assertions71.
+_:assertions71 rdf:first _:assertion71;
+    rdf:rest rdf:nil.
+_:assertion71 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:literal_with_CARRIAGE_RETURN;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result71.
+_:result71 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:literal_with_CHARACTER_TABULATION a earl:TestCriterion, earl:TestCase;
+    dc:title "literal_with_CHARACTER_TABULATION";
+    dc:description "literal with CHARACTER TABULATION";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/literal_with_CHARACTER_TABULATION.nq>;
+    earl:assertions _:assertions72.
+_:assertions72 rdf:first _:assertion72;
+    rdf:rest rdf:nil.
+_:assertion72 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:literal_with_CHARACTER_TABULATION;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result72.
+_:result72 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:literal_with_dquote a earl:TestCriterion, earl:TestCase;
+    dc:title "literal_with_dquote";
+    dc:description "literal with dquote \"x\"y\"";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/literal_with_dquote.nq>;
+    earl:assertions _:assertions73.
+_:assertions73 rdf:first _:assertion73;
+    rdf:rest rdf:nil.
+_:assertion73 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:literal_with_dquote;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result73.
+_:result73 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:literal_with_FORM_FEED a earl:TestCriterion, earl:TestCase;
+    dc:title "literal_with_FORM_FEED";
+    dc:description "literal with FORM FEED";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/literal_with_FORM_FEED.nq>;
+    earl:assertions _:assertions74.
+_:assertions74 rdf:first _:assertion74;
+    rdf:rest rdf:nil.
+_:assertion74 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:literal_with_FORM_FEED;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result74.
+_:result74 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:literal_with_LINE_FEED a earl:TestCriterion, earl:TestCase;
+    dc:title "literal_with_LINE_FEED";
+    dc:description "literal with LINE FEED";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/literal_with_LINE_FEED.nq>;
+    earl:assertions _:assertions75.
+_:assertions75 rdf:first _:assertion75;
+    rdf:rest rdf:nil.
+_:assertion75 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:literal_with_LINE_FEED;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result75.
+_:result75 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:literal_with_numeric_escape4 a earl:TestCriterion, earl:TestCase;
+    dc:title "literal_with_numeric_escape4";
+    dc:description "literal with numeric escape4 \\u";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/literal_with_numeric_escape4.nq>;
+    earl:assertions _:assertions76.
+_:assertions76 rdf:first _:assertion76;
+    rdf:rest rdf:nil.
+_:assertion76 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:literal_with_numeric_escape4;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result76.
+_:result76 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:literal_with_numeric_escape8 a earl:TestCriterion, earl:TestCase;
+    dc:title "literal_with_numeric_escape8";
+    dc:description "literal with numeric escape8 \\U";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/literal_with_numeric_escape8.nq>;
+    earl:assertions _:assertions77.
+_:assertions77 rdf:first _:assertion77;
+    rdf:rest rdf:nil.
+_:assertion77 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:literal_with_numeric_escape8;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result77.
+_:result77 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:literal_with_REVERSE_SOLIDUS a earl:TestCriterion, earl:TestCase;
+    dc:title "literal_with_REVERSE_SOLIDUS";
+    dc:description "literal with REVERSE SOLIDUS";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/literal_with_REVERSE_SOLIDUS.nq>;
+    earl:assertions _:assertions78.
+_:assertions78 rdf:first _:assertion78;
+    rdf:rest rdf:nil.
+_:assertion78 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:literal_with_REVERSE_SOLIDUS;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result78.
+_:result78 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:literal_with_REVERSE_SOLIDUS2 a earl:TestCriterion, earl:TestCase;
+    dc:title "literal_with_REVERSE_SOLIDUS2";
+    dc:description "REVERSE SOLIDUS at end of literal";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/literal_with_REVERSE_SOLIDUS2.nq>;
+    earl:assertions _:assertions79.
+_:assertions79 rdf:first _:assertion79;
+    rdf:rest rdf:nil.
+_:assertion79 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:literal_with_REVERSE_SOLIDUS2;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result79.
+_:result79 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:literal_with_squote a earl:TestCriterion, earl:TestCase;
+    dc:title "literal_with_squote";
+    dc:description "literal with squote \"x'y\"";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/literal_with_squote.nq>;
+    earl:assertions _:assertions80.
+_:assertions80 rdf:first _:assertion80;
+    rdf:rest rdf:nil.
+_:assertion80 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:literal_with_squote;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result80.
+_:result80 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:literal_with_UTF8_boundaries a earl:TestCriterion, earl:TestCase;
+    dc:title "literal_with_UTF8_boundaries";
+    dc:description "literal_with_UTF8_boundaries '\\x80\\x7ff\\x800\\xfff...'";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/literal_with_UTF8_boundaries.nq>;
+    earl:assertions _:assertions81.
+_:assertions81 rdf:first _:assertion81;
+    rdf:rest rdf:nil.
+_:assertion81 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:literal_with_UTF8_boundaries;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result81.
+_:result81 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:langtagged_string a earl:TestCriterion, earl:TestCase;
+    dc:title "langtagged_string";
+    dc:description "langtagged string \"x\"@en";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/langtagged_string.nq>;
+    earl:assertions _:assertions82.
+_:assertions82 rdf:first _:assertion82;
+    rdf:rest rdf:nil.
+_:assertion82 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:langtagged_string;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result82.
+_:result82 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:lantag_with_subtag a earl:TestCriterion, earl:TestCase;
+    dc:title "lantag_with_subtag";
+    dc:description "lantag with subtag \"x\"@en-us";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/lantag_with_subtag.nq>;
+    earl:assertions _:assertions83.
+_:assertions83 rdf:first _:assertion83;
+    rdf:rest rdf:nil.
+_:assertion83 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:lantag_with_subtag;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result83.
+_:result83 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
+manifest:minimal_whitespace a earl:TestCriterion, earl:TestCase;
+    dc:title "minimal_whitespace";
+    dc:description "tests absense of whitespace between subject, predicate, object and end-of-statement";
+    mf:action <http://www.w3.org/2013/N-QuadsTests/minimal_whitespace.nq>;
+    earl:assertions _:assertions84.
+_:assertions84 rdf:first _:assertion84;
+    rdf:rest rdf:nil.
+_:assertion84 a earl:Assertion;
+    earl:assertedBy <http://ruben.verborgh.org/#me>;
+    earl:test manifest:minimal_whitespace;
+    earl:subject <https://github.com/RubenVerborgh/N3.js#n3js>;
+    earl:mode earl:automatic;
+    earl:result _:result84.
+_:result84 a earl:TestResult;
+    earl:outcome earl:passed;
+    dc:date "2014-12-30T23:37:57.876Z"^^xsd:dateTime.
