@@ -91,6 +91,10 @@ describe('N3Parser', function () {
       shouldSerialize([['a', 'b', '"c\u2029de"']],
                       '<a> <b> "c\u2029de".\n'));
 
+    it('should serialize a literal containing special unicode characters',
+      shouldSerialize([['a', 'b', '"c\u0000\u0001"']],
+                      '<a> <b> "c\\u0000\\u0001".\n'));
+
     it('should serialize blank nodes',
       shouldSerialize([['_:a', 'b', '_:c']],
                       '_:a <b> _:c.\n'));
