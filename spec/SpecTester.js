@@ -260,6 +260,9 @@ SpecTester.prototype._generateEarlReport = function (tests, callback) {
     writeln('  doap:license <http://opensource.org/licenses/MIT>;');
     writeln('  doap:programming-language "JavaScript";');
     writeln('  doap:implements <http://www.w3.org/TR/turtle/>;');
+    writeln('  doap:implements <http://www.w3.org/TR/trig/>;');
+    writeln('  doap:implements <http://www.w3.org/TR/n-triples/>;');
+    writeln('  doap:implements <http://www.w3.org/TR/n-quads/>;');
     writeln('  doap:category <http://dbpedia.org/resource/Resource_Description_Framework>;');
     writeln('  doap:download-page <https://npmjs.org/package/n3>;');
     writeln('  doap:bug-database <', homepage, '/issues>;');
