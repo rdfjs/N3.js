@@ -1,7 +1,6 @@
 #!/usr/bin/env node
-var N3Parser = require('../lib/N3Parser.js'),
-    N3Store = require('../lib/N3Store.js');
-var fs = require('fs'),
+var N3 = require('../N3.js'),
+    fs = require('fs'),
     url = require('url'),
     path = require('path'),
     request = require('request'),
@@ -10,7 +9,7 @@ var fs = require('fs'),
 require('colors');
 
 // How many test cases may run in parallel?
-var workers = 4;
+var workers = 1;
 
 // Prefixes
 var prefixes = {
@@ -41,7 +40,7 @@ function SpecTester(settings) {
   // Create the folders that will contain the spec files and results
   [
     this._testFolder   = path.join(__dirname, this._name),
-    this._outputFolder = path.join(this._testFolder, 'results'),
+    this._reportFolder = path.join(__dirname, 'reports'),
   ]
   .forEach(function (folder) { fs.existsSync(folder) || fs.mkdirSync(folder); });
 }
@@ -65,8 +64,8 @@ SpecTester.prototype.run = function () {
       async.mapLimit(manifest.tests, workers,
         // 1.2.1 Execute an individual test
         function (test, callback) {
-          async.parallel({ actionStream: self._fetch.bind(self, test.action),
-                           resultStream: self._fetch.bind(self, test.result), },
+          async.series({ actionStream: self._fetch.bind(self, test.action),
+                         resultStream: self._fetch.bind(self, test.result), },
             function (err, results) {
               self._performTest(test, results.actionStream, callback);
             });
@@ -116,8 +115,8 @@ SpecTester.prototype._fetch = function (filename, callback) {
 // Parses the tests manifest into tests
 SpecTester.prototype._parseManifest = function (manifestContents, callback) {
   // Parse the manifest into triples
-  var manifest = {}, testStore = new N3Store(), self = this;
-  new N3Parser({ format: 'text/turtle' }).parse(manifestContents, function (error, triple) {
+  var manifest = {}, testStore = new N3.Store(), self = this;
+  new N3.Parser({ format: 'text/turtle' }).parse(manifestContents, function (error, triple) {
     // Store triples until there are no more
     if (error)  return callback(error);
     if (triple) return testStore.addTriple(triple.subject, triple.predicate, triple.object);
@@ -153,23 +152,20 @@ SpecTester.prototype._parseManifest = function (manifestContents, callback) {
 
 // Performs the test by parsing the specified document
 SpecTester.prototype._performTest = function (test, actionStream, callback) {
-  // Create the results file
+  // Try to parse the specified document
   var resultFile = path.join(this._testFolder, test.action.replace(/\.\w+$/, '-result.nq')),
-      resultStream = fs.createWriteStream(resultFile), self = this;
-  resultStream.once('open', function () {
-    // Try to parse the specified document
-    var config = { format: self._name, documentIRI: url.resolve(self._manifest, test.action) };
-    new N3Parser(config).parse(actionStream,
-      function (error, triple) {
-        if (error) test.error = error;
-        if (triple) resultStream.write(toNQuads(triple));
-        else resultStream.end();
+      resultWriter = new N3.Writer(fs.createWriteStream(resultFile), { format: 'N-Quads' }),
+      config = { format: this._name, documentIRI: url.resolve(this._manifest, test.action) },
+      parser = N3.Parser(config), self = this;
+  parser.parse(actionStream, function (error, triple) {
+    if (error)  test.error = error;
+    if (triple) resultWriter.addTriple(triple);
+    // Verify the result after it has been written
+    else
+      resultWriter.end(function () {
+        self._verifyResult(test, resultFile,
+                           test.result && path.join(self._testFolder, test.result), callback);
       });
-  });
-  // Verify the result if the result has been written
-  resultStream.once('close', function () {
-    self._verifyResult(test, resultFile,
-                       test.result && path.join(self._testFolder, test.result), callback);
   });
 };
 
@@ -192,7 +188,8 @@ SpecTester.prototype._verifyResult = function (test, resultFile, correctFile, ca
 
   // Display the test result
   function displayResult(error, success, comparison) {
-    console.log(unString(test.name).bold + ':', unString(test.comment),
+    console.log(N3.Util.getLiteralValue(test.name).bold + ':',
+                N3.Util.getLiteralValue(test.comment),
                 (test.skipped ? 'SKIP'.yellow : (success ? 'ok'.green : 'FAIL'.red)).bold);
     if (!test.skipped && (error || !success)) {
       console.log((correctFile ? fs.readFileSync(correctFile, 'utf8') : '(empty)').grey);
@@ -210,22 +207,27 @@ SpecTester.prototype._verifyResult = function (test, resultFile, correctFile, ca
 // Verifies whether the two result files are equivalent
 SpecTester.prototype._compareResultFiles = function (actual, expected, callback) {
   // Try a full-text comparison (fastest)
-  async.parallel({
+  async.series({
     actualContents:   fs.readFile.bind(fs,   actual, 'utf8'),
     expectedContents: fs.readFile.bind(fs, expected, 'utf8'),
   },
   function (error, results) {
     // If the full-text comparison was successful, graphs are certainly equal
-    if (results.actualContents === results.expectedContents)
-      callback(error, !error);
-    // Try renaming blank nodes
-    else if (renameBlankNodes(results.actualContents) === renameBlankNodes(results.expectedContents))
+    if (results.actualContents.trim() === results.expectedContents.trim())
       callback(error, !error);
     // Otherwise, check for proper equality with SWObjects
-    else
-      exec('sparql -d ' + expected + ' --compare ' + actual, function (error, stdout) {
-        callback(error, /^matched\s*$/.test(stdout), stdout);
-      });
+    else {
+      // SWObjects doesn't support N-Quads, so convert to TriG if necessary
+      if (/\.nq/.test(expected)) {
+        fs.writeFileSync(actual   += '.trig', NQuadsToTrig(results.actualContents));
+        fs.writeFileSync(expected += '.trig', NQuadsToTrig(results.expectedContents));
+      }
+      exec('sparql -d ' + expected + ' --compare ' + actual,
+           function (error, stdout) { callback(error, /^matched\s*$/.test(stdout), stdout); });
+    }
+    function NQuadsToTrig(nquad) {
+      return nquad.replace(/^([^\s]+)\s+([^\s]+)\s+(.+)\s+([^\s"]+)\s*\.$/mg, '$4 { $1 $2 $3 }');
+    }
   });
 };
 
@@ -236,160 +238,71 @@ SpecTester.prototype._compareResultFiles = function (actual, expected, callback)
 // Generate an EARL report with the given test results
 SpecTester.prototype._generateEarlReport = function (tests, callback) {
   // Create the report file
-  var reportFile = path.join(this._outputFolder, 'earl-report.ttl'),
-      report = fs.createWriteStream(reportFile),
-      date = new Date().toISOString(), self = this;
-  var homepage = 'https://github.com/RubenVerborgh/N3.js',
-      application = homepage + '#n3js',
-      developer = 'http://ruben.verborgh.org/#me';
+  var reportFile = path.join(this._reportFolder, 'n3js-earl-report-' + this._name + '.ttl'),
+      report = new N3.Writer(fs.createWriteStream(reportFile), { prefixes: prefixes }),
+      date = '"' + new Date().toISOString() + '"^^' + prefixes.xsd + 'dateTime',
+      homepage = 'https://github.com/RubenVerborgh/N3.js', app = homepage + '#n3js',
+      developer = 'http://ruben.verborgh.org/#me', manifest = this._manifest + '#';
 
-  report.once('open', function () {
-    for (var prefix in prefixes)
-      writeln('@prefix ', prefix, ': <', prefixes[prefix], '>.');
-    writeln('@prefix manifest: <', self._manifest, '#>.');
-    writeln();
+  report.addPrefix('manifest', manifest);
+  report.addTriple('', prefixes.foaf + 'primaryTopic', app);
+  report.addTriple('', prefixes.dc + 'issued', date);
+  report.addTriple('', prefixes.foaf + 'maker', developer);
 
-    writeln('<> foaf:primaryTopic <', application, '>;');
-    writeln('  dc:issued "', date, '"^^xsd:dateTime;');
-    writeln('  foaf:maker <', developer, '>.');
-    writeln();
+  report.addTriple(app, prefixes.rdf  + 'type', prefixes.earl + 'Software');
+  report.addTriple(app, prefixes.rdf  + 'type', prefixes.earl + 'TestSubject');
+  report.addTriple(app, prefixes.rdf  + 'type', prefixes.doap + 'Project');
+  report.addTriple(app, prefixes.doap + 'name', '"N3.js"');
+  report.addTriple(app, prefixes.doap + 'homepage', homepage);
+  report.addTriple(app, prefixes.doap + 'license', 'http://opensource.org/licenses/MIT');
+  report.addTriple(app, prefixes.doap + 'programming-language', '"JavaScript"');
+  report.addTriple(app, prefixes.doap + 'implements', 'http://www.w3.org/TR/turtle/');
+  report.addTriple(app, prefixes.doap + 'implements', 'http://www.w3.org/TR/trig/');
+  report.addTriple(app, prefixes.doap + 'implements', 'http://www.w3.org/TR/n-triples/');
+  report.addTriple(app, prefixes.doap + 'implements', 'http://www.w3.org/TR/n-quads/');
+  report.addTriple(app, prefixes.doap + 'category', 'http://dbpedia.org/resource/Resource_Description_Framework');
+  report.addTriple(app, prefixes.doap + 'download-page', 'https://npmjs.org/package/n3');
+  report.addTriple(app, prefixes.doap + 'bug-database', homepage + '/issues');
+  report.addTriple(app, prefixes.doap + 'blog', 'http://ruben.verborgh.org/blog/');
+  report.addTriple(app, prefixes.doap + 'developer', developer);
+  report.addTriple(app, prefixes.doap + 'maintainer', developer);
+  report.addTriple(app, prefixes.doap + 'documenter', developer);
+  report.addTriple(app, prefixes.doap + 'maker', developer);
+  report.addTriple(app, prefixes.dc   + 'title', '"N3.js"');
+  report.addTriple(app, prefixes.dc   + 'description', '"N3.js is an asynchronous, streaming RDF parser for JavaScript."@en');
+  report.addTriple(app, prefixes.doap + 'description', '"N3.js is an asynchronous, streaming RDF parser for JavaScript."@en');
+  report.addTriple(app, prefixes.dc   + 'creator', developer);
 
-    writeln('<', application, '> a earl:Software, earl:TestSubject, doap:Project;');
-    writeln('  doap:name "N3.js";');
-    writeln('  doap:homepage <', homepage, '>;');
-    writeln('  doap:license <http://opensource.org/licenses/MIT>;');
-    writeln('  doap:programming-language "JavaScript";');
-    writeln('  doap:implements <http://www.w3.org/TR/turtle/>;');
-    writeln('  doap:implements <http://www.w3.org/TR/trig/>;');
-    writeln('  doap:implements <http://www.w3.org/TR/n-triples/>;');
-    writeln('  doap:implements <http://www.w3.org/TR/n-quads/>;');
-    writeln('  doap:category <http://dbpedia.org/resource/Resource_Description_Framework>;');
-    writeln('  doap:download-page <https://npmjs.org/package/n3>;');
-    writeln('  doap:bug-database <', homepage, '/issues>;');
-    writeln('  doap:blog <http://ruben.verborgh.org/blog/>;');
-    writeln('  doap:developer <', developer, '>;');
-    writeln('  doap:maintainer <', developer, '>;');
-    writeln('  doap:documenter <', developer, '>;');
-    writeln('  doap:maker <', developer, '>;');
-    writeln('  dc:title "N3.js";');
-    writeln('  dc:description   "N3.js is an asynchronous, streaming RDF parser for JavaScript."@en;');
-    writeln('  doap:description "N3.js is an asynchronous, streaming RDF parser for JavaScript."@en;');
-    writeln('  dc:creator <', developer, '>.');
-    writeln();
+  report.addTriple(developer, prefixes.rdf  + 'type', prefixes.foaf + 'Person');
+  report.addTriple(developer, prefixes.rdf  + 'type', prefixes.earl + 'Assertor');
+  report.addTriple(developer, prefixes.foaf + 'name', '"Ruben Verborgh"');
+  report.addTriple(developer, prefixes.foaf + 'homepage', 'http://ruben.verborgh.org/');
+  report.addTriple(developer, prefixes.foaf + 'primaryTopicOf', 'http://ruben.verborgh.org/profile/');
+  report.addTriple(developer, prefixes.rdfs + 'isDefinedBy', 'http://ruben.verborgh.org/profile/');
 
-    writeln('<', developer, '> a foaf:Person, earl:Assertor;');
-    writeln('  foaf:name "Ruben Verborgh";');
-    writeln('  foaf:homepage <http://ruben.verborgh.org/>;');
-    writeln('  foaf:primaryTopicOf <http://ruben.verborgh.org/profile/>;');
-    writeln('  rdfs:isDefinedBy <http://ruben.verborgh.org/profile/>.');
-
-    tests.forEach(function (test) {
-      writeln();
-      writeln('manifest:', test.id, ' a earl:TestCriterion, earl:TestCase;');
-      writeln('  dc:title ', escapeString(unString(test.name)), ';');
-      writeln('  dc:description ', escapeString(unString(test.comment)), ';');
-      writeln('  mf:action <', url.resolve(self._manifest, test.action), '>;');
-      if (test.result)
-        writeln('  mf:result <', url.resolve(self._manifest, test.result), '>;');
-      writeln('  earl:assertions (');
-      writeln('     [ a earl:Assertion;');
-      writeln('       earl:assertedBy <', developer, '>;');
-      writeln('       earl:test manifest:', test.id, ';');
-      writeln('       earl:subject <', application, '>;');
-      writeln('       earl:mode earl:automatic;');
-      writeln('       earl:result [ a earl:TestResult; ',
-                        'earl:outcome earl:', (test.success ? 'passed' : 'failed'), '; ',
-                        'dc:date "', date, '"^^xsd:dateTime',
-                      ' ]]');
-      writeln('  ).');
-    });
-    report.end();
+  tests.forEach(function (test, id) {
+    var testUrl = manifest + test.id;
+    report.addTriple(testUrl, prefixes.rdf + 'type', prefixes.earl + 'TestCriterion');
+    report.addTriple(testUrl, prefixes.rdf + 'type', prefixes.earl + 'TestCase');
+    report.addTriple(testUrl, prefixes.dc  + 'title', test.name);
+    report.addTriple(testUrl, prefixes.dc  + 'description', test.comment);
+    report.addTriple(testUrl, prefixes.mf  + 'action', url.resolve(manifest, test.action));
+    if (test.result)
+      report.addTriple(testUrl, prefixes.mf + 'result', url.resolve(manifest, test.result));
+    report.addTriple(testUrl, prefixes.earl + 'assertions', '_:assertions' + id);
+    report.addTriple('_:assertions' + id, prefixes.rdf + 'first', '_:assertion' + id);
+    report.addTriple('_:assertions' + id, prefixes.rdf + 'rest', prefixes.rdf + 'nil');
+    report.addTriple('_:assertion' + id, prefixes.rdf + 'type', prefixes.earl + 'Assertion');
+    report.addTriple('_:assertion' + id, prefixes.earl + 'assertedBy', developer);
+    report.addTriple('_:assertion' + id, prefixes.earl + 'test', manifest + test.id);
+    report.addTriple('_:assertion' + id, prefixes.earl + 'subject', app);
+    report.addTriple('_:assertion' + id, prefixes.earl + 'mode', prefixes.earl + 'automatic');
+    report.addTriple('_:assertion' + id, prefixes.earl + 'result', '_:result' + id);
+    report.addTriple('_:result' + id, prefixes.rdf + 'type', prefixes.earl + 'TestResult');
+    report.addTriple('_:result' + id, prefixes.earl + 'outcome', prefixes.earl + (test.success ? 'passed' : 'failed'));
+    report.addTriple('_:result' + id, prefixes.dc + 'date', date);
   });
-  report.once('close', function () { callback(null, tests); });
-
-  function writeln() {
-    for (var i = 0; i < arguments.length; i++)
-      report.write(arguments[i]);
-    report.write('\n');
-  }
+  report.end(function () { callback(null, tests); });
 };
-
-
-// # Conversion routines
-
-// Converts the triple to N-Quads format (primitive and incomplete)
-function toNQuads(triple) {
-  var subject = triple.subject, predicate = triple.predicate,
-      object = triple.object, graph = triple.graph;
-  if (/^".*"$/.test(object))
-    object = escapeString(object);
-  else
-    object = escape(object).replace(/"\^\^(.*)$/, '"^^<$1>');
-
-  return (subject.match(/^_/)     ? subject   : '<' + subject   + '>') + ' ' +
-         (predicate.match(/^_/)   ? predicate : '<' + predicate + '>') + ' ' +
-         (object.match(/^_|^"/)   ? object    : '<' + object    + '>') + ' ' +
-         (graph.match(/^_|^"|^$/) ? graph     : '<' + graph     + '>') + (graph ? ' .\n' : '.\n');
-}
-
-// Removes the quotes around a string
-function unString(value) {
-  return value ? value.replace(/^("""|")(.*)\1$/, '$2') : '';
-}
-
-// Escapes unicode characters in an IRI
-function escape(value) {
-  // Don't escape blank nodes
-  if (value[0] === '_')
-    return value;
-  // Add all characters, converting to a unicode escape code if necessary
-  var result = '';
-  for (var i = 0; i < value.length; i++) {
-    var code = value.charCodeAt(i);
-    if (code >= 32 && code < 128) {
-      result += value[i];
-    }
-    else {
-      var hexCode = code.toString(16);
-      while (hexCode.length < 4)
-        hexCode = '0' + hexCode;
-      result += '\\u' + hexCode;
-    }
-  }
-
-  // Convert surrogate pairs to actual unicode (http://mathiasbynens.be/notes/javascript-encoding)
-  result = result.replace(/\\u([a-z0-9]{4})\\u([a-z0-9]{4})/gi, function (all, high, low) {
-    high = parseInt(high, 16);
-    low = parseInt(low, 16);
-    if (high >= 0xD800 && high <= 0xDBFF && low >= 0xDC00 && low <= 0xDFFF) {
-      var result = (high - 0xD800) * 0x400 + low - 0xDC00 + 0x10000;
-      result = result.toString(16);
-      while (result.length < 8)
-        result = '0' + result;
-      return '\\U' + result;
-    }
-    return all;
-  });
-
-  return result;
-}
-
-// Escapes characters in a string
-function escapeString(value) {
-  value = value.replace(/\\/g, '\\\\');
-  value = escape(unString(value));
-  value = value.replace(/"/g, '\\"');
-  return '"' + value + '"';
-}
-
-// Assigns incrementing IDs to blank nodes in an N-Quads fragment
-function renameBlankNodes(nquads) {
-  var id = 0, blanks = {};
-  return nquads.replace(/(^|\s)_:((?:\.?[^\s])+)/g, function (match, head, name) {
-    if (!(name in blanks))
-      blanks[name] = '_:b' + id++;
-    return head + blanks[name];
-  });
-}
 
 module.exports = SpecTester;
