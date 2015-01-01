@@ -4,6 +4,7 @@ node_js:
 
 branches:
   except:
+    - browser
     - earl
 
 sudo: false
