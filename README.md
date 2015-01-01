@@ -1,22 +1,27 @@
-# Lightning fast, asynchronous, streaming Turtle for JavaScript
+# Lightning fast, asynchronous, streaming RDF for JavaScript
 
-The N3.js library lets you handle [Turtle](http://www.w3.org/TR/turtle/) and [RDF](http://www.w3.org/TR/rdf-primer/) in JavaScript _([Node](http://nodejs.org/) and browser)_ easily.
+The N3.js library lets you handle [RDF](http://www.w3.org/TR/rdf-primer/) in JavaScript easily, in [Node.js](http://nodejs.org/) and the browser.
 It offers:
 
-- [**Turtle parsing**](#parsing) _([fully compliant](https://github.com/RubenVerborgh/N3.js/tree/master/spec) with the [Turtle standard](http://www.w3.org/TR/turtle/))_
-- [**in-memory storage and manipulation**](#storing)
-- [**Turtle writing**](#writing)
+- [**Parsing**](#parsing) triples/quads from
+  [Turtle](http://www.w3.org/TR/turtle/),
+  [TriG](http://www.w3.org/TR/trig/),
+  [N-Triples](http://www.w3.org/TR/ntriples/)
+  and [N-Quads](http://www.w3.org/TR/nquads/).
+- [**Writing**](#Writing) triples/quads to
+  [Turtle](http://www.w3.org/TR/turtle/),
+  [TriG](http://www.w3.org/TR/trig/),
+  [N-Triples](http://www.w3.org/TR/ntriples/)
+  and [N-Quads](http://www.w3.org/TR/nquads/).
+- **Storage** of triples/quads in memory
 
-It has the following characteristics:
-- extreme performance – by far the [fastest parser in JavaScript](https://github.com/RubenVerborgh/N3.js/tree/master/perf)
-- asynchronous – triples arrive as soon as possible
-- streaming – streams are parsed as data comes in, so you can easily parse files that don't fit into memory
-
-At a later stage, this library will support [Notation3 (N3)](http://www.w3.org/TeamSubmission/n3/),
-a Turtle superset.
+Parsing and writing is:
+- **asynchronous** – triples arrive as soon as possible
+- **streaming** – streams are parsed as data comes in, so you can parse files larger than memory
+- **fast** – by far the [fastest parser in JavaScript](https://github.com/RubenVerborgh/N3.js/tree/master/perf)
 
 ## Installation
-N3.js comes as an [npm package](https://npmjs.org/package/n3).
+For Node.js, N3.js comes as an [npm package](https://npmjs.org/package/n3).
 
 ``` bash
 $ npm install n3
@@ -26,12 +31,10 @@ $ npm install n3
 var N3 = require('n3');
 ```
 
-It is also fully compatible with [browserify](http://browserify.org/).
-<br>
-Alternatively, it offers a minimal browser version (without Node stream support).
+N3.js seamlessly works in browsers. Generate a browser version as follows:
 
 ``` bash
-$ cd n3
+$ cd N3.js
 $ npm install
 $ npm run browser
 ```
@@ -40,18 +43,19 @@ $ npm run browser
 <script src="n3-browser.min.js"></script>
 ```
 
+In addition, N3.js is fully compatible with [browserify](http://browserify.org/),
+so you can write code for Node.js and deploy it to browsers.
+
 ## Triple representation
 For maximum performance and easy of use,
-triples are represented as simple objects.
-<br>
-Since IRIs are most common when dealing with RDF,
-they are represented as simple strings.
+triples are simple objects with string properties.
 
+**URLs, URIs and IRIs are simple strings.** For example, parsing this RDF document:
 ``` Turtle
 @prefix c: <http://example.org/cartoons#>.
 c:Tom a c:Cat.
 ```
-is represented as
+results in this JavaScript object:
 ``` js
 {
   subject:   'http://example.org/cartoons#Tom',
@@ -60,12 +64,11 @@ is represented as
 }
 ```
 
-Literals are represented as double quoted strings.
-
+**Literals are represented as double quoted strings.** For example, parsing this RDF document:
 ``` Turtle
 c:Tom c:name "Tom".
 ```
-is represented as
+results in this JavaScript object:
 ``` js
 {
   subject:   'http://example.org/cartoons#Tom',
@@ -80,20 +83,23 @@ triple.object === 'http://example.org/cartoons#Cat'
 triple.object === '"Tom"'
 ```
 
-The [Utility](#utility) section details entity representation in more depth.
+An optional fourth element signals the graph to which a triple belongs:
+``` js
+{
+  subject:   'http://example.org/cartoons#Tom',
+  predicate: 'http://example.org/cartoons#name',
+  object:    '"Tom"',
+  graph:     'http://example.org/mycartoon'
+}
+```
+
+The N3.js [Utility](#utility) (`N3.Util`) can help you with these representations.
 
 ## Parsing
 
-### From a Turtle string to triples
+### From an RDF document to triples
 
-`N3.Parser` parses strings into triples using a callback.
-<br>
-The callback's first argument is an error value,
-the second is a triple.
-If there are no more triples,
-the callback is invoked one last time with `null` as `triple` value
-and a hash of prefixes as the third argument.
-
+`N3.Parser` transforms Turtle, TriG, N-Triples or N-Quads document into triples through a callback:
 ``` js
 var parser = N3.Parser();
 parser.parse('@prefix c: <http://example.org/cartoons#>.\n' +
@@ -107,12 +113,27 @@ parser.parse('@prefix c: <http://example.org/cartoons#>.\n' +
                  console.log("# That's all, folks!", prefixes)
              });
 ```
+The callback's first argument is an error value, the second is a triple.
+If there are no more triples,
+the callback is invoked one last time with `null` for `triple`
+and a hash of prefixes as third argument.
+<br>
+Pass a second callback to `parse` to retrieve prefixes as they are read.
 
-Addionally, a second callback `function (prefix, iri)` can be passed to `parse`.
+By default, `N3.Parser` parses a permissive superset of Turtle, TriG, N-Triples and N-Quads.
+<br>
+For strict compatibility with any of those languages, pass a `format` argument upon creation:
 
-### From Turtle fragments to triples
+``` js
+var parser1 = N3.Parser({ format: 'N-Triples' });
+var parser2 = N3.Parser({ format: 'application/trig' });
+```
 
-`N3.Parser` can also parse triples from a Turtle document that arrives in fragments.
+### From RDF chunks to triples
+
+`N3.Parser` can also parse triples from RDF documents arriving in chunks,
+for instance, when being downloaded or read from disk.
+Use `addChunk` to add a piece of data, and `end` to signal the end.
 
 ``` js
 var parser = N3.Parser(), triples = [];
@@ -128,27 +149,28 @@ parser.end();
 console.log(triples); // Both triples
 ```
 
-### From a Turtle stream to triples
+### From an RDF stream to triples
 
-`N3.Parser` can parse streams as they grow, returning triples as soon as they're ready.
+`N3.Parser` can parse [Node.js streams](http://nodejs.org/api/stream.html) as they grow,
+returning triples as soon as they're ready.
 <br>
-This behavior sets N3.js apart from most other Turtle libraries.
+This behavior sets N3.js apart from most other libraries.
 
 ``` js
 var parser = N3.Parser(),
-    turtleStream = fs.createReadStream('cartoons.ttl');
-parser.parse(turtleStream, console.log);
+    rdfStream = fs.createReadStream('cartoons.ttl');
+parser.parse(rdfStream, console.log);
 ```
 
-In addition, `N3.StreamParser` offers a [Node Stream](http://nodejs.org/api/stream.html) implementation,
-so you can transform Turtle streams and pipe them to anywhere.
+In addition, `N3.StreamParser` offers a [Node.js stream](http://nodejs.org/api/stream.html) implementation,
+so you can transform RDF streams and pipe them to anywhere.
 This solution is ideal if your consumer is slower,
-as it avoids parser backpressure.
+since source data is only read when the consumer is ready.
 
 ``` js
 var streamParser = N3.StreamParser(),
-    turtleStream = fs.createReadStream('cartoons.ttl');
-turtleStream.pipe(streamParser);
+    rdfStream = fs.createReadStream('cartoons.ttl');
+rdfStream.pipe(streamParser);
 streamParser.pipe(new SlowConsumer());
 
 function SlowConsumer() {
@@ -163,28 +185,15 @@ function SlowConsumer() {
 
 A dedicated `prefix` event signals every prefix with `prefix` and `iri` arguments.
 
-## Storing
-
-In this example below, we create a new store and add the triples `:Pluto a :Dog.` and `:Mickey a :Mouse`.
-Then, we find a triple with `:Mickey` as subject.
-
-``` js
-var store = N3.Store();
-store.addTriple('http://example.org/Pluto',  'a', 'http://example.org/Dog');
-store.addTriple('http://example.org/Mickey', 'a', 'http://example.org/Mouse');
-
-var mickey = store.find('http://example.org/Mickey', null, null)[0];
-console.log(mickey.subject, mickey.predicate, mickey.object, '.');
-```
-
 ## Writing
 
 ### From triples to a string
 
-`N3.Writer` can serialize triples as a Turtle string.
+`N3.Writer` serializes triples as an RDF document.
+Write triples through `addTriple`.
 
 ``` js
-var writer = N3.Writer({ 'c': 'http://example.org/cartoons#' });
+var writer = N3.Writer({ prefixes: { 'c': 'http://example.org/cartoons#' } });
 writer.addTriple('http://example.org/cartoons#Tom',
                  'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
                  'http://example.org/cartoons#Cat');
@@ -196,12 +205,21 @@ writer.addTriple({
 writer.end(function (error, result) { console.log(result); });
 ```
 
-### From triples to a Turtle stream
-
-`N3.Writer` can also write triples to an output stream.
+By default, `N3.Writer` writes Turtle (or TriG for triples with a `graph` property).
+<br>
+To write N-Triples (or N-Quads) instead, pass a `format` argument upon creation:
 
 ``` js
-var writer = N3.Writer(process.stdout, { 'c': 'http://example.org/cartoons#' });
+var writer1 = N3.Writer({ format: 'N-Triples' });
+var writer2 = N3.Writer({ format: 'application/trig' });
+```
+
+### From triples to an RDF stream
+
+`N3.Writer` can also write triples to a Node.js stream.
+
+``` js
+var writer = N3.Writer(process.stdout, { prefixes: { 'c': 'http://example.org/cartoons#' } });
 writer.addTriple('http://example.org/cartoons#Tom',
                  'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
                  'http://example.org/cartoons#Cat');
@@ -213,9 +231,9 @@ writer.addTriple({
 writer.end();
 ```
 
-### From a triple stream to a Turtle stream
+### From a triple stream to an RDF stream
 
-`N3.StreamWriter` is a Turtle writer implementation as a [Node Stream](http://nodejs.org/api/stream.html).
+`N3.StreamWriter` is a writer implementation as a Node.js stream.
 
 ``` js
 var streamParser = new N3.StreamParser(),
@@ -224,6 +242,23 @@ var streamParser = new N3.StreamParser(),
 inputStream.pipe(streamParser);
 streamParser.pipe(streamWriter);
 streamWriter.pipe(process.stdout);
+```
+
+## Storing
+
+`N3.Store` allows you to store triples in memory and find them fast.
+
+In this example, we create a new store and add the triples `:Pluto a :Dog.` and `:Mickey a :Mouse`.
+<br>
+Then, we find a triple with `:Mickey` as subject.
+
+``` js
+var store = N3.Store();
+store.addTriple('http://ex.org/Pluto',  'http://ex.org/type', 'http://ex.org/Dog');
+store.addTriple('http://ex.org/Mickey', 'http://ex.org/type', 'http://ex.org/Mouse');
+
+var mickey = store.find('http://ex.org/Mickey', null, null)[0];
+console.log(mickey.subject, mickey.predicate, mickey.object, '.');
 ```
 
 ## Utility
@@ -247,13 +282,13 @@ N3Util.getLiteralValue('"http://example.org/"'); // 'http://example.org/'
 ```
 Note the difference between `'http://example.org/'` (IRI) and `'"http://example.org/"'` (literal).
 <br>
-Also note that the double quoted literals are _not_ raw Turtle syntax:
+Also note that the double quoted literals are _not_ raw Turtle/TriG syntax:
 ``` js
 N3Util.isLiteral('"This word is "quoted"!"'); // true
 N3Util.isLiteral('"3"^^http://www.w3.org/2001/XMLSchema#integer'); // true
 ```
 The above string represents the string _This word is "quoted"!_,
-even though the correct Turtle syntax for that is `"This word is \"quoted\"!"`
+even though the correct Turtle/TriG syntax for that is `"This word is \"quoted\"!"`
 N3.js thus always parses literals, but adds quotes to differentiate from IRIs:
 ``` js
 new N3.Parser().parse('<a> <b> "This word is \\"quoted\\"!".', console.log);
@@ -275,21 +310,45 @@ N3Util.expandPrefixedName('rdfs:label', prefixes); // http://www.w3.org/2000/01/
 ```
 
 ### Loading the utility globally
-For convenience, `N3Util` can also be loaded globally:
+For convenience, `N3Util` can be loaded globally:
 ``` js
 require('n3').Util(global);
 isIRI('http://example.org/cartoons#Mickey'); // true
 isLiteral('"Mickey Mouse"'); // true
 ```
 
-If desired, the methods can even be added directly on all strings:
+If desired, its methods can even be added directly on all strings:
 ``` js
 require('n3').Util(String, true);
 'http://example.org/cartoons#Mickey'.isIRI(); // true
 '"Mickey Mouse"'.isLiteral(); // true
 ```
 
-# License, status and contributions
+## Compatibility
+### Specifications
+The N3.js parser and writer is fully compatible with the following W3C specifications:
+- [RDF 1.1 Turtle](http://www.w3.org/TR/turtle/)
+  – [EARL report](https://raw.githubusercontent.com/RubenVerborgh/N3.js/earl/n3js-earl-report-turtle.ttl)
+- [RDF 1.1 TriG](http://www.w3.org/TR/trig/)
+  – [EARL report](https://raw.githubusercontent.com/RubenVerborgh/N3.js/earl/n3js-earl-report-trig.ttl)
+- [RDF 1.1 N-Triples](http://www.w3.org/TR/n-triples/)
+  – [EARL report](https://raw.githubusercontent.com/RubenVerborgh/N3.js/earl/n3js-earl-report-ntriples.ttl)
+- [RDF 1.1 N-Quads](http://www.w3.org/TR/n-quads/)
+  – [EARL report](https://raw.githubusercontent.com/RubenVerborgh/N3.js/earl/n3js-earl-report-nquads.ttl)
+
+Pass a `format` option to the constructor with the name or MIME type of a format
+for strict, fault-intolerant behavior.
+
+Note that the library does not support full [Notation3](http://www.w3.org/TeamSubmission/n3/) yet
+(and a standardized specification for this syntax is currently lacking).
+
+### Breaking changes
+N3.js 0.4.x introduces the following breaking changes from 0.3.x versions:
+- The fourth element of a quad is named `graph` instead of `context`.
+- `N3.Writer` and `N3.Store` constructor options are passed as a hash `{ prefixes: { … } }`.
+- `N3.Util` URI methods such as `isUri` are now IRI methods such as `isIRI`.
+
+## License, status and contributions
 The N3.js library is copyrighted by [Ruben Verborgh](http://ruben.verborgh.org/)
 and released under the [MIT License](https://github.com/RubenVerborgh/N3.js/blob/master/LICENSE.md).
 
@@ -298,4 +357,4 @@ and released under the [MIT License](https://github.com/RubenVerborgh/N3.js/blob
 [![Browser Build Status](https://ci.testling.com/RubenVerborgh/N3.js.png)](https://ci.testling.com/RubenVerborgh/N3.js)
 
 Contributions are welcome, and bug reports or pull requests are always helpful.
-If you plan to implement larger features, it's best to contact me first.
+If you plan to implement a larger feature, it's best to contact me first.
