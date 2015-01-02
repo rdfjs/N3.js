@@ -47,7 +47,7 @@ In addition, N3.js is fully compatible with [browserify](http://browserify.org/)
 so you can write code for Node.js and deploy it to browsers.
 
 ## Triple representation
-For maximum performance and easy of use,
+For maximum performance and ease of use,
 triples are simple objects with string properties.
 
 **URLs, URIs and IRIs are simple strings.** For example, parsing this RDF document:
