@@ -41,10 +41,10 @@ script.write('(function (N3) {\n');
 submodules.forEach(function (name) {
   var submodule = fs.readFileSync(sourcePath + 'N3' + name + '.js', { encoding: 'utf8' });
   // Remove imports
-  submodule = submodule.replace(/require\(['"]\.\/([^)]+)['"]\)/g, '$1');
+  submodule = submodule.replace(/require\(['"]\.\/N3([^'"]+)['"]\)/g, 'N3.$1');
   // Replace exports by assignments on the N3 object
   submodule = submodule.replace(/module.exports/g, '\nN3.' + name);
-  script.write(submodule);
+  script.write('(function () {\n' + submodule + '\n})();\n');
 });
 
 // End and execute main wrapping function
