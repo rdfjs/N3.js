@@ -183,11 +183,37 @@ describe('N3Parser', function () {
       shouldNotParse('<a> <b> [<c>].',
                      'Expected object to follow "c" at line 1.'));
 
-    it('should parse a multi-statement blank node',
+    it('should not parse a blank node with only a semicolon',
+      shouldNotParse('<a> <b> [;].',
+                     'Unexpected ] at line 1.'));
+
+    it('should parse a blank node with a trailing semicolon',
+      shouldParse('<a> <b> [ <u> <v>; ].',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'u', 'v']));
+
+    it('should parse a blank node with multiple trailing semicolons',
+      shouldParse('<a> <b> [ <u> <v>;;; ].',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'u', 'v']));
+
+    it('should parse a multi-predicate blank node',
       shouldParse('<a> <b> [ <u> <v>; <w> <z> ].',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'u', 'v'],
                   ['_:b0', 'w', 'z']));
+
+    it('should parse a multi-predicate blank node with multiple semicolons',
+      shouldParse('<a> <b> [ <u> <v>;;; <w> <z> ].',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'u', 'v'],
+                  ['_:b0', 'w', 'z']));
+
+    it('should parse a multi-object blank node',
+      shouldParse('<a> <b> [ <u> <v>, <z> ].',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'u', 'v'],
+                  ['_:b0', 'u', 'z']));
 
     it('should parse a multi-statement blank node ending with a literal',
       shouldParse('<a> <b> [ <u> <v>; <w> "z" ].',
@@ -207,10 +233,6 @@ describe('N3Parser', function () {
                   ['_:b0', 'u', 'v'],
                   ['_:b0', 'w', '"z"^^t']));
 
-    it('should not parse a blank node with only a semicolon',
-      shouldNotParse('<a> <b> [;].',
-                     'Unexpected ] at line 1.'));
-
     it('should parse a multi-statement blank node with trailing semicolon',
       shouldParse('<a> <b> [ <u> <v>; <w> <z>; ].',
                   ['a', 'b', '_:b0'],
@@ -228,6 +250,10 @@ describe('N3Parser', function () {
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'c', '_:b1'],
                   ['_:b1', 'd', 'e']));
+
+    it('should not parse an invalid blank node',
+      shouldNotParse('[ <a> <b> .',
+                     'Expected punctuation to follow "b" at line 1.'));
 
     it('should parse statements with an empty list in the subject',
       shouldParse('() <a> <b>.',
