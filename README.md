@@ -83,6 +83,12 @@ triple.object === 'http://example.org/cartoons#Cat'
 triple.object === '"Tom"'
 ```
 
+For literals with a language or type, add a marker (`@` or `^^`) and the corresponding value as-is:
+``` js
+'"Tom"@en-gb' // lowercase language
+'"1"^^http://www.w3.org/2001/XMLSchema#integer' // no angular brackets <>
+```
+
 An optional fourth element signals the graph to which a triple belongs:
 ``` js
 {
@@ -293,6 +299,14 @@ N3.js thus always parses literals, but adds quotes to differentiate from IRIs:
 ``` js
 new N3.Parser().parse('<a> <b> "This word is \\"quoted\\"!".', console.log);
 // { subject: 'a', predicate: 'b', object: '"This word is "quoted"!"' }
+```
+
+Literals can be created with `createLiteral`:
+``` js
+N3Util.createLiteral('My text', 'en-gb');
+N3Util.createLiteral('123', 'http://www.w3.org/2001/XMLSchema#integer');
+N3Util.createLiteral(123);
+N3Util.createLiteral(false);
 ```
 
 **Blank nodes** start with `_:`, and can be tested for as follows:
