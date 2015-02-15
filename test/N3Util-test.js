@@ -280,4 +280,40 @@ describe('N3Util', function () {
       N3Util.expandPrefixedName('abc', null).should.equal('abc');
     });
   });
+
+  describe('createIRI', function () {
+    it('converts a plain IRI', function () {
+      N3Util.createIRI('http://ex.org/foo#bar').should.equal('http://ex.org/foo#bar');
+    });
+
+    it('converts a literal', function () {
+      N3Util.createIRI('"http://ex.org/foo#bar"^^uri:type').should.equal('http://ex.org/foo#bar');
+    });
+  });
+
+  describe('createLiteral', function () {
+    it('converts the empty string', function () {
+      N3Util.createLiteral('').should.equal('""');
+    });
+
+    it('converts the empty string with a language', function () {
+      N3Util.createLiteral('', 'en-GB').should.equal('""@en-gb');
+    });
+
+    it('converts the empty string with a type', function () {
+      N3Util.createLiteral('', 'http://ex.org/type').should.equal('""^^http://ex.org/type');
+    });
+
+    it('converts a non-empty string', function () {
+      N3Util.createLiteral('abc').should.equal('"abc"');
+    });
+
+    it('converts a non-empty string with a language', function () {
+      N3Util.createLiteral('abc', 'en-GB').should.equal('"abc"@en-gb');
+    });
+
+    it('converts a non-empty string with a type', function () {
+      N3Util.createLiteral('abc', 'http://ex.org/type').should.equal('"abc"^^http://ex.org/type');
+    });
+  });
 });
