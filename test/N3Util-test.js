@@ -272,8 +272,8 @@ describe('N3Util', function () {
       N3Util.expandPrefixedName(':Test', { '': 'http://ex.org/#' }).should.equal('http://ex.org/#Test');
     });
 
-    it('does not expand a prefixed name if the prefix is missing', function () {
-      N3Util.expandPrefixedName.bind(null, 'a:Test', { 'b': 'http://ex.org/#' }).should.throw('Unknown prefix: a');
+    it('does not expand a prefixed name if the prefix is unknown', function () {
+      N3Util.expandPrefixedName('a:Test', { 'b': 'http://ex.org/#' }).should.equal('a:Test');
     });
 
     it('returns the input if it is not a prefixed name', function () {
