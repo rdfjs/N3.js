@@ -289,6 +289,10 @@ describe('N3Util', function () {
     it('converts a literal', function () {
       N3Util.createIRI('"http://ex.org/foo#bar"^^uri:type').should.equal('http://ex.org/foo#bar');
     });
+
+    it('converts null', function () {
+      expect(N3Util.createIRI(null)).to.be.null;
+    });
   });
 
   describe('createLiteral', function () {
@@ -314,6 +318,26 @@ describe('N3Util', function () {
 
     it('converts a non-empty string with a type', function () {
       N3Util.createLiteral('abc', 'http://ex.org/type').should.equal('"abc"^^http://ex.org/type');
+    });
+
+    it('converts an integer', function () {
+      N3Util.createLiteral(123).should.equal('"123"^^http://www.w3.org/2001/XMLSchema#integer');
+    });
+
+    it('converts a decimal', function () {
+      N3Util.createLiteral(2.3).should.equal('"2.3"^^http://www.w3.org/2001/XMLSchema#decimal');
+    });
+
+    it('converts infinity', function () {
+      N3Util.createLiteral(Infinity).should.equal('"Infinity"');
+    });
+
+    it('converts false', function () {
+      N3Util.createLiteral(false).should.equal('"false"^^http://www.w3.org/2001/XMLSchema#boolean');
+    });
+
+    it('converts true', function () {
+      N3Util.createLiteral(true).should.equal('"true"^^http://www.w3.org/2001/XMLSchema#boolean');
     });
   });
 });
