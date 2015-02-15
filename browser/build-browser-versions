@@ -32,7 +32,9 @@ var scriptFile = destinationPath + 'n3-browser.js',
     script = fs.createWriteStream(scriptFile, { encoding: 'utf8' });
 
 // Add license information
-script.write('/** @license MIT - N3.js library (browser version) - ©Ruben Verborgh */\n');
+var package = JSON.parse(fs.readFileSync(path.join(rootPath, 'package.json')));
+script.write('/** @license MIT - N3.js ' + package.version +
+             ' (browser build) - ©Ruben Verborgh */\n');
 
 // Start main wrapping function
 script.write('(function (N3) {\n');
