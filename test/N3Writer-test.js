@@ -2,7 +2,7 @@ var N3Writer = require('../N3').Writer;
 var chai = require('chai');
 chai.should();
 
-describe('N3Parser', function () {
+describe('N3Writer', function () {
   describe('The N3Writer module', function () {
     it('should be a function', function () {
       N3Writer.should.be.a('function');
@@ -132,6 +132,13 @@ describe('N3Parser', function () {
                       'a:bc b:ef a:bhi.\n' +
                       '<http://a.org/bc/de> <http://a.org/b#e#f> <http://a.org/b#x/t>.\n' +
                       '<http://a.org/3a> <http://a.org/b#3a> b:a3.\n'));
+
+    it('should expand prefixes when possible',
+      shouldSerialize({ prefixes: { a: 'http://a.org/', b: 'http://a.org/b#' } },
+                      [['a:bc', 'b:ef', 'c:bhi']],
+                      '@prefix a: <http://a.org/>.\n' +
+                      '@prefix b: <http://a.org/b#>.\n\n' +
+                      'a:bc b:ef <c:bhi>.\n'));
 
     it('should not repeat the same subjects',
       shouldSerialize([['abc', 'def', 'ghi'],
