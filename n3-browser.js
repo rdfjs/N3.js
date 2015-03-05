@@ -1,8 +1,13 @@
-/** @license MIT - N3.js library (browser version) - ©Ruben Verborgh */
+/** @license MIT - N3.js 0.4.2 (browser build) - ©Ruben Verborgh */
 (function (N3) {
+(function () {
 // **N3Util** provides N3 utility functions
 
-var XsdString = 'http://www.w3.org/2001/XMLSchema#string';
+var Xsd = 'http://www.w3.org/2001/XMLSchema#';
+var XsdString  = Xsd + 'string';
+var XsdInteger = Xsd + 'integer';
+var XsdDecimal = Xsd + 'decimal';
+var XsdBoolean = Xsd + 'boolean';
 var RdfLangString = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString';
 
 var N3Util = {
@@ -55,17 +60,42 @@ var N3Util = {
 
   // Expands the prefixed name to a full IRI (also when it occurs as a literal's type)
   expandPrefixedName: function (prefixedName, prefixes) {
-    var match = /(?:^|"\^\^)([^:\/#"'\^_]*):[^\/]/.exec(prefixedName);
-    if (!match) return prefixedName;
-
-    var prefix = match[1], base = prefixes[prefix], index = match.index;
+    var match = /(?:^|"\^\^)([^:\/#"'\^_]*):[^\/]*$/.exec(prefixedName), prefix, base, index;
+    if (match)
+      prefix = match[1], base = prefixes[prefix], index = match.index;
     if (base === undefined)
-      throw new Error('Unknown prefix: ' + prefix);
+      return prefixedName;
 
     // The match index is non-zero when expanding a literal's type.
     return index === 0 ? base + prefixedName.substr(prefix.length + 1)
                        : prefixedName.substr(0, index + 3) +
                          base + prefixedName.substr(index + prefix.length + 4);
+  },
+
+  // Creates an IRI in N3.js representation
+  createIRI: function (iri) {
+    return iri && iri[0] === '"' ? N3Util.getLiteralValue(iri) : iri;
+  },
+
+  // Creates a literal in N3.js representation
+  createLiteral: function (value, modifier) {
+    if (!modifier) {
+      switch (typeof value) {
+      case 'boolean':
+        modifier = XsdBoolean;
+        break;
+      case 'number':
+        if (isFinite(value)) {
+          modifier = value % 1 === 0 ? XsdInteger : XsdDecimal;
+          break;
+        }
+      default:
+        return '"' + value + '"';
+      }
+    }
+    return '"' + value +
+           (/^[a-z]+(-[a-z0-9]+)*$/i.test(modifier) ? '"@'  + modifier.toLowerCase()
+                                                    : '"^^' + modifier);
   },
 };
 
@@ -88,6 +118,9 @@ function ApplyToThis(f) {
 // Expose N3Util, attaching all functions to it
 
 N3.Util = AddN3Util(AddN3Util);
+
+})();
+(function () {
 // **N3Lexer** tokenizes N3 documents.
 var fromCharCode = String.fromCharCode;
 var immediately = typeof setImmediate === 'function' ? setImmediate :
@@ -395,7 +428,7 @@ N3Lexer.prototype = {
         else if (unicode8) {
           charCode = parseInt(unicode8, 16);
           if (isNaN(charCode)) throw new Error(); // can never happen (regex), but helps performance
-          if (charCode < 0xFFFF) return fromCharCode(charCode);
+          if (charCode <= 0xFFFF) return fromCharCode(charCode);
           return fromCharCode(0xD800 + ((charCode -= 0x10000) / 0x400), 0xDC00 + (charCode & 0x3FF));
         }
         else {
@@ -471,8 +504,11 @@ N3Lexer.prototype = {
 // Export the `N3Lexer` class as a whole.
 
 N3.Lexer = N3Lexer;
+
+})();
+(function () {
 // **N3Parser** parses N3 documents.
-var N3Lexer = N3Lexer;
+var N3Lexer = N3.Lexer;
 
 var RDF_PREFIX = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
     RDF_NIL    = RDF_PREFIX + 'nil',
@@ -614,7 +650,8 @@ N3Parser.prototype = {
 
   // ### `_readPredicate` reads a triple's predicate.
   _readPredicate: function (token) {
-    switch (token.type) {
+    var type = token.type;
+    switch (type) {
     case 'IRI':
     case 'abbreviation':
       if (this._baseIRI === null || absoluteIRI.test(token.value))
@@ -638,9 +675,9 @@ N3Parser.prototype = {
     case '}':
       // Expected predicate didn't come, must have been trailing semicolon.
       if (this._predicate === null)
-        return this._error('Unexpected ' + token.type, token);
+        return this._error('Unexpected ' + type, token);
       this._subject = null;
-      return this._readBlankNodeTail(token);
+      return type === ']' ? this._readBlankNodeTail(token) : this._readPunctuation(token);
     case ';':
       // Extra semicolons can be safely ignored
       return this._readPredicate;
@@ -713,14 +750,14 @@ N3Parser.prototype = {
   // ### `_readBlankNodeTail` reads the end of a blank node.
   _readBlankNodeTail: function (token) {
     if (token.type !== ']')
-      return this._readPunctuation(token);
+      return this._readBlankNodePunctuation(token);
 
     // Store blank node triple.
     if (this._subject !== null)
       this._callback(null, { subject:   this._subject,
                              predicate: this._predicate,
                              object:    this._object,
-                             graph:     this._graph || '' });
+                             graph:     this._graph || '' });
 
     // Restore parent triple that contains the blank node.
     var triple = this._tripleStack.pop();
@@ -918,7 +955,30 @@ N3Parser.prototype = {
       this._callback(null, { subject:   subject,
                              predicate: this._predicate,
                              object:    this._object,
-                             graph:     graph || '' });
+                             graph:     graph || '' });
+    return next;
+  },
+
+    // ### `_readBlankNodePunctuation` reads punctuation in a blank node
+  _readBlankNodePunctuation: function (token) {
+    var next;
+    switch (token.type) {
+    // Semicolon means the subject is shared; predicate and object are different.
+    case ';':
+      next = this._readPredicate;
+      break;
+    // Comma means both the subject and predicate are shared; the object is different.
+    case ',':
+      next = this._readObject;
+      break;
+    default:
+      return this._error('Expected punctuation to follow "' + this._object + '"', token);
+    }
+    // A triple has been completed now, so return it.
+    this._callback(null, { subject:   this._subject,
+                           predicate: this._predicate,
+                           object:    this._object,
+                           graph:     this._graph || '' });
     return next;
   },
 
@@ -1082,6 +1142,9 @@ function noop() {}
 // Export the `N3Parser` class as a whole.
 
 N3.Parser = N3Parser;
+
+})();
+(function () {
 // **N3Writer** writes N3 documents.
 
 // Matches a literal as represented in memory by the N3 library
@@ -1192,7 +1255,8 @@ N3Writer.prototype = {
       iri = iri.replace(escapeAll, characterReplacer);
     // Try to represent the IRI as prefixed name
     var prefixMatch = this._prefixRegex.exec(iri);
-    return prefixMatch ? this._prefixIRIs[prefixMatch[1]] + prefixMatch[2] : '<' + iri + '>';
+    return !prefixMatch ? '<' + iri + '>' :
+           (!prefixMatch[1] ? iri : this._prefixIRIs[prefixMatch[1]] + prefixMatch[2]);
   },
 
   // ### `_encodeLiteral` represents a literal
@@ -1242,7 +1306,7 @@ N3Writer.prototype = {
   // ### `addTriple` adds the triple to the output stream
   addTriple: function (subject, predicate, object, graph, done) {
     // The triple was given as a triple object, so shift parameters
-    if (!object)
+    if (typeof object !== 'string')
       this._writeTriple(subject.subject, subject.predicate, subject.object,
                         subject.graph || '', predicate);
     // The optional `graph` parameter was not provided
@@ -1269,13 +1333,13 @@ N3Writer.prototype = {
   // ### `addPrefixes` adds the prefixes to the output stream
   addPrefixes: function (prefixes, done) {
     // Add all useful prefixes
-    var hasPrefixes = false;
+    var prefixIRIs = this._prefixIRIs, hasPrefixes = false;
     for (var prefix in prefixes) {
       // Verify whether the prefix can be used and does not exist yet
       var iri = prefixes[prefix];
-      if (/[#\/]$/.test(iri) && this._prefixIRIs[iri] !== (prefix += ':')) {
+      if (/[#\/]$/.test(iri) && prefixIRIs[iri] !== (prefix += ':')) {
         hasPrefixes = true;
-        this._prefixIRIs[iri] = prefix;
+        prefixIRIs[iri] = prefix;
         // Finish a possible pending triple
         if (this._subject !== null) {
           this._write(this._graph ? '\n}\n' : '.\n');
@@ -1287,17 +1351,20 @@ N3Writer.prototype = {
     }
     // Recreate the prefix matcher
     if (hasPrefixes) {
-      var prefixIRIs = '';
-      for (var prefixIRI in this._prefixIRIs)
-        prefixIRIs += prefixIRIs ? '|' + prefixIRI : prefixIRI;
-      prefixIRIs = prefixIRIs.replace(/[\]\/\(\)\*\+\?\.\\\$]/g, '\\$&');
-      this._prefixRegex = new RegExp('^(' + prefixIRIs + ')([a-zA-Z][\\-_a-zA-Z0-9]*)$');
+      var IRIlist = '', prefixList = '';
+      for (var prefixIRI in prefixIRIs) {
+        IRIlist += IRIlist ? '|' + prefixIRI : prefixIRI;
+        prefixList += (prefixList ? '|' : '') + prefixIRIs[prefixIRI];
+      }
+      IRIlist = IRIlist.replace(/[\]\/\(\)\*\+\?\.\\\$]/g, '\\$&');
+      this._prefixRegex = new RegExp('^(?:' + prefixList + ')[^\/]*$|' +
+                                     '^(' + IRIlist + ')([a-zA-Z][\\-_a-zA-Z0-9]*)$');
     }
     // End a prefix block with a newline
     this._write(hasPrefixes ? '\n' : '', done);
   },
 
-  // ### `_prefixRegex` matches an IRI that begins with one of the added prefixes
+  // ### `_prefixRegex` matches a prefixed name or IRI that begins with one of the added prefixes
   _prefixRegex: /$0^/,
 
   // ### `end` signals the end of the output stream
@@ -1348,9 +1415,12 @@ function characterReplacer(character) {
 // Export the `N3Writer` class as a whole.
 
 N3.Writer = N3Writer;
+
+})();
+(function () {
 // **N3Store** objects store N3 triples by graph in memory.
 
-var expandPrefixedName = N3Util.expandPrefixedName;
+var expandPrefixedName = N3.Util.expandPrefixedName;
 
 // ## Constructor
 function N3Store(triples, options) {
@@ -1709,4 +1779,6 @@ N3Store.prototype = {
 // Export the `N3Store` class as a whole.
 
 N3.Store = N3Store;
+
+})();
 })(typeof exports !== "undefined" ? exports : this.N3 = {});
