@@ -755,6 +755,24 @@ describe('N3Parser', function () {
                   ['http://ex.org/e/k', 'http://ex.org/e/l', 'http://ex.org/e/m']));
   });
 
+  describe('An N3Parser instance with a blank node prefix', function () {
+    var parser = new N3Parser({ blankNodePrefix: '_:blank' });
+
+    it('should use the given prefix for blank nodes',
+      shouldParse(parser,
+                  '_:a <b> _:c.\n',
+                  ['_:blanka', 'b', '_:blankc']));
+  });
+
+  describe('An N3Parser instance with an empty blank node prefix', function () {
+    var parser = new N3Parser({ blankNodePrefix: '' });
+
+    it('should not use a prefix for blank nodes',
+      shouldParse(parser,
+                  '_:a <b> _:c.\n',
+                  ['_:a', 'b', '_:c']));
+  });
+
   describe('An N3Parser instance with an invalid document IRI', function () {
     it('cannot be created', function (done) {
       try {
