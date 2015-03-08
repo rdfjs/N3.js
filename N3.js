@@ -10,7 +10,7 @@ var exports = module.exports = {
   Store:        require('./lib/N3Store'),
   StreamParser: require('./lib/N3StreamParser'),
   StreamWriter: require('./lib/N3StreamWriter'),
-  Util:         require('./lib/N3Util'),
+  Util:         require('./lib/N3Util')
 };
 
 // Load submodules on first access
@@ -21,6 +21,6 @@ Object.keys(exports).forEach(function (submodule) {
     get: function () {
       delete exports[submodule];
       return exports[submodule] = globalRequire('./lib/N3' + submodule);
-    },
+    }
   });
 });
