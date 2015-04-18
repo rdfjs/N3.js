@@ -244,7 +244,7 @@ writer.end();
 ``` js
 var streamParser = new N3.StreamParser(),
     inputStream = fs.createReadStream('cartoons.ttl'),
-    streamWriter = new N3.StreamWriter({ 'c': 'http://example.org/cartoons#' });
+    streamWriter = new N3.StreamWriter({ prefixes: { 'c': 'http://example.org/cartoons#' } });
 inputStream.pipe(streamParser);
 streamParser.pipe(streamWriter);
 streamWriter.pipe(process.stdout);
