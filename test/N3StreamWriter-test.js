@@ -99,7 +99,7 @@ function shouldNotSerialize(tripleArrays, expectedMessage) {
 function ArrayReader(items) {
   var reader = new Readable({ objectMode: true });
   items = items.map(function (i) { return { subject: i[0], predicate: i[1], object: i[2] }; });
-  reader._read = function () { this.push(items.shift()); };
+  reader._read = function () { this.push(items.shift() || null); };
   return reader;
 }
 
