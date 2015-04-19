@@ -66,14 +66,15 @@ SpecTester.prototype.run = function () {
         function (test, callback) {
           async.series({ actionStream: self._fetch.bind(self, test.action),
                          resultStream: self._fetch.bind(self, test.result), },
-            function (err, results) {
+            function (error, results) {
+              if (error) return callback(error);
               self._performTest(test, results.actionStream, callback);
             });
         },
         // 1.2.2 Show the summary of all performed tests
         function showSummary(error, tests) {
           var score = tests.reduce(function (sum, test) { return sum + test.success; }, 0);
-          manifest.skipped.forEach(function (test) { self._verifyResult(test); });
+          manifest.skipped.forEach(function (test) { self._verifyResult(test); });
           console.log(('* passed ' + score +
                        ' out of ' + manifest.tests.length + ' tests' +
                        ' (' + manifest.skipped.length + ' skipped)').bold);
@@ -177,14 +178,12 @@ SpecTester.prototype._verifyResult = function (test, resultFile, correctFile, ca
   }
   // Positive tests are successful if the results are equal,
   // or if the correct solution is not given but no error occurred
-  else {
-    if (!correctFile)
-      displayResult(null, !test.error);
-    else if (!resultFile)
-      displayResult(null, false);
-    else
-      this._compareResultFiles(resultFile, correctFile, displayResult);
-  }
+  else if (!correctFile)
+    displayResult(null, !test.error);
+  else if (!resultFile)
+    displayResult(null, false);
+  else
+    this._compareResultFiles(resultFile, correctFile, displayResult);
 
   // Display the test result
   function displayResult(error, success, comparison) {
@@ -239,7 +238,7 @@ SpecTester.prototype._compareResultFiles = function (actual, expected, callback)
 SpecTester.prototype._generateEarlReport = function (tests, callback) {
   // Create the report file
   var reportFile = path.join(this._reportFolder, 'n3js-earl-report-' + this._name + '.ttl'),
-      report = new N3.Writer(fs.createWriteStream(reportFile), { prefixes: prefixes }),
+      report = new N3.Writer(fs.createWriteStream(reportFile), { prefixes: prefixes }),
       date = '"' + new Date().toISOString() + '"^^' + prefixes.xsd + 'dateTime',
       homepage = 'https://github.com/RubenVerborgh/N3.js', app = homepage + '#n3js',
       developer = 'http://ruben.verborgh.org/#me', manifest = this._manifest + '#';

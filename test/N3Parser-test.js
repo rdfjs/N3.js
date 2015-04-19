@@ -776,7 +776,7 @@ describe('N3Parser', function () {
   describe('An N3Parser instance with an invalid document IRI', function () {
     it('cannot be created', function (done) {
       try {
-        new N3Parser({ documentIRI: 'http://ex.org/doc/f#' });
+        var parser = new N3Parser({ documentIRI: 'http://ex.org/doc/f#' });
       }
       catch (error) {
         error.message.should.equal('Invalid document IRI');

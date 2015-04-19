@@ -197,7 +197,7 @@ describe('N3Writer', function () {
     it('calls the done callback when ending the outputstream errors', function (done) {
       var writer = new N3Writer({
         write: function () {},
-        end: function () { throw 'error'; },
+        end: function () { throw new Error('error'); },
       });
       writer.end(done);
     });

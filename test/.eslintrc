@@ -1,0 +1,15 @@
+{
+  globals: {
+    it: true,
+    describe: true,
+    before: true,
+    after: true,
+    beforeEach: true,
+    afterEach: true,
+  },
+
+  rules: {
+    no-mixed-requires: 0,
+    no-native-reassign: 0,
+  }
+}

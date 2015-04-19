@@ -87,7 +87,7 @@ function shouldEmitPrefixes(chunks, expectedPrefixes) {
 
 function ArrayReader(items) {
   var reader = new Readable();
-  reader._read = function () { this.push(items.shift() || null); };
+  reader._read = function () { this.push(items.shift() || null); };
   return reader;
 }
 

@@ -1,0 +1,51 @@
+{
+  env: {
+    node: true,
+  },
+
+  rules: {
+    strict: 0,
+    no-unused-vars: 0,
+    quotes: [0, "single"],
+    comma-dangle: 0,
+    no-underscore-dangle: 0,
+    no-return-assign: 0, // allow assignment in return statements
+    no-cond-assign: 0, // enable assignments where expressions are expected
+    no-unused-expressions: 0, // enable expressions where statements are expected
+    no-constant-condition: 0,
+    curly: 0,
+    no-sequences: 0, // allow comma operator
+    no-fallthrough: 0,
+    no-use-before-define: [true, 'nofunc'],
+    no-multi-spaces: 0,
+    key-spacing: 0,
+    new-cap: 0,
+    no-throw-literal: 2,
+    no-console: 2,
+    radix: 2, // require use of second parameter with parseInt
+
+    // Node.js
+    no-mixed-requires: 2,
+    no-new-require: 2,
+    no-path-concat: 2,
+    no-sync: 2,
+
+    // Code style
+    // indent: [2, 2], // not reliable yet
+    brace-style: [2, "stroustrup", { "allowSingleLine": true }],
+    comma-style: 2,
+    func-style: 2,
+    space-before-function-paren: [2, {"anonymous": "always", "named": "never"}],
+    space-after-keywords: 2,
+    space-before-blocks: 2,
+    space-in-parens: 2,
+    space-unary-ops: 2,
+    spaced-line-comment: 2,
+    semi-spacing: 2,
+    operator-assignment: 2,
+    operator-linebreak: 2,
+    padded-blocks: [2, "never"],
+    no-lonely-if: 2,
+    yoda: 2,
+  },
+}

@@ -17,21 +17,21 @@
   },
   "devDependencies": {
     "async": "~0.9.0",
+    "browserify": "~3.x",
     "chai": "~1.4.2",
     "chai-things": "~0.1.1",
     "colors": "~0.6.0",
     "docco": "~0.6.2",
-    "jshint": "~2.1.10",
-    "request": "~2.22.0",
-    "mocha": "~1.15.0",
+    "eslint": "~0.19.0",
     "istanbul": "~0.3.0",
-    "uglify-js": "~2.4.3",
-    "browserify": "~3.x",
-    "pre-commit": "~0.0.9"
+    "mocha": "~1.15.0",
+    "pre-commit": "~0.0.9",
+    "request": "~2.22.0",
+    "uglify-js": "~2.4.3"
   },
   "scripts": {
     "test": "mocha",
-    "hint": "jshint lib perf test spec",
+    "lint": "eslint lib perf test spec",
     "browser": "node browser/build-browser-versions",
     "coverage": "istanbul cover node_modules/.bin/_mocha -- -R spec --timeout 100",
     "spec": "node spec/turtle-spec && node spec/trig-spec && node spec/ntriples-spec && node spec/nquads-spec",
@@ -58,7 +58,7 @@
     ]
   },
   "pre-commit": [
-    "hint",
+    "lint",
     "test"
   ]
 }

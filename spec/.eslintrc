@@ -1,0 +1,9 @@
+{
+  rules: {
+    no-sync: 0,
+    no-process-exit: 0,
+    no-shadow: 0,
+    no-loop-func: 0,
+    no-console: 0,
+  }
+}
