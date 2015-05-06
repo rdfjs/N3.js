@@ -327,6 +327,33 @@ describe('N3Writer', function () {
         done();
       });
     });
+
+    it('should end when the end option is not set', function (done) {
+      var outputStream = new QuickStream(), writer = N3Writer(outputStream, {});
+      outputStream.should.have.property('ended', false);
+      writer.end(function () {
+        outputStream.should.have.property('ended', true);
+        done();
+      });
+    });
+
+    it('should end when the end option is set to true', function (done) {
+      var outputStream = new QuickStream(), writer = N3Writer(outputStream, { end: true });
+      outputStream.should.have.property('ended', false);
+      writer.end(function () {
+        outputStream.should.have.property('ended', true);
+        done();
+      });
+    });
+
+    it('should not end when the end option is set to false', function (done) {
+      var outputStream = new QuickStream(), writer = N3Writer(outputStream, { end: false });
+      outputStream.should.have.property('ended', false);
+      writer.end(function () {
+        outputStream.should.have.property('ended', false);
+        done();
+      });
+    });
   });
 });
 
@@ -344,6 +371,7 @@ function shouldSerialize(prefixes, tripleArrays, expectedResult) {
         writer.end(function (error) {
           try {
             outputStream.result.should.equal(expectedResult);
+            outputStream.should.have.property('ended', true);
             done(error);
           }
           catch (e) {
@@ -370,8 +398,16 @@ function shouldNotSerialize(tripleArrays, expectedMessage) {
 }
 
 function QuickStream() {
-  var stream = {}, buffer = '';
-  stream.write = function (chunk, encoding, callback) { buffer += chunk; callback && callback(); };
-  stream.end = function (callback) { stream.result = buffer; buffer = null; callback(); };
+  var stream = { ended: false }, buffer = '';
+  stream.write = function (chunk, encoding, callback) {
+    buffer += chunk;
+    callback && callback();
+  };
+  stream.end = function (callback) {
+    stream.ended = true;
+    stream.result = buffer;
+    buffer = null;
+    callback();
+  };
   return stream;
 }
