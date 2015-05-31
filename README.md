@@ -6,13 +6,13 @@ It offers:
 - [**Parsing**](#parsing) triples/quads from
   [Turtle](http://www.w3.org/TR/turtle/),
   [TriG](http://www.w3.org/TR/trig/),
-  [N-Triples](http://www.w3.org/TR/ntriples/)
-  and [N-Quads](http://www.w3.org/TR/nquads/).
+  [N-Triples](http://www.w3.org/TR/n-triples/)
+  and [N-Quads](http://www.w3.org/TR/n-quads/).
 - [**Writing**](#Writing) triples/quads to
   [Turtle](http://www.w3.org/TR/turtle/),
   [TriG](http://www.w3.org/TR/trig/),
-  [N-Triples](http://www.w3.org/TR/ntriples/)
-  and [N-Quads](http://www.w3.org/TR/nquads/).
+  [N-Triples](http://www.w3.org/TR/n-triples/)
+  and [N-Quads](http://www.w3.org/TR/n-quads/).
 - **Storage** of triples/quads in memory
 
 Parsing and writing is:
