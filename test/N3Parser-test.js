@@ -740,6 +740,19 @@ describe('N3Parser', function () {
                   '<a> <b> "c"^^<d>.',
                   ['http://ex.org/doc/a', 'http://ex.org/doc/b', '"c"^^http://ex.org/doc/d']));
 
+    it('should resolve IRIs in lists against the document IRI',
+      shouldParse(parser,
+          '(<a> <b>) <p> (<c> <d>).',
+          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://ex.org/doc/a'],
+          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
+          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://ex.org/doc/b'],
+          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+          ['_:b0', 'http://ex.org/doc/p', '_:b2'],
+          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://ex.org/doc/c'],
+          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b3'],
+          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://ex.org/doc/d'],
+          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
     it('should respect @base statements',
       shouldParse(parser,
                   '<a> <b> <c>.\n' +
