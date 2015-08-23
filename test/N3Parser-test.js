@@ -720,37 +720,67 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance with a document IRI', function () {
-    var parser = new N3Parser({ documentIRI: 'http://ex.org/doc/f.ttl' });
+    var parser = new N3Parser({ documentIRI: 'http://ex.org/x/yy/zzz/f.ttl' });
 
     it('should resolve IRIs against the document IRI',
       shouldParse(parser,
                   '@prefix : <#>.\n' +
                   '<a> <b> <c> <g>.\n' +
                   ':d :e :f :g.',
-                  ['http://ex.org/doc/a', 'http://ex.org/doc/b', 'http://ex.org/doc/c', 'http://ex.org/doc/g'],
-                  ['http://ex.org/doc/f.ttl#d', 'http://ex.org/doc/f.ttl#e', 'http://ex.org/doc/f.ttl#f', 'http://ex.org/doc/f.ttl#g']));
+                  ['http://ex.org/x/yy/zzz/a', 'http://ex.org/x/yy/zzz/b', 'http://ex.org/x/yy/zzz/c', 'http://ex.org/x/yy/zzz/g'],
+                  ['http://ex.org/x/yy/zzz/f.ttl#d', 'http://ex.org/x/yy/zzz/f.ttl#e', 'http://ex.org/x/yy/zzz/f.ttl#f', 'http://ex.org/x/yy/zzz/f.ttl#g']));
 
-    it('should resolve IRIs with a trailing slashes against the document IRI',
+    it('should resolve IRIs with a trailing slash against the document IRI',
       shouldParse(parser,
                   '</a> </a/b> </a/b/c>.\n',
                   ['http://ex.org/a', 'http://ex.org/a/b', 'http://ex.org/a/b/c']));
 
+    it('should resolve IRIs starting with ./ against the document IRI',
+      shouldParse(parser,
+                  '<./a> <./a/b> <./a/b/c>.\n',
+                  ['http://ex.org/x/yy/zzz/a', 'http://ex.org/x/yy/zzz/a/b', 'http://ex.org/x/yy/zzz/a/b/c']));
+
+    it('should resolve IRIs starting with multiple ./ sequences against the document IRI',
+      shouldParse(parser,
+                  '<./././a> <./././././a/b> <././././././a/b/c>.\n',
+                  ['http://ex.org/x/yy/zzz/a', 'http://ex.org/x/yy/zzz/a/b', 'http://ex.org/x/yy/zzz/a/b/c']));
+
+    it('should resolve IRIs starting with ../ against the document IRI',
+      shouldParse(parser,
+                  '<../a> <../a/b> <../a/b/c>.\n',
+                  ['http://ex.org/x/yy/a', 'http://ex.org/x/yy/a/b', 'http://ex.org/x/yy/a/b/c']));
+
+    it('should resolve IRIs starting multiple ../ sequences against the document IRI',
+      shouldParse(parser,
+                  '<../../a> <../../../a/b> <../../../../../../../../a/b/c>.\n',
+                  ['http://ex.org/x/a', 'http://ex.org/a/b', 'http://ex.org/a/b/c']));
+
+    it('should resolve IRIs starting with mixes of ./ and ../ sequences against the document IRI',
+      shouldParse(parser,
+                  '<.././a> <./.././a/b> <./.././.././a/b/c>.\n',
+                  ['http://ex.org/x/yy/a', 'http://ex.org/x/yy/a/b', 'http://ex.org/x/a/b/c']));
+
+    it('should resolve IRIs starting with .x, ..x, or .../ against the document IRI',
+      shouldParse(parser,
+                  '<.x/a> <..x/a/b> <.../a/b/c>.\n',
+                  ['http://ex.org/x/yy/zzz/.x/a', 'http://ex.org/x/yy/zzz/..x/a/b', 'http://ex.org/x/yy/zzz/.../a/b/c']));
+
     it('should resolve datatype IRIs against the document IRI',
       shouldParse(parser,
                   '<a> <b> "c"^^<d>.',
-                  ['http://ex.org/doc/a', 'http://ex.org/doc/b', '"c"^^http://ex.org/doc/d']));
+                  ['http://ex.org/x/yy/zzz/a', 'http://ex.org/x/yy/zzz/b', '"c"^^http://ex.org/x/yy/zzz/d']));
 
     it('should resolve IRIs in lists against the document IRI',
       shouldParse(parser,
           '(<a> <b>) <p> (<c> <d>).',
-          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://ex.org/doc/a'],
+          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://ex.org/x/yy/zzz/a'],
           ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
-          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://ex.org/doc/b'],
+          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://ex.org/x/yy/zzz/b'],
           ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-          ['_:b0', 'http://ex.org/doc/p', '_:b2'],
-          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://ex.org/doc/c'],
+          ['_:b0', 'http://ex.org/x/yy/zzz/p', '_:b2'],
+          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://ex.org/x/yy/zzz/c'],
           ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b3'],
-          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://ex.org/doc/d'],
+          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://ex.org/x/yy/zzz/d'],
           ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
     it('should respect @base statements',
@@ -762,7 +792,7 @@ describe('N3Parser', function () {
                   '<h> <i> <j>.\n' +
                   '@base </e/>.\n' +
                   '<k> <l> <m>.',
-                  ['http://ex.org/doc/a', 'http://ex.org/doc/b', 'http://ex.org/doc/c'],
+                  ['http://ex.org/x/yy/zzz/a', 'http://ex.org/x/yy/zzz/b', 'http://ex.org/x/yy/zzz/c'],
                   ['http://ex.org/x/e', 'http://ex.org/x/f', 'http://ex.org/x/g'],
                   ['http://ex.org/x/d/h', 'http://ex.org/x/d/i', 'http://ex.org/x/d/j'],
                   ['http://ex.org/e/k', 'http://ex.org/e/l', 'http://ex.org/e/m']));
@@ -789,7 +819,7 @@ describe('N3Parser', function () {
   describe('An N3Parser instance with an invalid document IRI', function () {
     it('cannot be created', function (done) {
       try {
-        var parser = new N3Parser({ documentIRI: 'http://ex.org/doc/f#' });
+        var parser = new N3Parser({ documentIRI: 'http://ex.org/x/yy/zzz/f#' });
       }
       catch (error) {
         error.message.should.equal('Invalid document IRI');
