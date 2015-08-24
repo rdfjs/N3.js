@@ -1,6 +1,6 @@
 var N3Util = require('../N3').Util;
-var chai = require('chai'),
-    expect = chai.expect;
+var chai = require('chai');
+var expect = chai.expect;
 chai.should();
 
 describe('N3Util', function () {
@@ -261,11 +261,11 @@ describe('N3Util', function () {
 
   describe('expandPrefixedName', function () {
     it('expands a prefixed name', function () {
-      N3Util.expandPrefixedName('ex:Test', { 'ex': 'http://ex.org/#' }).should.equal('http://ex.org/#Test');
+      N3Util.expandPrefixedName('ex:Test', { ex: 'http://ex.org/#' }).should.equal('http://ex.org/#Test');
     });
 
     it('expands a type with a prefixed name', function () {
-      N3Util.expandPrefixedName('"a"^^ex:type', { 'ex': 'http://ex.org/#' }).should.equal('"a"^^http://ex.org/#type');
+      N3Util.expandPrefixedName('"a"^^ex:type', { ex: 'http://ex.org/#' }).should.equal('"a"^^http://ex.org/#type');
     });
 
     it('expands a prefixed name with the empty prefix', function () {
@@ -273,7 +273,7 @@ describe('N3Util', function () {
     });
 
     it('does not expand a prefixed name if the prefix is unknown', function () {
-      N3Util.expandPrefixedName('a:Test', { 'b': 'http://ex.org/#' }).should.equal('a:Test');
+      N3Util.expandPrefixedName('a:Test', { b: 'http://ex.org/#' }).should.equal('a:Test');
     });
 
     it('returns the input if it is not a prefixed name', function () {

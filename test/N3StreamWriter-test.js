@@ -3,7 +3,6 @@ var chai = require('chai'),
     Readable = require('stream').Readable,
     Writable = require('stream').Writable;
 chai.should();
-chai.use(require('chai-things'));
 
 describe('N3StreamWriter', function () {
   describe('The N3StreamWriter module', function () {

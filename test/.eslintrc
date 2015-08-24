@@ -1,7 +1,7 @@
 {
   globals: {
-    it: true,
     describe: true,
+    it: true,
     before: true,
     after: true,
     beforeEach: true,
@@ -9,7 +9,7 @@
   },
 
   rules: {
-    no-mixed-requires: 0,
-    no-native-reassign: 0,
-  }
+    max-nested-callbacks: 0, // Mocha works with deeply nested callbacks
+    new-cap: 0, // test constructors as regular functions
+  },
 }

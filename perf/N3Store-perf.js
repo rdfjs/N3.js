@@ -14,9 +14,10 @@ var store = new N3.Store();
 
 TEST = '- Adding ' + dimCubed + ' triples';
 console.time(TEST);
-for (var i = 0; i < dim; i++)
-  for (var j = 0; j < dim; j++)
-    for (var k = 0; k < dim; k++)
+var i, j, k;
+for (i = 0; i < dim; i++)
+  for (j = 0; j < dim; j++)
+    for (k = 0; k < dim; k++)
       store.addTriple(prefix + i, prefix + j, prefix + k);
 console.timeEnd(TEST);
 

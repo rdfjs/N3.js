@@ -378,7 +378,7 @@ function shouldSerialize(prefixes, tripleArrays, expectedResult) {
             done(e);
           }
         });
-    })();
+    }());
   };
 }
 

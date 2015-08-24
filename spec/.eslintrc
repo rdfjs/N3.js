@@ -1,9 +1,10 @@
 {
   rules: {
-    no-sync: 0,
+    max-nested-callbacks: 0,
+    no-console: 0,
+    no-loop-func: 0,
     no-process-exit: 0,
     no-shadow: 0,
-    no-loop-func: 0,
-    no-console: 0,
+    no-sync: 0,
   }
 }

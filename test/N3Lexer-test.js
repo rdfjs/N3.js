@@ -1,7 +1,7 @@
 var N3Lexer = require('../N3').Lexer;
 var chai = require('chai'),
-    expect = chai.expect,
     events = require('events');
+var expect = chai.expect;
 chai.should();
 
 describe('N3Lexer', function () {
@@ -363,9 +363,9 @@ describe('N3Lexer', function () {
     it('should tokenize a double literal',
       shouldTokenize('10e20, +30.40E+50. -60.70e-80. ',
                      { type: 'literal', value: '"10e20"^^http://www.w3.org/2001/XMLSchema#double', line: 1 },
-                     { type: ',', line: 1},
+                     { type: ',', line: 1 },
                      { type: 'literal', value: '"+30.40E+50"^^http://www.w3.org/2001/XMLSchema#double', line: 1 },
-                     { type: '.', line: 1},
+                     { type: '.', line: 1 },
                      { type: 'literal', value: '"-60.70e-80"^^http://www.w3.org/2001/XMLSchema#double', line: 1 },
                      { type: '.', line: 1 },
                      { type: 'eof', line: 1 }));
@@ -721,7 +721,7 @@ function shouldNotTokenize(input, expectedError) {
         done();
       }
       else if (token.type === 'eof')
-        throw new Error("Expected error " + expectedError);
+        throw new Error('Expected error ' + expectedError);
     }
   };
 }

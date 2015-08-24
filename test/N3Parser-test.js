@@ -1,6 +1,6 @@
 var N3Parser = require('../N3').Parser;
-var chai = require('chai'),
-    expect = chai.expect;
+var chai = require('chai');
+var expect = chai.expect;
 chai.should();
 chai.use(require('chai-things'));
 
@@ -954,7 +954,7 @@ function shouldNotParse(parser, input, expectedError) {
         done();
       }
       else if (!triple)
-        throw new Error("Expected error " + expectedError);
+        throw new Error('Expected error ' + expectedError);
     });
   };
 }

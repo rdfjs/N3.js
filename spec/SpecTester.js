@@ -65,7 +65,7 @@ SpecTester.prototype.run = function () {
         // 1.2.1 Execute an individual test
         function (test, callback) {
           async.series({ actionStream: self._fetch.bind(self, test.action),
-                         resultStream: self._fetch.bind(self, test.result), },
+                         resultStream: self._fetch.bind(self, test.result) },
             function (error, results) {
               if (error) return callback(error);
               self._performTest(test, results.actionStream, callback);
@@ -88,7 +88,7 @@ SpecTester.prototype.run = function () {
     // 3. Return with the proper exit code
     function (tests) {
       process.exit(tests.every(function (test) { return test.success; }) ? 0 : 1);
-    }
+    },
   ],
   function (error) {
     if (error) {
@@ -157,7 +157,7 @@ SpecTester.prototype._performTest = function (test, actionStream, callback) {
   var resultFile = path.join(this._testFolder, test.action.replace(/\.\w+$/, '-result.nq')),
       resultWriter = new N3.Writer(fs.createWriteStream(resultFile), { format: 'N-Quads' }),
       config = { format: this._name, documentIRI: url.resolve(this._manifest, test.action) },
-      parser = N3.Parser(config), self = this;
+      parser = new N3.Parser(config), self = this;
   parser.parse(actionStream, function (error, triple) {
     if (error)  test.error = error;
     if (triple) resultWriter.addTriple(triple);
@@ -218,13 +218,13 @@ SpecTester.prototype._compareResultFiles = function (actual, expected, callback)
     else {
       // SWObjects doesn't support N-Quads, so convert to TriG if necessary
       if (/\.nq/.test(expected)) {
-        fs.writeFileSync(actual   += '.trig', NQuadsToTrig(results.actualContents));
-        fs.writeFileSync(expected += '.trig', NQuadsToTrig(results.expectedContents));
+        fs.writeFileSync(actual   += '.trig', quadsToTrig(results.actualContents));
+        fs.writeFileSync(expected += '.trig', quadsToTrig(results.expectedContents));
       }
       exec('sparql -d ' + expected + ' --compare ' + actual,
            function (error, stdout) { callback(error, /^matched\s*$/.test(stdout), stdout); });
     }
-    function NQuadsToTrig(nquad) {
+    function quadsToTrig(nquad) {
       return nquad.replace(/^([^\s]+)\s+([^\s]+)\s+(.+)\s+([^\s"]+)\s*\.$/mg, '$4 { $1 $2 $3 }');
     }
   });
