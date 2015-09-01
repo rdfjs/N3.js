@@ -24,7 +24,7 @@
     "docco": "~0.6.2",
     "eslint": "~1.2.1",
     "istanbul": "~0.3.0",
-    "mocha": "~1.15.0",
+    "mocha": "~2.3.0",
     "pre-commit": "~0.0.9",
     "request": "~2.22.0",
     "uglify-js": "~2.4.3"
