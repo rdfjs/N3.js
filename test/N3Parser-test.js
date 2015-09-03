@@ -1202,18 +1202,27 @@ describe('N3Parser', function () {
     });
 
     describe('additional cases', function () {
+      // relative paths ending with '.'
       itShouldResolve('http://abc/def/ghi', '.',      'http://abc/def/');
       itShouldResolve('http://abc/def/ghi', '.?a=b',  'http://abc/def/?a=b');
       itShouldResolve('http://abc/def/ghi', '.#a=b',  'http://abc/def/#a=b');
 
+      // relative paths ending with '..'
       itShouldResolve('http://abc/def/ghi', '..',     'http://abc/');
       itShouldResolve('http://abc/def/ghi', '..?a=b', 'http://abc/?a=b');
       itShouldResolve('http://abc/def/ghi', '..#a=b', 'http://abc/#a=b');
 
-      itShouldResolve('http://ab//de//ghi', '../xyz', 'http://ab//xyz');
+      // base path with empty subpaths (double slashes)
+      itShouldResolve('http://ab//de//ghi', 'xyz',    'http://ab//de//xyz');
+      itShouldResolve('http://ab//de//ghi', './xyz',  'http://ab//de//xyz');
+      itShouldResolve('http://ab//de//ghi', '../xyz', 'http://ab//de/xyz');
 
+      // base path with colon (possible confusion with scheme)
+      itShouldResolve('http://abc/d:f/ghi', 'xyz',    'http://abc/d:f/xyz');
       itShouldResolve('http://abc/d:f/ghi', './xyz',  'http://abc/d:f/xyz');
+      itShouldResolve('http://abc/d:f/ghi', '../xyz', 'http://abc/xyz');
 
+      // base path consisting of '..' and/or '../' sequences
       itShouldResolve('./',        'abc',       '/abc');
       itShouldResolve('../',       'abc',       '/abc');
       itShouldResolve('./././',    '././abc',   '/abc');
