@@ -1009,7 +1009,7 @@ describe('N3Parser', function () {
       itShouldResolve('http://a/bb/ccc/d/', 'http:g',        'http:g');
     });
 
-    describe('RFC3986 normal examples with ./ in the base IRI', function () {
+    describe('RFC3986 normal examples with /. in the base IRI', function () {
       itShouldResolve('http://a/bb/ccc/./d;p?q', 'g:h',     'g:h');
       itShouldResolve('http://a/bb/ccc/./d;p?q', 'g',       'http://a/bb/ccc/g');
       itShouldResolve('http://a/bb/ccc/./d;p?q', './g',     'http://a/bb/ccc/g');
@@ -1035,7 +1035,7 @@ describe('N3Parser', function () {
       itShouldResolve('http://a/bb/ccc/./d;p?q', '../../g', 'http://a/g');
     });
 
-    describe('RFC3986 abnormal examples with ./ in the base IRI', function () {
+    describe('RFC3986 abnormal examples with /. in the base IRI', function () {
       itShouldResolve('http://a/bb/ccc/./d;p?q', '../../../g',    'http://a/g');
       itShouldResolve('http://a/bb/ccc/./d;p?q', '../../../../g', 'http://a/g');
       itShouldResolve('http://a/bb/ccc/./d;p?q', '/./g',          'http://a/g');
@@ -1057,7 +1057,7 @@ describe('N3Parser', function () {
       itShouldResolve('http://a/bb/ccc/./d;p?q', 'http:g',        'http:g');
     });
 
-    describe('RFC3986 normal examples with ../ in the base IRI', function () {
+    describe('RFC3986 normal examples with /.. in the base IRI', function () {
       itShouldResolve('http://a/bb/ccc/../d;p?q', 'g:h',     'g:h');
       itShouldResolve('http://a/bb/ccc/../d;p?q', 'g',       'http://a/bb/g');
       itShouldResolve('http://a/bb/ccc/../d;p?q', './g',     'http://a/bb/g');
@@ -1083,7 +1083,7 @@ describe('N3Parser', function () {
       itShouldResolve('http://a/bb/ccc/../d;p?q', '../../g', 'http://a/g');
     });
 
-    describe('RFC3986 abnormal examples with ../ in the base IRI', function () {
+    describe('RFC3986 abnormal examples with /.. in the base IRI', function () {
       itShouldResolve('http://a/bb/ccc/../d;p?q', '../../../g',    'http://a/g');
       itShouldResolve('http://a/bb/ccc/../d;p?q', '../../../../g', 'http://a/g');
       itShouldResolve('http://a/bb/ccc/../d;p?q', '/./g',          'http://a/g');
@@ -1105,7 +1105,7 @@ describe('N3Parser', function () {
       itShouldResolve('http://a/bb/ccc/../d;p?q', 'http:g',        'http:g');
     });
 
-    describe('RFC3986 normal examples with trailing ./ in the base IRI', function () {
+    describe('RFC3986 normal examples with trailing /. in the base IRI', function () {
       itShouldResolve('http://a/bb/ccc/.', 'g:h',     'g:h');
       itShouldResolve('http://a/bb/ccc/.', 'g',       'http://a/bb/ccc/g');
       itShouldResolve('http://a/bb/ccc/.', './g',     'http://a/bb/ccc/g');
@@ -1131,7 +1131,7 @@ describe('N3Parser', function () {
       itShouldResolve('http://a/bb/ccc/.', '../../g', 'http://a/g');
     });
 
-    describe('RFC3986 abnormal examples with trailing ./ in the base IRI', function () {
+    describe('RFC3986 abnormal examples with trailing /. in the base IRI', function () {
       itShouldResolve('http://a/bb/ccc/.', '../../../g',    'http://a/g');
       itShouldResolve('http://a/bb/ccc/.', '../../../../g', 'http://a/g');
       itShouldResolve('http://a/bb/ccc/.', '/./g',          'http://a/g');
@@ -1153,7 +1153,7 @@ describe('N3Parser', function () {
       itShouldResolve('http://a/bb/ccc/.', 'http:g',        'http:g');
     });
 
-    describe('RFC3986 normal examples with trailing ../ in the base IRI', function () {
+    describe('RFC3986 normal examples with trailing /.. in the base IRI', function () {
       itShouldResolve('http://a/bb/ccc/..', 'g:h',     'g:h');
       itShouldResolve('http://a/bb/ccc/..', 'g',       'http://a/bb/g');
       itShouldResolve('http://a/bb/ccc/..', './g',     'http://a/bb/g');
@@ -1179,7 +1179,7 @@ describe('N3Parser', function () {
       itShouldResolve('http://a/bb/ccc/..', '../../g', 'http://a/g');
     });
 
-    describe('RFC3986 abnormal examples with trailing ../ in the base IRI', function () {
+    describe('RFC3986 abnormal examples with trailing /.. in the base IRI', function () {
       itShouldResolve('http://a/bb/ccc/..', '../../../g',    'http://a/g');
       itShouldResolve('http://a/bb/ccc/..', '../../../../g', 'http://a/g');
       itShouldResolve('http://a/bb/ccc/..', '/./g',          'http://a/g');
