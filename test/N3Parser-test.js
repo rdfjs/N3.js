@@ -1342,7 +1342,7 @@ function itShouldResolve(baseIri, relativeIri, expected) {
   describe('resolving <' + relativeIri + '> against <' + baseIri + '>', function () {
     before(function (done) {
       try {
-        var doc = '<urn:a> <urn:b> <' + relativeIri + '>.';
+        var doc = '<urn:ex:s> <urn:ex:p> <' + relativeIri + '>.';
         new N3Parser({ documentIRI: baseIri }).parse(doc, function (error, triple) {
           if (done)
             result = triple, done(error);
