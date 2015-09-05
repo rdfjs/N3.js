@@ -1208,6 +1208,54 @@ describe('N3Parser', function () {
       itShouldResolve('http://a/bb/ccc/..', 'http:g',        'http:g');
     });
 
+    describe('RFC3986 normal examples with file path', function () {
+      itShouldResolve('file:///a/bb/ccc/d;p?q', 'g:h',     'g:h');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', 'g',       'file:///a/bb/ccc/g');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', './g',     'file:///a/bb/ccc/g');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', 'g/',      'file:///a/bb/ccc/g/');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', '/g',      'file:///a/g');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', '//g',     'file://g');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', '?y',      'file:///a/bb/ccc/d;p?y');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', 'g?y',     'file:///a/bb/ccc/g?y');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', '#s',      'file:///a/bb/ccc/d;p?q#s');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', 'g#s',     'file:///a/bb/ccc/g#s');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', 'g?y#s',   'file:///a/bb/ccc/g?y#s');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', ';x',      'file:///a/bb/ccc/;x');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', 'g;x',     'file:///a/bb/ccc/g;x');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', 'g;x?y#s', 'file:///a/bb/ccc/g;x?y#s');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', '',        'file:///a/bb/ccc/d;p?q');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', '.',       'file:///a/bb/ccc/');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', './',      'file:///a/bb/ccc/');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', '..',      'file:///a/bb/');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', '../',     'file:///a/bb/');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', '../g',    'file:///a/bb/g');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', '../..',   'file:///a/');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', '../../',  'file:///a/');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', '../../g', 'file:///a/g');
+    });
+
+    describe('RFC3986 abnormal examples with file path', function () {
+      itShouldResolve('file:///a/bb/ccc/d;p?q', '../../../g',    'file:///a/g');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', '../../../../g', 'file:///a/g');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', '/./g',          'file:///a/g');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', '/../g',         'file:///a/g');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', 'g.',            'file:///a/bb/ccc/g.');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', '.g',            'file:///a/bb/ccc/.g');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', 'g..',           'file:///a/bb/ccc/g..');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', '..g',           'file:///a/bb/ccc/..g');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', './../g',        'file:///a/bb/g');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', './g/.',         'file:///a/bb/ccc/g/');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', 'g/./h',         'file:///a/bb/ccc/g/h');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', 'g/../h',        'file:///a/bb/ccc/h');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', 'g;x=1/./y',     'file:///a/bb/ccc/g;x=1/y');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', 'g;x=1/../y',    'file:///a/bb/ccc/y');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', 'g?y/./x',       'file:///a/bb/ccc/g?y/./x');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', 'g?y/../x',      'file:///a/bb/ccc/g?y/../x');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', 'g#s/./x',       'file:///a/bb/ccc/g#s/./x');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', 'g#s/../x',      'file:///a/bb/ccc/g#s/../x');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', 'http:g',        'http:g');
+    });
+
     describe('additional cases', function () {
       // relative paths ending with '.'
       itShouldResolve('http://abc/def/ghi', '.',      'http://abc/def/');
