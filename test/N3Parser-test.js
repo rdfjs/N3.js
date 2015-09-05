@@ -427,6 +427,13 @@ describe('N3Parser', function () {
                   ['http://ex.org/a', 'http://ex.org/b', '"c"^^http://ex.org/d'],
                   ['http://ex.org/d/e', 'http://ex.org/d/f', '"g"^^http://ex.org/d/h']));
 
+    it('should not resolve prefixed names',
+      shouldParse('PREFIX ex: <http://ex.org/a/bb/ccc/../>\n' +
+                  'ex:a ex:b ex:c .',
+                  ['http://ex.org/a/bb/ccc/../a',
+                   'http://ex.org/a/bb/ccc/../b',
+                   'http://ex.org/a/bb/ccc/../c']));
+
     it('should parse an empty default graph',
       shouldParse('{}'));
 
