@@ -1235,6 +1235,10 @@ describe('N3Parser', function () {
       itShouldResolve('./././',    '././abc',   '/abc');
       itShouldResolve('../../../', '../../abc', '/abc');
       itShouldResolve('.../././',  '././abc',   '.../abc');
+
+      // base path with slashes in query string
+      itShouldResolve('http://abc/def/ghi?q=xx/yyy/z', 'jjj', 'http://abc/def/jjj');
+      itShouldResolve('http://abc/def/ghi?q=xx/y?y/z', 'jjj', 'http://abc/def/jjj');
     });
   });
 });
