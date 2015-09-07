@@ -43,7 +43,15 @@ describe('N3Parser', function () {
     it('should parse a triple with a literal',
       shouldParse('<a> <b> "string".',
                   ['a', 'b', '"string"']));
+                  
+    it('should parse a triple with a multi-line literal with double quotes',
+      shouldParse('<a> <b> """string\nand another string""".',
+        ['a', 'b', '"string\nand another string"']));
 
+    it('should parse a triple with a multi-line literal with single quotes',
+      shouldParse('<a> <b> \'\'\'string\nand another string\'\'\'.',
+        ['a', 'b', '"string\nand another string"']));
+        
     it('should parse a triple with a numeric literal',
       shouldParse('<a> <b> 3.0.',
                   ['a', 'b', '"3.0"^^http://www.w3.org/2001/XMLSchema#decimal']));
@@ -1306,7 +1314,7 @@ function shouldParse(parser, input) {
     var results = [];
     parser.parse(input, function (error, triple) {
       expect(error).not.to.exist;
-      if (triple)
+      if (triple)       
         results.push(triple);
       else {
         results.should.have.lengthOf(expected.length);
