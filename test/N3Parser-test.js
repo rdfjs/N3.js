@@ -1213,7 +1213,7 @@ describe('N3Parser', function () {
       itShouldResolve('file:///a/bb/ccc/d;p?q', 'g',       'file:///a/bb/ccc/g');
       itShouldResolve('file:///a/bb/ccc/d;p?q', './g',     'file:///a/bb/ccc/g');
       itShouldResolve('file:///a/bb/ccc/d;p?q', 'g/',      'file:///a/bb/ccc/g/');
-      itShouldResolve('file:///a/bb/ccc/d;p?q', '/g',      'file:///a/g');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', '/g',      'file:///g');
       itShouldResolve('file:///a/bb/ccc/d;p?q', '//g',     'file://g');
       itShouldResolve('file:///a/bb/ccc/d;p?q', '?y',      'file:///a/bb/ccc/d;p?y');
       itShouldResolve('file:///a/bb/ccc/d;p?q', 'g?y',     'file:///a/bb/ccc/g?y');
@@ -1235,10 +1235,10 @@ describe('N3Parser', function () {
     });
 
     describe('RFC3986 abnormal examples with file path', function () {
-      itShouldResolve('file:///a/bb/ccc/d;p?q', '../../../g',    'file:///a/g');
-      itShouldResolve('file:///a/bb/ccc/d;p?q', '../../../../g', 'file:///a/g');
-      itShouldResolve('file:///a/bb/ccc/d;p?q', '/./g',          'file:///a/g');
-      itShouldResolve('file:///a/bb/ccc/d;p?q', '/../g',         'file:///a/g');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', '../../../g',    'file:///g');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', '../../../../g', 'file:///g');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', '/./g',          'file:///g');
+      itShouldResolve('file:///a/bb/ccc/d;p?q', '/../g',         'file:///g');
       itShouldResolve('file:///a/bb/ccc/d;p?q', 'g.',            'file:///a/bb/ccc/g.');
       itShouldResolve('file:///a/bb/ccc/d;p?q', '.g',            'file:///a/bb/ccc/.g');
       itShouldResolve('file:///a/bb/ccc/d;p?q', 'g..',           'file:///a/bb/ccc/g..');
@@ -1258,11 +1258,13 @@ describe('N3Parser', function () {
 
     describe('additional cases', function () {
       // relative paths ending with '.'
+      itShouldResolve('http://abc/',        '.',      'http://abc/');
       itShouldResolve('http://abc/def/ghi', '.',      'http://abc/def/');
       itShouldResolve('http://abc/def/ghi', '.?a=b',  'http://abc/def/?a=b');
       itShouldResolve('http://abc/def/ghi', '.#a=b',  'http://abc/def/#a=b');
 
       // relative paths ending with '..'
+      itShouldResolve('http://abc/',        '..',     'http://abc/');
       itShouldResolve('http://abc/def/ghi', '..',     'http://abc/');
       itShouldResolve('http://abc/def/ghi', '..?a=b', 'http://abc/?a=b');
       itShouldResolve('http://abc/def/ghi', '..#a=b', 'http://abc/#a=b');
@@ -1283,6 +1285,12 @@ describe('N3Parser', function () {
       itShouldResolve('./././',    '././abc',   '/abc');
       itShouldResolve('../../../', '../../abc', '/abc');
       itShouldResolve('.../././',  '././abc',   '.../abc');
+
+      // base path without authority
+      itShouldResolve('a:b:c',     '/def',      'a:/def');
+      itShouldResolve('a:b/c',     '/def',      'a:/def');
+      itShouldResolve('a:',        '/.',        'a:/');
+      itShouldResolve('a:',        '/..',       'a:/');
 
       // base path with slashes in query string
       itShouldResolve('http://abc/def/ghi?q=xx/yyy/z', 'jjj', 'http://abc/def/jjj');
