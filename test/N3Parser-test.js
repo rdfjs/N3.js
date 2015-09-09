@@ -1314,7 +1314,7 @@ function shouldParse(parser, input) {
     var results = [];
     parser.parse(input, function (error, triple) {
       expect(error).not.to.exist;
-      if (triple)       
+      if (triple)
         results.push(triple);
       else {
         results.should.have.lengthOf(expected.length);
