@@ -1287,6 +1287,7 @@ describe('N3Parser', function () {
       itShouldResolve('.../././',  '././abc',   '.../abc');
 
       // base path without authority
+      itShouldResolve('a:b:c/',    'def/../',   'a:b:c/');
       itShouldResolve('a:b:c',     '/def',      'a:/def');
       itShouldResolve('a:b/c',     '/def',      'a:/def');
       itShouldResolve('a:',        '/.',        'a:/');
