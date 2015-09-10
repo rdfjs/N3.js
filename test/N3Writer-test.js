@@ -269,6 +269,130 @@ describe('N3Writer', function () {
       });
     });
 
+    it('should serialize triples with an empty blank node as object', function (done) {
+      var writer = N3Writer();
+      writer.addTriple('a1', 'b', writer.blank());
+      writer.addTriple('a2', 'b', writer.blank([]));
+      writer.end(function (error, output) {
+        output.should.equal('<a1> <b> [].\n' +
+                            '<a2> <b> [].\n');
+        done(error);
+      });
+    });
+
+    it('should serialize triples with a one-triple blank node as object', function (done) {
+      var writer = N3Writer();
+      writer.addTriple('a1', 'b', writer.blank('d', 'e'));
+      writer.addTriple('a2', 'b', writer.blank({ predicate: 'd', object: 'e' }));
+      writer.addTriple('a3', 'b', writer.blank([{ predicate: 'd', object: 'e' }]));
+      writer.end(function (error, output) {
+        output.should.equal('<a1> <b> [ <d> <e> ].\n' +
+                            '<a2> <b> [ <d> <e> ].\n' +
+                            '<a3> <b> [ <d> <e> ].\n');
+        done(error);
+      });
+    });
+
+    it('should serialize triples with a two-triple blank node as object', function (done) {
+      var writer = N3Writer();
+      writer.addTriple('a', 'b', writer.blank([
+          { predicate: 'd', object: 'e' },
+          { predicate: 'f', object: '"g"' },
+      ]));
+      writer.end(function (error, output) {
+        output.should.equal('<a> <b> [\n' +
+                            '  <d> <e>;\n' +
+                            '  <f> "g"\n' +
+                            '].\n');
+        done(error);
+      });
+    });
+
+    it('should serialize triples with a three-triple blank node as object', function (done) {
+      var writer = N3Writer();
+      writer.addTriple('a', 'b', writer.blank([
+        { predicate: 'd', object: 'e' },
+        { predicate: 'f', object: '"g"' },
+        { predicate: 'h', object: 'i' },
+      ]));
+      writer.end(function (error, output) {
+        output.should.equal('<a> <b> [\n' +
+                            '  <d> <e>;\n' +
+                            '  <f> "g";\n' +
+                            '  <h> <i>\n' +
+                            '].\n');
+        done(error);
+      });
+    });
+
+    it('should serialize triples with an empty blank node as subject', function (done) {
+      var writer = N3Writer();
+      writer.addTriple(writer.blank(), 'b', 'c');
+      writer.addTriple(writer.blank([]), 'b', 'c');
+      writer.end(function (error, output) {
+        output.should.equal('[] <b> <c>.\n' +
+                            '[] <b> <c>.\n');
+        done(error);
+      });
+    });
+
+    it('should serialize triples with nested blank nodes as object', function (done) {
+      var writer = N3Writer();
+      writer.addTriple('a1', 'b', writer.blank([
+        { predicate: 'd', object: writer.blank() },
+      ]));
+      writer.addTriple('a2', 'b', writer.blank([
+        { predicate: 'd', object: writer.blank('e', 'f') },
+        { predicate: 'g', object: writer.blank('h', '"i"') },
+      ]));
+      writer.addTriple('a3', 'b', writer.blank([
+        { predicate: 'd', object: writer.blank([
+          { predicate: 'g', object: writer.blank('h', 'i') },
+          { predicate: 'j', object: writer.blank('k', '"l"') },
+        ]) },
+      ]));
+      writer.end(function (error, output) {
+        output.should.equal('<a1> <b> [\n' +
+                            '  <d> []\n' +
+                            '].\n' +
+                            '<a2> <b> [\n' +
+                            '  <d> [ <e> <f> ];\n' +
+                            '  <g> [ <h> "i" ]\n' +
+                            '].\n' +
+                            '<a3> <b> [\n' +
+                            '  <d> [\n' +
+                            '  <g> [ <h> <i> ];\n' +
+                            '  <j> [ <k> "l" ]\n' +
+                            ']\n' +
+                            '].\n');
+        done(error);
+      });
+    });
+
+    it('should serialize triples with a one-triple blank node as subject', function (done) {
+      var writer = N3Writer();
+      writer.addTriple(writer.blank('a', 'b'), 'c', 'd');
+      writer.addTriple(writer.blank({ predicate: 'a', object: 'b' }), 'c', 'd');
+      writer.addTriple(writer.blank([{ predicate: 'a', object: 'b' }]), 'c', 'd');
+      writer.end(function (error, output) {
+        output.should.equal('[ <a> <b> ] <c> <d>.\n' +
+                            '[ <a> <b> ] <c> <d>.\n' +
+                            '[ <a> <b> ] <c> <d>.\n');
+        done(error);
+      });
+    });
+
+    it('should serialize triples with an empty blank node as graph', function (done) {
+      var writer = N3Writer();
+      writer.addTriple('a', 'b', 'c', writer.blank());
+      writer.addTriple('a', 'b', 'c', writer.blank([]));
+      writer.end(function (error, output) {
+        output.should.equal('[] {\n<a> <b> <c>\n}\n' +
+                            '[] {\n<a> <b> <c>\n}\n');
+        done(error);
+      });
+    });
+
     it('should accept triples in bulk', function (done) {
       var writer = N3Writer();
       writer.addTriples([{ subject: 'a', predicate: 'b', object: 'c' },
