@@ -250,6 +250,41 @@ streamParser.pipe(streamWriter);
 streamWriter.pipe(process.stdout);
 ```
 
+### Blank nodes and lists
+You might want to use the `[…]` and list `(…)` notations of Turtle and TriG.
+However, a streaming writer cannot create these automatically:
+the shorthand notations are only possible if blank nodes or list heads are not used later on,
+which can only be determined conclusively at the end of the stream.
+
+The `blank` and `list` functions allow you to create them manually instead:
+```js
+var writer = N3.Writer({ prefixes: { 'c': 'http://example.org/cartoons#',
+                                     'foaf': 'http://xmlns.com/foaf/0.1/' } });
+writer.addTriple(writer.blank('http://xmlns.com/foaf/0.1/givenName', '"Tom"@en'),
+                 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+                 'http://example.org/cartoons#Cat');
+writer.addTriple('http://example.org/cartoons#Jerry',
+                 'http://xmlns.com/foaf/0.1/knows',
+                 writer.blank([{
+                   predicate: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+                   object: 'http://example.org/cartoons#Cat'
+                 },{
+                   predicate: 'http://xmlns.com/foaf/0.1/givenName',
+                   object: '"Tom"@en',
+                 }]));
+writer.addTriple('http://example.org/cartoons#Mammy',
+                 'http://example.org/cartoons#hasPets',
+                 writer.list([
+                   'http://example.org/cartoons#Tom',
+                   'http://example.org/cartoons#Jerry'
+                 ]));
+writer.end(function (error, result) { console.log(result); });
+```
+
+Be careful to use the output of `blank` and `list`
+**only once** and **only as argument to `addTriple`** of the same writer,
+as return values of these functions are unspecified.
+
 ## Storing
 
 `N3.Store` allows you to store triples in memory and find them fast.
