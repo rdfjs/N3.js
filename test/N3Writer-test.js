@@ -410,6 +410,70 @@ describe('N3Writer', function () {
       });
     });
 
+    it('should serialize triples with an empty list as object', function (done) {
+      var writer = N3Writer();
+      writer.addTriple('a1', 'b', writer.list());
+      writer.addTriple('a2', 'b', writer.list([]));
+      writer.end(function (error, output) {
+        output.should.equal('<a1> <b> ().\n' +
+                            '<a2> <b> ().\n');
+        done(error);
+      });
+    });
+
+    it('should serialize triples with a one-element list as object', function (done) {
+      var writer = N3Writer();
+      writer.addTriple('a1', 'b', writer.list(['c']));
+      writer.addTriple('a2', 'b', writer.list(['"c"']));
+      writer.end(function (error, output) {
+        output.should.equal('<a1> <b> (<c>).\n' +
+                            '<a2> <b> ("c").\n');
+        done(error);
+      });
+    });
+
+    it('should serialize triples with a three-element list as object', function (done) {
+      var writer = N3Writer();
+      writer.addTriple('a1', 'b', writer.list(['c', 'd', 'e']));
+      writer.addTriple('a2', 'b', writer.list(['"c"', '"d"', '"e"']));
+      writer.end(function (error, output) {
+        output.should.equal('<a1> <b> (<c> <d> <e>).\n' +
+                            '<a2> <b> ("c" "d" "e").\n');
+        done(error);
+      });
+    });
+
+    it('should serialize triples with an empty list as subject', function (done) {
+      var writer = N3Writer();
+      writer.addTriple(writer.list(),   'b1', 'c');
+      writer.addTriple(writer.list([]), 'b2', 'c');
+      writer.end(function (error, output) {
+        output.should.equal('() <b1> <c>;\n' +
+                            '    <b2> <c>.\n');
+        done(error);
+      });
+    });
+
+    it('should serialize triples with a one-element list as subject', function (done) {
+      var writer = N3Writer();
+      writer.addTriple(writer.list(['a']), 'b1', 'c');
+      writer.addTriple(writer.list(['a']), 'b2', 'c');
+      writer.end(function (error, output) {
+        output.should.equal('(<a>) <b1> <c>;\n' +
+                            '    <b2> <c>.\n');
+        done(error);
+      });
+    });
+
+    it('should serialize triples with a three-element list as subject', function (done) {
+      var writer = N3Writer();
+      writer.addTriple(writer.list(['a', '"b"', '"c"']), 'd', 'e');
+      writer.end(function (error, output) {
+        output.should.equal('(<a> "b" "c") <d> <e>.\n');
+        done(error);
+      });
+    });
+
     it('should accept triples in bulk', function (done) {
       var writer = N3Writer();
       writer.addTriples([{ subject: 'a', predicate: 'b', object: 'c' },
