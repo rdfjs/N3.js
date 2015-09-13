@@ -199,7 +199,7 @@ A dedicated `prefix` event signals every prefix with `prefix` and `iri` argument
 Write triples through `addTriple`.
 
 ``` js
-var writer = N3.Writer({ prefixes: { 'c': 'http://example.org/cartoons#' } });
+var writer = N3.Writer({ prefixes: { c: 'http://example.org/cartoons#' } });
 writer.addTriple('http://example.org/cartoons#Tom',
                  'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
                  'http://example.org/cartoons#Cat');
@@ -225,7 +225,7 @@ var writer2 = N3.Writer({ format: 'application/trig' });
 `N3.Writer` can also write triples to a Node.js stream.
 
 ``` js
-var writer = N3.Writer(process.stdout, { prefixes: { 'c': 'http://example.org/cartoons#' } });
+var writer = N3.Writer(process.stdout, { prefixes: { c: 'http://example.org/cartoons#' } });
 writer.addTriple('http://example.org/cartoons#Tom',
                  'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
                  'http://example.org/cartoons#Cat');
@@ -244,7 +244,7 @@ writer.end();
 ``` js
 var streamParser = new N3.StreamParser(),
     inputStream = fs.createReadStream('cartoons.ttl'),
-    streamWriter = new N3.StreamWriter({ prefixes: { 'c': 'http://example.org/cartoons#' } });
+    streamWriter = new N3.StreamWriter({ prefixes: { c: 'http://example.org/cartoons#' } });
 inputStream.pipe(streamParser);
 streamParser.pipe(streamWriter);
 streamWriter.pipe(process.stdout);
@@ -258,8 +258,8 @@ which can only be determined conclusively at the end of the stream.
 
 The `blank` and `list` functions allow you to create them manually instead:
 ```js
-var writer = N3.Writer({ prefixes: { 'c': 'http://example.org/cartoons#',
-                                     'foaf': 'http://xmlns.com/foaf/0.1/' } });
+var writer = N3.Writer({ prefixes: { c: 'http://example.org/cartoons#',
+                                     foaf: 'http://xmlns.com/foaf/0.1/' } });
 writer.addTriple(writer.blank('http://xmlns.com/foaf/0.1/givenName', '"Tom"@en'),
                  'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
                  'http://example.org/cartoons#Cat');
@@ -353,7 +353,7 @@ N3Util.isLiteral('_:b1'); // false
 
 **Prefixed names** can be tested and expanded:
 ``` js
-var prefixes = { 'rdfs': 'http://www.w3.org/2000/01/rdf-schema#' };
+var prefixes = { rdfs: 'http://www.w3.org/2000/01/rdf-schema#' };
 N3Util.isPrefixedName('rdfs:label'); // true;
 N3Util.expandPrefixedName('rdfs:label', prefixes); // http://www.w3.org/2000/01/rdf-schema#label
 ```
