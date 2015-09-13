@@ -325,13 +325,19 @@ describe('N3Writer', function () {
       });
     });
 
-    it('should serialize triples with an empty blank node as subject', function (done) {
+    it('should serialize triples with predicate-sharing blank node triples as object', function (done) {
       var writer = N3Writer();
-      writer.addTriple(writer.blank(), 'b', 'c');
-      writer.addTriple(writer.blank([]), 'b', 'c');
+      writer.addTriple('a', 'b', writer.blank([
+        { predicate: 'd', object: 'e' },
+        { predicate: 'd', object: 'f' },
+        { predicate: 'g', object: 'h' },
+        { predicate: 'g', object: 'i' },
+      ]));
       writer.end(function (error, output) {
-        output.should.equal('[] <b> <c>.\n' +
-                            '[] <b> <c>.\n');
+        output.should.equal('<a> <b> [\n' +
+                            '  <d> <e>, <f>;\n' +
+                            '  <g> <h>, <i>\n' +
+                            '].\n');
         done(error);
       });
     });
@@ -365,6 +371,17 @@ describe('N3Writer', function () {
                             '  <j> [ <k> "l" ]\n' +
                             ']\n' +
                             '].\n');
+        done(error);
+      });
+    });
+
+    it('should serialize triples with an empty blank node as subject', function (done) {
+      var writer = N3Writer();
+      writer.addTriple(writer.blank(), 'b', 'c');
+      writer.addTriple(writer.blank([]), 'b', 'c');
+      writer.end(function (error, output) {
+        output.should.equal('[] <b> <c>.\n' +
+                            '[] <b> <c>.\n');
         done(error);
       });
     });
