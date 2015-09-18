@@ -30,7 +30,7 @@ describe('N3Store', function () {
       store.find().should.be.empty;
     });
 
-    it('should be able to create unnamed blank nodes', function () {
+    it('should be able to generate unnamed blank nodes', function () {
       store.createBlankNode().should.eql('_:b0');
       store.createBlankNode().should.eql('_:b1');
 
@@ -38,10 +38,15 @@ describe('N3Store', function () {
       store.createBlankNode().should.eql('_:b3');
     });
 
-    it('should be able to create named blank nodes', function () {
+    it('should be able to generate named blank nodes', function () {
       store.createBlankNode('blank').should.eql('_:blank');
       store.createBlankNode('blank').should.eql('_:blank1');
       store.createBlankNode('blank').should.eql('_:blank2');
+    });
+
+    it('should be able to store triples with generated blank nodes', function () {
+      store.addTriple(store.createBlankNode('x'), 'b', 'c');
+      shouldIncludeAll(store.find(null, 'b'), ['_:x1', 'b', 'd']);
     });
   });
 
