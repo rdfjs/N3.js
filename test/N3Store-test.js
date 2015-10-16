@@ -50,6 +50,23 @@ describe('N3Store', function () {
     });
   });
 
+  describe('An N3Store without a configured default graph', function () {
+    var store = new N3Store();
+
+    it('should have a dummy default graph', function () {
+      store.defaultGraph.should.eql('http://example.org/#defaultGraph');
+    });
+  });
+
+  describe('An N3Store with a configured default graph', function () {
+    var dg = 'http://example.org/#defaultGraph';
+    var store = new N3Store({ defaultGraph: dg });
+
+    it('should return that configured default graph', function () {
+      store.defaultGraph.should.eql(dg);
+    });
+  });
+
   describe('An N3Store with initialized with 3 elements', function () {
     var store = new N3Store([
       { subject: 's1', predicate: 'p1', object: 'o1' },
@@ -63,7 +80,7 @@ describe('N3Store', function () {
   });
 
   describe('An N3Store with 5 elements', function () {
-    var store = new N3Store();
+    var store = new N3Store({ defaultGraph: 'http://example.org/#defaultGraph' });
     store.addTriple('s1', 'p1', 'o1');
     store.addTriple({ subject: 's1', predicate: 'p1', object: 'o2' });
     store.addTriples([
@@ -77,15 +94,22 @@ describe('N3Store', function () {
     });
 
     describe('when searched without parameters', function () {
-      it('should return all items in the default graph',
+      it('should return all items',
         shouldIncludeAll(store.find(),
-                         ['s1', 'p1', 'o1'], ['s1', 'p1', 'o2'], ['s1', 'p2', 'o2'], ['s2', 'p1', 'o1']));
+                         ['s1', 'p1', 'o1', store.defaultGraph],
+                         ['s1', 'p1', 'o2', store.defaultGraph],
+                         ['s1', 'p2', 'o2', store.defaultGraph],
+                         ['s2', 'p1', 'o1', store.defaultGraph],
+                         ['s1', 'p2', 'o3', 'c4']));
     });
 
     describe('when searched with an existing subject parameter', function () {
-      it('should return all items with this subject in the default graph',
+      it('should return all items with this subject in all graphs',
         shouldIncludeAll(store.find('s1', null, null),
-                         ['s1', 'p1', 'o1'], ['s1', 'p1', 'o2'], ['s1', 'p2', 'o2']));
+                         ['s1', 'p1', 'o1', store.defaultGraph],
+                         ['s1', 'p1', 'o2', store.defaultGraph],
+                         ['s1', 'p2', 'o2', store.defaultGraph],
+                         ['s1', 'p2', 'o3', 'c4']));
     });
 
     describe('when searched with a non-existing subject parameter', function () {
@@ -99,7 +123,9 @@ describe('N3Store', function () {
     describe('when searched with an existing predicate parameter', function () {
       it('should return all items with this predicate in the default graph',
         shouldIncludeAll(store.find(null, 'p1', null),
-                         ['s1', 'p1', 'o1'], ['s1', 'p1', 'o2'], ['s2', 'p1', 'o1']));
+                         ['s1', 'p1', 'o1', store.defaultGraph],
+                         ['s1', 'p1', 'o2', store.defaultGraph],
+                         ['s2', 'p1', 'o1', store.defaultGraph]));
     });
 
     describe('when searched with a non-existing predicate parameter', function () {
@@ -108,7 +134,9 @@ describe('N3Store', function () {
 
     describe('when searched with an existing object parameter', function () {
       it('should return all items with this object in the default graph',
-        shouldIncludeAll(store.find(null, null, 'o1'), ['s1', 'p1', 'o1'], ['s2', 'p1', 'o1']));
+        shouldIncludeAll(store.find(null, null, 'o1'),
+            ['s1', 'p1', 'o1', store.defaultGraph],
+            ['s2', 'p1', 'o1', store.defaultGraph]));
     });
 
     describe('when searched with a non-existing object parameter', function () {
@@ -117,7 +145,9 @@ describe('N3Store', function () {
 
     describe('when searched with existing subject and predicate parameters', function () {
       it('should return all items with this subject and predicate in the default graph',
-        shouldIncludeAll(store.find('s1', 'p1', null), ['s1', 'p1', 'o1'], ['s1', 'p1', 'o2']));
+        shouldIncludeAll(store.find('s1', 'p1', null),
+            ['s1', 'p1', 'o1', store.defaultGraph],
+            ['s1', 'p1', 'o2', store.defaultGraph]));
     });
 
     describe('when searched with non-existing subject and predicate parameters', function () {
@@ -126,7 +156,9 @@ describe('N3Store', function () {
 
     describe('when searched with existing subject and object parameters', function () {
       it('should return all items with this subject and object in the default graph',
-        shouldIncludeAll(store.find('s1', null, 'o2'), ['s1', 'p1', 'o2'], ['s1', 'p2', 'o2']));
+        shouldIncludeAll(store.find('s1', null, 'o2'),
+            ['s1', 'p1', 'o2', store.defaultGraph],
+            ['s1', 'p2', 'o2', store.defaultGraph]));
     });
 
     describe('when searched with non-existing subject and object parameters', function () {
@@ -135,16 +167,18 @@ describe('N3Store', function () {
 
     describe('when searched with existing predicate and object parameters', function () {
       it('should return all items with this predicate and object in the default graph',
-        shouldIncludeAll(store.find(null, 'p1', 'o1'), ['s1', 'p1', 'o1'], ['s2', 'p1', 'o1']));
+        shouldIncludeAll(store.find(null, 'p1', 'o1'),
+            ['s1', 'p1', 'o1', store.defaultGraph],
+            ['s2', 'p1', 'o1', store.defaultGraph]));
     });
 
-    describe('when searched with non-existing predicate and object parameters', function () {
-      itShouldBeEmpty(store.find(null, 'p2', 'o3'));
+    describe('when searched with non-existing predicate and object parameters in the default graph', function () {
+      itShouldBeEmpty(store.find(null, 'p2', 'o3', store.defaultGraph));
     });
 
     describe('when searched with existing subject, predicate, and object parameters', function () {
       it('should return all items with this subject, predicate, and object in the default graph',
-        shouldIncludeAll(store.find('s1', 'p1', 'o1'), ['s1', 'p1', 'o1']));
+        shouldIncludeAll(store.find('s1', 'p1', 'o1'), ['s1', 'p1', 'o1', store.defaultGraph]));
     });
 
     describe('when searched with a non-existing triple', function () {
@@ -153,8 +187,11 @@ describe('N3Store', function () {
 
     describe('when searched with the default graph parameter', function () {
       it('should return all items in the default graph',
-        shouldIncludeAll(store.find(),
-                         ['s1', 'p1', 'o1'], ['s1', 'p1', 'o2'], ['s1', 'p2', 'o2'], ['s2', 'p1', 'o1']));
+        shouldIncludeAll(store.find(null, null, null, store.defaultGraph),
+                         ['s1', 'p1', 'o1', store.defaultGraph],
+                         ['s1', 'p1', 'o2', store.defaultGraph],
+                         ['s1', 'p2', 'o2', store.defaultGraph],
+                         ['s2', 'p1', 'o1', store.defaultGraph]));
     });
 
     describe('when searched with an existing non-default graph parameter', function () {
@@ -332,7 +369,10 @@ describe('N3Store', function () {
 
       it('should not contain that triple anymore',
         shouldIncludeAll(function () { return store.find(); },
-                         ['s1', 'p1', 'o2'], ['s1', 'p2', 'o2'], ['s2', 'p1', 'o1']));
+                         ['s1', 'p1', 'o2', store.defaultGraph],
+                         ['s1', 'p2', 'o2', store.defaultGraph],
+                         ['s2', 'p1', 'o1', store.defaultGraph],
+                         ['s1', 'p2', 'o3', 'c4', store.defaultGraph]));
     });
 
     describe('when removing an existing triple from a non-default graph', function () {
@@ -355,7 +395,7 @@ describe('N3Store', function () {
 
       it('should not contain those triples anymore',
         shouldIncludeAll(function () { return store.find(); },
-                         ['s1', 'p1', 'o2']));
+                         ['s1', 'p1', 'o2', store.defaultGraph]));
     });
 
     describe('when adding and removing a triple', function () {
@@ -380,29 +420,39 @@ describe('N3Store', function () {
 
     describe('should allow to query subjects with prefixes', function () {
       it('should return all triples with that subject',
-        shouldIncludeAll(store.find('a:s1', null, null),
-                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
-                         ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
+          shouldIncludeAll(store.find('a:s1', null, null),
+              ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', store.defaultGraph],
+              ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1', store.defaultGraph],
+              ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
+    });
+
+    describe('should allow to query subjects with prefixes', function () {
+      it('should return all triples with that subject in the default graph',
+          shouldIncludeAll(store.find('a:s1', null, null, store.defaultGraph),
+              ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', store.defaultGraph],
+              ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1', store.defaultGraph]));
     });
 
     describe('should allow to query predicates with prefixes', function () {
       it('should return all triples with that predicate',
         shouldIncludeAll(store.find(null, 'b:p1', null),
-                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
-                         ['http://foo.org/#s2', 'http://bar.org/p1', 'http://foo.org/#o2']));
+                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', store.defaultGraph],
+                         ['http://foo.org/#s2', 'http://bar.org/p1', 'http://foo.org/#o2', store.defaultGraph],
+                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
     });
 
     describe('should allow to query objects with prefixes', function () {
       it('should return all triples with that object',
         shouldIncludeAll(store.find(null, null, 'a:o1'),
-                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
-                         ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
+                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', store.defaultGraph],
+                         ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1', store.defaultGraph],
+                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
     });
 
     describe('should allow to query graphs with prefixes', function () {
       it('should return all triples with that graph',
         shouldIncludeAll(store.find(null, null, null, 'http://graphs.org/#g1'),
-          ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
+          ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1', store.defaultGraph]));
     });
   });
 
@@ -418,24 +468,48 @@ describe('N3Store', function () {
     store.addPrefixes({ b: 'http://bar.org/', g: 'http://graphs.org/#' });
 
     describe('should allow to query subjects with prefixes', function () {
+      it('should return all triples with that subject in the default graph',
+        shouldIncludeAll(store.find('a:s1', null, null, store.defaultGraph),
+                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', store.defaultGraph],
+                         ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1', store.defaultGraph]));
+    });
+
+    describe('should allow to query subjects with prefixes', function () {
       it('should return all triples with that subject',
-        shouldIncludeAll(store.find('a:s1', null, null),
-                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
-                         ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
+          shouldIncludeAll(store.find('a:s1', null, null),
+              ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', store.defaultGraph],
+              ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1', store.defaultGraph],
+              ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
+    });
+
+    describe('should allow to query predicates with prefixes', function () {
+      it('should return all triples with that predicate in the default graph',
+          shouldIncludeAll(store.find(null, 'b:p1', null, store.defaultGraph),
+              ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', store.defaultGraph],
+              ['http://foo.org/#s2', 'http://bar.org/p1', 'http://foo.org/#o2', store.defaultGraph]));
     });
 
     describe('should allow to query predicates with prefixes', function () {
       it('should return all triples with that predicate',
-        shouldIncludeAll(store.find(null, 'b:p1', null),
-                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
-                         ['http://foo.org/#s2', 'http://bar.org/p1', 'http://foo.org/#o2']));
+          shouldIncludeAll(store.find(null, 'b:p1', null),
+              ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', store.defaultGraph],
+              ['http://foo.org/#s2', 'http://bar.org/p1', 'http://foo.org/#o2', store.defaultGraph],
+              ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
+    });
+
+    describe('should allow to query objects with prefixes', function () {
+      it('should return all triples with that object in the default graph',
+          shouldIncludeAll(store.find(null, null, 'a:o1', store.defaultGraph),
+              ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', store.defaultGraph],
+              ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1', store.defaultGraph]));
     });
 
     describe('should allow to query objects with prefixes', function () {
       it('should return all triples with that object',
         shouldIncludeAll(store.find(null, null, 'a:o1'),
-                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
-                         ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
+                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', store.defaultGraph],
+                         ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1', store.defaultGraph],
+                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
     });
 
     describe('should allow to query graphs with prefixes', function () {
@@ -456,8 +530,8 @@ describe('N3Store', function () {
     describe('should allow to query subjects without prefixes', function () {
       it('should return all triples with that subject',
         shouldIncludeAll(store.find('http://foo.org/#s1', null, null),
-                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
-                         ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
+                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', store.defaultGraph],
+                         ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1', store.defaultGraph]));
     });
   });
 
@@ -468,7 +542,7 @@ describe('N3Store', function () {
     describe('should allow to query predicates with prefixes', function () {
       it('should return all triples with that predicate',
         shouldIncludeAll(store.find(null, 'http:b', null),
-                         ['a', 'http://www.w3.org/2006/http#b', 'c']));
+                         ['a', 'http://www.w3.org/2006/http#b', 'c', store.defaultGraph]));
     });
   });
 
