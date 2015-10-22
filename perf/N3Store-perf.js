@@ -4,15 +4,15 @@ var assert = require('assert');
 
 console.log('N3Store performance test');
 
-var TEST;
-var dim = parseInt(process.argv[2], 10) || 75; // Consumes about 1GB for the quad case
-var dimSquared = dim * dim;
-var dimCubed = dimSquared * dim;
-var dimQuads = dimCubed * dim;
 var prefix = 'http://example.org/#';
+var TEST, dim, dimSquared, dimCubed, dimQuads, store;
 
 /* Test triples */
-var store = new N3.Store();
+dim = parseInt(process.argv[2], 10) || 256;
+dimSquared = dim * dim;
+dimCubed = dimSquared * dim;
+
+store = new N3.Store();
 TEST = '- Adding ' + dimCubed + ' triples in the default graph';
 console.time(TEST);
 var i, j, k, l;
@@ -37,6 +37,11 @@ console.timeEnd(TEST);
 console.log();
 
 /* Test quads */
+dim /= 4,
+dimSquared = dim * dim;
+dimCubed = dimSquared * dim;
+dimQuads = dimCubed * dim;
+
 store = new N3.Store();
 TEST = '- Adding ' + dimQuads + ' quads';
 console.time(TEST);
