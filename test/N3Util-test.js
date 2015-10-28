@@ -340,4 +340,70 @@ describe('N3Util', function () {
       N3Util.createLiteral(true).should.equal('"true"^^http://www.w3.org/2001/XMLSchema#boolean');
     });
   });
+
+  describe('prefix', function () {
+    var baz = N3Util.prefix('http://ex.org/baz#');
+    it('should return a function', function () {
+      expect(baz).to.be.an.instanceof(Function);
+    });
+
+    describe('the function', function () {
+      it('should expand the prefix', function () {
+        expect(baz('bar')).to.equal('http://ex.org/baz#bar');
+      });
+    });
+  });
+
+  describe('prefixes', function () {
+    describe('called without arguments', function () {
+      var prefixes = N3Util.prefixes();
+      it('should return a function', function () {
+        expect(prefixes).to.be.an.instanceof(Function);
+      });
+
+      describe('the function', function () {
+        it('should not expand non-registered prefixes', function () {
+          expect(prefixes('baz')('bar')).to.equal('bar');
+        });
+
+        it('should allow registering prefixes', function () {
+          var p = prefixes('baz', 'http://ex.org/baz#');
+          expect(p).to.exist;
+          expect(p).to.equal(prefixes('baz'));
+        });
+
+        it('should expand the newly registered prefix', function () {
+          expect(prefixes('baz')('bar')).to.equal('http://ex.org/baz#bar');
+        });
+      });
+    });
+
+    describe('called with a hash of prefixes', function () {
+      var prefixes = N3Util.prefixes({ foo: 'http://ex.org/foo#', bar: 'http://ex.org/bar#' });
+      it('should return a function', function () {
+        expect(prefixes).to.be.an.instanceof(Function);
+      });
+
+      describe('the function', function () {
+        it('should expand registered prefixes', function () {
+          expect(prefixes('foo')('bar')).to.equal('http://ex.org/foo#bar');
+          expect(prefixes('bar')('bar')).to.equal('http://ex.org/bar#bar');
+        });
+
+        it('should not expand non-registered prefixes', function () {
+          expect(prefixes('baz')('bar')).to.equal('bar');
+        });
+
+        it('should allow registering prefixes', function () {
+          var p = prefixes('baz', 'http://ex.org/baz#');
+          expect(p).to.exist;
+          expect(p).to.equal(prefixes('baz'));
+        });
+
+        it('should expand the newly registered prefix', function () {
+          expect(prefixes('baz')('bar')).to.equal('http://ex.org/baz#bar');
+        });
+      });
+    });
+  });
 });
