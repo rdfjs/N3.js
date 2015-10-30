@@ -97,6 +97,26 @@ describe('N3Store', function () {
         store.size.should.eql(4);
       });
     });
+
+    describe('removing an existing triple', function () {
+      it('should return true', function () {
+        store.removeTriple('s1', 'p1', 'o4').should.be.true;
+      });
+
+      it('should decrease the size', function () {
+        store.size.should.eql(3);
+      });
+    });
+
+    describe('removing a non-existing triple', function () {
+      it('should return false', function () {
+        store.removeTriple('s1', 'p1', 'o5').should.be.false;
+      });
+
+      it('should not decrease the size', function () {
+        store.size.should.eql(3);
+      });
+    });
   });
 
   describe('An N3Store with 5 elements', function () {
@@ -338,52 +358,52 @@ describe('N3Store', function () {
     });
 
     describe('when trying to remove a triple with a non-existing subject', function () {
-      before(function () { store.removeTriple('s0', 'p1', 'o1'); });
+      before(function () { store.removeTriple('s0', 'p1', 'o1').should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove a triple with a non-existing predicate', function () {
-      before(function () { store.removeTriple('s1', 'p0', 'o1'); });
+      before(function () { store.removeTriple('s1', 'p0', 'o1').should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove a triple with a non-existing object', function () {
-      before(function () { store.removeTriple('s1', 'p1', 'o0'); });
+      before(function () { store.removeTriple('s1', 'p1', 'o0').should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove a triple for which no subjects exist', function () {
-      before(function () { store.removeTriple('o1', 'p1', 'o1'); });
+      before(function () { store.removeTriple('o1', 'p1', 'o1').should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove a triple for which no predicates exist', function () {
-      before(function () { store.removeTriple('s1', 's1', 'o1'); });
+      before(function () { store.removeTriple('s1', 's1', 'o1').should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove a triple for which no objects exist', function () {
-      before(function () { store.removeTriple('s1', 'p1', 's1'); });
+      before(function () { store.removeTriple('s1', 'p1', 's1').should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove a triple that does not exist', function () {
-      before(function () { store.removeTriple('s1', 'p2', 'o1'); });
+      before(function () { store.removeTriple('s1', 'p2', 'o1').should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove an incomplete triple', function () {
-      before(function () { store.removeTriple('s1', null, null); });
+      before(function () { store.removeTriple('s1', null, null).should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove a triple with a non-existing graph', function () {
-      before(function () { store.removeTriple('s1', 'p1', 'o1', 'c0'); });
+      before(function () { store.removeTriple('s1', 'p1', 'o1', 'c0').should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when removing an existing triple', function () {
-      before(function () { store.removeTriple('s1', 'p1', 'o1'); });
+      before(function () { store.removeTriple('s1', 'p1', 'o1').should.be.true; });
 
       it('should have size 4', function () { store.size.should.eql(4); });
 
@@ -396,7 +416,7 @@ describe('N3Store', function () {
     });
 
     describe('when removing an existing triple from a non-default graph', function () {
-      before(function () { store.removeTriple('s1', 'p2', 'o3', 'c4'); });
+      before(function () { store.removeTriple('s1', 'p2', 'o3', 'c4').should.be.true; });
 
       it('should have size 3', function () { store.size.should.eql(3); });
 
@@ -421,7 +441,7 @@ describe('N3Store', function () {
     describe('when adding and removing a triple', function () {
       before(function () {
         store.addTriple('a', 'b', 'c').should.be.true;
-        store.removeTriple('a', 'b', 'c');
+        store.removeTriple('a', 'b', 'c').should.be.true;
       });
 
       it('should have an unchanged size', function () { store.size.should.eql(1); });
