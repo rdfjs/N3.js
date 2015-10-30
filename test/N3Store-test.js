@@ -34,7 +34,7 @@ describe('N3Store', function () {
       store.createBlankNode().should.eql('_:b0');
       store.createBlankNode().should.eql('_:b1');
 
-      store.addTriple('_:b0', '_:b1', '_:b2');
+      store.addTriple('_:b0', '_:b1', '_:b2').should.be.true;
       store.createBlankNode().should.eql('_:b3');
     });
 
@@ -45,7 +45,7 @@ describe('N3Store', function () {
     });
 
     it('should be able to store triples with generated blank nodes', function () {
-      store.addTriple(store.createBlankNode('x'), 'b', 'c');
+      store.addTriple(store.createBlankNode('x'), 'b', 'c').should.be.true;
       shouldIncludeAll(store.find(null, 'b'), ['_:x1', 'b', 'd']);
     });
   });
@@ -77,17 +77,37 @@ describe('N3Store', function () {
     it('should have size 3', function () {
       store.size.should.eql(3);
     });
+
+    describe('adding a triple that already exists', function () {
+      it('should return false', function () {
+        store.addTriple('s1', 'p1', 'o1').should.be.false;
+      });
+
+      it('should not increase the size', function () {
+        store.size.should.eql(3);
+      });
+    });
+
+    describe('adding a triple that did not exist yet', function () {
+      it('should return true', function () {
+        store.addTriple('s1', 'p1', 'o4').should.be.true;
+      });
+
+      it('should increase the size', function () {
+        store.size.should.eql(4);
+      });
+    });
   });
 
   describe('An N3Store with 5 elements', function () {
     var store = new N3Store({ defaultGraph: 'http://example.org/#defaultGraph' });
-    store.addTriple('s1', 'p1', 'o1');
-    store.addTriple({ subject: 's1', predicate: 'p1', object: 'o2' });
+    store.addTriple('s1', 'p1', 'o1').should.be.true;
+    store.addTriple({ subject: 's1', predicate: 'p1', object: 'o2' }).should.be.true;
     store.addTriples([
       { subject: 's1', predicate: 'p2', object: 'o2' },
       { subject: 's2', predicate: 'p1', object: 'o1' },
     ]);
-    store.addTriple('s1', 'p2', 'o3', 'c4');
+    store.addTriple('s1', 'p2', 'o3', 'c4').should.be.true;
 
     it('should have size 5', function () {
       store.size.should.eql(5);
@@ -400,7 +420,7 @@ describe('N3Store', function () {
 
     describe('when adding and removing a triple', function () {
       before(function () {
-        store.addTriple('a', 'b', 'c');
+        store.addTriple('a', 'b', 'c').should.be.true;
         store.removeTriple('a', 'b', 'c');
       });
 
@@ -537,7 +557,7 @@ describe('N3Store', function () {
 
   describe('An N3Store created without triples but with prefixes', function () {
     var store = new N3Store({ prefixes: { http: 'http://www.w3.org/2006/http#' } });
-    store.addTriple('a', 'http://www.w3.org/2006/http#b', 'c');
+    store.addTriple('a', 'http://www.w3.org/2006/http#b', 'c').should.be.true;
 
     describe('should allow to query predicates with prefixes', function () {
       it('should return all triples with that predicate',
@@ -552,13 +572,13 @@ describe('N3Store', function () {
     // Test inspired by http://www.devthought.com/2012/01/18/an-object-is-not-a-hash/.
     // The value `__proto__` is not supported however – fixing it introduces too much overhead.
     it('should be able to contain entities with JavaScript object property names', function () {
-      store.addTriple('toString', 'valueOf', 'toLocaleString', 'hasOwnProperty');
+      store.addTriple('toString', 'valueOf', 'toLocaleString', 'hasOwnProperty').should.be.true;
       shouldIncludeAll(store.find(null, null, null, 'hasOwnProperty'),
                        ['toString', 'valueOf', 'toLocaleString', 'hasOwnProperty'])();
     });
 
     it('should be able to contain entities named "null"', function () {
-      store.addTriple('null', 'null', 'null', 'null');
+      store.addTriple('null', 'null', 'null', 'null').should.be.true;
       shouldIncludeAll(store.find(null, null, null, 'null'), ['null', 'null', 'null', 'null'])();
     });
   });
