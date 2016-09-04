@@ -3,5 +3,7 @@ node_js:
  - "4"
  - "6"
  - "node"
-
+script:
+  - npm run lint
+  - npm test
 sudo: false
