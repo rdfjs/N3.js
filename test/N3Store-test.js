@@ -586,6 +586,24 @@ describe('N3Store', function () {
     });
   });
 
+  describe('An N3Store containing a blank node', function () {
+    var store = new N3Store({ defaultGraph: 'http://example.org/#defaultGraph' });
+    var b1 = store.createBlankNode();
+    store.addTriple('s1', 'p1', b1).should.be.true;
+
+    describe('when searched with more than one variable', function () {
+      it('should return a triple with the blank node as an object',
+        shouldIncludeAll(store.find(),
+                         ['s1', 'p1', b1, store.defaultGraph]));
+    });
+
+    describe('when searched with one variable', function () {
+      it('should return a triple with the blank node as an object',
+        shouldIncludeAll(store.find('s1', 'p1'),
+                         ['s1', 'p1', b1, store.defaultGraph]));
+    });
+  });
+
   describe('An N3Store', function () {
     var store = new N3Store();
 
