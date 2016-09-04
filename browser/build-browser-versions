@@ -18,8 +18,8 @@ var submodules = [
 var rootPath = path.join(__dirname, '../'),
     sourcePath = path.join(rootPath, 'lib/'),
     destinationPath = path.join(rootPath, 'browser/'),
-    uglifyjsPath = path.join(rootPath, 'node_modules/uglify-js/bin/uglifyjs'),
-    browserifyPath = path.join(rootPath, 'node_modules/browserify/bin/cmd.js');
+    uglifyjsPath = path.join(rootPath, 'node_modules/.bin/uglifyjs'),
+    browserifyPath = path.join(rootPath, 'node_modules/.bin/browserify');
 
 if (!fs.existsSync(destinationPath))
   fs.mkdirSync(destinationPath);

@@ -16,24 +16,24 @@
     "node": ">=0.10.0"
   },
   "devDependencies": {
-    "async": "~0.9.0",
-    "browserify": "~3.x",
-    "chai": "~1.4.2",
-    "chai-things": "~0.1.1",
-    "colors": "~0.6.0",
-    "docco": "~0.6.2",
-    "eslint": "~1.2.1",
-    "istanbul": "~0.3.0",
-    "mocha": "~2.3.0",
-    "pre-commit": "~0.0.9",
-    "request": "~2.22.0",
-    "uglify-js": "~2.4.3"
+    "async": "^2.0.1",
+    "browserify": "^13.1.0",
+    "chai": "^3.5.0",
+    "chai-things": "^0.2.0",
+    "colors": "^1.1.2",
+    "docco": "^0.7.0",
+    "eslint": "^3.4.0",
+    "istanbul": "^0.4.5",
+    "mocha": "^3.0.2",
+    "pre-commit": "^1.1.3",
+    "request": "^2.74.0",
+    "uglify-js": "^2.7.3"
   },
   "scripts": {
     "test": "mocha",
     "lint": "eslint lib perf test spec",
     "browser": "node browser/build-browser-versions",
-    "coverage": "istanbul cover node_modules/.bin/_mocha -- -R spec --timeout 100",
+    "coverage": "istanbul cover node_modules/.bin/_mocha -- -R spec --timeout 1000",
     "spec": "node spec/turtle-spec && node spec/trig-spec && node spec/ntriples-spec && node spec/nquads-spec",
     "spec-clean": "rm -r spec/turtle spec/trig",
     "docs": "docco lib/*.js"

@@ -1,2 +1,2 @@
---timeout 50
---slow 30
+--timeout 100
+--slow 50
