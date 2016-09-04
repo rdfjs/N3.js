@@ -696,6 +696,20 @@ describe('N3Parser', function () {
       }
     });
 
+    it('should return prefixes through a callback without triple callback', function (done) {
+      var prefixes = {};
+      new N3Parser().parse('@prefix a: <IRIa>. a:a a:b a:c. @prefix b: <IRIb>.',
+                           null, prefixCallback);
+
+      function prefixCallback(prefix, iri) {
+        expect(prefix).to.exist;
+        expect(iri).to.exist;
+        prefixes[prefix] = iri;
+        if (Object.keys(prefixes).length === 2)
+          done();
+      }
+    });
+
     it('should return prefixes at the last triple callback', function (done) {
       new N3Parser().parse('@prefix a: <IRIa>. a:a a:b a:c. @prefix b: <IRIb>.', tripleCallback);
 
