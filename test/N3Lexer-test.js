@@ -1,6 +1,6 @@
 var N3Lexer = require('../N3').Lexer;
 var chai = require('chai'),
-    events = require('events');
+    EventEmitter = require('events');
 var expect = chai.expect;
 chai.should();
 
@@ -72,13 +72,13 @@ describe('N3Lexer', function () {
       var isNaN = global.isNaN;
       global.isNaN = function () { return true; };
       // Try parsing
-      var lexer = new N3Lexer();
-      lexer.tokenize(function (error, token) {
+      var stream = new EventEmitter(), lexer = new N3Lexer();
+      lexer.tokenize(stream, function (error, token) {
         error.should.be.an.instanceof(Error);
         error.message.should.equal('Syntax error: unexpected "<\\u1234>" on line 1.');
         done(token);
       });
-      lexer.addChunk('<\\u1234>');
+      stream.emit('data', '<\\u1234>');
       // Restore global isNaN
       global.isNaN = isNaN;
     });
@@ -88,13 +88,13 @@ describe('N3Lexer', function () {
       var isNaN = global.isNaN;
       global.isNaN = function () { return true; };
       // Try parsing
-      var lexer = new N3Lexer();
-      lexer.tokenize(function (error, token) {
+      var stream = new EventEmitter(), lexer = new N3Lexer();
+      lexer.tokenize(stream, function (error, token) {
         error.should.be.an.instanceof(Error);
         error.message.should.equal('Syntax error: unexpected "<\\U12345678>" on line 1.');
         done(token);
       });
-      lexer.addChunk('<\\U12345678>');
+      stream.emit('data', '<\\U12345678>');
       // Restore global isNaN
       global.isNaN = isNaN;
     });
@@ -645,26 +645,13 @@ describe('N3Lexer', function () {
       new N3Lexer().tokenize({ on: function () {} });
     });
 
-    describe('using the addChunk/end interface', function () {
-      var tokens = [], lexer = new N3Lexer();
-      lexer.tokenize(function (error, token) { !error && tokens.push(token); });
-      lexer.addChunk('<a> ');
-      lexer.addChunk('<b> ');
-      lexer.addChunk('<c>.');
-      lexer.end();
-
-      it('parses all chunks', function () {
-        tokens.should.have.length(5);
-      });
-    });
-
     describe('passing data after the stream has been finished', function () {
-      var tokens = [], lexer = new N3Lexer();
-      lexer.tokenize(function (error, token) { !error && tokens.push(token); });
-      lexer.addChunk('<a> ');
-      lexer.end();
-      lexer.addChunk('<b> ');
-      lexer.end();
+      var tokens = [], stream = new EventEmitter(), lexer = new N3Lexer();
+      lexer.tokenize(stream, function (error, token) { !error && tokens.push(token); });
+      stream.emit('data', '<a> ');
+      stream.emit('end');
+      stream.emit('data', '<b> ');
+      stream.emit('end');
 
       it('parses only the first chunk (plus EOF)', function () {
         tokens.should.have.length(2);
@@ -672,12 +659,13 @@ describe('N3Lexer', function () {
     });
 
     describe('passing data after an error has occured', function () {
-      var tokens = [], lexer = new N3Lexer();
-      lexer.tokenize(function (error, token) { !error && tokens.push(token); });
-      lexer.addChunk('<a> ');
-      lexer.addChunk('error ');
-      lexer.end();
-      lexer.addChunk('<b> ');
+      var tokens = [], stream = new EventEmitter(), lexer = new N3Lexer();
+      lexer.tokenize(stream, function (error, token) { !error && tokens.push(token); });
+      stream.emit('data', '<a> ');
+      stream.emit('data', ' error ');
+      stream.emit('end');
+      stream.emit('data', '<b> ');
+      stream.emit('end');
 
       it('parses only the first chunk', function () {
         tokens.should.have.length(1);
@@ -731,7 +719,7 @@ var immediately = typeof setImmediate === 'function' ? setImmediate :
 
 function streamOf() {
   var elements = Array.prototype.slice.call(arguments),
-      stream = new events.EventEmitter();
+      stream = new EventEmitter();
 
   stream.setEncoding = function (encoding) {
     if (encoding === 'utf8')

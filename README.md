@@ -135,26 +135,6 @@ var parser1 = N3.Parser({ format: 'N-Triples' });
 var parser2 = N3.Parser({ format: 'application/trig' });
 ```
 
-### From RDF chunks to triples
-
-`N3.Parser` can also parse triples from RDF documents arriving in chunks,
-for instance, when being downloaded or read from disk.
-Use `addChunk` to add a piece of data, and `end` to signal the end.
-
-``` js
-var parser = N3.Parser(), triples = [];
-parser.parse(function (error, triple, prefixes) { triple && triples.push(triple); });
-
-parser.addChunk('@prefix c: <http://example.org/cartoons#>.\n');
-parser.addChunk('c:Tom a ');
-parser.addChunk('c:Cat. c:Jerry a');
-console.log(triples); // First triple
-
-parser.addChunk(' c:Mouse.');
-parser.end();
-console.log(triples); // Both triples
-```
-
 ### From an RDF stream to triples
 
 `N3.Parser` can parse [Node.js streams](http://nodejs.org/api/stream.html) as they grow,

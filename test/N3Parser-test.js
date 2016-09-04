@@ -712,18 +712,6 @@ describe('N3Parser', function () {
         }
       }
     });
-
-    describe('when the addChunk/end interface is used', function () {
-      it('should return the parsed triples', function () {
-        var triples = [], parser = new N3Parser();
-        parser.parse(function (error, triple) { triple && triples.push(triple); });
-        parser.addChunk('<a> <b> <c>,');
-        triples.should.have.length(1);
-        parser.addChunk('<d>.');
-        parser.end();
-        triples.should.have.length(2);
-      });
-    });
   });
 
   describe('An N3Parser instance with a document IRI', function () {
