@@ -78,7 +78,7 @@ describe('N3Parser', function () {
 
     it('should not parse a triple with a literal and a prefixed name type with an inexistent prefix',
       shouldNotParse('<a> <b> "string"^^x:z.',
-                     'Undefined prefix "x:" at line 1.'));
+                     'Undefined prefix "x:" on line 1.'));
 
     it('should parse triples with prefixes',
       shouldParse('@prefix : <#>.\n' +
@@ -96,23 +96,23 @@ describe('N3Parser', function () {
 
     it('should not parse undefined empty prefix in subject',
       shouldNotParse(':a ',
-                     'Undefined prefix ":" at line 1.'));
+                     'Undefined prefix ":" on line 1.'));
 
     it('should not parse undefined prefix in subject',
       shouldNotParse('a:a ',
-                     'Undefined prefix "a:" at line 1.'));
+                     'Undefined prefix "a:" on line 1.'));
 
     it('should not parse undefined prefix in predicate',
       shouldNotParse('<a> b:c ',
-                     'Undefined prefix "b:" at line 1.'));
+                     'Undefined prefix "b:" on line 1.'));
 
     it('should not parse undefined prefix in object',
       shouldNotParse('<a> <b> c:d ',
-                     'Undefined prefix "c:" at line 1.'));
+                     'Undefined prefix "c:" on line 1.'));
 
     it('should not parse undefined prefix in datatype',
       shouldNotParse('<a> <b> "c"^^d:e ',
-                     'Undefined prefix "d:" at line 1.'));
+                     'Undefined prefix "d:" on line 1.'));
 
     it('should parse triples with SPARQL prefixes',
       shouldParse('PREFIX : <#>\n' +
@@ -122,15 +122,15 @@ describe('N3Parser', function () {
 
     it('should not parse prefix declarations without prefix',
       shouldNotParse('@prefix <a> ',
-                     'Expected prefix to follow @prefix at line 1.'));
+                     'Expected prefix to follow @prefix on line 1.'));
 
     it('should not parse prefix declarations without IRI',
       shouldNotParse('@prefix : .',
-                     'Expected IRI to follow prefix ":" at line 1.'));
+                     'Expected IRI to follow prefix ":" on line 1.'));
 
     it('should not parse prefix declarations without a dot',
       shouldNotParse('@prefix : <a> ;',
-                     'Expected declaration to end with a dot at line 1.'));
+                     'Expected declaration to end with a dot on line 1.'));
 
     it('should parse statements with shared subjects',
       shouldParse('<a> <b> <c>;\n<d> <e>.',
@@ -158,7 +158,7 @@ describe('N3Parser', function () {
 
     it('should not parse statements with blank predicates',
       shouldNotParse('<a> _:b <c>.',
-                     'Disallowed blank node as predicate at line 1.'));
+                     'Disallowed blank node as predicate on line 1.'));
 
     it('should parse statements with empty blank nodes',
       shouldParse('[] <b> [].',
@@ -181,11 +181,11 @@ describe('N3Parser', function () {
 
     it('should not parse a blank node with missing subject',
       shouldNotParse('<a> <b> [<c>].',
-                     'Expected object to follow "c" at line 1.'));
+                     'Expected object to follow "c" on line 1.'));
 
     it('should not parse a blank node with only a semicolon',
       shouldNotParse('<a> <b> [;].',
-                     'Unexpected ] at line 1.'));
+                     'Unexpected ] on line 1.'));
 
     it('should parse a blank node with a trailing semicolon',
       shouldParse('<a> <b> [ <u> <v>; ].',
@@ -253,7 +253,7 @@ describe('N3Parser', function () {
 
     it('should not parse an invalid blank node',
       shouldNotParse('[ <a> <b> .',
-                     'Expected punctuation to follow "b" at line 1.'));
+                     'Expected punctuation to follow "b" on line 1.'));
 
     it('should parse statements with an empty list in the subject',
       shouldParse('() <a> <b>.',
@@ -306,7 +306,7 @@ describe('N3Parser', function () {
 
     it('should not parse statements with undefined prefixes in lists',
       shouldNotParse('<a> <b> (a:x a:y).',
-                     'Undefined prefix "a:" at line 1.'));
+                     'Undefined prefix "a:" on line 1.'));
 
     it('should parse statements with blank nodes in lists',
       shouldParse('<a> <b> (_:x _:y).',
@@ -373,7 +373,7 @@ describe('N3Parser', function () {
 
     it('should not parse an invalid list',
       shouldNotParse('<a> <b> (]).',
-                     'Expected list item instead of "]" at line 1.'));
+                     'Expected list item instead of "]" on line 1.'));
 
     it('should resolve IRIs against @base',
       shouldParse('@base <http://ex.org/>.\n' +
@@ -559,47 +559,47 @@ describe('N3Parser', function () {
 
     it('should not parse a single closing brace',
       shouldNotParse('}',
-                     'Unexpected graph closing at line 1.'));
+                     'Unexpected graph closing on line 1.'));
 
     it('should not parse a single opening brace',
       shouldNotParse('{',
-                     'Expected subject but got eof at line 1.'));
+                     'Expected subject but got eof on line 1.'));
 
     it('should not parse a superfluous closing brace ',
       shouldNotParse('{}}',
-                     'Unexpected graph closing at line 1.'));
+                     'Unexpected graph closing on line 1.'));
 
     it('should not parse a graph with only a dot',
       shouldNotParse('{.}',
-                     'Expected subject but got . at line 1.'));
+                     'Expected subject but got . on line 1.'));
 
     it('should not parse a graph with only a semicolon',
       shouldNotParse('{;}',
-                     'Expected subject but got ; at line 1.'));
+                     'Expected subject but got ; on line 1.'));
 
     it('should not parse an unclosed graph',
       shouldNotParse('{<a> <b> <c>.',
-                     'Unclosed graph at line 1.'));
+                     'Unclosed graph on line 1.'));
 
     it('should not parse a named graph with a list node as label',
       shouldNotParse('() {}',
-                     'Expected predicate to follow "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil" at line 1.'));
+                     'Expected predicate to follow "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil" on line 1.'));
 
     it('should not parse a named graph with a non-empty blank node as label',
       shouldNotParse('[<a> <b>] {}',
-                     'Expected predicate to follow "_:b0" at line 1.'));
+                     'Expected predicate to follow "_:b0" on line 1.'));
 
     it('should not parse a named graph with the GRAPH keyword and a non-empty blank node as label',
       shouldNotParse('GRAPH [<a> <b>] {}',
-                     'Invalid graph label at line 1.'));
+                     'Invalid graph label on line 1.'));
 
     it('should not parse a triple after the GRAPH keyword',
       shouldNotParse('GRAPH <a> <b> <c>.',
-                     'Expected graph but got IRI at line 1.'));
+                     'Expected graph but got IRI on line 1.'));
 
     it('should not parse repeated GRAPH keywords',
       shouldNotParse('GRAPH GRAPH <g> {}',
-                     'Invalid graph label at line 1.'));
+                     'Invalid graph label on line 1.'));
 
     it('should parse a quad with 4 IRIs',
       shouldParse('<a> <b> <c> <g>.',
@@ -611,7 +611,7 @@ describe('N3Parser', function () {
 
     it('should not parse a quad with an undefined prefix',
       shouldNotParse('<a> <b> <c> p:g.',
-                     'Undefined prefix "p:" at line 1.'));
+                     'Undefined prefix "p:" on line 1.'));
 
     it('should parse a quad with 3 IRIs and a literal',
       shouldParse('<a> <b> "c"^^<d> <g>.',
@@ -623,52 +623,52 @@ describe('N3Parser', function () {
 
     it('should not parse a quad in a graph',
       shouldNotParse('{<a> <b> <c> <g>.}',
-                     'Expected punctuation to follow "c" at line 1.'));
+                     'Expected punctuation to follow "c" on line 1.'));
 
     it('should not parse a quad with different punctuation',
       shouldNotParse('<a> <b> <c> <g>;',
-                     'Expected dot to follow quad at line 1.'));
+                     'Expected dot to follow quad on line 1.'));
 
     it('should not parse base declarations without IRI',
       shouldNotParse('@base a: ',
-                     'Expected IRI to follow base declaration at line 1.'));
+                     'Expected IRI to follow base declaration on line 1.'));
 
     it('should not parse invalid @base statements',
       shouldNotParse('@base <http://ex.org/foo#bar>.\n' +
                      '<a> <b> <c>.\n',
-                     'Invalid base IRI http://ex.org/foo#bar at line 1.'));
+                     'Invalid base IRI http://ex.org/foo#bar on line 1.'));
 
     it('should not parse improperly nested parentheses and brackets',
       shouldNotParse('<a> <b> [<c> (<d>]).',
-                     'Expected list item instead of "]" at line 1.'));
+                     'Expected list item instead of "]" on line 1.'));
 
     it('should not parse improperly nested square brackets',
       shouldNotParse('<a> <b> [<c> <d>]].',
-                     'Expected punctuation to follow "_:b0" at line 1.'));
+                     'Expected punctuation to follow "_:b0" on line 1.'));
 
     it('should error when an object is not there',
       shouldNotParse('<a> <b>.',
-                     'Expected object to follow "b" at line 1.'));
+                     'Expected object to follow "b" on line 1.'));
 
     it('should error when a dot is not there',
       shouldNotParse('<a> <b> <c>',
-                     'Expected punctuation to follow "c" at line 1.'));
+                     'Expected punctuation to follow "c" on line 1.'));
 
     it('should error with an abbreviation in the subject',
       shouldNotParse('a <a> <a>.',
-                     'Expected subject but got abbreviation at line 1.'));
+                     'Expected subject but got abbreviation on line 1.'));
 
     it('should error with an abbreviation in the object',
       shouldNotParse('<a> <a> a .',
-                     'Expected object to follow "a" at line 1.'));
+                     'Expected object to follow "a" on line 1.'));
 
     it('should error if punctuation follows a subject',
       shouldNotParse('<a> .',
-                     'Unexpected . at line 1.'));
+                     'Unexpected . on line 1.'));
 
     it('should error if an unexpected token follows a subject',
       shouldNotParse('<a> [',
-                     'Expected predicate to follow "a" at line 1.'));
+                     'Expected predicate to follow "a" on line 1.'));
 
     it('should not error if there is no triple callback', function () {
       new N3Parser().parse('');
@@ -734,12 +734,12 @@ describe('N3Parser', function () {
 
     it('should throw on syntax errors if no callback is given', function () {
       (function () { new N3Parser().parse('<a> bar <c>'); })
-      .should.throw('Syntax error: unexpected "bar" on line 1.');
+      .should.throw('Unexpected "bar" on line 1.');
     });
 
     it('should throw on grammar errors if no callback is given', function () {
       (function () { new N3Parser().parse('<a> <b> <c>'); })
-      .should.throw('Expected punctuation to follow "c" at line 1.');
+      .should.throw('Expected punctuation to follow "c" on line 1.');
     });
   });
 
@@ -870,16 +870,16 @@ describe('N3Parser', function () {
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
 
     it('should not parse a default graph',
-      shouldNotParse(parser, '{}', 'Expected subject but got { at line 1.'));
+      shouldNotParse(parser, '{}', 'Expected subject but got { on line 1.'));
 
     it('should not parse a named graph',
-      shouldNotParse(parser, '<g> {}', 'Expected predicate to follow "g" at line 1.'));
+      shouldNotParse(parser, '<g> {}', 'Expected predicate to follow "g" on line 1.'));
 
     it('should not parse a named graph with the GRAPH keyword',
-      shouldNotParse(parser, 'GRAPH <g> {}', 'Expected subject but got GRAPH at line 1.'));
+      shouldNotParse(parser, 'GRAPH <g> {}', 'Expected subject but got GRAPH on line 1.'));
 
     it('should not parse a quad',
-      shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "c" at line 1.'));
+      shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "c" on line 1.'));
   });
 
   describe('An N3Parser instance for the TriG format', function () {
@@ -898,7 +898,7 @@ describe('N3Parser', function () {
       shouldParse(parser, 'GRAPH <g> {}'));
 
     it('should not parse a quad',
-      shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "c" at line 1.'));
+      shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "c" on line 1.'));
   });
 
   describe('An N3Parser instance for the N-Triples format', function () {
@@ -910,13 +910,13 @@ describe('N3Parser', function () {
 
     it('should not parse a single quad',
       shouldNotParse(parser, '<http://ex.org/a> <http://ex.org/b> "c" <http://ex.org/g>.',
-                             'Expected punctuation to follow ""c"" at line 1.'));
+                             'Expected punctuation to follow ""c"" on line 1.'));
 
     it('should not parse relative IRIs',
-      shouldNotParse(parser, '<a> <b> <c>.', 'Disallowed relative IRI at line 1.'));
+      shouldNotParse(parser, '<a> <b> <c>.', 'Disallowed relative IRI on line 1.'));
 
     it('should not parse a prefix declaration',
-      shouldNotParse(parser, '@prefix : <p#>.', 'Syntax error: unexpected "@prefix" on line 1.'));
+      shouldNotParse(parser, '@prefix : <p#>.', 'Unexpected "@prefix" on line 1.'));
   });
 
   describe('An N3Parser instance for the N-Quads format', function () {
@@ -931,10 +931,10 @@ describe('N3Parser', function () {
                           ['http://ex.org/a', 'http://ex.org/b', '"c"', 'http://ex.org/g']));
 
     it('should not parse relative IRIs',
-      shouldNotParse(parser, '<a> <b> <c>.', 'Disallowed relative IRI at line 1.'));
+      shouldNotParse(parser, '<a> <b> <c>.', 'Disallowed relative IRI on line 1.'));
 
     it('should not parse a prefix declaration',
-      shouldNotParse(parser, '@prefix : <p#>.', 'Syntax error: unexpected "@prefix" on line 1.'));
+      shouldNotParse(parser, '@prefix : <p#>.', 'Unexpected "@prefix" on line 1.'));
   });
 
   describe('IRI resolution', function () {

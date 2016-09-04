@@ -29,7 +29,7 @@ describe('N3StreamParser', function () {
     it('parses two triples', shouldParse(['<a> <b>', ' <c>. <d> <e> ', '<f>.'], 2));
 
     it("doesn't parse an invalid stream",
-      shouldNotParse(['z.'], 'Syntax error: unexpected "z." on line 1.'));
+      shouldNotParse(['z.'], 'Unexpected "z." on line 1.'));
 
     it('emits "prefix" events',
       shouldEmitPrefixes(['@prefix a: <IRIa>. a:a a:b a:c. @prefix b: <IRIb>.'],

@@ -49,23 +49,23 @@ describe('N3Lexer', function () {
 
     it('should not tokenize an IRI with disallowed characters',
       shouldNotTokenize('<http://ex.org/bla"foo>',
-                        'Syntax error: unexpected "<http://ex.org/bla"foo>" on line 1.'));
+                        'Unexpected "<http://ex.org/bla"foo>" on line 1.'));
 
     it('should not tokenize an IRI with escaped characters',
       shouldNotTokenize('<http://ex.org/bla\\"foo>',
-                        'Syntax error: unexpected "<http://ex.org/bla\\"foo>" on line 1.'));
+                        'Unexpected "<http://ex.org/bla\\"foo>" on line 1.'));
 
     it('should not tokenize an IRI with disallowed escaped characters',
       shouldNotTokenize('<http://ex.org/bla\\u0020foo>',
-                        'Syntax error: unexpected "<http://ex.org/bla\\u0020foo>" on line 1.'));
+                        'Unexpected "<http://ex.org/bla\\u0020foo>" on line 1.'));
 
     it('should not tokenize an IRI with invalid 4-digit unicode escapes',
       shouldNotTokenize('<http://ex.org/bla\\uXYZZfoo>',
-                        'Syntax error: unexpected "<http://ex.org/bla\\uXYZZfoo>" on line 1.'));
+                        'Unexpected "<http://ex.org/bla\\uXYZZfoo>" on line 1.'));
 
     it('should not tokenize an IRI with invalid 8-digit unicode escapes',
       shouldNotTokenize('<http://ex.org/bla\\uXYZZxyzzfoo>',
-                        'Syntax error: unexpected "<http://ex.org/bla\\uXYZZxyzzfoo>" on line 1.'));
+                        'Unexpected "<http://ex.org/bla\\uXYZZxyzzfoo>" on line 1.'));
 
     it('should not tokenize an IRI with a non-numeric 4-digit unicode escapes', function (done) {
       // Replace global isNaN
@@ -75,7 +75,7 @@ describe('N3Lexer', function () {
       var stream = new EventEmitter(), lexer = new N3Lexer();
       lexer.tokenize(stream, function (error, token) {
         error.should.be.an.instanceof(Error);
-        error.message.should.equal('Syntax error: unexpected "<\\u1234>" on line 1.');
+        error.message.should.equal('Unexpected "<\\u1234>" on line 1.');
         done(token);
       });
       stream.emit('data', '<\\u1234>');
@@ -91,7 +91,7 @@ describe('N3Lexer', function () {
       var stream = new EventEmitter(), lexer = new N3Lexer();
       lexer.tokenize(stream, function (error, token) {
         error.should.be.an.instanceof(Error);
-        error.message.should.equal('Syntax error: unexpected "<\\U12345678>" on line 1.');
+        error.message.should.equal('Unexpected "<\\U12345678>" on line 1.');
         done(token);
       });
       stream.emit('data', '<\\U12345678>');
@@ -177,31 +177,31 @@ describe('N3Lexer', function () {
 
     it('should not tokenize a prefixed name with disallowed characters',
       shouldNotTokenize('ex:bla"foo',
-                        'Syntax error: unexpected ""foo" on line 1.'));
+                        'Unexpected ""foo" on line 1.'));
 
     it('should not tokenize a prefixed name with escaped characters',
       shouldNotTokenize('ex:bla\\"foo',
-                        'Syntax error: unexpected "ex:bla\\"foo" on line 1.'));
+                        'Unexpected "ex:bla\\"foo" on line 1.'));
 
     it('should not tokenize a prefixed name with disallowed escaped characters',
       shouldNotTokenize('ex:bla\\u0020foo',
-                        'Syntax error: unexpected "ex:bla\\u0020foo" on line 1.'));
+                        'Unexpected "ex:bla\\u0020foo" on line 1.'));
 
     it('should not tokenize a prefixed name with invalid 4-digit unicode escapes',
       shouldNotTokenize('ex:bla\\uXYZZfoo',
-                        'Syntax error: unexpected "ex:bla\\uXYZZfoo" on line 1.'));
+                        'Unexpected "ex:bla\\uXYZZfoo" on line 1.'));
 
     it('should not tokenize a prefixed name with invalid 8-digit unicode escapes',
       shouldNotTokenize('ex:bla\\uXYZZxyzzfoo',
-                        'Syntax error: unexpected "ex:bla\\uXYZZxyzzfoo" on line 1.'));
+                        'Unexpected "ex:bla\\uXYZZxyzzfoo" on line 1.'));
 
     it('should not tokenize a prefixed name with four-digit unicode escapes',
       shouldNotTokenize('ex:foo\\u0073bar',
-                        'Syntax error: unexpected "ex:foo\\u0073bar" on line 1.'));
+                        'Unexpected "ex:foo\\u0073bar" on line 1.'));
 
     it('should not tokenize a prefixed name with eight-digit unicode escapes',
       shouldNotTokenize('ex:foo\\U00000073\\U00A00073bar',
-                        'Syntax error: unexpected "ex:foo\\U00000073\\U00A00073bar" on line 1.'));
+                        'Unexpected "ex:foo\\U00000073\\U00A00073bar" on line 1.'));
 
     it('should tokenize two prefixed names separated by whitespace',
       shouldTokenize(' \n\tex:foo \n\tex:bar \n\t',
@@ -259,11 +259,11 @@ describe('N3Lexer', function () {
 
     it('should not tokenize a string with invalid characters',
       shouldNotTokenize('"\\uXYZX" ',
-                        'Syntax error: unexpected ""\\uXYZX"" on line 1.'));
+                        'Unexpected ""\\uXYZX"" on line 1.'));
 
     it('should not tokenize a triple-quoted string with invalid characters',
       shouldNotTokenize('"""\\uXYZX""" ',
-                        'Syntax error: unexpected """"\\uXYZX"""" on line 1.'));
+                        'Unexpected """"\\uXYZX"""" on line 1.'));
 
     it('should tokenize a quoted string literal with language code',
       shouldTokenize('"string"@en "string"@nl-be "string"@EN ',
@@ -285,15 +285,15 @@ describe('N3Lexer', function () {
 
     it('should not tokenize a quoted string literal with incorrect type',
       shouldNotTokenize('"stringA"^<type> "stringB"^^ns:mytype ',
-                        'Syntax error: unexpected "^<type>" on line 1.'));
+                        'Unexpected "^<type>" on line 1.'));
 
     it('should not tokenize a single hat',
       shouldNotTokenize('^',
-                        'Syntax error: unexpected "^" on line 1.'));
+                        'Unexpected "^" on line 1.'));
 
     it('should not tokenize a double hat followed by a non-IRI',
       shouldNotTokenize('^^1',
-                        'Syntax error: unexpected "1" on line 1.'));
+                        'Unexpected "1" on line 1.'));
 
     it('should tokenize a single-quoted string literal',
       shouldTokenize("'string' ",
@@ -372,7 +372,7 @@ describe('N3Lexer', function () {
 
     it('should not tokenize an invalid number',
       shouldNotTokenize('10-10 ',
-                        'Syntax error: unexpected "10-10" on line 1.'));
+                        'Unexpected "10-10" on line 1.'));
 
     it('should tokenize booleans',
       shouldTokenize('true false ',
@@ -443,16 +443,16 @@ describe('N3Lexer', function () {
                      { type: 'eof', line: 1 }));
 
     it('should immediately signal an error if a linebreak occurs anywhere outside a triple-quoted literal',
-      shouldNotTokenize(streamOf('abc\n', null), 'Syntax error: unexpected "abc" on line 1.'));
+      shouldNotTokenize(streamOf('abc\n', null), 'Unexpected "abc" on line 1.'));
 
     it('should immediately signal an error if a linebreak occurs inside a single-quoted literal',
-      shouldNotTokenize(streamOf('"abc\n', null), 'Syntax error: unexpected ""abc" on line 1.'));
+      shouldNotTokenize(streamOf('"abc\n', null), 'Unexpected ""abc" on line 1.'));
 
     it('should immediately signal an error if a carriage return occurs anywhere outside a triple-quoted literal',
-      shouldNotTokenize(streamOf('abc\r', null), 'Syntax error: unexpected "abc" on line 1.'));
+      shouldNotTokenize(streamOf('abc\r', null), 'Unexpected "abc" on line 1.'));
 
     it('should immediately signal an error if a carriage return occurs inside a single-quoted literal',
-      shouldNotTokenize(streamOf('"abc\r', null), 'Syntax error: unexpected ""abc" on line 1.'));
+      shouldNotTokenize(streamOf('"abc\r', null), 'Unexpected ""abc" on line 1.'));
 
     it('should tokenize a split triple-quoted string',
       shouldTokenize(streamOf('"""abc\n', 'def"""'),
@@ -473,7 +473,7 @@ describe('N3Lexer', function () {
 
     it('should not tokenize prefixes that end with a dot',
       shouldNotTokenize('@prefix abc.: <def>.',
-                        'Syntax error: unexpected "abc.:" on line 1.'));
+                        'Unexpected "abc.:" on line 1.'));
 
     it('should tokenize @base declarations',
       shouldTokenize('@base <http://iri.org/#>.\n@base <http://iri.org/#>.',
@@ -528,7 +528,7 @@ describe('N3Lexer', function () {
 
     it('should not tokenize invalid blank nodes',
       shouldNotTokenize('_::',
-                        'Syntax error: unexpected "_::" on line 1.'));
+                        'Unexpected "_::" on line 1.'));
 
     it('should tokenize lists',
       shouldTokenize('() (<a>) (<a> <b>)',
@@ -639,7 +639,7 @@ describe('N3Lexer', function () {
                      { type: 'eof', line: 1 }));
 
     it('should not tokenize an invalid document',
-      shouldNotTokenize(' \n @!', 'Syntax error: unexpected "@!" on line 2.'));
+      shouldNotTokenize(' \n @!', 'Unexpected "@!" on line 2.'));
 
     it('does not call setEncoding if not available', function () {
       new N3Lexer().tokenize({ on: function () {} });
@@ -692,7 +692,7 @@ describe('N3Lexer', function () {
 
       it('throws an error', function () {
         (function () { lexer.tokenize('<a> bar'); })
-        .should.throw('Syntax error: unexpected "bar" on line 1.');
+        .should.throw('Unexpected "bar" on line 1.');
       });
     });
   });
