@@ -125,6 +125,8 @@ the callback is invoked one last time with `null` for `triple`
 and a hash of prefixes as third argument.
 <br>
 Pass a second callback to `parse` to retrieve prefixes as they are read.
+<br>
+If no callbacks are provided, parsing happens synchronously.
 
 By default, `N3.Parser` parses a permissive superset of Turtle, TriG, N-Triples and N-Quads.
 <br>

@@ -671,6 +671,30 @@ describe('N3Lexer', function () {
         tokens.should.have.length(1);
       });
     });
+
+    describe('called with a string and without callback', function () {
+      var lexer = new N3Lexer(),
+          tokens = lexer.tokenize('<a> <b> <c>.');
+
+      it('returns all tokens synchronously', function () {
+        tokens.should.deep.equal([
+          { line: 1, type: 'IRI', value: 'a', prefix: '' },
+          { line: 1, type: 'IRI', value: 'b', prefix: '' },
+          { line: 1, type: 'IRI', value: 'c', prefix: '' },
+          { line: 1, type: '.',   value: '',  prefix: '' },
+          { line: 1, type: 'eof', value: '',  prefix: '' },
+        ]);
+      });
+    });
+
+    describe('called with an erroneous string and without callback', function () {
+      var lexer = new N3Lexer();
+
+      it('throws an error', function () {
+        (function () { lexer.tokenize('<a> bar'); })
+        .should.throw('Syntax error: unexpected "bar" on line 1.');
+      });
+    });
   });
 });
 

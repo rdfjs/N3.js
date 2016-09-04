@@ -712,6 +712,21 @@ describe('N3Parser', function () {
         }
       }
     });
+
+    it('should parse a string synchronously if no callback is given', function () {
+      var triples = new N3Parser().parse('<a> <b> <c>.');
+      triples.should.deep.equal([{ subject: 'a', predicate: 'b', object: 'c', graph: '' }]);
+    });
+
+    it('should throw on syntax errors if no callback is given', function () {
+      (function () { new N3Parser().parse('<a> bar <c>'); })
+      .should.throw('Syntax error: unexpected "bar" on line 1.');
+    });
+
+    it('should throw on grammar errors if no callback is given', function () {
+      (function () { new N3Parser().parse('<a> <b> <c>'); })
+      .should.throw('Expected punctuation to follow "c" at line 1.');
+    });
   });
 
   describe('An N3Parser instance with a document IRI', function () {
