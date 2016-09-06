@@ -427,6 +427,16 @@ describe('N3Parser', function () {
                   ['http://ex.org/a', 'http://ex.org/b', '"c"^^http://ex.org/d'],
                   ['http://ex.org/d/e', 'http://ex.org/d/f', '"g"^^http://ex.org/d/h']));
 
+    it('should resolve IRIs against a base with a fragment',
+      shouldParse('@base <http://ex.org/foo#bar>.\n' +
+                  '<a> <b> <#c>.\n',
+                  ['http://ex.org/a', 'http://ex.org/b', 'http://ex.org/foo#c']));
+
+    it('should resolve IRIs with an empty fragment',
+      shouldParse('@base <http://ex.org/foo>.\n' +
+                  '<#> <b#> <#c>.\n',
+                  ['http://ex.org/foo#', 'http://ex.org/b#', 'http://ex.org/foo#c']));
+
     it('should not resolve prefixed names',
       shouldParse('PREFIX ex: <http://ex.org/a/bb/ccc/../>\n' +
                   'ex:a ex:b ex:c .',
@@ -633,11 +643,6 @@ describe('N3Parser', function () {
       shouldNotParse('@base a: ',
                      'Expected IRI to follow base declaration on line 1.'));
 
-    it('should not parse invalid @base statements',
-      shouldNotParse('@base <http://ex.org/foo#bar>.\n' +
-                     '<a> <b> <c>.\n',
-                     'Invalid base IRI http://ex.org/foo#bar on line 1.'));
-
     it('should not parse improperly nested parentheses and brackets',
       shouldNotParse('<a> <b> [<c> (<d>]).',
                      'Expected list item instead of "]" on line 1.'));
@@ -838,19 +843,6 @@ describe('N3Parser', function () {
       shouldParse(parser,
                   '_:a <b> _:c.\n',
                   ['_:a', 'b', '_:c']));
-  });
-
-  describe('An N3Parser instance with an invalid document IRI', function () {
-    it('cannot be created', function (done) {
-      try {
-        var parser = new N3Parser({ documentIRI: 'http://ex.org/x/yy/zzz/f#' });
-        done(parser);
-      }
-      catch (error) {
-        error.message.should.equal('Invalid base IRI http://ex.org/x/yy/zzz/f#');
-        done();
-      }
-    });
   });
 
   describe('An N3Parser instance with a non-string format', function () {
@@ -1224,6 +1216,54 @@ describe('N3Parser', function () {
       itShouldResolve('http://a/bb/ccc/..', 'g#s/./x',       'http://a/bb/ccc/g#s/./x');
       itShouldResolve('http://a/bb/ccc/..', 'g#s/../x',      'http://a/bb/ccc/g#s/../x');
       itShouldResolve('http://a/bb/ccc/..', 'http:g',        'http:g');
+    });
+
+    describe('RFC3986 normal examples with fragment in base IRI', function () {
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', 'g:h',     'g:h');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', 'g',       'http://a/bb/ccc/g');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', './g',     'http://a/bb/ccc/g');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', 'g/',      'http://a/bb/ccc/g/');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', '/g',      'http://a/g');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', '//g',     'http://g');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', '?y',      'http://a/bb/ccc/d;p?y');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', 'g?y',     'http://a/bb/ccc/g?y');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', '#s',      'http://a/bb/ccc/d;p?q#s');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', 'g#s',     'http://a/bb/ccc/g#s');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', 'g?y#s',   'http://a/bb/ccc/g?y#s');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', ';x',      'http://a/bb/ccc/;x');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', 'g;x',     'http://a/bb/ccc/g;x');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', 'g;x?y#s', 'http://a/bb/ccc/g;x?y#s');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', '',        'http://a/bb/ccc/d;p?q');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', '.',       'http://a/bb/ccc/');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', './',      'http://a/bb/ccc/');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', '..',      'http://a/bb/');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', '../',     'http://a/bb/');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', '../g',    'http://a/bb/g');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', '../..',   'http://a/');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', '../../',  'http://a/');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', '../../g', 'http://a/g');
+    });
+
+    describe('RFC3986 abnormal examples with fragment in base IRI', function () {
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', '../../../g',    'http://a/g');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', '../../../../g', 'http://a/g');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', '/./g',          'http://a/g');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', '/../g',         'http://a/g');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', 'g.',            'http://a/bb/ccc/g.');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', '.g',            'http://a/bb/ccc/.g');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', 'g..',           'http://a/bb/ccc/g..');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', '..g',           'http://a/bb/ccc/..g');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', './../g',        'http://a/bb/g');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', './g/.',         'http://a/bb/ccc/g/');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', 'g/./h',         'http://a/bb/ccc/g/h');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', 'g/../h',        'http://a/bb/ccc/h');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', 'g;x=1/./y',     'http://a/bb/ccc/g;x=1/y');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', 'g;x=1/../y',    'http://a/bb/ccc/y');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', 'g?y/./x',       'http://a/bb/ccc/g?y/./x');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', 'g?y/../x',      'http://a/bb/ccc/g?y/../x');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', 'g#s/./x',       'http://a/bb/ccc/g#s/./x');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', 'g#s/../x',      'http://a/bb/ccc/g#s/../x');
+      itShouldResolve('http://a/bb/ccc/d;p?q#f', 'http:g',        'http:g');
     });
 
     describe('RFC3986 normal examples with file path', function () {
