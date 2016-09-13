@@ -48,22 +48,9 @@ describe('N3Store', function () {
       store.addTriple(store.createBlankNode('x'), 'b', 'c').should.be.true;
       shouldIncludeAll(store.find(null, 'b'), ['_:x1', 'b', 'd']);
     });
-  });
 
-  describe('An N3Store without a configured default graph', function () {
-    var store = new N3Store();
-
-    it('should have a dummy default graph', function () {
+    it('should have a fixed default graph', function () {
       store.defaultGraph.should.eql('urn:n3:defaultGraph');
-    });
-  });
-
-  describe('An N3Store with a configured default graph', function () {
-    var dg = 'http://example.org/#defaultGraph';
-    var store = new N3Store({ defaultGraph: dg });
-
-    it('should return that configured default graph', function () {
-      store.defaultGraph.should.eql(dg);
     });
   });
 
@@ -120,7 +107,7 @@ describe('N3Store', function () {
   });
 
   describe('An N3Store with 5 elements', function () {
-    var store = new N3Store({ defaultGraph: 'http://example.org/#defaultGraph' });
+    var store = new N3Store();
     store.addTriple('s1', 'p1', 'o1').should.be.true;
     store.addTriple({ subject: 's1', predicate: 'p1', object: 'o2' }).should.be.true;
     store.addTriples([
@@ -587,7 +574,7 @@ describe('N3Store', function () {
   });
 
   describe('An N3Store containing a blank node', function () {
-    var store = new N3Store({ defaultGraph: 'http://example.org/#defaultGraph' });
+    var store = new N3Store();
     var b1 = store.createBlankNode();
     store.addTriple('s1', 'p1', b1).should.be.true;
 
