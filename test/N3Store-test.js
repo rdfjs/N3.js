@@ -54,7 +54,7 @@ describe('N3Store', function () {
     var store = new N3Store();
 
     it('should have a dummy default graph', function () {
-      store.defaultGraph.should.eql('http://example.org/#defaultGraph');
+      store.defaultGraph.should.eql('urn:n3:defaultGraph');
     });
   });
 
