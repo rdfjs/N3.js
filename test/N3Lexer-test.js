@@ -638,6 +638,16 @@ describe('N3Lexer', function () {
                      { type: '}', line: 1 },
                      { type: 'eof', line: 1 }));
 
+    it('should tokenize variables',
+      shouldTokenize('?a ?abc ?a_B_c ',
+                     { type: 'var', value: '?a',     line: 1 },
+                     { type: 'var', value: '?abc',   line: 1 },
+                     { type: 'var', value: '?a_B_c', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should not tokenize invalid variables',
+      shouldNotTokenize('?0a ', 'Unexpected "?0a" on line 1.'));
+
     it('should not tokenize an invalid document',
       shouldNotTokenize(' \n @!', 'Unexpected "@!" on line 2.'));
 

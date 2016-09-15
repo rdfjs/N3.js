@@ -129,7 +129,7 @@
     id-length: 0,
     id-match: 2,
     indent: [2, 2, { VariableDeclarator: 2 }],
-    key-spacing: 0,
+    key-spacing: [2, { mode: "minimum" }],
     lines-around-comment: 2,
     linebreak-style: 2,
     max-nested-callbacks: [2, 1],
