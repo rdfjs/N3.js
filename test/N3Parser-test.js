@@ -643,6 +643,10 @@ describe('N3Parser', function () {
       shouldParse('<a> => <b>.',
                   ['a', 'http://www.w3.org/2000/10/swap/log#implies', 'b']));
 
+    it('should parse a simple left implication',
+      shouldParse('<a> <= <b>.',
+                  ['b', 'http://www.w3.org/2000/10/swap/log#implies', 'a']));
+
     it('should not parse a quad in a graph',
       shouldNotParse('{<a> <b> <c> <g>.}',
                      'Expected punctuation to follow "c" on line 1.'));
