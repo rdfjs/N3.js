@@ -635,6 +635,14 @@ describe('N3Parser', function () {
       shouldParse('_:a <b> "c"^^<d> _:g.',
                   ['_:b0_a', 'b', '"c"^^d', '_:b0_g']));
 
+    it('should parse a simple equality',
+      shouldParse('<a> = <b>.',
+                  ['a', 'http://www.w3.org/2002/07/owl#sameAs', 'b']));
+
+    it('should parse a simple right implication',
+      shouldParse('<a> => <b>.',
+                  ['a', 'http://www.w3.org/2000/10/swap/log#implies', 'b']));
+
     it('should not parse a quad in a graph',
       shouldNotParse('{<a> <b> <c> <g>.}',
                      'Expected punctuation to follow "c" on line 1.'));
@@ -876,6 +884,15 @@ describe('N3Parser', function () {
 
     it('should not parse a quad',
       shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "c" on line 1.'));
+
+    it('should not parse an equality statement',
+      shouldNotParse(parser, '<a> = <b>.', 'Unexpected "=" on line 1.'));
+
+    it('should not parse a right implication statement',
+      shouldNotParse(parser, '<a> => <b>.', 'Unexpected "=>" on line 1.'));
+
+    it('should not parse a left implication statement',
+      shouldNotParse(parser, '<a> <= <b>.', 'Unexpected "<=" on line 1.'));
   });
 
   describe('An N3Parser instance for the TriG format', function () {
@@ -895,6 +912,15 @@ describe('N3Parser', function () {
 
     it('should not parse a quad',
       shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "c" on line 1.'));
+
+    it('should not parse an equality statement',
+      shouldNotParse(parser, '<a> = <b>.', 'Unexpected "=" on line 1.'));
+
+    it('should not parse a right implication statement',
+      shouldNotParse(parser, '<a> => <b>.', 'Unexpected "=>" on line 1.'));
+
+    it('should not parse a left implication statement',
+      shouldNotParse(parser, '<a> <= <b>.', 'Unexpected "<=" on line 1.'));
   });
 
   describe('An N3Parser instance for the N-Triples format', function () {
@@ -913,6 +939,15 @@ describe('N3Parser', function () {
 
     it('should not parse a prefix declaration',
       shouldNotParse(parser, '@prefix : <p#>.', 'Unexpected "@prefix" on line 1.'));
+
+    it('should not parse an equality statement',
+      shouldNotParse(parser, '<urn:a:a> = <urn:b:b>.', 'Unexpected "=" on line 1.'));
+
+    it('should not parse a right implication statement',
+      shouldNotParse(parser, '<urn:a:a> => <urn:b:b>.', 'Unexpected "=>" on line 1.'));
+
+    it('should not parse a left implication statement',
+      shouldNotParse(parser, '<urn:a:a> <= <urn:b:b>.', 'Unexpected "<=" on line 1.'));
   });
 
   describe('An N3Parser instance for the N-Quads format', function () {
@@ -931,6 +966,15 @@ describe('N3Parser', function () {
 
     it('should not parse a prefix declaration',
       shouldNotParse(parser, '@prefix : <p#>.', 'Unexpected "@prefix" on line 1.'));
+
+    it('should not parse an equality statement',
+      shouldNotParse(parser, '<urn:a:a> = <urn:b:b>.', 'Unexpected "=" on line 1.'));
+
+    it('should not parse a right implication statement',
+      shouldNotParse(parser, '<urn:a:a> => <urn:b:b>.', 'Unexpected "=>" on line 1.'));
+
+    it('should not parse a left implication statement',
+      shouldNotParse(parser, '<urn:a:a> <= <urn:b:b>.', 'Unexpected "<=" on line 1.'));
   });
 
   describe('IRI resolution', function () {
