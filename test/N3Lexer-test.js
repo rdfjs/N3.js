@@ -648,6 +648,27 @@ describe('N3Lexer', function () {
     it('should not tokenize invalid variables',
       shouldNotTokenize('?0a ', 'Unexpected "?0a" on line 1.'));
 
+    it('should tokenize the equality sign',
+      shouldTokenize('<a> = <b> ',
+                     { type: 'IRI', value: 'a', line: 1 },
+                     { type: 'abbreviation', value: 'http://www.w3.org/2002/07/owl#sameAs', line: 1 },
+                     { type: 'IRI', value: 'b', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize the right implication',
+      shouldTokenize('<a> => <b> ',
+                     { type: 'IRI', value: 'a', line: 1 },
+                     { type: 'abbreviation', value: 'http://www.w3.org/2000/10/swap/log#implies', line: 1 },
+                     { type: 'IRI', value: 'b', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize the left implication',
+      shouldTokenize('<a> <= <b> ',
+                     { type: 'IRI', value: 'a', line: 1 },
+                     { type: 'inverse', value: 'http://www.w3.org/2000/10/swap/log#implies', line: 1 },
+                     { type: 'IRI', value: 'b', line: 1 },
+                     { type: 'eof', line: 1 }));
+
     it('should not tokenize an invalid document',
       shouldNotTokenize(' \n @!', 'Unexpected "@!" on line 2.'));
 
@@ -708,6 +729,19 @@ describe('N3Lexer', function () {
   });
 });
 
+describe('An N3Lexer instance with the n3 option set to false', function () {
+  function createLexer() { return new N3Lexer({ n3: false }); }
+
+  it('should not tokenize a right implication',
+    shouldNotTokenize(createLexer(), '<a> => <c>.', 'Unexpected "=>" on line 1.'));
+
+  it('should not tokenize a left implication',
+    shouldNotTokenize(createLexer(), '<a> <= <c>.', 'Unexpected "<=" on line 1.'));
+
+  it('should not tokenize an equality',
+    shouldNotTokenize(createLexer(), '<a> = <c>.', 'Unexpected "=" on line 1.'));
+});
+
 function shouldTokenize(input) {
   var expected = Array.prototype.slice.call(arguments, 1);
   return function (done) {
@@ -731,15 +765,18 @@ function shouldTokenize(input) {
   };
 }
 
-function shouldNotTokenize(input, expectedError) {
+function shouldNotTokenize(lexer, input, expectedError) {
+  // Shift parameters if necessary
+  if (!(lexer instanceof N3Lexer))
+    expectedError = input, input = lexer, lexer = new N3Lexer();
+
   return function (done) {
-    new N3Lexer().tokenize(input, tokenCallback);
+    lexer.tokenize(input, tokenCallback);
     function tokenCallback(error, token) {
       if (error) {
         expect(token).not.to.exist;
         error.should.be.an.instanceof(Error);
         error.message.should.eql(expectedError);
-        error.should.be.an.instanceof(Error);
         done();
       }
       else if (token.type === 'eof')
