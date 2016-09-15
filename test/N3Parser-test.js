@@ -972,6 +972,21 @@ describe('N3Parser', function () {
   describe('An N3Parser instance for the N3 format', function () {
     var parser = new N3Parser({ format: 'N3' });
 
+    it('should parse a single triple',
+      shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
+
+    it('should not parse a default graph',
+      shouldNotParse(parser, '{}', 'Expected subject but got { on line 1.'));
+
+    it('should not parse a named graph',
+      shouldNotParse(parser, '<g> {}', 'Expected predicate to follow "g" on line 1.'));
+
+    it('should not parse a named graph with the GRAPH keyword',
+      shouldNotParse(parser, 'GRAPH <g> {}', 'Expected subject but got GRAPH on line 1.'));
+
+    it('should not parse a quad',
+      shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "c" on line 1.'));
+
     it('should parse a simple equality',
       shouldParse(parser, '<a> = <b>.',
                   ['a', 'http://www.w3.org/2002/07/owl#sameAs', 'b']));
