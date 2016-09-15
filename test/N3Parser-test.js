@@ -866,7 +866,7 @@ describe('N3Parser', function () {
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
 
     it('should not parse a default graph',
-      shouldNotParse(parser, '{}', 'Expected subject but got { on line 1.'));
+      shouldNotParse(parser, '{}', 'Unexpected graph on line 1.'));
 
     it('should not parse a named graph',
       shouldNotParse(parser, '<g> {}', 'Expected predicate to follow "g" on line 1.'));
@@ -885,6 +885,9 @@ describe('N3Parser', function () {
 
     it('should not parse a left implication statement',
       shouldNotParse(parser, '<a> <= <b>.', 'Unexpected "<=" on line 1.'));
+
+    it('should not parse a formula as object',
+      shouldNotParse(parser, '<a> <b> {}.', 'Unexpected graph on line 1.'));
   });
 
   describe('An N3Parser instance for the TriG format', function () {
@@ -913,6 +916,9 @@ describe('N3Parser', function () {
 
     it('should not parse a left implication statement',
       shouldNotParse(parser, '<a> <= <b>.', 'Unexpected "<=" on line 1.'));
+
+    it('should not parse a formula as object',
+      shouldNotParse(parser, '<a> <b> {}.', 'Unexpected graph on line 1.'));
   });
 
   describe('An N3Parser instance for the N-Triples format', function () {
@@ -940,6 +946,9 @@ describe('N3Parser', function () {
 
     it('should not parse a left implication statement',
       shouldNotParse(parser, '<urn:a:a> <= <urn:b:b>.', 'Unexpected "<=" on line 1.'));
+
+    it('should not parse a formula as object',
+      shouldNotParse(parser, '<urn:a:a> <urn:b:b> {}.', 'Unexpected "{" on line 1.'));
   });
 
   describe('An N3Parser instance for the N-Quads format', function () {
@@ -967,6 +976,9 @@ describe('N3Parser', function () {
 
     it('should not parse a left implication statement',
       shouldNotParse(parser, '<urn:a:a> <= <urn:b:b>.', 'Unexpected "<=" on line 1.'));
+
+    it('should not parse a formula as object',
+      shouldNotParse(parser, '<urn:a:a> <urn:b:b> {}.', 'Unexpected "{" on line 1.'));
   });
 
   describe('An N3Parser instance for the N3 format', function () {
@@ -976,7 +988,7 @@ describe('N3Parser', function () {
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
 
     it('should not parse a default graph',
-      shouldNotParse(parser, '{}', 'Expected subject but got { on line 1.'));
+      shouldNotParse(parser, '{}', 'Expected predicate to follow "_:b0" on line 1.'));
 
     it('should not parse a named graph',
       shouldNotParse(parser, '<g> {}', 'Expected predicate to follow "g" on line 1.'));
@@ -998,6 +1010,58 @@ describe('N3Parser', function () {
     it('should parse a simple left implication',
       shouldParse(parser, '<a> <= <b>.',
                   ['b', 'http://www.w3.org/2000/10/swap/log#implies', 'a']));
+
+    it('should parse a right implication between one-triple graphs',
+      shouldParse(parser, '{ ?a ?b <c>. } => { <d> <e> ?a }.',
+                  ['_:b0', 'http://www.w3.org/2000/10/swap/log#implies', '_:b1'],
+                  ['?a', '?b', 'c',  '_:b0'],
+                  ['d',  'e',  '?a', '_:b1']));
+
+    it('should parse a right implication between two-triple graphs',
+      shouldParse(parser, '{ ?a ?b <c>. <d> <e> <f>. } => { <d> <e> ?a, <f> }.',
+                  ['_:b0', 'http://www.w3.org/2000/10/swap/log#implies', '_:b1'],
+                  ['?a', '?b', 'c',  '_:b0'],
+                  ['d',  'e',  'f',  '_:b0'],
+                  ['d',  'e',  '?a', '_:b1'],
+                  ['d',  'e',  'f',  '_:b1']));
+
+    it('should parse a left implication between one-triple graphs',
+      shouldParse(parser, '{ ?a ?b <c>. } <= { <d> <e> ?a }.',
+                  ['_:b1', 'http://www.w3.org/2000/10/swap/log#implies', '_:b0'],
+                  ['?a', '?b', 'c',  '_:b0'],
+                  ['d',  'e',  '?a', '_:b1']));
+
+    it('should parse a left implication between two-triple graphs',
+      shouldParse(parser, '{ ?a ?b <c>. <d> <e> <f>. } <= { <d> <e> ?a, <f> }.',
+                  ['_:b1', 'http://www.w3.org/2000/10/swap/log#implies', '_:b0'],
+                  ['?a', '?b', 'c',  '_:b0'],
+                  ['d',  'e',  'f',  '_:b0'],
+                  ['d',  'e',  '?a', '_:b1'],
+                  ['d',  'e',  'f',  '_:b1']));
+
+    it('should parse an equality of one-triple graphs',
+      shouldParse(parser, '{ ?a ?b <c>. } = { <d> <e> ?a }.',
+                  ['_:b0', 'http://www.w3.org/2002/07/owl#sameAs', '_:b1'],
+                  ['?a', '?b', 'c',  '_:b0'],
+                  ['d',  'e',  '?a', '_:b1']));
+
+    it('should parse an equality of two-triple graphs',
+      shouldParse(parser, '{ ?a ?b <c>. <d> <e> <f>. } = { <d> <e> ?a, <f> }.',
+                  ['_:b0', 'http://www.w3.org/2002/07/owl#sameAs', '_:b1'],
+                  ['?a', '?b', 'c',  '_:b0'],
+                  ['d',  'e',  'f',  '_:b0'],
+                  ['d',  'e',  '?a', '_:b1'],
+                  ['d',  'e',  'f',  '_:b1']));
+
+    it('should parse nested implication graphs',
+      shouldParse(parser, '{ { ?a ?b ?c }<={ ?d ?e ?f }. } <= { { ?g ?h ?i } => { ?j ?k ?l } }.',
+                  ['_:b3', 'http://www.w3.org/2000/10/swap/log#implies', '_:b0'],
+                  ['_:b2', 'http://www.w3.org/2000/10/swap/log#implies', '_:b1', '_:b0'],
+                  ['?a', '?b', '?c', '_:b1'],
+                  ['?d', '?e', '?f', '_:b2'],
+                  ['_:b4', 'http://www.w3.org/2000/10/swap/log#implies', '_:b5', '_:b3'],
+                  ['?g', '?h', '?i', '_:b4'],
+                  ['?j', '?k', '?l', '_:b5']));
   });
 
   describe('IRI resolution', function () {
@@ -1435,13 +1499,13 @@ function shouldParse(parser, input) {
       items = expected.map(function (item) {
         return { subject: item[0], predicate: item[1], object: item[2], graph: item[3] || '' };
       });
-  N3Parser._resetBlankNodeIds();
   // Shift parameters if necessary
   if (!hasParser)
     input = parser, parser = new N3Parser();
 
   return function (done) {
     var results = [];
+    N3Parser._resetBlankNodeIds();
     parser.parse(input, function (error, triple) {
       expect(error).not.to.exist;
       if (triple)
