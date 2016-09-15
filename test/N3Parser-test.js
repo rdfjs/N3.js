@@ -80,6 +80,10 @@ describe('N3Parser', function () {
       shouldNotParse('<a> <b> "string"^^x:z.',
                      'Undefined prefix "x:" on line 1.'));
 
+    it('should parse a triple with the "a" shorthand predicate',
+      shouldParse('<a> a <t>.',
+                  ['a', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 't']));
+
     it('should parse triples with prefixes',
       shouldParse('@prefix : <#>.\n' +
                   '@prefix a: <a#>.\n' +
