@@ -668,7 +668,7 @@ describe('N3Lexer', function () {
       });
     });
 
-    describe('passing data after an error has occured', function () {
+    describe('passing data after an error has occurred', function () {
       var tokens = [], stream = new EventEmitter(), lexer = new N3Lexer();
       lexer.tokenize(stream, function (error, token) { !error && tokens.push(token); });
       stream.emit('data', '<a> ');
