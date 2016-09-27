@@ -521,7 +521,7 @@ describe('N3Lexer', function () {
                      { type: '[', line: 1 },
                      { type: ']', line: 1 },
                      { type: ']', line: 1 },
-                     { type: 'prefixed', prefix: '_', value: 'a', line: 1 },
+                     { type: 'blank', prefix: '_', value: 'a', line: 1 },
                      { type: 'prefixed', prefix: '',  value: 'b', line: 1 },
                      { type: '.', line: 1 },
                      { type: 'eof', line: 1 }));
@@ -604,14 +604,14 @@ describe('N3Lexer', function () {
 
     it('should tokenize an empty graph identified by a blank node',
       shouldTokenize('_:g{}',
-                     { type: 'prefixed', prefix: '_', value: 'g', line: 1 },
+                     { type: 'blank', prefix: '_', value: 'g', line: 1 },
                      { type: '{', line: 1 },
                      { type: '}', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should tokenize a non-empty graph identified by a blank node',
       shouldTokenize('_:g {<a> <b> c:d}',
-                     { type: 'prefixed', prefix: '_', value: 'g', line: 1 },
+                     { type: 'blank', prefix: '_', value: 'g', line: 1 },
                      { type: '{', line: 1 },
                      { type: 'IRI', value: 'a', line: 1 },
                      { type: 'IRI', value: 'b', line: 1 },
