@@ -288,7 +288,7 @@ describe('N3Lexer', function () {
     it('should tokenize a quoted string literal with type',
       shouldTokenize('"stringA"^^<type> "stringB"^^ns:mytype ',
                      { type: 'literal', value: '"stringA"', line: 1 },
-                     { type: 'type', value: 'type', line: 1 },
+                     { type: 'typeIRI', value: 'type', line: 1 },
                      { type: 'literal', value: '"stringB"', line: 1 },
                      { type: 'type', value: 'mytype', prefix: 'ns', line: 1 },
                      { type: 'eof', line: 1 }));
@@ -339,7 +339,7 @@ describe('N3Lexer', function () {
     it('should tokenize a single-quoted string literal with type',
       shouldTokenize("'stringA'^^<type> 'stringB'^^ns:mytype ",
                      { type: 'literal', value: '"stringA"', line: 1 },
-                     { type: 'type', value: 'type', line: 1 },
+                     { type: 'typeIRI', value: 'type', line: 1 },
                      { type: 'literal', value: '"stringB"', line: 1 },
                      { type: 'type', value: 'mytype', prefix: 'ns', line: 1 },
                      { type: 'eof', line: 1 }));

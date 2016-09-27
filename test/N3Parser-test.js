@@ -76,6 +76,11 @@ describe('N3Parser', function () {
       shouldParse('@prefix x: <y#>. <a> <b> "string"^^x:z.',
                   ['a', 'b', '"string"^^y#z']));
 
+    it('should differentiate between IRI and prefixed name types',
+      shouldParse('@prefix : <noturn:>. :a :b "x"^^<urn:foo>. :a :b "x"^^:urn:foo.',
+                  ['noturn:a', 'noturn:b', '"x"^^urn:foo'],
+                  ['noturn:a', 'noturn:b', '"x"^^noturn:urn:foo']));
+
     it('should not parse a triple with a literal and a prefixed name type with an inexistent prefix',
       shouldNotParse('<a> <b> "string"^^x:z.',
                      'Undefined prefix "x:" on line 1.'));
