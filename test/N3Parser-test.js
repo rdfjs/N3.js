@@ -1094,7 +1094,7 @@ describe('N3Parser', function () {
                   ['_:b3.a', '_:b3.b', '_:b3.c', '_:b3']));
 
     it('should parse a @forSome statement',
-      shouldParse(parser, '@forSome <#x>. <#x> <#x> <#x>.',
+      shouldParse(parser, '@forSome <x>. <x> <x> <x>.',
                   ['_:b0', '_:b0', '_:b0']));
 
     it('should parse a @forSome statement with multiple entities',
@@ -1113,8 +1113,14 @@ describe('N3Parser', function () {
       shouldNotParse(parser, '@forSome ?a.',
                      'Unexpected "?a." on line 1.'));
 
+    it('should correctly scope @forSome statements',
+      shouldParse(parser, '@forSome <x>. <x> <x> { @forSome <x>. <x> <x> <x>. }. <x> <x> <x>.',
+                  ['_:b0', '_:b0', '_:b1'],
+                  ['_:b2', '_:b2', '_:b2', '_:b1'],
+                  ['_:b0', '_:b0', '_:b0']));
+
     it('should parse a @forAll statement',
-      shouldParse(parser, '@forAll  <#x>. <#x> <#x> <#x>.',
+      shouldParse(parser, '@forAll  <x>. <x> <x> <x>.',
                   ['?b-0', '?b-0', '?b-0']));
 
     it('should parse a @forAll statement with multiple entities',
@@ -1132,6 +1138,12 @@ describe('N3Parser', function () {
     it('should not parse a @forAll statement with a variable',
       shouldNotParse(parser, '@forAll ?a.',
                      'Unexpected "?a." on line 1.'));
+
+    it('should correctly scope @forAll statements',
+      shouldParse(parser, '@forAll <x>. <x> <x> { @forAll <x>. <x> <x> <x>. }. <x> <x> <x>.',
+                  ['?b-0', '?b-0', '_:b1'],
+                  ['?b-2', '?b-2', '?b-2', '_:b1'],
+                  ['?b-0', '?b-0', '?b-0']));
   });
 
   describe('IRI resolution', function () {
