@@ -293,10 +293,6 @@ describe('N3Lexer', function () {
                      { type: 'type', value: 'mytype', prefix: 'ns', line: 1 },
                      { type: 'eof', line: 1 }));
 
-    it('should not tokenize a quoted string literal with incorrect type',
-      shouldNotTokenize('"stringA"^<type> "stringB"^^ns:mytype ',
-                        'Unexpected "^<type>" on line 1.'));
-
     it('should not tokenize a single hat',
       shouldNotTokenize('^',
                         'Unexpected "^" on line 1.'));
@@ -685,6 +681,23 @@ describe('N3Lexer', function () {
                      { type: 'IRI', value: 'a', line: 1 },
                      { type: 'inverse', value: 'http://www.w3.org/2000/10/swap/log#implies', line: 1 },
                      { type: 'IRI', value: 'b', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize paths',
+      shouldTokenize(':joe!fam:mother!loc:office!loc:zip :joe!fam:mother^fam:mother',
+                     { type: 'prefixed', prefix: '', value: 'joe', line: 1 },
+                     { type: '!', line: 1 },
+                     { type: 'prefixed', prefix: 'fam', value: 'mother', line: 1 },
+                     { type: '!', line: 1 },
+                     { type: 'prefixed', prefix: 'loc', value: 'office', line: 1 },
+                     { type: '!', line: 1 },
+                     { type: 'prefixed', prefix: 'loc', value: 'zip', line: 1 },
+
+                     { type: 'prefixed', prefix: '', value: 'joe', line: 1 },
+                     { type: '!', line: 1 },
+                     { type: 'prefixed', prefix: 'fam', value: 'mother', line: 1 },
+                     { type: '^', line: 1 },
+                     { type: 'prefixed', prefix: 'fam', value: 'mother', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should not tokenize an invalid document',
