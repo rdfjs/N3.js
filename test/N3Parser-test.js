@@ -95,6 +95,10 @@ describe('N3Parser', function () {
                   ':x a:a a:b.',
                   ['#x', 'a#a', 'a#b']));
 
+    it('should not parse @PREFIX',
+      shouldNotParse('@PREFIX : <#>.',
+                     'Expected subject but got @PREFIX on line 1.'));
+
     it('should parse triples with prefixes and different punctuation',
       shouldParse('@prefix : <#>.\n' +
                   '@prefix a: <a#>.\n' +
@@ -396,6 +400,10 @@ describe('N3Parser', function () {
                   '<e> <f> <g>.',
                   ['http://ex.org/a', 'http://ex.org/b', 'http://ex.org/c'],
                   ['http://ex.org/d/e', 'http://ex.org/d/f', 'http://ex.org/d/g']));
+
+    it('should not resolve IRIs against @BASE',
+      shouldNotParse('@BASE <http://ex.org/>.',
+                     'Expected subject but got @BASE on line 1.'));
 
     it('should resolve IRIs against SPARQL base',
       shouldParse('BASE <http://ex.org/>\n' +
