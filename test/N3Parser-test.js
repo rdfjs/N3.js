@@ -1510,14 +1510,16 @@ function shouldParse(parser, input) {
       expect(error).not.to.exist;
       if (triple)
         results.push(triple);
-      else {
-        results.should.have.lengthOf(expected.length);
-        for (var i = 0; i < items.length; i++)
-          results.should.contain.something.that.deep.equals(items[i]);
-        done();
-      }
+      else
+        toSortedJSON(results).should.equal(toSortedJSON(items)), done();
     });
   };
+}
+
+function toSortedJSON(triples) {
+  triples = triples.map(JSON.stringify);
+  triples.sort();
+  return '[\n  ' + triples.join('\n  ') + '\n]';
 }
 
 function shouldNotParse(parser, input, expectedError) {
