@@ -999,6 +999,9 @@ describe('N3Parser', function () {
     it('should not parse a quad',
       shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "c" on line 1.'));
 
+    it('allows a blank node label in predicate position',
+      shouldParse(parser, '<a> _:b <c>.', ['a', '_:b0_b', 'c']));
+
     it('should parse a simple equality',
       shouldParse(parser, '<a> = <b>.',
                   ['a', 'http://www.w3.org/2002/07/owl#sameAs', 'b']));
