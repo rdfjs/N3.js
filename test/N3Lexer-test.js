@@ -142,6 +142,18 @@ describe('N3Lexer', function () {
                      { type: 'prefixed', prefix: 'isbn13', value: '9780136019701', line: 1 },
                      { type: 'eof', line: 1 }));
 
+    it('should tokenize prefixed names starting with true',
+      shouldTokenize('true:a  truer:b ',
+                     { type: 'prefixed', prefix: 'true',   value: 'a', line: 1 },
+                     { type: 'prefixed', prefix: 'truer',  value: 'b', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize prefixed names starting with false',
+      shouldTokenize('false:a falser:b ',
+                     { type: 'prefixed', prefix: 'false',  value: 'a', line: 1 },
+                     { type: 'prefixed', prefix: 'falser', value: 'b', line: 1 },
+                     { type: 'eof', line: 1 }));
+
     it('should tokenize prefixed names with non-leading colons',
       shouldTokenize('og:video:height ',
                      { type: 'prefixed', prefix: 'og', value: 'video:height', line: 1 },
