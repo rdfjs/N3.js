@@ -1092,6 +1092,46 @@ describe('N3Parser', function () {
                   ['_:b2', 'http://www.w3.org/2000/10/swap/log#implies', '_:b3', '_:b1'],
                   ['_:b2.a', '_:b2.b', '_:b2.c', '_:b2'],
                   ['_:b3.a', '_:b3.b', '_:b3.c', '_:b3']));
+
+    it('should parse a @forSome statement',
+      shouldParse(parser, '@forSome <#x>. <#x> <#x> <#x>.',
+                  ['_:b0', '_:b0', '_:b0']));
+
+    it('should parse a @forSome statement with multiple entities',
+      shouldParse(parser, '@prefix a: <a:>. @base <b:>. @forSome a:x, <y>, a:z. a:x <y> a:z.',
+                  ['_:b0', '_:b1', '_:b2']));
+
+    it('should not parse a @forSome statement with an invalid prefix',
+      shouldNotParse(parser, '@forSome a:b.',
+                     'Undefined prefix "a:" on line 1.'));
+
+    it('should not parse a @forSome statement with a blank node',
+      shouldNotParse(parser, '@forSome _:a.',
+                     'Unexpected blank on line 1.'));
+
+    it('should not parse a @forSome statement with a variable',
+      shouldNotParse(parser, '@forSome ?a.',
+                     'Unexpected "?a." on line 1.'));
+
+    it('should parse a @forAll statement',
+      shouldParse(parser, '@forAll  <#x>. <#x> <#x> <#x>.',
+                  ['?b-0', '?b-0', '?b-0']));
+
+    it('should parse a @forAll statement with multiple entities',
+      shouldParse(parser, '@prefix a: <a:>. @base <b:>. @forAll  a:x, <y>, a:z. a:x <y> a:z.',
+                  ['?b-0', '?b-1', '?b-2']));
+
+    it('should not parse a @forAll statement with an invalid prefix',
+      shouldNotParse(parser, '@forAll a:b.',
+                     'Undefined prefix "a:" on line 1.'));
+
+    it('should not parse a @forAll statement with a blank node',
+      shouldNotParse(parser, '@forAll _:a.',
+                     'Unexpected blank on line 1.'));
+
+    it('should not parse a @forAll statement with a variable',
+      shouldNotParse(parser, '@forAll ?a.',
+                     'Unexpected "?a." on line 1.'));
   });
 
   describe('IRI resolution', function () {
