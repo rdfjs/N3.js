@@ -170,6 +170,16 @@ describe('N3Lexer', function () {
                      { type: 'prefixed', prefix: 'dbpedia', value: 'Anthony_J._Battaglia', line: 1 },
                      { type: 'eof', line: 1 }));
 
+    it('should tokenize a blank node with a dot, split in half while streaming',
+      shouldTokenize(streamOf('_:Anthony_J._Batt', 'aglia '),
+                     { type: 'blank', prefix: '_', value: 'Anthony_J._Battaglia', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize a blank node with a dot, split after the dot while streaming',
+      shouldTokenize(streamOf('_:Anthony_J.', '_Battaglia '),
+                     { type: 'blank', prefix: '_', value: 'Anthony_J._Battaglia', line: 1 },
+                     { type: 'eof', line: 1 }));
+
     it('should not decode a prefixed name',
       shouldTokenize('ex:%66oo-bar ',
                      { type: 'prefixed', prefix: 'ex', value: '%66oo-bar', line: 1 },
