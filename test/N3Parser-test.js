@@ -255,6 +255,11 @@ describe('N3Parser', function () {
                   ['_:b0', 'c', '_:b1'],
                   ['_:b1', 'd', 'e']));
 
+    it('should reuse identifiers of blank nodes within and outside of graphs',
+      shouldParse('_:a <b> _:c. <g> { _:a <b> _:c }',
+                  ['_:b0_a', 'b', '_:b0_c'],
+                  ['_:b0_a', 'b', '_:b0_c', 'g']));
+
     it('should not parse an invalid blank node',
       shouldNotParse('[ <a> <b> .',
                      'Expected punctuation to follow "b" on line 1.'));
@@ -1065,6 +1070,15 @@ describe('N3Parser', function () {
                   ['_:b4', 'http://www.w3.org/2000/10/swap/log#implies', '_:b5', '_:b3'],
                   ['?g', '?h', '?i', '_:b4'],
                   ['?j', '?k', '?l', '_:b5']));
+
+    it('should not reuse identifiers of blank nodes within and outside of formulas',
+      shouldParse(parser, '_:a _:b _:c. { _:a _:b _:c } => { { _:a _:b _:c } => { _:a _:b _:c } }.',
+                  ['_:b0_a', '_:b0_b', '_:b0_c'],
+                  ['_:b0', 'http://www.w3.org/2000/10/swap/log#implies', '_:b1', ''],
+                  ['_:b0.a', '_:b0.b', '_:b0.c', '_:b0'],
+                  ['_:b2', 'http://www.w3.org/2000/10/swap/log#implies', '_:b3', '_:b1'],
+                  ['_:b2.a', '_:b2.b', '_:b2.c', '_:b2'],
+                  ['_:b3.a', '_:b3.b', '_:b3.c', '_:b3']));
   });
 
   describe('IRI resolution', function () {
