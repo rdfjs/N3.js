@@ -469,6 +469,14 @@ describe('N3Lexer', function () {
                      { type: 'literal', value: '"abc\ndef"', line: 1 },
                      { type: 'eof', line: 2 }));
 
+    it('should tokenize @ keywords',
+      shouldTokenize('@prefix @base @forSome @forAll ',
+                     { type: '@prefix',  line: 1 },
+                     { type: '@base',    line: 1 },
+                     { type: '@forSome', line: 1 },
+                     { type: '@forAll',  line: 1 },
+                     { type: 'eof',      line: 1 }));
+
     it('should tokenize @prefix declarations',
       shouldTokenize('@prefix : <http://iri.org/#>.\n@prefix abc:<http://iri.org/#>.',
                      { type: '@prefix', line: 1 },
