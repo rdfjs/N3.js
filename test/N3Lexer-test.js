@@ -248,11 +248,15 @@ describe('N3Lexer', function () {
                      { type: 'eof', line: 4 }));
 
     it('should tokenize a single comment',
-      shouldTokenize(streamOf('#comment'),
+      shouldTokenize('#mycomment',
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize a stream with split comment',
+      shouldTokenize(streamOf('#mycom', 'ment'),
                      { type: 'eof', line: 1 }));
 
     it('should ignore comments',
-      shouldTokenize('<#foo> #comment\n <#foo>  #comment \r# comment\n\n<#bla>#',
+      shouldTokenize('<#foo> #mycomment\n <#foo>  #mycomment \r# mycomment\n\n<#bla>#',
                      { type: 'IRI', value: '#foo', line: 1 },
                      { type: 'IRI', value: '#foo', line: 2 },
                      { type: 'IRI', value: '#bla', line: 5 },
@@ -268,7 +272,7 @@ describe('N3Lexer', function () {
                      { type: 'literal', value: '"string"', line: 1 },
                      { type: 'eof', line: 1 }));
 
-    it('should tokenize a triple quoted string literal with quotes newlines inside',
+    it('should tokenize a triple quoted string literal with quoted newlines inside',
       shouldTokenize('"""st"r\ni""ng"""',
                      { type: 'literal', value: '"st"r\ni""ng"', line: 1 },
                      { type: 'eof', line: 2 }));
@@ -454,10 +458,6 @@ describe('N3Lexer', function () {
     it('should tokenize a stream with split number',
       shouldTokenize(streamOf('.', '1 '),
                      { type: 'literal', value: '".1"^^http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
-                     { type: 'eof', line: 1 }));
-
-    it('should tokenize a stream with split comment',
-      shouldTokenize(streamOf('#com', 'ment'),
                      { type: 'eof', line: 1 }));
 
     it('should immediately signal an error if a linebreak occurs anywhere outside a triple-quoted literal',
@@ -795,11 +795,42 @@ describe('An N3Lexer instance with the n3 option set to false', function () {
     shouldNotTokenize(createLexer(), ':joe^fam:father', 'Unexpected "^fam:father" on line 1.'));
 });
 
-function shouldTokenize(input) {
+describe('An N3Lexer instance with the comment option set to true', function () {
+  function createLexer() { return new N3Lexer({ comments: true }); }
+
+  it('should tokenize a single comment',
+    shouldTokenize(createLexer(), '#mycomment',
+                   { type: 'comment', value: 'mycomment', line: 1 },
+                   { type: 'eof', line: 1 }));
+
+  it('should tokenize a stream with split comment',
+    shouldTokenize(createLexer(), streamOf('#mycom', 'ment'),
+                   { type: 'comment', value: 'mycomment', line: 1 },
+                   { type: 'eof', line: 1 }));
+
+  it('should tokenize comments',
+    shouldTokenize(createLexer(), '<#foo> #mycomment\n <#foo>  #mycomment \r# mycomment\n\n<#bla>#',
+                   { type: 'IRI', value: '#foo', line: 1 },
+                   { type: 'comment', value: 'mycomment', line: 1 },
+                   { type: 'IRI', value: '#foo', line: 2 },
+                   { type: 'comment', value: 'mycomment ', line: 2 },
+                   { type: 'comment', value: ' mycomment', line: 3 },
+                   { type: 'IRI', value: '#bla', line: 5 },
+                   { type: 'comment', value: '', line: 5 },
+                   { type: 'eof', line: 5 }));
+});
+
+function shouldTokenize(lexer, input) {
   var expected = Array.prototype.slice.call(arguments, 1);
+  // Shift parameters if necessary
+  if (lexer instanceof N3Lexer)
+    expected.shift();
+  else
+    input = lexer, lexer = new N3Lexer();
+
   return function (done) {
     var result = [];
-    new N3Lexer().tokenize(input, tokenCallback);
+    lexer.tokenize(input, tokenCallback);
 
     function tokenCallback(error, token) {
       expect(error).not.to.exist;
