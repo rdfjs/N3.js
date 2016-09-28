@@ -895,6 +895,9 @@ describe('N3Parser', function () {
     it('should not parse a quad',
       shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "c" on line 1.'));
 
+    it('should not parse a variable',
+      shouldNotParse(parser, '?a ?b ?c.', 'Unexpected "?a" on line 1.'));
+
     it('should not parse an equality statement',
       shouldNotParse(parser, '<a> = <b>.', 'Unexpected "=" on line 1.'));
 
@@ -926,6 +929,9 @@ describe('N3Parser', function () {
     it('should not parse a quad',
       shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "c" on line 1.'));
 
+    it('should not parse a variable',
+      shouldNotParse(parser, '?a ?b ?c.', 'Unexpected "?a" on line 1.'));
+
     it('should not parse an equality statement',
       shouldNotParse(parser, '<a> = <b>.', 'Unexpected "=" on line 1.'));
 
@@ -956,6 +962,9 @@ describe('N3Parser', function () {
     it('should not parse a prefix declaration',
       shouldNotParse(parser, '@prefix : <p#>.', 'Unexpected "@prefix" on line 1.'));
 
+    it('should not parse a variable',
+      shouldNotParse(parser, '?a ?b ?c.', 'Unexpected "?a" on line 1.'));
+
     it('should not parse an equality statement',
       shouldNotParse(parser, '<urn:a:a> = <urn:b:b>.', 'Unexpected "=" on line 1.'));
 
@@ -985,6 +994,9 @@ describe('N3Parser', function () {
 
     it('should not parse a prefix declaration',
       shouldNotParse(parser, '@prefix : <p#>.', 'Unexpected "@prefix" on line 1.'));
+
+    it('should not parse a variable',
+      shouldNotParse(parser, '?a ?b ?c.', 'Unexpected "?a" on line 1.'));
 
     it('should not parse an equality statement',
       shouldNotParse(parser, '<urn:a:a> = <urn:b:b>.', 'Unexpected "=" on line 1.'));
@@ -1019,6 +1031,9 @@ describe('N3Parser', function () {
 
     it('allows a blank node label in predicate position',
       shouldParse(parser, '<a> _:b <c>.', ['a', '_:b0_b', 'c']));
+
+    it('should parse a variable',
+      shouldParse(parser, '?a ?b ?c.', ['?a', '?b', '?c']));
 
     it('should parse a simple equality',
       shouldParse(parser, '<a> = <b>.',
