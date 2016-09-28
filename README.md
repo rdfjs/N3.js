@@ -6,12 +6,13 @@ It offers:
 - [**Parsing**](#parsing) triples/quads from
   [Turtle](http://www.w3.org/TR/turtle/),
   [TriG](http://www.w3.org/TR/trig/),
-  [N-Triples](http://www.w3.org/TR/n-triples/)
-  and [N-Quads](http://www.w3.org/TR/n-quads/).
-- [**Writing**](#Writing) triples/quads to
+  [N-Triples](http://www.w3.org/TR/n-triples/),
+  [N-Quads](http://www.w3.org/TR/n-quads/),
+  and [Notation3 (N3)](https://www.w3.org/TeamSubmission/n3/).
+- [**Writing**](#writing) triples/quads to
   [Turtle](http://www.w3.org/TR/turtle/),
   [TriG](http://www.w3.org/TR/trig/),
-  [N-Triples](http://www.w3.org/TR/n-triples/)
+  [N-Triples](http://www.w3.org/TR/n-triples/),
   and [N-Quads](http://www.w3.org/TR/n-quads/).
 - **Storage** of triples/quads in memory
 
@@ -135,6 +136,14 @@ For strict compatibility with any of those languages, pass a `format` argument 
 ``` js
 var parser1 = N3.Parser({ format: 'N-Triples' });
 var parser2 = N3.Parser({ format: 'application/trig' });
+```
+
+Notation3 (N3) is supported _only_ through the `format` argument:
+
+``` js
+var parser3 = N3.Parser({ format: 'N3' });
+var parser4 = N3.Parser({ format: 'Notation3' });
+var parser5 = N3.Parser({ format: 'text/n3' });
 ```
 
 ### From an RDF stream to triples
@@ -367,11 +376,10 @@ The N3.js parser and writer is fully compatible with the following W3C specifica
 - [RDF 1.1 N-Quads](http://www.w3.org/TR/n-quads/)
   – [EARL report](https://raw.githubusercontent.com/RubenVerborgh/N3.js/earl/n3js-earl-report-nquads.ttl)
 
+In addition, the N3.js parser also supports [Notation3 (N3)](https://www.w3.org/TeamSubmission/n3/) (no official specification yet).
+
 Pass a `format` option to the constructor with the name or MIME type of a format
 for strict, fault-intolerant behavior.
-
-Note that the library does not support full [Notation3](http://www.w3.org/TeamSubmission/n3/) yet
-(and a standardized specification for this syntax is currently lacking).
 
 ### Breaking changes
 N3.js 0.4.x introduces the following breaking changes from 0.3.x versions:
