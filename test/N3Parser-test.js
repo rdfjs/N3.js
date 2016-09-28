@@ -97,7 +97,7 @@ describe('N3Parser', function () {
 
     it('should not parse @PREFIX',
       shouldNotParse('@PREFIX : <#>.',
-                     'Expected subject but got @PREFIX on line 1.'));
+                     'Expected entity but got @PREFIX on line 1.'));
 
     it('should parse triples with prefixes and different punctuation',
       shouldParse('@prefix : <#>.\n' +
@@ -194,7 +194,7 @@ describe('N3Parser', function () {
 
     it('should not parse a blank node with missing subject',
       shouldNotParse('<a> <b> [<c>].',
-                     'Expected object to follow "c" on line 1.'));
+                     'Expected entity but got ] on line 1.'));
 
     it('should not parse a blank node with only a semicolon',
       shouldNotParse('<a> <b> [;].',
@@ -391,7 +391,7 @@ describe('N3Parser', function () {
 
     it('should not parse an invalid list',
       shouldNotParse('<a> <b> (]).',
-                     'Expected list item instead of "]" on line 1.'));
+                     'Expected entity but got ] on line 1.'));
 
     it('should resolve IRIs against @base',
       shouldParse('@base <http://ex.org/>.\n' +
@@ -403,7 +403,7 @@ describe('N3Parser', function () {
 
     it('should not resolve IRIs against @BASE',
       shouldNotParse('@BASE <http://ex.org/>.',
-                     'Expected subject but got @BASE on line 1.'));
+                     'Expected entity but got @BASE on line 1.'));
 
     it('should resolve IRIs against SPARQL base',
       shouldParse('BASE <http://ex.org/>\n' +
@@ -595,7 +595,7 @@ describe('N3Parser', function () {
 
     it('should not parse a single opening brace',
       shouldNotParse('{',
-                     'Expected subject but got eof on line 1.'));
+                     'Expected entity but got eof on line 1.'));
 
     it('should not parse a superfluous closing brace ',
       shouldNotParse('{}}',
@@ -603,11 +603,11 @@ describe('N3Parser', function () {
 
     it('should not parse a graph with only a dot',
       shouldNotParse('{.}',
-                     'Expected subject but got . on line 1.'));
+                     'Expected entity but got . on line 1.'));
 
     it('should not parse a graph with only a semicolon',
       shouldNotParse('{;}',
-                     'Expected subject but got ; on line 1.'));
+                     'Expected entity but got ; on line 1.'));
 
     it('should not parse an unclosed graph',
       shouldNotParse('{<a> <b> <c>.',
@@ -615,11 +615,11 @@ describe('N3Parser', function () {
 
     it('should not parse a named graph with a list node as label',
       shouldNotParse('() {}',
-                     'Expected predicate to follow "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil" on line 1.'));
+                     'Expected entity but got { on line 1.'));
 
     it('should not parse a named graph with a non-empty blank node as label',
       shouldNotParse('[<a> <b>] {}',
-                     'Expected predicate to follow "_:b0" on line 1.'));
+                     'Expected entity but got { on line 1.'));
 
     it('should not parse a named graph with the GRAPH keyword and a non-empty blank node as label',
       shouldNotParse('GRAPH [<a> <b>] {}',
@@ -667,27 +667,27 @@ describe('N3Parser', function () {
 
     it('should not parse improperly nested parentheses and brackets',
       shouldNotParse('<a> <b> [<c> (<d>]).',
-                     'Expected list item instead of "]" on line 1.'));
+                     'Expected entity but got ] on line 1.'));
 
     it('should not parse improperly nested square brackets',
       shouldNotParse('<a> <b> [<c> <d>]].',
-                     'Expected punctuation to follow "_:b0" on line 1.'));
+                     'Expected entity but got ] on line 1.'));
 
     it('should error when an object is not there',
       shouldNotParse('<a> <b>.',
-                     'Expected object to follow "b" on line 1.'));
+                     'Expected entity but got . on line 1.'));
 
     it('should error when a dot is not there',
       shouldNotParse('<a> <b> <c>',
-                     'Expected punctuation to follow "c" on line 1.'));
+                     'Expected entity but got eof on line 1.'));
 
     it('should error with an abbreviation in the subject',
       shouldNotParse('a <a> <a>.',
-                     'Expected subject but got abbreviation on line 1.'));
+                     'Expected entity but got abbreviation on line 1.'));
 
     it('should error with an abbreviation in the object',
       shouldNotParse('<a> <a> a .',
-                     'Expected object to follow "a" on line 1.'));
+                     'Expected entity but got abbreviation on line 1.'));
 
     it('should error if punctuation follows a subject',
       shouldNotParse('<a> .',
@@ -695,7 +695,7 @@ describe('N3Parser', function () {
 
     it('should error if an unexpected token follows a subject',
       shouldNotParse('<a> [',
-                     'Expected predicate to follow "a" on line 1.'));
+                     'Expected entity but got [ on line 1.'));
 
     it('should not error if there is no triple callback', function () {
       new N3Parser().parse('');
@@ -887,10 +887,10 @@ describe('N3Parser', function () {
       shouldNotParse(parser, '{}', 'Unexpected graph on line 1.'));
 
     it('should not parse a named graph',
-      shouldNotParse(parser, '<g> {}', 'Expected predicate to follow "g" on line 1.'));
+      shouldNotParse(parser, '<g> {}', 'Expected entity but got { on line 1.'));
 
     it('should not parse a named graph with the GRAPH keyword',
-      shouldNotParse(parser, 'GRAPH <g> {}', 'Expected subject but got GRAPH on line 1.'));
+      shouldNotParse(parser, 'GRAPH <g> {}', 'Expected entity but got GRAPH on line 1.'));
 
     it('should not parse a quad',
       shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "c" on line 1.'));
@@ -1018,13 +1018,13 @@ describe('N3Parser', function () {
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
 
     it('should not parse a default graph',
-      shouldNotParse(parser, '{}', 'Expected predicate to follow "_:b0" on line 1.'));
+      shouldNotParse(parser, '{}', 'Expected entity but got eof on line 1.'));
 
     it('should not parse a named graph',
-      shouldNotParse(parser, '<g> {}', 'Expected predicate to follow "g" on line 1.'));
+      shouldNotParse(parser, '<g> {}', 'Expected entity but got { on line 1.'));
 
     it('should not parse a named graph with the GRAPH keyword',
-      shouldNotParse(parser, 'GRAPH <g> {}', 'Expected subject but got GRAPH on line 1.'));
+      shouldNotParse(parser, 'GRAPH <g> {}', 'Expected entity but got GRAPH on line 1.'));
 
     it('should not parse a quad',
       shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "c" on line 1.'));
