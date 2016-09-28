@@ -1229,6 +1229,34 @@ describe('N3Parser', function () {
                   ['x', 'is', '_:b1'],
                   ['ex:joe', 'f:mother', '_:b0'],
                   ['_:b1',   'f:mother', '_:b0']));
+
+    it('should parse a ! path in a blank node as subject',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
+                          '[fam:knows :joe!fam:mother] a fam:Person.',
+                  ['_:b0', 'f:knows', '_:b1'],
+                  ['ex:joe', 'f:mother', '_:b1'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']));
+
+    it('should parse a ! path in a blank node as object',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
+                          '<x> <is> [fam:knows :joe!fam:mother].',
+                  ['x', 'is', '_:b0'],
+                  ['_:b0', 'f:knows', '_:b1'],
+                  ['ex:joe', 'f:mother', '_:b1']));
+
+    it('should parse a ^ path in a blank node as subject',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
+                          '[fam:knows :joe^fam:son] a fam:Person.',
+                  ['_:b0', 'f:knows', '_:b1'],
+                  ['_:b1', 'f:son', 'ex:joe'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']));
+
+    it('should parse a ^ path in a blank node as object',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
+                          '<x> <is> [fam:knows :joe^fam:son].',
+                  ['x', 'is', '_:b0'],
+                  ['_:b0', 'f:knows', '_:b1'],
+                  ['_:b1', 'f:son', 'ex:joe']));
   });
 
   describe('IRI resolution', function () {
