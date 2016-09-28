@@ -8,13 +8,13 @@ It offers:
   [TriG](http://www.w3.org/TR/trig/),
   [N-Triples](http://www.w3.org/TR/n-triples/),
   [N-Quads](http://www.w3.org/TR/n-quads/),
-  and [Notation3 (N3)](https://www.w3.org/TeamSubmission/n3/).
+  and [Notation3 (N3)](https://www.w3.org/TeamSubmission/n3/)
 - [**Writing**](#writing) triples/quads to
   [Turtle](http://www.w3.org/TR/turtle/),
   [TriG](http://www.w3.org/TR/trig/),
   [N-Triples](http://www.w3.org/TR/n-triples/),
-  and [N-Quads](http://www.w3.org/TR/n-quads/).
-- **Storage** of triples/quads in memory
+  and [N-Quads](http://www.w3.org/TR/n-quads/)
+- [**Storage**](#storing) of triples/quads in memory
 
 Parsing and writing is:
 - **asynchronous** – triples arrive as soon as possible
