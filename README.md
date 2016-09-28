@@ -381,12 +381,6 @@ In addition, the N3.js parser also supports [Notation3 (N3)](https://www.w3.org/
 Pass a `format` option to the constructor with the name or MIME type of a format
 for strict, fault-intolerant behavior.
 
-### Breaking changes
-N3.js 0.4.x introduces the following breaking changes from 0.3.x versions:
-- The fourth element of a quad is named `graph` instead of `context`.
-- `N3.Writer` and `N3.Store` constructor options are passed as a hash `{ prefixes: { … } }`.
-- `N3.Util` URI methods such as `isUri` are now IRI methods such as `isIRI`.
-
 ## License, status and contributions
 The N3.js library is copyrighted by [Ruben Verborgh](http://ruben.verborgh.org/)
 and released under the [MIT License](https://github.com/RubenVerborgh/N3.js/blob/master/LICENSE.md).
