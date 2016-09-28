@@ -665,10 +665,11 @@ describe('N3Lexer', function () {
                      { type: 'eof', line: 1 }));
 
     it('should tokenize variables',
-      shouldTokenize('?a ?abc ?a_B_c ',
+      shouldTokenize('?a ?abc ?a_B_c.',
                      { type: 'var', value: '?a',     line: 1 },
                      { type: 'var', value: '?abc',   line: 1 },
                      { type: 'var', value: '?a_B_c', line: 1 },
+                     { type: '.',   value: '',       line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should not tokenize invalid variables',

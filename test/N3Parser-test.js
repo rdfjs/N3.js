@@ -1111,7 +1111,7 @@ describe('N3Parser', function () {
 
     it('should not parse a @forSome statement with a variable',
       shouldNotParse(parser, '@forSome ?a.',
-                     'Unexpected "?a." on line 1.'));
+                     'Unexpected var on line 1.'));
 
     it('should correctly scope @forSome statements',
       shouldParse(parser, '@forSome <x>. <x> <x> { @forSome <x>. <x> <x> <x>. }. <x> <x> <x>.',
@@ -1137,7 +1137,7 @@ describe('N3Parser', function () {
 
     it('should not parse a @forAll statement with a variable',
       shouldNotParse(parser, '@forAll ?a.',
-                     'Unexpected "?a." on line 1.'));
+                     'Unexpected var on line 1.'));
 
     it('should correctly scope @forAll statements',
       shouldParse(parser, '@forAll <x>. <x> <x> { @forAll <x>. <x> <x> <x>. }. <x> <x> <x>.',
