@@ -1187,6 +1187,34 @@ describe('N3Parser', function () {
                   ['ex:joe', 'f:mother', '_:b0'],
                   ['_:b0',   'l:office', '_:b1'],
                   ['_:b1',   'l:zip',    '_:b2']));
+
+    it('should parse a ^ path of length 2 as subject',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
+                          ':joe^fam:son a fam:Person.',
+                  ['_:b0', 'f:son', 'ex:joe'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']));
+
+    it('should parse a ^ path of length 4 as subject',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
+                          ':joe^fam:son^fam:sister^fam:mother a fam:Person.',
+                  ['_:b0', 'f:son',    'ex:joe'],
+                  ['_:b1', 'f:sister', '_:b0'],
+                  ['_:b2', 'f:mother', '_:b1'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']));
+
+    it('should parse a ^ path of length 2 as object',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
+                          '<x> <is> :joe^fam:son.',
+                  ['x',    'is',    '_:b0'],
+                  ['_:b0', 'f:son', 'ex:joe']));
+
+    it('should parse a ^ path of length 4 as object',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
+                          '<x> <is> :joe^fam:son^fam:sister^fam:mother.',
+                  ['x',    'is',       '_:b2'],
+                  ['_:b0', 'f:son',    'ex:joe'],
+                  ['_:b1', 'f:sister', '_:b0'],
+                  ['_:b2', 'f:mother', '_:b1']));
   });
 
   describe('IRI resolution', function () {
