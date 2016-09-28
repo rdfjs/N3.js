@@ -1159,6 +1159,34 @@ describe('N3Parser', function () {
                   ['?b-0', '?b-0', '_:b1'],
                   ['?b-2', '?b-2', '?b-2', '_:b1'],
                   ['?b-0', '?b-0', '?b-0']));
+
+    it('should parse a ! path of length 2 as subject',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
+                          ':joe!fam:mother a fam:Person.',
+                  ['ex:joe', 'f:mother', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']));
+
+    it('should parse a ! path of length 4 as subject',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>. @prefix loc: <l:>.' +
+                          ':joe!fam:mother!loc:office!loc:zip loc:code 1234.',
+                  ['ex:joe', 'f:mother', '_:b0'],
+                  ['_:b0',   'l:office', '_:b1'],
+                  ['_:b1',   'l:zip',    '_:b2'],
+                  ['_:b2',   'l:code',   '"1234"^^http://www.w3.org/2001/XMLSchema#integer']));
+
+    it('should parse a ! path of length 2 as object',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
+                          '<x> <is> :joe!fam:mother.',
+                  ['x', 'is', '_:b0'],
+                  ['ex:joe', 'f:mother', '_:b0']));
+
+    it('should parse a ! path of length 4 as object',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>. @prefix loc: <l:>.' +
+                          '<x> <is> :joe!fam:mother!loc:office!loc:zip.',
+                  ['x',      'is',       '_:b2'],
+                  ['ex:joe', 'f:mother', '_:b0'],
+                  ['_:b0',   'l:office', '_:b1'],
+                  ['_:b1',   'l:zip',    '_:b2']));
   });
 
   describe('IRI resolution', function () {
