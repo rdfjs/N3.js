@@ -1257,6 +1257,12 @@ describe('N3Parser', function () {
                   ['x', 'is', '_:b0'],
                   ['_:b0', 'f:knows', '_:b1'],
                   ['_:b1', 'f:son', 'ex:joe']));
+
+    it('should not parse an invalid ! path',
+      shouldNotParse(parser, '<a>!"invalid" ', 'Expected entity but got literal on line 1.'));
+
+    it('should not parse an invalid ^ path',
+      shouldNotParse(parser, '<a>^"invalid" ', 'Expected entity but got literal on line 1.'));
   });
 
   describe('IRI resolution', function () {
