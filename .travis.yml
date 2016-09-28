@@ -6,4 +6,7 @@ node_js:
 script:
   - npm run lint
   - npm test
+cache:
+  directories:
+    - node_modules
 sudo: false
