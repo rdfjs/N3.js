@@ -1215,6 +1215,20 @@ describe('N3Parser', function () {
                   ['_:b0', 'f:son',    'ex:joe'],
                   ['_:b1', 'f:sister', '_:b0'],
                   ['_:b2', 'f:mother', '_:b1']));
+
+    it('should parse mixed !/^ paths as subject',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
+                          ':joe!fam:mother^fam:mother a fam:Person.',
+                  ['ex:joe', 'f:mother', '_:b0'],
+                  ['_:b1',   'f:mother', '_:b0'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']));
+
+    it('should parse mixed !/^ paths as object',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
+                          '<x> <is> :joe!fam:mother^fam:mother.',
+                  ['x', 'is', '_:b1'],
+                  ['ex:joe', 'f:mother', '_:b0'],
+                  ['_:b1',   'f:mother', '_:b0']));
   });
 
   describe('IRI resolution', function () {
