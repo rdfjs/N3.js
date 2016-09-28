@@ -776,6 +776,9 @@ describe('N3Lexer', function () {
 describe('An N3Lexer instance with the n3 option set to false', function () {
   function createLexer() { return new N3Lexer({ n3: false }); }
 
+  it('should not tokenize a variable',
+    shouldNotTokenize(createLexer(), '?a', 'Unexpected "?a" on line 1.'));
+
   it('should not tokenize a right implication',
     shouldNotTokenize(createLexer(), '<a> => <c>.', 'Unexpected "=>" on line 1.'));
 
@@ -784,6 +787,12 @@ describe('An N3Lexer instance with the n3 option set to false', function () {
 
   it('should not tokenize an equality',
     shouldNotTokenize(createLexer(), '<a> = <c>.', 'Unexpected "=" on line 1.'));
+
+  it('should not tokenize a ! path',
+    shouldNotTokenize(createLexer(), ':joe!fam:mother', 'Unexpected "!fam:mother" on line 1.'));
+
+  it('should not tokenize a ^ path',
+    shouldNotTokenize(createLexer(), ':joe^fam:father', 'Unexpected "^fam:father" on line 1.'));
 });
 
 function shouldTokenize(input) {
