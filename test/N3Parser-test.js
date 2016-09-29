@@ -771,7 +771,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance with a document IRI', function () {
-    var parser = new N3Parser({ documentIRI: 'http://ex.org/x/yy/zzz/f.ttl' });
+    function parser() { return new N3Parser({ documentIRI: 'http://ex.org/x/yy/zzz/f.ttl' }); }
 
     it('should resolve IRIs against the document IRI',
       shouldParse(parser,
@@ -850,7 +850,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance with a blank node prefix', function () {
-    var parser = new N3Parser({ blankNodePrefix: '_:blank' });
+    function parser() { return new N3Parser({ blankNodePrefix: '_:blank' }); }
 
     it('should use the given prefix for blank nodes',
       shouldParse(parser,
@@ -859,7 +859,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance with an empty blank node prefix', function () {
-    var parser = new N3Parser({ blankNodePrefix: '' });
+    function parser() { return new N3Parser({ blankNodePrefix: '' }); }
 
     it('should not use a prefix for blank nodes',
       shouldParse(parser,
@@ -868,7 +868,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance with a non-string format', function () {
-    var parser = new N3Parser({ format: 1 });
+    function parser() { return new N3Parser({ format: 1 }); }
 
     it('should parse a single triple',
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
@@ -878,7 +878,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance for the Turtle format', function () {
-    var parser = new N3Parser({ format: 'Turtle' });
+    function parser() { return new N3Parser({ format: 'Turtle' }); }
 
     it('should parse a single triple',
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
@@ -912,7 +912,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance for the TriG format', function () {
-    var parser = new N3Parser({ format: 'TriG' });
+    function parser() { return new N3Parser({ format: 'TriG' }); }
 
     it('should parse a single triple',
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
@@ -946,7 +946,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance for the N-Triples format', function () {
-    var parser = new N3Parser({ format: 'N-Triples' });
+    function parser() { return new N3Parser({ format: 'N-Triples' }); }
 
     it('should parse a single triple',
       shouldParse(parser, '<http://ex.org/a> <http://ex.org/b> "c".',
@@ -979,7 +979,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance for the N-Quads format', function () {
-    var parser = new N3Parser({ format: 'N-Quads' });
+    function parser() { return new N3Parser({ format: 'N-Quads' }); }
 
     it('should parse a single triple',
       shouldParse(parser, '<http://ex.org/a> <http://ex.org/b> <http://ex.org/c>.',
@@ -1012,7 +1012,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance for the N3 format', function () {
-    var parser = new N3Parser({ format: 'N3' });
+    function parser() { return new N3Parser({ format: 'N3' }); }
 
     it('should parse a single triple',
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
@@ -1746,20 +1746,21 @@ describe('N3Parser', function () {
   });
 });
 
-function shouldParse(parser, input) {
-  var hasParser = parser instanceof N3Parser,
-      expected = Array.prototype.slice.call(arguments, hasParser ? 2 : 1),
-      items = expected.map(function (item) {
-        return { subject: item[0], predicate: item[1], object: item[2], graph: item[3] || '' };
-      });
-  // Shift parameters if necessary
-  if (!hasParser)
-    input = parser, parser = new N3Parser();
+function shouldParse(createParser, input) {
+  var expected = Array.prototype.slice.call(arguments, 1);
+  // Shift parameters as necessary
+  if (createParser.call)
+    expected.shift();
+  else
+    input = createParser, createParser = N3Parser;
 
   return function (done) {
     var results = [];
+    var items = expected.map(function (item) {
+      return { subject: item[0], predicate: item[1], object: item[2], graph: item[3] || '' };
+    });
     N3Parser._resetBlankNodeIds();
-    parser.parse(input, function (error, triple) {
+    createParser().parse(input, function (error, triple) {
       expect(error).not.to.exist;
       if (triple)
         results.push(triple);
@@ -1775,13 +1776,13 @@ function toSortedJSON(triples) {
   return '[\n  ' + triples.join('\n  ') + '\n]';
 }
 
-function shouldNotParse(parser, input, expectedError) {
+function shouldNotParse(createParser, input, expectedError) {
   // Shift parameters if necessary
-  if (!(parser instanceof N3Parser))
-    expectedError = input, input = parser, parser = new N3Parser();
+  if (!createParser.call)
+    expectedError = input, input = createParser, createParser = N3Parser;
 
   return function (done) {
-    parser.parse(input, function (error, triple) {
+    createParser().parse(input, function (error, triple) {
       if (error) {
         expect(triple).not.to.exist;
         error.should.be.an.instanceof(Error);

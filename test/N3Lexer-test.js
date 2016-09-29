@@ -822,7 +822,7 @@ describe('An N3Lexer instance with the comment option set to true', function () 
 
 function shouldTokenize(lexer, input) {
   var expected = Array.prototype.slice.call(arguments, 1);
-  // Shift parameters if necessary
+  // Shift parameters as necessary
   if (lexer instanceof N3Lexer)
     expected.shift();
   else
