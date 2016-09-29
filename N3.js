@@ -24,3 +24,8 @@ Object.keys(exports).forEach(function (submodule) {
     },
   });
 });
+
+// Load data types directly
+var Core = globalRequire('./lib/Datatypes');
+for (var type in Core)
+  exports[type] = Core[type];
