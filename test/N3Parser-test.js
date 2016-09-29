@@ -1317,6 +1317,78 @@ describe('N3Parser', function () {
       shouldNotParse(parser, '<a>^"invalid" ', 'Expected entity but got literal on line 1.'));
   });
 
+  describe('An N3Parser instance for the N3 format with the explicitQuantifiers option', function () {
+    function parser() { return new N3Parser({ format: 'N3', explicitQuantifiers: true }); }
+
+    it('should parse a @forSome statement',
+      shouldParse(parser, '@forSome <x>. <x> <x> <x>.',
+                  ['', 'http://www.w3.org/2000/10/swap/reify#forSome', '_:b0',      'urn:n3:quantifiers'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x', 'urn:n3:quantifiers'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
+                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil',        'urn:n3:quantifiers'],
+                  ['x', 'x', 'x']));
+
+    it('should parse a @forSome statement with multiple entities',
+      shouldParse(parser, '@prefix a: <a:>. @base <b:>. @forSome a:x, <y>, a:z. a:x <y> a:z.',
+                  ['', 'http://www.w3.org/2000/10/swap/reify#forSome', '_:b0',        'urn:n3:quantifiers'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a:x', 'urn:n3:quantifiers'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1', 'urn:n3:quantifiers'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'b:y', 'urn:n3:quantifiers'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2', 'urn:n3:quantifiers'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a:z', 'urn:n3:quantifiers'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
+                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil',          'urn:n3:quantifiers'],
+                  ['a:x', 'b:y', 'a:z']));
+
+    it('should correctly scope @forSome statements',
+      shouldParse(parser, '@forSome <x>. <x> <x> { @forSome <x>. <x> <x> <x>. }. <x> <x> <x>.',
+                  ['', 'http://www.w3.org/2000/10/swap/reify#forSome', '_:b0',      'urn:n3:quantifiers'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x', 'urn:n3:quantifiers'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
+                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil',        'urn:n3:quantifiers'],
+                  ['x', 'x', '_:b1'],
+                  ['_:b1', 'http://www.w3.org/2000/10/swap/reify#forSome', '_:b2',  'urn:n3:quantifiers'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x', 'urn:n3:quantifiers'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
+                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil',        'urn:n3:quantifiers'],
+                  ['x', 'x', 'x', '_:b1'],
+                  ['x', 'x', 'x']));
+
+    it('should parse a @forAll statement',
+      shouldParse(parser, '@forAll <x>. <x> <x> <x>.',
+                  ['', 'http://www.w3.org/2000/10/swap/reify#forAll', '_:b0',       'urn:n3:quantifiers'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x', 'urn:n3:quantifiers'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
+                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil',        'urn:n3:quantifiers'],
+                  ['x', 'x', 'x']));
+
+    it('should parse a @forAll statement with multiple entities',
+      shouldParse(parser, '@prefix a: <a:>. @base <b:>. @forAll a:x, <y>, a:z. a:x <y> a:z.',
+                  ['', 'http://www.w3.org/2000/10/swap/reify#forAll', '_:b0',         'urn:n3:quantifiers'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a:x', 'urn:n3:quantifiers'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1', 'urn:n3:quantifiers'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'b:y', 'urn:n3:quantifiers'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2', 'urn:n3:quantifiers'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a:z', 'urn:n3:quantifiers'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
+                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil',          'urn:n3:quantifiers'],
+                  ['a:x', 'b:y', 'a:z']));
+
+    it('should correctly scope @forAll statements',
+      shouldParse(parser, '@forAll <x>. <x> <x> { @forAll <x>. <x> <x> <x>. }. <x> <x> <x>.',
+                  ['', 'http://www.w3.org/2000/10/swap/reify#forAll', '_:b0',       'urn:n3:quantifiers'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x', 'urn:n3:quantifiers'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
+                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil',        'urn:n3:quantifiers'],
+                  ['x', 'x', '_:b1'],
+                  ['_:b1', 'http://www.w3.org/2000/10/swap/reify#forAll', '_:b2',   'urn:n3:quantifiers'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x', 'urn:n3:quantifiers'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
+                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil',        'urn:n3:quantifiers'],
+                  ['x', 'x', 'x', '_:b1'],
+                  ['x', 'x', 'x']));
+  });
+
   describe('IRI resolution', function () {
     describe('RFC3986 normal examples', function () {
       itShouldResolve('http://a/bb/ccc/d;p?q', 'g:h',     'g:h');
