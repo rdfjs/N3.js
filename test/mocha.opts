@@ -1,2 +1,3 @@
+--require test/test-setup
 --timeout 100
 --slow 50

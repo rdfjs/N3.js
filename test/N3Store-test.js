@@ -1,8 +1,4 @@
 var N3Store = require('../N3').Store;
-var chai = require('chai');
-var expect = chai.expect;
-chai.should();
-chai.use(require('chai-things'));
 
 describe('N3Store', function () {
   describe('The N3Store module', function () {

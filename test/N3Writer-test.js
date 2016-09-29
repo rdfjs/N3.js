@@ -1,6 +1,4 @@
 var N3Writer = require('../N3').Writer;
-var chai = require('chai');
-chai.should();
 
 describe('N3Writer', function () {
   describe('The N3Writer module', function () {

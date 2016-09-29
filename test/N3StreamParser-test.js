@@ -1,8 +1,7 @@
 var N3StreamParser = require('../N3').StreamParser;
-var chai = require('chai'),
-    Readable = require('stream').Readable,
+
+var Readable = require('stream').Readable,
     Writable = require('stream').Writable;
-chai.should();
 
 describe('N3StreamParser', function () {
   describe('The N3StreamParser module', function () {

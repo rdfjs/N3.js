@@ -1,8 +1,6 @@
 var N3Lexer = require('../N3').Lexer;
-var chai = require('chai'),
-    EventEmitter = require('events');
-var expect = chai.expect;
-chai.should();
+
+var EventEmitter = require('events');
 
 describe('N3Lexer', function () {
   describe('The N3Lexer module', function () {

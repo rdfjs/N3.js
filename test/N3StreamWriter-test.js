@@ -1,8 +1,7 @@
 var N3StreamWriter = require('../N3').StreamWriter;
-var chai = require('chai'),
-    Readable = require('stream').Readable,
+
+var Readable = require('stream').Readable,
     Writable = require('stream').Writable;
-chai.should();
 
 describe('N3StreamWriter', function () {
   describe('The N3StreamWriter module', function () {

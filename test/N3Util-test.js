@@ -1,7 +1,4 @@
 var N3Util = require('../N3').Util;
-var chai = require('chai');
-var expect = chai.expect;
-chai.should();
 
 describe('N3Util', function () {
   describe('The N3Util module', function () {

@@ -1,8 +1,4 @@
 var N3Parser = require('../N3').Parser;
-var chai = require('chai');
-var expect = chai.expect;
-chai.should();
-chai.use(require('chai-things'));
 
 describe('N3Parser', function () {
   describe('The N3Parser module', function () {
