@@ -81,5 +81,12 @@ describe('NamedNode', function () {
         value: 'http://example.org/foo#bar',
       }).should.be.false;
     });
+
+    it('should provide a JSON representation', function () {
+      namedNode.toJSON().should.deep.equal({
+        termType: 'NamedNode',
+        value: 'http://example.org/foo#bar',
+      });
+    });
   });
 });

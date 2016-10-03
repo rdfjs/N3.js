@@ -81,5 +81,12 @@ describe('BlankNode', function () {
         value: 'b1',
       }).should.be.false;
     });
+
+    it('should provide a JSON representation', function () {
+      blankNode.toJSON().should.deep.equal({
+        termType: 'BlankNode',
+        value: 'b1',
+      });
+    });
   });
 });

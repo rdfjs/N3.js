@@ -81,5 +81,12 @@ describe('Variable', function () {
         value: 'v1',
       }).should.be.false;
     });
+
+    it('should provide a JSON representation', function () {
+      variable.toJSON().should.deep.equal({
+        termType: 'Variable',
+        value: 'v1',
+      });
+    });
   });
 });

@@ -116,6 +116,18 @@ describe('Literal', function () {
         datatype: { value: 'http://www.w3.org/2001/XMLSchema#string', termType: 'NamedNode' },
       }).should.be.false;
     });
+
+    it('should provide a JSON representation', function () {
+      literal.toJSON().should.deep.equal({
+        termType: 'Literal',
+        value: '',
+        language: '',
+        datatype: {
+          termType: 'NamedNode',
+          value: 'http://www.w3.org/2001/XMLSchema#string',
+        },
+      });
+    });
   });
 
   describe('A Literal instance created from a string without language or datatype', function () {
@@ -207,6 +219,18 @@ describe('Literal', function () {
         language: '',
         datatype: { value: 'http://www.w3.org/2001/XMLSchema#string', termType: 'NamedNode' },
       }).should.be.false;
+    });
+
+    it('should provide a JSON representation', function () {
+      literal.toJSON().should.deep.equal({
+        termType: 'Literal',
+        value: 'my @^^ string',
+        language: '',
+        datatype: {
+          termType: 'NamedNode',
+          value: 'http://www.w3.org/2001/XMLSchema#string',
+        },
+      });
     });
   });
 
@@ -300,6 +324,18 @@ describe('Literal', function () {
         datatype: { value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString', termType: 'NamedNode' },
       }).should.be.false;
     });
+
+    it('should provide a JSON representation', function () {
+      literal.toJSON().should.deep.equal({
+        termType: 'Literal',
+        value: '',
+        language: 'en-us',
+        datatype: {
+          termType: 'NamedNode',
+          value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString',
+        },
+      });
+    });
   });
 
   describe('A Literal instance created from a string without language or datatype', function () {
@@ -391,6 +427,18 @@ describe('Literal', function () {
         language: 'en-us',
         datatype: { value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString', termType: 'NamedNode' },
       }).should.be.false;
+    });
+
+    it('should provide a JSON representation', function () {
+      literal.toJSON().should.deep.equal({
+        termType: 'Literal',
+        value: 'my @^^ string',
+        language: 'en-us',
+        datatype: {
+          termType: 'NamedNode',
+          value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString',
+        },
+      });
     });
   });
 
@@ -484,6 +532,18 @@ describe('Literal', function () {
         datatype: { value: 'http://example.org/types#type', termType: 'NamedNode' },
       }).should.be.false;
     });
+
+    it('should provide a JSON representation', function () {
+      literal.toJSON().should.deep.equal({
+        termType: 'Literal',
+        value: '',
+        language: '',
+        datatype: {
+          termType: 'NamedNode',
+          value: 'http://example.org/types#type',
+        },
+      });
+    });
   });
 
   describe('A Literal instance created from a string with a datatype', function () {
@@ -575,6 +635,18 @@ describe('Literal', function () {
         language: '',
         datatype: { value: 'http://example.org/types#type', termType: 'NamedNode' },
       }).should.be.false;
+    });
+
+    it('should provide a JSON representation', function () {
+      literal.toJSON().should.deep.equal({
+        termType: 'Literal',
+        value: 'my @^^ string',
+        language: '',
+        datatype: {
+          termType: 'NamedNode',
+          value: 'http://example.org/types#type',
+        },
+      });
     });
   });
 });

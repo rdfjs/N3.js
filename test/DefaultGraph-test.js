@@ -68,5 +68,12 @@ describe('DefaultGraph', function () {
         termType: 'Literal',
       }).should.be.false;
     });
+
+    it('should provide a JSON representation', function () {
+      defaultGraph.toJSON().should.deep.equal({
+        termType: 'DefaultGraph',
+        value: '',
+      });
+    });
   });
 });
