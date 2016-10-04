@@ -6,6 +6,8 @@ node_js:
 script:
   - npm run lint
   - npm test
+after_success:
+  - npm run coveralls
 cache:
   directories:
     - node_modules

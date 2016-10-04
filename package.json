@@ -21,10 +21,11 @@
     "chai": "^3.5.0",
     "chai-things": "^0.2.0",
     "colors": "^1.1.2",
+    "coveralls": "^2.11.14",
     "docco": "^0.7.0",
     "eslint": "^3.4.0",
-    "istanbul": "^0.4.5",
     "mocha": "^3.0.2",
+    "nyc": "^8.3.0",
     "pre-commit": "^1.1.3",
     "request": "^2.74.0",
     "uglify-js": "^2.7.3"
@@ -33,7 +34,8 @@
     "test": "mocha",
     "lint": "eslint lib perf test spec",
     "browser": "node browser/build-browser-versions",
-    "coverage": "istanbul cover node_modules/.bin/_mocha -- -R spec --timeout 1000",
+    "cover": "nyc -- mocha -R dot --timeout 1000",
+    "coveralls": "nyc --reporter=text-lcov -- mocha -R dot --timeout 1000 | coveralls",
     "spec": "node spec/turtle-spec && node spec/trig-spec && node spec/ntriples-spec && node spec/nquads-spec",
     "spec-clean": "rm -r spec/turtle spec/trig",
     "docs": "docco lib/*.js"
