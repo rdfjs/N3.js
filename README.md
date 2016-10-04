@@ -1,4 +1,7 @@
 # Lightning fast, asynchronous, streaming RDF for JavaScript
+[![Build Status](https://travis-ci.org/RubenVerborgh/N3.js.svg?branch=master)](https://travis-ci.org/RubenVerborgh/N3.js)
+[![Coverage Status](https://coveralls.io/repos/github/RubenVerborgh/N3.js/badge.svg)](https://coveralls.io/github/RubenVerborgh/N3.js)
+[![npm version](https://badge.fury.io/js/n3.svg)](https://www.npmjs.com/package/n3)
 
 The N3.js library lets you handle [RDF](http://www.w3.org/TR/rdf-primer/) in JavaScript easily, in [Node.js](http://nodejs.org/) and the browser.
 It offers:
@@ -384,10 +387,6 @@ for strict, fault-intolerant behavior.
 ## License, status and contributions
 The N3.js library is copyrighted by [Ruben Verborgh](http://ruben.verborgh.org/)
 and released under the [MIT License](https://github.com/RubenVerborgh/N3.js/blob/master/LICENSE.md).
-
-[![Build Status](https://travis-ci.org/RubenVerborgh/N3.js.png?branch=master)](https://travis-ci.org/RubenVerborgh/N3.js)
-<br>
-[![Browser Build Status](https://ci.testling.com/RubenVerborgh/N3.js.png)](https://ci.testling.com/RubenVerborgh/N3.js)
 
 Contributions are welcome, and bug reports or pull requests are always helpful.
 If you plan to implement a larger feature, it's best to contact me first.
