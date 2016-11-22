@@ -751,8 +751,8 @@ describe('N3Parser', function () {
     });
 
     it('should parse a string synchronously if no callback is given', function () {
-      var triples = new N3Parser().parse('<a> <b> <c>.');
-      triples.should.deep.equal([{ subject: 'a', predicate: 'b', object: 'c', graph: '' }]);
+      var triples = new N3Parser().parse('@prefix a: <urn:a:>. a:a a:b a:c.');
+      triples.should.deep.equal([{ subject: 'urn:a:a', predicate: 'urn:a:b', object: 'urn:a:c', graph: '' }]);
     });
 
     it('should throw on syntax errors if no callback is given', function () {
