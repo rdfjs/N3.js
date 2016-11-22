@@ -20,39 +20,39 @@ describe('N3StreamWriter', function () {
 
   describe('An N3StreamWriter instance', function () {
     it('should serialize 0 triples',
-      shouldSerialize([], ''));
+      shouldSerialize(''));
 
     it('should serialize 1 triple',
-      shouldSerialize([['abc', 'def', 'ghi']],
+      shouldSerialize(['abc', 'def', 'ghi'],
                       '<abc> <def> <ghi>.\n'));
 
     it('should serialize 2 triples',
-      shouldSerialize([['abc', 'def', 'ghi'],
-                       ['jkl', 'mno', 'pqr']],
+      shouldSerialize(['abc', 'def', 'ghi'],
+                      ['jkl', 'mno', 'pqr'],
                       '<abc> <def> <ghi>.\n' +
                       '<jkl> <mno> <pqr>.\n'));
 
     it('should serialize 3 triples',
-      shouldSerialize([['abc', 'def', 'ghi'],
-                       ['jkl', 'mno', 'pqr'],
-                       ['stu', 'vwx', 'yz']],
+      shouldSerialize(['abc', 'def', 'ghi'],
+                      ['jkl', 'mno', 'pqr'],
+                      ['stu', 'vwx', 'yz'],
                       '<abc> <def> <ghi>.\n' +
                       '<jkl> <mno> <pqr>.\n' +
                       '<stu> <vwx> <yz>.\n'));
 
     it('should not serialize a literal in the subject',
-      shouldNotSerialize([['"a"', 'b', '"c']],
+      shouldNotSerialize(['"a"', 'b', '"c'],
                           'A literal as subject is not allowed: "a"'));
 
     it('should not serialize a literal in the predicate',
-      shouldNotSerialize([['a', '"b"', '"c']],
+      shouldNotSerialize(['a', '"b"', '"c'],
                           'A literal as predicate is not allowed: "b"'));
 
     it('should use prefixes when possible',
       shouldSerialize({ prefixes: { a: 'http://a.org/', b: 'http://a.org/b#', c: 'http://a.org/b' } },
-                      [['http://a.org/bc', 'http://a.org/b#ef', 'http://a.org/bhi'],
-                       ['http://a.org/bc/de', 'http://a.org/b#e#f', 'http://a.org/b#x/t'],
-                       ['http://a.org/3a', 'http://a.org/b#3a', 'http://a.org/b#a3']],
+                      ['http://a.org/bc', 'http://a.org/b#ef', 'http://a.org/bhi'],
+                      ['http://a.org/bc/de', 'http://a.org/b#e#f', 'http://a.org/b#x/t'],
+                      ['http://a.org/3a', 'http://a.org/b#3a', 'http://a.org/b#a3'],
                       '@prefix a: <http://a.org/>.\n' +
                       '@prefix b: <http://a.org/b#>.\n\n' +
                       'a:bc b:ef a:bhi.\n' +
@@ -62,9 +62,11 @@ describe('N3StreamWriter', function () {
 });
 
 
-function shouldSerialize(options, tripleArrays, expectedResult) {
-  if (!expectedResult)
-    expectedResult = tripleArrays, tripleArrays = options, options = null;
+function shouldSerialize(/* options?, tripleArrays..., expectedResult */) {
+  var tripleArrays = Array.prototype.slice.call(arguments),
+      expectedResult = tripleArrays.pop(),
+      options = tripleArrays[0] instanceof Array ? null : tripleArrays.shift();
+
   return function (done) {
     var inputStream = new ArrayReader(tripleArrays),
         transform = new N3StreamWriter(options),
@@ -79,7 +81,10 @@ function shouldSerialize(options, tripleArrays, expectedResult) {
   };
 }
 
-function shouldNotSerialize(tripleArrays, expectedMessage) {
+function shouldNotSerialize(/* tripleArrays..., expectedMessage */) {
+  var tripleArrays = Array.prototype.slice.call(arguments),
+      expectedMessage = tripleArrays.pop();
+
   return function (done) {
     var inputStream = new ArrayReader(tripleArrays),
         transform = new N3StreamWriter(),

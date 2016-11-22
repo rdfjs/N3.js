@@ -64,12 +64,14 @@ SpecTester.prototype.run = function () {
       async.mapLimit(manifest.tests, workers,
         // 1.2.1 Execute an individual test
         function (test, callback) {
-          async.series({ actionStream: self._fetch.bind(self, test.action),
-                         resultStream: self._fetch.bind(self, test.result) },
-            function (error, results) {
-              if (error) return callback(error);
-              self._performTest(test, results.actionStream, callback);
-            });
+          async.series({
+            actionStream: self._fetch.bind(self, test.action),
+            resultStream: self._fetch.bind(self, test.result),
+          },
+          function (error, results) {
+            if (error) return callback(error);
+            self._performTest(test, results.actionStream, callback);
+          });
         },
         // 1.2.2 Show the summary of all performed tests
         function showSummary(error, tests) {

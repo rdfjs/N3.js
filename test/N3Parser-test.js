@@ -281,15 +281,13 @@ describe('N3Parser', function () {
       shouldParse('(<x>) <a> <b>.',
                   ['_:b0', 'a', 'b'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
     it('should parse statements with a single-element list in the object',
       shouldParse('<a> <b> (<x>).',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
     it('should parse statements with a multi-element list in the subject',
       shouldParse('(<x> <y>) <a> <b>.',
@@ -297,8 +295,7 @@ describe('N3Parser', function () {
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
     it('should parse statements with a multi-element list in the object',
       shouldParse('<a> <b> (<x> <y>).',
@@ -306,8 +303,7 @@ describe('N3Parser', function () {
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
     it('should parse statements with prefixed names in lists',
       shouldParse('@prefix a: <a#>. <a> <b> (a:x a:y).',
@@ -315,8 +311,7 @@ describe('N3Parser', function () {
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a#x'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a#y'],
-                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
     it('should not parse statements with undefined prefixes in lists',
       shouldNotParse('<a> <b> (a:x a:y).',
@@ -328,25 +323,21 @@ describe('N3Parser', function () {
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b0_x'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b0_y'],
-                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
     it('should parse statements with a list containing strings',
       shouldParse('("y") <a> <b>.',
                   ['_:b0', 'a', 'b'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"y"'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
     it('should parse statements with a nested empty list',
       shouldParse('<a> <b> (<x> ()).',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
-                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
     it('should parse statements with non-empty nested lists',
       shouldParse('<a> <b> (<x> (<y>)).',
@@ -354,18 +345,15 @@ describe('N3Parser', function () {
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
-                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
     it('should parse statements with a list containing a blank node',
       shouldParse('([]) <a> <b>.',
                   ['_:b0', 'a', 'b'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
     it('should parse statements with a list containing multiple blank nodes',
       shouldParse('([] [<x> <y>]) <a> <b>.',
@@ -373,8 +361,7 @@ describe('N3Parser', function () {
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2'],
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3'],
-                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
                   ['_:b3', 'x', 'y']));
 
     it('should parse statements with a blank node containing a list',
@@ -382,8 +369,7 @@ describe('N3Parser', function () {
                   ['_:b0', 'c', 'd'],
                   ['_:b0', 'a', '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'b'],
-                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
     it('should not parse an invalid list',
       shouldNotParse('<a> <b> (]).',
@@ -458,9 +444,7 @@ describe('N3Parser', function () {
     it('should not resolve prefixed names',
       shouldParse('PREFIX ex: <http://ex.org/a/bb/ccc/../>\n' +
                   'ex:a ex:b ex:c .',
-                  ['http://ex.org/a/bb/ccc/../a',
-                   'http://ex.org/a/bb/ccc/../b',
-                   'http://ex.org/a/bb/ccc/../c']));
+                  ['http://ex.org/a/bb/ccc/../a', 'http://ex.org/a/bb/ccc/../b', 'http://ex.org/a/bb/ccc/../c']));
 
     it('should parse an empty default graph',
       shouldParse('{}'));
@@ -1263,8 +1247,7 @@ describe('N3Parser', function () {
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b3'],
                   ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
                   ['ex:joe', 'f:mother', '_:b2']));
 
     it('should parse a ! path in a list as object',
@@ -1276,8 +1259,7 @@ describe('N3Parser', function () {
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b3'],
                   ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
                   ['ex:joe', 'f:mother', '_:b2']));
 
     it('should parse a ^ path in a list as subject',
@@ -1289,8 +1271,7 @@ describe('N3Parser', function () {
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b3'],
                   ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
                   ['_:b2', 'f:son', 'ex:joe']));
 
     it('should parse a ^ path in a list as object',
@@ -1302,8 +1283,7 @@ describe('N3Parser', function () {
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b3'],
                   ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
                   ['_:b2', 'f:son', 'ex:joe']));
 
     it('should not parse an invalid ! path',
@@ -1318,10 +1298,9 @@ describe('N3Parser', function () {
 
     it('should parse a @forSome statement',
       shouldParse(parser, '@forSome <x>. <x> <x> <x>.',
-                  ['', 'http://www.w3.org/2000/10/swap/reify#forSome', '_:b0',      'urn:n3:quantifiers'],
+                  ['', 'http://www.w3.org/2000/10/swap/reify#forSome', '_:b0', 'urn:n3:quantifiers'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x', 'urn:n3:quantifiers'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil',        'urn:n3:quantifiers'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'urn:n3:quantifiers'],
                   ['x', 'x', 'x']));
 
     it('should parse a @forSome statement with multiple entities',
@@ -1332,21 +1311,18 @@ describe('N3Parser', function () {
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'b:y', 'urn:n3:quantifiers'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2', 'urn:n3:quantifiers'],
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a:z', 'urn:n3:quantifiers'],
-                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil',          'urn:n3:quantifiers'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'urn:n3:quantifiers'],
                   ['a:x', 'b:y', 'a:z']));
 
     it('should correctly scope @forSome statements',
       shouldParse(parser, '@forSome <x>. <x> <x> { @forSome <x>. <x> <x> <x>. }. <x> <x> <x>.',
                   ['', 'http://www.w3.org/2000/10/swap/reify#forSome', '_:b0',      'urn:n3:quantifiers'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x', 'urn:n3:quantifiers'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil',        'urn:n3:quantifiers'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'urn:n3:quantifiers'],
                   ['x', 'x', '_:b1'],
                   ['_:b1', 'http://www.w3.org/2000/10/swap/reify#forSome', '_:b2',  'urn:n3:quantifiers'],
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x', 'urn:n3:quantifiers'],
-                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil',        'urn:n3:quantifiers'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'urn:n3:quantifiers'],
                   ['x', 'x', 'x', '_:b1'],
                   ['x', 'x', 'x']));
 
@@ -1354,8 +1330,7 @@ describe('N3Parser', function () {
       shouldParse(parser, '@forAll <x>. <x> <x> <x>.',
                   ['', 'http://www.w3.org/2000/10/swap/reify#forAll', '_:b0',       'urn:n3:quantifiers'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x', 'urn:n3:quantifiers'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil',        'urn:n3:quantifiers'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'urn:n3:quantifiers'],
                   ['x', 'x', 'x']));
 
     it('should parse a @forAll statement with multiple entities',
@@ -1366,21 +1341,18 @@ describe('N3Parser', function () {
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'b:y', 'urn:n3:quantifiers'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2', 'urn:n3:quantifiers'],
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a:z', 'urn:n3:quantifiers'],
-                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil',          'urn:n3:quantifiers'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'urn:n3:quantifiers'],
                   ['a:x', 'b:y', 'a:z']));
 
     it('should correctly scope @forAll statements',
       shouldParse(parser, '@forAll <x>. <x> <x> { @forAll <x>. <x> <x> <x>. }. <x> <x> <x>.',
                   ['', 'http://www.w3.org/2000/10/swap/reify#forAll', '_:b0',       'urn:n3:quantifiers'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x', 'urn:n3:quantifiers'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil',        'urn:n3:quantifiers'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'urn:n3:quantifiers'],
                   ['x', 'x', '_:b1'],
                   ['_:b1', 'http://www.w3.org/2000/10/swap/reify#forAll', '_:b2',   'urn:n3:quantifiers'],
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x', 'urn:n3:quantifiers'],
-                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
-                           'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil',        'urn:n3:quantifiers'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'urn:n3:quantifiers'],
                   ['x', 'x', 'x', '_:b1'],
                   ['x', 'x', 'x']));
   });

@@ -17,114 +17,113 @@ describe('N3Writer', function () {
 
   describe('An N3Writer instance', function () {
     it('should serialize 0 triples',
-      shouldSerialize([], ''));
+      shouldSerialize(''));
 
     it('should serialize 1 triple',
-      shouldSerialize([['abc', 'def', 'ghi']],
+      shouldSerialize(['abc', 'def', 'ghi'],
                       '<abc> <def> <ghi>.\n'));
 
     it('should serialize 2 triples',
-      shouldSerialize([['abc', 'def', 'ghi'],
-                       ['jkl', 'mno', 'pqr']],
+      shouldSerialize(['abc', 'def', 'ghi'],
+                      ['jkl', 'mno', 'pqr'],
                       '<abc> <def> <ghi>.\n' +
                       '<jkl> <mno> <pqr>.\n'));
 
     it('should serialize 3 triples',
-      shouldSerialize([['abc', 'def', 'ghi'],
-                       ['jkl', 'mno', 'pqr'],
-                       ['stu', 'vwx', 'yz']],
+      shouldSerialize(['abc', 'def', 'ghi'],
+                      ['jkl', 'mno', 'pqr'],
+                      ['stu', 'vwx', 'yz'],
                       '<abc> <def> <ghi>.\n' +
                       '<jkl> <mno> <pqr>.\n' +
                       '<stu> <vwx> <yz>.\n'));
 
     it('should serialize a literal',
-      shouldSerialize([['a', 'b', '"cde"']],
+      shouldSerialize(['a', 'b', '"cde"'],
                       '<a> <b> "cde".\n'));
 
     it('should serialize a literal with a type',
-      shouldSerialize([['a', 'b', '"cde"^^fgh']],
+      shouldSerialize(['a', 'b', '"cde"^^fgh'],
                       '<a> <b> "cde"^^<fgh>.\n'));
 
     it('should serialize a literal with a language',
-      shouldSerialize([['a', 'b', '"cde"@en-us']],
+      shouldSerialize(['a', 'b', '"cde"@en-us'],
                       '<a> <b> "cde"@en-us.\n'));
 
     it('should serialize a literal containing a single quote',
-      shouldSerialize([['a', 'b', '"c\'de"']],
+      shouldSerialize(['a', 'b', '"c\'de"'],
                       '<a> <b> "c\'de".\n'));
 
     it('should serialize a literal containing a double quote',
-      shouldSerialize([['a', 'b', '"c"de"']],
+      shouldSerialize(['a', 'b', '"c"de"'],
                       '<a> <b> "c\\"de".\n'));
 
     it('should serialize a literal containing a backspace',
-      shouldSerialize([['a', 'b', '"c\\de"']],
+      shouldSerialize(['a', 'b', '"c\\de"'],
                       '<a> <b> "c\\\\de".\n'));
 
     it('should serialize a literal containing a tab character',
-      shouldSerialize([['a', 'b', '"c\tde"']],
+      shouldSerialize(['a', 'b', '"c\tde"'],
                       '<a> <b> "c\\tde".\n'));
 
     it('should serialize a literal containing a newline character',
-      shouldSerialize([['a', 'b', '"c\nde"']],
+      shouldSerialize(['a', 'b', '"c\nde"'],
                       '<a> <b> "c\\nde".\n'));
 
     it('should serialize a literal containing a cariage return character',
-      shouldSerialize([['a', 'b', '"c\rde"']],
+      shouldSerialize(['a', 'b', '"c\rde"'],
                       '<a> <b> "c\\rde".\n'));
 
     it('should serialize a literal containing a backspace character',
-      shouldSerialize([['a', 'b', '"c\bde"']],
+      shouldSerialize(['a', 'b', '"c\bde"'],
                       '<a> <b> "c\\bde".\n'));
 
     it('should serialize a literal containing a form feed character',
-      shouldSerialize([['a', 'b', '"c\fde"']],
+      shouldSerialize(['a', 'b', '"c\fde"'],
                       '<a> <b> "c\\fde".\n'));
 
     it('should serialize a literal containing a line separator',
-      shouldSerialize([['a', 'b', '"c\u2028de"']],
+      shouldSerialize(['a', 'b', '"c\u2028de"'],
                       '<a> <b> "c\u2028de".\n'));
 
     it('should serialize a literal containing a paragraph separator',
-      shouldSerialize([['a', 'b', '"c\u2029de"']],
+      shouldSerialize(['a', 'b', '"c\u2029de"'],
                       '<a> <b> "c\u2029de".\n'));
 
     it('should serialize a literal containing special unicode characters',
-      shouldSerialize([['a', 'b', '"c\u0000\u0001"']],
+      shouldSerialize(['a', 'b', '"c\u0000\u0001"'],
                       '<a> <b> "c\\u0000\\u0001".\n'));
 
     it('should serialize blank nodes',
-      shouldSerialize([['_:a', 'b', '_:c']],
+      shouldSerialize(['_:a', 'b', '_:c'],
                       '_:a <b> _:c.\n'));
 
     it('should not serialize a literal in the subject',
-      shouldNotSerialize([['"a"', 'b', '"c"']],
+      shouldNotSerialize(['"a"', 'b', '"c"'],
                           'A literal as subject is not allowed: "a"'));
 
     it('should not serialize a literal in the predicate',
-      shouldNotSerialize([['a', '"b"', '"c"']],
+      shouldNotSerialize(['a', '"b"', '"c"'],
                           'A literal as predicate is not allowed: "b"'));
 
     it('should not serialize an invalid object literal',
-      shouldNotSerialize([['a', 'b', '"c']],
+      shouldNotSerialize(['a', 'b', '"c'],
                           'Invalid literal: "c'));
 
     it('should not leave leading whitespace if the prefix set is empty',
       shouldSerialize({},
-                      [['a', 'b', 'c']],
+                      ['a', 'b', 'c'],
                       '<a> <b> <c>.\n'));
 
     it('should serialize valid prefixes',
       shouldSerialize({ prefixes: { a: 'http://a.org/', b: 'http://a.org/b#', c: 'http://a.org/b' } },
-                      [],
                       '@prefix a: <http://a.org/>.\n' +
                       '@prefix b: <http://a.org/b#>.\n\n'));
 
     it('should use prefixes when possible',
       shouldSerialize({ prefixes: { a: 'http://a.org/', b: 'http://a.org/b#', c: 'http://a.org/b' } },
-                      [['http://a.org/bc', 'http://a.org/b#ef', 'http://a.org/bhi'],
-                       ['http://a.org/bc/de', 'http://a.org/b#e#f', 'http://a.org/b#x/t'],
-                       ['http://a.org/3a', 'http://a.org/b#3a', 'http://a.org/b#a3']],
+                      ['http://a.org/bc', 'http://a.org/b#ef', 'http://a.org/bhi'],
+                      ['http://a.org/bc/de', 'http://a.org/b#e#f', 'http://a.org/b#x/t'],
+                      ['http://a.org/3a', 'http://a.org/b#3a', 'http://a.org/b#a3'],
                       '@prefix a: <http://a.org/>.\n' +
                       '@prefix b: <http://a.org/b#>.\n\n' +
                       'a:bc b:ef a:bhi.\n' +
@@ -133,43 +132,43 @@ describe('N3Writer', function () {
 
     it('should expand prefixes when possible',
       shouldSerialize({ prefixes: { a: 'http://a.org/', b: 'http://a.org/b#' } },
-                      [['a:bc', 'b:ef', 'c:bhi']],
+                      ['a:bc', 'b:ef', 'c:bhi'],
                       '@prefix a: <http://a.org/>.\n' +
                       '@prefix b: <http://a.org/b#>.\n\n' +
                       'a:bc b:ef <c:bhi>.\n'));
 
     it('should not repeat the same subjects',
-      shouldSerialize([['abc', 'def', 'ghi'],
-                       ['abc', 'mno', 'pqr'],
-                       ['stu', 'vwx', 'yz']],
+      shouldSerialize(['abc', 'def', 'ghi'],
+                      ['abc', 'mno', 'pqr'],
+                      ['stu', 'vwx', 'yz'],
                       '<abc> <def> <ghi>;\n' +
                       '    <mno> <pqr>.\n' +
                       '<stu> <vwx> <yz>.\n'));
 
     it('should not repeat the same predicates',
-      shouldSerialize([['abc', 'def', 'ghi'],
-                       ['abc', 'def', 'pqr'],
-                       ['abc', 'bef', 'ghi'],
-                       ['abc', 'bef', 'pqr'],
-                       ['stu', 'bef', 'yz']],
+      shouldSerialize(['abc', 'def', 'ghi'],
+                      ['abc', 'def', 'pqr'],
+                      ['abc', 'bef', 'ghi'],
+                      ['abc', 'bef', 'pqr'],
+                      ['stu', 'bef', 'yz'],
                       '<abc> <def> <ghi>, <pqr>;\n' +
                       '    <bef> <ghi>, <pqr>.\n' +
                       '<stu> <bef> <yz>.\n'));
 
     it('should write rdf:type as "a"',
-      shouldSerialize([['abc', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'def']],
+      shouldSerialize(['abc', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'def'],
                       '<abc> a <def>.\n'));
 
     it('should serialize a graph with 1 triple',
-      shouldSerialize([['abc', 'def', 'ghi', 'xyz']],
+      shouldSerialize(['abc', 'def', 'ghi', 'xyz'],
                       '<xyz> {\n' +
                       '<abc> <def> <ghi>\n' +
                       '}\n'));
 
     it('should serialize a graph with 3 triples',
-      shouldSerialize([['abc', 'def', 'ghi', 'xyz'],
-                       ['jkl', 'mno', 'pqr', 'xyz'],
-                       ['stu', 'vwx', 'yz',  'xyz']],
+      shouldSerialize(['abc', 'def', 'ghi', 'xyz'],
+                      ['jkl', 'mno', 'pqr', 'xyz'],
+                      ['stu', 'vwx', 'yz',  'xyz'],
                       '<xyz> {\n' +
                       '<abc> <def> <ghi>.\n' +
                       '<jkl> <mno> <pqr>.\n' +
@@ -177,19 +176,19 @@ describe('N3Writer', function () {
                       '}\n'));
 
     it('should serialize three graphs',
-      shouldSerialize([['abc', 'def', 'ghi', 'xyz'],
-                       ['jkl', 'mno', 'pqr', ''],
-                       ['stu', 'vwx', 'yz',  'abc']],
+      shouldSerialize(['abc', 'def', 'ghi', 'xyz'],
+                      ['jkl', 'mno', 'pqr', ''],
+                      ['stu', 'vwx', 'yz',  'abc'],
                       '<xyz> {\n<abc> <def> <ghi>\n}\n' +
                       '<jkl> <mno> <pqr>.\n' +
                       '<abc> {\n<stu> <vwx> <yz>\n}\n'));
 
     it('should output 8-bit unicode characters as escape sequences',
-      shouldSerialize([['\ud835\udc00', '\ud835\udc00', '"\ud835\udc00"^^\ud835\udc00', '\ud835\udc00']],
+      shouldSerialize(['\ud835\udc00', '\ud835\udc00', '"\ud835\udc00"^^\ud835\udc00', '\ud835\udc00'],
                       '<\\U0001d400> {\n<\\U0001d400> <\\U0001d400> "\\U0001d400"^^<\\U0001d400>\n}\n'));
 
     it('should not use escape sequences in blank nodes',
-      shouldSerialize([['_:\ud835\udc00', '_:\ud835\udc00', '_:\ud835\udc00', '_:\ud835\udc00']],
+      shouldSerialize(['_:\ud835\udc00', '_:\ud835\udc00', '_:\ud835\udc00', '_:\ud835\udc00'],
                       '_:\ud835\udc00 {\n_:\ud835\udc00 _:\ud835\udc00 _:\ud835\udc00\n}\n'));
 
     it('calls the done callback when ending the outputstream errors', function (done) {
@@ -560,9 +559,11 @@ describe('N3Writer', function () {
   });
 });
 
-function shouldSerialize(prefixes, tripleArrays, expectedResult) {
-  if (!expectedResult)
-    expectedResult = tripleArrays, tripleArrays = prefixes, prefixes = null;
+function shouldSerialize(/* prefixes?, tripleArrays..., expectedResult */) {
+  var tripleArrays = Array.prototype.slice.call(arguments),
+      expectedResult = tripleArrays.pop(),
+      prefixes = tripleArrays[0] instanceof Array ? null : tripleArrays.shift();
+
   return function (done) {
     var outputStream = new QuickStream(),
         writer = N3Writer(outputStream, prefixes);
@@ -585,7 +586,10 @@ function shouldSerialize(prefixes, tripleArrays, expectedResult) {
   };
 }
 
-function shouldNotSerialize(tripleArrays, expectedMessage) {
+function shouldNotSerialize(/* tripleArrays..., expectedResult */) {
+  var tripleArrays = Array.prototype.slice.call(arguments),
+      expectedMessage = tripleArrays.pop();
+
   return function (done) {
     var outputStream = new QuickStream(),
         writer = N3Writer(outputStream),
