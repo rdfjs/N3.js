@@ -91,6 +91,21 @@ describe('N3Parser', function () {
                   ':x a:a a:b.',
                   ['#x', 'a#a', 'a#b']));
 
+    it('should parse triples with the prefix "prefix"',
+      shouldParse('@prefix prefix: <http://prefix.cc/>.' +
+                  'prefix:a prefix:b prefix:c.',
+                  ['http://prefix.cc/a', 'http://prefix.cc/b', 'http://prefix.cc/c']));
+
+    it('should parse triples with the prefix "base"',
+      shouldParse('PREFIX base: <http://prefix.cc/>' +
+                  'base:a base:b base:c.',
+                  ['http://prefix.cc/a', 'http://prefix.cc/b', 'http://prefix.cc/c']));
+
+    it('should parse triples with the prefix "graph"',
+      shouldParse('PREFIX graph: <http://prefix.cc/>' +
+                  'graph:a graph:b graph:c.',
+                  ['http://prefix.cc/a', 'http://prefix.cc/b', 'http://prefix.cc/c']));
+
     it('should not parse @PREFIX',
       shouldNotParse('@PREFIX : <#>.',
                      'Expected entity but got @PREFIX on line 1.'));
