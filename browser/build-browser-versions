@@ -2,7 +2,7 @@
 /* build-browser-versions.js builds a browserify version and a minimal browser version */
 var fs = require('fs'),
     path = require('path'),
-    spawn = require('child_process').spawn;
+    spawn = require('cross-spawn').spawn;
 
 // Modules to be included in the minimal browser version
 var submodules = [
@@ -54,8 +54,8 @@ script.write('})(typeof exports !== "undefined" ? exports : this.N3 = {});\n');
 script.end(function () {
   console.log('minimal browser version written to', scriptFile);
   // Write minified file
-  var minifier = spawn('node',
-                       [ uglifyjsPath, scriptFile, '--comments', '-m', '-c', '-o', minifiedFile ],
+  var minifier = spawn(uglifyjsPath,
+                       [ scriptFile, '--comments', '-m', '-c', '-o', minifiedFile ],
                        { stdio: 'inherit' });
   minifier.on('exit', function () {
     console.log('minimal browser version (minified) written to', minifiedFile);
@@ -66,8 +66,8 @@ script.end(function () {
 /* Build browserify version */
 
 var browserifiedFile = destinationPath + 'n3-browserify.js',
-    browserify = spawn('node',
-                       [ browserifyPath, rootPath + 'N3.js', '-s', 'N3', '-o', browserifiedFile ],
+    browserify = spawn(browserifyPath,
+                       [ rootPath + 'N3.js', '-s', 'N3', '-o', browserifiedFile ],
                        { stdio: 'inherit' });
 browserify.on('exit', function () {
   console.log('browserify version written to', browserifiedFile);
