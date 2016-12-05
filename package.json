@@ -22,6 +22,7 @@
     "chai-things": "^0.2.0",
     "colors": "^1.1.2",
     "coveralls": "^2.11.14",
+    "cross-spawn": "^5.0.1",
     "docco": "^0.7.0",
     "eslint": "^3.10.0",
     "mocha": "^3.0.2",
