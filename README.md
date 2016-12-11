@@ -2,6 +2,7 @@
 [![Build Status](https://travis-ci.org/RubenVerborgh/N3.js.svg?branch=master)](https://travis-ci.org/RubenVerborgh/N3.js)
 [![Coverage Status](https://coveralls.io/repos/github/RubenVerborgh/N3.js/badge.svg)](https://coveralls.io/github/RubenVerborgh/N3.js)
 [![npm version](https://badge.fury.io/js/n3.svg)](https://www.npmjs.com/package/n3)
+[![DOI](https://zenodo.org/badge/3058202.svg)](https://zenodo.org/badge/latestdoi/3058202)
 
 The N3.js library lets you handle [RDF](http://www.w3.org/TR/rdf-primer/) in JavaScript easily, in [Node.js](http://nodejs.org/) and the browser.
 It offers:
