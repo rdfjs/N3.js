@@ -284,6 +284,18 @@ describe('N3Parser', function () {
       shouldNotParse('[ <a> <b> .',
                      'Expected punctuation to follow "b" on line 1.'));
 
+    it('should parse a statements with only an anonymous node',
+      shouldParse('[<p> <o>].',
+                  ['_:b0', 'p', 'o']));
+
+    it('should not parse a statement with only a blank anonymous node',
+      shouldNotParse('[].',
+                     'Unexpected . on line 1.'));
+
+    it('should not parse an anonymous node with only an anonymous node inside',
+      shouldNotParse('[[<p> <o>]].',
+                     'Expected entity but got [ on line 1.'));
+
     it('should parse statements with an empty list in the subject',
       shouldParse('() <a> <b>.',
                   ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'a', 'b']));
