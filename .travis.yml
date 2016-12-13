@@ -6,7 +6,7 @@ node_js:
 script:
   - npm run lint
   - npm test
-  - ./browser/build-browser-versions
+  - npm run browser
 after_success:
   - npm run coveralls
 cache:
