@@ -176,6 +176,15 @@ describe('N3Parser', function () {
                   ['a', 'b', 'c'],
                   ['a', 'b', 'd']));
 
+    it('should parse diamonds',
+      shouldParse('<> <> <> <>.\n(<>) <> (<>) <>.',
+                  ['', '', '', ''],
+                  ['_:b0', '', '_:b1', ''],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ''],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ''],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
     it('should parse statements with named blank nodes',
       shouldParse('_:a <b> _:c.',
                   ['_:b0_a', 'b', '_:b0_c']));
