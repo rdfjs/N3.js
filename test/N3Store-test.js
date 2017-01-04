@@ -234,14 +234,14 @@ describe('N3Store', function () {
     });
 
     describe('when counted without parameters', function () {
-      it('should count all items in the default graph', function () {
-        store.count().should.equal(4);
+      it('should count all items in all graphs', function () {
+        store.count().should.equal(5);
       });
     });
 
     describe('when counted with an existing subject parameter', function () {
-      it('should count all items with this subject in the default graph', function () {
-        store.count('s1', null, null).should.equal(3);
+      it('should count all items with this subject in all graphs', function () {
+        store.count('s1', null, null).should.equal(4);
       });
     });
 
@@ -258,8 +258,8 @@ describe('N3Store', function () {
     });
 
     describe('when counted with an existing predicate parameter', function () {
-      it('should count all items with this predicate in the default graph', function () {
-        store.count(null, 'p1', null).should.equal(3);
+      it('should count all items with this predicate in all graphs', function () {
+        store.count(null, 'p1', null).should.equal(4);
       });
     });
 
@@ -270,8 +270,8 @@ describe('N3Store', function () {
     });
 
     describe('when counted with an existing object parameter', function () {
-      it('should count all items with this object in the default graph', function () {
-        store.count(null, null, 'o1').should.equal(2);
+      it('should count all items with this object in all graphs', function () {
+        store.count(null, null, 'o1').should.equal(3);
       });
     });
 
@@ -282,8 +282,8 @@ describe('N3Store', function () {
     });
 
     describe('when counted with existing subject and predicate parameters', function () {
-      it('should count all items with this subject and predicate in the default graph', function () {
-        store.count('s1', 'p1', null).should.equal(2);
+      it('should count all items with this subject and predicate in all graphs', function () {
+        store.count('s1', 'p1', null).should.equal(3);
       });
     });
 
@@ -294,8 +294,8 @@ describe('N3Store', function () {
     });
 
     describe('when counted with existing subject and object parameters', function () {
-      it('should count all items with this subject and object in the default graph', function () {
-        store.count('s1', null, 'o2').should.equal(2);
+      it('should count all items with this subject and object in all graphs', function () {
+        store.count('s1', null, 'o1').should.equal(2);
       });
     });
 
@@ -306,8 +306,8 @@ describe('N3Store', function () {
     });
 
     describe('when counted with existing predicate and object parameters', function () {
-      it('should count all items with this predicate and object in the default graph', function () {
-        store.count(null, 'p1', 'o1').should.equal(2);
+      it('should count all items with this predicate and object in all graphs', function () {
+        store.count(null, 'p1', 'o1').should.equal(3);
       });
     });
 
@@ -318,8 +318,8 @@ describe('N3Store', function () {
     });
 
     describe('when counted with existing subject, predicate, and object parameters', function () {
-      it('should count all items with this subject, predicate, and object in the default graph', function () {
-        store.count('s1', 'p1', 'o1').should.equal(1);
+      it('should count all items with this subject, predicate, and object in all graphs', function () {
+        store.count('s1', 'p1', 'o1').should.equal(2);
       });
     });
 
