@@ -112,6 +112,58 @@ describe('N3Util', function () {
     });
   });
 
+  describe('isDefaultGraph', function () {
+    it('does not match a blank node', function () {
+      N3Util.isDefaultGraph('_:x').should.be.false;
+    });
+
+    it('does not match an IRI', function () {
+      N3Util.isDefaultGraph('http://example.org/').should.be.false;
+    });
+
+    it('does not match a literal', function () {
+      N3Util.isDefaultGraph('"http://example.org/"').should.be.false;
+    });
+
+    it('matches null', function () {
+      expect(N3Util.isDefaultGraph(null)).to.be.true;
+    });
+
+    it('matches undefined', function () {
+      expect(N3Util.isDefaultGraph(undefined)).to.be.true;
+    });
+
+    it('matches the empty string', function () {
+      expect(N3Util.isDefaultGraph('')).to.be.true;
+    });
+  });
+
+  describe('inDefaultGraph', function () {
+    it('does not match a blank node', function () {
+      N3Util.inDefaultGraph({ graph: '_:x' }).should.be.false;
+    });
+
+    it('does not match an IRI', function () {
+      N3Util.inDefaultGraph({ graph: 'http://example.org/' }).should.be.false;
+    });
+
+    it('does not match a literal', function () {
+      N3Util.inDefaultGraph({ graph: '"http://example.org/"' }).should.be.false;
+    });
+
+    it('matches null', function () {
+      N3Util.inDefaultGraph({ graph: null }).should.be.true;
+    });
+
+    it('matches undefined', function () {
+      N3Util.inDefaultGraph({ graph: undefined }).should.be.true;
+    });
+
+    it('matches the empty string', function () {
+      N3Util.inDefaultGraph({ graph: '' }).should.be.true;
+    });
+  });
+
   describe('getLiteralValue', function () {
     it('gets the value of a literal', function () {
       N3Util.getLiteralValue('"Mickey"').should.equal('Mickey');
