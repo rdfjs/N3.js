@@ -27,10 +27,10 @@ describe('N3Store', function () {
     });
 
     describe('every()', function () {
-      function trueFn (q) {
+      function trueFn(q) {
         return true;
       }
-      function falseFn (q) {
+      function falseFn(q) {
         return false;
       }
       describe('with no parameters and a callback always returning true', function () {
@@ -46,10 +46,10 @@ describe('N3Store', function () {
     });
 
     describe('some()', function () {
-      function trueFn (q) {
+      function trueFn(q) {
         return true;
       }
-      function falseFn (q) {
+      function falseFn(q) {
         return false;
       }
       describe('with no parameters and a callback always returning true', function () {
@@ -277,7 +277,6 @@ describe('N3Store', function () {
     });
 
     describe('findGraphs()', function () {
-
       describe('with existing subject, predicate and object parameters', function () {
         it('should return all graphs with this subject, predicate and object', function () {
           store.findGraphs('s1', 'p1', 'o1').should.have.members(['c4', '']);
@@ -328,7 +327,6 @@ describe('N3Store', function () {
     });
 
     describe('findSubjects()', function () {
-
       describe('with existing predicate, object and graph parameters', function () {
         it('should return all subjects with this predicate, object and graph', function () {
           store.findSubjects('p1', 'o1', 'c4').should.have.members(['s1']);
@@ -379,7 +377,6 @@ describe('N3Store', function () {
     });
 
     describe('findPredicates()', function () {
-
       describe('with existing subject, object and graph parameters', function () {
         it('should return all predicates with this subject, object and graph', function () {
           store.findPredicates('s1', 'o1', 'c4').should.have.members(['p1']);
@@ -430,7 +427,6 @@ describe('N3Store', function () {
     });
 
     describe('findObjects()', function () {
-
       describe('with existing subject, predicate and graph parameters', function () {
         it('should return all objects with this subject, predicate and graph', function () {
           store.findObjects('s1', 'p1', '').should.have.members(['o1', 'o2']);
@@ -481,9 +477,8 @@ describe('N3Store', function () {
     });
 
     describe('forEach()', function () {
-
       var quads = [];
-      function resultCollectorFn (q) {
+      function resultCollectorFn(q) {
         quads.push(q);
       }
 
@@ -625,7 +620,7 @@ describe('N3Store', function () {
 
     describe('forGraphs()', function () {
       var graphs = [];
-      function resultCollectorFn (g) {
+      function resultCollectorFn(g) {
         graphs.push(g);
       }
       describe('with existing subject, predicate and object parameters', function () {
@@ -639,7 +634,7 @@ describe('N3Store', function () {
 
     describe('forSubjects()', function () {
       var subjects = [];
-      function resultCollectorFn (s) {
+      function resultCollectorFn(s) {
         subjects.push(s);
       }
       describe('with existing predicate, object and graph parameters', function () {
@@ -653,7 +648,7 @@ describe('N3Store', function () {
 
     describe('forPredicates()', function () {
       var predicates = [];
-      function resultCollectorFn (p) {
+      function resultCollectorFn(p) {
         predicates.push(p);
       }
       describe('with existing subject, object and graph parameters', function () {
@@ -667,7 +662,7 @@ describe('N3Store', function () {
 
     describe('forObjects()', function () {
       var objects = [];
-      function resultCollectorFn (o) {
+      function resultCollectorFn(o) {
         objects.push(o);
       }
       describe('with existing subject, predicate and graph parameters', function () {
@@ -680,14 +675,14 @@ describe('N3Store', function () {
     });
 
     describe('every()', function () {
-      function trueFn (q) {
+      function trueFn(q) {
         return true;
       }
-      function falseFn (q) {
+      function falseFn(q) {
         return false;
       }
       var count = 3;
-      function falseThirdTimeFn (q) {
+      function falseThirdTimeFn(q) {
         if (count > 0) {
           count--;
           return true;
@@ -712,14 +707,14 @@ describe('N3Store', function () {
     });
 
     describe('some()', function () {
-      function trueFn (q) {
+      function trueFn(q) {
         return true;
       }
-      function falseFn (q) {
+      function falseFn(q) {
         return false;
       }
       var count = 3;
-      function trueThirdTimeFn (q) {
+      function trueThirdTimeFn(q) {
         if (count > 0) {
           count--;
           return false;
