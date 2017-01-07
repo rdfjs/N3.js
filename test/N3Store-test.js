@@ -26,12 +26,58 @@ describe('N3Store', function () {
       store.find().should.be.empty;
     });
 
+    describe('every()', function () {
+      function trueFn (q) {
+        return true;
+      }
+      function falseFn (q) {
+        return false;
+      }
+      describe('with no parameters and a callback always returning true', function () {
+        it('should return false', function () {
+          store.every(trueFn, null, null, null, null).should.be.false;
+        });
+      });
+      describe('with no parameters and a callback always returning false', function () {
+        it('should return false', function () {
+          store.every(falseFn, null, null, null, null).should.be.false;
+        });
+      });
+    });
+
+    describe('some()', function () {
+      function trueFn (q) {
+        return true;
+      }
+      function falseFn (q) {
+        return false;
+      }
+      describe('with no parameters and a callback always returning true', function () {
+        it('should return false', function () {
+          store.some(trueFn, null, null, null, null).should.be.false;
+        });
+      });
+      describe('with no parameters and a callback always returning false', function () {
+        it('should return false', function () {
+          store.some(falseFn, null, null, null, null).should.be.false;
+        });
+      });
+    });
+
+    it('should still have size 0 (instead of null) after adding and removing a triple', function () {
+      expect(store.size).to.eql(0);
+      store.addTriple('a', 'b', 'c').should.be.true;
+      store.removeTriple('a', 'b', 'c').should.be.true;
+      expect(store.size).to.eql(0);
+    });
+
     it('should be able to generate unnamed blank nodes', function () {
       store.createBlankNode().should.eql('_:b0');
       store.createBlankNode().should.eql('_:b1');
 
       store.addTriple('_:b0', '_:b1', '_:b2').should.be.true;
       store.createBlankNode().should.eql('_:b3');
+      store.removeTriples(store.find());
     });
 
     it('should be able to generate named blank nodes', function () {
@@ -43,6 +89,7 @@ describe('N3Store', function () {
     it('should be able to store triples with generated blank nodes', function () {
       store.addTriple(store.createBlankNode('x'), 'b', 'c').should.be.true;
       shouldIncludeAll(store.find(null, 'b'), ['_:x1', 'b', 'd']);
+      store.removeTriples(store.find());
     });
 
     it('should have a fixed default graph', function () {
@@ -224,6 +271,459 @@ describe('N3Store', function () {
 
     describe('when searched with a non-existing non-default graph parameter', function () {
       itShouldBeEmpty(store.find(null, null, null, 'c5'));
+    });
+
+    describe('findGraphs()', function () {
+
+      describe('with existing subject, predicate and object parameters', function () {
+        it('should return all graphs with this subject, predicate and object', function () {
+          store.findGraphs('s1', 'p2', 'o3').should.have.members(['c4']);
+        });
+      });
+
+      describe('with existing subject and predicate parameters', function () {
+        it('should return all graphs with this subject and predicate', function () {
+          store.findGraphs('s1', 'p2', null).should.have.members(['c4', '']);
+        });
+      });
+
+      describe('with existing subject and object parameters', function () {
+        it('should return all graphs with this subject and object', function () {
+          store.findGraphs('s1', null, 'o2').should.have.members(['']);
+        });
+      });
+
+      describe('with existing predicate and object parameters', function () {
+        it('should return all graphs with this predicate and object', function () {
+          store.findGraphs(null, 'p2', 'o3').should.have.members(['c4']);
+        });
+      });
+
+      describe('with an existing subject parameter', function () {
+        it('should return all graphs with this subject', function () {
+          store.findGraphs('s1', null, null).should.have.members(['c4', '']);
+        });
+      });
+
+      describe('with an existing predicate parameter', function () {
+        it('should return all graphs with this predicate', function () {
+          store.findGraphs(null, 'p2', null).should.have.members(['c4', '']);
+        });
+      });
+
+      describe('with an existing object parameter', function () {
+        it('should return all graphs with this object', function () {
+          store.findGraphs(null, null, 'o3').should.have.members(['c4']);
+        });
+      });
+
+      describe('with no parameters', function () {
+        it('should return all graphs', function () {
+          store.findGraphs(null, null, null).should.have.members(['c4', '']);
+        });
+      });
+    });
+
+    describe('findSubjects()', function () {
+
+      describe('with existing predicate, object and graph parameters', function () {
+        it('should return all subjects with this predicate, object and graph', function () {
+          store.findSubjects('p2', 'o3', 'c4').should.have.members(['s1']);
+        });
+      });
+
+      describe('with existing predicate and object parameters', function () {
+        it('should return all subjects with this predicate and object', function () {
+          store.findSubjects('p2', 'o2', null).should.have.members(['s1']);
+        });
+      });
+
+      describe('with existing predicate and graph parameters', function () {
+        it('should return all subjects with this predicate and graph', function () {
+          store.findSubjects('p1', null, store.defaultGraph).should.have.members(['s1', 's2']);
+        });
+      });
+
+      describe('with existing object and graph parameters', function () {
+        it('should return all subjects with this object and graph', function () {
+          store.findSubjects(null, 'o1', store.defaultGraph).should.have.members(['s1', 's2']);
+        });
+      });
+
+      describe('with an existing predicate parameter', function () {
+        it('should return all subjects with this predicate', function () {
+          store.findSubjects('p1', null, null).should.have.members(['s1', 's2']);
+        });
+      });
+
+      describe('with an existing object parameter', function () {
+        it('should return all subjects with this object', function () {
+          store.findSubjects(null, 'o1', null).should.have.members(['s1', 's2']);
+        });
+      });
+
+      describe('with an existing graph parameter', function () {
+        it('should return all subjects in the graph', function () {
+          store.findSubjects(null, null, 'c4').should.have.members(['s1']);
+        });
+      });
+
+      describe('with no parameters', function () {
+        it('should return all subjects', function () {
+          store.findSubjects(null, null, null).should.have.members(['s1', 's2']);
+        });
+      });
+    });
+
+    describe('findPredicates()', function () {
+
+      describe('with existing subject, object and graph parameters', function () {
+        it('should return all predicates with this subject, object and graph', function () {
+          store.findPredicates('s1', 'o3', 'c4').should.have.members(['p2']);
+        });
+      });
+
+      describe('with existing subject and object parameters', function () {
+        it('should return all predicates with this subject and object', function () {
+          store.findPredicates('s1', 'o2', null).should.have.members(['p1', 'p2']);
+        });
+      });
+
+      describe('with existing subject and graph parameters', function () {
+        it('should return all predicates with this subject and graph', function () {
+          store.findPredicates('s1', null, store.defaultGraph).should.have.members(['p1', 'p2']);
+        });
+      });
+
+      describe('with existing object and graph parameters', function () {
+        it('should return all predicates with this object and graph', function () {
+          store.findPredicates(null, 'o1', store.defaultGraph).should.have.members(['p1']);
+        });
+      });
+
+      describe('with an existing subject parameter', function () {
+        it('should return all predicates with this subject', function () {
+          store.findPredicates('s2', null, null).should.have.members(['p1']);
+        });
+      });
+
+      describe('with an existing object parameter', function () {
+        it('should return all predicates with this object', function () {
+          store.findPredicates(null, 'o1', null).should.have.members(['p1']);
+        });
+      });
+
+      describe('with an existing graph parameter', function () {
+        it('should return all predicates in the graph', function () {
+          store.findPredicates(null, null, 'c4').should.have.members(['p2']);
+        });
+      });
+
+      describe('with no parameters', function () {
+        it('should return all predicates', function () {
+          store.findPredicates(null, null, null).should.have.members(['p1', 'p2']);
+        });
+      });
+    });
+
+    describe('findObjects()', function () {
+
+      describe('with existing subject, predicate and graph parameters', function () {
+        it('should return all objects with this subject, predicate and graph', function () {
+          store.findObjects('s1', 'p1', store.defaultGraph).should.have.members(['o1', 'o2']);
+        });
+      });
+
+      describe('with existing subject and predicate parameters', function () {
+        it('should return all objects with this subject and predicate', function () {
+          store.findObjects('s1', 'p2', null).should.have.members(['o2', 'o3']);
+        });
+      });
+
+      describe('with existing subject and graph parameters', function () {
+        it('should return all objects with this subject and graph', function () {
+          store.findObjects('s1', null, store.defaultGraph).should.have.members(['o1', 'o2']);
+        });
+      });
+
+      describe('with existing predicate and graph parameters', function () {
+        it('should return all objects with this predicate and graph', function () {
+          store.findObjects(null, 'p1', store.defaultGraph).should.have.members(['o1', 'o2']);
+        });
+      });
+
+      describe('with an existing subject parameter', function () {
+        it('should return all objects with this subject', function () {
+          store.findObjects('s1', null, null).should.have.members(['o1', 'o2', 'o3']);
+        });
+      });
+
+      describe('with an existing predicate parameter', function () {
+        it('should return all objects with this predicate', function () {
+          store.findObjects(null, 'p2', null).should.have.members(['o2', 'o3']);
+        });
+      });
+
+      describe('with an existing graph parameter', function () {
+        it('should return all objects in the graph', function () {
+          store.findObjects(null, null, 'c4').should.have.members(['o3']);
+        });
+      });
+
+      describe('with no parameters', function () {
+        it('should return all objects', function () {
+          store.findObjects(null, null, null).should.have.members(['o1', 'o2', 'o3']);
+        });
+      });
+    });
+
+    describe('forEach()', function () {
+
+      var quads = [];
+      function resultCollectorFn (q) {
+        quads.push(q);
+      }
+
+      describe('with existing subject, predicate, object and graph parameters', function () {
+        store.forEach(resultCollectorFn, 's1', 'p1', 'o2', store.defaultGraph);
+        it('should have iterated all items with this subject, predicate, object and graph',
+          shouldIncludeAll(quads, ['s1', 'p1', 'o2', '']));
+        quads = [];
+      });
+
+      describe('with existing subject, predicate and object parameters', function () {
+        store.forEach(resultCollectorFn, 's1', 'p2', 'o3', null);
+        it('should have iterated all items with this subject, predicate and object',
+          shouldIncludeAll(quads, ['s1', 'p2', 'o3', 'c4']));
+        quads = [];
+      });
+
+      describe('with existing subject, predicate and graph parameters', function () {
+        store.forEach(resultCollectorFn, 's1', 'p1', null, store.defaultGraph);
+        it('should have iterated all items with this subject, predicate and graph',
+          shouldIncludeAll(quads, ['s1', 'p1', 'o1', ''], ['s1', 'p1', 'o2', '']));
+        quads = [];
+      });
+
+      describe('with existing subject, object and graph parameters', function () {
+        store.forEach(resultCollectorFn, 's1', null, 'o2', store.defaultGraph);
+        it('should have iterated all items with this subject, object and graph',
+          shouldIncludeAll(quads, ['s1', 'p1', 'o2', ''], ['s1', 'p2', 'o2', '']));
+        quads = [];
+      });
+
+      describe('with existing predicate, object and graph parameters', function () {
+        store.forEach(resultCollectorFn, null, 'p1', 'o1', store.defaultGraph);
+        it('should have iterated all items with this predicate, object and graph',
+          shouldIncludeAll(quads, ['s1', 'p1', 'o1', ''], ['s2', 'p1', 'o1', '']));
+        quads = [];
+      });
+
+      describe('with existing subject and predicate parameters', function () {
+        store.forEach(resultCollectorFn, 's1', 'p2', null, null);
+        it('should iterate all items with this subject and predicate',
+          shouldIncludeAll(quads, ['s1', 'p2', 'o2', ''], ['s1', 'p2', 'o3', 'c4']));
+        quads = [];
+      });
+
+      describe('with existing subject and object parameters', function () {
+        store.forEach(resultCollectorFn, 's1', null, 'o2', null);
+        it('should iterate all items with this subject and predicate',
+          shouldIncludeAll(quads, ['s1', 'p1', 'o2', ''], ['s1', 'p2', 'o2', '']));
+        quads = [];
+      });
+
+      describe('with existing subject and graph parameters', function () {
+        store.forEach(resultCollectorFn, 's1', null, null, 'c4');
+        it('should iterate all items with this subject and graph',
+          shouldIncludeAll(quads, ['s1', 'p2', 'o3', 'c4']));
+        quads = [];
+      });
+
+      describe('with existing predicate and object parameters', function () {
+        store.forEach(resultCollectorFn, null, 'p1', 'o1', null);
+        it('should iterate all items with this predicate and object',
+          shouldIncludeAll(quads, ['s1', 'p1', 'o1', ''], ['s2', 'p1', 'o1', '']));
+        quads = [];
+      });
+
+      describe('with existing predicate and graph parameters', function () {
+        store.forEach(resultCollectorFn, null, 'p1', null, store.defaultGraph);
+        it('should iterate all items with this predicate and graph',
+          shouldIncludeAll(quads, ['s1', 'p1', 'o1', ''],
+                                    ['s1', 'p1', 'o2', ''],
+                                    ['s2', 'p1', 'o1', '']));
+        quads = [];
+      });
+
+      describe('with existing object and graph parameters', function () {
+        store.forEach(resultCollectorFn, null, null, 'o1', store.defaultGraph);
+        it('should iterate all items with this object and graph',
+          shouldIncludeAll(quads, ['s1', 'p1', 'o1', ''], ['s2', 'p1', 'o1', '']));
+        quads = [];
+      });
+
+      describe('with existing subject parameter', function () {
+        store.forEach(resultCollectorFn, 's2', null, null, null);
+        it('should iterate all items with this subject',
+          shouldIncludeAll(quads, ['s2', 'p1', 'o1', '']));
+        quads = [];
+      });
+
+      describe('with existing predicate parameter', function () {
+        store.forEach(resultCollectorFn, null, 'p2', null, null);
+        it('should iterate all items with this predicate',
+          shouldIncludeAll(quads, ['s1', 'p2', 'o2', ''], ['s1', 'p2', 'o3', 'c4']));
+        quads = [];
+      });
+
+      describe('with existing object parameter', function () {
+        store.forEach(resultCollectorFn, null, null, 'o1', null);
+        it('should iterate all items with this object',
+          shouldIncludeAll(quads, ['s1', 'p1', 'o1', ''], ['s2', 'p1', 'o1', '']));
+        quads = [];
+      });
+
+      describe('with existing graph parameter', function () {
+        store.forEach(resultCollectorFn, null, null, null, store.defaultGraph);
+        it('should iterate all items with this graph',
+          shouldIncludeAll(quads, ['s1', 'p1', 'o1'],
+                                    ['s1', 'p1', 'o2'],
+                                    ['s1', 'p2', 'o2'],
+                                    ['s2', 'p1', 'o1']));
+        quads = [];
+      });
+
+      describe('with no parameters', function () {
+        store.forEach(resultCollectorFn, null, null, null, null);
+        it('should iterate all items',
+          shouldIncludeAll(quads, ['s1', 'p1', 'o1'],
+                                    ['s1', 'p1', 'o2'],
+                                    ['s1', 'p2', 'o2'],
+                                    ['s2', 'p1', 'o1'],
+                                    ['s1', 'p2', 'o3', 'c4']));
+        quads = [];
+      });
+    });
+
+    describe('forGraphs()', function () {
+      var graphs = [];
+      function resultCollectorFn (g) {
+        graphs.push(g);
+      }
+      describe('with existing subject, predicate and object parameters', function () {
+        it('should iterate all graphs with this subject, predicate and object', function () {
+          store.forGraphs(resultCollectorFn, 's1', 'p1', 'o1');
+          graphs.should.have.members(['']);
+        });
+        graphs = [];
+      });
+    });
+
+    describe('forSubjects()', function () {
+      var subjects = [];
+      function resultCollectorFn (s) {
+        subjects.push(s);
+      }
+      describe('with existing predicate, object and graph parameters', function () {
+        it('should iterate all subjects with this predicate, object and graph', function () {
+          store.forSubjects(resultCollectorFn, 'p1', 'o1', store.defaultGraph);
+          subjects.should.have.members(['s1', 's2']);
+        });
+        subjects = [];
+      });
+    });
+
+    describe('forPredicates()', function () {
+      var predicates = [];
+      function resultCollectorFn (p) {
+        predicates.push(p);
+      }
+      describe('with existing subject, object and graph parameters', function () {
+        it('should iterate all predicates with this subject, object and graph', function () {
+          store.forPredicates(resultCollectorFn, 's1', 'o2', store.defaultGraph);
+          predicates.should.have.members(['p1', 'p2']);
+        });
+        predicates = [];
+      });
+    });
+
+    describe('forObjects()', function () {
+      var objects = [];
+      function resultCollectorFn (o) {
+        objects.push(o);
+      }
+      describe('with existing subject, predicate and graph parameters', function () {
+        it('should iterate all objects with this subject, predicate and graph', function () {
+          store.forObjects(resultCollectorFn, 's1', 'p1', store.defaultGraph);
+          objects.should.have.members(['o1', 'o2']);
+        });
+        objects = [];
+      });
+    });
+
+    describe('every()', function () {
+      function trueFn (q) {
+        return true;
+      }
+      function falseFn (q) {
+        return false;
+      }
+      var count = 3;
+      function falseThirdTimeFn (q) {
+        if (count > 0) {
+          count--;
+          return true;
+        }
+        return false;
+      }
+      describe('with no parameters and a callback always returning true', function () {
+        it('should return true', function () {
+          store.every(trueFn, null, null, null, null).should.be.true;
+        });
+      });
+      describe('with no parameters and a callback always returning false', function () {
+        it('should return false', function () {
+          store.every(falseFn, null, null, null, null).should.be.false;
+        });
+      });
+      describe('with no parameters and a callback that returns false after 3 calls', function () {
+        it('should return false', function () {
+          store.every(falseThirdTimeFn, null, null, null, null).should.be.false;
+        });
+      });
+    });
+
+    describe('some()', function () {
+      function trueFn (q) {
+        return true;
+      }
+      function falseFn (q) {
+        return false;
+      }
+      var count = 3;
+      function trueThirdTimeFn (q) {
+        if (count > 0) {
+          count--;
+          return false;
+        }
+        return true;
+      }
+      describe('with no parameters and a callback always returning true', function () {
+        it('should return true', function () {
+          store.some(trueFn, null, null, null, null).should.be.true;
+        });
+      });
+      describe('with no parameters and a callback always returning false', function () {
+        it('should return false', function () {
+          store.some(falseFn, null, null, null, null).should.be.false;
+        });
+      });
+      describe('with no parameters and a callback that returns true after 3 calls', function () {
+        it('should return false', function () {
+          store.some(trueThirdTimeFn, null, null, null, null).should.be.true;
+        });
+      });
     });
 
     describe('when counted without parameters', function () {
