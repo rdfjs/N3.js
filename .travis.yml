@@ -7,8 +7,10 @@ script:
   - npm run lint
   - npm test
   - npm run browser
+  - npm run docs
 after_success:
   - npm run coveralls
+  - ./.travis_build_pages
 cache:
   directories:
     - node_modules
