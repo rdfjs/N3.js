@@ -591,12 +591,42 @@ describe('N3Store', function () {
           collect(store, 'forSubjects', 'p1', 'o1', '').should.have.members(['s1', 's2']);
         });
       });
+      describe('with a non-existing predicate', function () {
+        it('should be empty', function () {
+          collect(store, 'forSubjects', 'p3', null, null).should.be.empty;
+        });
+      });
+      describe('with a non-existing object', function () {
+        it('should be empty', function () {
+          collect(store, 'forSubjects', null, 'o4', null).should.be.empty;
+        });
+      });
+      describe('with a non-existing graph', function () {
+        it('should be empty', function () {
+          collect(store, 'forSubjects', null, null, 'g2').should.be.empty;
+        });
+      });
     });
 
     describe('forPredicates', function () {
       describe('with existing subject, object and graph parameters', function () {
         it('should iterate all predicates with this subject, object and graph', function () {
           collect(store, 'forPredicates', 's1', 'o2', '').should.have.members(['p1', 'p2']);
+        });
+      });
+      describe('with a non-existing subject', function () {
+        it('should be empty', function () {
+          collect(store, 'forPredicates', 's3', null, null).should.be.empty;
+        });
+      });
+      describe('with a non-existing object', function () {
+        it('should be empty', function () {
+          collect(store, 'forPredicates', null, 'o4', null).should.be.empty;
+        });
+      });
+      describe('with a non-existing graph', function () {
+        it('should be empty', function () {
+          collect(store, 'forPredicates', null, null, 'g2').should.be.empty;
         });
       });
     });
@@ -607,12 +637,42 @@ describe('N3Store', function () {
           collect(store, 'forObjects', 's1', 'p1', '').should.have.members(['o1', 'o2']);
         });
       });
+      describe('with a non-existing subject', function () {
+        it('should be empty', function () {
+          collect(store, 'forObjects', 's3', null, null).should.be.empty;
+        });
+      });
+      describe('with a non-existing predicate', function () {
+        it('should be empty', function () {
+          collect(store, 'forObjects', null, 'p3', null).should.be.empty;
+        });
+      });
+      describe('with a non-existing graph', function () {
+        it('should be empty', function () {
+          collect(store, 'forObjects', null, null, 'g2').should.be.empty;
+        });
+      });
     });
 
     describe('forGraphs', function () {
       describe('with existing subject, predicate and object parameters', function () {
         it('should iterate all graphs with this subject, predicate and object', function () {
           collect(store, 'forGraphs', 's1', 'p1', 'o1').should.have.members(['', 'c4']);
+        });
+      });
+      describe('with a non-existing subject', function () {
+        it('should be empty', function () {
+          collect(store, 'forObjects', 's3', null, null).should.be.empty;
+        });
+      });
+      describe('with a non-existing predicate', function () {
+        it('should be empty', function () {
+          collect(store, 'forObjects', null, 'p3', null).should.be.empty;
+        });
+      });
+      describe('with a non-existing graph', function () {
+        it('should be empty', function () {
+          collect(store, 'forPredicates', null, null, 'g2').should.be.empty;
         });
       });
     });
@@ -655,6 +715,26 @@ describe('N3Store', function () {
       describe('with no parameters and a callback that returns true after 3 calls', function () {
         it('should return false', function () {
           store.some(thirdTimeFalse, null, null, null, null).should.be.true;
+        });
+      });
+      describe('with a non-existing subject', function () {
+        it('should return true', function () {
+          store.some(null, 's3', null, null, null).should.be.false;
+        });
+      });
+      describe('with a non-existing predicate', function () {
+        it('should return false', function () {
+          store.some(null, null, 'p3', null, null).should.be.false;
+        });
+      });
+      describe('with a non-existing object', function () {
+        it('should return false', function () {
+          store.some(null, null, null, 'o4', null).should.be.false;
+        });
+      });
+      describe('with a non-existing graph', function () {
+        it('should return false', function () {
+          store.some(null, null, null, null, 'g2').should.be.false;
         });
       });
     });
