@@ -1,3 +1,4 @@
+"use strict";
 // Replace local require by a lazy loader
 var globalRequire = require;
 require = function () {};
