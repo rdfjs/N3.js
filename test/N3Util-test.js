@@ -47,10 +47,9 @@ describe('N3Util', function () {
       expect(N3Util.isIRI(undefined)).to.be.undefined;
     });
 
-    it('does not match a blank node', function () {
+    it('does not match an object', function () {
       N3Util.isIRI({}).should.be.false;
     });
-
   });
 
   describe('isLiteral', function () {
