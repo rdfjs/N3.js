@@ -46,6 +46,11 @@ describe('N3Util', function () {
     it('does not match undefined', function () {
       expect(N3Util.isIRI(undefined)).to.be.undefined;
     });
+
+    it('does not match a blank node', function () {
+      N3Util.isIRI({}).should.be.false;
+    });
+
   });
 
   describe('isLiteral', function () {
