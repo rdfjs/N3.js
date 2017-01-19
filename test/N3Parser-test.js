@@ -325,6 +325,24 @@ describe('N3Parser', function () {
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
+    it('should parse a list with a literal',
+      shouldParse('<a> <b> ("x").',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"x"'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
+    it('should parse a list with a typed literal',
+      shouldParse('<a> <b> ("x"^^<y>).',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"x"^^y'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
+    it('should parse a list with a language-tagged literal',
+      shouldParse('<a> <b> ("x"@en-GB).',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"x"@en-gb'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
     it('should parse statements with a multi-element list in the subject',
       shouldParse('(<x> <y>) <a> <b>.',
                   ['_:b0', 'a', 'b'],
@@ -340,6 +358,16 @@ describe('N3Parser', function () {
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
+    it('should parse statements with a multi-element literal list in the object',
+      shouldParse('<a> <b> ("x" "y"@en-GB "z"^^<t>).',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"x"'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"y"@en-gb'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"z"^^t'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
     it('should parse statements with prefixed names in lists',
       shouldParse('@prefix a: <a#>. <a> <b> (a:x a:y).',
@@ -360,12 +388,6 @@ describe('N3Parser', function () {
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b0_y'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
-
-    it('should parse statements with a list containing strings',
-      shouldParse('("y") <a> <b>.',
-                  ['_:b0', 'a', 'b'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"y"'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
     it('should parse statements with a nested empty list',
       shouldParse('<a> <b> (<x> ()).',
