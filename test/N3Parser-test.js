@@ -1258,11 +1258,11 @@ describe('N3Parser', function () {
 
     it('should parse a @forAll statement',
       shouldParse(parser, '@forAll  <x>. <x> <x> <x>.',
-                  ['?b-0', '?b-0', '?b-0']));
+                  ['?b0', '?b0', '?b0']));
 
     it('should parse a @forAll statement with multiple entities',
       shouldParse(parser, '@prefix a: <a:>. @base <b:>. @forAll  a:x, <y>, a:z. a:x <y> a:z.',
-                  ['?b-0', '?b-1', '?b-2']));
+                  ['?b0', '?b1', '?b2']));
 
     it('should not parse a @forAll statement with an invalid prefix',
       shouldNotParse(parser, '@forAll a:b.',
@@ -1278,9 +1278,9 @@ describe('N3Parser', function () {
 
     it('should correctly scope @forAll statements',
       shouldParse(parser, '@forAll <x>. <x> <x> { @forAll <x>. <x> <x> <x>. }. <x> <x> <x>.',
-                  ['?b-0', '?b-0', '_:b1'],
-                  ['?b-2', '?b-2', '?b-2', '_:b1'],
-                  ['?b-0', '?b-0', '?b-0']));
+                  ['?b0', '?b0', '_:b1'],
+                  ['?b2', '?b2', '?b2', '_:b1'],
+                  ['?b0', '?b0', '?b0']));
 
     it('should parse a ! path of length 2 as subject',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +

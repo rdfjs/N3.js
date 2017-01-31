@@ -620,7 +620,7 @@ describe('N3Lexer', function () {
     it('should tokenize the "a" predicate',
       shouldTokenize('<x> a <y>.',
                      { type: 'IRI', value: 'x', line: 1 },
-                     { type: 'abbreviation', value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', line: 1 },
+                     { type: 'abbreviation', value: 'a', line: 1 },
                      { type: 'IRI', value: 'y', line: 1 },
                      { type: '.', line: 1 },
                      { type: 'eof', line: 1 }));
@@ -707,21 +707,21 @@ describe('N3Lexer', function () {
     it('should tokenize the equality sign',
       shouldTokenize('<a> = <b> ',
                      { type: 'IRI', value: 'a', line: 1 },
-                     { type: 'abbreviation', value: 'http://www.w3.org/2002/07/owl#sameAs', line: 1 },
+                     { type: 'abbreviation', value: '=', line: 1 },
                      { type: 'IRI', value: 'b', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should tokenize the right implication',
       shouldTokenize('<a> => <b> ',
                      { type: 'IRI', value: 'a', line: 1 },
-                     { type: 'abbreviation', value: 'http://www.w3.org/2000/10/swap/log#implies', line: 1 },
+                     { type: 'abbreviation', value: '>', line: 1 },
                      { type: 'IRI', value: 'b', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should tokenize the left implication',
       shouldTokenize('<a> <= <b> ',
                      { type: 'IRI', value: 'a', line: 1 },
-                     { type: 'inverse', value: 'http://www.w3.org/2000/10/swap/log#implies', line: 1 },
+                     { type: 'inverse', value: '>', line: 1 },
                      { type: 'IRI', value: 'b', line: 1 },
                      { type: 'eof', line: 1 }));
 
