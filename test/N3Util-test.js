@@ -49,8 +49,12 @@ describe('N3Util', function () {
   });
 
   describe('isLiteral', function () {
-    it('matches a literal', function () {
+    it('matches a literal with double quotes', function () {
       N3Util.isLiteral('"http://example.org/"').should.be.true;
+    });
+    
+    it('matches a literal with single quotes', function () {
+      N3Util.isLiteral('\'http://example.org/\'').should.be.true;
     });
 
     it('matches a literal with a language', function () {
@@ -165,8 +169,12 @@ describe('N3Util', function () {
   });
 
   describe('getLiteralValue', function () {
-    it('gets the value of a literal', function () {
+    it('gets the value of a literal with double quotes', function () {
       N3Util.getLiteralValue('"Mickey"').should.equal('Mickey');
+    });
+    
+    it('gets the value of a literal with single quotes', function () {
+      N3Util.getLiteralValue('\'Mouse\'').should.equal('Mouse');
     });
 
     it('gets the value of a literal with a language', function () {
