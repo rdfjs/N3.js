@@ -1,31 +1,6 @@
 var N3Util = require('../N3').Util;
 
 describe('N3Util', function () {
-  describe('The N3Util module', function () {
-    it('is a function', function () {
-      N3Util.should.be.a('function');
-    });
-
-    it('can attach functions to an object', function () {
-      var host = {};
-      N3Util(host).should.equal(host);
-      host.isIRI.should.be.a('function');
-      host.isLiteral.should.be.a('function');
-      host.isPrefixedName('a:b').should.be.true;
-    });
-
-    it("can attach functions to an object's prototype", function () {
-      function Constructor() {}
-      Constructor.prototype = { toString: function () { return 'a:b'; } };
-      N3Util(Constructor, true).should.equal(Constructor);
-      Constructor.prototype.isIRI.should.be.a('function');
-      Constructor.prototype.isLiteral.should.be.a('function');
-
-      var host = new Constructor();
-      host.isPrefixedName().should.be.true;
-    });
-  });
-
   describe('isIRI', function () {
     it('matches an IRI', function () {
       N3Util.isIRI('http://example.org/').should.be.true;

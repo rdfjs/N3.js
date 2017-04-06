@@ -354,21 +354,6 @@ N3Util.isPrefixedName('rdfs:label'); // true;
 N3Util.expandPrefixedName('rdfs:label', prefixes); // http://www.w3.org/2000/01/rdf-schema#label
 ```
 
-### Loading the utility globally
-For convenience, `N3Util` can be loaded globally:
-``` js
-require('n3').Util(global);
-isIRI('http://example.org/cartoons#Mickey'); // true
-isLiteral('"Mickey Mouse"'); // true
-```
-
-If desired, its methods can even be added directly on all strings:
-``` js
-require('n3').Util(String, true);
-'http://example.org/cartoons#Mickey'.isIRI(); // true
-'"Mickey Mouse"'.isLiteral(); // true
-```
-
 ## Compatibility
 ### Specifications
 The N3.js parser and writer is fully compatible with the following W3C specifications:
