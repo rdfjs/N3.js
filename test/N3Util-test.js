@@ -373,12 +373,20 @@ describe('N3Util', function () {
       N3Util.createLiteral(123).should.equal('"123"^^http://www.w3.org/2001/XMLSchema#integer');
     });
 
-    it('converts a decimal', function () {
-      N3Util.createLiteral(2.3).should.equal('"2.3"^^http://www.w3.org/2001/XMLSchema#decimal');
+    it('converts a double', function () {
+      N3Util.createLiteral(2.3).should.equal('"2.3"^^http://www.w3.org/2001/XMLSchema#double');
     });
 
-    it('converts infinity', function () {
-      N3Util.createLiteral(Infinity).should.equal('"Infinity"');
+    it('converts Infinity', function () {
+      N3Util.createLiteral(Infinity).should.equal('"INF"^^http://www.w3.org/2001/XMLSchema#double');
+    });
+
+    it('converts -Infinity', function () {
+      N3Util.createLiteral(-Infinity).should.equal('"-INF"^^http://www.w3.org/2001/XMLSchema#double');
+    });
+
+    it('converts NaN', function () {
+      N3Util.createLiteral(NaN).should.equal('"NaN"^^http://www.w3.org/2001/XMLSchema#double');
     });
 
     it('converts false', function () {
