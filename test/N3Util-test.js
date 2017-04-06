@@ -31,6 +31,10 @@ describe('N3Util', function () {
       N3Util.isIRI('http://example.org/').should.be.true;
     });
 
+    it('matches an empty IRI', function () {
+      N3Util.isIRI('').should.be.true;
+    });
+
     it('does not match a literal', function () {
       N3Util.isIRI('"http://example.org/"').should.be.false;
     });
@@ -40,11 +44,11 @@ describe('N3Util', function () {
     });
 
     it('does not match null', function () {
-      expect(N3Util.isIRI(null)).to.be.null;
+      expect(N3Util.isIRI(null)).to.be.false;
     });
 
     it('does not match undefined', function () {
-      expect(N3Util.isIRI(undefined)).to.be.undefined;
+      expect(N3Util.isIRI(undefined)).to.be.false;
     });
   });
 
