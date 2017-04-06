@@ -61,11 +61,11 @@ describe('N3Util', function () {
     });
 
     it('does not match null', function () {
-      expect(N3Util.isLiteral(null)).to.be.null;
+      expect(N3Util.isLiteral(null)).to.be.false;
     });
 
     it('does not match undefined', function () {
-      expect(N3Util.isLiteral(undefined)).to.be.undefined;
+      expect(N3Util.isLiteral(undefined)).to.be.false;
     });
   });
 
@@ -83,11 +83,11 @@ describe('N3Util', function () {
     });
 
     it('does not match null', function () {
-      expect(N3Util.isBlank(null)).to.be.null;
+      expect(N3Util.isBlank(null)).to.be.false;
     });
 
     it('does not match undefined', function () {
-      expect(N3Util.isBlank(undefined)).to.be.undefined;
+      expect(N3Util.isBlank(undefined)).to.be.false;
     });
   });
 
@@ -279,11 +279,11 @@ describe('N3Util', function () {
     });
 
     it('does not match null', function () {
-      expect(N3Util.isPrefixedName(null)).to.be.null;
+      expect(N3Util.isPrefixedName(null)).to.be.false;
     });
 
     it('does not match undefined', function () {
-      expect(N3Util.isPrefixedName(undefined)).to.be.undefined;
+      expect(N3Util.isPrefixedName(undefined)).to.be.false;
     });
   });
 
