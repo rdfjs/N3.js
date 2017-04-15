@@ -281,22 +281,56 @@ Be careful to use the output of `blank` and `list`
 **only once** and **only as argument to `addTriple`** of the same writer,
 as return values of these functions are unspecified.
 
+
 ## Storing
 
 `N3.Store` allows you to store triples in memory and find them fast.
 
 In this example, we create a new store and add the triples `:Pluto a :Dog.` and `:Mickey a :Mouse`.
 <br>
-Then, we find a triple with `:Mickey` as subject.
+Then, we find triples with `:Mickey` as subject.
 
 ``` js
 var store = N3.Store();
 store.addTriple('http://ex.org/Pluto',  'http://ex.org/type', 'http://ex.org/Dog');
 store.addTriple('http://ex.org/Mickey', 'http://ex.org/type', 'http://ex.org/Mouse');
 
-var mickey = store.find('http://ex.org/Mickey', null, null)[0];
+var mickey = store.getTriples('http://ex.org/Mickey', null, null)[0];
 console.log(mickey.subject, mickey.predicate, mickey.object, '.');
 ```
+
+### Addition and deletion of triples/quads
+The store provides the following manipulation methods
+([documentation](http://rubenverborgh.github.io/N3.js/docs/N3Store.html)):
+- `addTriple` to insert one triple/quad
+- `addTriples` to insert an array of triples/quads
+- `addPrefix` to register a prefix (facilitating addition and lookup)
+- `addPrefixes` to register an array of prefixes
+- `removeTriple` to remove one triple/quad
+- `removeTriples` to remove an array of triples/quads
+- `createBlankNode` returns an unused blank node identifier
+
+### Searching triples/quads or entities
+The store provides the following search methods
+([documentation](http://rubenverborgh.github.io/N3.js/docs/N3Store.html)):
+- `getTriples` returns an array of triples/quads matching the given pattern
+- `countTriples` counts the number of triples/quads matching the given pattern
+- `forEach` executes a callback on all matching triples/quads
+- `every` returns whether a callback on matching triples/quads always returns true
+- `some`  returns whether a callback on matching triples/quads returns true at least once
+- `getSubjects` returns an array of unique subjects occurring in matching triples
+- `forSubjects` executes a callback on unique subjects occurring in matching triples
+- `getPredicates` returns an array of unique predicates occurring in matching triple
+- `forPredicates` executes a callback on unique predicates occurring in matching triples
+- `getObjects` returns an array of unique objects occurring in matching triple
+- `forObjects` executes a callback on unique objects occurring in matching triples
+- `getGraphs` returns an array of unique graphs occurring in matching triple
+- `forGraphs` executes a callback on unique graphs occurring in matching triples
+
+All of the above methods also have a variant with the `byIRI` suffix
+(e.g., `getTriplesByIRI`),
+which skips prefix expansion and is thus faster.
+
 
 ## Utility
 `N3.Util` offers helpers for IRI and literal representations.

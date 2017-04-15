@@ -23,7 +23,40 @@ describe('N3Store', function () {
     });
 
     it('should be empty', function () {
-      store.find().should.be.empty;
+      store.getTriples().should.be.empty;
+    });
+
+    describe('every', function () {
+      describe('with no parameters and a callback always returning true', function () {
+        it('should return false', function () {
+          store.every(alwaysTrue, null, null, null, null).should.be.false;
+        });
+      });
+      describe('with no parameters and a callback always returning false', function () {
+        it('should return false', function () {
+          store.every(alwaysFalse, null, null, null, null).should.be.false;
+        });
+      });
+    });
+
+    describe('some', function () {
+      describe('with no parameters and a callback always returning true', function () {
+        it('should return false', function () {
+          store.some(alwaysTrue, null, null, null, null).should.be.false;
+        });
+      });
+      describe('with no parameters and a callback always returning false', function () {
+        it('should return false', function () {
+          store.some(alwaysFalse, null, null, null, null).should.be.false;
+        });
+      });
+    });
+
+    it('should still have size 0 (instead of null) after adding and removing a triple', function () {
+      expect(store.size).to.eql(0);
+      store.addTriple('a', 'b', 'c').should.be.true;
+      store.removeTriple('a', 'b', 'c').should.be.true;
+      expect(store.size).to.eql(0);
     });
 
     it('should be able to generate unnamed blank nodes', function () {
@@ -32,6 +65,7 @@ describe('N3Store', function () {
 
       store.addTriple('_:b0', '_:b1', '_:b2').should.be.true;
       store.createBlankNode().should.eql('_:b3');
+      store.removeTriples(store.getTriples());
     });
 
     it('should be able to generate named blank nodes', function () {
@@ -42,7 +76,8 @@ describe('N3Store', function () {
 
     it('should be able to store triples with generated blank nodes', function () {
       store.addTriple(store.createBlankNode('x'), 'b', 'c').should.be.true;
-      shouldIncludeAll(store.find(null, 'b'), ['_:x1', 'b', 'd']);
+      shouldIncludeAll(store.getTriples(null, 'b'), ['_:x1', 'b', 'd']);
+      store.removeTriples(store.getTriples());
     });
   });
 
@@ -114,7 +149,7 @@ describe('N3Store', function () {
 
     describe('when searched without parameters', function () {
       it('should return all items',
-        shouldIncludeAll(store.find(),
+        shouldIncludeAll(store.getTriples(),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o2'],
                          ['s1', 'p2', 'o2'],
@@ -124,7 +159,7 @@ describe('N3Store', function () {
 
     describe('when searched with an existing subject parameter', function () {
       it('should return all items with this subject in all graphs',
-        shouldIncludeAll(store.find('s1', null, null),
+        shouldIncludeAll(store.getTriples('s1', null, null),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o2'],
                          ['s1', 'p2', 'o2'],
@@ -132,16 +167,16 @@ describe('N3Store', function () {
     });
 
     describe('when searched with a non-existing subject parameter', function () {
-      itShouldBeEmpty(store.find('s3', null, null));
+      itShouldBeEmpty(store.getTriples('s3', null, null));
     });
 
     describe('when searched with a non-existing subject parameter that exists elsewhere', function () {
-      itShouldBeEmpty(store.find('p1', null, null));
+      itShouldBeEmpty(store.getTriples('p1', null, null));
     });
 
     describe('when searched with an existing predicate parameter', function () {
       it('should return all items with this predicate in all graphs',
-        shouldIncludeAll(store.find(null, 'p1', null),
+        shouldIncludeAll(store.getTriples(null, 'p1', null),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o2'],
                          ['s2', 'p1', 'o1'],
@@ -149,70 +184,70 @@ describe('N3Store', function () {
     });
 
     describe('when searched with a non-existing predicate parameter', function () {
-      itShouldBeEmpty(store.find(null, 'p3', null));
+      itShouldBeEmpty(store.getTriples(null, 'p3', null));
     });
 
     describe('when searched with an existing object parameter', function () {
       it('should return all items with this object in all graphs',
-        shouldIncludeAll(store.find(null, null, 'o1'),
+        shouldIncludeAll(store.getTriples(null, null, 'o1'),
                          ['s1', 'p1', 'o1'],
                          ['s2', 'p1', 'o1'],
                          ['s1', 'p1', 'o1', 'c4']));
     });
 
     describe('when searched with a non-existing object parameter', function () {
-      itShouldBeEmpty(store.find(null, null, 'o4'));
+      itShouldBeEmpty(store.getTriples(null, null, 'o4'));
     });
 
     describe('when searched with existing subject and predicate parameters', function () {
       it('should return all items with this subject and predicate in all graphs',
-        shouldIncludeAll(store.find('s1', 'p1', null),
+        shouldIncludeAll(store.getTriples('s1', 'p1', null),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o2'],
                          ['s1', 'p1', 'o1', 'c4']));
     });
 
     describe('when searched with non-existing subject and predicate parameters', function () {
-      itShouldBeEmpty(store.find('s2', 'p2', null));
+      itShouldBeEmpty(store.getTriples('s2', 'p2', null));
     });
 
     describe('when searched with existing subject and object parameters', function () {
       it('should return all items with this subject and object in all graphs',
-        shouldIncludeAll(store.find('s1', null, 'o1'),
+        shouldIncludeAll(store.getTriples('s1', null, 'o1'),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o1', 'c4']));
     });
 
     describe('when searched with non-existing subject and object parameters', function () {
-      itShouldBeEmpty(store.find('s2', 'p2', null));
+      itShouldBeEmpty(store.getTriples('s2', 'p2', null));
     });
 
     describe('when searched with existing predicate and object parameters', function () {
       it('should return all items with this predicate and object in all graphs',
-        shouldIncludeAll(store.find(null, 'p1', 'o1'),
+        shouldIncludeAll(store.getTriples(null, 'p1', 'o1'),
                          ['s1', 'p1', 'o1'],
                          ['s2', 'p1', 'o1'],
                          ['s1', 'p1', 'o1', 'c4']));
     });
 
     describe('when searched with non-existing predicate and object parameters in the default graph', function () {
-      itShouldBeEmpty(store.find(null, 'p2', 'o3', ''));
+      itShouldBeEmpty(store.getTriples(null, 'p2', 'o3', ''));
     });
 
     describe('when searched with existing subject, predicate, and object parameters', function () {
       it('should return all items with this subject, predicate, and object in all graphs',
-        shouldIncludeAll(store.find('s1', 'p1', 'o1'),
+        shouldIncludeAll(store.getTriples('s1', 'p1', 'o1'),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o1', 'c4']));
     });
 
     describe('when searched with a non-existing triple', function () {
-      itShouldBeEmpty(store.find('s2', 'p2', 'o1'));
+      itShouldBeEmpty(store.getTriples('s2', 'p2', 'o1'));
     });
 
     describe('when searched with the default graph parameter', function () {
       it('should return all items in the default graph',
-        shouldIncludeAll(store.find(null, null, null, ''),
+        shouldIncludeAll(store.getTriples(null, null, null, ''),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o2'],
                          ['s1', 'p2', 'o2'],
@@ -221,125 +256,600 @@ describe('N3Store', function () {
 
     describe('when searched with an existing named graph parameter', function () {
       it('should return all items in that graph',
-        shouldIncludeAll(store.find(null, null, null, 'c4'),
+        shouldIncludeAll(store.getTriples(null, null, null, 'c4'),
                          ['s1', 'p1', 'o1', 'c4']));
     });
 
     describe('when searched with a non-existing named graph parameter', function () {
-      itShouldBeEmpty(store.find(null, null, null, 'c5'));
+      itShouldBeEmpty(store.getTriples(null, null, null, 'c5'));
+    });
+
+    describe('getSubjects', function () {
+      describe('with existing predicate, object and graph parameters', function () {
+        it('should return all subjects with this predicate, object and graph', function () {
+          store.getSubjects('p1', 'o1', 'c4').should.have.members(['s1']);
+        });
+      });
+
+      describe('with existing predicate and object parameters', function () {
+        it('should return all subjects with this predicate and object', function () {
+          store.getSubjects('p2', 'o2', null).should.have.members(['s1']);
+        });
+      });
+
+      describe('with existing predicate and graph parameters', function () {
+        it('should return all subjects with this predicate and graph', function () {
+          store.getSubjects('p1', null, '').should.have.members(['s1', 's2']);
+        });
+      });
+
+      describe('with existing object and graph parameters', function () {
+        it('should return all subjects with this object and graph', function () {
+          store.getSubjects(null, 'o1', '').should.have.members(['s1', 's2']);
+        });
+      });
+
+      describe('with an existing predicate parameter', function () {
+        it('should return all subjects with this predicate', function () {
+          store.getSubjects('p1', null, null).should.have.members(['s1', 's2']);
+        });
+      });
+
+      describe('with an existing object parameter', function () {
+        it('should return all subjects with this object', function () {
+          store.getSubjects(null, 'o1', null).should.have.members(['s1', 's2']);
+        });
+      });
+
+      describe('with an existing graph parameter', function () {
+        it('should return all subjects in the graph', function () {
+          store.getSubjects(null, null, 'c4').should.have.members(['s1']);
+        });
+      });
+
+      describe('with no parameters', function () {
+        it('should return all subjects', function () {
+          store.getSubjects(null, null, null).should.have.members(['s1', 's2']);
+        });
+      });
+    });
+
+    describe('getPredicates', function () {
+      describe('with existing subject, object and graph parameters', function () {
+        it('should return all predicates with this subject, object and graph', function () {
+          store.getPredicates('s1', 'o1', 'c4').should.have.members(['p1']);
+        });
+      });
+
+      describe('with existing subject and object parameters', function () {
+        it('should return all predicates with this subject and object', function () {
+          store.getPredicates('s1', 'o2', null).should.have.members(['p1', 'p2']);
+        });
+      });
+
+      describe('with existing subject and graph parameters', function () {
+        it('should return all predicates with this subject and graph', function () {
+          store.getPredicates('s1', null, '').should.have.members(['p1', 'p2']);
+        });
+      });
+
+      describe('with existing object and graph parameters', function () {
+        it('should return all predicates with this object and graph', function () {
+          store.getPredicates(null, 'o1', '').should.have.members(['p1']);
+        });
+      });
+
+      describe('with an existing subject parameter', function () {
+        it('should return all predicates with this subject', function () {
+          store.getPredicates('s2', null, null).should.have.members(['p1']);
+        });
+      });
+
+      describe('with an existing object parameter', function () {
+        it('should return all predicates with this object', function () {
+          store.getPredicates(null, 'o1', null).should.have.members(['p1']);
+        });
+      });
+
+      describe('with an existing graph parameter', function () {
+        it('should return all predicates in the graph', function () {
+          store.getPredicates(null, null, 'c4').should.have.members(['p1']);
+        });
+      });
+
+      describe('with no parameters', function () {
+        it('should return all predicates', function () {
+          store.getPredicates(null, null, null).should.have.members(['p1', 'p2']);
+        });
+      });
+    });
+
+    describe('getObjects', function () {
+      describe('with existing subject, predicate and graph parameters', function () {
+        it('should return all objects with this subject, predicate and graph', function () {
+          store.getObjects('s1', 'p1', '').should.have.members(['o1', 'o2']);
+        });
+      });
+
+      describe('with existing subject and predicate parameters', function () {
+        it('should return all objects with this subject and predicate', function () {
+          store.getObjects('s1', 'p1', null).should.have.members(['o1', 'o2']);
+        });
+      });
+
+      describe('with existing subject and graph parameters', function () {
+        it('should return all objects with this subject and graph', function () {
+          store.getObjects('s1', null, '').should.have.members(['o1', 'o2']);
+        });
+      });
+
+      describe('with existing predicate and graph parameters', function () {
+        it('should return all objects with this predicate and graph', function () {
+          store.getObjects(null, 'p1', '').should.have.members(['o1', 'o2']);
+        });
+      });
+
+      describe('with an existing subject parameter', function () {
+        it('should return all objects with this subject', function () {
+          store.getObjects('s1', null, null).should.have.members(['o1', 'o2']);
+        });
+      });
+
+      describe('with an existing predicate parameter', function () {
+        it('should return all objects with this predicate', function () {
+          store.getObjects(null, 'p1', null).should.have.members(['o1', 'o2']);
+        });
+      });
+
+      describe('with an existing graph parameter', function () {
+        it('should return all objects in the graph', function () {
+          store.getObjects(null, null, 'c4').should.have.members(['o1']);
+        });
+      });
+
+      describe('with no parameters', function () {
+        it('should return all objects', function () {
+          store.getObjects(null, null, null).should.have.members(['o1', 'o2']);
+        });
+      });
+    });
+
+    describe('getGraphs', function () {
+      describe('with existing subject, predicate and object parameters', function () {
+        it('should return all graphs with this subject, predicate and object', function () {
+          store.getGraphs('s1', 'p1', 'o1').should.have.members(['c4', '']);
+        });
+      });
+
+      describe('with existing subject and predicate parameters', function () {
+        it('should return all graphs with this subject and predicate', function () {
+          store.getGraphs('s1', 'p1', null).should.have.members(['c4', '']);
+        });
+      });
+
+      describe('with existing subject and object parameters', function () {
+        it('should return all graphs with this subject and object', function () {
+          store.getGraphs('s1', null, 'o2').should.have.members(['']);
+        });
+      });
+
+      describe('with existing predicate and object parameters', function () {
+        it('should return all graphs with this predicate and object', function () {
+          store.getGraphs(null, 'p1', 'o1').should.have.members(['', 'c4']);
+        });
+      });
+
+      describe('with an existing subject parameter', function () {
+        it('should return all graphs with this subject', function () {
+          store.getGraphs('s1', null, null).should.have.members(['c4', '']);
+        });
+      });
+
+      describe('with an existing predicate parameter', function () {
+        it('should return all graphs with this predicate', function () {
+          store.getGraphs(null, 'p1', null).should.have.members(['c4', '']);
+        });
+      });
+
+      describe('with an existing object parameter', function () {
+        it('should return all graphs with this object', function () {
+          store.getGraphs(null, null, 'o2').should.have.members(['']);
+        });
+      });
+
+      describe('with no parameters', function () {
+        it('should return all graphs', function () {
+          store.getGraphs(null, null, null).should.have.members(['c4', '']);
+        });
+      });
+    });
+
+    describe('forEach', function () {
+      describe('with existing subject, predicate, object and graph parameters', function () {
+        it('should have iterated all items with this subject, predicate, object and graph',
+          shouldIncludeAll(collect(store, 'forEach', 's1', 'p1', 'o2', ''),
+                           ['s1', 'p1', 'o2', '']));
+      });
+
+      describe('with existing subject, predicate and object parameters', function () {
+        it('should have iterated all items with this subject, predicate and object',
+          shouldIncludeAll(collect(store, 'forEach', 's1', 'p2', 'o2', null),
+                           ['s1', 'p2', 'o2', '']));
+      });
+
+      describe('with existing subject, predicate and graph parameters', function () {
+        it('should have iterated all items with this subject, predicate and graph',
+          shouldIncludeAll(collect(store, 'forEach', 's1', 'p1', null, ''),
+                           ['s1', 'p1', 'o1', ''],
+                           ['s1', 'p1', 'o2', '']));
+      });
+
+      describe('with existing subject, object and graph parameters', function () {
+        it('should have iterated all items with this subject, object and graph',
+          shouldIncludeAll(collect(store, 'forEach', 's1', null, 'o2', ''),
+                           ['s1', 'p1', 'o2', ''],
+                           ['s1', 'p2', 'o2', '']));
+      });
+
+      describe('with existing predicate, object and graph parameters', function () {
+        it('should have iterated all items with this predicate, object and graph',
+          shouldIncludeAll(collect(store, 'forEach', null, 'p1', 'o1', ''),
+                           ['s1', 'p1', 'o1', ''],
+                           ['s2', 'p1', 'o1', '']));
+      });
+
+      describe('with existing subject and predicate parameters', function () {
+        it('should iterate all items with this subject and predicate',
+          shouldIncludeAll(collect(store, 'forEach', 's1', 'p1', null, null),
+                           ['s1', 'p1', 'o1', ''],
+                           ['s1', 'p1', 'o2', ''],
+                           ['s1', 'p1', 'o1', 'c4']));
+      });
+
+      describe('with existing subject and object parameters', function () {
+        it('should iterate all items with this subject and predicate',
+          shouldIncludeAll(collect(store, 'forEach', 's1', null, 'o2', null),
+                           ['s1', 'p1', 'o2', ''],
+                           ['s1', 'p2', 'o2', '']));
+      });
+
+      describe('with existing subject and graph parameters', function () {
+        it('should iterate all items with this subject and graph',
+          shouldIncludeAll(collect(store, 'forEach', 's1', null, null, 'c4'),
+                         ['s1', 'p1', 'o1', 'c4']));
+      });
+
+      describe('with existing predicate and object parameters', function () {
+        it('should iterate all items with this predicate and object',
+          shouldIncludeAll(collect(store, 'forEach', null, 'p1', 'o1', null),
+                           ['s1', 'p1', 'o1', ''],
+                           ['s2', 'p1', 'o1', ''],
+                           ['s1', 'p1', 'o1', 'c4']));
+      });
+
+      describe('with existing predicate and graph parameters', function () {
+        it('should iterate all items with this predicate and graph',
+        shouldIncludeAll(collect(store, 'forEach', null, 'p1', null, ''),
+                           ['s1', 'p1', 'o1', ''],
+                           ['s1', 'p1', 'o2', ''],
+                           ['s2', 'p1', 'o1', '']));
+      });
+
+      describe('with existing object and graph parameters', function () {
+        it('should iterate all items with this object and graph',
+          shouldIncludeAll(collect(store, 'forEach', null, null, 'o1', ''),
+                           ['s1', 'p1', 'o1', ''],
+                           ['s2', 'p1', 'o1', '']));
+      });
+
+      describe('with an existing subject parameter', function () {
+        it('should iterate all items with this subject',
+          shouldIncludeAll(collect(store, 'forEach', 's2', null, null, null),
+                         ['s2', 'p1', 'o1', '']));
+      });
+
+      describe('with an existing predicate parameter', function () {
+        it('should iterate all items with this predicate',
+          shouldIncludeAll(collect(store, 'forEach', null, 'p1', null, null),
+                           ['s1', 'p1', 'o1', ''],
+                           ['s1', 'p1', 'o2', ''],
+                           ['s2', 'p1', 'o1', ''],
+                           ['s1', 'p1', 'o1', 'c4']));
+      });
+
+      describe('with an existing object parameter', function () {
+        it('should iterate all items with this object',
+          shouldIncludeAll(collect(store, 'forEach', null, null, 'o1', null),
+                           ['s1', 'p1', 'o1', ''],
+                           ['s2', 'p1', 'o1', ''],
+                           ['s1', 'p1', 'o1', 'c4']));
+      });
+
+      describe('with an existing graph parameter', function () {
+        it('should iterate all items with this graph',
+          shouldIncludeAll(collect(store, 'forEach', null, null, null, ''),
+                           ['s1', 'p1', 'o1'],
+                           ['s1', 'p1', 'o2'],
+                           ['s1', 'p2', 'o2'],
+                           ['s2', 'p1', 'o1']));
+      });
+
+      describe('with no parameters', function () {
+        it('should iterate all items',
+          shouldIncludeAll(collect(store, 'forEach', null, null, null, null),
+                           ['s1', 'p1', 'o1'],
+                           ['s1', 'p1', 'o2'],
+                           ['s1', 'p2', 'o2'],
+                           ['s2', 'p1', 'o1'],
+                           ['s1', 'p1', 'o1', 'c4']));
+      });
+    });
+
+    describe('forSubjects', function () {
+      describe('with existing predicate, object and graph parameters', function () {
+        it('should iterate all subjects with this predicate, object and graph', function () {
+          collect(store, 'forSubjects', 'p1', 'o1', '').should.have.members(['s1', 's2']);
+        });
+      });
+      describe('with a non-existing predicate', function () {
+        it('should be empty', function () {
+          collect(store, 'forSubjects', 'p3', null, null).should.be.empty;
+        });
+      });
+      describe('with a non-existing object', function () {
+        it('should be empty', function () {
+          collect(store, 'forSubjects', null, 'o4', null).should.be.empty;
+        });
+      });
+      describe('with a non-existing graph', function () {
+        it('should be empty', function () {
+          collect(store, 'forSubjects', null, null, 'g2').should.be.empty;
+        });
+      });
+    });
+
+    describe('forPredicates', function () {
+      describe('with existing subject, object and graph parameters', function () {
+        it('should iterate all predicates with this subject, object and graph', function () {
+          collect(store, 'forPredicates', 's1', 'o2', '').should.have.members(['p1', 'p2']);
+        });
+      });
+      describe('with a non-existing subject', function () {
+        it('should be empty', function () {
+          collect(store, 'forPredicates', 's3', null, null).should.be.empty;
+        });
+      });
+      describe('with a non-existing object', function () {
+        it('should be empty', function () {
+          collect(store, 'forPredicates', null, 'o4', null).should.be.empty;
+        });
+      });
+      describe('with a non-existing graph', function () {
+        it('should be empty', function () {
+          collect(store, 'forPredicates', null, null, 'g2').should.be.empty;
+        });
+      });
+    });
+
+    describe('forObjects', function () {
+      describe('with existing subject, predicate and graph parameters', function () {
+        it('should iterate all objects with this subject, predicate and graph', function () {
+          collect(store, 'forObjects', 's1', 'p1', '').should.have.members(['o1', 'o2']);
+        });
+      });
+      describe('with a non-existing subject', function () {
+        it('should be empty', function () {
+          collect(store, 'forObjects', 's3', null, null).should.be.empty;
+        });
+      });
+      describe('with a non-existing predicate', function () {
+        it('should be empty', function () {
+          collect(store, 'forObjects', null, 'p3', null).should.be.empty;
+        });
+      });
+      describe('with a non-existing graph', function () {
+        it('should be empty', function () {
+          collect(store, 'forObjects', null, null, 'g2').should.be.empty;
+        });
+      });
+    });
+
+    describe('forGraphs', function () {
+      describe('with existing subject, predicate and object parameters', function () {
+        it('should iterate all graphs with this subject, predicate and object', function () {
+          collect(store, 'forGraphs', 's1', 'p1', 'o1').should.have.members(['', 'c4']);
+        });
+      });
+      describe('with a non-existing subject', function () {
+        it('should be empty', function () {
+          collect(store, 'forObjects', 's3', null, null).should.be.empty;
+        });
+      });
+      describe('with a non-existing predicate', function () {
+        it('should be empty', function () {
+          collect(store, 'forObjects', null, 'p3', null).should.be.empty;
+        });
+      });
+      describe('with a non-existing graph', function () {
+        it('should be empty', function () {
+          collect(store, 'forPredicates', null, null, 'g2').should.be.empty;
+        });
+      });
+    });
+
+    describe('every', function () {
+      var count = 3;
+      function thirdTimeFalse() { return count-- === 0; }
+
+      describe('with no parameters and a callback always returning true', function () {
+        it('should return true', function () {
+          store.every(alwaysTrue, null, null, null, null).should.be.true;
+        });
+      });
+      describe('with no parameters and a callback always returning false', function () {
+        it('should return false', function () {
+          store.every(alwaysFalse, null, null, null, null).should.be.false;
+        });
+      });
+      describe('with no parameters and a callback that returns false after 3 calls', function () {
+        it('should return false', function () {
+          store.every(thirdTimeFalse, null, null, null, null).should.be.false;
+        });
+      });
+    });
+
+    describe('some', function () {
+      var count = 3;
+      function thirdTimeFalse() { return count-- !== 0; }
+
+      describe('with no parameters and a callback always returning true', function () {
+        it('should return true', function () {
+          store.some(alwaysTrue, null, null, null, null).should.be.true;
+        });
+      });
+      describe('with no parameters and a callback always returning false', function () {
+        it('should return false', function () {
+          store.some(alwaysFalse, null, null, null, null).should.be.false;
+        });
+      });
+      describe('with no parameters and a callback that returns true after 3 calls', function () {
+        it('should return false', function () {
+          store.some(thirdTimeFalse, null, null, null, null).should.be.true;
+        });
+      });
+      describe('with a non-existing subject', function () {
+        it('should return true', function () {
+          store.some(null, 's3', null, null, null).should.be.false;
+        });
+      });
+      describe('with a non-existing predicate', function () {
+        it('should return false', function () {
+          store.some(null, null, 'p3', null, null).should.be.false;
+        });
+      });
+      describe('with a non-existing object', function () {
+        it('should return false', function () {
+          store.some(null, null, null, 'o4', null).should.be.false;
+        });
+      });
+      describe('with a non-existing graph', function () {
+        it('should return false', function () {
+          store.some(null, null, null, null, 'g2').should.be.false;
+        });
+      });
     });
 
     describe('when counted without parameters', function () {
       it('should count all items in all graphs', function () {
-        store.count().should.equal(5);
+        store.countTriplesByIRI().should.equal(5);
       });
     });
 
     describe('when counted with an existing subject parameter', function () {
       it('should count all items with this subject in all graphs', function () {
-        store.count('s1', null, null).should.equal(4);
+        store.countTriplesByIRI('s1', null, null).should.equal(4);
       });
     });
 
     describe('when counted with a non-existing subject parameter', function () {
       it('should be empty', function () {
-        store.count('s3', null, null).should.equal(0);
+        store.countTriplesByIRI('s3', null, null).should.equal(0);
       });
     });
 
     describe('when counted with a non-existing subject parameter that exists elsewhere', function () {
       it('should be empty', function () {
-        store.count('p1', null, null).should.equal(0);
+        store.countTriplesByIRI('p1', null, null).should.equal(0);
       });
     });
 
     describe('when counted with an existing predicate parameter', function () {
       it('should count all items with this predicate in all graphs', function () {
-        store.count(null, 'p1', null).should.equal(4);
+        store.countTriplesByIRI(null, 'p1', null).should.equal(4);
       });
     });
 
     describe('when counted with a non-existing predicate parameter', function () {
       it('should be empty', function () {
-        store.count(null, 'p3', null).should.equal(0);
+        store.countTriplesByIRI(null, 'p3', null).should.equal(0);
       });
     });
 
     describe('when counted with an existing object parameter', function () {
       it('should count all items with this object in all graphs', function () {
-        store.count(null, null, 'o1').should.equal(3);
+        store.countTriples(null, null, 'o1').should.equal(3);
       });
     });
 
     describe('when counted with a non-existing object parameter', function () {
       it('should be empty', function () {
-        store.count(null, null, 'o4').should.equal(0);
+        store.countTriples(null, null, 'o4').should.equal(0);
       });
     });
 
     describe('when counted with existing subject and predicate parameters', function () {
       it('should count all items with this subject and predicate in all graphs', function () {
-        store.count('s1', 'p1', null).should.equal(3);
+        store.countTriples('s1', 'p1', null).should.equal(3);
       });
     });
 
     describe('when counted with non-existing subject and predicate parameters', function () {
       it('should be empty', function () {
-        store.count('s2', 'p2', null).should.equal(0);
+        store.countTriples('s2', 'p2', null).should.equal(0);
       });
     });
 
     describe('when counted with existing subject and object parameters', function () {
       it('should count all items with this subject and object in all graphs', function () {
-        store.count('s1', null, 'o1').should.equal(2);
+        store.countTriples('s1', null, 'o1').should.equal(2);
       });
     });
 
     describe('when counted with non-existing subject and object parameters', function () {
       it('should be empty', function () {
-        store.count('s2', 'p2', null).should.equal(0);
+        store.countTriples('s2', 'p2', null).should.equal(0);
       });
     });
 
     describe('when counted with existing predicate and object parameters', function () {
       it('should count all items with this predicate and object in all graphs', function () {
-        store.count(null, 'p1', 'o1').should.equal(3);
+        store.countTriples(null, 'p1', 'o1').should.equal(3);
       });
     });
 
     describe('when counted with non-existing predicate and object parameters', function () {
       it('should be empty', function () {
-        store.count(null, 'p2', 'o3').should.equal(0);
+        store.countTriples(null, 'p2', 'o3').should.equal(0);
       });
     });
 
     describe('when counted with existing subject, predicate, and object parameters', function () {
       it('should count all items with this subject, predicate, and object in all graphs', function () {
-        store.count('s1', 'p1', 'o1').should.equal(2);
+        store.countTriples('s1', 'p1', 'o1').should.equal(2);
       });
     });
 
     describe('when counted with a non-existing triple', function () {
       it('should be empty', function () {
-        store.count('s2', 'p2', 'o1').should.equal(0);
+        store.countTriples('s2', 'p2', 'o1').should.equal(0);
       });
     });
 
     describe('when counted with the default graph parameter', function () {
       it('should count all items in the default graph', function () {
-        store.count(null, null, null, '').should.equal(4);
+        store.countTriples(null, null, null, '').should.equal(4);
       });
     });
 
     describe('when counted with an existing named graph parameter', function () {
       it('should count all items in that graph', function () {
-        store.count(null, null, null, 'c4').should.equal(1);
+        store.countTriples(null, null, null, 'c4').should.equal(1);
       });
     });
 
     describe('when counted with a non-existing named graph parameter', function () {
       it('should be empty', function () {
-        store.count(null, null, null, 'c5').should.equal(0);
+        store.countTriples(null, null, null, 'c5').should.equal(0);
       });
     });
 
@@ -394,7 +904,7 @@ describe('N3Store', function () {
       it('should have size 4', function () { store.size.should.eql(4); });
 
       it('should not contain that triple anymore',
-        shouldIncludeAll(function () { return store.find(); },
+        shouldIncludeAll(function () { return store.getTriples(); },
                          ['s1', 'p1', 'o2'],
                          ['s1', 'p2', 'o2'],
                          ['s2', 'p1', 'o1'],
@@ -406,7 +916,7 @@ describe('N3Store', function () {
 
       it('should have size 3', function () { store.size.should.eql(3); });
 
-      itShouldBeEmpty(function () { return store.find(null, null, null, 'c4'); });
+      itShouldBeEmpty(function () { return store.getTriples(null, null, null, 'c4'); });
     });
 
     describe('when removing multiple triples', function () {
@@ -420,7 +930,7 @@ describe('N3Store', function () {
       it('should have size 1', function () { store.size.should.eql(1); });
 
       it('should not contain those triples anymore',
-        shouldIncludeAll(function () { return store.find(); },
+        shouldIncludeAll(function () { return store.getTriples(); },
                          ['s1', 'p1', 'o2']));
     });
 
@@ -446,7 +956,7 @@ describe('N3Store', function () {
 
     describe('should allow to query subjects with prefixes', function () {
       it('should return all triples with that subject',
-          shouldIncludeAll(store.find('a:s1', null, null),
+          shouldIncludeAll(store.getTriples('a:s1', null, null),
               ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
               ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1'],
               ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
@@ -454,14 +964,14 @@ describe('N3Store', function () {
 
     describe('should allow to query subjects with prefixes', function () {
       it('should return all triples with that subject in the default graph',
-          shouldIncludeAll(store.find('a:s1', null, null, ''),
+          shouldIncludeAll(store.getTriples('a:s1', null, null, ''),
               ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
               ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
     });
 
     describe('should allow to query predicates with prefixes', function () {
       it('should return all triples with that predicate',
-        shouldIncludeAll(store.find(null, 'b:p1', null),
+        shouldIncludeAll(store.getTriples(null, 'b:p1', null),
                          ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
                          ['http://foo.org/#s2', 'http://bar.org/p1', 'http://foo.org/#o2'],
                          ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
@@ -469,7 +979,7 @@ describe('N3Store', function () {
 
     describe('should allow to query objects with prefixes', function () {
       it('should return all triples with that object',
-        shouldIncludeAll(store.find(null, null, 'a:o1'),
+        shouldIncludeAll(store.getTriples(null, null, 'a:o1'),
                          ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
                          ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1'],
                          ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
@@ -477,7 +987,7 @@ describe('N3Store', function () {
 
     describe('should allow to query graphs with prefixes', function () {
       it('should return all triples with that graph',
-        shouldIncludeAll(store.find(null, null, null, 'http://graphs.org/#g1'),
+        shouldIncludeAll(store.getTriples(null, null, null, 'http://graphs.org/#g1'),
           ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
     });
   });
@@ -495,14 +1005,14 @@ describe('N3Store', function () {
 
     describe('should allow to query subjects with prefixes', function () {
       it('should return all triples with that subject in the default graph',
-        shouldIncludeAll(store.find('a:s1', null, null, ''),
+        shouldIncludeAll(store.getTriples('a:s1', null, null, ''),
                          ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
                          ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
     });
 
     describe('should allow to query subjects with prefixes', function () {
       it('should return all triples with that subject',
-          shouldIncludeAll(store.find('a:s1', null, null),
+          shouldIncludeAll(store.getTriples('a:s1', null, null),
               ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
               ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1'],
               ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
@@ -510,14 +1020,14 @@ describe('N3Store', function () {
 
     describe('should allow to query predicates with prefixes', function () {
       it('should return all triples with that predicate in the default graph',
-          shouldIncludeAll(store.find(null, 'b:p1', null, ''),
+          shouldIncludeAll(store.getTriples(null, 'b:p1', null, ''),
               ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
               ['http://foo.org/#s2', 'http://bar.org/p1', 'http://foo.org/#o2']));
     });
 
     describe('should allow to query predicates with prefixes', function () {
       it('should return all triples with that predicate',
-          shouldIncludeAll(store.find(null, 'b:p1', null),
+          shouldIncludeAll(store.getTriples(null, 'b:p1', null),
               ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
               ['http://foo.org/#s2', 'http://bar.org/p1', 'http://foo.org/#o2'],
               ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
@@ -525,14 +1035,14 @@ describe('N3Store', function () {
 
     describe('should allow to query objects with prefixes', function () {
       it('should return all triples with that object in the default graph',
-          shouldIncludeAll(store.find(null, null, 'a:o1', ''),
+          shouldIncludeAll(store.getTriples(null, null, 'a:o1', ''),
               ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
               ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
     });
 
     describe('should allow to query objects with prefixes', function () {
       it('should return all triples with that object',
-        shouldIncludeAll(store.find(null, null, 'a:o1'),
+        shouldIncludeAll(store.getTriples(null, null, 'a:o1'),
                          ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
                          ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1'],
                          ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
@@ -540,7 +1050,7 @@ describe('N3Store', function () {
 
     describe('should allow to query graphs with prefixes', function () {
       it('should return all triples with that graph',
-        shouldIncludeAll(store.find(null, null, null, 'http://graphs.org/#g1'),
+        shouldIncludeAll(store.getTriples(null, null, null, 'http://graphs.org/#g1'),
           ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
     });
   });
@@ -555,7 +1065,7 @@ describe('N3Store', function () {
 
     describe('should allow to query subjects without prefixes', function () {
       it('should return all triples with that subject',
-        shouldIncludeAll(store.find('http://foo.org/#s1', null, null),
+        shouldIncludeAll(store.getTriples('http://foo.org/#s1', null, null),
                          ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
                          ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
     });
@@ -567,7 +1077,7 @@ describe('N3Store', function () {
 
     describe('should allow to query predicates with prefixes', function () {
       it('should return all triples with that predicate',
-        shouldIncludeAll(store.find(null, 'http:b', null),
+        shouldIncludeAll(store.getTriples(null, 'http:b', null),
                          ['a', 'http://www.w3.org/2006/http#b', 'c']));
     });
   });
@@ -579,13 +1089,13 @@ describe('N3Store', function () {
 
     describe('when searched with more than one variable', function () {
       it('should return a triple with the blank node as an object',
-        shouldIncludeAll(store.find(),
+        shouldIncludeAll(store.getTriples(),
                          ['s1', 'p1', b1]));
     });
 
     describe('when searched with one variable', function () {
       it('should return a triple with the blank node as an object',
-        shouldIncludeAll(store.find('s1', 'p1'),
+        shouldIncludeAll(store.getTriples('s1', 'p1'),
                          ['s1', 'p1', b1]));
     });
   });
@@ -597,16 +1107,25 @@ describe('N3Store', function () {
     // The value `__proto__` is not supported however – fixing it introduces too much overhead.
     it('should be able to contain entities with JavaScript object property names', function () {
       store.addTriple('toString', 'valueOf', 'toLocaleString', 'hasOwnProperty').should.be.true;
-      shouldIncludeAll(store.find(null, null, null, 'hasOwnProperty'),
+      shouldIncludeAll(store.getTriples(null, null, null, 'hasOwnProperty'),
                        ['toString', 'valueOf', 'toLocaleString', 'hasOwnProperty'])();
     });
 
     it('should be able to contain entities named "null"', function () {
       store.addTriple('null', 'null', 'null', 'null').should.be.true;
-      shouldIncludeAll(store.find(null, null, null, 'null'), ['null', 'null', 'null', 'null'])();
+      shouldIncludeAll(store.getTriples(null, null, null, 'null'), ['null', 'null', 'null', 'null'])();
     });
   });
 });
+
+function alwaysTrue()  { return true;  }
+function alwaysFalse() { return false; }
+
+function collect(store, method, arg1, arg2, arg3, arg4) {
+  var results = [];
+  store[method](function (r) { results.push(r); }, arg1, arg2, arg3, arg4);
+  return results;
+}
 
 function itShouldBeEmpty(result) {
   it('should be empty', function () {
