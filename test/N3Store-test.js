@@ -741,115 +741,115 @@ describe('N3Store', function () {
 
     describe('when counted without parameters', function () {
       it('should count all items in all graphs', function () {
-        store.count().should.equal(5);
+        store.countTriplesByIRI().should.equal(5);
       });
     });
 
     describe('when counted with an existing subject parameter', function () {
       it('should count all items with this subject in all graphs', function () {
-        store.count('s1', null, null).should.equal(4);
+        store.countTriplesByIRI('s1', null, null).should.equal(4);
       });
     });
 
     describe('when counted with a non-existing subject parameter', function () {
       it('should be empty', function () {
-        store.count('s3', null, null).should.equal(0);
+        store.countTriplesByIRI('s3', null, null).should.equal(0);
       });
     });
 
     describe('when counted with a non-existing subject parameter that exists elsewhere', function () {
       it('should be empty', function () {
-        store.count('p1', null, null).should.equal(0);
+        store.countTriplesByIRI('p1', null, null).should.equal(0);
       });
     });
 
     describe('when counted with an existing predicate parameter', function () {
       it('should count all items with this predicate in all graphs', function () {
-        store.count(null, 'p1', null).should.equal(4);
+        store.countTriplesByIRI(null, 'p1', null).should.equal(4);
       });
     });
 
     describe('when counted with a non-existing predicate parameter', function () {
       it('should be empty', function () {
-        store.count(null, 'p3', null).should.equal(0);
+        store.countTriplesByIRI(null, 'p3', null).should.equal(0);
       });
     });
 
     describe('when counted with an existing object parameter', function () {
       it('should count all items with this object in all graphs', function () {
-        store.count(null, null, 'o1').should.equal(3);
+        store.countTriples(null, null, 'o1').should.equal(3);
       });
     });
 
     describe('when counted with a non-existing object parameter', function () {
       it('should be empty', function () {
-        store.count(null, null, 'o4').should.equal(0);
+        store.countTriples(null, null, 'o4').should.equal(0);
       });
     });
 
     describe('when counted with existing subject and predicate parameters', function () {
       it('should count all items with this subject and predicate in all graphs', function () {
-        store.count('s1', 'p1', null).should.equal(3);
+        store.countTriples('s1', 'p1', null).should.equal(3);
       });
     });
 
     describe('when counted with non-existing subject and predicate parameters', function () {
       it('should be empty', function () {
-        store.count('s2', 'p2', null).should.equal(0);
+        store.countTriples('s2', 'p2', null).should.equal(0);
       });
     });
 
     describe('when counted with existing subject and object parameters', function () {
       it('should count all items with this subject and object in all graphs', function () {
-        store.count('s1', null, 'o1').should.equal(2);
+        store.countTriples('s1', null, 'o1').should.equal(2);
       });
     });
 
     describe('when counted with non-existing subject and object parameters', function () {
       it('should be empty', function () {
-        store.count('s2', 'p2', null).should.equal(0);
+        store.countTriples('s2', 'p2', null).should.equal(0);
       });
     });
 
     describe('when counted with existing predicate and object parameters', function () {
       it('should count all items with this predicate and object in all graphs', function () {
-        store.count(null, 'p1', 'o1').should.equal(3);
+        store.countTriples(null, 'p1', 'o1').should.equal(3);
       });
     });
 
     describe('when counted with non-existing predicate and object parameters', function () {
       it('should be empty', function () {
-        store.count(null, 'p2', 'o3').should.equal(0);
+        store.countTriples(null, 'p2', 'o3').should.equal(0);
       });
     });
 
     describe('when counted with existing subject, predicate, and object parameters', function () {
       it('should count all items with this subject, predicate, and object in all graphs', function () {
-        store.count('s1', 'p1', 'o1').should.equal(2);
+        store.countTriples('s1', 'p1', 'o1').should.equal(2);
       });
     });
 
     describe('when counted with a non-existing triple', function () {
       it('should be empty', function () {
-        store.count('s2', 'p2', 'o1').should.equal(0);
+        store.countTriples('s2', 'p2', 'o1').should.equal(0);
       });
     });
 
     describe('when counted with the default graph parameter', function () {
       it('should count all items in the default graph', function () {
-        store.count(null, null, null, '').should.equal(4);
+        store.countTriples(null, null, null, '').should.equal(4);
       });
     });
 
     describe('when counted with an existing named graph parameter', function () {
       it('should count all items in that graph', function () {
-        store.count(null, null, null, 'c4').should.equal(1);
+        store.countTriples(null, null, null, 'c4').should.equal(1);
       });
     });
 
     describe('when counted with a non-existing named graph parameter', function () {
       it('should be empty', function () {
-        store.count(null, null, null, 'c5').should.equal(0);
+        store.countTriples(null, null, null, 'c5').should.equal(0);
       });
     });
 
