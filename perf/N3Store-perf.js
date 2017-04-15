@@ -29,30 +29,30 @@ console.time(TEST);
 for (i = 0; i < dim; i++)
   for (j = 0; j < dim; j++)
     for (k = 0; k < dim; k++)
-      assert.equal(store.find(prefix + i, prefix + j, prefix + k, '').length, 1);
+      assert.equal(store.getTriples(prefix + i, prefix + j, prefix + k, '').length, 1);
 console.timeEnd(TEST);
 
 TEST = '- Finding all ' + dimCubed + ' triples in the default graph ' + dimSquared * 2 + ' times (1 variable)';
 console.time(TEST);
 for (i = 0; i < dim; i++)
   for (j = 0; j < dim; j++)
-    assert.equal(store.find(prefix + i, prefix + j, null, '').length, dim);
+    assert.equal(store.getTriples(prefix + i, prefix + j, null, '').length, dim);
 for (i = 0; i < dim; i++)
   for (j = 0; j < dim; j++)
-    assert.equal(store.find(prefix + i, null, prefix + j, '').length, dim);
+    assert.equal(store.getTriples(prefix + i, null, prefix + j, '').length, dim);
 for (i = 0; i < dim; i++)
   for (j = 0; j < dim; j++)
-    assert.equal(store.find(null, prefix + i, prefix + j, '').length, dim);
+    assert.equal(store.getTriples(null, prefix + i, prefix + j, '').length, dim);
 console.timeEnd(TEST);
 
 TEST = '- Finding all ' + dimCubed + ' triples in the default graph ' + dimSquared * 3 + ' times (2 variables)';
 console.time(TEST);
 for (i = 0; i < dim; i++)
-  assert.equal(store.find(prefix + i, null, null, '').length, dimSquared);
+  assert.equal(store.getTriples(prefix + i, null, null, '').length, dimSquared);
 for (j = 0; j < dim; j++)
-  assert.equal(store.find(null, prefix + j, null, '').length, dimSquared);
+  assert.equal(store.getTriples(null, prefix + j, null, '').length, dimSquared);
 for (k = 0; k < dim; k++)
-  assert.equal(store.find(null, null, prefix + k, '').length, dimSquared);
+  assert.equal(store.getTriples(null, null, prefix + k, '').length, dimSquared);
 console.timeEnd(TEST);
 
 console.log();
@@ -78,11 +78,11 @@ console.log('* Memory usage for quads: ' + Math.round(process.memoryUsage().rss 
 TEST = '- Finding all ' + dimQuads + ' quads ' + dimCubed * 4 + ' times';
 console.time(TEST);
 for (i = 0; i < dim; i++)
-  assert.equal(store.find(prefix + i, null, null, null).length, dimCubed);
+  assert.equal(store.getTriples(prefix + i, null, null, null).length, dimCubed);
 for (j = 0; j < dim; j++)
-  assert.equal(store.find(null, prefix + j, null, null).length, dimCubed);
+  assert.equal(store.getTriples(null, prefix + j, null, null).length, dimCubed);
 for (k = 0; k < dim; k++)
-  assert.equal(store.find(null, null, prefix + k, null).length, dimCubed);
+  assert.equal(store.getTriples(null, null, prefix + k, null).length, dimCubed);
 for (l = 0; l < dim; l++)
-  assert.equal(store.find(null, null, null, prefix + l).length, dimCubed);
+  assert.equal(store.getTriples(null, null, null, prefix + l).length, dimCubed);
 console.timeEnd(TEST);

@@ -287,14 +287,14 @@ as return values of these functions are unspecified.
 
 In this example, we create a new store and add the triples `:Pluto a :Dog.` and `:Mickey a :Mouse`.
 <br>
-Then, we find a triple with `:Mickey` as subject.
+Then, we find triples with `:Mickey` as subject.
 
 ``` js
 var store = N3.Store();
 store.addTriple('http://ex.org/Pluto',  'http://ex.org/type', 'http://ex.org/Dog');
 store.addTriple('http://ex.org/Mickey', 'http://ex.org/type', 'http://ex.org/Mouse');
 
-var mickey = store.find('http://ex.org/Mickey', null, null)[0];
+var mickey = store.getTriples('http://ex.org/Mickey', null, null)[0];
 console.log(mickey.subject, mickey.predicate, mickey.object, '.');
 ```
 
