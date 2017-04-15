@@ -3,6 +3,7 @@
   "version": "0.10.0",
   "description": "Lightning fast, asynchronous, streaming Turtle / N3 / RDF library.",
   "author": "Ruben Verborgh <ruben.verborgh@gmail.com>",
+  "typings": "./lib/n3.d.ts",
   "keywords": [
     "turtle",
     "rdf",
