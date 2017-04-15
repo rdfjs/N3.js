@@ -260,7 +260,8 @@ N3Store.prototype = {</pre></div></div>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> graphs = <span class="hljs-keyword">this</span>._graphs, subjects, subject;
+            <div class="content"><div class='highlight'><pre>    size = <span class="hljs-number">0</span>;
+    <span class="hljs-keyword">var</span> graphs = <span class="hljs-keyword">this</span>._graphs, subjects, subject;
     <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> graphKey <span class="hljs-keyword">in</span> graphs)
       <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> subjectKey <span class="hljs-keyword">in</span> (subjects = graphs[graphKey].subjects))
         <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> predicateKey <span class="hljs-keyword">in</span> (subject = subjects[subjectKey]))
@@ -397,12 +398,15 @@ Any of these keys can be undefined, which is interpreted as a wildcard.
 <code>name0</code>, <code>name1</code>, and <code>name2</code> are the names of the keys at each level,
 used when reconstructing the resulting triple
 (for instance: <em>subject</em>, <em>predicate</em>, and <em>object</em>).
-Finally, <code>graph</code> will be the graph of the created triples.</p>
+Finally, <code>graph</code> will be the graph of the created triples.
+If <code>callback</code> is given, each result is passed through it
+and iteration halts when it returns truthy for any triple.
+If instead <code>array</code> is given, each result is added to the array.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  _findInIndex: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">index0, key0, key1, key2, name0, name1, name2, graph</span>) </span>{
-    <span class="hljs-keyword">var</span> results = [], tmp, index1, index2, varCount = !key0 + !key1 + !key2,</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  _findInIndex: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">index0, key0, key1, key2, name0, name1, name2, graph, callback, array</span>) </span>{
+    <span class="hljs-keyword">var</span> tmp, index1, index2, varCount = !key0 + !key1 + !key2,</pre></div></div>
             
         </li>
         
@@ -428,7 +432,7 @@ Finally, <code>graph</code> will be the graph of the created triples.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-22">&#182;</a>
               </div>
-              <p>If a key is specified, use only that part of index 0</p>
+              <p>If a key is specified, use only that part of index 0.</p>
 
             </div>
             
@@ -447,7 +451,7 @@ Finally, <code>graph</code> will be the graph of the created triples.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-23">&#182;</a>
               </div>
-              <p>If a key is specified, use only that part of index 1</p>
+              <p>If a key is specified, use only that part of index 1.</p>
 
             </div>
             
@@ -466,7 +470,7 @@ Finally, <code>graph</code> will be the graph of the created triples.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-24">&#182;</a>
               </div>
-              <p>If a key is specified, use only that part of index 2, if it exists</p>
+              <p>If a key is specified, use only that part of index 2, if it exists.</p>
 
             </div>
             
@@ -481,7 +485,7 @@ Finally, <code>graph</code> will be the graph of the created triples.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-25">&#182;</a>
               </div>
-              <p>Create triples for all items found in index 2</p>
+              <p>Create triples for all items found in index 2.</p>
 
             </div>
             
@@ -490,13 +494,16 @@ Finally, <code>graph</code> will be the graph of the created triples.</p>
               result[name0] = entity0;
               result[name1] = entity1;
               result[name2] = entityKeys[values[l]];
-              results.push(result);
+              <span class="hljs-keyword">if</span> (array)
+                array.push(result);
+              <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (callback(result))
+                <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
             }
           }
         }
       }
     }
-    <span class="hljs-keyword">return</span> results;
+    <span class="hljs-keyword">return</span> array;
   },</pre></div></div>
             
         </li>
@@ -507,6 +514,88 @@ Finally, <code>graph</code> will be the graph of the created triples.</p>
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-26">&#182;</a>
+              </div>
+              <h3 id="-_loop-executes-the-callback-on-all-keys-of-index-0"><code>_loop</code> executes the callback on all keys of index 0</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _loop: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">index0, callback</span>) </span>{
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> key0 <span class="hljs-keyword">in</span> index0)
+      callback(key0);
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-27">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-27">&#182;</a>
+              </div>
+              <h3 id="-_loopbykey0-executes-the-callback-on-all-keys-of-a-certain-entry-in-index-0"><code>_loopByKey0</code> executes the callback on all keys of a certain entry in index 0</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _loopByKey0: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">index0, key0, callback</span>) </span>{
+    <span class="hljs-keyword">var</span> index1, key1;
+    <span class="hljs-keyword">if</span> (index1 = index0[key0]) {
+      <span class="hljs-keyword">for</span> (key1 <span class="hljs-keyword">in</span> index1)
+        callback(key1);
+    }
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-28">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-28">&#182;</a>
+              </div>
+              <h3 id="-_loopbykey1-executes-the-callback-on-given-keys-of-all-entries-in-index-0"><code>_loopByKey1</code> executes the callback on given keys of all entries in index 0</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _loopByKey1: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">index0, key1, callback</span>) </span>{
+    <span class="hljs-keyword">var</span> key0, index1;
+    <span class="hljs-keyword">for</span> (key0 <span class="hljs-keyword">in</span> index0) {
+      index1 = index0[key0];
+      <span class="hljs-keyword">if</span> (index1[key1])
+        callback(key0);
+    }
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-29">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-29">&#182;</a>
+              </div>
+              <h3 id="-_loopby2keys-executes-the-callback-on-given-keys-of-certain-entries-in-index-2"><code>_loopBy2Keys</code> executes the callback on given keys of certain entries in index 2</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _loopBy2Keys: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">index0, key0, key1, callback</span>) </span>{
+    <span class="hljs-keyword">var</span> index1, index2, key2;
+    <span class="hljs-keyword">if</span> ((index1 = index0[key0]) &amp;&amp; (index2 = index1[key1])) {
+      <span class="hljs-keyword">for</span> (key2 <span class="hljs-keyword">in</span> index2)
+        callback(key2);
+    }
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-30">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-30">&#182;</a>
               </div>
               <h3 id="-_countinindex-counts-matching-triples-in-a-three-layered-index-"><code>_countInIndex</code> counts matching triples in a three-layered index.</h3>
 <p>The index base is <code>index0</code> and the keys at each level are <code>key0</code>, <code>key1</code>, and <code>key2</code>.
@@ -520,11 +609,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-27">
+        <li id="section-31">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-27">&#182;</a>
+                <a class="pilcrow" href="#section-31">&#182;</a>
               </div>
               <p>If a key is specified, count only that part of index 0</p>
 
@@ -537,11 +626,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-28">
+        <li id="section-32">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-28">&#182;</a>
+                <a class="pilcrow" href="#section-32">&#182;</a>
               </div>
               <p>If a key is specified, count only that part of index 1</p>
 
@@ -554,11 +643,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-29">
+        <li id="section-33">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-29">&#182;</a>
+                <a class="pilcrow" href="#section-33">&#182;</a>
               </div>
               <p>If a key is specified, count the triple if it exists</p>
 
@@ -569,11 +658,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-30">
+        <li id="section-34">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-30">&#182;</a>
+                <a class="pilcrow" href="#section-34">&#182;</a>
               </div>
               <p>Otherwise, count all triples</p>
 
@@ -590,11 +679,57 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-31">
+        <li id="section-35">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-31">&#182;</a>
+                <a class="pilcrow" href="#section-35">&#182;</a>
+              </div>
+              <h3 id="-_getgraphs-returns-an-array-with-the-given-graph-"><code>_getGraphs</code> returns an array with the given graph,</h3>
+<p>or all graphs if the argument is null or undefined.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _getGraphs: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">graph</span>) </span>{
+    <span class="hljs-keyword">if</span> (!isString(graph))
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>._graphs;
+    <span class="hljs-keyword">var</span> graphs = {};
+    graphs[graph] = <span class="hljs-keyword">this</span>._graphs[graph];
+    <span class="hljs-keyword">return</span> graphs;
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-36">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-36">&#182;</a>
+              </div>
+              <h3 id="-_uniqueentities-returns-a-function-that-accepts-an-entity-id"><code>_uniqueEntities</code> returns a function that accepts an entity ID</h3>
+<p>and passes the corresponding entity to callback if it hasn’t occurred before.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _uniqueEntities: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">callback</span>) </span>{
+    <span class="hljs-keyword">var</span> uniqueIds = <span class="hljs-built_in">Object</span>.create(<span class="hljs-literal">null</span>), entities = <span class="hljs-keyword">this</span>._entities;
+    <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">id</span>) </span>{
+      <span class="hljs-keyword">if</span> (!(id <span class="hljs-keyword">in</span> uniqueIds)) {
+        uniqueIds[id] = <span class="hljs-literal">true</span>;
+        callback(entities[id]);
+      }
+    };
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-37">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-37">&#182;</a>
               </div>
               <h2 id="public-methods">Public methods</h2>
 
@@ -603,11 +738,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-32">
+        <li id="section-38">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-32">&#182;</a>
+                <a class="pilcrow" href="#section-38">&#182;</a>
               </div>
               <h3 id="-addtriple-adds-a-new-n3-triple-to-the-store-"><code>addTriple</code> adds a new N3 triple to the store.</h3>
 <p>Returns if the triple index has changed, if the triple did not already exist.</p>
@@ -619,11 +754,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-33">
+        <li id="section-39">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-33">&#182;</a>
+                <a class="pilcrow" href="#section-39">&#182;</a>
               </div>
               <p>Shift arguments if a triple object is given instead of components</p>
 
@@ -636,11 +771,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-34">
+        <li id="section-40">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-34">&#182;</a>
+                <a class="pilcrow" href="#section-40">&#182;</a>
               </div>
               <p>Find the graph that will contain the triple</p>
 
@@ -652,11 +787,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-35">
+        <li id="section-41">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-35">&#182;</a>
+                <a class="pilcrow" href="#section-41">&#182;</a>
               </div>
               <p>Create the graph if it doesn’t exist yet</p>
 
@@ -668,11 +803,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-36">
+        <li id="section-42">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-36">&#182;</a>
+                <a class="pilcrow" href="#section-42">&#182;</a>
               </div>
               <p>Freezing a graph helps subsequent <code>add</code> performance,
 and properties will never be modified anyway</p>
@@ -685,11 +820,11 @@ and properties will never be modified anyway</p>
         </li>
         
         
-        <li id="section-37">
+        <li id="section-43">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-37">&#182;</a>
+                <a class="pilcrow" href="#section-43">&#182;</a>
               </div>
               <p>Since entities can often be long IRIs, we avoid storing them in every index.
 Instead, we have a separate index that maps entities to numbers,
@@ -710,11 +845,11 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-38">
+        <li id="section-44">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-38">&#182;</a>
+                <a class="pilcrow" href="#section-44">&#182;</a>
               </div>
               <p>The cached triple count is now invalid</p>
 
@@ -727,11 +862,11 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-39">
+        <li id="section-45">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-39">&#182;</a>
+                <a class="pilcrow" href="#section-45">&#182;</a>
               </div>
               <h3 id="-addtriples-adds-multiple-n3-triples-to-the-store"><code>addTriples</code> adds multiple N3 triples to the store</h3>
 
@@ -745,11 +880,11 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-40">
+        <li id="section-46">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-40">&#182;</a>
+                <a class="pilcrow" href="#section-46">&#182;</a>
               </div>
               <h3 id="-addprefix-adds-support-for-querying-with-the-given-prefix"><code>addPrefix</code> adds support for querying with the given prefix</h3>
 
@@ -762,11 +897,11 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-41">
+        <li id="section-47">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-41">&#182;</a>
+                <a class="pilcrow" href="#section-47">&#182;</a>
               </div>
               <h3 id="-addprefixes-adds-support-for-querying-with-the-given-prefixes"><code>addPrefixes</code> adds support for querying with the given prefixes</h3>
 
@@ -780,11 +915,11 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-42">
+        <li id="section-48">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-42">&#182;</a>
+                <a class="pilcrow" href="#section-48">&#182;</a>
               </div>
               <h3 id="-removetriple-removes-an-n3-triple-from-the-store-if-it-exists"><code>removeTriple</code> removes an N3 triple from the store if it exists</h3>
 
@@ -795,11 +930,11 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-43">
+        <li id="section-49">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-43">&#182;</a>
+                <a class="pilcrow" href="#section-49">&#182;</a>
               </div>
               <p>Shift arguments if a triple object is given instead of components</p>
 
@@ -813,48 +948,33 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-44">
+        <li id="section-50">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-44">&#182;</a>
+                <a class="pilcrow" href="#section-50">&#182;</a>
               </div>
-              <p>Find internal identifiers for all components</p>
+              <p>Find internal identifiers for all components
+and verify the triple exists.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> graphItem, ids = <span class="hljs-keyword">this</span>._ids, graphs = <span class="hljs-keyword">this</span>._graphs;
-    <span class="hljs-keyword">if</span> (!(subject   = ids[subject]))   <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
-    <span class="hljs-keyword">if</span> (!(predicate = ids[predicate])) <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
-    <span class="hljs-keyword">if</span> (!(object    = ids[object]))    <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
-    <span class="hljs-keyword">if</span> (!(graphItem = graphs[graph]))  <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> graphItem, ids = <span class="hljs-keyword">this</span>._ids, graphs = <span class="hljs-keyword">this</span>._graphs, subjects, predicates;
+    <span class="hljs-keyword">if</span> (!(subject    = ids[subject]) || !(predicate = ids[predicate]) ||
+        !(object     = ids[object])  || !(graphItem = graphs[graph])  ||
+        !(subjects   = graphItem.subjects[subject]) ||
+        !(predicates = subjects[predicate]) ||
+        !(object <span class="hljs-keyword">in</span> predicates))
+      <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;</pre></div></div>
             
         </li>
         
         
-        <li id="section-45">
+        <li id="section-51">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-45">&#182;</a>
-              </div>
-              <p>Verify that the triple exists</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> subjects, predicates;
-    <span class="hljs-keyword">if</span> (!(subjects   = graphItem.subjects[subject])) <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
-    <span class="hljs-keyword">if</span> (!(predicates = subjects[predicate])) <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
-    <span class="hljs-keyword">if</span> (!(object <span class="hljs-keyword">in</span> predicates)) <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-46">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-46">&#182;</a>
+                <a class="pilcrow" href="#section-51">&#182;</a>
               </div>
               <p>Remove it from all indexes</p>
 
@@ -868,11 +988,11 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-47">
+        <li id="section-52">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-47">&#182;</a>
+                <a class="pilcrow" href="#section-52">&#182;</a>
               </div>
               <p>Remove the graph if it is empty</p>
 
@@ -886,11 +1006,11 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-48">
+        <li id="section-53">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-48">&#182;</a>
+                <a class="pilcrow" href="#section-53">&#182;</a>
               </div>
               <h3 id="-removetriples-removes-multiple-n3-triples-from-the-store"><code>removeTriples</code> removes multiple N3 triples from the store</h3>
 
@@ -904,20 +1024,20 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-49">
+        <li id="section-54">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-49">&#182;</a>
+                <a class="pilcrow" href="#section-54">&#182;</a>
               </div>
-              <h3 id="-find-finds-a-set-of-triples-matching-a-pattern-expanding-prefixes-as-necessary-"><code>find</code> finds a set of triples matching a pattern, expanding prefixes as necessary.</h3>
+              <h3 id="-gettriples-returns-an-array-of-triples-matching-a-pattern-expanding-prefixes-as-necessary-"><code>getTriples</code> returns an array of triples matching a pattern, expanding prefixes as necessary.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  find: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">subject, predicate, object, graph</span>) </span>{
+            <div class="content"><div class='highlight'><pre>  getTriples: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">subject, predicate, object, graph</span>) </span>{
     <span class="hljs-keyword">var</span> prefixes = <span class="hljs-keyword">this</span>._prefixes;
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.findByIRI(
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.getTriplesByIRI(
       expandPrefixedName(subject,   prefixes),
       expandPrefixedName(predicate, prefixes),
       expandPrefixedName(object,    prefixes),
@@ -928,82 +1048,64 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-50">
+        <li id="section-55">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-50">&#182;</a>
+                <a class="pilcrow" href="#section-55">&#182;</a>
               </div>
-              <h3 id="-findbyiri-finds-a-set-of-triples-matching-a-pattern-"><code>findByIRI</code> finds a set of triples matching a pattern.</h3>
+              <h3 id="-gettriplesbyiri-returns-an-array-of-triples-matching-a-pattern-"><code>getTriplesByIRI</code> returns an array of triples matching a pattern.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  findByIRI: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">subject, predicate, object, graph</span>) </span>{
-    <span class="hljs-keyword">var</span> quads = [], graphs = {}, graphContents,
+            <div class="content"><div class='highlight'><pre>  getTriplesByIRI: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">subject, predicate, object, graph</span>) </span>{
+    <span class="hljs-keyword">var</span> quads = [], graphs = <span class="hljs-keyword">this</span>._getGraphs(graph), content,
         ids = <span class="hljs-keyword">this</span>._ids, subjectId, predicateId, objectId;</pre></div></div>
             
         </li>
         
         
-        <li id="section-51">
+        <li id="section-56">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-51">&#182;</a>
+                <a class="pilcrow" href="#section-56">&#182;</a>
               </div>
-              <p>Either loop over all graphs, or over just one selected graph</p>
+              <p>Translate IRIs to internal index keys.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (!isString(graph))
-      graphs = <span class="hljs-keyword">this</span>._graphs;
-    <span class="hljs-keyword">else</span>
-      graphs[graph] = <span class="hljs-keyword">this</span>._graphs[graph];</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-52">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-52">&#182;</a>
-              </div>
-              <p>Translate IRIs to internal index keys.
-Optimization: if the entity doesn’t exist, no triples with it exist.</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (isString(subject)   &amp;&amp; !(subjectId   = ids[subject]))   <span class="hljs-keyword">return</span> quads;
-    <span class="hljs-keyword">if</span> (isString(predicate) &amp;&amp; !(predicateId = ids[predicate])) <span class="hljs-keyword">return</span> quads;
-    <span class="hljs-keyword">if</span> (isString(object)    &amp;&amp; !(objectId    = ids[object]))    <span class="hljs-keyword">return</span> quads;
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (isString(subject)   &amp;&amp; !(subjectId   = ids[subject])   ||
+        isString(predicate) &amp;&amp; !(predicateId = ids[predicate]) ||
+        isString(object)    &amp;&amp; !(objectId    = ids[object]))
+      <span class="hljs-keyword">return</span> quads;
 
     <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> graphId <span class="hljs-keyword">in</span> graphs) {</pre></div></div>
             
         </li>
         
         
-        <li id="section-53">
+        <li id="section-57">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-53">&#182;</a>
+                <a class="pilcrow" href="#section-57">&#182;</a>
               </div>
               <p>Only if the specified graph contains triples, there can be results</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (graphContents = graphs[graphId]) {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (content = graphs[graphId]) {</pre></div></div>
             
         </li>
         
         
-        <li id="section-54">
+        <li id="section-58">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-54">&#182;</a>
+                <a class="pilcrow" href="#section-58">&#182;</a>
               </div>
               <p>Choose the optimal index, based on what fields are present</p>
 
@@ -1015,91 +1117,19 @@ Optimization: if the entity doesn’t exist, no triples with it exist.</p>
         </li>
         
         
-        <li id="section-55">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-55">&#182;</a>
-              </div>
-              <p>If subject and object are given, the object index will be the fastest</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>            quads.push(<span class="hljs-keyword">this</span>._findInIndex(graphContents.objects, objectId, subjectId, predicateId,
-                                         <span class="hljs-string">'object'</span>, <span class="hljs-string">'subject'</span>, <span class="hljs-string">'predicate'</span>, graphId));
-          <span class="hljs-keyword">else</span></pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-56">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-56">&#182;</a>
-              </div>
-              <p>If only subject and possibly predicate are given, the subject index will be the fastest</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>            quads.push(<span class="hljs-keyword">this</span>._findInIndex(graphContents.subjects, subjectId, predicateId, <span class="hljs-literal">null</span>,
-                                         <span class="hljs-string">'subject'</span>, <span class="hljs-string">'predicate'</span>, <span class="hljs-string">'object'</span>, graphId));
-        }
-        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (predicateId)</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-57">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-57">&#182;</a>
-              </div>
-              <p>If only predicate and possibly object are given, the predicate index will be the fastest</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>          quads.push(<span class="hljs-keyword">this</span>._findInIndex(graphContents.predicates, predicateId, objectId, <span class="hljs-literal">null</span>,
-                                       <span class="hljs-string">'predicate'</span>, <span class="hljs-string">'object'</span>, <span class="hljs-string">'subject'</span>, graphId));
-        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (objectId)</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-58">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-58">&#182;</a>
-              </div>
-              <p>If only object is given, the object index will be the fastest</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>          quads.push(<span class="hljs-keyword">this</span>._findInIndex(graphContents.objects, objectId, <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>,
-                                       <span class="hljs-string">'object'</span>, <span class="hljs-string">'subject'</span>, <span class="hljs-string">'predicate'</span>, graphId));
-        <span class="hljs-keyword">else</span></pre></div></div>
-            
-        </li>
-        
-        
         <li id="section-59">
             <div class="annotation">
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-59">&#182;</a>
               </div>
-              <p>If nothing is given, iterate subjects and predicates first</p>
+              <p>If subject and object are given, the object index will be the fastest</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>          quads.push(<span class="hljs-keyword">this</span>._findInIndex(graphContents.subjects, <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>,
-                                       <span class="hljs-string">'subject'</span>, <span class="hljs-string">'predicate'</span>, <span class="hljs-string">'object'</span>, graphId));
-      }
-    }
-    <span class="hljs-keyword">return</span> quads.length === <span class="hljs-number">1</span> ? quads[<span class="hljs-number">0</span>] : quads.concat.apply([], quads);
-  },</pre></div></div>
+            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">this</span>._findInIndex(content.objects, objectId, subjectId, predicateId,
+                              <span class="hljs-string">'object'</span>, <span class="hljs-string">'subject'</span>, <span class="hljs-string">'predicate'</span>, graphId, <span class="hljs-literal">null</span>, quads);
+          <span class="hljs-keyword">else</span></pre></div></div>
             
         </li>
         
@@ -1110,20 +1140,14 @@ Optimization: if the entity doesn’t exist, no triples with it exist.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-60">&#182;</a>
               </div>
-              <h3 id="-count-returns-the-number-of-triples-matching-a-pattern-expanding-prefixes-as-necessary-"><code>count</code> returns the number of triples matching a pattern, expanding prefixes as necessary.</h3>
-<p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+              <p>If only subject and possibly predicate are given, the subject index will be the fastest</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  count: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">subject, predicate, object, graph</span>) </span>{
-    <span class="hljs-keyword">var</span> prefixes = <span class="hljs-keyword">this</span>._prefixes;
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.countByIRI(
-      expandPrefixedName(subject,   prefixes),
-      expandPrefixedName(predicate, prefixes),
-      expandPrefixedName(object,    prefixes),
-      expandPrefixedName(graph,     prefixes)
-    );
-  },</pre></div></div>
+            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">this</span>._findInIndex(content.subjects, subjectId, predicateId, <span class="hljs-literal">null</span>,
+                              <span class="hljs-string">'subject'</span>, <span class="hljs-string">'predicate'</span>, <span class="hljs-string">'object'</span>, graphId, <span class="hljs-literal">null</span>, quads);
+        }
+        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (predicateId)</pre></div></div>
             
         </li>
         
@@ -1134,14 +1158,13 @@ Optimization: if the entity doesn’t exist, no triples with it exist.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-61">&#182;</a>
               </div>
-              <h3 id="-countbyiri-returns-the-number-of-triples-matching-a-pattern-"><code>countByIRI</code> returns the number of triples matching a pattern.</h3>
-<p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+              <p>If only predicate and possibly object are given, the predicate index will be the fastest</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  countByIRI: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">subject, predicate, object, graph</span>) </span>{
-    <span class="hljs-keyword">var</span> count = <span class="hljs-number">0</span>, graphs = {}, graphContents,
-        ids = <span class="hljs-keyword">this</span>._ids, subjectId, predicateId, objectId;</pre></div></div>
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">this</span>._findInIndex(content.predicates, predicateId, objectId, <span class="hljs-literal">null</span>,
+                            <span class="hljs-string">'predicate'</span>, <span class="hljs-string">'object'</span>, <span class="hljs-string">'subject'</span>, graphId, <span class="hljs-literal">null</span>, quads);
+        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (objectId)</pre></div></div>
             
         </li>
         
@@ -1152,14 +1175,13 @@ Optimization: if the entity doesn’t exist, no triples with it exist.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-62">&#182;</a>
               </div>
-              <p>Either loop over all graphs, or over just one selected graph</p>
+              <p>If only object is given, the object index will be the fastest</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (!isString(graph))
-      graphs = <span class="hljs-keyword">this</span>._graphs;
-    <span class="hljs-keyword">else</span>
-      graphs[graph] = <span class="hljs-keyword">this</span>._graphs[graph];</pre></div></div>
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">this</span>._findInIndex(content.objects, objectId, <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>,
+                            <span class="hljs-string">'object'</span>, <span class="hljs-string">'subject'</span>, <span class="hljs-string">'predicate'</span>, graphId, <span class="hljs-literal">null</span>, quads);
+        <span class="hljs-keyword">else</span></pre></div></div>
             
         </li>
         
@@ -1170,16 +1192,16 @@ Optimization: if the entity doesn’t exist, no triples with it exist.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-63">&#182;</a>
               </div>
-              <p>Translate IRIs to internal index keys.
-Optimization: if the entity doesn’t exist, no triples with it exist.</p>
+              <p>If nothing is given, iterate subjects and predicates first</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (isString(subject)   &amp;&amp; !(subjectId   = ids[subject]))   <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
-    <span class="hljs-keyword">if</span> (isString(predicate) &amp;&amp; !(predicateId = ids[predicate])) <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
-    <span class="hljs-keyword">if</span> (isString(object)    &amp;&amp; !(objectId    = ids[object]))    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
-
-    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> graphId <span class="hljs-keyword">in</span> graphs) {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">this</span>._findInIndex(content.subjects, <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>,
+                            <span class="hljs-string">'subject'</span>, <span class="hljs-string">'predicate'</span>, <span class="hljs-string">'object'</span>, graphId, <span class="hljs-literal">null</span>, quads);
+      }
+    }
+    <span class="hljs-keyword">return</span> quads;
+  },</pre></div></div>
             
         </li>
         
@@ -1190,11 +1212,20 @@ Optimization: if the entity doesn’t exist, no triples with it exist.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-64">&#182;</a>
               </div>
-              <p>Only if the specified graph contains triples, there can be results</p>
+              <h3 id="-counttriples-returns-the-number-of-triples-matching-a-pattern-expanding-prefixes-as-necessary-"><code>countTriples</code> returns the number of triples matching a pattern, expanding prefixes as necessary.</h3>
+<p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (graphContents = graphs[graphId]) {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  countTriples: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">subject, predicate, object, graph</span>) </span>{
+    <span class="hljs-keyword">var</span> prefixes = <span class="hljs-keyword">this</span>._prefixes;
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.countTriplesByIRI(
+      expandPrefixedName(subject,   prefixes),
+      expandPrefixedName(predicate, prefixes),
+      expandPrefixedName(object,    prefixes),
+      expandPrefixedName(graph,     prefixes)
+    );
+  },</pre></div></div>
             
         </li>
         
@@ -1204,6 +1235,59 @@ Optimization: if the entity doesn’t exist, no triples with it exist.</p>
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-65">&#182;</a>
+              </div>
+              <h3 id="-counttriplesbyiri-returns-the-number-of-triples-matching-a-pattern-"><code>countTriplesByIRI</code> returns the number of triples matching a pattern.</h3>
+<p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  countTriplesByIRI: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">subject, predicate, object, graph</span>) </span>{
+    <span class="hljs-keyword">var</span> count = <span class="hljs-number">0</span>, graphs = <span class="hljs-keyword">this</span>._getGraphs(graph), content,
+        ids = <span class="hljs-keyword">this</span>._ids, subjectId, predicateId, objectId;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-66">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-66">&#182;</a>
+              </div>
+              <p>Translate IRIs to internal index keys.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (isString(subject)   &amp;&amp; !(subjectId   = ids[subject])   ||
+        isString(predicate) &amp;&amp; !(predicateId = ids[predicate]) ||
+        isString(object)    &amp;&amp; !(objectId    = ids[object]))
+      <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
+
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> graphId <span class="hljs-keyword">in</span> graphs) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-67">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-67">&#182;</a>
+              </div>
+              <p>Only if the specified graph contains triples, there can be results</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (content = graphs[graphId]) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-68">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-68">&#182;</a>
               </div>
               <p>Choose the optimal index, based on what fields are present</p>
 
@@ -1215,72 +1299,18 @@ Optimization: if the entity doesn’t exist, no triples with it exist.</p>
         </li>
         
         
-        <li id="section-66">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-66">&#182;</a>
-              </div>
-              <p>If subject and object are given, the object index will be the fastest</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>            count += <span class="hljs-keyword">this</span>._countInIndex(graphContents.objects, objectId, subjectId, predicateId);
-          <span class="hljs-keyword">else</span></pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-67">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-67">&#182;</a>
-              </div>
-              <p>If only subject and possibly predicate are given, the subject index will be the fastest</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>            count += <span class="hljs-keyword">this</span>._countInIndex(graphContents.subjects, subjectId, predicateId, objectId);
-        }
-        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (predicate) {</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-68">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-68">&#182;</a>
-              </div>
-              <p>If only predicate and possibly object are given, the predicate index will be the fastest</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>          count += <span class="hljs-keyword">this</span>._countInIndex(graphContents.predicates, predicateId, objectId, subjectId);
-        }
-        <span class="hljs-keyword">else</span> {</pre></div></div>
-            
-        </li>
-        
-        
         <li id="section-69">
             <div class="annotation">
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-69">&#182;</a>
               </div>
-              <p>If only object is possibly given, the object index will be the fastest</p>
+              <p>If subject and object are given, the object index will be the fastest</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>          count += <span class="hljs-keyword">this</span>._countInIndex(graphContents.objects, objectId, subjectId, predicateId);
-        }
-      }
-    }
-    <span class="hljs-keyword">return</span> count;
-  },</pre></div></div>
+            <div class="content"><div class='highlight'><pre>            count += <span class="hljs-keyword">this</span>._countInIndex(content.objects, objectId, subjectId, predicateId);
+          <span class="hljs-keyword">else</span></pre></div></div>
             
         </li>
         
@@ -1290,6 +1320,1048 @@ Optimization: if the entity doesn’t exist, no triples with it exist.</p>
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-70">&#182;</a>
+              </div>
+              <p>If only subject and possibly predicate are given, the subject index will be the fastest</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            count += <span class="hljs-keyword">this</span>._countInIndex(content.subjects, subjectId, predicateId, objectId);
+        }
+        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (predicate) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-71">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-71">&#182;</a>
+              </div>
+              <p>If only predicate and possibly object are given, the predicate index will be the fastest</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>          count += <span class="hljs-keyword">this</span>._countInIndex(content.predicates, predicateId, objectId, subjectId);
+        }
+        <span class="hljs-keyword">else</span> {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-72">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-72">&#182;</a>
+              </div>
+              <p>If only object is possibly given, the object index will be the fastest</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>          count += <span class="hljs-keyword">this</span>._countInIndex(content.objects, objectId, subjectId, predicateId);
+        }
+      }
+    }
+    <span class="hljs-keyword">return</span> count;
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-73">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-73">&#182;</a>
+              </div>
+              <h3 id="-foreach-executes-the-callback-on-all-triples-"><code>forEach</code> executes the callback on all triples.</h3>
+<p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  forEach: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">callback, subject, predicate, object, graph</span>) </span>{
+    <span class="hljs-keyword">var</span> prefixes = <span class="hljs-keyword">this</span>._prefixes;
+    <span class="hljs-keyword">this</span>.forEachByIRI(
+      callback,
+      expandPrefixedName(subject,   prefixes),
+      expandPrefixedName(predicate, prefixes),
+      expandPrefixedName(object,    prefixes),
+      expandPrefixedName(graph,     prefixes)
+    );
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-74">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-74">&#182;</a>
+              </div>
+              <h3 id="-foreachbyiri-executes-the-callback-on-all-triples-"><code>forEachByIRI</code> executes the callback on all triples.</h3>
+<p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  forEachByIRI: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">callback, subject, predicate, object, graph</span>) </span>{
+    <span class="hljs-keyword">this</span>.someByIRI(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">quad</span>) </span>{
+      callback(quad);
+      <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+    }, subject, predicate, object, graph);
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-75">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-75">&#182;</a>
+              </div>
+              <h3 id="-every-executes-the-callback-on-all-triples-"><code>every</code> executes the callback on all triples,</h3>
+<p>and returns <code>true</code> if it returns truthy for all them.
+Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  every: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">callback, subject, predicate, object, graph</span>) </span>{
+    <span class="hljs-keyword">var</span> prefixes = <span class="hljs-keyword">this</span>._prefixes;
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.everyByIRI(
+      callback,
+      expandPrefixedName(subject,   prefixes),
+      expandPrefixedName(predicate, prefixes),
+      expandPrefixedName(object,    prefixes),
+      expandPrefixedName(graph,     prefixes)
+    );
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-76">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-76">&#182;</a>
+              </div>
+              <h3 id="-everybyiri-executes-the-callback-on-all-triples-"><code>everyByIRI</code> executes the callback on all triples,</h3>
+<p>and returns <code>true</code> if it returns truthy for all them.
+Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  everyByIRI: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">callback, subject, predicate, object, graph</span>) </span>{
+    <span class="hljs-keyword">var</span> some = <span class="hljs-literal">false</span>;
+    <span class="hljs-keyword">var</span> every = !<span class="hljs-keyword">this</span>.someByIRI(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">quad</span>) </span>{
+      some = <span class="hljs-literal">true</span>;
+      <span class="hljs-keyword">return</span> !callback(quad);
+    }, subject, predicate, object, graph);
+    <span class="hljs-keyword">return</span> some &amp;&amp; every;
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-77">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-77">&#182;</a>
+              </div>
+              <h3 id="-some-executes-the-callback-on-all-triples-"><code>some</code> executes the callback on all triples,</h3>
+<p>and returns <code>true</code> if it returns truthy for any of them.
+Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  some: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">callback, subject, predicate, object, graph</span>) </span>{
+    <span class="hljs-keyword">var</span> prefixes = <span class="hljs-keyword">this</span>._prefixes;
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.someByIRI(
+      callback,
+      expandPrefixedName(subject,   prefixes),
+      expandPrefixedName(predicate, prefixes),
+      expandPrefixedName(object,    prefixes),
+      expandPrefixedName(graph,     prefixes)
+    );
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-78">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-78">&#182;</a>
+              </div>
+              <h3 id="-somebyiri-executes-the-callback-on-all-triples-"><code>someByIRI</code> executes the callback on all triples,</h3>
+<p>and returns <code>true</code> if it returns truthy for any of them.
+Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  someByIRI: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">callback, subject, predicate, object, graph</span>) </span>{
+    <span class="hljs-keyword">var</span> graphs = <span class="hljs-keyword">this</span>._getGraphs(graph), content,
+        ids = <span class="hljs-keyword">this</span>._ids, subjectId, predicateId, objectId;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-79">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-79">&#182;</a>
+              </div>
+              <p>Translate IRIs to internal index keys.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (isString(subject)   &amp;&amp; !(subjectId   = ids[subject])   ||
+        isString(predicate) &amp;&amp; !(predicateId = ids[predicate]) ||
+        isString(object)    &amp;&amp; !(objectId    = ids[object]))
+      <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> graphId <span class="hljs-keyword">in</span> graphs) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-80">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-80">&#182;</a>
+              </div>
+              <p>Only if the specified graph contains triples, there can be result</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (content = graphs[graphId]) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-81">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-81">&#182;</a>
+              </div>
+              <p>Choose the optimal index, based on what fields are present</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (subjectId) {
+          <span class="hljs-keyword">if</span> (objectId) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-82">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-82">&#182;</a>
+              </div>
+              <p>If subject and object are given, the object index will be the fastest</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>._findInIndex(content.objects, objectId, subjectId, predicateId,
+                                  <span class="hljs-string">'object'</span>, <span class="hljs-string">'subject'</span>, <span class="hljs-string">'predicate'</span>, graphId, callback, <span class="hljs-literal">null</span>))
+              <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+          }
+          <span class="hljs-keyword">else</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-83">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-83">&#182;</a>
+              </div>
+              <p>If only subject and possibly predicate are given, the subject index will be the fastest</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>._findInIndex(content.subjects, subjectId, predicateId, <span class="hljs-literal">null</span>,
+                                  <span class="hljs-string">'subject'</span>, <span class="hljs-string">'predicate'</span>, <span class="hljs-string">'object'</span>, graphId, callback, <span class="hljs-literal">null</span>))
+              <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+        }
+        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (predicateId) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-84">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-84">&#182;</a>
+              </div>
+              <p>If only predicate and possibly object are given, the predicate index will be the fastest</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>._findInIndex(content.predicates, predicateId, objectId, <span class="hljs-literal">null</span>,
+                                <span class="hljs-string">'predicate'</span>, <span class="hljs-string">'object'</span>, <span class="hljs-string">'subject'</span>, graphId, callback, <span class="hljs-literal">null</span>)) {
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+          }
+        }
+        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (objectId) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-85">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-85">&#182;</a>
+              </div>
+              <p>If only object is given, the object index will be the fastest</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>._findInIndex(content.objects, objectId, <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>,
+                                <span class="hljs-string">'object'</span>, <span class="hljs-string">'subject'</span>, <span class="hljs-string">'predicate'</span>, graphId, callback, <span class="hljs-literal">null</span>)) {
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+          }
+        }
+        <span class="hljs-keyword">else</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-86">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-86">&#182;</a>
+              </div>
+              <p>If nothing is given, iterate subjects and predicates first</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>._findInIndex(content.subjects, <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>,
+                              <span class="hljs-string">'subject'</span>, <span class="hljs-string">'predicate'</span>, <span class="hljs-string">'object'</span>, graphId, callback, <span class="hljs-literal">null</span>)) {
+          <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+        }
+      }
+    }
+    <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-87">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-87">&#182;</a>
+              </div>
+              <h3 id="-getsubjects-returns-all-subjects-that-match-the-pattern-"><code>getSubjects</code> returns all subjects that match the pattern.</h3>
+<p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  getSubjects: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">predicate, object, graph</span>) </span>{
+    <span class="hljs-keyword">var</span> prefixes = <span class="hljs-keyword">this</span>._prefixes;
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.getSubjectsByIRI(
+      expandPrefixedName(predicate, prefixes),
+      expandPrefixedName(object,    prefixes),
+      expandPrefixedName(graph,     prefixes)
+    );
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-88">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-88">&#182;</a>
+              </div>
+              <h3 id="-getsubjectsbyiri-returns-all-subjects-that-match-the-pattern-"><code>getSubjectsByIRI</code> returns all subjects that match the pattern.</h3>
+<p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  getSubjectsByIRI: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">predicate, object, graph</span>) </span>{
+    <span class="hljs-keyword">var</span> results = [];
+    <span class="hljs-keyword">this</span>.forSubjectsByIRI(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">s</span>) </span>{ results.push(s); }, predicate, object, graph);
+    <span class="hljs-keyword">return</span> results;
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-89">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-89">&#182;</a>
+              </div>
+              <h3 id="-forsubjects-executes-the-callback-on-all-subjects-that-match-the-pattern-"><code>forSubjects</code> executes the callback on all subjects that match the pattern.</h3>
+<p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  forSubjects: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">callback, predicate, object, graph</span>) </span>{
+    <span class="hljs-keyword">var</span> prefixes = <span class="hljs-keyword">this</span>._prefixes;
+    <span class="hljs-keyword">this</span>.forSubjectsByIRI(
+      callback,
+      expandPrefixedName(predicate, prefixes),
+      expandPrefixedName(object,    prefixes),
+      expandPrefixedName(graph,     prefixes)
+    );
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-90">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-90">&#182;</a>
+              </div>
+              <h3 id="-forsubjectsbyiri-executes-the-callback-on-all-subjects-that-match-the-pattern-"><code>forSubjectsByIRI</code> executes the callback on all subjects that match the pattern.</h3>
+<p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  forSubjectsByIRI: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">callback, predicate, object, graph</span>) </span>{
+    <span class="hljs-keyword">var</span> ids = <span class="hljs-keyword">this</span>._ids, graphs = <span class="hljs-keyword">this</span>._getGraphs(graph), content, predicateId, objectId;
+    callback = <span class="hljs-keyword">this</span>._uniqueEntities(callback);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-91">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-91">&#182;</a>
+              </div>
+              <p>Translate IRIs to internal index keys.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (isString(predicate) &amp;&amp; !(predicateId = ids[predicate]) ||
+        isString(object)    &amp;&amp; !(objectId    = ids[object]))
+      <span class="hljs-keyword">return</span>;
+
+    <span class="hljs-keyword">for</span> (graph <span class="hljs-keyword">in</span> graphs) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-92">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-92">&#182;</a>
+              </div>
+              <p>Only if the specified graph contains triples, there can be results</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (content = graphs[graph]) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-93">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-93">&#182;</a>
+              </div>
+              <p>Choose optimal index based on which fields are wildcards</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (predicateId) {
+          <span class="hljs-keyword">if</span> (objectId)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-94">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-94">&#182;</a>
+              </div>
+              <p>If predicate and object are given, the POS index is best.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">this</span>._loopBy2Keys(content.predicates, predicateId, objectId, callback);
+          <span class="hljs-keyword">else</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-95">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-95">&#182;</a>
+              </div>
+              <p>If only predicate is given, the SPO index is best.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">this</span>._loopByKey1(content.subjects, predicateId, callback);
+        }
+        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (objectId)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-96">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-96">&#182;</a>
+              </div>
+              <p>If only object is given, the OSP index is best.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">this</span>._loopByKey0(content.objects, objectId, callback);
+        <span class="hljs-keyword">else</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-97">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-97">&#182;</a>
+              </div>
+              <p>If no params given, iterate all the subjects</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">this</span>._loop(content.subjects, callback);
+      }
+    }
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-98">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-98">&#182;</a>
+              </div>
+              <h3 id="-getpredicates-returns-all-predicates-that-match-the-pattern-"><code>getPredicates</code> returns all predicates that match the pattern.</h3>
+<p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  getPredicates: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">subject, object, graph</span>) </span>{
+    <span class="hljs-keyword">var</span> prefixes = <span class="hljs-keyword">this</span>._prefixes;
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.getPredicatesByIRI(
+      expandPrefixedName(subject, prefixes),
+      expandPrefixedName(object,  prefixes),
+      expandPrefixedName(graph,   prefixes)
+    );
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-99">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-99">&#182;</a>
+              </div>
+              <h3 id="-getpredicatesbyiri-returns-all-predicates-that-match-the-pattern-"><code>getPredicatesByIRI</code> returns all predicates that match the pattern.</h3>
+<p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  getPredicatesByIRI: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">subject, object, graph</span>) </span>{
+    <span class="hljs-keyword">var</span> results = [];
+    <span class="hljs-keyword">this</span>.forPredicatesByIRI(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">p</span>) </span>{ results.push(p); }, subject, object, graph);
+    <span class="hljs-keyword">return</span> results;
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-100">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-100">&#182;</a>
+              </div>
+              <h3 id="-forpredicates-executes-the-callback-on-all-predicates-that-match-the-pattern-"><code>forPredicates</code> executes the callback on all predicates that match the pattern.</h3>
+<p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  forPredicates: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">callback, subject, object, graph</span>) </span>{
+    <span class="hljs-keyword">var</span> prefixes = <span class="hljs-keyword">this</span>._prefixes;
+    <span class="hljs-keyword">this</span>.forPredicatesByIRI(
+      callback,
+      expandPrefixedName(subject, prefixes),
+      expandPrefixedName(object,  prefixes),
+      expandPrefixedName(graph,   prefixes)
+    );
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-101">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-101">&#182;</a>
+              </div>
+              <h3 id="-forpredicatesbyiri-executes-the-callback-on-all-predicates-that-match-the-pattern-"><code>forPredicatesByIRI</code> executes the callback on all predicates that match the pattern.</h3>
+<p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  forPredicatesByIRI: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">callback, subject, object, graph</span>) </span>{
+    <span class="hljs-keyword">var</span> ids = <span class="hljs-keyword">this</span>._ids, graphs = <span class="hljs-keyword">this</span>._getGraphs(graph), content, subjectId, objectId;
+    callback = <span class="hljs-keyword">this</span>._uniqueEntities(callback);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-102">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-102">&#182;</a>
+              </div>
+              <p>Translate IRIs to internal index keys.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (isString(subject) &amp;&amp; !(subjectId = ids[subject]) ||
+        isString(object)  &amp;&amp; !(objectId  = ids[object]))
+      <span class="hljs-keyword">return</span>;
+
+    <span class="hljs-keyword">for</span> (graph <span class="hljs-keyword">in</span> graphs) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-103">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-103">&#182;</a>
+              </div>
+              <p>Only if the specified graph contains triples, there can be results</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (content = graphs[graph]) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-104">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-104">&#182;</a>
+              </div>
+              <p>Choose optimal index based on which fields are wildcards</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (subjectId) {
+          <span class="hljs-keyword">if</span> (objectId)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-105">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-105">&#182;</a>
+              </div>
+              <p>If subject and object are given, the OSP index is best.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">this</span>._loopBy2Keys(content.objects, objectId, subjectId, callback);
+          <span class="hljs-keyword">else</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-106">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-106">&#182;</a>
+              </div>
+              <p>If only subject is given, the SPO index is best.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">this</span>._loopByKey0(content.subjects, subjectId, callback);
+        }
+        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (objectId)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-107">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-107">&#182;</a>
+              </div>
+              <p>If only object is given, the POS index is best.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">this</span>._loopByKey1(content.predicates, objectId, callback);
+        <span class="hljs-keyword">else</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-108">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-108">&#182;</a>
+              </div>
+              <p>If no params given, iterate all the predicates.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">this</span>._loop(content.predicates, callback);
+      }
+    }
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-109">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-109">&#182;</a>
+              </div>
+              <h3 id="-getobjects-returns-all-objects-that-match-the-pattern-"><code>getObjects</code> returns all objects that match the pattern.</h3>
+<p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  getObjects: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">subject, predicate, graph</span>) </span>{
+    <span class="hljs-keyword">var</span> prefixes = <span class="hljs-keyword">this</span>._prefixes;
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.getObjectsByIRI(
+      expandPrefixedName(subject,   prefixes),
+      expandPrefixedName(predicate, prefixes),
+      expandPrefixedName(graph,     prefixes)
+    );
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-110">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-110">&#182;</a>
+              </div>
+              <h3 id="-getobjectsbyiri-returns-all-objects-that-match-the-pattern-"><code>getObjectsByIRI</code> returns all objects that match the pattern.</h3>
+<p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  getObjectsByIRI: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">subject, predicate, graph</span>) </span>{
+    <span class="hljs-keyword">var</span> results = [];
+    <span class="hljs-keyword">this</span>.forObjectsByIRI(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">o</span>) </span>{ results.push(o); }, subject, predicate, graph);
+    <span class="hljs-keyword">return</span> results;
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-111">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-111">&#182;</a>
+              </div>
+              <h3 id="-forobjects-executes-the-callback-on-all-objects-that-match-the-pattern-"><code>forObjects</code> executes the callback on all objects that match the pattern.</h3>
+<p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  forObjects: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">callback, subject, predicate, graph</span>) </span>{
+    <span class="hljs-keyword">var</span> prefixes = <span class="hljs-keyword">this</span>._prefixes;
+    <span class="hljs-keyword">this</span>.forObjectsByIRI(
+      callback,
+      expandPrefixedName(subject,   prefixes),
+      expandPrefixedName(predicate, prefixes),
+      expandPrefixedName(graph,     prefixes)
+    );
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-112">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-112">&#182;</a>
+              </div>
+              <h3 id="-forobjectsbyiri-executes-the-callback-on-all-objects-that-match-the-pattern-"><code>forObjectsByIRI</code> executes the callback on all objects that match the pattern.</h3>
+<p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  forObjectsByIRI: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">callback, subject, predicate, graph</span>) </span>{
+    <span class="hljs-keyword">var</span> ids = <span class="hljs-keyword">this</span>._ids, graphs = <span class="hljs-keyword">this</span>._getGraphs(graph), content, subjectId, predicateId;
+    callback = <span class="hljs-keyword">this</span>._uniqueEntities(callback);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-113">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-113">&#182;</a>
+              </div>
+              <p>Translate IRIs to internal index keys.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (isString(subject)   &amp;&amp; !(subjectId   = ids[subject]) ||
+        isString(predicate) &amp;&amp; !(predicateId = ids[predicate]))
+      <span class="hljs-keyword">return</span>;
+
+    <span class="hljs-keyword">for</span> (graph <span class="hljs-keyword">in</span> graphs) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-114">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-114">&#182;</a>
+              </div>
+              <p>Only if the specified graph contains triples, there can be results</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (content = graphs[graph]) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-115">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-115">&#182;</a>
+              </div>
+              <p>Choose optimal index based on which fields are wildcards</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (subjectId) {
+          <span class="hljs-keyword">if</span> (predicateId)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-116">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-116">&#182;</a>
+              </div>
+              <p>If subject and predicate are given, the SPO index is best.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">this</span>._loopBy2Keys(content.subjects, subjectId, predicateId, callback);
+          <span class="hljs-keyword">else</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-117">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-117">&#182;</a>
+              </div>
+              <p>If only subject is given, the OSP index is best.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">this</span>._loopByKey1(content.objects, subjectId, callback);
+        }
+        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (predicateId)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-118">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-118">&#182;</a>
+              </div>
+              <p>If only predicate is given, the POS index is best.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">this</span>._loopByKey0(content.predicates, predicateId, callback);
+        <span class="hljs-keyword">else</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-119">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-119">&#182;</a>
+              </div>
+              <p>If no params given, iterate all the objects.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">this</span>._loop(content.objects, callback);
+      }
+    }
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-120">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-120">&#182;</a>
+              </div>
+              <h3 id="-getgraphs-returns-all-graphs-that-match-the-pattern-"><code>getGraphs</code> returns all graphs that match the pattern.</h3>
+<p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  getGraphs: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">subject, predicate, object</span>) </span>{
+    <span class="hljs-keyword">var</span> prefixes = <span class="hljs-keyword">this</span>._prefixes;
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.getGraphsByIRI(
+      expandPrefixedName(subject,   prefixes),
+      expandPrefixedName(predicate, prefixes),
+      expandPrefixedName(object,    prefixes)
+    );
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-121">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-121">&#182;</a>
+              </div>
+              <h3 id="-getgraphsbyiri-returns-all-graphs-that-match-the-pattern-"><code>getGraphsByIRI</code> returns all graphs that match the pattern.</h3>
+<p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  getGraphsByIRI: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">subject, predicate, object</span>) </span>{
+    <span class="hljs-keyword">var</span> results = [];
+    <span class="hljs-keyword">this</span>.forGraphsByIRI(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">g</span>) </span>{ results.push(g); }, subject, predicate, object);
+    <span class="hljs-keyword">return</span> results;
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-122">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-122">&#182;</a>
+              </div>
+              <h3 id="-forgraphs-executes-the-callback-on-all-graphs-that-match-the-pattern-"><code>forGraphs</code> executes the callback on all graphs that match the pattern.</h3>
+<p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  forGraphs: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">callback, subject, predicate, object</span>) </span>{
+    <span class="hljs-keyword">var</span> prefixes = <span class="hljs-keyword">this</span>._prefixes;
+    <span class="hljs-keyword">this</span>.forGraphsByIRI(
+      callback,
+      expandPrefixedName(subject,   prefixes),
+      expandPrefixedName(predicate, prefixes),
+      expandPrefixedName(object,    prefixes)
+    );
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-123">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-123">&#182;</a>
+              </div>
+              <h3 id="-forgraphsbyiri-executes-the-callback-on-all-graphs-that-match-the-pattern-"><code>forGraphsByIRI</code> executes the callback on all graphs that match the pattern.</h3>
+<p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  forGraphsByIRI: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">callback, subject, predicate, object</span>) </span>{
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> graph <span class="hljs-keyword">in</span> <span class="hljs-keyword">this</span>._graphs) {
+      <span class="hljs-keyword">this</span>.someByIRI(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">quad</span>) </span>{
+        callback(quad.graph);
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>; <span class="hljs-comment">// Halt iteration of some()</span>
+      }, subject, predicate, object, graph);
+    }
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-124">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-124">&#182;</a>
               </div>
               <h3 id="-createblanknode-creates-a-new-blank-node-returning-its-name"><code>createBlankNode</code> creates a new blank node, returning its name</h3>
 
@@ -1301,11 +2373,11 @@ Optimization: if the entity doesn’t exist, no triples with it exist.</p>
         </li>
         
         
-        <li id="section-71">
+        <li id="section-125">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-71">&#182;</a>
+                <a class="pilcrow" href="#section-125">&#182;</a>
               </div>
               <p>Generate a name based on the suggested name</p>
 
@@ -1320,11 +2392,11 @@ Optimization: if the entity doesn’t exist, no triples with it exist.</p>
         </li>
         
         
-        <li id="section-72">
+        <li id="section-126">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-72">&#182;</a>
+                <a class="pilcrow" href="#section-126">&#182;</a>
               </div>
               <p>Generate a generic blank node name</p>
 
@@ -1338,11 +2410,11 @@ Optimization: if the entity doesn’t exist, no triples with it exist.</p>
         </li>
         
         
-        <li id="section-73">
+        <li id="section-127">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-73">&#182;</a>
+                <a class="pilcrow" href="#section-127">&#182;</a>
               </div>
               <p>Add the blank node to the entities, avoiding the generation of duplicates</p>
 
@@ -1357,11 +2429,11 @@ Optimization: if the entity doesn’t exist, no triples with it exist.</p>
         </li>
         
         
-        <li id="section-74">
+        <li id="section-128">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-74">&#182;</a>
+                <a class="pilcrow" href="#section-128">&#182;</a>
               </div>
               <p>Determines whether the argument is a string</p>
 
@@ -1374,11 +2446,11 @@ Optimization: if the entity doesn’t exist, no triples with it exist.</p>
         </li>
         
         
-        <li id="section-75">
+        <li id="section-129">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-75">&#182;</a>
+                <a class="pilcrow" href="#section-129">&#182;</a>
               </div>
               <h2 id="exports">Exports</h2>
 

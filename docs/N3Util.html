@@ -83,7 +83,7 @@
 <span class="hljs-keyword">var</span> Xsd = <span class="hljs-string">'http://www.w3.org/2001/XMLSchema#'</span>;
 <span class="hljs-keyword">var</span> XsdString  = Xsd + <span class="hljs-string">'string'</span>;
 <span class="hljs-keyword">var</span> XsdInteger = Xsd + <span class="hljs-string">'integer'</span>;
-<span class="hljs-keyword">var</span> XsdDecimal = Xsd + <span class="hljs-string">'decimal'</span>;
+<span class="hljs-keyword">var</span> XsdDouble = Xsd + <span class="hljs-string">'double'</span>;
 <span class="hljs-keyword">var</span> XsdBoolean = Xsd + <span class="hljs-string">'boolean'</span>;
 <span class="hljs-keyword">var</span> RdfLangString = <span class="hljs-string">'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString'</span>;
 
@@ -103,10 +103,14 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>  isIRI: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">entity</span>) </span>{
-    <span class="hljs-keyword">if</span> (!entity)
-      <span class="hljs-keyword">return</span> entity;
-    <span class="hljs-keyword">var</span> firstChar = entity[<span class="hljs-number">0</span>];
-    <span class="hljs-keyword">return</span> firstChar !== <span class="hljs-string">'"'</span> &amp;&amp; firstChar !== <span class="hljs-string">'_'</span>;
+    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> entity !== <span class="hljs-string">'string'</span>)
+      <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (entity.length === <span class="hljs-number">0</span>)
+      <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-keyword">else</span> {
+      <span class="hljs-keyword">var</span> firstChar = entity[<span class="hljs-number">0</span>];
+      <span class="hljs-keyword">return</span> firstChar !== <span class="hljs-string">'"'</span> &amp;&amp; firstChar !== <span class="hljs-string">'_'</span>;
+    }
   },</pre></div></div>
             
         </li>
@@ -123,7 +127,7 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>  isLiteral: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">entity</span>) </span>{
-    <span class="hljs-keyword">return</span> entity &amp;&amp; entity[<span class="hljs-number">0</span>] === <span class="hljs-string">'"'</span>;
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">typeof</span> entity === <span class="hljs-string">'string'</span> &amp;&amp; entity[<span class="hljs-number">0</span>] === <span class="hljs-string">'"'</span>;
   },</pre></div></div>
             
         </li>
@@ -140,7 +144,7 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>  isBlank: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">entity</span>) </span>{
-    <span class="hljs-keyword">return</span> entity &amp;&amp; entity.substr(<span class="hljs-number">0</span>, <span class="hljs-number">2</span>) === <span class="hljs-string">'_:'</span>;
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">typeof</span> entity === <span class="hljs-string">'string'</span> &amp;&amp; entity.substr(<span class="hljs-number">0</span>, <span class="hljs-number">2</span>) === <span class="hljs-string">'_:'</span>;
   },</pre></div></div>
             
         </li>
@@ -251,7 +255,7 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>  isPrefixedName: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">entity</span>) </span>{
-    <span class="hljs-keyword">return</span> entity &amp;&amp; <span class="hljs-regexp">/^[^:\/"']*:[^:\/"']+$/</span>.test(entity);
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">typeof</span> entity === <span class="hljs-string">'string'</span> &amp;&amp; <span class="hljs-regexp">/^[^:\/"']*:[^:\/"']+$/</span>.test(entity);
   },</pre></div></div>
             
         </li>
@@ -329,10 +333,14 @@
         modifier = XsdBoolean;
         <span class="hljs-keyword">break</span>;
       <span class="hljs-keyword">case</span> <span class="hljs-string">'number'</span>:
-        <span class="hljs-keyword">if</span> (<span class="hljs-built_in">isFinite</span>(value)) {
-          modifier = value % <span class="hljs-number">1</span> === <span class="hljs-number">0</span> ? XsdInteger : XsdDecimal;
-          <span class="hljs-keyword">break</span>;
+        <span class="hljs-keyword">if</span> (<span class="hljs-built_in">isFinite</span>(value))
+          modifier = value % <span class="hljs-number">1</span> === <span class="hljs-number">0</span> ? XsdInteger : XsdDouble;
+        <span class="hljs-keyword">else</span> {
+          modifier = XsdDouble;
+          <span class="hljs-keyword">if</span> (!<span class="hljs-built_in">isNaN</span>(value))
+            value = value &gt; <span class="hljs-number">0</span> ? <span class="hljs-string">'INF'</span> : <span class="hljs-string">'-INF'</span>;
         }
+        <span class="hljs-keyword">break</span>;
       <span class="hljs-keyword">default</span>:
         <span class="hljs-keyword">return</span> <span class="hljs-string">'"'</span> + value + <span class="hljs-string">'"'</span>;
       }
@@ -456,51 +464,11 @@ or retrieves a function that expands an existing prefix (if no IRI was specified
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-21">&#182;</a>
               </div>
-              <p>Add the N3Util functions to the given object or its prototype</p>
+              <h2 id="exports">Exports</h2>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">addN3Util</span>(<span class="hljs-params">parent, toPrototype</span>) </span>{
-  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> name <span class="hljs-keyword">in</span> N3Util)
-    <span class="hljs-keyword">if</span> (!toPrototype)
-      parent[name] = N3Util[name];
-    <span class="hljs-keyword">else</span>
-      parent.prototype[name] = applyToThis(N3Util[name]);
-
-  <span class="hljs-keyword">return</span> parent;
-}</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-22">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-22">&#182;</a>
-              </div>
-              <p>Returns a function that applies <code>f</code> to the <code>this</code> object</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">applyToThis</span>(<span class="hljs-params">f</span>) </span>{
-  <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">a</span>) </span>{ <span class="hljs-keyword">return</span> f(<span class="hljs-keyword">this</span>, a); };
-}</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-23">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-23">&#182;</a>
-              </div>
-              <p>Expose N3Util, attaching all functions to it</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre><span class="hljs-built_in">module</span>.exports = addN3Util(addN3Util);</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-built_in">module</span>.exports = N3Util;</pre></div></div>
             
         </li>
         
