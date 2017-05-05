@@ -502,6 +502,18 @@ describe('N3Writer', function () {
       });
     });
 
+    it('should serialize a simple triple like N-Triples mode', function () {
+      var writer = N3Writer();
+      writer.tripleToString('a', 'b', 'c').should.equal('<a> <b> <c>.\n');
+    });
+
+    it('should serialize a simple triple array like N-Triples mode', function () {
+      var writer = N3Writer();
+      var triples = [{ subject: 'a', predicate: 'b', object: 'c' },
+                      { subject: 'd', predicate: 'e', object: 'f' }];
+      writer.triplesToString(triples).should.equal('<a> <b> <c>.\n<d> <e> <f>.\n');
+    });
+
     it('should not write an invalid literal in N-Triples mode', function (done) {
       var writer = N3Writer({ format: 'N-Triples' });
       writer.addTriple('a', 'b', '"c', function (error) {
@@ -509,6 +521,12 @@ describe('N3Writer', function () {
         error.should.have.property('message', 'Invalid literal: "c');
         done();
       });
+    });
+
+    it('should not serialize an invalid literal like in N-Triples mode', function () {
+      var writer = N3Writer();
+      function test() { writer.tripleToString('a', 'b', '"c'); }
+      test.should.throw(Error, 'Invalid literal: "c');
     });
 
     it('should write simple quads in N-Quads mode', function (done) {
@@ -521,13 +539,24 @@ describe('N3Writer', function () {
       });
     });
 
+    it('should serialize a simple quad like N-Quads mode', function () {
+      var writer = N3Writer();
+      writer.tripleToString('a', 'b', 'c', 'g').should.equal('<a> <b> <c> <g>.\n');
+    });
+
     it('should not write an invalid literal in N-Quads mode', function (done) {
-      var writer = N3Writer({ format: 'N-Triples' });
-      writer.addTriple('a', 'b', '"c', function (error) {
+      var writer = N3Writer({ format: 'N-Quads' });
+      writer.addTriple('a', 'b', '"c', 'g', function (error) {
         error.should.be.an.instanceof(Error);
         error.should.have.property('message', 'Invalid literal: "c');
         done();
       });
+    });
+
+    it('should not serialize an invalid literal like in N-Quads mode', function () {
+      var writer = N3Writer();
+      function test() { writer.tripleToString('a', 'b', '"c', 'g'); }
+      test.should.throw(Error, 'Invalid literal: "c');
     });
 
     it('should end when the end option is not set', function (done) {
