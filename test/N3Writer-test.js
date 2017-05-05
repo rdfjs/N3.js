@@ -16,6 +16,24 @@ describe('N3Writer', function () {
   });
 
   describe('An N3Writer instance', function () {
+    it('should serialize a single triple', function () {
+      var writer = N3Writer();
+      writer.tripleToString('a', 'b', 'c').should.equal('<a> <b> <c>.\n');
+    });
+
+    it('should serialize a single quad', function () {
+      var writer = N3Writer();
+      writer.tripleToString('a', 'b', 'c', 'g').should.equal('<a> <b> <c> <g>.\n');
+    });
+
+    it('should serialize an array of triples', function () {
+      var writer = N3Writer();
+      var triples = [{ subject: 'a', predicate: 'b', object: 'c' },
+                     { subject: 'd', predicate: 'e', object: 'f' }];
+      writer.triplesToString(triples).should.equal('<a> <b> <c>.\n<d> <e> <f>.\n');
+    });
+
+
     it('should serialize 0 triples',
       shouldSerialize(''));
 
@@ -522,13 +540,14 @@ describe('N3Writer', function () {
     });
 
     it('should not write an invalid literal in N-Quads mode', function (done) {
-      var writer = N3Writer({ format: 'N-Triples' });
-      writer.addTriple('a', 'b', '"c', function (error) {
+      var writer = N3Writer({ format: 'N-Quads' });
+      writer.addTriple('a', 'b', '"c', 'g', function (error) {
         error.should.be.an.instanceof(Error);
         error.should.have.property('message', 'Invalid literal: "c');
         done();
       });
     });
+
 
     it('should end when the end option is not set', function (done) {
       var outputStream = new QuickStream(), writer = N3Writer(outputStream, {});
