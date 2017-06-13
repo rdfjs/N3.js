@@ -27,11 +27,8 @@ describe('N3StreamParser', function () {
 
     it('parses two triples', shouldParse(['<a> <b>', ' <c>. <d> <e> ', '<f>.'], 2));
 
-    it.skip('should parse double values that are split accross chunks in the stream', function (done) {
-      // this is the same as creating a read-stream from a file, with this one triple, where the
-      // highWaterMark of the readstream is set to 2.
-      shouldParse('<sub> <pred> 11.2 .'.match(/.{1,2}/g), 1)(done);
-    });
+    it('should parse decimals that are split across chunks in the stream',
+      shouldParse('<sub> <pred> 11.2 .'.match(/.{1,2}/g), 1));
 
     it("doesn't parse an invalid stream",
       shouldNotParse(['z.'], 'Unexpected "z." on line 1.'));

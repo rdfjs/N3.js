@@ -453,9 +453,20 @@ describe('N3Lexer', function () {
                      { type: '.', line: 3 },
                      { type: 'eof', line: 3 }));
 
-    it('should tokenize a stream with split number',
+    it('should tokenize a stream ending with a digit and a dot',
+      shouldTokenize(streamOf('1', '.'),
+                     { type: 'literal', value: '"1"^^http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                     { type: '.', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize a stream containing a decimal without leading digit',
       shouldTokenize(streamOf('.', '1 '),
                      { type: 'literal', value: '".1"^^http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize a stream containing a decimal with leading digit',
+      shouldTokenize(streamOf('1.', '1 '),
+                     { type: 'literal', value: '"1.1"^^http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should immediately signal an error if a linebreak occurs anywhere outside a triple-quoted literal',
