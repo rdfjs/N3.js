@@ -799,7 +799,7 @@ describe('N3Parser', function () {
 
     it('should throw on syntax errors if no callback is given', function () {
       (function () { new N3Parser().parse('<a> bar <c>'); })
-      .should.throw('Unexpected "bar" on line 1.');
+      .should.throw('Unexpected "bar" on line 1.').with.property('line');
     });
 
     it('should throw on grammar errors if no callback is given', function () {
@@ -1885,6 +1885,10 @@ function shouldNotParse(createParser, input, expectedError) {
         expect(triple).not.to.exist;
         error.should.be.an.instanceof(Error);
         error.message.should.eql(expectedError);
+        error.should.have.property('line');
+        if (error.token) {
+          error.token.should.have.property('type');
+        }
         done();
       }
       else if (!triple)
