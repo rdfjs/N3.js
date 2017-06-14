@@ -66,6 +66,7 @@ function shouldNotParse(chunks, expectedMessage) {
     transform.on('error', function (error) {
       error.should.be.an.instanceof(Error);
       error.message.should.equal(expectedMessage);
+      error.should.have.property('line');
       done();
     });
   };
