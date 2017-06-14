@@ -31,7 +31,7 @@ describe('N3StreamParser', function () {
       shouldParse('<sub> <pred> 11.2 .'.match(/.{1,2}/g), 1));
 
     it("doesn't parse an invalid stream",
-      shouldNotParse(['z.'], 'Unexpected "z." on line 1.'));
+      shouldNotParse(['z.'], 'Unexpected "z." on line 1.'), { token: undefined, line: 1, previousToken: undefined });
 
     it('emits "prefix" events',
       shouldEmitPrefixes(['@prefix a: <IRIa>. a:a a:b a:c. @prefix b: <IRIb>.'],
@@ -56,7 +56,7 @@ function shouldParse(chunks, expectedLength) {
   };
 }
 
-function shouldNotParse(chunks, expectedMessage) {
+function shouldNotParse(chunks, expectedMessage, expectedContext) {
   return function (done) {
     var inputStream = new ArrayReader(chunks),
         outputStream = new ArrayWriter([]),
@@ -66,6 +66,7 @@ function shouldNotParse(chunks, expectedMessage) {
     transform.on('error', function (error) {
       error.should.be.an.instanceof(Error);
       error.message.should.equal(expectedMessage);
+      if (expectedContext) error.context.should.deep.equal(expectedContext);
       done();
     });
   };
