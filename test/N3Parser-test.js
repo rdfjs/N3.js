@@ -79,7 +79,21 @@ describe('N3Parser', function () {
 
     it('should not parse a triple with a literal and a prefixed name type with an inexistent prefix',
       shouldNotParse('<a> <b> "string"^^x:z.',
-                     'Undefined prefix "x:" on line 1.'));
+                     'Undefined prefix "x:" on line 1.', {
+                       token: {
+                         line: 1,
+                         type: 'type',
+                         value: 'z',
+                         prefix: 'x',
+                       },
+                       line: 1,
+                       previousToken: {
+                         line: 1,
+                         type: 'literal',
+                         value: '\"string\"',
+                         prefix: '',
+                       },
+                     }));
 
     it('should parse a triple with the "a" shorthand predicate',
       shouldParse('<a> a <t>.',
@@ -108,7 +122,16 @@ describe('N3Parser', function () {
 
     it('should not parse @PREFIX',
       shouldNotParse('@PREFIX : <#>.',
-                     'Expected entity but got @PREFIX on line 1.'));
+                     'Expected entity but got @PREFIX on line 1.', {
+                       token: {
+                         line: 1,
+                         type: '@PREFIX',
+                         value: '',
+                         prefix: '',
+                       },
+                       previousToken: undefined,
+                       line: 1,
+                     }));
 
     it('should parse triples with prefixes and different punctuation',
       shouldParse('@prefix : <#>.\n' +
@@ -190,8 +213,22 @@ describe('N3Parser', function () {
                   ['_:b0_a', 'b', '_:b0_c']));
 
     it('should not parse statements with blank predicates',
-      shouldNotParse('<a> _:b <c>.',
-                     'Disallowed blank node as predicate on line 1.'));
+      shouldNotParse('PREFIX : <#>\n<a> _:b <c>.',
+                     'Disallowed blank node as predicate on line 2.', {
+                       token: {
+                         line: 2,
+                         type: 'blank',
+                         value: 'b',
+                         prefix: '_',
+                       },
+                       line: 2,
+                       previousToken: {
+                         line: 2,
+                         type: 'IRI',
+                         value: 'a',
+                         prefix: '',
+                       },
+                     }));
 
     it('should parse statements with empty blank nodes',
       shouldParse('[] <b> [].',
@@ -733,7 +770,16 @@ describe('N3Parser', function () {
 
     it('should error if an unexpected token follows a subject',
       shouldNotParse('<a> [',
-                     'Expected entity but got [ on line 1.'));
+                     'Expected entity but got [ on line 1.'), {
+                       token: {
+                         line: 1,
+                         type: '@PREFIX',
+                         value: '',
+                         prefix: '',
+                       },
+                       previousToken: undefined,
+                       line: 1,
+                     });
 
     it('should not error if there is no triple callback', function () {
       new N3Parser().parse('');
@@ -799,7 +845,7 @@ describe('N3Parser', function () {
 
     it('should throw on syntax errors if no callback is given', function () {
       (function () { new N3Parser().parse('<a> bar <c>'); })
-      .should.throw('Unexpected "bar" on line 1.').with.property('line');
+      .should.throw('Unexpected "bar" on line 1.').with.property('context').with.property('line', 1);
     });
 
     it('should throw on grammar errors if no callback is given', function () {
@@ -1874,10 +1920,10 @@ function toSortedJSON(triples) {
   return '[\n  ' + triples.join('\n  ') + '\n]';
 }
 
-function shouldNotParse(createParser, input, expectedError) {
+function shouldNotParse(createParser, input, expectedError, expectedContext) {
   // Shift parameters if necessary
   if (!createParser.call)
-    expectedError = input, input = createParser, createParser = N3Parser;
+    expectedContext = expectedError, expectedError = input, input = createParser, createParser = N3Parser;
 
   return function (done) {
     createParser().parse(input, function (error, triple) {
@@ -1885,10 +1931,7 @@ function shouldNotParse(createParser, input, expectedError) {
         expect(triple).not.to.exist;
         error.should.be.an.instanceof(Error);
         error.message.should.eql(expectedError);
-        error.should.have.property('line');
-        if (error.token) {
-          error.token.should.have.property('type');
-        }
+        if (expectedContext) error.context.should.deep.equal(expectedContext);
         done();
       }
       else if (!triple)
