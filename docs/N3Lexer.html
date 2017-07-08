@@ -238,7 +238,7 @@ N3Lexer.prototype = {</pre></div></div>
   <span class="hljs-attr">_prefixed</span>: <span class="hljs-regexp">/^((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:((?:(?:[0-:A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])(?:(?:[\.\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])*(?:[\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~]))?)?)(?:[ \t]+|(?=\.?[,;!\^\s#()\[\]\{\}"'&lt;]))/</span>,
   <span class="hljs-attr">_variable</span>: <span class="hljs-regexp">/^\?(?:(?:[A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:[\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?=[.,;!\^\s#()\[\]\{\}"'&lt;])/</span>,
   <span class="hljs-attr">_blank</span>: <span class="hljs-regexp">/^_:((?:[0-9A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?:[ \t]+|(?=\.?[,;:\s#()\[\]\{\}"'&lt;]))/</span>,
-  <span class="hljs-attr">_number</span>: <span class="hljs-regexp">/^[\-+]?(?:\d+\.?\d*([eE](?:[\-\+])?\d+)|\d*\.?\d+)(?=[.,;:\s#()\[\]\{\}"'&lt;])/</span>,
+  <span class="hljs-attr">_number</span>: <span class="hljs-regexp">/^[\-+]?(?:\d+\.?\d*([eE](?:[\-\+])?\d+)|\d*\.?\d+)(?=\.?[,;:\s#()\[\]\{\}"'&lt;])/</span>,
   <span class="hljs-attr">_boolean</span>: <span class="hljs-regexp">/^(?:true|false)(?=[.,;\s#()\[\]\{\}"'&lt;])/</span>,
   <span class="hljs-attr">_keyword</span>: <span class="hljs-regexp">/^@[a-z]+(?=[\s#&lt;])/i</span>,
   <span class="hljs-attr">_sparqlKeyword</span>: <span class="hljs-regexp">/^(?:PREFIX|BASE|GRAPH)(?=[\s#&lt;])/i</span>,
@@ -455,7 +455,7 @@ N3Lexer.prototype = {</pre></div></div>
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (input[<span class="hljs-number">1</span>] === <span class="hljs-string">'^'</span>) {
-          <span class="hljs-keyword">this</span>._prevTokenType = <span class="hljs-string">'^^'</span>;</pre></div></div>
+          <span class="hljs-keyword">this</span>._previousMarker = <span class="hljs-string">'^^'</span>;</pre></div></div>
             
         </li>
         
@@ -578,7 +578,7 @@ N3Lexer.prototype = {</pre></div></div>
                 <a class="pilcrow" href="#section-29">&#182;</a>
               </div>
               <p>Try to find a blank node. Since it can contain (but not end with) a dot,
-we always need a non-dot character before deciding it is a prefixed name.
+we always need a non-dot character before deciding it is a blank node.
 Therefore, try inserting a space if we’re at the end of the input.</p>
 
             </div>
@@ -698,7 +698,7 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>._prevTokenType === <span class="hljs-string">'literal'</span> &amp;&amp; (match = <span class="hljs-keyword">this</span>._langcode.exec(input)))
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>._previousMarker === <span class="hljs-string">'literal'</span> &amp;&amp; (match = <span class="hljs-keyword">this</span>._langcode.exec(input)))
           type = <span class="hljs-string">'langcode'</span>, value = match[<span class="hljs-number">1</span>];</pre></div></div>
             
         </li>
@@ -775,11 +775,14 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-39">&#182;</a>
               </div>
-              <p>Try to find a number</p>
+              <p>Try to find a number. Since it can contain (but not end with) a dot,
+we always need a non-dot character before deciding it is a number.
+Therefore, try inserting a space if we’re at the end of the input.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (match = <span class="hljs-keyword">this</span>._number.exec(input)) {
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (match = <span class="hljs-keyword">this</span>._number.exec(input) ||
+            inputFinished &amp;&amp; (match = <span class="hljs-keyword">this</span>._number.exec(input + <span class="hljs-string">' '</span>))) {
           type = <span class="hljs-string">'literal'</span>;
           value = <span class="hljs-string">'"'</span> + match[<span class="hljs-number">0</span>] + <span class="hljs-string">'"^^http://www.w3.org/2001/XMLSchema#'</span> +
                   (match[<span class="hljs-number">1</span>] ? <span class="hljs-string">'double'</span> : (<span class="hljs-regexp">/^[+\-]?\d+$/</span>.test(match[<span class="hljs-number">0</span>]) ? <span class="hljs-string">'integer'</span> : <span class="hljs-string">'decimal'</span>));
@@ -940,7 +943,7 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> ((<span class="hljs-keyword">this</span>._prevTokenType === <span class="hljs-string">'@prefix'</span> || <span class="hljs-keyword">this</span>._prevTokenType === <span class="hljs-string">'PREFIX'</span>) &amp;&amp;
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> ((<span class="hljs-keyword">this</span>._previousMarker === <span class="hljs-string">'@prefix'</span> || <span class="hljs-keyword">this</span>._previousMarker === <span class="hljs-string">'PREFIX'</span>) &amp;&amp;
             (match = <span class="hljs-keyword">this</span>._prefix.exec(input)))
           type = <span class="hljs-string">'prefix'</span>, value = match[<span class="hljs-number">1</span>] || <span class="hljs-string">''</span>;</pre></div></div>
             
@@ -977,7 +980,7 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>._prevTokenType === <span class="hljs-string">'^^'</span>) {
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>._previousMarker === <span class="hljs-string">'^^'</span>) {
         <span class="hljs-keyword">switch</span> (type) {
         <span class="hljs-keyword">case</span> <span class="hljs-string">'prefixed'</span>: type = <span class="hljs-string">'type'</span>;    <span class="hljs-keyword">break</span>;
         <span class="hljs-keyword">case</span> <span class="hljs-string">'IRI'</span>:      type = <span class="hljs-string">'typeIRI'</span>; <span class="hljs-keyword">break</span>;
@@ -1034,8 +1037,10 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      callback(<span class="hljs-literal">null</span>, { <span class="hljs-attr">line</span>: line, <span class="hljs-attr">type</span>: type, <span class="hljs-attr">value</span>: value, <span class="hljs-attr">prefix</span>: prefix });
-      <span class="hljs-keyword">this</span>._prevTokenType = type;</pre></div></div>
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">var</span> token = { <span class="hljs-attr">line</span>: line, <span class="hljs-attr">type</span>: type, <span class="hljs-attr">value</span>: value, <span class="hljs-attr">prefix</span>: prefix };
+      callback(<span class="hljs-literal">null</span>, token);
+      <span class="hljs-keyword">this</span>.previousToken = token;
+      <span class="hljs-keyword">this</span>._previousMarker = type;</pre></div></div>
             
         </li>
         
@@ -1123,7 +1128,13 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
             
             <div class="content"><div class='highlight'><pre>  _syntaxError: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">issue</span>) </span>{
     <span class="hljs-keyword">this</span>._input = <span class="hljs-literal">null</span>;
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'Unexpected "'</span> + issue + <span class="hljs-string">'" on line '</span> + <span class="hljs-keyword">this</span>._line + <span class="hljs-string">'.'</span>);
+    <span class="hljs-keyword">var</span> err = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'Unexpected "'</span> + issue + <span class="hljs-string">'" on line '</span> + <span class="hljs-keyword">this</span>._line + <span class="hljs-string">'.'</span>);
+    err.context = {
+      <span class="hljs-attr">token</span>: <span class="hljs-literal">undefined</span>,
+      <span class="hljs-attr">line</span>: <span class="hljs-keyword">this</span>._line,
+      <span class="hljs-attr">previousToken</span>: <span class="hljs-keyword">this</span>.previousToken,
+    };
+    <span class="hljs-keyword">return</span> err;
   },</pre></div></div>
             
         </li>
@@ -1265,6 +1276,7 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         <span class="hljs-keyword">if</span> (self._input !== <span class="hljs-literal">null</span>)
           self._tokenizeToEnd(callback, <span class="hljs-literal">true</span>);
       });
+      input.on(<span class="hljs-string">'error'</span>, callback);
     }
   },
 };</pre></div></div>

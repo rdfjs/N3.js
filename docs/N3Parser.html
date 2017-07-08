@@ -2688,7 +2688,13 @@ If the formula was the object, read punctuation.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>  _error: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">message, token</span>) </span>{
-    <span class="hljs-keyword">this</span>._callback(<span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(message + <span class="hljs-string">' on line '</span> + token.line + <span class="hljs-string">'.'</span>));
+    <span class="hljs-keyword">var</span> err = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(message + <span class="hljs-string">' on line '</span> + token.line + <span class="hljs-string">'.'</span>);
+    err.context = {
+      <span class="hljs-attr">token</span>: token,
+      <span class="hljs-attr">line</span>: token.line,
+      <span class="hljs-attr">previousToken</span>: <span class="hljs-keyword">this</span>._lexer.previousToken,
+    };
+    <span class="hljs-keyword">this</span>._callback(err);
   },</pre></div></div>
             
         </li>

@@ -129,8 +129,7 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">var</span> self = <span class="hljs-keyword">this</span>, parser = <span class="hljs-keyword">new</span> N3Parser(options), onData, onEnd;
-  parser.parse(</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">var</span> self = <span class="hljs-keyword">this</span>, parser = <span class="hljs-keyword">new</span> N3Parser(options), onData, onEnd;</pre></div></div>
             
         </li>
         
@@ -145,7 +144,14 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    { <span class="hljs-attr">on</span>: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">event, cb</span>) </span>{ event === <span class="hljs-string">'data'</span> ? (onData = cb) : (onEnd = cb); } },</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  parser.parse({
+    <span class="hljs-attr">on</span>: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">event, cb</span>) </span>{
+      <span class="hljs-keyword">switch</span> (event) {
+      <span class="hljs-keyword">case</span> <span class="hljs-string">'data'</span>: onData = cb; <span class="hljs-keyword">break</span>;
+      <span class="hljs-keyword">case</span> <span class="hljs-string">'end'</span>:   onEnd = cb; <span class="hljs-keyword">break</span>;
+      }
+    },
+  },</pre></div></div>
             
         </li>
         
@@ -160,7 +166,7 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">error, t</span>) </span>{ error &amp;&amp; self.emit(<span class="hljs-string">'error'</span>, error) || t &amp;&amp; self.push(t); },</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">error, t</span>) </span>{ error &amp;&amp; self.emit(<span class="hljs-string">'error'</span>, error) || t &amp;&amp; self.push(t); },</pre></div></div>
             
         </li>
         
@@ -175,7 +181,7 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">prefix, uri</span>) </span>{ self.emit(<span class="hljs-string">'prefix'</span>, prefix, uri); });</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">prefix, uri</span>) </span>{ self.emit(<span class="hljs-string">'prefix'</span>, prefix, uri); });</pre></div></div>
             
         </li>
         
