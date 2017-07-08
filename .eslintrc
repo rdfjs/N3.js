@@ -128,7 +128,7 @@
     func-style: [2, "declaration"],
     id-length: 0,
     id-match: 2,
-    indent: [2, 2, { VariableDeclarator: 2 }],
+    indent-legacy: [2, 2, { VariableDeclarator: 2 }],
     key-spacing: [2, { mode: "minimum" }],
     lines-around-comment: 2,
     linebreak-style: 2,
