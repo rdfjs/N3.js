@@ -32,11 +32,10 @@
     "uglify-js": "^3.0.24"
   },
   "scripts": {
-    "test": "mocha",
+    "test": "nyc mocha",
     "lint": "eslint lib perf test spec",
     "browser": "node browser/build-browser-versions",
-    "cover": "nyc -- mocha -R dot --timeout 1000",
-    "coveralls": "nyc --reporter=text-lcov -- mocha -R dot --timeout 1000 | coveralls",
+    "coveralls": "nyc --reporter=text-lcov mocha | coveralls",
     "spec": "node spec/turtle-spec && node spec/trig-spec && node spec/ntriples-spec && node spec/nquads-spec",
     "spec-clean": "rm -r spec/turtle spec/trig",
     "docs": "docco lib/*.js"
