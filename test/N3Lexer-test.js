@@ -730,29 +730,73 @@ describe('N3Lexer', function () {
     });
 
     describe('passing data after the stream has been finished', function () {
-      var tokens = [], stream = new EventEmitter(), lexer = new N3Lexer();
-      lexer.tokenize(stream, function (error, token) { !error && tokens.push(token); });
-      stream.emit('data', '<a> ');
-      stream.emit('end');
-      stream.emit('data', '<b> ');
-      stream.emit('end');
+      var tokens = [], error;
+      before(function () {
+        var stream = new EventEmitter(), lexer = new N3Lexer();
+        lexer.tokenize(stream, function (err, token) {
+          if (err)
+            error = err;
+          else
+            tokens.push(token);
+        });
+        stream.emit('data', '<a> ');
+        stream.emit('end');
+        stream.emit('data', '<b> ');
+        stream.emit('end');
+      });
 
       it('parses only the first chunk (plus EOF)', function () {
         tokens.should.have.length(2);
       });
+
+      it('does not emit an error', function () {
+        expect(error).to.not.exist;
+      });
     });
 
-    describe('passing data after an error has occurred', function () {
-      var tokens = [], stream = new EventEmitter(), lexer = new N3Lexer();
-      lexer.tokenize(stream, function (error, token) { !error && tokens.push(token); });
-      stream.emit('data', '<a> ');
-      stream.emit('data', ' error ');
-      stream.emit('end');
-      stream.emit('data', '<b> ');
-      stream.emit('end');
+    describe('passing data after a syntax error', function () {
+      var tokens = [], error;
+      before(function () {
+        var stream = new EventEmitter(), lexer = new N3Lexer();
+        lexer.tokenize(stream, function (err, token) {
+          if (err)
+            error = err;
+          else
+            tokens.push(token);
+        });
+        stream.emit('data', '<a> ');
+        stream.emit('data', ' error ');
+        stream.emit('end');
+        stream.emit('data', '<b> ');
+        stream.emit('end');
+      });
 
       it('parses only the first chunk', function () {
         tokens.should.have.length(1);
+      });
+
+      it('emits the error', function () {
+        expect(error).to.exist;
+        expect(error).to.have.property('message', 'Unexpected "error" on line 1.');
+      });
+    });
+
+    describe('when the stream errors', function () {
+      var tokens = [], error;
+      before(function () {
+        var stream = new EventEmitter(), lexer = new N3Lexer();
+        lexer.tokenize(stream, function (err, token) {
+          if (err)
+            error = err;
+          else
+            tokens.push(token);
+        });
+        stream.emit('error', new Error('my error'));
+      });
+
+      it('passes the error', function () {
+        expect(error).to.exist;
+        expect(error).to.have.property('message', 'my error');
       });
     });
 
