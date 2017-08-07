@@ -4,15 +4,42 @@ node_js:
  - "6"
  - "8"
  - "node"
+addons:
+  apt:
+    sources:
+    - boost-latest
+    packages:
+    # for SWObjects
+    - libboost-all-dev
+    - uuid-dev
+before_script:
+  - | # Build SWObjects for spec tests
+    if [ ! -e swobjects/bin/sparql ]; then
+      rm -rf swobjects
+      git clone https://github.com/ericprud/SWObjects.git swobjects
+      pushd swobjects
+      git checkout 1739b95536d2b7bf516f5543a6cf7e5c46a9a4f9
+      sed -i 's/^SQL_CLIENTS=.*/SQL_CLIENTS= MYSQL /' CONFIG
+      sed -i 's/^CRYPTLIB=.*/LDFLAGS += -lltdl -ldl/' CONFIG
+      make -j2 bin/sparql
+      popd
+    fi
+  - PATH=$PATH:swobjects/bin
+  - sparql -v
 script:
   - npm run lint
   - npm test
+  - npm run spec
   - npm run browser
   - npm run docs
 after_success:
   - npm run coveralls
   - ./.travis_build_pages
 cache:
+  apt: true
   directories:
     - node_modules
+    - swobjects
+    - spec/turtle
+    - spec/trig
 sudo: false
