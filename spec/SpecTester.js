@@ -127,12 +127,12 @@ SpecTester.prototype._parseManifest = function (manifestContents, callback) {
     // Once all triples are there, get the first item of the test list
     var tests = manifest.tests = [],
         skipped = manifest.skipped = [],
-        itemHead = testStore.find('', prefixes.mf + 'entries', null)[0].object;
+        itemHead = testStore.getObjects('', prefixes.mf + 'entries')[0];
     // Loop through all test items
     while (itemHead && itemHead !== nil) {
       // Find and store the item's properties
-      var itemValue = testStore.find(itemHead, first, null)[0].object,
-          itemTriples = testStore.find(itemValue, null, null),
+      var itemValue = testStore.getObjects(itemHead, first)[0],
+          itemTriples = testStore.getTriples(itemValue, null, null),
           test = { id: itemValue.replace(/^#/, '') };
       itemTriples.forEach(function (triple) {
         var propertyMatch = triple.predicate.match(/#(.+)/);
@@ -144,7 +144,7 @@ SpecTester.prototype._parseManifest = function (manifestContents, callback) {
       (!test.skipped ? tests : skipped).push(test);
 
       // Find the next test item
-      itemHead = testStore.find(itemHead, rest, null)[0].object;
+      itemHead = testStore.getTriples(itemHead, rest, null)[0].object;
     }
     return callback(null, manifest);
   });
