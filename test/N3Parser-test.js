@@ -40,6 +40,10 @@ describe('N3Parser', function () {
       shouldParse('<a> <b> "string".',
                   ['a', 'b', '"string"']));
 
+    it('should not parse a triple with a multi-line single-quoted literal',
+      shouldNotParse('<a> <b> "line1 \n' +
+                  'line2" .', 'Line ending found in short string'));
+
     it('should parse a triple with a numeric literal',
       shouldParse('<a> <b> 3.0.',
                   ['a', 'b', '"3.0"^^http://www.w3.org/2001/XMLSchema#decimal']));
