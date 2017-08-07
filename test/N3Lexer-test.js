@@ -511,7 +511,7 @@ describe('N3Lexer', function () {
                      { type: 'eof',      line: 1 }));
 
     it('should tokenize @prefix declarations',
-      shouldTokenize('@prefix : <http://iri.org/#>.\n@prefix abc:<http://iri.org/#>.',
+      shouldTokenize('@prefix : <http://iri.org/#>.\n@prefix abc:<http://iri.org/#>.\n@prefix:<http://example/c/>.',
                      { type: '@prefix', line: 1 },
                      { type: 'prefix', value: '', line: 1 },
                      { type: 'IRI', value: 'http://iri.org/#', line: 1 },
@@ -520,7 +520,11 @@ describe('N3Lexer', function () {
                      { type: 'prefix', value: 'abc', line: 2 },
                      { type: 'IRI', value: 'http://iri.org/#', line: 2 },
                      { type: '.', line: 2 },
-                     { type: 'eof', line: 2 }));
+                     { type: '@prefix', line: 3 },
+                     { type: 'prefix', value: '', line: 3 },
+                     { type: 'IRI', value: 'http://example/c/', line: 3 },
+                     { type: '.', line: 3 },
+                     { type: 'eof', line: 3 }));
 
     it('should not tokenize prefixes that end with a dot',
       shouldNotTokenize('@prefix abc.: <def>.',
