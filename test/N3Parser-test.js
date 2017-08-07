@@ -993,6 +993,12 @@ describe('N3Parser', function () {
 
     it('should not parse a formula as object',
       shouldNotParse(parser, '<a> <b> {}.', 'Unexpected graph on line 1.'));
+
+    it('should not parse @forSome',
+      shouldNotParse(parser, '@forSome <x>.', 'Unexpected "@forSome" on line 1.'));
+
+    it('should not parse @forAll',
+      shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'));
   });
 
   describe('An N3Parser instance for the TriG format', function () {
@@ -1027,6 +1033,12 @@ describe('N3Parser', function () {
 
     it('should not parse a formula as object',
       shouldNotParse(parser, '<a> <b> {}.', 'Unexpected graph on line 1.'));
+
+    it('should not parse @forSome',
+      shouldNotParse(parser, '@forSome <x>.', 'Unexpected "@forSome" on line 1.'));
+
+    it('should not parse @forAll',
+      shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'));
   });
 
   describe('An N3Parser instance for the N-Triples format', function () {
@@ -1060,6 +1072,12 @@ describe('N3Parser', function () {
 
     it('should not parse a formula as object',
       shouldNotParse(parser, '<urn:a:a> <urn:b:b> {}.', 'Unexpected "{" on line 1.'));
+
+    it('should not parse @forSome',
+      shouldNotParse(parser, '@forSome <x>.', 'Unexpected "@forSome" on line 1.'));
+
+    it('should not parse @forAll',
+      shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'));
   });
 
   describe('An N3Parser instance for the N-Quads format', function () {
@@ -1093,6 +1111,12 @@ describe('N3Parser', function () {
 
     it('should not parse a formula as object',
       shouldNotParse(parser, '<urn:a:a> <urn:b:b> {}.', 'Unexpected "{" on line 1.'));
+
+    it('should not parse @forSome',
+      shouldNotParse(parser, '@forSome <x>.', 'Unexpected "@forSome" on line 1.'));
+
+    it('should not parse @forAll',
+      shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'));
   });
 
   describe('An N3Parser instance for the N3 format', function () {
