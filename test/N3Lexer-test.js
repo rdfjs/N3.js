@@ -265,6 +265,14 @@ describe('N3Lexer', function () {
                      { type: 'literal', value: '"string"', line: 1 },
                      { type: 'eof', line: 1 }));
 
+    it('should not tokenize a quoted string literal with a newline',
+      shouldNotTokenize('"abc\ndef" ',
+                        'Unexpected ""abc" on line 1.'));
+
+    it('should not tokenize a quoted string literal with a carriage return',
+      shouldNotTokenize('"abc\rdef" ',
+                        'Unexpected ""abc" on line 1.'));
+
     it('should tokenize a triple quoted string literal',
       shouldTokenize('"""string"""',
                      { type: 'literal', value: '"string"', line: 1 },
@@ -324,6 +332,14 @@ describe('N3Lexer', function () {
       shouldTokenize("'''string'''",
                      { type: 'literal', value: '"string"', line: 1 },
                      { type: 'eof', line: 1 }));
+
+    it('should not tokenize a single-quoted string literal with a newline',
+      shouldNotTokenize("'abc\ndef' ",
+                        'Unexpected "\'abc" on line 1.'));
+
+    it('should not tokenize a single-quoted string literal with a carriage return',
+      shouldNotTokenize("'abc\rdef' ",
+                        'Unexpected "\'abc" on line 1.'));
 
     it('should tokenize a triple single-quoted string literal with quotes newlines inside',
       shouldTokenize("'''st'r\ni''ng'''",
