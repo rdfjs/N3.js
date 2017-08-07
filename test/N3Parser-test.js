@@ -1045,11 +1045,11 @@ describe('N3Parser', function () {
     function parser() { return new N3Parser({ format: 'N-Triples' }); }
 
     it('should parse a single triple',
-      shouldParse(parser, '<http://ex.org/a> <http://ex.org/b> "c".',
-                          ['http://ex.org/a', 'http://ex.org/b', '"c"']));
+      shouldParse(parser, '_:a <http://ex.org/b> "c".',
+                          ['_:b0_a', 'http://ex.org/b', '"c"']));
 
     it('should not parse a single quad',
-      shouldNotParse(parser, '<http://ex.org/a> <http://ex.org/b> "c" <http://ex.org/g>.',
+      shouldNotParse(parser, '_:a <http://ex.org/b> "c" <http://ex.org/g>.',
                              'Expected punctuation to follow ""c"" on line 1.'));
 
     it('should not parse relative IRIs',
@@ -1084,12 +1084,12 @@ describe('N3Parser', function () {
     function parser() { return new N3Parser({ format: 'N-Quads' }); }
 
     it('should parse a single triple',
-      shouldParse(parser, '<http://ex.org/a> <http://ex.org/b> <http://ex.org/c>.',
-                          ['http://ex.org/a', 'http://ex.org/b', 'http://ex.org/c']));
+      shouldParse(parser, '_:a <http://ex.org/b> "c".',
+                          ['_:b0_a', 'http://ex.org/b', '"c"']));
 
     it('should parse a single quad',
-      shouldParse(parser, '<http://ex.org/a> <http://ex.org/b> "c" <http://ex.org/g>.',
-                          ['http://ex.org/a', 'http://ex.org/b', '"c"', 'http://ex.org/g']));
+      shouldParse(parser, '_:a <http://ex.org/b> "c" <http://ex.org/g>.',
+                          ['_:b0_a', 'http://ex.org/b', '"c"', 'http://ex.org/g']));
 
     it('should not parse relative IRIs',
       shouldNotParse(parser, '<a> <b> <c>.', 'Disallowed relative IRI on line 1.'));
