@@ -13,7 +13,7 @@
   "license": "MIT",
   "main": "./N3.js",
   "engines": {
-    "node": ">=0.10.0"
+    "node": ">=4.0"
   },
   "files": [
     "N3.js",
