@@ -745,11 +745,15 @@ N3Parser.prototype = {</pre></div></div>
             
             <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>._readPunctuation(token);
     <span class="hljs-keyword">case</span> <span class="hljs-string">'@forSome'</span>:
+      <span class="hljs-keyword">if</span> (!<span class="hljs-keyword">this</span>._n3Mode)
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>._error(<span class="hljs-string">'Unexpected "@forSome"'</span>, token);
       <span class="hljs-keyword">this</span>._subject = <span class="hljs-literal">null</span>;
       <span class="hljs-keyword">this</span>._predicate = <span class="hljs-string">'http://www.w3.org/2000/10/swap/reify#forSome'</span>;
       <span class="hljs-keyword">this</span>._quantifiedPrefix = <span class="hljs-string">'_:b'</span>;
       <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>._readQuantifierList;
     <span class="hljs-keyword">case</span> <span class="hljs-string">'@forAll'</span>:
+      <span class="hljs-keyword">if</span> (!<span class="hljs-keyword">this</span>._n3Mode)
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>._error(<span class="hljs-string">'Unexpected "@forAll"'</span>, token);
       <span class="hljs-keyword">this</span>._subject = <span class="hljs-literal">null</span>;
       <span class="hljs-keyword">this</span>._predicate = <span class="hljs-string">'http://www.w3.org/2000/10/swap/reify#forAll'</span>;
       <span class="hljs-keyword">this</span>._quantifiedPrefix = <span class="hljs-string">'?b-'</span>;

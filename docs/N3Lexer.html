@@ -172,7 +172,7 @@ Note how we catch invalid unicode sequences separately (they will trigger an err
     <span class="hljs-keyword">this</span>._tokenize = <span class="hljs-keyword">this</span>.tokenize;
     <span class="hljs-keyword">this</span>.tokenize = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">input, callback</span>) </span>{
       <span class="hljs-keyword">this</span>._tokenize(input, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">error, token</span>) </span>{
-        <span class="hljs-keyword">if</span> (!error &amp;&amp; <span class="hljs-regexp">/^(?:IRI|prefixed|literal|langcode|type|\.|eof)$/</span>.test(token.type))
+        <span class="hljs-keyword">if</span> (!error &amp;&amp; <span class="hljs-regexp">/^(?:IRI|blank|literal|langcode|typeIRI|\.|eof)$/</span>.test(token.type))
           callback &amp;&amp; callback(error, token);
         <span class="hljs-keyword">else</span>
           callback &amp;&amp; callback(error || self._syntaxError(token.type, callback = <span class="hljs-literal">null</span>));
@@ -230,8 +230,8 @@ N3Lexer.prototype = {</pre></div></div>
             <div class="content"><div class='highlight'><pre>
   _iri: <span class="hljs-regexp">/^&lt;((?:[^ &lt;&gt;{}\\]|\\[uU])+)&gt;[ \t]*/</span>, <span class="hljs-comment">// IRI with escape sequences; needs sanity check after unescaping</span>
   _unescapedIri: <span class="hljs-regexp">/^&lt;([^\x00-\x20&lt;&gt;\\"\{\}\|\^\`]*)&gt;[ \t]*/</span>, <span class="hljs-comment">// IRI without escape sequences; no unescaping</span>
-  _unescapedString: <span class="hljs-regexp">/^"[^"\\]+"(?=[^"\\])/</span>, <span class="hljs-comment">// non-empty string without escape sequences</span>
-  _singleQuotedString: <span class="hljs-regexp">/^"[^"\\]*(?:\\.[^"\\]*)*"(?=[^"\\])|^'[^'\\]*(?:\\.[^'\\]*)*'(?=[^'\\])/</span>,
+  _unescapedString: <span class="hljs-regexp">/^"[^"\\\r\n]+"/</span>, <span class="hljs-comment">// non-empty string without escape sequences</span>
+  _singleQuotedString: <span class="hljs-regexp">/^"(?:[^"\\\r\n]|\\.)*"(?=[^"])|^'(?:[^'\\\r\n]|\\.)*'(?=[^'])/</span>,
   <span class="hljs-attr">_tripleQuotedString</span>: <span class="hljs-regexp">/^""("[^"\\]*(?:(?:\\.|"(?!""))[^"\\]*)*")""|^''('[^'\\]*(?:(?:\\.|'(?!''))[^'\\]*)*')''/</span>,
   <span class="hljs-attr">_langcode</span>: <span class="hljs-regexp">/^@([a-z]+(?:-[a-z0-9]+)*)(?=[^a-z0-9\-])/i</span>,
   <span class="hljs-attr">_prefix</span>: <span class="hljs-regexp">/^((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:(?=[#\s&lt;])/</span>,
@@ -240,7 +240,7 @@ N3Lexer.prototype = {</pre></div></div>
   <span class="hljs-attr">_blank</span>: <span class="hljs-regexp">/^_:((?:[0-9A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?:[ \t]+|(?=\.?[,;:\s#()\[\]\{\}"'&lt;]))/</span>,
   <span class="hljs-attr">_number</span>: <span class="hljs-regexp">/^[\-+]?(?:\d+\.?\d*([eE](?:[\-\+])?\d+)|\d*\.?\d+)(?=\.?[,;:\s#()\[\]\{\}"'&lt;])/</span>,
   <span class="hljs-attr">_boolean</span>: <span class="hljs-regexp">/^(?:true|false)(?=[.,;\s#()\[\]\{\}"'&lt;])/</span>,
-  <span class="hljs-attr">_keyword</span>: <span class="hljs-regexp">/^@[a-z]+(?=[\s#&lt;])/i</span>,
+  <span class="hljs-attr">_keyword</span>: <span class="hljs-regexp">/^@[a-z]+(?=[\s#&lt;:])/i</span>,
   <span class="hljs-attr">_sparqlKeyword</span>: <span class="hljs-regexp">/^(?:PREFIX|BASE|GRAPH)(?=[\s#&lt;])/i</span>,
   <span class="hljs-attr">_shortPredicates</span>: <span class="hljs-regexp">/^a(?=\s+|&lt;)/</span>,
   <span class="hljs-attr">_newline</span>: <span class="hljs-regexp">/^[ \t]*(?:#[^\n\r]*)?(?:\r\n|\n|\r)[ \t]*/</span>,
