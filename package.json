@@ -15,6 +15,10 @@
   "engines": {
     "node": ">=0.10.0"
   },
+  "files": [
+    "N3.js",
+    "lib"
+  ],
   "devDependencies": {
     "async": "^2.0.1",
     "browserify": "^14.4.0",
