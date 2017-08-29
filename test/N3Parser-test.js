@@ -203,6 +203,10 @@ describe('N3Parser', function () {
       shouldNotParse('<a> <b> <c>. <x>; <y> <z>.',
                      'Expected predicate but got ; on line 1.'));
 
+    it('should not accept , without preceding object',
+      shouldNotParse('<a> <b> <c>. <x> <y>, <z>.',
+                     'Expected entity but got , on line 1.'));
+
     it('should parse diamonds',
       shouldParse('<> <> <> <>.\n(<>) <> (<>) <>.',
                   ['', '', '', ''],
