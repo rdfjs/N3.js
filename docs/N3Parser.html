@@ -863,11 +863,12 @@ or, if the subject was actually a graph IRI, a named graph</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-43">&#182;</a>
               </div>
-              <p>Extra semicolons can be safely ignored</p>
+              <p>Additional semicolons can be safely ignored</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>._readPredicate;
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>._predicate !== <span class="hljs-literal">null</span> ? <span class="hljs-keyword">this</span>._readPredicate :
+             <span class="hljs-keyword">this</span>._error(<span class="hljs-string">'Expected predicate but got ;'</span>, token);
     <span class="hljs-keyword">case</span> <span class="hljs-string">'blank'</span>:
       <span class="hljs-keyword">if</span> (!<span class="hljs-keyword">this</span>._n3Mode)
         <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>._error(<span class="hljs-string">'Disallowed blank node as predicate'</span>, token);
