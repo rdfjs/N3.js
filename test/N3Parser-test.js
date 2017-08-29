@@ -199,6 +199,10 @@ describe('N3Parser', function () {
                   ['a', 'b', 'c'],
                   ['a', 'b', 'd']));
 
+    it('should not accept ; without preceding predicate',
+      shouldNotParse('<a> <b> <c>. <x>; <y> <z>.',
+                     'Expected predicate but got ; on line 1.'));
+
     it('should parse diamonds',
       shouldParse('<> <> <> <>.\n(<>) <> (<>) <>.',
                   ['', '', '', ''],
@@ -255,7 +259,7 @@ describe('N3Parser', function () {
 
     it('should not parse a blank node with only a semicolon',
       shouldNotParse('<a> <b> [;].',
-                     'Unexpected ] on line 1.'));
+                     'Expected predicate but got ; on line 1.'));
 
     it('should parse a blank node with a trailing semicolon',
       shouldParse('<a> <b> [ <u> <v>; ].',
