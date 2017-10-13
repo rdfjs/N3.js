@@ -1,7 +1,10 @@
 var N3StreamWriter = require('../N3').StreamWriter;
 
 var Readable = require('stream').Readable,
-    Writable = require('stream').Writable;
+    Writable = require('stream').Writable,
+    Datatype = require('../lib/Datatypes');
+var Term = Datatype.Term,
+    Quad = Datatype.Quad;
 
 describe('N3StreamWriter', function () {
   describe('The N3StreamWriter module', function () {
@@ -101,7 +104,7 @@ function shouldNotSerialize(/* tripleArrays..., expectedMessage */) {
 
 function ArrayReader(items) {
   var reader = new Readable({ objectMode: true });
-  items = items.map(function (i) { return { subject: i[0], predicate: i[1], object: i[2] }; });
+  items = items.map(function (i) { return new Quad(Term.fromId(i[0]), Term.fromId(i[1]), Term.fromId(i[2])); });
   reader._read = function () { this.push(items.shift() || null); };
   return reader;
 }
