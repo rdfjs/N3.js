@@ -1,4 +1,10 @@
-var Term = require('../N3').Term;
+var Datatype = require('../lib/Datatypes');
+var Term = Datatype.Term,
+    NamedNode = Datatype.NamedNode,
+    BlankNode = Datatype.BlankNode,
+    Literal   = Datatype.Literal,
+    Variable  = Datatype.Variable,
+    DefaultGraph = Datatype.DefaultGraph;
 
 describe('Term', function () {
   describe('The Term module', function () {
@@ -61,6 +67,87 @@ describe('Term', function () {
           value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString',
         },
       });
+    });
+  });
+
+  describe('Term.toId', function () {
+    it('should create the empty string a falsy value', function () {
+      Term.toId(null).should.equal('');
+      Term.toId(false).should.equal('');
+      Term.toId('').should.equal('');
+    });
+
+    it('should create the empty string from the DefaultGraph', function () {
+      Term.toId(new DefaultGraph()).should.equal('');
+      Term.toId(new DefaultGraph().toJSON()).should.equal('');
+    });
+
+    it('should create an id that starts with a question mark from a Variable', function () {
+      Term.toId(new Variable('abc')).should.equal('?abc');
+      Term.toId(new Variable('abc').toJSON()).should.equal('?abc');
+    });
+
+    it('should create an id that starts with a question mark from a Variable string', function () {
+      Term.toId('?abc').should.equal('?abc');
+    });
+
+    it('should create an id that starts with a quotation mark from a Literal', function () {
+      Term.toId(new Literal('"abc"')).should.equal('"abc"');
+      Term.toId(new Literal('"abc"').toJSON()).should.equal('"abc"');
+    });
+
+    it('should create an id that starts with a quotation mark from a Literal string', function () {
+      Term.toId('"abc"').should.equal('"abc"');
+    });
+
+    it('should create an id that starts with a quotation mark and datatype from a Literal with a datatype', function () {
+      Term.toId(new Literal('"abc"^^http://example.org')).should.equal('"abc"^^http://example.org');
+      Term.toId(new Literal('"abc"^^http://example.org').toJSON()).should.equal('"abc"^^http://example.org');
+    });
+
+    it('should create an id that starts with a quotation mark and datatype from a Literal string with a datatype', function () {
+      Term.toId('"abc"^^http://example.org').should.equal('"abc"^^http://example.org');
+    });
+
+    it('should create an id that starts with a quotation mark and language tag from a Literal with a language', function () {
+      Term.toId(new Literal('"abc"@en-us')).should.equal('"abc"@en-us');
+      Term.toId(new Literal('"abc"@en-us').toJSON()).should.equal('"abc"@en-us');
+    });
+
+    it('should create an id that starts with a quotation mark and language tag from a Literal string with a language', function () {
+      Term.toId('"abc"@en-us').should.equal('"abc"@en-us');
+    });
+
+    it('should create an id that starts with a quotation mark, datatype and language tag from a Literal with a datatype and language', function () {
+      Term.toId(new Literal('"abc"^^http://example.org@en-us')).should.equal('"abc"^^http://example.org@en-us');
+      Term.toId(new Literal('"abc"^^http://example.org@en-us').toJSON()).should.equal('"abc"^^http://example.org@en-us');
+    });
+
+    it('should create an id that starts with a quotation mark, datatype and language tag from a Literal string with a datatype and language', function () {
+      Term.toId('"abc"^^http://example.org@en-us').should.equal('"abc"^^http://example.org@en-us');
+    });
+
+    it('should create an id that starts with an underscore from a BlankNode', function () {
+      Term.toId(new BlankNode('abc')).should.equal('_:abc');
+      Term.toId(new BlankNode('abc').toJSON()).should.equal('_:abc');
+    });
+
+    it('should create an id that starts with an underscore from a BlankNode string', function () {
+      Term.toId('_:abc').should.equal('_:abc');
+    });
+
+    it('should create an IRI from a NamedNode', function () {
+      Term.toId(new NamedNode('http://example.org/')).should.equal('http://example.org/');
+      Term.toId(new NamedNode('http://example.org/').toJSON()).should.equal('http://example.org/');
+    });
+
+    it('should create an IRI from a NamedNode string', function () {
+      Term.toId('http://example.org/').should.equal('http://example.org/');
+    });
+
+    it('should throw on an unknown type', function () {
+      (function () { Term.toId({ termType: 'unknown' }); })
+        .should.throw('Unexpected termType: unknown');
     });
   });
 });
