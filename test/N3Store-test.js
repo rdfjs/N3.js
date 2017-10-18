@@ -1,4 +1,11 @@
-var N3Store = require('../N3').Store;
+var N3Store = require('../N3').Store,
+    Datatype = require('../lib/Datatypes');
+var Term = Datatype.Term,
+    NamedNode = Datatype.NamedNode,
+    Literal = Datatype.Literal,
+    DefaultGraph = Datatype.DefaultGraph,
+    Quad = Datatype.Quad,
+    Triple = Datatype.Triple;
 
 describe('N3Store', function () {
   describe('The N3Store module', function () {
@@ -54,38 +61,38 @@ describe('N3Store', function () {
 
     it('should still have size 0 (instead of null) after adding and removing a triple', function () {
       expect(store.size).to.eql(0);
-      store.addTriple('a', 'b', 'c').should.be.true;
-      store.removeTriple('a', 'b', 'c').should.be.true;
+      store.addTriple(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')).should.be.true;
+      store.removeTriple(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')).should.be.true;
       expect(store.size).to.eql(0);
     });
 
     it('should be able to generate unnamed blank nodes', function () {
-      store.createBlankNode().should.eql('_:b0');
-      store.createBlankNode().should.eql('_:b1');
+      store.createBlankNode().value.should.eql('b0');
+      store.createBlankNode().value.should.eql('b1');
 
       store.addTriple('_:b0', '_:b1', '_:b2').should.be.true;
-      store.createBlankNode().should.eql('_:b3');
+      store.createBlankNode().value.should.eql('b3');
       store.removeTriples(store.getTriples());
     });
 
     it('should be able to generate named blank nodes', function () {
-      store.createBlankNode('blank').should.eql('_:blank');
-      store.createBlankNode('blank').should.eql('_:blank1');
-      store.createBlankNode('blank').should.eql('_:blank2');
+      store.createBlankNode('blank').value.should.eql('blank');
+      store.createBlankNode('blank').value.should.eql('blank1');
+      store.createBlankNode('blank').value.should.eql('blank2');
     });
 
     it('should be able to store triples with generated blank nodes', function () {
-      store.addTriple(store.createBlankNode('x'), 'b', 'c').should.be.true;
-      shouldIncludeAll(store.getTriples(null, 'b'), ['_:x1', 'b', 'd']);
+      store.addTriple(store.createBlankNode('x'), new NamedNode('b'), new NamedNode('c')).should.be.true;
+      shouldIncludeAll(store.getTriples(null, new NamedNode('b')), ['_:x', 'b', 'c'])();
       store.removeTriples(store.getTriples());
     });
   });
 
   describe('An N3Store with initialized with 3 elements', function () {
     var store = new N3Store([
-      { subject: 's1', predicate: 'p1', object: 'o1' },
-      { subject: 's1', predicate: 'p1', object: 'o2' },
-      { subject: 's1', predicate: 'p1', object: 'o3' },
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o3')),
     ]);
 
     it('should have size 3', function () {
@@ -159,7 +166,7 @@ describe('N3Store', function () {
 
     describe('when searched with an existing subject parameter', function () {
       it('should return all items with this subject in all graphs',
-        shouldIncludeAll(store.getTriples('s1', null, null),
+        shouldIncludeAll(store.getTriples(new NamedNode('s1'), null, null),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o2'],
                          ['s1', 'p2', 'o2'],
@@ -167,16 +174,16 @@ describe('N3Store', function () {
     });
 
     describe('when searched with a non-existing subject parameter', function () {
-      itShouldBeEmpty(store.getTriples('s3', null, null));
+      itShouldBeEmpty(store.getTriples(new NamedNode('s3'), null, null));
     });
 
     describe('when searched with a non-existing subject parameter that exists elsewhere', function () {
-      itShouldBeEmpty(store.getTriples('p1', null, null));
+      itShouldBeEmpty(store.getTriples(new NamedNode('p1'), null, null));
     });
 
     describe('when searched with an existing predicate parameter', function () {
       it('should return all items with this predicate in all graphs',
-        shouldIncludeAll(store.getTriples(null, 'p1', null),
+        shouldIncludeAll(store.getTriples(null, new NamedNode('p1'), null),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o2'],
                          ['s2', 'p1', 'o1'],
@@ -184,70 +191,70 @@ describe('N3Store', function () {
     });
 
     describe('when searched with a non-existing predicate parameter', function () {
-      itShouldBeEmpty(store.getTriples(null, 'p3', null));
+      itShouldBeEmpty(store.getTriples(null, new NamedNode('p3'), null));
     });
 
     describe('when searched with an existing object parameter', function () {
       it('should return all items with this object in all graphs',
-        shouldIncludeAll(store.getTriples(null, null, 'o1'),
+        shouldIncludeAll(store.getTriples(null, null, new NamedNode('o1')),
                          ['s1', 'p1', 'o1'],
                          ['s2', 'p1', 'o1'],
                          ['s1', 'p1', 'o1', 'c4']));
     });
 
     describe('when searched with a non-existing object parameter', function () {
-      itShouldBeEmpty(store.getTriples(null, null, 'o4'));
+      itShouldBeEmpty(store.getTriples(null, null, new NamedNode('o4')));
     });
 
     describe('when searched with existing subject and predicate parameters', function () {
       it('should return all items with this subject and predicate in all graphs',
-        shouldIncludeAll(store.getTriples('s1', 'p1', null),
+        shouldIncludeAll(store.getTriples(new NamedNode('s1'), new NamedNode('p1'), null),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o2'],
                          ['s1', 'p1', 'o1', 'c4']));
     });
 
     describe('when searched with non-existing subject and predicate parameters', function () {
-      itShouldBeEmpty(store.getTriples('s2', 'p2', null));
+      itShouldBeEmpty(store.getTriples(new NamedNode('s2'), new NamedNode('p2'), null));
     });
 
     describe('when searched with existing subject and object parameters', function () {
       it('should return all items with this subject and object in all graphs',
-        shouldIncludeAll(store.getTriples('s1', null, 'o1'),
+        shouldIncludeAll(store.getTriples(new NamedNode('s1'), null, new NamedNode('o1')),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o1', 'c4']));
     });
 
     describe('when searched with non-existing subject and object parameters', function () {
-      itShouldBeEmpty(store.getTriples('s2', 'p2', null));
+      itShouldBeEmpty(store.getTriples(new NamedNode('s2'), new NamedNode('p2'), null));
     });
 
     describe('when searched with existing predicate and object parameters', function () {
       it('should return all items with this predicate and object in all graphs',
-        shouldIncludeAll(store.getTriples(null, 'p1', 'o1'),
+        shouldIncludeAll(store.getTriples(null, new NamedNode('p1'), new NamedNode('o1')),
                          ['s1', 'p1', 'o1'],
                          ['s2', 'p1', 'o1'],
                          ['s1', 'p1', 'o1', 'c4']));
     });
 
     describe('when searched with non-existing predicate and object parameters in the default graph', function () {
-      itShouldBeEmpty(store.getTriples(null, 'p2', 'o3', ''));
+      itShouldBeEmpty(store.getTriples(null, new NamedNode('p2'), new NamedNode('o3'), new DefaultGraph()));
     });
 
     describe('when searched with existing subject, predicate, and object parameters', function () {
       it('should return all items with this subject, predicate, and object in all graphs',
-        shouldIncludeAll(store.getTriples('s1', 'p1', 'o1'),
+        shouldIncludeAll(store.getTriples(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o1', 'c4']));
     });
 
     describe('when searched with a non-existing triple', function () {
-      itShouldBeEmpty(store.getTriples('s2', 'p2', 'o1'));
+      itShouldBeEmpty(store.getTriples(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o1')));
     });
 
     describe('when searched with the default graph parameter', function () {
       it('should return all items in the default graph',
-        shouldIncludeAll(store.getTriples(null, null, null, ''),
+        shouldIncludeAll(store.getTriples(null, null, null, new DefaultGraph()),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o2'],
                          ['s1', 'p2', 'o2'],
@@ -256,60 +263,60 @@ describe('N3Store', function () {
 
     describe('when searched with an existing named graph parameter', function () {
       it('should return all items in that graph',
-        shouldIncludeAll(store.getTriples(null, null, null, 'c4'),
+        shouldIncludeAll(store.getTriples(null, null, null, new NamedNode('c4')),
                          ['s1', 'p1', 'o1', 'c4']));
     });
 
     describe('when searched with a non-existing named graph parameter', function () {
-      itShouldBeEmpty(store.getTriples(null, null, null, 'c5'));
+      itShouldBeEmpty(store.getTriples(null, null, null, new NamedNode('c5')));
     });
 
     describe('getSubjects', function () {
       describe('with existing predicate, object and graph parameters', function () {
         it('should return all subjects with this predicate, object and graph', function () {
-          store.getSubjects('p1', 'o1', 'c4').should.have.members(['s1']);
+          store.getSubjects(new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c4')).should.have.deep.members([new NamedNode('s1')]);
         });
       });
 
       describe('with existing predicate and object parameters', function () {
         it('should return all subjects with this predicate and object', function () {
-          store.getSubjects('p2', 'o2', null).should.have.members(['s1']);
+          store.getSubjects(new NamedNode('p2'), new NamedNode('o2'), null).should.have.deep.members([new NamedNode('s1')]);
         });
       });
 
       describe('with existing predicate and graph parameters', function () {
         it('should return all subjects with this predicate and graph', function () {
-          store.getSubjects('p1', null, '').should.have.members(['s1', 's2']);
+          store.getSubjects(new NamedNode('p1'), null, new DefaultGraph()).should.have.deep.members([new NamedNode('s1'), new NamedNode('s2')]);
         });
       });
 
       describe('with existing object and graph parameters', function () {
         it('should return all subjects with this object and graph', function () {
-          store.getSubjects(null, 'o1', '').should.have.members(['s1', 's2']);
+          store.getSubjects(null, new NamedNode('o1'), new DefaultGraph()).should.have.deep.members([new NamedNode('s1'), new NamedNode('s2')]);
         });
       });
 
       describe('with an existing predicate parameter', function () {
         it('should return all subjects with this predicate', function () {
-          store.getSubjects('p1', null, null).should.have.members(['s1', 's2']);
+          store.getSubjects(new NamedNode('p1'), null, null).should.have.deep.members([new NamedNode('s1'), new NamedNode('s2')]);
         });
       });
 
       describe('with an existing object parameter', function () {
         it('should return all subjects with this object', function () {
-          store.getSubjects(null, 'o1', null).should.have.members(['s1', 's2']);
+          store.getSubjects(null, new NamedNode('o1'), null).should.have.deep.members([new NamedNode('s1'), new NamedNode('s2')]);
         });
       });
 
       describe('with an existing graph parameter', function () {
         it('should return all subjects in the graph', function () {
-          store.getSubjects(null, null, 'c4').should.have.members(['s1']);
+          store.getSubjects(null, null, new NamedNode('c4')).should.have.deep.members([new NamedNode('s1')]);
         });
       });
 
       describe('with no parameters', function () {
         it('should return all subjects', function () {
-          store.getSubjects(null, null, null).should.have.members(['s1', 's2']);
+          store.getSubjects(null, null, null).should.have.deep.members([new NamedNode('s1'), new NamedNode('s2')]);
         });
       });
     });
@@ -317,49 +324,49 @@ describe('N3Store', function () {
     describe('getPredicates', function () {
       describe('with existing subject, object and graph parameters', function () {
         it('should return all predicates with this subject, object and graph', function () {
-          store.getPredicates('s1', 'o1', 'c4').should.have.members(['p1']);
+          store.getPredicates(new NamedNode('s1'), new NamedNode('o1'), new NamedNode('c4')).should.have.deep.members([new NamedNode('p1')]);
         });
       });
 
       describe('with existing subject and object parameters', function () {
         it('should return all predicates with this subject and object', function () {
-          store.getPredicates('s1', 'o2', null).should.have.members(['p1', 'p2']);
+          store.getPredicates(new NamedNode('s1'), new NamedNode('o2'), null).should.have.deep.members([new NamedNode('p1'), new NamedNode('p2')]);
         });
       });
 
       describe('with existing subject and graph parameters', function () {
         it('should return all predicates with this subject and graph', function () {
-          store.getPredicates('s1', null, '').should.have.members(['p1', 'p2']);
+          store.getPredicates(new NamedNode('s1'), null, new DefaultGraph()).should.have.deep.members([new NamedNode('p1'), new NamedNode('p2')]);
         });
       });
 
       describe('with existing object and graph parameters', function () {
         it('should return all predicates with this object and graph', function () {
-          store.getPredicates(null, 'o1', '').should.have.members(['p1']);
+          store.getPredicates(null, new NamedNode('o1'), new DefaultGraph()).should.have.deep.members([new NamedNode('p1')]);
         });
       });
 
       describe('with an existing subject parameter', function () {
         it('should return all predicates with this subject', function () {
-          store.getPredicates('s2', null, null).should.have.members(['p1']);
+          store.getPredicates(new NamedNode('s2'), null, null).should.have.deep.members([new NamedNode('p1')]);
         });
       });
 
       describe('with an existing object parameter', function () {
         it('should return all predicates with this object', function () {
-          store.getPredicates(null, 'o1', null).should.have.members(['p1']);
+          store.getPredicates(null, new NamedNode('o1'), null).should.have.deep.members([new NamedNode('p1')]);
         });
       });
 
       describe('with an existing graph parameter', function () {
         it('should return all predicates in the graph', function () {
-          store.getPredicates(null, null, 'c4').should.have.members(['p1']);
+          store.getPredicates(null, null, new NamedNode('c4')).should.have.deep.members([new NamedNode('p1')]);
         });
       });
 
       describe('with no parameters', function () {
         it('should return all predicates', function () {
-          store.getPredicates(null, null, null).should.have.members(['p1', 'p2']);
+          store.getPredicates(null, null, null).should.have.deep.members([new NamedNode('p1'), new NamedNode('p2')]);
         });
       });
     });
@@ -367,49 +374,49 @@ describe('N3Store', function () {
     describe('getObjects', function () {
       describe('with existing subject, predicate and graph parameters', function () {
         it('should return all objects with this subject, predicate and graph', function () {
-          store.getObjects('s1', 'p1', '').should.have.members(['o1', 'o2']);
+          store.getObjects(new NamedNode('s1'), new NamedNode('p1'), new DefaultGraph()).should.have.deep.members([new NamedNode('o1'), new NamedNode('o2')]);
         });
       });
 
       describe('with existing subject and predicate parameters', function () {
         it('should return all objects with this subject and predicate', function () {
-          store.getObjects('s1', 'p1', null).should.have.members(['o1', 'o2']);
+          store.getObjects(new NamedNode('s1'), new NamedNode('p1'), null).should.have.deep.members([new NamedNode('o1'), new NamedNode('o2')]);
         });
       });
 
       describe('with existing subject and graph parameters', function () {
         it('should return all objects with this subject and graph', function () {
-          store.getObjects('s1', null, '').should.have.members(['o1', 'o2']);
+          store.getObjects(new NamedNode('s1'), null, new DefaultGraph()).should.have.deep.members([new NamedNode('o1'), new NamedNode('o2')]);
         });
       });
 
       describe('with existing predicate and graph parameters', function () {
         it('should return all objects with this predicate and graph', function () {
-          store.getObjects(null, 'p1', '').should.have.members(['o1', 'o2']);
+          store.getObjects(null, new NamedNode('p1'), new DefaultGraph()).should.have.deep.members([new NamedNode('o1'), new NamedNode('o2')]);
         });
       });
 
       describe('with an existing subject parameter', function () {
         it('should return all objects with this subject', function () {
-          store.getObjects('s1', null, null).should.have.members(['o1', 'o2']);
+          store.getObjects(new NamedNode('s1'), null, null).should.have.deep.members([new NamedNode('o1'), new NamedNode('o2')]);
         });
       });
 
       describe('with an existing predicate parameter', function () {
         it('should return all objects with this predicate', function () {
-          store.getObjects(null, 'p1', null).should.have.members(['o1', 'o2']);
+          store.getObjects(null, new NamedNode('p1'), null).should.have.deep.members([new NamedNode('o1'), new NamedNode('o2')]);
         });
       });
 
       describe('with an existing graph parameter', function () {
         it('should return all objects in the graph', function () {
-          store.getObjects(null, null, 'c4').should.have.members(['o1']);
+          store.getObjects(null, null, new NamedNode('c4')).should.have.deep.members([new NamedNode('o1')]);
         });
       });
 
       describe('with no parameters', function () {
         it('should return all objects', function () {
-          store.getObjects(null, null, null).should.have.members(['o1', 'o2']);
+          store.getObjects(null, null, null).should.have.deep.members([new NamedNode('o1'), new NamedNode('o2')]);
         });
       });
     });
@@ -417,49 +424,49 @@ describe('N3Store', function () {
     describe('getGraphs', function () {
       describe('with existing subject, predicate and object parameters', function () {
         it('should return all graphs with this subject, predicate and object', function () {
-          store.getGraphs('s1', 'p1', 'o1').should.have.members(['c4', '']);
+          store.getGraphs(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')).should.have.deep.members([new NamedNode('c4'), new DefaultGraph()]);
         });
       });
 
       describe('with existing subject and predicate parameters', function () {
         it('should return all graphs with this subject and predicate', function () {
-          store.getGraphs('s1', 'p1', null).should.have.members(['c4', '']);
+          store.getGraphs(new NamedNode('s1'), new NamedNode('p1'), null).should.have.deep.members([new NamedNode('c4'), new DefaultGraph()]);
         });
       });
 
       describe('with existing subject and object parameters', function () {
         it('should return all graphs with this subject and object', function () {
-          store.getGraphs('s1', null, 'o2').should.have.members(['']);
+          store.getGraphs(new NamedNode('s1'), null, new NamedNode('o2')).should.have.deep.members([new DefaultGraph()]);
         });
       });
 
       describe('with existing predicate and object parameters', function () {
         it('should return all graphs with this predicate and object', function () {
-          store.getGraphs(null, 'p1', 'o1').should.have.members(['', 'c4']);
+          store.getGraphs(null, new NamedNode('p1'), new NamedNode('o1')).should.have.deep.members([new DefaultGraph(), new NamedNode('c4')]);
         });
       });
 
       describe('with an existing subject parameter', function () {
         it('should return all graphs with this subject', function () {
-          store.getGraphs('s1', null, null).should.have.members(['c4', '']);
+          store.getGraphs(new NamedNode('s1'), null, null).should.have.deep.members([new NamedNode('c4'), new DefaultGraph()]);
         });
       });
 
       describe('with an existing predicate parameter', function () {
         it('should return all graphs with this predicate', function () {
-          store.getGraphs(null, 'p1', null).should.have.members(['c4', '']);
+          store.getGraphs(null, new NamedNode('p1'), null).should.have.deep.members([new NamedNode('c4'), new DefaultGraph()]);
         });
       });
 
       describe('with an existing object parameter', function () {
         it('should return all graphs with this object', function () {
-          store.getGraphs(null, null, 'o2').should.have.members(['']);
+          store.getGraphs(null, null, new NamedNode('o2')).should.have.deep.members([new DefaultGraph()]);
         });
       });
 
       describe('with no parameters', function () {
         it('should return all graphs', function () {
-          store.getGraphs(null, null, null).should.have.members(['c4', '']);
+          store.getGraphs(null, null, null).should.have.deep.members([new NamedNode('c4'), new DefaultGraph()]);
         });
       });
     });
@@ -588,7 +595,7 @@ describe('N3Store', function () {
     describe('forSubjects', function () {
       describe('with existing predicate, object and graph parameters', function () {
         it('should iterate all subjects with this predicate, object and graph', function () {
-          collect(store, 'forSubjects', 'p1', 'o1', '').should.have.members(['s1', 's2']);
+          collect(store, 'forSubjects', 'p1', 'o1', '').should.have.deep.members([new NamedNode('s1'), new NamedNode('s2')]);
         });
       });
       describe('with a non-existing predicate', function () {
@@ -611,7 +618,7 @@ describe('N3Store', function () {
     describe('forPredicates', function () {
       describe('with existing subject, object and graph parameters', function () {
         it('should iterate all predicates with this subject, object and graph', function () {
-          collect(store, 'forPredicates', 's1', 'o2', '').should.have.members(['p1', 'p2']);
+          collect(store, 'forPredicates', 's1', 'o2', '').should.have.deep.members([new NamedNode('p1'), new NamedNode('p2')]);
         });
       });
       describe('with a non-existing subject', function () {
@@ -634,7 +641,7 @@ describe('N3Store', function () {
     describe('forObjects', function () {
       describe('with existing subject, predicate and graph parameters', function () {
         it('should iterate all objects with this subject, predicate and graph', function () {
-          collect(store, 'forObjects', 's1', 'p1', '').should.have.members(['o1', 'o2']);
+          collect(store, 'forObjects', 's1', 'p1', '').should.have.deep.members([new NamedNode('o1'), new NamedNode('o2')]);
         });
       });
       describe('with a non-existing subject', function () {
@@ -657,7 +664,7 @@ describe('N3Store', function () {
     describe('forGraphs', function () {
       describe('with existing subject, predicate and object parameters', function () {
         it('should iterate all graphs with this subject, predicate and object', function () {
-          collect(store, 'forGraphs', 's1', 'p1', 'o1').should.have.members(['', 'c4']);
+          collect(store, 'forGraphs', 's1', 'p1', 'o1').should.have.deep.members([new DefaultGraph(), new NamedNode('c4')]);
         });
       });
       describe('with a non-existing subject', function () {
@@ -694,6 +701,27 @@ describe('N3Store', function () {
       describe('with no parameters and a callback that returns false after 3 calls', function () {
         it('should return false', function () {
           store.every(thirdTimeFalse, null, null, null, null).should.be.false;
+        });
+      });
+    });
+
+    describe('everyByIRI', function () {
+      var count = 3;
+      function thirdTimeFalse() { return count-- === 0; }
+
+      describe('with no parameters and a callback always returning true', function () {
+        it('should return true', function () {
+          store.everyByIRI(alwaysTrue, null, null, null, null).should.be.true;
+        });
+      });
+      describe('with no parameters and a callback always returning false', function () {
+        it('should return false', function () {
+          store.everyByIRI(alwaysFalse, null, null, null, null).should.be.false;
+        });
+      });
+      describe('with no parameters and a callback that returns false after 3 calls', function () {
+        it('should return false', function () {
+          store.everyByIRI(thirdTimeFalse, null, null, null, null).should.be.false;
         });
       });
     });
@@ -739,6 +767,47 @@ describe('N3Store', function () {
       });
     });
 
+    describe('someByIRI', function () {
+      var count = 3;
+      function thirdTimeFalse() { return count-- !== 0; }
+
+      describe('with no parameters and a callback always returning true', function () {
+        it('should return true', function () {
+          store.someByIRI(alwaysTrue, null, null, null, null).should.be.true;
+        });
+      });
+      describe('with no parameters and a callback always returning false', function () {
+        it('should return false', function () {
+          store.someByIRI(alwaysFalse, null, null, null, null).should.be.false;
+        });
+      });
+      describe('with no parameters and a callback that returns true after 3 calls', function () {
+        it('should return false', function () {
+          store.someByIRI(thirdTimeFalse, null, null, null, null).should.be.true;
+        });
+      });
+      describe('with a non-existing subject', function () {
+        it('should return true', function () {
+          store.someByIRI(null, new NamedNode('s3'), null, null, null).should.be.false;
+        });
+      });
+      describe('with a non-existing predicate', function () {
+        it('should return false', function () {
+          store.someByIRI(null, null, new NamedNode('p3'), null, null).should.be.false;
+        });
+      });
+      describe('with a non-existing object', function () {
+        it('should return false', function () {
+          store.someByIRI(null, null, null, new NamedNode('o4'), null).should.be.false;
+        });
+      });
+      describe('with a non-existing graph', function () {
+        it('should return false', function () {
+          store.someByIRI(null, null, null, null, new NamedNode('g2')).should.be.false;
+        });
+      });
+    });
+
     describe('when counted without parameters', function () {
       it('should count all items in all graphs', function () {
         store.countTriplesByIRI().should.equal(5);
@@ -747,31 +816,31 @@ describe('N3Store', function () {
 
     describe('when counted with an existing subject parameter', function () {
       it('should count all items with this subject in all graphs', function () {
-        store.countTriplesByIRI('s1', null, null).should.equal(4);
+        store.countTriplesByIRI(new NamedNode('s1'), null, null).should.equal(4);
       });
     });
 
     describe('when counted with a non-existing subject parameter', function () {
       it('should be empty', function () {
-        store.countTriplesByIRI('s3', null, null).should.equal(0);
+        store.countTriplesByIRI(new NamedNode('s3'), null, null).should.equal(0);
       });
     });
 
     describe('when counted with a non-existing subject parameter that exists elsewhere', function () {
       it('should be empty', function () {
-        store.countTriplesByIRI('p1', null, null).should.equal(0);
+        store.countTriplesByIRI(new NamedNode('p1'), null, null).should.equal(0);
       });
     });
 
     describe('when counted with an existing predicate parameter', function () {
       it('should count all items with this predicate in all graphs', function () {
-        store.countTriplesByIRI(null, 'p1', null).should.equal(4);
+        store.countTriplesByIRI(null, new NamedNode('p1'), null).should.equal(4);
       });
     });
 
     describe('when counted with a non-existing predicate parameter', function () {
       it('should be empty', function () {
-        store.countTriplesByIRI(null, 'p3', null).should.equal(0);
+        store.countTriplesByIRI(null, new NamedNode('p3'), null).should.equal(0);
       });
     });
 
@@ -837,7 +906,7 @@ describe('N3Store', function () {
 
     describe('when counted with the default graph parameter', function () {
       it('should count all items in the default graph', function () {
-        store.countTriples(null, null, null, '').should.equal(4);
+        store.countTriples(null, null, null, new DefaultGraph()).should.equal(4);
       });
     });
 
@@ -854,52 +923,52 @@ describe('N3Store', function () {
     });
 
     describe('when trying to remove a triple with a non-existing subject', function () {
-      before(function () { store.removeTriple('s0', 'p1', 'o1').should.be.false; });
+      before(function () { store.removeTriple(new NamedNode('s0'), new NamedNode('p1'), new NamedNode('o1')).should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove a triple with a non-existing predicate', function () {
-      before(function () { store.removeTriple('s1', 'p0', 'o1').should.be.false; });
+      before(function () { store.removeTriple(new NamedNode('s1'), new NamedNode('p0'), new NamedNode('o1')).should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove a triple with a non-existing object', function () {
-      before(function () { store.removeTriple('s1', 'p1', 'o0').should.be.false; });
+      before(function () { store.removeTriple(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o0')).should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove a triple for which no subjects exist', function () {
-      before(function () { store.removeTriple('o1', 'p1', 'o1').should.be.false; });
+      before(function () { store.removeTriple(new NamedNode('o1'), new NamedNode('p1'), new NamedNode('o1')).should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove a triple for which no predicates exist', function () {
-      before(function () { store.removeTriple('s1', 's1', 'o1').should.be.false; });
+      before(function () { store.removeTriple(new NamedNode('s1'), new NamedNode('s1'), new NamedNode('o1')).should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove a triple for which no objects exist', function () {
-      before(function () { store.removeTriple('s1', 'p1', 's1').should.be.false; });
+      before(function () { store.removeTriple(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('s1')).should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove a triple that does not exist', function () {
-      before(function () { store.removeTriple('s1', 'p2', 'o1').should.be.false; });
+      before(function () { store.removeTriple(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o1')).should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove an incomplete triple', function () {
-      before(function () { store.removeTriple('s1', null, null).should.be.false; });
+      before(function () { store.removeTriple(new NamedNode('s1'), null, null).should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove a triple with a non-existing graph', function () {
-      before(function () { store.removeTriple('s1', 'p1', 'o1', 'c0').should.be.false; });
+      before(function () { store.removeTriple(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c0')).should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when removing an existing triple', function () {
-      before(function () { store.removeTriple('s1', 'p1', 'o1').should.be.true; });
+      before(function () { store.removeTriple(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')).should.be.true; });
 
       it('should have size 4', function () { store.size.should.eql(4); });
 
@@ -912,7 +981,7 @@ describe('N3Store', function () {
     });
 
     describe('when removing an existing triple from a named graph', function () {
-      before(function () { store.removeTriple('s1', 'p1', 'o1', 'c4').should.be.true; });
+      before(function () { store.removeTriple(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c4')).should.be.true; });
 
       it('should have size 3', function () { store.size.should.eql(3); });
 
@@ -922,8 +991,8 @@ describe('N3Store', function () {
     describe('when removing multiple triples', function () {
       before(function () {
         store.removeTriples([
-          { subject: 's1', predicate: 'p2', object: 'o2' },
-          { subject: 's2', predicate: 'p1', object: 'o1' },
+          new Triple(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
+          new Triple(new NamedNode('s2'), new NamedNode('p1'), new NamedNode('o1')),
         ]);
       });
 
@@ -936,8 +1005,8 @@ describe('N3Store', function () {
 
     describe('when adding and removing a triple', function () {
       before(function () {
-        store.addTriple('a', 'b', 'c').should.be.true;
-        store.removeTriple('a', 'b', 'c').should.be.true;
+        store.addTriple(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')).should.be.true;
+        store.removeTriple(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')).should.be.true;
       });
 
       it('should have an unchanged size', function () { store.size.should.eql(1); });
@@ -946,11 +1015,11 @@ describe('N3Store', function () {
 
   describe('An N3Store initialized with prefixes', function () {
     var store = new N3Store([
-      { subject: 'http://foo.org/#s1', predicate: 'http://bar.org/p1', object: 'http://foo.org/#o1' },
-      { subject: 'http://foo.org/#s1', predicate: 'http://bar.org/p2', object: 'http://foo.org/#o1' },
-      { subject: 'http://foo.org/#s2', predicate: 'http://bar.org/p1', object: 'http://foo.org/#o2' },
-      { subject: 'http://foo.org/#s3', predicate: 'http://bar.org/p3', object: '"a"^^http://foo.org/#t1' },
-      { subject: 'http://foo.org/#s1', predicate: 'http://bar.org/p1', object: 'http://foo.org/#o1', graph: 'http://graphs.org/#g1' },
+      new Triple(new NamedNode('http://foo.org/#s1'), new NamedNode('http://bar.org/p1'), new NamedNode('http://foo.org/#o1')),
+      new Triple(new NamedNode('http://foo.org/#s1'), new NamedNode('http://bar.org/p2'), new NamedNode('http://foo.org/#o1')),
+      new Triple(new NamedNode('http://foo.org/#s2'), new NamedNode('http://bar.org/p1'), new NamedNode('http://foo.org/#o2')),
+      new Triple(new NamedNode('http://foo.org/#s3'), new NamedNode('http://bar.org/p3'), new Literal('"a"^^http://foo.org/#t1')),
+      new Triple(new NamedNode('http://foo.org/#s1'), new NamedNode('http://bar.org/p1'), new NamedNode('http://foo.org/#o1'), new NamedNode('http://graphs.org/#g1')),
     ],
     { prefixes: { a: 'http://foo.org/#', b: 'http://bar.org/', g: 'http://graphs.org/#' } });
 
@@ -964,7 +1033,7 @@ describe('N3Store', function () {
 
     describe('should allow to query subjects with prefixes', function () {
       it('should return all triples with that subject in the default graph',
-          shouldIncludeAll(store.getTriples('a:s1', null, null, ''),
+          shouldIncludeAll(store.getTriples('a:s1', null, null, new DefaultGraph()),
               ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
               ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
     });
@@ -994,10 +1063,10 @@ describe('N3Store', function () {
 
   describe('An N3Store with prefixes added later on', function () {
     var store = new N3Store([
-      { subject: 'http://foo.org/#s1', predicate: 'http://bar.org/p1', object: 'http://foo.org/#o1' },
-      { subject: 'http://foo.org/#s1', predicate: 'http://bar.org/p2', object: 'http://foo.org/#o1' },
-      { subject: 'http://foo.org/#s2', predicate: 'http://bar.org/p1', object: 'http://foo.org/#o2' },
-      { subject: 'http://foo.org/#s1', predicate: 'http://bar.org/p1', object: 'http://foo.org/#o1', graph: 'http://graphs.org/#g1' },
+      new Triple(new NamedNode('http://foo.org/#s1'), new NamedNode('http://bar.org/p1'), new NamedNode('http://foo.org/#o1')),
+      new Triple(new NamedNode('http://foo.org/#s1'), new NamedNode('http://bar.org/p2'), new NamedNode('http://foo.org/#o1')),
+      new Triple(new NamedNode('http://foo.org/#s2'), new NamedNode('http://bar.org/p1'), new NamedNode('http://foo.org/#o2')),
+      new Triple(new NamedNode('http://foo.org/#s1'), new NamedNode('http://bar.org/p1'), new NamedNode('http://foo.org/#o1'), new NamedNode('http://graphs.org/#g1')),
     ]);
 
     store.addPrefix('a', 'http://foo.org/#');
@@ -1005,7 +1074,7 @@ describe('N3Store', function () {
 
     describe('should allow to query subjects with prefixes', function () {
       it('should return all triples with that subject in the default graph',
-        shouldIncludeAll(store.getTriples('a:s1', null, null, ''),
+        shouldIncludeAll(store.getTriples('a:s1', null, null, new DefaultGraph()),
                          ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
                          ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
     });
@@ -1020,7 +1089,7 @@ describe('N3Store', function () {
 
     describe('should allow to query predicates with prefixes', function () {
       it('should return all triples with that predicate in the default graph',
-          shouldIncludeAll(store.getTriples(null, 'b:p1', null, ''),
+          shouldIncludeAll(store.getTriples(null, 'b:p1', null, new DefaultGraph()),
               ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
               ['http://foo.org/#s2', 'http://bar.org/p1', 'http://foo.org/#o2']));
     });
@@ -1035,7 +1104,7 @@ describe('N3Store', function () {
 
     describe('should allow to query objects with prefixes', function () {
       it('should return all triples with that object in the default graph',
-          shouldIncludeAll(store.getTriples(null, null, 'a:o1', ''),
+          shouldIncludeAll(store.getTriples(null, null, 'a:o1', new DefaultGraph()),
               ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
               ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
     });
@@ -1057,9 +1126,9 @@ describe('N3Store', function () {
 
   describe('An N3Store with the http prefix', function () {
     var store = new N3Store([
-      { subject: 'http://foo.org/#s1', predicate: 'http://bar.org/p1', object: 'http://foo.org/#o1' },
-      { subject: 'http://foo.org/#s1', predicate: 'http://bar.org/p2', object: 'http://foo.org/#o1' },
-      { subject: 'http://foo.org/#s2', predicate: 'http://bar.org/p1', object: 'http://foo.org/#o2' },
+      new Triple(new NamedNode('http://foo.org/#s1'), new NamedNode('http://bar.org/p1'), new NamedNode('http://foo.org/#o1')),
+      new Triple(new NamedNode('http://foo.org/#s1'), new NamedNode('http://bar.org/p2'), new NamedNode('http://foo.org/#o1')),
+      new Triple(new NamedNode('http://foo.org/#s2'), new NamedNode('http://bar.org/p1'), new NamedNode('http://foo.org/#o2')),
     ],
     { prefixes: { http: 'http://www.w3.org/2006/http#' } });
 
@@ -1085,18 +1154,18 @@ describe('N3Store', function () {
   describe('An N3Store containing a blank node', function () {
     var store = new N3Store();
     var b1 = store.createBlankNode();
-    store.addTriple('s1', 'p1', b1).should.be.true;
+    store.addTriple(new NamedNode('s1'), new NamedNode('p1'), b1).should.be.true;
 
     describe('when searched with more than one variable', function () {
       it('should return a triple with the blank node as an object',
         shouldIncludeAll(store.getTriples(),
-                         ['s1', 'p1', b1]));
+                         ['s1', 'p1', '_:' + b1.value]));
     });
 
     describe('when searched with one variable', function () {
       it('should return a triple with the blank node as an object',
         shouldIncludeAll(store.getTriples('s1', 'p1'),
-                         ['s1', 'p1', b1]));
+                         ['s1', 'p1', '_:' + b1.value]));
     });
   });
 
@@ -1123,7 +1192,7 @@ function alwaysFalse() { return false; }
 
 function collect(store, method, arg1, arg2, arg3, arg4) {
   var results = [];
-  store[method](function (r) { results.push(r); }, arg1, arg2, arg3, arg4);
+  store[method](function (r) { results.push(r); }, arg1 && Term.fromId(arg1), arg2 && Term.fromId(arg2), arg3 && Term.fromId(arg3), arg4 && Term.fromId(arg4));
   return results;
 }
 
@@ -1136,12 +1205,13 @@ function itShouldBeEmpty(result) {
 
 function shouldIncludeAll(result) {
   var items = Array.prototype.slice.call(arguments, 1).map(function (arg) {
-    return { subject: arg[0], predicate: arg[1], object: arg[2], graph: arg[3] || '' };
+    return new Quad(Term.fromId(arg[0]), Term.fromId(arg[1]), Term.fromId(arg[2]), Term.fromId(arg[3] || ''));
   });
   return function () {
     if (typeof result === 'function') result = result();
+    result = result.map(function (r) { return r.toJSON(); });
     result.should.have.length(items.length);
     for (var i = 0; i < items.length; i++)
-      result.should.include.something.that.deep.equals(items[i]);
+      result.should.include.something.that.deep.equals(items[i].toJSON());
   };
 }
