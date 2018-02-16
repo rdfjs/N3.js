@@ -304,7 +304,7 @@ The store provides the following manipulation methods
 ([documentation](http://rubenverborgh.github.io/N3.js/docs/N3Store.html)):
 - `addTriple` to insert one triple/quad
 - `addTriples` to insert an array of triples/quads
-- `addPrefix` to register a prefix (facilitating addition and lookup)
+- `addPrefix` to register a prefix (facilitating lookup)
 - `addPrefixes` to register an array of prefixes
 - `removeTriple` to remove one triple/quad
 - `removeTriples` to remove an array of triples/quads
