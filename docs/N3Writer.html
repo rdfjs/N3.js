@@ -92,7 +92,7 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> N3LiteralMatcher = <span class="hljs-regexp">/^"([^]*)"(?:\^\^(.+)|@([\-a-z]+))?$/i</span>;</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> N3LiteralMatcher = <span class="hljs-regexp">/^"([^]*)"(?:\^\^(.+)|@([a-z]+(?:-[a-z0-9]+)*))?$/i</span>;</pre></div></div>
             
         </li>
         
@@ -238,7 +238,7 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-10">&#182;</a>
               </div>
-              <h3 id="-_write-writes-the-argument-to-the-output-stream"><code>_write</code> writes the argument to the output stream</h3>
+              <h3 id="_write-writes-the-argument-to-the-output-stream"><code>_write</code> writes the argument to the output stream</h3>
 
             </div>
             
@@ -255,7 +255,7 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-11">&#182;</a>
               </div>
-              <h3 id="-_writetriple-writes-the-triple-to-the-output-stream"><code>_writeTriple</code> writes the triple to the output stream</h3>
+              <h3 id="_writetriple-writes-the-triple-to-the-output-stream"><code>_writeTriple</code> writes the triple to the output stream</h3>
 
             </div>
             
@@ -391,7 +391,7 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-19">&#182;</a>
               </div>
-              <h3 id="-_writetripleline-writes-the-triple-or-quad-to-the-output-stream-as-a-single-line"><code>_writeTripleLine</code> writes the triple or quad to the output stream as a single line</h3>
+              <h3 id="_writetripleline-writes-the-triple-or-quad-to-the-output-stream-as-a-single-line"><code>_writeTripleLine</code> writes the triple or quad to the output stream as a single line</h3>
 
             </div>
             
@@ -424,7 +424,7 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-21">&#182;</a>
               </div>
-              <h3 id="-tripletostring-serializes-a-triple-or-quad-as-a-string"><code>tripleToString</code> serializes a triple or quad as a string</h3>
+              <h3 id="tripletostring-serializes-a-triple-or-quad-as-a-string"><code>tripleToString</code> serializes a triple or quad as a string</h3>
 
             </div>
             
@@ -444,7 +444,7 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-22">&#182;</a>
               </div>
-              <h3 id="-triplestostring-serializes-an-array-of-triples-or-quads-as-a-string"><code>triplesToString</code> serializes an array of triples or quads as a string</h3>
+              <h3 id="triplestostring-serializes-an-array-of-triples-or-quads-as-a-string"><code>triplesToString</code> serializes an array of triples or quads as a string</h3>
 
             </div>
             
@@ -463,7 +463,7 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-23">&#182;</a>
               </div>
-              <h3 id="-_encodeiriorblanknode-represents-an-iri-or-blank-node"><code>_encodeIriOrBlankNode</code> represents an IRI or blank node</h3>
+              <h3 id="_encodeiriorblanknode-represents-an-iri-or-blank-node"><code>_encodeIriOrBlankNode</code> represents an IRI or blank node</h3>
 
             </div>
             
@@ -529,7 +529,7 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-27">&#182;</a>
               </div>
-              <h3 id="-_encodeliteral-represents-a-literal"><code>_encodeLiteral</code> represents a literal</h3>
+              <h3 id="_encodeliteral-represents-a-literal"><code>_encodeLiteral</code> represents a literal</h3>
 
             </div>
             
@@ -581,7 +581,7 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-30">&#182;</a>
               </div>
-              <h3 id="-_encodesubject-represents-a-subject"><code>_encodeSubject</code> represents a subject</h3>
+              <h3 id="_encodesubject-represents-a-subject"><code>_encodeSubject</code> represents a subject</h3>
 
             </div>
             
@@ -616,7 +616,7 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-32">&#182;</a>
               </div>
-              <h3 id="-_encodepredicate-represents-a-predicate"><code>_encodePredicate</code> represents a predicate</h3>
+              <h3 id="_encodepredicate-represents-a-predicate"><code>_encodePredicate</code> represents a predicate</h3>
 
             </div>
             
@@ -635,7 +635,7 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-33">&#182;</a>
               </div>
-              <h3 id="-_encodeobject-represents-an-object"><code>_encodeObject</code> represents an object</h3>
+              <h3 id="_encodeobject-represents-an-object"><code>_encodeObject</code> represents an object</h3>
 
             </div>
             
@@ -684,7 +684,7 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-36">&#182;</a>
               </div>
-              <h3 id="-_blockedwrite-replaces-_write-after-the-writer-has-been-closed"><code>_blockedWrite</code> replaces <code>_write</code> after the writer has been closed</h3>
+              <h3 id="_blockedwrite-replaces-_write-after-the-writer-has-been-closed"><code>_blockedWrite</code> replaces <code>_write</code> after the writer has been closed</h3>
 
             </div>
             
@@ -701,7 +701,7 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-37">&#182;</a>
               </div>
-              <h3 id="-addtriple-adds-the-triple-to-the-output-stream"><code>addTriple</code> adds the triple to the output stream</h3>
+              <h3 id="addtriple-adds-the-triple-to-the-output-stream"><code>addTriple</code> adds the triple to the output stream</h3>
 
             </div>
             
@@ -766,7 +766,7 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-41">&#182;</a>
               </div>
-              <h3 id="-addtriples-adds-the-triples-to-the-output-stream"><code>addTriples</code> adds the triples to the output stream</h3>
+              <h3 id="addtriples-adds-the-triples-to-the-output-stream"><code>addTriples</code> adds the triples to the output stream</h3>
 
             </div>
             
@@ -784,7 +784,7 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-42">&#182;</a>
               </div>
-              <h3 id="-addprefix-adds-the-prefix-to-the-output-stream"><code>addPrefix</code> adds the prefix to the output stream</h3>
+              <h3 id="addprefix-adds-the-prefix-to-the-output-stream"><code>addPrefix</code> adds the prefix to the output stream</h3>
 
             </div>
             
@@ -803,7 +803,7 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-43">&#182;</a>
               </div>
-              <h3 id="-addprefixes-adds-the-prefixes-to-the-output-stream"><code>addPrefixes</code> adds the prefixes to the output stream</h3>
+              <h3 id="addprefixes-adds-the-prefixes-to-the-output-stream"><code>addPrefixes</code> adds the prefixes to the output stream</h3>
 
             </div>
             
@@ -927,7 +927,7 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-50">&#182;</a>
               </div>
-              <h3 id="-blank-creates-a-blank-node-with-the-given-content"><code>blank</code> creates a blank node with the given content</h3>
+              <h3 id="blank-creates-a-blank-node-with-the-given-content"><code>blank</code> creates a blank node with the given content</h3>
 
             </div>
             
@@ -1100,7 +1100,7 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-60">&#182;</a>
               </div>
-              <h3 id="-list-creates-a-list-node-with-the-given-content"><code>list</code> creates a list node with the given content</h3>
+              <h3 id="list-creates-a-list-node-with-the-given-content"><code>list</code> creates a list node with the given content</h3>
 
             </div>
             
@@ -1120,7 +1120,7 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-61">&#182;</a>
               </div>
-              <h3 id="-_prefixregex-matches-a-prefixed-name-or-iri-that-begins-with-one-of-the-added-prefixes"><code>_prefixRegex</code> matches a prefixed name or IRI that begins with one of the added prefixes</h3>
+              <h3 id="_prefixregex-matches-a-prefixed-name-or-iri-that-begins-with-one-of-the-added-prefixes"><code>_prefixRegex</code> matches a prefixed name or IRI that begins with one of the added prefixes</h3>
 
             </div>
             
@@ -1135,7 +1135,7 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-62">&#182;</a>
               </div>
-              <h3 id="-end-signals-the-end-of-the-output-stream"><code>end</code> signals the end of the output stream</h3>
+              <h3 id="end-signals-the-end-of-the-output-stream"><code>end</code> signals the end of the output stream</h3>
 
             </div>
             
