@@ -858,7 +858,7 @@ describe('N3Parser', function () {
 
     it('should throw on grammar errors if no callback is given', function () {
       (function () { new N3Parser().parse('<a> <b> <c>'); })
-      .should.throw('Expected punctuation to follow "c" on line 1.');
+      .should.throw('Expected entity but got eof on line 1');
     });
   });
 
@@ -1967,7 +1967,7 @@ function shouldNotParse(createParser, input, expectedError, expectedContext) {
         done();
       }
       else if (!triple)
-        throw new Error('Expected error ' + expectedError);
+        done(new Error('Expected error ' + expectedError));
     });
   };
 }
