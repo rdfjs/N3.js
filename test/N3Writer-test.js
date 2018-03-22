@@ -67,6 +67,11 @@ describe('N3Writer', function () {
       shouldSerialize(['a', 'b', '"cde"@en-us'],
                       '<a> <b> "cde"@en-us.\n'));
 
+    // e.g. http://vocab.getty.edu/aat/300264727.ttl
+    it('should serialize a literal with an artificial language',
+       shouldSerialize(['a', 'b', '"cde"@qqq-002'],
+                        '<a> <b> "cde"@qqq-002.\n'));
+
     it('should serialize a literal containing a single quote',
       shouldSerialize(['a', 'b', '"c\'de"'],
                       '<a> <b> "c\'de".\n'));
