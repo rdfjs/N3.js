@@ -134,10 +134,6 @@ describe('N3Writer', function () {
       shouldNotSerialize(['a', '"b"', '"c"'],
                           'A literal as predicate is not allowed: "b"'));
 
-    it('should not serialize an invalid object literal',
-      shouldNotSerialize(['a', 'b', '"c'],
-                          'Invalid literal: "c'));
-
     it('should not leave leading whitespace if the prefix set is empty',
       shouldSerialize({},
                       ['a', 'b', 'c'],
@@ -531,34 +527,18 @@ describe('N3Writer', function () {
       });
     });
 
-    it('should not write an invalid literal in N-Triples mode', function (done) {
-      var writer = N3Writer({ format: 'N-Triples' });
-      writer.addTriple(new NamedNode('a'), new NamedNode('b'), new NamedNode('"c'), function (error) {
-        error.should.be.an.instanceof(Error);
-        error.should.have.property('message', 'Invalid literal: "c');
-        done();
-      });
-    });
-
     it('should write simple quads in N-Quads mode', function (done) {
       var writer = N3Writer({ format: 'N-Quads' });
-      writer.addTriple(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'));
+      var called = false;
+      function callback() { called = true; }
+      writer.addTriple(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), callback);
       writer.addTriple(new NamedNode('a'), new NamedNode('b'), new NamedNode('d'), new NamedNode('g'));
       writer.end(function (error, output) {
+        called.should.be.true;
         output.should.equal('<a> <b> <c>.\n<a> <b> <d> <g>.\n');
         done(error);
       });
     });
-
-    it('should not write an invalid literal in N-Quads mode', function (done) {
-      var writer = N3Writer({ format: 'N-Quads' });
-      writer.addTriple(new NamedNode('a'), new NamedNode('b'), new NamedNode('"c'), new NamedNode('g'), function (error) {
-        error.should.be.an.instanceof(Error);
-        error.should.have.property('message', 'Invalid literal: "c');
-        done();
-      });
-    });
-
 
     it('should end when the end option is not set', function (done) {
       var outputStream = new QuickStream(), writer = N3Writer(outputStream, {});
