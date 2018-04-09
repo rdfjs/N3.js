@@ -130,10 +130,6 @@ describe('N3Writer', function () {
       shouldNotSerialize(['"a"', 'b', '"c"'],
                           'A literal as subject is not allowed: "a"'));
 
-    it('should not serialize a literal in the predicate',
-      shouldNotSerialize(['a', '"b"', '"c"'],
-                          'A literal as predicate is not allowed: "b"'));
-
     it('should not leave leading whitespace if the prefix set is empty',
       shouldSerialize({},
                       ['a', 'b', 'c'],

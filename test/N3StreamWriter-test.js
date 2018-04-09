@@ -47,10 +47,6 @@ describe('N3StreamWriter', function () {
       shouldNotSerialize(['"a"', 'b', '"c'],
                           'A literal as subject is not allowed: "a"'));
 
-    it('should not serialize a literal in the predicate',
-      shouldNotSerialize(['a', '"b"', '"c'],
-                          'A literal as predicate is not allowed: "b"'));
-
     it('should use prefixes when possible',
       shouldSerialize({ prefixes: { a: 'http://a.org/', b: 'http://a.org/b#', c: 'http://a.org/b' } },
                       ['http://a.org/bc', 'http://a.org/b#ef', 'http://a.org/bhi'],
