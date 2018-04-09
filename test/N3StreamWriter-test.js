@@ -43,10 +43,6 @@ describe('N3StreamWriter', function () {
                       '<jkl> <mno> <pqr>.\n' +
                       '<stu> <vwx> <yz>.\n'));
 
-    it('should not serialize a literal in the subject',
-      shouldNotSerialize(['"a"', 'b', '"c'],
-                          'A literal as subject is not allowed: "a"'));
-
     it('should use prefixes when possible',
       shouldSerialize({ prefixes: { a: 'http://a.org/', b: 'http://a.org/b#', c: 'http://a.org/b' } },
                       ['http://a.org/bc', 'http://a.org/b#ef', 'http://a.org/bhi'],
@@ -75,24 +71,6 @@ function shouldSerialize(/* options?, tripleArrays..., expectedResult */) {
     transform.on('error', done);
     transform.on('end', function () {
       outputStream.result.should.equal(expectedResult);
-      done();
-    });
-  };
-}
-
-function shouldNotSerialize(/* tripleArrays..., expectedMessage */) {
-  var tripleArrays = Array.prototype.slice.call(arguments),
-      expectedMessage = tripleArrays.pop();
-
-  return function (done) {
-    var inputStream = new ArrayReader(tripleArrays),
-        transform = new N3StreamWriter(),
-        outputStream = new StringWriter();
-    inputStream.pipe(transform);
-    transform.pipe(outputStream);
-    transform.on('error', function (error) {
-      error.should.be.an.instanceof(Error);
-      error.message.should.equal(expectedMessage);
       done();
     });
   };

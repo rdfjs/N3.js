@@ -126,10 +126,6 @@ describe('N3Writer', function () {
       shouldSerialize(['_:a', 'b', '_:c'],
                       '_:a <b> _:c.\n'));
 
-    it('should not serialize a literal in the subject',
-      shouldNotSerialize(['"a"', 'b', '"c"'],
-                          'A literal as subject is not allowed: "a"'));
-
     it('should not leave leading whitespace if the prefix set is empty',
       shouldSerialize({},
                       ['a', 'b', 'c'],
@@ -417,7 +413,7 @@ describe('N3Writer', function () {
       });
     });
 
-    it.skip('should serialize triples with an empty blank node as graph', function (done) {
+    it('should serialize triples with an empty blank node as graph', function (done) {
       var writer = N3Writer();
       writer.addTriple(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), writer.blank());
       writer.addTriple(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), writer.blank([]));
@@ -466,8 +462,8 @@ describe('N3Writer', function () {
       writer.addTriple(writer.list(),   new NamedNode('b1'), new NamedNode('c'));
       writer.addTriple(writer.list([]), new NamedNode('b2'), new NamedNode('c'));
       writer.end(function (error, output) {
-        output.should.equal('() <b1> <c>;\n' +
-                            '    <b2> <c>.\n');
+        output.should.equal('() <b1> <c>.\n' +
+                            '() <b2> <c>.\n');
         done(error);
       });
     });
@@ -477,8 +473,8 @@ describe('N3Writer', function () {
       writer.addTriple(writer.list([new NamedNode('a')]), new NamedNode('b1'), new NamedNode('c'));
       writer.addTriple(writer.list([new NamedNode('a')]), new NamedNode('b2'), new NamedNode('c'));
       writer.end(function (error, output) {
-        output.should.equal('(<a>) <b1> <c>;\n' +
-                            '    <b2> <c>.\n');
+        output.should.equal('(<a>) <b1> <c>.\n' +
+                            '(<a>) <b2> <c>.\n');
         done(error);
       });
     });
@@ -589,24 +585,6 @@ function shouldSerialize(/* prefixes?, tripleArrays..., expectedResult */) {
           }
         });
     })();
-  };
-}
-
-function shouldNotSerialize(/* tripleArrays..., expectedResult */) {
-  var tripleArrays = Array.prototype.slice.call(arguments),
-      expectedMessage = tripleArrays.pop();
-
-  return function (done) {
-    var outputStream = new QuickStream(),
-        writer = N3Writer(outputStream),
-        item = tripleArrays.shift();
-    writer.addTriple(new Quad(Term.fromId(item[0]), Term.fromId(item[1]), Term.fromId(item[2]), Term.fromId(item[3])),
-                      function (error) {
-                        if (error) {
-                          error.message.should.equal(expectedMessage);
-                          done();
-                        }
-                      });
   };
 }
 
