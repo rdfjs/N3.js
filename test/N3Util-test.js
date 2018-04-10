@@ -1,11 +1,12 @@
-var N3Util = require('../N3').Util,
-    Datatype = require('../lib/Datatypes');
-var NamedNode = Datatype.NamedNode,
-    Literal = Datatype.Literal,
-    BlankNode = Datatype.BlankNode,
-    Variable = Datatype.Variable,
-    DefaultGraph = Datatype.DefaultGraph,
-    Quad = Datatype.Quad;
+var N3Util = require('../N3').Util;
+
+var DataFactory = require('../N3').DataFactory;
+var NamedNode = DataFactory.NamedNode,
+    Literal = DataFactory.Literal,
+    BlankNode = DataFactory.BlankNode,
+    Variable = DataFactory.Variable,
+    DefaultGraph = DataFactory.DefaultGraph,
+    Quad = DataFactory.Quad;
 
 describe('N3Util', function () {
   describe('isNamedNode', function () {
@@ -351,153 +352,6 @@ describe('N3Util', function () {
 
     it('returns the input if it is not a prefixed name', function () {
       N3Util.expandPrefixedName('abc', null).should.deep.equal('abc');
-    });
-  });
-
-  describe('namedNode', function () {
-    it('converts a plain IRI', function () {
-      N3Util.namedNode('http://ex.org/foo#bar').should.deep.equal(new NamedNode('http://ex.org/foo#bar'));
-    });
-
-    it('converts a literal', function () {
-      N3Util.namedNode('"http://ex.org/foo#bar"^^uri:type').should.deep.equal(new NamedNode('http://ex.org/foo#bar'));
-    });
-
-    it('converts null', function () {
-      expect(N3Util.namedNode(null)).to.be.null;
-    });
-  });
-
-  describe('blankNode', function () {
-    it('converts a label', function () {
-      N3Util.blankNode('abc').should.deep.equal(new BlankNode('abc'));
-    });
-
-    it('converts an anonymous blank node', function () {
-      N3Util.blankNode().should.deep.equal(new BlankNode('n30'));
-      N3Util.blankNode().should.deep.equal(new BlankNode('n31'));
-    });
-
-    it('does not create two equal anonymous blank nodes', function () {
-      N3Util.blankNode().should.not.deep.equal(N3Util.blankNode());
-    });
-  });
-
-  describe('literal', function () {
-    it('converts the empty string', function () {
-      N3Util.literal('').should.deep.equal(new Literal('""'));
-    });
-
-    it('converts the empty string with a language', function () {
-      N3Util.literal('', 'en-GB').should.deep.equal(new Literal('""@en-gb'));
-    });
-
-    it('converts the empty string with a named node type', function () {
-      N3Util.literal('', new NamedNode('http://ex.org/type')).should.deep.equal(new Literal('""^^http://ex.org/type'));
-    });
-
-    it('converts the empty string with a string type', function () {
-      N3Util.literal('', 'http://ex.org/type').should.deep.equal(new Literal('""^^http://ex.org/type'));
-    });
-
-    it('converts a non-empty string', function () {
-      N3Util.literal('abc').should.deep.equal(new Literal('"abc"'));
-    });
-
-    it('converts a non-empty string with a language', function () {
-      N3Util.literal('abc', 'en-GB').should.deep.equal(new Literal('"abc"@en-gb'));
-    });
-
-    it('converts a non-empty string with a named node type', function () {
-      N3Util.literal('abc', new NamedNode('http://ex.org/type')).should.deep.equal(new Literal('"abc"^^http://ex.org/type'));
-    });
-
-    it('converts a non-empty string with a string type', function () {
-      N3Util.literal('abc', 'http://ex.org/type').should.deep.equal(new Literal('"abc"^^http://ex.org/type'));
-    });
-
-    it('converts an integer', function () {
-      N3Util.literal(123).should.deep.equal(new Literal('"123"^^http://www.w3.org/2001/XMLSchema#integer'));
-    });
-
-    it('converts a double', function () {
-      N3Util.literal(2.3).should.deep.equal(new Literal('"2.3"^^http://www.w3.org/2001/XMLSchema#double'));
-    });
-
-    it('converts Infinity', function () {
-      N3Util.literal(Infinity).should.deep.equal(new Literal('"INF"^^http://www.w3.org/2001/XMLSchema#double'));
-    });
-
-    it('converts -Infinity', function () {
-      N3Util.literal(-Infinity).should.deep.equal(new Literal('"-INF"^^http://www.w3.org/2001/XMLSchema#double'));
-    });
-
-    it('converts NaN', function () {
-      N3Util.literal(NaN).should.deep.equal(new Literal('"NaN"^^http://www.w3.org/2001/XMLSchema#double'));
-    });
-
-    it('converts false', function () {
-      N3Util.literal(false).should.deep.equal(new Literal('"false"^^http://www.w3.org/2001/XMLSchema#boolean'));
-    });
-
-    it('converts true', function () {
-      N3Util.literal(true).should.deep.equal(new Literal('"true"^^http://www.w3.org/2001/XMLSchema#boolean'));
-    });
-  });
-
-  describe('variable', function () {
-    it('converts a label', function () {
-      N3Util.variable('abc').should.deep.equal(new Variable('abc'));
-    });
-  });
-
-  describe('defaultGraph', function () {
-    it('returns the default graph', function () {
-      N3Util.defaultGraph().should.deep.equal(new DefaultGraph());
-    });
-  });
-
-  describe('triple', function () {
-    it('returns a quad in the default graph', function () {
-      N3Util.triple(
-        new NamedNode('http://ex.org/a'),
-        new NamedNode('http://ex.org/b'),
-        new Literal('abc')
-      ).should.deep.equal(new Quad(
-        new NamedNode('http://ex.org/a'),
-        new NamedNode('http://ex.org/b'),
-        new Literal('abc'),
-        new DefaultGraph()
-      ));
-    });
-  });
-
-  describe('quad', function () {
-    it('returns a quad', function () {
-      N3Util.quad(
-        new NamedNode('http://ex.org/a'),
-        new NamedNode('http://ex.org/b'),
-        new Literal('abc'),
-        new NamedNode('http://ex.org/d')
-      ).should.deep.equal(new Quad(
-        new NamedNode('http://ex.org/a'),
-        new NamedNode('http://ex.org/b'),
-        new Literal('abc'),
-        new NamedNode('http://ex.org/d')
-      ));
-    });
-
-    it('without graph parameter returns a quad in the default graph', function () {
-      N3Util.quad(
-        new NamedNode('http://ex.org/a'),
-        new NamedNode('http://ex.org/b'),
-        new Literal('abc')
-      ).should.deep.equal(new Quad(
-        new NamedNode('http://ex.org/a'),
-        new NamedNode('http://ex.org/b'),
-        new Literal('abc'),
-        new DefaultGraph()
-      ));
     });
   });
 

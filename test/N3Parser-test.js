@@ -1,7 +1,8 @@
 var N3Parser = require('../N3').Parser;
 
-var Term = require('../N3').Term,
-    Quad = require('../N3').Quad;
+var DataFactory = require('../N3').DataFactory;
+var Term = DataFactory.Term,
+    Quad = DataFactory.Quad;
 
 describe('N3Parser', function () {
   describe('The N3Parser module', function () {

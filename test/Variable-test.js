@@ -1,6 +1,7 @@
-var Variable = require('../N3').Variable;
+var DataFactory = require('../N3').DataFactory;
 
-var Term = require('../N3').Term;
+var Variable = DataFactory.Variable,
+    Term = DataFactory.Term;
 
 describe('Variable', function () {
   describe('The Variable module', function () {

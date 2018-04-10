@@ -1,10 +1,11 @@
-var Datatype = require('../lib/Datatypes');
-var Term = Datatype.Term,
-    NamedNode = Datatype.NamedNode,
-    BlankNode = Datatype.BlankNode,
-    Literal   = Datatype.Literal,
-    Variable  = Datatype.Variable,
-    DefaultGraph = Datatype.DefaultGraph;
+var DataFactory = require('../N3').DataFactory;
+
+var Term = DataFactory.Term,
+    NamedNode = DataFactory.NamedNode,
+    BlankNode = DataFactory.BlankNode,
+    Literal   = DataFactory.Literal,
+    Variable  = DataFactory.Variable,
+    DefaultGraph = DataFactory.DefaultGraph;
 
 describe('Term', function () {
   describe('The Term module', function () {

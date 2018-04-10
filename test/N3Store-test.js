@@ -1,11 +1,12 @@
-var N3Store = require('../N3').Store,
-    Datatype = require('../lib/Datatypes');
-var Term = Datatype.Term,
-    NamedNode = Datatype.NamedNode,
-    Literal = Datatype.Literal,
-    DefaultGraph = Datatype.DefaultGraph,
-    Quad = Datatype.Quad,
-    Triple = Datatype.Triple;
+var N3Store = require('../N3').Store;
+
+var DataFactory = require('../N3').DataFactory;
+var Term = DataFactory.Term,
+    NamedNode = DataFactory.NamedNode,
+    Literal = DataFactory.Literal,
+    DefaultGraph = DataFactory.DefaultGraph,
+    Quad = DataFactory.Quad,
+    Triple = DataFactory.Triple;
 
 describe('N3Store', function () {
   describe('The N3Store module', function () {

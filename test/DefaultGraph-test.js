@@ -1,6 +1,7 @@
-var DefaultGraph = require('../N3').DefaultGraph;
+var DataFactory = require('../N3').DataFactory;
 
-var Term = require('../N3').Term;
+var DefaultGraph = DataFactory.DefaultGraph,
+    Term = DataFactory.Term;
 
 describe('DefaultGraph', function () {
   describe('The DefaultGraph module', function () {

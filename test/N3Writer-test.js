@@ -1,10 +1,11 @@
-var N3Writer = require('../N3').Writer,
-    Datatype = require('../lib/Datatypes');
-var Term = Datatype.Term,
-    NamedNode = Datatype.NamedNode,
-    Literal = Datatype.Literal,
-    Quad = Datatype.Quad,
-    Triple = Datatype.Triple;
+var N3Writer = require('../N3').Writer;
+
+var DataFactory = require('../N3').DataFactory;
+var Term = DataFactory.Term,
+    NamedNode = DataFactory.NamedNode,
+    Literal = DataFactory.Literal,
+    Quad = DataFactory.Quad,
+    Triple = DataFactory.Triple;
 
 describe('N3Writer', function () {
   describe('The N3Writer module', function () {

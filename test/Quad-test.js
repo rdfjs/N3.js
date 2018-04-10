@@ -1,8 +1,9 @@
-var Quad = require('../N3').Quad;
+var DataFactory = require('../N3').DataFactory;
 
-var Triple = require('../N3').Triple,
-    Term = require('../N3').Term,
-    DefaultGraph = require('../N3').DefaultGraph;
+var Quad = DataFactory.Quad,
+    Triple = DataFactory.Triple,
+    Term = DataFactory.Term,
+    DefaultGraph = DataFactory.DefaultGraph;
 
 describe('Quad', function () {
   describe('The Quad module', function () {

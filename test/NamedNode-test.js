@@ -1,6 +1,7 @@
-var NamedNode = require('../N3').NamedNode;
+var DataFactory = require('../N3').DataFactory;
 
-var Term = require('../N3').Term;
+var NamedNode = DataFactory.NamedNode,
+    Term = DataFactory.Term;
 
 describe('NamedNode', function () {
   describe('The NamedNode module', function () {

@@ -1,6 +1,7 @@
-var BlankNode = require('../N3').BlankNode;
+var DataFactory = require('../N3').DataFactory;
 
-var Term = require('../N3').Term;
+var BlankNode = DataFactory.BlankNode,
+    Term = DataFactory.Term;
 
 describe('BlankNode', function () {
   describe('The BlankNode module', function () {

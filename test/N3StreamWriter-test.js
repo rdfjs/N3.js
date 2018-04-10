@@ -2,9 +2,9 @@ var N3StreamWriter = require('../N3').StreamWriter;
 
 var Readable = require('stream').Readable,
     Writable = require('stream').Writable,
-    Datatype = require('../lib/Datatypes');
-var Term = Datatype.Term,
-    Quad = Datatype.Quad;
+    DataFactory = require('../N3').DataFactory;
+var Term = DataFactory.Term,
+    Quad = DataFactory.Quad;
 
 describe('N3StreamWriter', function () {
   describe('The N3StreamWriter module', function () {
