@@ -1964,7 +1964,7 @@ function shouldParse(createParser, input) {
 function toSortedJSON(triples) {
   triples = triples.map(function (t) {
     return JSON.stringify([
-      t.subject.id, t.predicate.id, t.object.id,  t.graph.id,
+      t.subject.toJSON(), t.predicate.toJSON(), t.object.toJSON(), t.graph.toJSON(),
     ]);
   });
   triples.sort();
