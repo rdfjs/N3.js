@@ -37,6 +37,16 @@ describe('N3StreamParser', function () {
     it('emits "prefix" events',
       shouldEmitPrefixes(['@prefix a: <http://a.org/#>. a:a a:b a:c. @prefix b: <http://b.org/#>.'],
                          { a: new NamedNode('http://a.org/#'), b: new NamedNode('http://b.org/#') }));
+
+    it('passes an error', function () {
+      var input = new Readable(),
+          parser = new N3StreamParser(),
+          error = null;
+      parser.on('error', function (e) { error = e; });
+      parser.import(input);
+      input.emit('error', new Error());
+      expect(error).to.be.an.instanceof(Error);
+    });
   });
 });
 
@@ -45,12 +55,12 @@ function shouldParse(chunks, expectedLength) {
   return function (done) {
     var triples = [],
         inputStream = new ArrayReader(chunks),
-        outputStream = new ArrayWriter(triples),
-        transform = new N3StreamParser();
-    inputStream.pipe(transform);
-    transform.pipe(outputStream);
-    transform.on('error', done);
-    transform.on('end', function () {
+        parser = new N3StreamParser(),
+        outputStream = new ArrayWriter(triples);
+    parser.import(inputStream);
+    parser.pipe(outputStream);
+    parser.on('error', done);
+    parser.on('end', function () {
       triples.should.have.length(expectedLength);
       done();
     });
@@ -60,11 +70,11 @@ function shouldParse(chunks, expectedLength) {
 function shouldNotParse(chunks, expectedMessage, expectedContext) {
   return function (done) {
     var inputStream = new ArrayReader(chunks),
-        outputStream = new ArrayWriter([]),
-        transform = N3StreamParser();
-    inputStream.pipe(transform);
-    transform.pipe(outputStream);
-    transform.on('error', function (error) {
+        parser = N3StreamParser(),
+        outputStream = new ArrayWriter([]);
+    inputStream.pipe(parser);
+    parser.pipe(outputStream);
+    parser.on('error', function (error) {
       error.should.be.an.instanceof(Error);
       error.message.should.equal(expectedMessage);
       if (expectedContext) error.context.should.deep.equal(expectedContext);
@@ -76,13 +86,13 @@ function shouldNotParse(chunks, expectedMessage, expectedContext) {
 function shouldEmitPrefixes(chunks, expectedPrefixes) {
   return function (done) {
     var prefixes = {},
-        inputStream = new ArrayReader(chunks),
-        transform = N3StreamParser();
-    inputStream.pipe(transform);
-    transform.on('data', function () {});
-    transform.on('prefix', function (prefix, iri) { prefixes[prefix] = iri; });
-    transform.on('error', done);
-    transform.on('end', function (error) {
+        parser = N3StreamParser(),
+        inputStream = new ArrayReader(chunks);
+    inputStream.pipe(parser);
+    parser.on('data', function () {});
+    parser.on('prefix', function (prefix, iri) { prefixes[prefix] = iri; });
+    parser.on('error', done);
+    parser.on('end', function (error) {
       prefixes.should.deep.equal(expectedPrefixes);
       done(error);
     });

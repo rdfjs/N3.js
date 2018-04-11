@@ -55,6 +55,16 @@ describe('N3StreamWriter', function () {
                       '<http://a.org/bc/de> <http://a.org/b#e#f> <http://a.org/b#x/t>.\n' +
                       '<http://a.org/3a> <http://a.org/b#3a> b:a3.\n'));
   });
+
+  it('passes an error', function () {
+    var input = new Readable(),
+        writer = new N3StreamWriter(),
+        error = null;
+    writer.on('error', function (e) { error = e; });
+    writer.import(input);
+    input.emit('error', new Error());
+    expect(error).to.be.an.instanceof(Error);
+  });
 });
 
 
@@ -65,12 +75,12 @@ function shouldSerialize(/* options?, tripleArrays..., expectedResult */) {
 
   return function (done) {
     var inputStream = new ArrayReader(tripleArrays),
-        transform = new N3StreamWriter(options),
+        writer = new N3StreamWriter(options),
         outputStream = new StringWriter();
-    inputStream.pipe(transform);
-    transform.pipe(outputStream);
-    transform.on('error', done);
-    transform.on('end', function () {
+    writer.import(inputStream);
+    writer.pipe(outputStream);
+    writer.on('error', done);
+    writer.on('end', function () {
       outputStream.result.should.equal(expectedResult);
       done();
     });
