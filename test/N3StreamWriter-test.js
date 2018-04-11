@@ -54,6 +54,26 @@ describe('N3StreamWriter', function () {
                       'a:bc b:ef a:bhi.\n' +
                       '<http://a.org/bc/de> <http://a.org/b#e#f> <http://a.org/b#x/t>.\n' +
                       '<http://a.org/3a> <http://a.org/b#3a> b:a3.\n'));
+
+    it('should take over prefixes from the input stream', function (done) {
+      var inputStream = new Readable(),
+          writer = new N3StreamWriter(),
+          outputStream = new StringWriter();
+      writer.import(inputStream);
+      writer.pipe(outputStream);
+
+      // emit prefixes and close
+      inputStream.emit('prefix', 'a', new NamedNode('http://a.org/'));
+      inputStream.emit('prefix', 'b', new NamedNode('http://b.org/'));
+      inputStream.push(null);
+
+      writer.on('error', done);
+      writer.on('end', function () {
+        outputStream.result.should.equal('@prefix a: <http://a.org/>.\n\n' +
+                                         '@prefix b: <http://b.org/>.\n\n');
+        done();
+      });
+    });
   });
 
   it('passes an error', function () {
