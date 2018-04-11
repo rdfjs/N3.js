@@ -58,11 +58,14 @@ console.log(myQuad.object.datatype.value); // http://www.w3.org/1999/02/22-rdf-s
 console.log(myQuad.object.language);       // en
 ```
 
+In the rest of this document, we will treat “triples” and “quads” equally:
+we assume that a quad is simply a triple in a named or default graph.
+
 ## Parsing
 
-### From an RDF document to triples
+### From an RDF document to quads
 
-`N3.Parser` transforms Turtle, TriG, N-Triples, or N-Quads document into triples through a callback:
+`N3.Parser` transforms Turtle, TriG, N-Triples, or N-Quads document into quads through a callback:
 ```JavaScript
 const parser = new N3.Parser();
 parser.parse(
@@ -77,9 +80,9 @@ parser.parse(
       console.log("# That's all, folks!", prefixes);
   });
 ```
-The callback's first argument is an error value, the second is a triple.
-If there are no more triples,
-the callback is invoked one last time with `null` for `triple`
+The callback's first argument is an optional error value, the second is a quad.
+If there are no more quads,
+the callback is invoked one last time with `null` for `quad`
 and a hash of prefixes as third argument.
 <br>
 Pass a second callback to `parse` to retrieve prefixes as they are read.
@@ -103,10 +106,10 @@ const parser4 = N3.Parser({ format: 'Notation3' });
 const parser5 = N3.Parser({ format: 'text/n3' });
 ```
 
-### From an RDF stream to triples
+### From an RDF stream to quads
 
 `N3.Parser` can parse [Node.js streams](http://nodejs.org/api/stream.html) as they grow,
-returning triples as soon as they're ready.
+returning quads as soon as they're ready.
 
 ```JavaScript
 const parser = N3.Parser(),
@@ -126,8 +129,8 @@ streamParser.pipe(new SlowConsumer());
 
 function SlowConsumer() {
   const writer = new require('stream').Writable({ objectMode: true });
-  writer._write = (triple, encoding, done) => {
-    console.log(triple);
+  writer._write = (quad, encoding, done) => {
+    console.log(quad);
     setTimeout(done, 1000);
   };
   return writer;
@@ -138,19 +141,19 @@ A dedicated `prefix` event signals every prefix with `prefix` and `term` argumen
 
 ## Writing
 
-### From triples to a string
+### From quads to a string
 
-`N3.Writer` serializes triples as an RDF document.
-Write triples through `addTriple`.
+`N3.Writer` serializes quads as an RDF document.
+Write quads through `addQuad`.
 
 ```JavaScript
 const writer = N3.Writer({ prefixes: { c: 'http://example.org/cartoons#' } });
-writer.addTriple(
+writer.addQuad(
   namedNode('http://example.org/cartoons#Tom'),
   namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
   namedNode('http://example.org/cartoons#Cat')
 );
-writer.addTriple(quad(
+writer.addQuad(quad(
   namedNode('http://example.org/cartoons#Tom'),
   namedNode('http://example.org/cartoons#name'),
   literal('Tom')
@@ -158,7 +161,7 @@ writer.addTriple(quad(
 writer.end((error, result) => console.log(result));
 ```
 
-By default, `N3.Writer` writes Turtle (or TriG for triples with a `graph` property).
+By default, `N3.Writer` writes Turtle (or TriG if some quads are in a named graph).
 <br>
 To write N-Triples (or N-Quads) instead, pass a `format` argument upon creation:
 
@@ -167,18 +170,18 @@ const writer1 = N3.Writer({ format: 'N-Triples' });
 const writer2 = N3.Writer({ format: 'application/trig' });
 ```
 
-### From triples to an RDF stream
+### From quads to an RDF stream
 
-`N3.Writer` can also write triples to a Node.js stream.
+`N3.Writer` can also write quads to a Node.js stream.
 
 ```JavaScript
 const writer = N3.Writer(process.stdout, { end: false, prefixes: { c: 'http://example.org/cartoons#' } });
-writer.addTriple(
+writer.addQuad(
   namedNode('http://example.org/cartoons#Tom'),
   namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
   namedNode('http://example.org/cartoons#Cat')
 );
-writer.addTriple(quad(
+writer.addQuad(quad(
   namedNode('http://example.org/cartoons#Tom'),
   namedNode('http://example.org/cartoons#name'),
   literal('Tom')
@@ -186,7 +189,7 @@ writer.addTriple(quad(
 writer.end();
 ```
 
-### From a triple stream to an RDF stream
+### From a quad stream to an RDF stream
 
 `N3.StreamWriter` is a [Node.js stream](http://nodejs.org/api/stream.html) and [RDF.js Sink](http://rdf.js.org/#sink-interface) implementation.
 
@@ -209,14 +212,14 @@ The `blank` and `list` functions allow you to create them manually instead:
 ```JavaScript
 const writer = N3.Writer({ prefixes: { c: 'http://example.org/cartoons#',
                                        foaf: 'http://xmlns.com/foaf/0.1/' } });
-writer.addTriple(
+writer.addQuad(
   writer.blank(
     namedNode('http://xmlns.com/foaf/0.1/givenName'),
     literal('Tom', 'en')),
   namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
   namedNode('http://example.org/cartoons#Cat')
 );
-writer.addTriple(quad(
+writer.addQuad(quad(
   namedNode('http://example.org/cartoons#Jerry'),
   namedNode('http://xmlns.com/foaf/0.1/knows'),
   writer.blank([{
@@ -227,7 +230,7 @@ writer.addTriple(quad(
     object:    literal('Tom', 'en'),
   }])
 ));
-writer.addTriple(
+writer.addQuad(
   namedNode('http://example.org/cartoons#Mammy'),
   namedNode('http://example.org/cartoons#hasPets'),
   writer.list([
@@ -248,46 +251,46 @@ Then, we find triples with `:Mickey` as subject.
 
 ```JavaScript
 const store = N3.Store();
-store.addTriple(
+store.addQuad(
   namedNode('http://ex.org/Pluto'), 
   namedNode('http://ex.org/type'),
   namedNode('http://ex.org/Dog')
 );
-store.addTriple(
+store.addQuad(
   namedNode('http://ex.org/Mickey'),
   namedNode('http://ex.org/type'),
   namedNode('http://ex.org/Mouse')
 );
 
-const mickey = store.getTriples(namedNode('http://ex.org/Mickey'), null, null)[0];
+const mickey = store.getQuads(namedNode('http://ex.org/Mickey'), null, null)[0];
 console.log(mickey);
 ```
 
-### Addition and deletion of triples/quads
+### Addition and deletion of quads
 The store provides the following manipulation methods
 ([documentation](http://rubenverborgh.github.io/N3.js/docs/N3Store.html)):
-- `addTriple` to insert one triple/quad
-- `addTriples` to insert an array of triples/quads
-- `removeTriple` to remove one triple/quad
-- `removeTriples` to remove an array of triples/quads
+- `addQuad` to insert one quad
+- `addQuads` to insert an array of quads
+- `removeQuad` to remove one quad
+- `removeQuads` to remove an array of quads
 - `createBlankNode` returns an unused blank node identifier
 
-### Searching triples/quads or entities
+### Searching quads or entities
 The store provides the following search methods
 ([documentation](http://rubenverborgh.github.io/N3.js/docs/N3Store.html)):
-- `getTriples` returns an array of triples/quads matching the given pattern
-- `countTriples` counts the number of triples/quads matching the given pattern
-- `forEach` executes a callback on all matching triples/quads
-- `every` returns whether a callback on matching triples/quads always returns true
-- `some`  returns whether a callback on matching triples/quads returns true at least once
-- `getSubjects` returns an array of unique subjects occurring in matching triples
-- `forSubjects` executes a callback on unique subjects occurring in matching triples
-- `getPredicates` returns an array of unique predicates occurring in matching triple
-- `forPredicates` executes a callback on unique predicates occurring in matching triples
-- `getObjects` returns an array of unique objects occurring in matching triple
-- `forObjects` executes a callback on unique objects occurring in matching triples
-- `getGraphs` returns an array of unique graphs occurring in matching triple
-- `forGraphs` executes a callback on unique graphs occurring in matching triples
+- `getQuads` returns an array of quads matching the given pattern
+- `countQuads` counts the number of quads matching the given pattern
+- `forEach` executes a callback on all matching quads
+- `every` returns whether a callback on matching quads always returns true
+- `some`  returns whether a callback on matching quads returns true at least once
+- `getSubjects` returns an array of unique subjects occurring in matching quads
+- `forSubjects` executes a callback on unique subjects occurring in matching quads
+- `getPredicates` returns an array of unique predicates occurring in matching quad
+- `forPredicates` executes a callback on unique predicates occurring in matching quads
+- `getObjects` returns an array of unique objects occurring in matching quad
+- `forObjects` executes a callback on unique objects occurring in matching quads
+- `getGraphs` returns an array of unique graphs occurring in matching quad
+- `forGraphs` executes a callback on unique graphs occurring in matching quads
 
 ## Compatibility
 ### Format specifications

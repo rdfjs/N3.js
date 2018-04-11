@@ -120,14 +120,14 @@ SpecTester.prototype._fetch = function (filename, callback) {
 
 // Parses the tests manifest into tests
 SpecTester.prototype._parseManifest = function (manifestContents, callback) {
-  // Parse the manifest into triples
+  // Parse the manifest into quads
   var manifest = {}, testStore = new N3.Store(), self = this;
-  new N3.Parser({ format: 'text/turtle' }).parse(manifestContents, function (error, triple) {
-    // Store triples until there are no more
-    if (error)  return callback(error);
-    if (triple) return testStore.addTriple(triple.subject, triple.predicate, triple.object);
+  new N3.Parser({ format: 'text/turtle' }).parse(manifestContents, function (error, quad) {
+    // Store quads until there are no more
+    if (error) return callback(error);
+    if (quad)  return testStore.addQuad(quad.subject, quad.predicate, quad.object);
 
-    // Once all triples are there, get the first item of the test list
+    // Once all quads are there, get the first item of the test list
     var tests = manifest.tests = [],
         skipped = manifest.skipped = [],
         itemHead = testStore.getObjects('', prefixes.mf + 'entries')[0];
@@ -135,19 +135,19 @@ SpecTester.prototype._parseManifest = function (manifestContents, callback) {
     while (itemHead && itemHead.value !== nil) {
       // Find and store the item's properties
       var itemValue = testStore.getObjects(itemHead, first)[0],
-          itemTriples = testStore.getTriples(itemValue, null, null),
+          itemQuads = testStore.getQuads(itemValue, null, null),
           test = { id: itemValue.value.replace(/^#/, '') };
-      itemTriples.forEach(function (triple) {
-        var propertyMatch = triple.predicate.value.match(/#(.+)/);
+      itemQuads.forEach(function (quad) {
+        var propertyMatch = quad.predicate.value.match(/#(.+)/);
         if (propertyMatch)
-          test[propertyMatch[1]] = triple.object.value;
+          test[propertyMatch[1]] = quad.object.value;
       });
       test.negative = /Negative/.test(test.type);
       test.skipped = self._skipNegative && test.negative;
       (!test.skipped ? tests : skipped).push(test);
 
       // Find the next test item
-      itemHead = testStore.getTriples(itemHead, rest, null)[0].object;
+      itemHead = testStore.getQuads(itemHead, rest, null)[0].object;
     }
     return callback(null, manifest);
   });
@@ -163,9 +163,9 @@ SpecTester.prototype._performTest = function (test, actionStream, callback) {
       resultWriter = new N3.Writer(fs.createWriteStream(resultFile), { format: 'N-Quads' }),
       config = { format: this._name, documentIRI: url.resolve(this._manifest, test.action) },
       parser = new N3.Parser(config), self = this;
-  parser.parse(actionStream, function (error, triple) {
+  parser.parse(actionStream, function (error, quad) {
     if (error)  test.error = error;
-    if (triple) resultWriter.addTriple(triple);
+    if (quad) resultWriter.addQuad(quad);
     // Verify the result after it has been written
     else
       resultWriter.end(function () {
@@ -250,7 +250,7 @@ SpecTester.prototype._generateEarlReport = function (tests, callback) {
   report.addPrefix('manifest', manifest);
 
   function addTriple(s, p, o) {
-    report.addTriple(Term.fromId(s), Term.fromId(p), Term.fromId(o));
+    report.addQuad(Term.fromId(s), Term.fromId(p), Term.fromId(o));
   }
 
   addTriple(reportFile, prefixes.foaf + 'primaryTopic', app);

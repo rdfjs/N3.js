@@ -5,8 +5,7 @@ var Readable = require('stream').Readable,
 var Term = DataFactory.Term,
     NamedNode = DataFactory.NamedNode,
     DefaultGraph = DataFactory.DefaultGraph,
-    Quad = DataFactory.Quad,
-    Triple = DataFactory.Triple;
+    Quad = DataFactory.Quad;
 
 describe('N3Store', function () {
   describe('The N3Store module', function () {
@@ -31,14 +30,14 @@ describe('N3Store', function () {
     });
 
     it('should be empty', function () {
-      store.getTriples().should.be.empty;
+      store.getQuads().should.be.empty;
     });
 
     describe('when importing a stream of 2 quads', function () {
       before(function (done) {
         var stream = new ArrayReader([
-          new Triple(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
-          new Triple(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+          new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
+          new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
         ]);
         var events = store.import(stream);
         events.on('end', done);
@@ -50,8 +49,8 @@ describe('N3Store', function () {
     describe('when removing a stream of 2 quads', function () {
       before(function (done) {
         var stream = new ArrayReader([
-          new Triple(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
-          new Triple(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+          new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
+          new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
         ]);
         var events = store.remove(stream);
         events.on('end', done);
@@ -88,8 +87,8 @@ describe('N3Store', function () {
 
     it('should still have size 0 (instead of null) after adding and removing a triple', function () {
       expect(store.size).to.eql(0);
-      store.addTriple(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')).should.be.true;
-      store.removeTriple(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')).should.be.true;
+      store.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')).should.be.true;
+      store.removeQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')).should.be.true;
       expect(store.size).to.eql(0);
     });
 
@@ -97,9 +96,9 @@ describe('N3Store', function () {
       store.createBlankNode().value.should.eql('b0');
       store.createBlankNode().value.should.eql('b1');
 
-      store.addTriple('_:b0', '_:b1', '_:b2').should.be.true;
+      store.addQuad('_:b0', '_:b1', '_:b2').should.be.true;
       store.createBlankNode().value.should.eql('b3');
-      store.removeTriples(store.getTriples());
+      store.removeQuads(store.getQuads());
     });
 
     it('should be able to generate named blank nodes', function () {
@@ -109,9 +108,9 @@ describe('N3Store', function () {
     });
 
     it('should be able to store triples with generated blank nodes', function () {
-      store.addTriple(store.createBlankNode('x'), new NamedNode('b'), new NamedNode('c')).should.be.true;
-      shouldIncludeAll(store.getTriples(null, new NamedNode('b')), ['_:x', 'b', 'c'])();
-      store.removeTriples(store.getTriples());
+      store.addQuad(store.createBlankNode('x'), new NamedNode('b'), new NamedNode('c')).should.be.true;
+      shouldIncludeAll(store.getQuads(null, new NamedNode('b')), ['_:x', 'b', 'c'])();
+      store.removeQuads(store.getQuads());
     });
   });
 
@@ -128,7 +127,7 @@ describe('N3Store', function () {
 
     describe('adding a triple that already exists', function () {
       it('should return false', function () {
-        store.addTriple('s1', 'p1', 'o1').should.be.false;
+        store.addQuad('s1', 'p1', 'o1').should.be.false;
       });
 
       it('should not increase the size', function () {
@@ -138,7 +137,7 @@ describe('N3Store', function () {
 
     describe('adding a triple that did not exist yet', function () {
       it('should return true', function () {
-        store.addTriple('s1', 'p1', 'o4').should.be.true;
+        store.addQuad('s1', 'p1', 'o4').should.be.true;
       });
 
       it('should increase the size', function () {
@@ -148,7 +147,7 @@ describe('N3Store', function () {
 
     describe('removing an existing triple', function () {
       it('should return true', function () {
-        store.removeTriple('s1', 'p1', 'o4').should.be.true;
+        store.removeQuad('s1', 'p1', 'o4').should.be.true;
       });
 
       it('should decrease the size', function () {
@@ -158,7 +157,7 @@ describe('N3Store', function () {
 
     describe('removing a non-existing triple', function () {
       it('should return false', function () {
-        store.removeTriple('s1', 'p1', 'o5').should.be.false;
+        store.removeQuad('s1', 'p1', 'o5').should.be.false;
       });
 
       it('should not decrease the size', function () {
@@ -169,13 +168,13 @@ describe('N3Store', function () {
 
   describe('An N3Store with 5 elements', function () {
     var store = new N3Store();
-    store.addTriple('s1', 'p1', 'o1').should.be.true;
-    store.addTriple({ subject: 's1', predicate: 'p1', object: 'o2' }).should.be.true;
-    store.addTriples([
+    store.addQuad('s1', 'p1', 'o1').should.be.true;
+    store.addQuad({ subject: 's1', predicate: 'p1', object: 'o2' }).should.be.true;
+    store.addQuads([
       { subject: 's1', predicate: 'p2', object: 'o2' },
       { subject: 's2', predicate: 'p1', object: 'o1' },
     ]);
-    store.addTriple('s1', 'p1', 'o1', 'c4').should.be.true;
+    store.addQuad('s1', 'p1', 'o1', 'c4').should.be.true;
 
     it('should have size 5', function () {
       store.size.should.eql(5);
@@ -183,7 +182,7 @@ describe('N3Store', function () {
 
     describe('when searched without parameters', function () {
       it('should return all items',
-        shouldIncludeAll(store.getTriples(),
+        shouldIncludeAll(store.getQuads(),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o2'],
                          ['s1', 'p2', 'o2'],
@@ -193,7 +192,7 @@ describe('N3Store', function () {
 
     describe('when searched with an existing subject parameter', function () {
       it('should return all items with this subject in all graphs',
-        shouldIncludeAll(store.getTriples(new NamedNode('s1'), null, null),
+        shouldIncludeAll(store.getQuads(new NamedNode('s1'), null, null),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o2'],
                          ['s1', 'p2', 'o2'],
@@ -201,16 +200,16 @@ describe('N3Store', function () {
     });
 
     describe('when searched with a non-existing subject parameter', function () {
-      itShouldBeEmpty(store.getTriples(new NamedNode('s3'), null, null));
+      itShouldBeEmpty(store.getQuads(new NamedNode('s3'), null, null));
     });
 
     describe('when searched with a non-existing subject parameter that exists elsewhere', function () {
-      itShouldBeEmpty(store.getTriples(new NamedNode('p1'), null, null));
+      itShouldBeEmpty(store.getQuads(new NamedNode('p1'), null, null));
     });
 
     describe('when searched with an existing predicate parameter', function () {
       it('should return all items with this predicate in all graphs',
-        shouldIncludeAll(store.getTriples(null, new NamedNode('p1'), null),
+        shouldIncludeAll(store.getQuads(null, new NamedNode('p1'), null),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o2'],
                          ['s2', 'p1', 'o1'],
@@ -218,70 +217,70 @@ describe('N3Store', function () {
     });
 
     describe('when searched with a non-existing predicate parameter', function () {
-      itShouldBeEmpty(store.getTriples(null, new NamedNode('p3'), null));
+      itShouldBeEmpty(store.getQuads(null, new NamedNode('p3'), null));
     });
 
     describe('when searched with an existing object parameter', function () {
       it('should return all items with this object in all graphs',
-        shouldIncludeAll(store.getTriples(null, null, new NamedNode('o1')),
+        shouldIncludeAll(store.getQuads(null, null, new NamedNode('o1')),
                          ['s1', 'p1', 'o1'],
                          ['s2', 'p1', 'o1'],
                          ['s1', 'p1', 'o1', 'c4']));
     });
 
     describe('when searched with a non-existing object parameter', function () {
-      itShouldBeEmpty(store.getTriples(null, null, new NamedNode('o4')));
+      itShouldBeEmpty(store.getQuads(null, null, new NamedNode('o4')));
     });
 
     describe('when searched with existing subject and predicate parameters', function () {
       it('should return all items with this subject and predicate in all graphs',
-        shouldIncludeAll(store.getTriples(new NamedNode('s1'), new NamedNode('p1'), null),
+        shouldIncludeAll(store.getQuads(new NamedNode('s1'), new NamedNode('p1'), null),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o2'],
                          ['s1', 'p1', 'o1', 'c4']));
     });
 
     describe('when searched with non-existing subject and predicate parameters', function () {
-      itShouldBeEmpty(store.getTriples(new NamedNode('s2'), new NamedNode('p2'), null));
+      itShouldBeEmpty(store.getQuads(new NamedNode('s2'), new NamedNode('p2'), null));
     });
 
     describe('when searched with existing subject and object parameters', function () {
       it('should return all items with this subject and object in all graphs',
-        shouldIncludeAll(store.getTriples(new NamedNode('s1'), null, new NamedNode('o1')),
+        shouldIncludeAll(store.getQuads(new NamedNode('s1'), null, new NamedNode('o1')),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o1', 'c4']));
     });
 
     describe('when searched with non-existing subject and object parameters', function () {
-      itShouldBeEmpty(store.getTriples(new NamedNode('s2'), new NamedNode('p2'), null));
+      itShouldBeEmpty(store.getQuads(new NamedNode('s2'), new NamedNode('p2'), null));
     });
 
     describe('when searched with existing predicate and object parameters', function () {
       it('should return all items with this predicate and object in all graphs',
-        shouldIncludeAll(store.getTriples(null, new NamedNode('p1'), new NamedNode('o1')),
+        shouldIncludeAll(store.getQuads(null, new NamedNode('p1'), new NamedNode('o1')),
                          ['s1', 'p1', 'o1'],
                          ['s2', 'p1', 'o1'],
                          ['s1', 'p1', 'o1', 'c4']));
     });
 
     describe('when searched with non-existing predicate and object parameters in the default graph', function () {
-      itShouldBeEmpty(store.getTriples(null, new NamedNode('p2'), new NamedNode('o3'), new DefaultGraph()));
+      itShouldBeEmpty(store.getQuads(null, new NamedNode('p2'), new NamedNode('o3'), new DefaultGraph()));
     });
 
     describe('when searched with existing subject, predicate, and object parameters', function () {
       it('should return all items with this subject, predicate, and object in all graphs',
-        shouldIncludeAll(store.getTriples(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+        shouldIncludeAll(store.getQuads(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o1', 'c4']));
     });
 
     describe('when searched with a non-existing triple', function () {
-      itShouldBeEmpty(store.getTriples(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o1')));
+      itShouldBeEmpty(store.getQuads(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o1')));
     });
 
     describe('when searched with the default graph parameter', function () {
       it('should return all items in the default graph',
-        shouldIncludeAll(store.getTriples(null, null, null, new DefaultGraph()),
+        shouldIncludeAll(store.getQuads(null, null, null, new DefaultGraph()),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o2'],
                          ['s1', 'p2', 'o2'],
@@ -290,12 +289,12 @@ describe('N3Store', function () {
 
     describe('when searched with an existing named graph parameter', function () {
       it('should return all items in that graph',
-        shouldIncludeAll(store.getTriples(null, null, null, new NamedNode('c4')),
+        shouldIncludeAll(store.getQuads(null, null, null, new NamedNode('c4')),
                          ['s1', 'p1', 'o1', 'c4']));
     });
 
     describe('when searched with a non-existing named graph parameter', function () {
-      itShouldBeEmpty(store.getTriples(null, null, null, new NamedNode('c5')));
+      itShouldBeEmpty(store.getQuads(null, null, null, new NamedNode('c5')));
     });
 
     describe('getSubjects', function () {
@@ -775,170 +774,170 @@ describe('N3Store', function () {
 
     describe('when counted without parameters', function () {
       it('should count all items in all graphs', function () {
-        store.countTriples().should.equal(5);
+        store.countQuads().should.equal(5);
       });
     });
 
     describe('when counted with an existing subject parameter', function () {
       it('should count all items with this subject in all graphs', function () {
-        store.countTriples(new NamedNode('s1'), null, null).should.equal(4);
+        store.countQuads(new NamedNode('s1'), null, null).should.equal(4);
       });
     });
 
     describe('when counted with a non-existing subject parameter', function () {
       it('should be empty', function () {
-        store.countTriples(new NamedNode('s3'), null, null).should.equal(0);
+        store.countQuads(new NamedNode('s3'), null, null).should.equal(0);
       });
     });
 
     describe('when counted with a non-existing subject parameter that exists elsewhere', function () {
       it('should be empty', function () {
-        store.countTriples(new NamedNode('p1'), null, null).should.equal(0);
+        store.countQuads(new NamedNode('p1'), null, null).should.equal(0);
       });
     });
 
     describe('when counted with an existing predicate parameter', function () {
       it('should count all items with this predicate in all graphs', function () {
-        store.countTriples(null, new NamedNode('p1'), null).should.equal(4);
+        store.countQuads(null, new NamedNode('p1'), null).should.equal(4);
       });
     });
 
     describe('when counted with a non-existing predicate parameter', function () {
       it('should be empty', function () {
-        store.countTriples(null, new NamedNode('p3'), null).should.equal(0);
+        store.countQuads(null, new NamedNode('p3'), null).should.equal(0);
       });
     });
 
     describe('when counted with an existing object parameter', function () {
       it('should count all items with this object in all graphs', function () {
-        store.countTriples(null, null, 'o1').should.equal(3);
+        store.countQuads(null, null, 'o1').should.equal(3);
       });
     });
 
     describe('when counted with a non-existing object parameter', function () {
       it('should be empty', function () {
-        store.countTriples(null, null, 'o4').should.equal(0);
+        store.countQuads(null, null, 'o4').should.equal(0);
       });
     });
 
     describe('when counted with existing subject and predicate parameters', function () {
       it('should count all items with this subject and predicate in all graphs', function () {
-        store.countTriples('s1', 'p1', null).should.equal(3);
+        store.countQuads('s1', 'p1', null).should.equal(3);
       });
     });
 
     describe('when counted with non-existing subject and predicate parameters', function () {
       it('should be empty', function () {
-        store.countTriples('s2', 'p2', null).should.equal(0);
+        store.countQuads('s2', 'p2', null).should.equal(0);
       });
     });
 
     describe('when counted with existing subject and object parameters', function () {
       it('should count all items with this subject and object in all graphs', function () {
-        store.countTriples('s1', null, 'o1').should.equal(2);
+        store.countQuads('s1', null, 'o1').should.equal(2);
       });
     });
 
     describe('when counted with non-existing subject and object parameters', function () {
       it('should be empty', function () {
-        store.countTriples('s2', 'p2', null).should.equal(0);
+        store.countQuads('s2', 'p2', null).should.equal(0);
       });
     });
 
     describe('when counted with existing predicate and object parameters', function () {
       it('should count all items with this predicate and object in all graphs', function () {
-        store.countTriples(null, 'p1', 'o1').should.equal(3);
+        store.countQuads(null, 'p1', 'o1').should.equal(3);
       });
     });
 
     describe('when counted with non-existing predicate and object parameters', function () {
       it('should be empty', function () {
-        store.countTriples(null, 'p2', 'o3').should.equal(0);
+        store.countQuads(null, 'p2', 'o3').should.equal(0);
       });
     });
 
     describe('when counted with existing subject, predicate, and object parameters', function () {
       it('should count all items with this subject, predicate, and object in all graphs', function () {
-        store.countTriples('s1', 'p1', 'o1').should.equal(2);
+        store.countQuads('s1', 'p1', 'o1').should.equal(2);
       });
     });
 
     describe('when counted with a non-existing triple', function () {
       it('should be empty', function () {
-        store.countTriples('s2', 'p2', 'o1').should.equal(0);
+        store.countQuads('s2', 'p2', 'o1').should.equal(0);
       });
     });
 
     describe('when counted with the default graph parameter', function () {
       it('should count all items in the default graph', function () {
-        store.countTriples(null, null, null, new DefaultGraph()).should.equal(4);
+        store.countQuads(null, null, null, new DefaultGraph()).should.equal(4);
       });
     });
 
     describe('when counted with an existing named graph parameter', function () {
       it('should count all items in that graph', function () {
-        store.countTriples(null, null, null, 'c4').should.equal(1);
+        store.countQuads(null, null, null, 'c4').should.equal(1);
       });
     });
 
     describe('when counted with a non-existing named graph parameter', function () {
       it('should be empty', function () {
-        store.countTriples(null, null, null, 'c5').should.equal(0);
+        store.countQuads(null, null, null, 'c5').should.equal(0);
       });
     });
 
     describe('when trying to remove a triple with a non-existing subject', function () {
-      before(function () { store.removeTriple(new NamedNode('s0'), new NamedNode('p1'), new NamedNode('o1')).should.be.false; });
+      before(function () { store.removeQuad(new NamedNode('s0'), new NamedNode('p1'), new NamedNode('o1')).should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove a triple with a non-existing predicate', function () {
-      before(function () { store.removeTriple(new NamedNode('s1'), new NamedNode('p0'), new NamedNode('o1')).should.be.false; });
+      before(function () { store.removeQuad(new NamedNode('s1'), new NamedNode('p0'), new NamedNode('o1')).should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove a triple with a non-existing object', function () {
-      before(function () { store.removeTriple(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o0')).should.be.false; });
+      before(function () { store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o0')).should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove a triple for which no subjects exist', function () {
-      before(function () { store.removeTriple(new NamedNode('o1'), new NamedNode('p1'), new NamedNode('o1')).should.be.false; });
+      before(function () { store.removeQuad(new NamedNode('o1'), new NamedNode('p1'), new NamedNode('o1')).should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove a triple for which no predicates exist', function () {
-      before(function () { store.removeTriple(new NamedNode('s1'), new NamedNode('s1'), new NamedNode('o1')).should.be.false; });
+      before(function () { store.removeQuad(new NamedNode('s1'), new NamedNode('s1'), new NamedNode('o1')).should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove a triple for which no objects exist', function () {
-      before(function () { store.removeTriple(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('s1')).should.be.false; });
+      before(function () { store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('s1')).should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove a triple that does not exist', function () {
-      before(function () { store.removeTriple(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o1')).should.be.false; });
+      before(function () { store.removeQuad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o1')).should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove an incomplete triple', function () {
-      before(function () { store.removeTriple(new NamedNode('s1'), null, null).should.be.false; });
+      before(function () { store.removeQuad(new NamedNode('s1'), null, null).should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when trying to remove a triple with a non-existing graph', function () {
-      before(function () { store.removeTriple(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c0')).should.be.false; });
+      before(function () { store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c0')).should.be.false; });
       it('should still have size 5', function () { store.size.should.eql(5); });
     });
 
     describe('when removing an existing triple', function () {
-      before(function () { store.removeTriple(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')).should.be.true; });
+      before(function () { store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')).should.be.true; });
 
       it('should have size 4', function () { store.size.should.eql(4); });
 
       it('should not contain that triple anymore',
-        shouldIncludeAll(function () { return store.getTriples(); },
+        shouldIncludeAll(function () { return store.getQuads(); },
                          ['s1', 'p1', 'o2'],
                          ['s1', 'p2', 'o2'],
                          ['s2', 'p1', 'o1'],
@@ -946,32 +945,32 @@ describe('N3Store', function () {
     });
 
     describe('when removing an existing triple from a named graph', function () {
-      before(function () { store.removeTriple(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c4')).should.be.true; });
+      before(function () { store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c4')).should.be.true; });
 
       it('should have size 3', function () { store.size.should.eql(3); });
 
-      itShouldBeEmpty(function () { return store.getTriples(null, null, null, 'c4'); });
+      itShouldBeEmpty(function () { return store.getQuads(null, null, null, 'c4'); });
     });
 
     describe('when removing multiple triples', function () {
       before(function () {
-        store.removeTriples([
-          new Triple(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
-          new Triple(new NamedNode('s2'), new NamedNode('p1'), new NamedNode('o1')),
+        store.removeQuads([
+          new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
+          new Quad(new NamedNode('s2'), new NamedNode('p1'), new NamedNode('o1')),
         ]);
       });
 
       it('should have size 1', function () { store.size.should.eql(1); });
 
       it('should not contain those triples anymore',
-        shouldIncludeAll(function () { return store.getTriples(); },
+        shouldIncludeAll(function () { return store.getQuads(); },
                          ['s1', 'p1', 'o2']));
     });
 
     describe('when adding and removing a triple', function () {
       before(function () {
-        store.addTriple(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')).should.be.true;
-        store.removeTriple(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')).should.be.true;
+        store.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')).should.be.true;
+        store.removeQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')).should.be.true;
       });
 
       it('should have an unchanged size', function () { store.size.should.eql(1); });
@@ -981,17 +980,17 @@ describe('N3Store', function () {
   describe('An N3Store containing a blank node', function () {
     var store = new N3Store();
     var b1 = store.createBlankNode();
-    store.addTriple(new NamedNode('s1'), new NamedNode('p1'), b1).should.be.true;
+    store.addQuad(new NamedNode('s1'), new NamedNode('p1'), b1).should.be.true;
 
     describe('when searched with more than one variable', function () {
       it('should return a triple with the blank node as an object',
-        shouldIncludeAll(store.getTriples(),
+        shouldIncludeAll(store.getQuads(),
                          ['s1', 'p1', '_:' + b1.value]));
     });
 
     describe('when searched with one variable', function () {
       it('should return a triple with the blank node as an object',
-        shouldIncludeAll(store.getTriples('s1', 'p1'),
+        shouldIncludeAll(store.getQuads('s1', 'p1'),
                          ['s1', 'p1', '_:' + b1.value]));
     });
   });
@@ -1002,14 +1001,14 @@ describe('N3Store', function () {
     // Test inspired by http://www.devthought.com/2012/01/18/an-object-is-not-a-hash/.
     // The value `__proto__` is not supported however – fixing it introduces too much overhead.
     it('should be able to contain entities with JavaScript object property names', function () {
-      store.addTriple('toString', 'valueOf', 'toLocaleString', 'hasOwnProperty').should.be.true;
-      shouldIncludeAll(store.getTriples(null, null, null, 'hasOwnProperty'),
+      store.addQuad('toString', 'valueOf', 'toLocaleString', 'hasOwnProperty').should.be.true;
+      shouldIncludeAll(store.getQuads(null, null, null, 'hasOwnProperty'),
                        ['toString', 'valueOf', 'toLocaleString', 'hasOwnProperty'])();
     });
 
     it('should be able to contain entities named "null"', function () {
-      store.addTriple('null', 'null', 'null', 'null').should.be.true;
-      shouldIncludeAll(store.getTriples(null, null, null, 'null'), ['null', 'null', 'null', 'null'])();
+      store.addQuad('null', 'null', 'null', 'null').should.be.true;
+      shouldIncludeAll(store.getQuads(null, null, null, 'null'), ['null', 'null', 'null', 'null'])();
     });
   });
 });
