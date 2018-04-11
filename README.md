@@ -313,7 +313,7 @@ for strict, fault-intolerant behavior.
 The N3.js submodules are compatible with the following [RDF.js](http://rdf.js.org) interfaces:
 
 - `N3.DataFactory` implements
-  [`DataFactory`](`http://rdf.js.org/#datafactory-interface`)
+  [`DataFactory`](http://rdf.js.org/#datafactory-interface)
   - the terms it creates implement [`Term`](http://rdf.js.org/#term-interface)
     and one of
     [`NamedNode`](http://rdf.js.org/#namednode-interface),
