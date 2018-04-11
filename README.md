@@ -377,13 +377,6 @@ N3Util.isIRI('_:b1'); // false
 N3Util.isLiteral('_:b1'); // false
 ```
 
-**Prefixed names** can be tested and expanded:
-``` js
-var prefixes = { rdfs: 'http://www.w3.org/2000/01/rdf-schema#' };
-N3Util.isPrefixedName('rdfs:label'); // true;
-N3Util.expandPrefixedName('rdfs:label', prefixes); // http://www.w3.org/2000/01/rdf-schema#label
-```
-
 ## Compatibility
 ### Specifications
 The N3.js parser and writer is fully compatible with the following W3C specifications:
