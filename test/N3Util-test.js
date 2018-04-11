@@ -1,63 +1,79 @@
 var N3Util = require('../N3').Util;
 
+var DataFactory = require('../N3').DataFactory;
+var NamedNode = DataFactory.NamedNode,
+    Literal = DataFactory.Literal,
+    BlankNode = DataFactory.BlankNode,
+    Variable = DataFactory.Variable,
+    DefaultGraph = DataFactory.DefaultGraph,
+    Quad = DataFactory.Quad;
+
 describe('N3Util', function () {
-  describe('isIRI', function () {
+  describe('isNamedNode', function () {
     it('matches an IRI', function () {
-      N3Util.isIRI('http://example.org/').should.be.true;
+      N3Util.isNamedNode(new NamedNode('http://example.org/')).should.be.true;
     });
 
     it('matches an empty IRI', function () {
-      N3Util.isIRI('').should.be.true;
+      N3Util.isNamedNode(new NamedNode('')).should.be.true;
     });
 
     it('does not match a literal', function () {
-      N3Util.isIRI('"http://example.org/"').should.be.false;
+      N3Util.isNamedNode(new Literal('"http://example.org/"')).should.be.false;
     });
 
     it('does not match a blank node', function () {
-      N3Util.isIRI('_:x').should.be.false;
+      N3Util.isNamedNode(new BlankNode('x')).should.be.false;
+    });
+
+    it('does not match a variable', function () {
+      N3Util.isNamedNode(new Variable('x')).should.be.false;
     });
 
     it('does not match null', function () {
-      expect(N3Util.isIRI(null)).to.be.false;
+      expect(N3Util.isNamedNode(null)).to.be.false;
     });
 
     it('does not match undefined', function () {
-      expect(N3Util.isIRI(undefined)).to.be.false;
+      expect(N3Util.isNamedNode(undefined)).to.be.false;
     });
   });
 
   describe('isLiteral', function () {
     it('matches a literal', function () {
-      N3Util.isLiteral('"http://example.org/"').should.be.true;
+      N3Util.isLiteral(new Literal('"http://example.org/"')).should.be.true;
     });
 
     it('matches a literal with a language', function () {
-      N3Util.isLiteral('"English"@en').should.be.true;
+      N3Util.isLiteral(new Literal('"English"@en')).should.be.true;
     });
 
     it('matches a literal with a language that contains a number', function () {
-      N3Util.isLiteral('"English"@es-419').should.be.true;
+      N3Util.isLiteral(new Literal('"English"@es-419')).should.be.true;
     });
 
     it('matches a literal with a type', function () {
-      N3Util.isLiteral('"3"^^http://www.w3.org/2001/XMLSchema#integer').should.be.true;
+      N3Util.isLiteral(new Literal('"3"^^http://www.w3.org/2001/XMLSchema#integer')).should.be.true;
     });
 
     it('matches a literal with a newline', function () {
-      N3Util.isLiteral('"a\nb"').should.be.true;
+      N3Util.isLiteral(new Literal('"a\nb"')).should.be.true;
     });
 
     it('matches a literal with a cariage return', function () {
-      N3Util.isLiteral('"a\rb"').should.be.true;
+      N3Util.isLiteral(new Literal('"a\rb"')).should.be.true;
     });
 
     it('does not match an IRI', function () {
-      N3Util.isLiteral('http://example.org/').should.be.false;
+      N3Util.isLiteral(new NamedNode('http://example.org/')).should.be.false;
     });
 
     it('does not match a blank node', function () {
-      N3Util.isLiteral('_:x').should.be.false;
+      N3Util.isLiteral(new BlankNode('_:x')).should.be.false;
+    });
+
+    it('does not match a variable', function () {
+      N3Util.isLiteral(new Variable('x')).should.be.false;
     });
 
     it('does not match null', function () {
@@ -69,323 +85,115 @@ describe('N3Util', function () {
     });
   });
 
-  describe('isBlank', function () {
+  describe('isBlankNode', function () {
     it('matches a blank node', function () {
-      N3Util.isBlank('_:x').should.be.true;
+      N3Util.isBlankNode(new BlankNode('x')).should.be.true;
     });
 
     it('does not match an IRI', function () {
-      N3Util.isBlank('http://example.org/').should.be.false;
+      N3Util.isBlankNode(new NamedNode('http://example.org/')).should.be.false;
     });
 
     it('does not match a literal', function () {
-      N3Util.isBlank('"http://example.org/"').should.be.false;
+      N3Util.isBlankNode(new Literal('"http://example.org/"')).should.be.false;
+    });
+
+    it('does not match a variable', function () {
+      N3Util.isBlankNode(new Variable('x')).should.be.false;
     });
 
     it('does not match null', function () {
-      expect(N3Util.isBlank(null)).to.be.false;
+      expect(N3Util.isBlankNode(null)).to.be.false;
     });
 
     it('does not match undefined', function () {
-      expect(N3Util.isBlank(undefined)).to.be.false;
+      expect(N3Util.isBlankNode(undefined)).to.be.false;
+    });
+  });
+
+  describe('isVariable', function () {
+    it('matches a variable', function () {
+      N3Util.isVariable(new Variable('x')).should.be.true;
+    });
+
+    it('does not match an IRI', function () {
+      N3Util.isVariable(new NamedNode('http://example.org/')).should.be.false;
+    });
+
+    it('does not match a literal', function () {
+      N3Util.isVariable(new Literal('"http://example.org/"')).should.be.false;
+    });
+
+    it('does not match a blank node', function () {
+      N3Util.isNamedNode(new BlankNode('x')).should.be.false;
+    });
+
+    it('does not match null', function () {
+      expect(N3Util.isVariable(null)).to.be.false;
+    });
+
+    it('does not match undefined', function () {
+      expect(N3Util.isVariable(undefined)).to.be.false;
     });
   });
 
   describe('isDefaultGraph', function () {
     it('does not match a blank node', function () {
-      N3Util.isDefaultGraph('_:x').should.be.false;
+      N3Util.isDefaultGraph(new BlankNode('x')).should.be.false;
     });
 
     it('does not match an IRI', function () {
-      N3Util.isDefaultGraph('http://example.org/').should.be.false;
+      N3Util.isDefaultGraph(new NamedNode('http://example.org/')).should.be.false;
     });
 
     it('does not match a literal', function () {
-      N3Util.isDefaultGraph('"http://example.org/"').should.be.false;
+      N3Util.isDefaultGraph(new Literal('"http://example.org/"')).should.be.false;
     });
 
-    it('matches null', function () {
-      expect(N3Util.isDefaultGraph(null)).to.be.true;
+    it('does not match null', function () {
+      expect(N3Util.isVariable(null)).to.be.false;
     });
 
-    it('matches undefined', function () {
-      expect(N3Util.isDefaultGraph(undefined)).to.be.true;
-    });
-
-    it('matches the empty string', function () {
-      expect(N3Util.isDefaultGraph('')).to.be.true;
+    it('does not match undefined', function () {
+      expect(N3Util.isVariable(undefined)).to.be.false;
     });
   });
 
   describe('inDefaultGraph', function () {
     it('does not match a blank node', function () {
-      N3Util.inDefaultGraph({ graph: '_:x' }).should.be.false;
+      N3Util.inDefaultGraph(new Quad(null, null, null, new BlankNode('x'))).should.be.false;
     });
 
     it('does not match an IRI', function () {
-      N3Util.inDefaultGraph({ graph: 'http://example.org/' }).should.be.false;
+      N3Util.inDefaultGraph(new Quad(null, null, null, new NamedNode('http://example.org/'))).should.be.false;
     });
 
     it('does not match a literal', function () {
-      N3Util.inDefaultGraph({ graph: '"http://example.org/"' }).should.be.false;
+      N3Util.inDefaultGraph(new Quad(null, null, null, new Literal('"http://example.org/"'))).should.be.false;
     });
 
     it('matches null', function () {
-      N3Util.inDefaultGraph({ graph: null }).should.be.true;
+      N3Util.inDefaultGraph(new Quad(null, null, null, null)).should.be.true;
     });
 
     it('matches undefined', function () {
-      N3Util.inDefaultGraph({ graph: undefined }).should.be.true;
+      N3Util.inDefaultGraph(new Quad(null, null, null, undefined)).should.be.true;
     });
 
-    it('matches the empty string', function () {
-      N3Util.inDefaultGraph({ graph: '' }).should.be.true;
-    });
-  });
-
-  describe('getLiteralValue', function () {
-    it('gets the value of a literal', function () {
-      N3Util.getLiteralValue('"Mickey"').should.equal('Mickey');
-    });
-
-    it('gets the value of a literal with a language', function () {
-      N3Util.getLiteralValue('"English"@en').should.equal('English');
-    });
-
-    it('gets the value of a literal with a language that contains a number', function () {
-      N3Util.getLiteralValue('"English"@es-419').should.equal('English');
-    });
-
-    it('gets the value of a literal with a type', function () {
-      N3Util.getLiteralValue('"3"^^http://www.w3.org/2001/XMLSchema#integer').should.equal('3');
-    });
-
-    it('gets the value of a literal with a newline', function () {
-      N3Util.getLiteralValue('"Mickey\nMouse"').should.equal('Mickey\nMouse');
-    });
-
-    it('gets the value of a literal with a cariage return', function () {
-      N3Util.getLiteralValue('"Mickey\rMouse"').should.equal('Mickey\rMouse');
-    });
-
-    it('does not work with non-literals', function () {
-      N3Util.getLiteralValue.bind(null, 'http://ex.org/').should.throw('http://ex.org/ is not a literal');
-    });
-
-    it('does not work with null', function () {
-      N3Util.getLiteralValue.bind(null, null).should.throw('null is not a literal');
-    });
-
-    it('does not work with undefined', function () {
-      N3Util.getLiteralValue.bind(null, undefined).should.throw('undefined is not a literal');
-    });
-  });
-
-  describe('getLiteralType', function () {
-    it('gets the type of a literal', function () {
-      N3Util.getLiteralType('"Mickey"').should.equal('http://www.w3.org/2001/XMLSchema#string');
-    });
-
-    it('gets the type of a literal with a language', function () {
-      N3Util.getLiteralType('"English"@en').should.equal('http://www.w3.org/1999/02/22-rdf-syntax-ns#langString');
-    });
-
-    it('gets the type of a literal with a language that contains a number', function () {
-      N3Util.getLiteralType('"English"@es-419').should.equal('http://www.w3.org/1999/02/22-rdf-syntax-ns#langString');
-    });
-
-    it('gets the type of a literal with a type', function () {
-      N3Util.getLiteralType('"3"^^http://www.w3.org/2001/XMLSchema#integer').should.equal('http://www.w3.org/2001/XMLSchema#integer');
-    });
-
-    it('gets the type of a literal with a newline', function () {
-      N3Util.getLiteralType('"Mickey\nMouse"^^abc').should.equal('abc');
-    });
-
-    it('gets the type of a literal with a cariage return', function () {
-      N3Util.getLiteralType('"Mickey\rMouse"^^abc').should.equal('abc');
-    });
-
-    it('does not work with non-literals', function () {
-      N3Util.getLiteralType.bind(null, 'http://example.org/').should.throw('http://example.org/ is not a literal');
-    });
-
-    it('does not work with null', function () {
-      N3Util.getLiteralType.bind(null, null).should.throw('null is not a literal');
-    });
-
-    it('does not work with undefined', function () {
-      N3Util.getLiteralType.bind(null, undefined).should.throw('undefined is not a literal');
-    });
-  });
-
-  describe('getLiteralLanguage', function () {
-    it('gets the language of a literal', function () {
-      N3Util.getLiteralLanguage('"Mickey"').should.equal('');
-    });
-
-    it('gets the language of a literal with a language', function () {
-      N3Util.getLiteralLanguage('"English"@en').should.equal('en');
-    });
-
-    it('gets the language of a literal with a language that contains a number', function () {
-      N3Util.getLiteralLanguage('"English"@es-419').should.equal('es-419');
-    });
-
-    it('normalizes the language to lowercase', function () {
-      N3Util.getLiteralLanguage('"English"@en-GB').should.equal('en-gb');
-    });
-
-    it('gets the language of a literal with a type', function () {
-      N3Util.getLiteralLanguage('"3"^^http://www.w3.org/2001/XMLSchema#integer').should.equal('');
-    });
-
-    it('gets the language of a literal with a newline', function () {
-      N3Util.getLiteralLanguage('"Mickey\nMouse"@en').should.equal('en');
-    });
-
-    it('gets the language of a literal with a cariage return', function () {
-      N3Util.getLiteralLanguage('"Mickey\rMouse"@en').should.equal('en');
-    });
-
-    it('does not work with non-literals', function () {
-      N3Util.getLiteralLanguage.bind(null, 'http://example.org/').should.throw('http://example.org/ is not a literal');
-    });
-
-    it('does not work with null', function () {
-      N3Util.getLiteralLanguage.bind(null, null).should.throw('null is not a literal');
-    });
-
-    it('does not work with undefined', function () {
-      N3Util.getLiteralLanguage.bind(null, undefined).should.throw('undefined is not a literal');
-    });
-  });
-
-  describe('isPrefixedName', function () {
-    it('matches a prefixed name', function () {
-      N3Util.isPrefixedName('ex:Test').should.be.true;
-    });
-
-    it('does not match an IRI', function () {
-      N3Util.isPrefixedName('http://example.org/').should.be.false;
-    });
-
-    it('does not match a literal', function () {
-      N3Util.isPrefixedName('"http://example.org/"').should.be.false;
-    });
-
-    it('does not match a literal with a colon', function () {
-      N3Util.isPrefixedName('"a:b"').should.be.false;
-    });
-
-    it('does not match null', function () {
-      expect(N3Util.isPrefixedName(null)).to.be.false;
-    });
-
-    it('does not match undefined', function () {
-      expect(N3Util.isPrefixedName(undefined)).to.be.false;
-    });
-  });
-
-  describe('expandPrefixedName', function () {
-    it('expands a prefixed name', function () {
-      N3Util.expandPrefixedName('ex:Test', { ex: 'http://ex.org/#' }).should.equal('http://ex.org/#Test');
-    });
-
-    it('expands a type with a prefixed name', function () {
-      N3Util.expandPrefixedName('"a"^^ex:type', { ex: 'http://ex.org/#' }).should.equal('"a"^^http://ex.org/#type');
-    });
-
-    it('expands a prefixed name with the empty prefix', function () {
-      N3Util.expandPrefixedName(':Test', { '': 'http://ex.org/#' }).should.equal('http://ex.org/#Test');
-    });
-
-    it('does not expand a prefixed name if the prefix is unknown', function () {
-      N3Util.expandPrefixedName('a:Test', { b: 'http://ex.org/#' }).should.equal('a:Test');
-    });
-
-    it('returns the input if it is not a prefixed name', function () {
-      N3Util.expandPrefixedName('abc', null).should.equal('abc');
-    });
-  });
-
-  describe('createIRI', function () {
-    it('converts a plain IRI', function () {
-      N3Util.createIRI('http://ex.org/foo#bar').should.equal('http://ex.org/foo#bar');
-    });
-
-    it('converts a literal', function () {
-      N3Util.createIRI('"http://ex.org/foo#bar"^^uri:type').should.equal('http://ex.org/foo#bar');
-    });
-
-    it('converts null', function () {
-      expect(N3Util.createIRI(null)).to.be.null;
-    });
-  });
-
-  describe('createLiteral', function () {
-    it('converts the empty string', function () {
-      N3Util.createLiteral('').should.equal('""');
-    });
-
-    it('converts the empty string with a language', function () {
-      N3Util.createLiteral('', 'en-GB').should.equal('""@en-gb');
-    });
-
-    it('converts the empty string with a type', function () {
-      N3Util.createLiteral('', 'http://ex.org/type').should.equal('""^^http://ex.org/type');
-    });
-
-    it('converts a non-empty string', function () {
-      N3Util.createLiteral('abc').should.equal('"abc"');
-    });
-
-    it('converts a non-empty string with a language', function () {
-      N3Util.createLiteral('abc', 'en-GB').should.equal('"abc"@en-gb');
-    });
-
-    it('converts a non-empty string with a type', function () {
-      N3Util.createLiteral('abc', 'http://ex.org/type').should.equal('"abc"^^http://ex.org/type');
-    });
-
-    it('converts an integer', function () {
-      N3Util.createLiteral(123).should.equal('"123"^^http://www.w3.org/2001/XMLSchema#integer');
-    });
-
-    it('converts a double', function () {
-      N3Util.createLiteral(2.3).should.equal('"2.3"^^http://www.w3.org/2001/XMLSchema#double');
-    });
-
-    it('converts Infinity', function () {
-      N3Util.createLiteral(Infinity).should.equal('"INF"^^http://www.w3.org/2001/XMLSchema#double');
-    });
-
-    it('converts -Infinity', function () {
-      N3Util.createLiteral(-Infinity).should.equal('"-INF"^^http://www.w3.org/2001/XMLSchema#double');
-    });
-
-    it('converts NaN', function () {
-      N3Util.createLiteral(NaN).should.equal('"NaN"^^http://www.w3.org/2001/XMLSchema#double');
-    });
-
-    it('converts false', function () {
-      N3Util.createLiteral(false).should.equal('"false"^^http://www.w3.org/2001/XMLSchema#boolean');
-    });
-
-    it('converts true', function () {
-      N3Util.createLiteral(true).should.equal('"true"^^http://www.w3.org/2001/XMLSchema#boolean');
+    it('matches the default graph', function () {
+      N3Util.inDefaultGraph(new Quad(null, null, null, new DefaultGraph())).should.be.true;
     });
   });
 
   describe('prefix', function () {
-    var baz = N3Util.prefix('http://ex.org/baz#');
+    var rdfs = N3Util.prefix('http://www.w3.org/2000/01/rdf-schema#');
     it('should return a function', function () {
-      expect(baz).to.be.an.instanceof(Function);
+      expect(rdfs).to.be.an.instanceof(Function);
     });
 
     describe('the function', function () {
       it('should expand the prefix', function () {
-        expect(baz('bar')).to.equal('http://ex.org/baz#bar');
+        expect(rdfs('label')).to.deep.equal(new NamedNode('http://www.w3.org/2000/01/rdf-schema#label'));
       });
     });
   });
@@ -399,45 +207,52 @@ describe('N3Util', function () {
 
       describe('the function', function () {
         it('should not expand non-registered prefixes', function () {
-          expect(prefixes('baz')('bar')).to.equal('bar');
+          expect(function () { prefixes('foo'); }).to.throw('Unknown prefix: foo');
         });
 
         it('should allow registering prefixes', function () {
-          var p = prefixes('baz', 'http://ex.org/baz#');
+          var p = prefixes('rdfs', 'http://www.w3.org/2000/01/rdf-schema#');
+          var rdfs = prefixes('rdfs');
           expect(p).to.exist;
-          expect(p).to.equal(prefixes('baz'));
+          expect(p).to.equal(rdfs);
         });
 
         it('should expand the newly registered prefix', function () {
-          expect(prefixes('baz')('bar')).to.equal('http://ex.org/baz#bar');
+          var rdfs = prefixes('rdfs');
+          expect(rdfs('label')).to.deep.equal(new NamedNode('http://www.w3.org/2000/01/rdf-schema#label'));
         });
       });
     });
 
     describe('called with a hash of prefixes', function () {
-      var prefixes = N3Util.prefixes({ foo: 'http://ex.org/foo#', bar: 'http://ex.org/bar#' });
+      var prefixes = N3Util.prefixes({
+        rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
+        owl: 'http://www.w3.org/2002/07/owl#',
+      });
       it('should return a function', function () {
         expect(prefixes).to.be.an.instanceof(Function);
       });
 
       describe('the function', function () {
         it('should expand registered prefixes', function () {
-          expect(prefixes('foo')('bar')).to.equal('http://ex.org/foo#bar');
-          expect(prefixes('bar')('bar')).to.equal('http://ex.org/bar#bar');
+          expect(prefixes('rdfs')('label')).to.deep.equal(new NamedNode('http://www.w3.org/2000/01/rdf-schema#label'));
+          expect(prefixes('owl')('sameAs')).to.deep.equal(new NamedNode('http://www.w3.org/2002/07/owl#sameAs'));
         });
 
         it('should not expand non-registered prefixes', function () {
-          expect(prefixes('baz')('bar')).to.equal('bar');
+          expect(function () { prefixes('foo'); }).to.throw('Unknown prefix: foo');
         });
 
         it('should allow registering prefixes', function () {
-          var p = prefixes('baz', 'http://ex.org/baz#');
+          var p = prefixes('my', 'http://example.org/#');
+          var my = prefixes('my');
           expect(p).to.exist;
-          expect(p).to.equal(prefixes('baz'));
+          expect(p).to.equal(my);
         });
 
         it('should expand the newly registered prefix', function () {
-          expect(prefixes('baz')('bar')).to.equal('http://ex.org/baz#bar');
+          var my = prefixes('my');
+          expect(my('me')).to.deep.equal(new NamedNode('http://example.org/#me'));
         });
       });
     });

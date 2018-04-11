@@ -14,13 +14,13 @@ var TEST = '- Parsing file ' + filename;
 console.time(TEST);
 
 var count = 0;
-new N3.Parser({ documentIRI: base }).parse(fs.createReadStream(filename), function (error, triple) {
+new N3.Parser({ documentIRI: base }).parse(fs.createReadStream(filename), function (error, quad) {
   assert(!error, error);
-  if (triple)
+  if (quad)
     count++;
   else {
     console.timeEnd(TEST);
-    console.log('* Triples parsed: ' + count);
+    console.log('* Quads parsed: ' + count);
     console.log('* Memory usage: ' + Math.round(process.memoryUsage().rss / 1024 / 1024) + 'MB');
   }
 });

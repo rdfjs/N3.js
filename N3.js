@@ -4,6 +4,7 @@ require = function () {};
 
 // Expose submodules
 var exports = module.exports = {
+  DataFactory:  require('./lib/N3DataFactory'),
   Lexer:        require('./lib/N3Lexer'),
   Parser:       require('./lib/N3Parser'),
   Writer:       require('./lib/N3Writer'),

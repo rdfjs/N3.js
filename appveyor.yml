@@ -13,7 +13,6 @@ test_script:
   - npm --version
   - npm run lint
   - npm test
-  - npm run browser
 
 cache:
   - node_modules

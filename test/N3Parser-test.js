@@ -1,5 +1,12 @@
 var N3Parser = require('../N3').Parser;
 
+var DataFactory = require('../N3').DataFactory;
+var Term = DataFactory.Term,
+    NamedNode = DataFactory.NamedNode,
+    Quad = DataFactory.Quad;
+
+var BASE_IRI = 'http://example.org/';
+
 describe('N3Parser', function () {
   describe('The N3Parser module', function () {
     it('should be a function', function () {
@@ -66,11 +73,11 @@ describe('N3Parser', function () {
 
     it('should parse a triple with a literal and an IRI type',
       shouldParse('<a> <b> "string"^^<type>.',
-                  ['a', 'b', '"string"^^type']));
+                  ['a', 'b', '"string"^^http://example.org/type']));
 
     it('should parse a triple with a literal and a prefixed name type',
-      shouldParse('@prefix x: <y#>. <a> <b> "string"^^x:z.',
-                  ['a', 'b', '"string"^^y#z']));
+      shouldParse('@prefix x: <urn:x:y#>. <a> <b> "string"^^x:z.',
+                  ['a', 'b', '"string"^^urn:x:y#z']));
 
     it('should differentiate between IRI and prefixed name types',
       shouldParse('@prefix : <noturn:>. :a :b "x"^^<urn:foo>. :a :b "x"^^:urn:foo.',
@@ -209,11 +216,11 @@ describe('N3Parser', function () {
 
     it('should parse diamonds',
       shouldParse('<> <> <> <>.\n(<>) <> (<>) <>.',
-                  ['', '', '', ''],
-                  ['_:b0', '', '_:b1', ''],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ''],
+                  [BASE_IRI, BASE_IRI, BASE_IRI, BASE_IRI],
+                  ['_:b0', BASE_IRI, '_:b1', BASE_IRI],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', BASE_IRI],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ''],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', BASE_IRI],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
     it('should parse statements with named blank nodes',
@@ -303,13 +310,13 @@ describe('N3Parser', function () {
       shouldParse('<a> <b> [ <u> <v>; <w> "z"^^<t> ].',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'u', 'v'],
-                  ['_:b0', 'w', '"z"^^t']));
+                  ['_:b0', 'w', '"z"^^http://example.org/t']));
 
     it('should parse a multi-statement blank node ending with a string with language',
       shouldParse('<a> <b> [ <u> <v>; <w> "z"^^<t> ].',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'u', 'v'],
-                  ['_:b0', 'w', '"z"^^t']));
+                  ['_:b0', 'w', '"z"^^http://example.org/t']));
 
     it('should parse a multi-statement blank node with trailing semicolon',
       shouldParse('<a> <b> [ <u> <v>; <w> <z>; ].',
@@ -336,7 +343,7 @@ describe('N3Parser', function () {
 
     it('should not parse an invalid blank node',
       shouldNotParse('[ <a> <b> .',
-                     'Expected punctuation to follow "b" on line 1.'));
+                     'Expected punctuation to follow "http://example.org/b" on line 1.'));
 
     it('should parse a statements with only an anonymous node',
       shouldParse('[<p> <o>].',
@@ -379,7 +386,7 @@ describe('N3Parser', function () {
     it('should parse a list with a typed literal',
       shouldParse('<a> <b> ("x"^^<y>).',
                   ['a', 'b', '_:b0'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"x"^^y'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"x"^^http://example.org/y'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
     it('should parse a list with a language-tagged literal',
@@ -411,7 +418,7 @@ describe('N3Parser', function () {
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"y"@en-gb'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2'],
-                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"z"^^t'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"z"^^http://example.org/t'],
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
     it('should parse statements with prefixed names in lists',
@@ -670,7 +677,7 @@ describe('N3Parser', function () {
 
     it('should parse a graph with 8-bit unicode escape sequences',
       shouldParse('<\\U0001d400> {\n<\\U0001d400> <\\U0001d400> "\\U0001d400"^^<\\U0001d400>\n}\n',
-                  ['\ud835\udC00', '\ud835\udc00', '"\ud835\udc00"^^\ud835\udc00', '\ud835\udc00']));
+                  ['\ud835\udC00', '\ud835\udc00', '"\ud835\udc00"^^http://example.org/\ud835\udc00', '\ud835\udc00']));
 
     it('should not parse a single closing brace',
       shouldNotParse('}',
@@ -730,15 +737,15 @@ describe('N3Parser', function () {
 
     it('should parse a quad with 3 IRIs and a literal',
       shouldParse('<a> <b> "c"^^<d> <g>.',
-                  ['a', 'b', '"c"^^d', 'g']));
+                  ['a', 'b', '"c"^^http://example.org/d', 'g']));
 
     it('should parse a quad with 2 blank nodes and a literal',
       shouldParse('_:a <b> "c"^^<d> _:g.',
-                  ['_:b0_a', 'b', '"c"^^d', '_:b0_g']));
+                  ['_:b0_a', 'b', '"c"^^http://example.org/d', '_:b0_g']));
 
     it('should not parse a quad in a graph',
       shouldNotParse('{<a> <b> <c> <g>.}',
-                     'Expected punctuation to follow "c" on line 1.'));
+                     'Expected punctuation to follow "http://example.org/c" on line 1.'));
 
     it('should not parse a quad with different punctuation',
       shouldNotParse('<a> <b> <c> <g>;',
@@ -795,15 +802,17 @@ describe('N3Parser', function () {
 
     it('should return prefixes through a callback', function (done) {
       var prefixes = {};
-      new N3Parser().parse('@prefix a: <IRIa>. a:a a:b a:c. @prefix b: <IRIb>.',
+      new N3Parser().parse('@prefix a: <http://a.org/#>. a:a a:b a:c. @prefix b: <http://b.org/#>.',
                            tripleCallback, prefixCallback);
 
       function tripleCallback(error, triple) {
         expect(error).not.to.exist;
         if (!triple) {
           Object.keys(prefixes).should.have.length(2);
-          expect(prefixes).to.have.property('a', 'IRIa');
-          expect(prefixes).to.have.property('b', 'IRIb');
+          expect(prefixes).to.have.property('a');
+          expect(prefixes.a).to.deep.equal(new NamedNode('http://a.org/#'));
+          expect(prefixes).to.have.property('b');
+          expect(prefixes.b).to.deep.equal(new NamedNode('http://b.org/#'));
           done();
         }
       }
@@ -848,7 +857,10 @@ describe('N3Parser', function () {
 
     it('should parse a string synchronously if no callback is given', function () {
       var triples = new N3Parser().parse('@prefix a: <urn:a:>. a:a a:b a:c.');
-      triples.should.deep.equal([{ subject: 'urn:a:a', predicate: 'urn:a:b', object: 'urn:a:c', graph: '' }]);
+      triples.should.deep.equal([
+        new Quad(Term.fromId('urn:a:a'), Term.fromId('urn:a:b'),
+                 Term.fromId('urn:a:c'), Term.fromId('')),
+      ]);
     });
 
     it('should throw on syntax errors if no callback is given', function () {
@@ -942,7 +954,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance with a blank node prefix', function () {
-    function parser() { return new N3Parser({ blankNodePrefix: '_:blank' }); }
+    function parser() { return new N3Parser({ documentIRI: BASE_IRI, blankNodePrefix: '_:blank' }); }
 
     it('should use the given prefix for blank nodes',
       shouldParse(parser,
@@ -951,7 +963,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance with an empty blank node prefix', function () {
-    function parser() { return new N3Parser({ blankNodePrefix: '' }); }
+    function parser() { return new N3Parser({ documentIRI: BASE_IRI, blankNodePrefix: '' }); }
 
     it('should not use a prefix for blank nodes',
       shouldParse(parser,
@@ -960,7 +972,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance with a non-string format', function () {
-    function parser() { return new N3Parser({ format: 1 }); }
+    function parser() { return new N3Parser({ documentIRI: BASE_IRI, format: 1 }); }
 
     it('should parse a single triple',
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
@@ -970,7 +982,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance for the Turtle format', function () {
-    function parser() { return new N3Parser({ format: 'Turtle' }); }
+    function parser() { return new N3Parser({ documentIRI: BASE_IRI, format: 'Turtle' }); }
 
     it('should parse a single triple',
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
@@ -985,7 +997,7 @@ describe('N3Parser', function () {
       shouldNotParse(parser, 'GRAPH <g> {}', 'Expected entity but got GRAPH on line 1.'));
 
     it('should not parse a quad',
-      shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "c" on line 1.'));
+      shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "http://example.org/c" on line 1.'));
 
     it('should not parse a variable',
       shouldNotParse(parser, '?a ?b ?c.', 'Unexpected "?a" on line 1.'));
@@ -1010,7 +1022,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance for the TriG format', function () {
-    function parser() { return new N3Parser({ format: 'TriG' }); }
+    function parser() { return new N3Parser({ documentIRI: BASE_IRI, format: 'TriG' }); }
 
     it('should parse a single triple',
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
@@ -1025,7 +1037,7 @@ describe('N3Parser', function () {
       shouldParse(parser, 'GRAPH <g> {}'));
 
     it('should not parse a quad',
-      shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "c" on line 1.'));
+      shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "http://example.org/c" on line 1.'));
 
     it('should not parse a variable',
       shouldNotParse(parser, '?a ?b ?c.', 'Unexpected "?a" on line 1.'));
@@ -1050,7 +1062,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance for the N-Triples format', function () {
-    function parser() { return new N3Parser({ format: 'N-Triples' }); }
+    function parser() { return new N3Parser({ documentIRI: BASE_IRI, format: 'N-Triples' }); }
 
     it('should parse a single triple',
       shouldParse(parser, '_:a <http://ex.org/b> "c".',
@@ -1089,7 +1101,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance for the N-Quads format', function () {
-    function parser() { return new N3Parser({ format: 'N-Quads' }); }
+    function parser() { return new N3Parser({ documentIRI: BASE_IRI, format: 'N-Quads' }); }
 
     it('should parse a single triple',
       shouldParse(parser, '_:a <http://ex.org/b> "c".',
@@ -1128,7 +1140,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance for the N3 format', function () {
-    function parser() { return new N3Parser({ format: 'N3' }); }
+    function parser() { return new N3Parser({ documentIRI: BASE_IRI, format: 'N3' }); }
 
     it('should parse a single triple',
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
@@ -1143,7 +1155,7 @@ describe('N3Parser', function () {
       shouldNotParse(parser, 'GRAPH <g> {}', 'Expected entity but got GRAPH on line 1.'));
 
     it('should not parse a quad',
-      shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "c" on line 1.'));
+      shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "http://example.org/c" on line 1.'));
 
     it('allows a blank node label in predicate position',
       shouldParse(parser, '<a> _:b <c>.', ['a', '_:b0_b', 'c']));
@@ -1252,11 +1264,11 @@ describe('N3Parser', function () {
 
     it('should parse a @forAll statement',
       shouldParse(parser, '@forAll  <x>. <x> <x> <x>.',
-                  ['?b-0', '?b-0', '?b-0']));
+                  ['?b0', '?b0', '?b0']));
 
     it('should parse a @forAll statement with multiple entities',
       shouldParse(parser, '@prefix a: <a:>. @base <b:>. @forAll  a:x, <y>, a:z. a:x <y> a:z.',
-                  ['?b-0', '?b-1', '?b-2']));
+                  ['?b0', '?b1', '?b2']));
 
     it('should not parse a @forAll statement with an invalid prefix',
       shouldNotParse(parser, '@forAll a:b.',
@@ -1272,9 +1284,9 @@ describe('N3Parser', function () {
 
     it('should correctly scope @forAll statements',
       shouldParse(parser, '@forAll <x>. <x> <x> { @forAll <x>. <x> <x> <x>. }. <x> <x> <x>.',
-                  ['?b-0', '?b-0', '_:b1'],
-                  ['?b-2', '?b-2', '?b-2', '_:b1'],
-                  ['?b-0', '?b-0', '?b-0']));
+                  ['?b0', '?b0', '_:b1'],
+                  ['?b2', '?b2', '?b2', '_:b1'],
+                  ['?b0', '?b0', '?b0']));
 
     it('should parse a ! path of length 2 as subject',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
@@ -1430,7 +1442,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance for the N3 format with the explicitQuantifiers option', function () {
-    function parser() { return new N3Parser({ format: 'N3', explicitQuantifiers: true }); }
+    function parser() { return new N3Parser({ documentIRI: BASE_IRI, format: 'N3', explicitQuantifiers: true }); }
 
     it('should parse a @forSome statement',
       shouldParse(parser, '@forSome <x>. <x> <x> <x>.',
@@ -1933,10 +1945,16 @@ function shouldParse(createParser, input) {
   return function (done) {
     var results = [];
     var items = expected.map(function (item) {
-      return { subject: item[0], predicate: item[1], object: item[2], graph: item[3] || '' };
+      item = item.map(function (t) {
+        // Append base to relative IRIs
+        if (!/^$|^["?]|:/.test(t))
+          t = BASE_IRI + t;
+        return Term.fromId(t);
+      });
+      return new Quad(item[0], item[1], item[2], item[3]);
     });
     N3Parser._resetBlankNodeIds();
-    createParser().parse(input, function (error, triple) {
+    createParser({ documentIRI: BASE_IRI }).parse(input, function (error, triple) {
       expect(error).not.to.exist;
       if (triple)
         results.push(triple);
@@ -1947,7 +1965,11 @@ function shouldParse(createParser, input) {
 }
 
 function toSortedJSON(triples) {
-  triples = triples.map(JSON.stringify);
+  triples = triples.map(function (t) {
+    return JSON.stringify([
+      t.subject.toJSON(), t.predicate.toJSON(), t.object.toJSON(), t.graph.toJSON(),
+    ]);
+  });
   triples.sort();
   return '[\n  ' + triples.join('\n  ') + '\n]';
 }
@@ -1958,7 +1980,7 @@ function shouldNotParse(createParser, input, expectedError, expectedContext) {
     expectedContext = expectedError, expectedError = input, input = createParser, createParser = N3Parser;
 
   return function (done) {
-    createParser().parse(input, function (error, triple) {
+    createParser({ documentIRI: BASE_IRI }).parse(input, function (error, triple) {
       if (error) {
         expect(triple).not.to.exist;
         error.should.be.an.instanceof(Error);
@@ -1987,7 +2009,7 @@ function itShouldResolve(baseIri, relativeIri, expected) {
       catch (error) { done(error); }
     });
     it('should result in ' + expected, function () {
-      expect(result.object).to.equal(expected);
+      expect(result.object.value).to.equal(expected);
     });
   });
 }

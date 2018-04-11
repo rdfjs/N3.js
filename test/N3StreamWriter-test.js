@@ -1,7 +1,11 @@
 var N3StreamWriter = require('../N3').StreamWriter;
 
 var Readable = require('stream').Readable,
-    Writable = require('stream').Writable;
+    Writable = require('stream').Writable,
+    DataFactory = require('../N3').DataFactory;
+var Term = DataFactory.Term,
+    Quad = DataFactory.Quad,
+    NamedNode = DataFactory.NamedNode;
 
 describe('N3StreamWriter', function () {
   describe('The N3StreamWriter module', function () {
@@ -40,16 +44,8 @@ describe('N3StreamWriter', function () {
                       '<jkl> <mno> <pqr>.\n' +
                       '<stu> <vwx> <yz>.\n'));
 
-    it('should not serialize a literal in the subject',
-      shouldNotSerialize(['"a"', 'b', '"c'],
-                          'A literal as subject is not allowed: "a"'));
-
-    it('should not serialize a literal in the predicate',
-      shouldNotSerialize(['a', '"b"', '"c'],
-                          'A literal as predicate is not allowed: "b"'));
-
     it('should use prefixes when possible',
-      shouldSerialize({ prefixes: { a: 'http://a.org/', b: 'http://a.org/b#', c: 'http://a.org/b' } },
+      shouldSerialize({ prefixes: { a: 'http://a.org/', b: new NamedNode('http://a.org/b#'), c: 'http://a.org/b' } },
                       ['http://a.org/bc', 'http://a.org/b#ef', 'http://a.org/bhi'],
                       ['http://a.org/bc/de', 'http://a.org/b#e#f', 'http://a.org/b#x/t'],
                       ['http://a.org/3a', 'http://a.org/b#3a', 'http://a.org/b#a3'],
@@ -59,6 +55,16 @@ describe('N3StreamWriter', function () {
                       '<http://a.org/bc/de> <http://a.org/b#e#f> <http://a.org/b#x/t>.\n' +
                       '<http://a.org/3a> <http://a.org/b#3a> b:a3.\n'));
   });
+
+  it('passes an error', function () {
+    var input = new Readable(),
+        writer = new N3StreamWriter(),
+        error = null;
+    writer.on('error', function (e) { error = e; });
+    writer.import(input);
+    input.emit('error', new Error());
+    expect(error).to.be.an.instanceof(Error);
+  });
 });
 
 
@@ -67,33 +73,19 @@ function shouldSerialize(/* options?, tripleArrays..., expectedResult */) {
       expectedResult = tripleArrays.pop(),
       options = tripleArrays[0] instanceof Array ? null : tripleArrays.shift();
 
+  tripleArrays = tripleArrays.map(function (i) {
+    return new Quad(Term.fromId(i[0]), Term.fromId(i[1]), Term.fromId(i[2]));
+  });
+
   return function (done) {
     var inputStream = new ArrayReader(tripleArrays),
-        transform = new N3StreamWriter(options),
+        writer = new N3StreamWriter(options),
         outputStream = new StringWriter();
-    inputStream.pipe(transform);
-    transform.pipe(outputStream);
-    transform.on('error', done);
-    transform.on('end', function () {
+    writer.import(inputStream);
+    writer.pipe(outputStream);
+    writer.on('error', done);
+    writer.on('end', function () {
       outputStream.result.should.equal(expectedResult);
-      done();
-    });
-  };
-}
-
-function shouldNotSerialize(/* tripleArrays..., expectedMessage */) {
-  var tripleArrays = Array.prototype.slice.call(arguments),
-      expectedMessage = tripleArrays.pop();
-
-  return function (done) {
-    var inputStream = new ArrayReader(tripleArrays),
-        transform = new N3StreamWriter(),
-        outputStream = new StringWriter();
-    inputStream.pipe(transform);
-    transform.pipe(outputStream);
-    transform.on('error', function (error) {
-      error.should.be.an.instanceof(Error);
-      error.message.should.equal(expectedMessage);
       done();
     });
   };
@@ -101,7 +93,6 @@ function shouldNotSerialize(/* tripleArrays..., expectedMessage */) {
 
 function ArrayReader(items) {
   var reader = new Readable({ objectMode: true });
-  items = items.map(function (i) { return { subject: i[0], predicate: i[1], object: i[2] }; });
   reader._read = function () { this.push(items.shift() || null); };
   return reader;
 }
