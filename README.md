@@ -327,10 +327,6 @@ The store provides the following search methods
 - `getGraphs` returns an array of unique graphs occurring in matching triple
 - `forGraphs` executes a callback on unique graphs occurring in matching triples
 
-All of the above methods also have a variant with the `byIRI` suffix
-(e.g., `getTriplesByIRI`),
-which skips prefix expansion and is thus faster.
-
 
 ## Utility
 `N3.Util` offers helpers for IRI and literal representations.

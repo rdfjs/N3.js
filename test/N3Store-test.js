@@ -3,7 +3,6 @@ var N3Store = require('../N3').Store;
 var DataFactory = require('../N3').DataFactory;
 var Term = DataFactory.Term,
     NamedNode = DataFactory.NamedNode,
-    Literal = DataFactory.Literal,
     DefaultGraph = DataFactory.DefaultGraph,
     Quad = DataFactory.Quad,
     Triple = DataFactory.Triple;
@@ -24,7 +23,7 @@ describe('N3Store', function () {
   });
 
   describe('An empty N3Store', function () {
-    var store = new N3Store();
+    var store = new N3Store({});
 
     it('should have size 0', function () {
       expect(store.size).to.eql(0);
@@ -706,27 +705,6 @@ describe('N3Store', function () {
       });
     });
 
-    describe('everyByIRI', function () {
-      var count = 3;
-      function thirdTimeFalse() { return count-- === 0; }
-
-      describe('with no parameters and a callback always returning true', function () {
-        it('should return true', function () {
-          store.everyByIRI(alwaysTrue, null, null, null, null).should.be.true;
-        });
-      });
-      describe('with no parameters and a callback always returning false', function () {
-        it('should return false', function () {
-          store.everyByIRI(alwaysFalse, null, null, null, null).should.be.false;
-        });
-      });
-      describe('with no parameters and a callback that returns false after 3 calls', function () {
-        it('should return false', function () {
-          store.everyByIRI(thirdTimeFalse, null, null, null, null).should.be.false;
-        });
-      });
-    });
-
     describe('some', function () {
       var count = 3;
       function thirdTimeFalse() { return count-- !== 0; }
@@ -748,100 +726,59 @@ describe('N3Store', function () {
       });
       describe('with a non-existing subject', function () {
         it('should return true', function () {
-          store.some(null, 's3', null, null, null).should.be.false;
+          store.some(null, new NamedNode('s3'), null, null, null).should.be.false;
         });
       });
       describe('with a non-existing predicate', function () {
         it('should return false', function () {
-          store.some(null, null, 'p3', null, null).should.be.false;
+          store.some(null, null, new NamedNode('p3'), null, null).should.be.false;
         });
       });
       describe('with a non-existing object', function () {
         it('should return false', function () {
-          store.some(null, null, null, 'o4', null).should.be.false;
+          store.some(null, null, null, new NamedNode('o4'), null).should.be.false;
         });
       });
       describe('with a non-existing graph', function () {
         it('should return false', function () {
-          store.some(null, null, null, null, 'g2').should.be.false;
-        });
-      });
-    });
-
-    describe('someByIRI', function () {
-      var count = 3;
-      function thirdTimeFalse() { return count-- !== 0; }
-
-      describe('with no parameters and a callback always returning true', function () {
-        it('should return true', function () {
-          store.someByIRI(alwaysTrue, null, null, null, null).should.be.true;
-        });
-      });
-      describe('with no parameters and a callback always returning false', function () {
-        it('should return false', function () {
-          store.someByIRI(alwaysFalse, null, null, null, null).should.be.false;
-        });
-      });
-      describe('with no parameters and a callback that returns true after 3 calls', function () {
-        it('should return false', function () {
-          store.someByIRI(thirdTimeFalse, null, null, null, null).should.be.true;
-        });
-      });
-      describe('with a non-existing subject', function () {
-        it('should return true', function () {
-          store.someByIRI(null, new NamedNode('s3'), null, null, null).should.be.false;
-        });
-      });
-      describe('with a non-existing predicate', function () {
-        it('should return false', function () {
-          store.someByIRI(null, null, new NamedNode('p3'), null, null).should.be.false;
-        });
-      });
-      describe('with a non-existing object', function () {
-        it('should return false', function () {
-          store.someByIRI(null, null, null, new NamedNode('o4'), null).should.be.false;
-        });
-      });
-      describe('with a non-existing graph', function () {
-        it('should return false', function () {
-          store.someByIRI(null, null, null, null, new NamedNode('g2')).should.be.false;
+          store.some(null, null, null, null, new NamedNode('g2')).should.be.false;
         });
       });
     });
 
     describe('when counted without parameters', function () {
       it('should count all items in all graphs', function () {
-        store.countTriplesByIRI().should.equal(5);
+        store.countTriples().should.equal(5);
       });
     });
 
     describe('when counted with an existing subject parameter', function () {
       it('should count all items with this subject in all graphs', function () {
-        store.countTriplesByIRI(new NamedNode('s1'), null, null).should.equal(4);
+        store.countTriples(new NamedNode('s1'), null, null).should.equal(4);
       });
     });
 
     describe('when counted with a non-existing subject parameter', function () {
       it('should be empty', function () {
-        store.countTriplesByIRI(new NamedNode('s3'), null, null).should.equal(0);
+        store.countTriples(new NamedNode('s3'), null, null).should.equal(0);
       });
     });
 
     describe('when counted with a non-existing subject parameter that exists elsewhere', function () {
       it('should be empty', function () {
-        store.countTriplesByIRI(new NamedNode('p1'), null, null).should.equal(0);
+        store.countTriples(new NamedNode('p1'), null, null).should.equal(0);
       });
     });
 
     describe('when counted with an existing predicate parameter', function () {
       it('should count all items with this predicate in all graphs', function () {
-        store.countTriplesByIRI(null, new NamedNode('p1'), null).should.equal(4);
+        store.countTriples(null, new NamedNode('p1'), null).should.equal(4);
       });
     });
 
     describe('when counted with a non-existing predicate parameter', function () {
       it('should be empty', function () {
-        store.countTriplesByIRI(null, new NamedNode('p3'), null).should.equal(0);
+        store.countTriples(null, new NamedNode('p3'), null).should.equal(0);
       });
     });
 
@@ -1011,144 +948,6 @@ describe('N3Store', function () {
       });
 
       it('should have an unchanged size', function () { store.size.should.eql(1); });
-    });
-  });
-
-  describe('An N3Store initialized with prefixes', function () {
-    var store = new N3Store([
-      new Triple(new NamedNode('http://foo.org/#s1'), new NamedNode('http://bar.org/p1'), new NamedNode('http://foo.org/#o1')),
-      new Triple(new NamedNode('http://foo.org/#s1'), new NamedNode('http://bar.org/p2'), new NamedNode('http://foo.org/#o1')),
-      new Triple(new NamedNode('http://foo.org/#s2'), new NamedNode('http://bar.org/p1'), new NamedNode('http://foo.org/#o2')),
-      new Triple(new NamedNode('http://foo.org/#s3'), new NamedNode('http://bar.org/p3'), new Literal('"a"^^http://foo.org/#t1')),
-      new Triple(new NamedNode('http://foo.org/#s1'), new NamedNode('http://bar.org/p1'), new NamedNode('http://foo.org/#o1'), new NamedNode('http://graphs.org/#g1')),
-    ],
-    { prefixes: { a: 'http://foo.org/#', b: 'http://bar.org/', g: 'http://graphs.org/#' } });
-
-    describe('should allow to query subjects with prefixes', function () {
-      it('should return all triples with that subject',
-          shouldIncludeAll(store.getTriples('a:s1', null, null),
-              ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
-              ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1'],
-              ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
-    });
-
-    describe('should allow to query subjects with prefixes', function () {
-      it('should return all triples with that subject in the default graph',
-          shouldIncludeAll(store.getTriples('a:s1', null, null, new DefaultGraph()),
-              ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
-              ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
-    });
-
-    describe('should allow to query predicates with prefixes', function () {
-      it('should return all triples with that predicate',
-        shouldIncludeAll(store.getTriples(null, 'b:p1', null),
-                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
-                         ['http://foo.org/#s2', 'http://bar.org/p1', 'http://foo.org/#o2'],
-                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
-    });
-
-    describe('should allow to query objects with prefixes', function () {
-      it('should return all triples with that object',
-        shouldIncludeAll(store.getTriples(null, null, 'a:o1'),
-                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
-                         ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1'],
-                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
-    });
-
-    describe('should allow to query graphs with prefixes', function () {
-      it('should return all triples with that graph',
-        shouldIncludeAll(store.getTriples(null, null, null, 'http://graphs.org/#g1'),
-          ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
-    });
-  });
-
-  describe('An N3Store with prefixes added later on', function () {
-    var store = new N3Store([
-      new Triple(new NamedNode('http://foo.org/#s1'), new NamedNode('http://bar.org/p1'), new NamedNode('http://foo.org/#o1')),
-      new Triple(new NamedNode('http://foo.org/#s1'), new NamedNode('http://bar.org/p2'), new NamedNode('http://foo.org/#o1')),
-      new Triple(new NamedNode('http://foo.org/#s2'), new NamedNode('http://bar.org/p1'), new NamedNode('http://foo.org/#o2')),
-      new Triple(new NamedNode('http://foo.org/#s1'), new NamedNode('http://bar.org/p1'), new NamedNode('http://foo.org/#o1'), new NamedNode('http://graphs.org/#g1')),
-    ]);
-
-    store.addPrefix('a', 'http://foo.org/#');
-    store.addPrefixes({ b: 'http://bar.org/', g: 'http://graphs.org/#' });
-
-    describe('should allow to query subjects with prefixes', function () {
-      it('should return all triples with that subject in the default graph',
-        shouldIncludeAll(store.getTriples('a:s1', null, null, new DefaultGraph()),
-                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
-                         ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
-    });
-
-    describe('should allow to query subjects with prefixes', function () {
-      it('should return all triples with that subject',
-          shouldIncludeAll(store.getTriples('a:s1', null, null),
-              ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
-              ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1'],
-              ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
-    });
-
-    describe('should allow to query predicates with prefixes', function () {
-      it('should return all triples with that predicate in the default graph',
-          shouldIncludeAll(store.getTriples(null, 'b:p1', null, new DefaultGraph()),
-              ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
-              ['http://foo.org/#s2', 'http://bar.org/p1', 'http://foo.org/#o2']));
-    });
-
-    describe('should allow to query predicates with prefixes', function () {
-      it('should return all triples with that predicate',
-          shouldIncludeAll(store.getTriples(null, 'b:p1', null),
-              ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
-              ['http://foo.org/#s2', 'http://bar.org/p1', 'http://foo.org/#o2'],
-              ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
-    });
-
-    describe('should allow to query objects with prefixes', function () {
-      it('should return all triples with that object in the default graph',
-          shouldIncludeAll(store.getTriples(null, null, 'a:o1', new DefaultGraph()),
-              ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
-              ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
-    });
-
-    describe('should allow to query objects with prefixes', function () {
-      it('should return all triples with that object',
-        shouldIncludeAll(store.getTriples(null, null, 'a:o1'),
-                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
-                         ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1'],
-                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
-    });
-
-    describe('should allow to query graphs with prefixes', function () {
-      it('should return all triples with that graph',
-        shouldIncludeAll(store.getTriples(null, null, null, 'http://graphs.org/#g1'),
-          ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1', 'http://graphs.org/#g1']));
-    });
-  });
-
-  describe('An N3Store with the http prefix', function () {
-    var store = new N3Store([
-      new Triple(new NamedNode('http://foo.org/#s1'), new NamedNode('http://bar.org/p1'), new NamedNode('http://foo.org/#o1')),
-      new Triple(new NamedNode('http://foo.org/#s1'), new NamedNode('http://bar.org/p2'), new NamedNode('http://foo.org/#o1')),
-      new Triple(new NamedNode('http://foo.org/#s2'), new NamedNode('http://bar.org/p1'), new NamedNode('http://foo.org/#o2')),
-    ],
-    { prefixes: { http: 'http://www.w3.org/2006/http#' } });
-
-    describe('should allow to query subjects without prefixes', function () {
-      it('should return all triples with that subject',
-        shouldIncludeAll(store.getTriples('http://foo.org/#s1', null, null),
-                         ['http://foo.org/#s1', 'http://bar.org/p1', 'http://foo.org/#o1'],
-                         ['http://foo.org/#s1', 'http://bar.org/p2', 'http://foo.org/#o1']));
-    });
-  });
-
-  describe('An N3Store created without triples but with prefixes', function () {
-    var store = new N3Store({ prefixes: { http: 'http://www.w3.org/2006/http#' } });
-    store.addTriple('a', 'http://www.w3.org/2006/http#b', 'c').should.be.true;
-
-    describe('should allow to query predicates with prefixes', function () {
-      it('should return all triples with that predicate',
-        shouldIncludeAll(store.getTriples(null, 'http:b', null),
-                         ['a', 'http://www.w3.org/2006/http#b', 'c']));
     });
   });
 
