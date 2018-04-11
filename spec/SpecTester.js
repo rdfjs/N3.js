@@ -245,7 +245,7 @@ SpecTester.prototype._generateEarlReport = function (tests, callback) {
       report = new N3.Writer(fs.createWriteStream(reportFile), { prefixes: prefixes }),
       date = '"' + new Date().toISOString() + '"^^' + prefixes.xsd + 'dateTime',
       homepage = 'https://github.com/RubenVerborgh/N3.js', app = homepage + '#n3js',
-      developer = 'http://ruben.verborgh.org/#me', manifest = this._manifest + '#';
+      developer = 'https://ruben.verborgh.org/profile/#me', manifest = this._manifest + '#';
 
   report.addPrefix('manifest', manifest);
 
@@ -264,14 +264,14 @@ SpecTester.prototype._generateEarlReport = function (tests, callback) {
   addTriple(app, prefixes.doap + 'homepage', homepage);
   addTriple(app, prefixes.doap + 'license', 'http://opensource.org/licenses/MIT');
   addTriple(app, prefixes.doap + 'programming-language', '"JavaScript"');
-  addTriple(app, prefixes.doap + 'implements', 'http://www.w3.org/TR/turtle/');
-  addTriple(app, prefixes.doap + 'implements', 'http://www.w3.org/TR/trig/');
-  addTriple(app, prefixes.doap + 'implements', 'http://www.w3.org/TR/n-triples/');
-  addTriple(app, prefixes.doap + 'implements', 'http://www.w3.org/TR/n-quads/');
+  addTriple(app, prefixes.doap + 'implements', 'https://www.w3.org/TR/turtle/');
+  addTriple(app, prefixes.doap + 'implements', 'https://www.w3.org/TR/trig/');
+  addTriple(app, prefixes.doap + 'implements', 'https://www.w3.org/TR/n-triples/');
+  addTriple(app, prefixes.doap + 'implements', 'https://www.w3.org/TR/n-quads/');
   addTriple(app, prefixes.doap + 'category', 'http://dbpedia.org/resource/Resource_Description_Framework');
   addTriple(app, prefixes.doap + 'download-page', 'https://npmjs.org/package/n3');
   addTriple(app, prefixes.doap + 'bug-database', homepage + '/issues');
-  addTriple(app, prefixes.doap + 'blog', 'http://ruben.verborgh.org/blog/');
+  addTriple(app, prefixes.doap + 'blog', 'https://ruben.verborgh.org/blog/');
   addTriple(app, prefixes.doap + 'developer', developer);
   addTriple(app, prefixes.doap + 'maintainer', developer);
   addTriple(app, prefixes.doap + 'documenter', developer);
@@ -284,9 +284,8 @@ SpecTester.prototype._generateEarlReport = function (tests, callback) {
   addTriple(developer, prefixes.rdf  + 'type', prefixes.foaf + 'Person');
   addTriple(developer, prefixes.rdf  + 'type', prefixes.earl + 'Assertor');
   addTriple(developer, prefixes.foaf + 'name', '"Ruben Verborgh"');
-  addTriple(developer, prefixes.foaf + 'homepage', 'http://ruben.verborgh.org/');
-  addTriple(developer, prefixes.foaf + 'primaryTopicOf', 'http://ruben.verborgh.org/profile/');
-  addTriple(developer, prefixes.rdfs + 'isDefinedBy', 'http://ruben.verborgh.org/profile/');
+  addTriple(developer, prefixes.foaf + 'homepage', 'https://ruben.verborgh.org/');
+  addTriple(developer, prefixes.foaf + 'primaryTopicOf', 'https://ruben.verborgh.org/profile/');
 
   tests.forEach(function (test, id) {
     var testUrl = manifest + test.id;
