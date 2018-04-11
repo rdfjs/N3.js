@@ -1,6 +1,7 @@
 var N3Store = require('../N3').Store;
 
-var DataFactory = require('../N3').DataFactory;
+var Readable = require('stream').Readable,
+    DataFactory = require('../N3').DataFactory;
 var Term = DataFactory.Term,
     NamedNode = DataFactory.NamedNode,
     DefaultGraph = DataFactory.DefaultGraph,
@@ -31,6 +32,32 @@ describe('N3Store', function () {
 
     it('should be empty', function () {
       store.getTriples().should.be.empty;
+    });
+
+    describe('when importing a stream of 2 quads', function () {
+      before(function (done) {
+        var stream = new ArrayReader([
+          new Triple(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
+          new Triple(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+        ]);
+        var events = store.import(stream);
+        events.on('end', done);
+      });
+
+      it('should have size 2', function () { store.size.should.eql(2); });
+    });
+
+    describe('when removing a stream of 2 quads', function () {
+      before(function (done) {
+        var stream = new ArrayReader([
+          new Triple(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
+          new Triple(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+        ]);
+        var events = store.remove(stream);
+        events.on('end', done);
+      });
+
+      it('should have size 0', function () { store.size.should.eql(0); });
     });
 
     describe('every', function () {
@@ -1014,4 +1041,10 @@ function shouldIncludeAll(result) {
     for (var i = 0; i < items.length; i++)
       result.should.include.something.that.deep.equals(items[i].toJSON());
   };
+}
+
+function ArrayReader(items) {
+  var reader = new Readable({ objectMode: true });
+  reader._read = function () { this.push(items.shift() || null); };
+  return reader;
 }

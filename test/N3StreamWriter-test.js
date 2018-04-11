@@ -73,6 +73,10 @@ function shouldSerialize(/* options?, tripleArrays..., expectedResult */) {
       expectedResult = tripleArrays.pop(),
       options = tripleArrays[0] instanceof Array ? null : tripleArrays.shift();
 
+  tripleArrays = tripleArrays.map(function (i) {
+    return new Quad(Term.fromId(i[0]), Term.fromId(i[1]), Term.fromId(i[2]));
+  });
+
   return function (done) {
     var inputStream = new ArrayReader(tripleArrays),
         writer = new N3StreamWriter(options),
@@ -89,7 +93,6 @@ function shouldSerialize(/* options?, tripleArrays..., expectedResult */) {
 
 function ArrayReader(items) {
   var reader = new Readable({ objectMode: true });
-  items = items.map(function (i) { return new Quad(Term.fromId(i[0]), Term.fromId(i[1]), Term.fromId(i[2])); });
   reader._read = function () { this.push(items.shift() || null); };
   return reader;
 }
