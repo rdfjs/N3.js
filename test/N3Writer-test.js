@@ -133,7 +133,7 @@ describe('N3Writer', function () {
                       '<a> <b> <c>.\n'));
 
     it('should serialize valid prefixes',
-      shouldSerialize({ prefixes: { a: 'http://a.org/', b: 'http://a.org/b#', c: 'http://a.org/b' } },
+      shouldSerialize({ prefixes: { a: 'http://a.org/', b: new NamedNode('http://a.org/b#'), c: 'http://a.org/b' } },
                       '@prefix a: <http://a.org/>.\n' +
                       '@prefix b: <http://a.org/b#>.\n\n'));
 

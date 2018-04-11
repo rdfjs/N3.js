@@ -4,7 +4,8 @@ var Readable = require('stream').Readable,
     Writable = require('stream').Writable,
     DataFactory = require('../N3').DataFactory;
 var Term = DataFactory.Term,
-    Quad = DataFactory.Quad;
+    Quad = DataFactory.Quad,
+    NamedNode = DataFactory.NamedNode;
 
 describe('N3StreamWriter', function () {
   describe('The N3StreamWriter module', function () {
@@ -44,7 +45,7 @@ describe('N3StreamWriter', function () {
                       '<stu> <vwx> <yz>.\n'));
 
     it('should use prefixes when possible',
-      shouldSerialize({ prefixes: { a: 'http://a.org/', b: 'http://a.org/b#', c: 'http://a.org/b' } },
+      shouldSerialize({ prefixes: { a: 'http://a.org/', b: new NamedNode('http://a.org/b#'), c: 'http://a.org/b' } },
                       ['http://a.org/bc', 'http://a.org/b#ef', 'http://a.org/bhi'],
                       ['http://a.org/bc/de', 'http://a.org/b#e#f', 'http://a.org/b#x/t'],
                       ['http://a.org/3a', 'http://a.org/b#3a', 'http://a.org/b#a3'],
