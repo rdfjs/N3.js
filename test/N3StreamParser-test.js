@@ -1,7 +1,8 @@
 var N3StreamParser = require('../N3').StreamParser;
 
 var Readable = require('stream').Readable,
-    Writable = require('stream').Writable;
+    Writable = require('stream').Writable,
+    NamedNode = require('../N3').DataFactory.NamedNode;
 
 describe('N3StreamParser', function () {
   describe('The N3StreamParser module', function () {
@@ -34,8 +35,8 @@ describe('N3StreamParser', function () {
       shouldNotParse(['z.'], 'Unexpected "z." on line 1.'), { token: undefined, line: 1, previousToken: undefined });
 
     it('emits "prefix" events',
-      shouldEmitPrefixes(['@prefix a: <IRIa>. a:a a:b a:c. @prefix b: <IRIb>.'],
-                         { a: 'IRIa', b: 'IRIb' }));
+      shouldEmitPrefixes(['@prefix a: <http://a.org/#>. a:a a:b a:c. @prefix b: <http://b.org/#>.'],
+                         { a: new NamedNode('http://a.org/#'), b: new NamedNode('http://b.org/#') }));
   });
 });
 

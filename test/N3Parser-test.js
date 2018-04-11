@@ -2,6 +2,7 @@ var N3Parser = require('../N3').Parser;
 
 var DataFactory = require('../N3').DataFactory;
 var Term = DataFactory.Term,
+    NamedNode = DataFactory.NamedNode,
     Quad = DataFactory.Quad;
 
 var BASE_IRI = 'http://example.org/';
@@ -801,15 +802,17 @@ describe('N3Parser', function () {
 
     it('should return prefixes through a callback', function (done) {
       var prefixes = {};
-      new N3Parser().parse('@prefix a: <IRIa>. a:a a:b a:c. @prefix b: <IRIb>.',
+      new N3Parser().parse('@prefix a: <http://a.org/#>. a:a a:b a:c. @prefix b: <http://b.org/#>.',
                            tripleCallback, prefixCallback);
 
       function tripleCallback(error, triple) {
         expect(error).not.to.exist;
         if (!triple) {
           Object.keys(prefixes).should.have.length(2);
-          expect(prefixes).to.have.property('a', 'IRIa');
-          expect(prefixes).to.have.property('b', 'IRIb');
+          expect(prefixes).to.have.property('a');
+          expect(prefixes.a).to.deep.equal(new NamedNode('http://a.org/#'));
+          expect(prefixes).to.have.property('b');
+          expect(prefixes.b).to.deep.equal(new NamedNode('http://b.org/#'));
           done();
         }
       }
