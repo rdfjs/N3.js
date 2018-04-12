@@ -57,7 +57,7 @@ function shouldParse(chunks, expectedLength) {
         inputStream = new ArrayReader(chunks),
         parser = new N3StreamParser(),
         outputStream = new ArrayWriter(triples);
-    parser.import(inputStream);
+    parser.import(inputStream).should.equal(parser);
     parser.pipe(outputStream);
     parser.on('error', done);
     parser.on('end', function () {

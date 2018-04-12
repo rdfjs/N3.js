@@ -101,7 +101,7 @@ function shouldSerialize(/* options?, tripleArrays..., expectedResult */) {
     var inputStream = new ArrayReader(tripleArrays),
         writer = new N3StreamWriter(options),
         outputStream = new StringWriter();
-    writer.import(inputStream);
+    writer.import(inputStream).should.equal(writer);
     writer.pipe(outputStream);
     writer.on('error', done);
     writer.on('end', function () {
