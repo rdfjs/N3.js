@@ -42,10 +42,6 @@ describe('DataFactory', function () {
       DataFactory.literal('', new NamedNode('http://ex.org/type')).should.deep.equal(new Literal('""^^http://ex.org/type'));
     });
 
-    it('converts the empty string with a string type', function () {
-      DataFactory.literal('', 'http://ex.org/type').should.deep.equal(new Literal('""^^http://ex.org/type'));
-    });
-
     it('converts a non-empty string', function () {
       DataFactory.literal('abc').should.deep.equal(new Literal('"abc"'));
     });
@@ -56,10 +52,6 @@ describe('DataFactory', function () {
 
     it('converts a non-empty string with a named node type', function () {
       DataFactory.literal('abc', new NamedNode('http://ex.org/type')).should.deep.equal(new Literal('"abc"^^http://ex.org/type'));
-    });
-
-    it('converts a non-empty string with a string type', function () {
-      DataFactory.literal('abc', 'http://ex.org/type').should.deep.equal(new Literal('"abc"^^http://ex.org/type'));
     });
 
     it('converts an integer', function () {
