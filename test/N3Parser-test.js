@@ -97,7 +97,7 @@ describe('N3Parser', function () {
                        previousToken: {
                          line: 1,
                          type: 'literal',
-                         value: '\"string\"',
+                         value: 'string',
                          prefix: '',
                        },
                      }));
@@ -412,14 +412,16 @@ describe('N3Parser', function () {
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
     it('should parse statements with a multi-element literal list in the object',
-      shouldParse('<a> <b> ("x" "y"@en-GB "z"^^<t>).',
+      shouldParse('<a> <b> ("x" "y"@en-GB 1 "z"^^<t>).',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"x"'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"y"@en-gb'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2'],
-                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"z"^^http://example.org/t'],
-                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"1"^^http://www.w3.org/2001/XMLSchema#integer'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b3'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"z"^^http://example.org/t'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
     it('should parse statements with prefixed names in lists',
       shouldParse('@prefix a: <a#>. <a> <b> (a:x a:y).',

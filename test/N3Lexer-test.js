@@ -262,7 +262,7 @@ describe('N3Lexer', function () {
 
     it('should tokenize a quoted string literal',
       shouldTokenize('"string" ',
-                     { type: 'literal', value: '"string"', line: 1 },
+                     { type: 'literal', value: 'string', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should not tokenize a quoted string literal with a newline',
@@ -275,18 +275,18 @@ describe('N3Lexer', function () {
 
     it('should tokenize a triple quoted string literal',
       shouldTokenize('"""string"""',
-                     { type: 'literal', value: '"string"', line: 1 },
+                     { type: 'literal', value: 'string', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should tokenize a triple quoted string literal with quoted newlines inside',
       shouldTokenize('"""st"r\ni""ng"""',
-                     { type: 'literal', value: '"st"r\ni""ng"', line: 1 },
+                     { type: 'literal', value: 'st"r\ni""ng', line: 1 },
                      { type: 'eof', line: 2 }));
 
     it('should tokenize a string with escape characters',
       shouldTokenize('"\\\\ \\\' \\" \\n \\r \\t \\ua1b2" \n """\\\\ \\\' \\" \\n \\r \\t \\U0000a1b2"""',
-                     { type: 'literal', value: '"\\ \' " \n \r \t \ua1b2"', line: 1 },
-                     { type: 'literal', value: '"\\ \' " \n \r \t \ua1b2"', line: 2 },
+                     { type: 'literal', value: '\\ \' " \n \r \t \ua1b2', line: 1 },
+                     { type: 'literal', value: '\\ \' " \n \r \t \ua1b2', line: 2 },
                      { type: 'eof', line: 2 }));
 
     it('should not tokenize a string with invalid characters',
@@ -299,19 +299,19 @@ describe('N3Lexer', function () {
 
     it('should tokenize a quoted string literal with language code',
       shouldTokenize('"string"@en "string"@nl-be "string"@EN ',
-                     { type: 'literal', value: '"string"', line: 1 },
+                     { type: 'literal', value: 'string', line: 1 },
                      { type: 'langcode', value: 'en', line: 1 },
-                     { type: 'literal', value: '"string"', line: 1 },
+                     { type: 'literal', value: 'string', line: 1 },
                      { type: 'langcode', value: 'nl-be', line: 1 },
-                     { type: 'literal', value: '"string"', line: 1 },
+                     { type: 'literal', value: 'string', line: 1 },
                      { type: 'langcode', value: 'EN', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should tokenize a quoted string literal with type',
       shouldTokenize('"stringA"^^<type> "stringB"^^ns:mytype ',
-                     { type: 'literal', value: '"stringA"', line: 1 },
+                     { type: 'literal', value: 'stringA', line: 1 },
                      { type: 'typeIRI', value: 'type', line: 1 },
-                     { type: 'literal', value: '"stringB"', line: 1 },
+                     { type: 'literal', value: 'stringB', line: 1 },
                      { type: 'type', value: 'mytype', prefix: 'ns', line: 1 },
                      { type: 'eof', line: 1 }));
 
@@ -325,12 +325,12 @@ describe('N3Lexer', function () {
 
     it('should tokenize a single-quoted string literal',
       shouldTokenize("'string' ",
-                     { type: 'literal', value: '"string"', line: 1 },
+                     { type: 'literal', value: 'string', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should tokenize a triple single-quoted string literal',
       shouldTokenize("'''string'''",
-                     { type: 'literal', value: '"string"', line: 1 },
+                     { type: 'literal', value: 'string', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should not tokenize a single-quoted string literal with a newline',
@@ -343,66 +343,66 @@ describe('N3Lexer', function () {
 
     it('should tokenize a triple single-quoted string literal with quotes newlines inside',
       shouldTokenize("'''st'r\ni''ng'''",
-                     { type: 'literal', value: '"st\'r\ni\'\'ng"', line: 1 },
+                     { type: 'literal', value: 'st\'r\ni\'\'ng', line: 1 },
                      { type: 'eof', line: 2 }));
 
     it('should tokenize a single-quoted string with escape characters',
       shouldTokenize("'\\\\ \\\" \\' \\n \\r \\t \\ua1b2' \n '''\\\\ \\\" \\' \\n \\r \\t \\U0020a1b2'''",
-                     { type: 'literal', value: '"\\ " \' \n \r \t \ua1b2"', line: 1 },
-                     { type: 'literal', value: '"\\ " \' \n \r \t \udfe8\uddb2"', line: 2 },
+                     { type: 'literal', value: '\\ " \' \n \r \t \ua1b2', line: 1 },
+                     { type: 'literal', value: '\\ " \' \n \r \t \udfe8\uddb2', line: 2 },
                      { type: 'eof', line: 2 }));
 
     it('should tokenize a single-quoted string literal with language code',
       shouldTokenize("'string'@en 'string'@nl-be 'string'@EN ",
-                     { type: 'literal', value: '"string"', line: 1 },
+                     { type: 'literal', value: 'string', line: 1 },
                      { type: 'langcode', value: 'en', line: 1 },
-                     { type: 'literal', value: '"string"', line: 1 },
+                     { type: 'literal', value: 'string', line: 1 },
                      { type: 'langcode', value: 'nl-be', line: 1 },
-                     { type: 'literal', value: '"string"', line: 1 },
+                     { type: 'literal', value: 'string', line: 1 },
                      { type: 'langcode', value: 'EN', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should tokenize a single-quoted string literal with type',
       shouldTokenize("'stringA'^^<type> 'stringB'^^ns:mytype ",
-                     { type: 'literal', value: '"stringA"', line: 1 },
+                     { type: 'literal', value: 'stringA', line: 1 },
                      { type: 'typeIRI', value: 'type', line: 1 },
-                     { type: 'literal', value: '"stringB"', line: 1 },
+                     { type: 'literal', value: 'stringB', line: 1 },
                      { type: 'type', value: 'mytype', prefix: 'ns', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should tokenize an integer literal',
       shouldTokenize('10, +20. -30, 40. ',
-                     { type: 'literal', value: '"10"^^http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                     { type: 'literal', value:  '10', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
                      { type: ',', line: 1 },
-                     { type: 'literal', value: '"+20"^^http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                     { type: 'literal', value: '+20', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
                      { type: '.', line: 1 },
-                     { type: 'literal', value: '"-30"^^http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                     { type: 'literal', value: '-30', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
                      { type: ',', line: 1 },
-                     { type: 'literal', value: '"40"^^http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                     { type: 'literal', value:  '40', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
                      { type: '.', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should tokenize a decimal literal',
       shouldTokenize('1. 2.0, .3. -0.4, -.5. ',
-                     { type: 'literal', value: '"1"^^http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                     { type: 'literal', value:    '1', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
                      { type: '.', line: 1 },
-                     { type: 'literal', value: '"2.0"^^http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
+                     { type: 'literal', value:  '2.0', prefix: 'http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
                      { type: ',', line: 1 },
-                     { type: 'literal', value: '".3"^^http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
+                     { type: 'literal', value:   '.3', prefix: 'http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
                      { type: '.', line: 1 },
-                     { type: 'literal', value: '"-0.4"^^http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
+                     { type: 'literal', value: '-0.4', prefix: 'http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
                      { type: ',', line: 1 },
-                     { type: 'literal', value: '"-.5"^^http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
+                     { type: 'literal', value:  '-.5', prefix: 'http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
                      { type: '.', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should tokenize a double literal',
       shouldTokenize('10e20, +30.40E+50. -60.70e-80. ',
-                     { type: 'literal', value: '"10e20"^^http://www.w3.org/2001/XMLSchema#double', line: 1 },
+                     { type: 'literal', value:      '10e20', prefix: 'http://www.w3.org/2001/XMLSchema#double', line: 1 },
                      { type: ',', line: 1 },
-                     { type: 'literal', value: '"+30.40E+50"^^http://www.w3.org/2001/XMLSchema#double', line: 1 },
+                     { type: 'literal', value: '+30.40E+50', prefix: 'http://www.w3.org/2001/XMLSchema#double', line: 1 },
                      { type: '.', line: 1 },
-                     { type: 'literal', value: '"-60.70e-80"^^http://www.w3.org/2001/XMLSchema#double', line: 1 },
+                     { type: 'literal', value: '-60.70e-80', prefix: 'http://www.w3.org/2001/XMLSchema#double', line: 1 },
                      { type: '.', line: 1 },
                      { type: 'eof', line: 1 }));
 
@@ -412,8 +412,8 @@ describe('N3Lexer', function () {
 
     it('should tokenize booleans',
       shouldTokenize('true false ',
-                     { type: 'literal', value: '"true"^^http://www.w3.org/2001/XMLSchema#boolean', line: 1 },
-                     { type: 'literal', value: '"false"^^http://www.w3.org/2001/XMLSchema#boolean', line: 1 },
+                     { type: 'literal', value:  'true', prefix: 'http://www.w3.org/2001/XMLSchema#boolean', line: 1 },
+                     { type: 'literal', value: 'false', prefix: 'http://www.w3.org/2001/XMLSchema#boolean', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should tokenize statements with shared subjects',
@@ -456,33 +456,33 @@ describe('N3Lexer', function () {
                               '<g> <h> "i"', '@e', 'n.'),
                      { type: 'IRI', value: 'a', line: 1 },
                      { type: 'IRI', value: 'b', line: 2 },
-                     { type: 'literal', value: '"c\n"', line: 2 },
+                     { type: 'literal', value: 'c\n', line: 2 },
                      { type: '.', line: 3 },
                      { type: 'IRI', value: 'd', line: 3 },
                      { type: 'IRI', value: 'e', line: 3 },
-                     { type: 'literal', value: '""', line: 3 },
+                     { type: 'literal', value: '', line: 3 },
                      { type: '.', line: 3 },
                      { type: 'IRI', value: 'g', line: 3 },
                      { type: 'IRI', value: 'h', line: 3 },
-                     { type: 'literal', value: '"i"', line: 3 },
+                     { type: 'literal', value: 'i', line: 3 },
                      { type: 'langcode', value: 'en', line: 3 },
                      { type: '.', line: 3 },
                      { type: 'eof', line: 3 }));
 
     it('should tokenize a stream ending with a digit and a dot',
       shouldTokenize(streamOf('1', '.'),
-                     { type: 'literal', value: '"1"^^http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                     { type: 'literal', value: '1', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
                      { type: '.', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should tokenize a stream containing a decimal without leading digit',
       shouldTokenize(streamOf('.', '1 '),
-                     { type: 'literal', value: '".1"^^http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
+                     { type: 'literal', value: '.1', prefix: 'http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should tokenize a stream containing a decimal with leading digit',
       shouldTokenize(streamOf('1.', '1 '),
-                     { type: 'literal', value: '"1.1"^^http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
+                     { type: 'literal', value: '1.1', prefix: 'http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should immediately signal an error if a linebreak occurs anywhere outside a triple-quoted literal',
@@ -499,7 +499,7 @@ describe('N3Lexer', function () {
 
     it('should tokenize a split triple-quoted string',
       shouldTokenize(streamOf('"""abc\n', 'def"""'),
-                     { type: 'literal', value: '"abc\ndef"', line: 1 },
+                     { type: 'literal', value: 'abc\ndef', line: 1 },
                      { type: 'eof', line: 2 }));
 
     it('should tokenize @ keywords',
@@ -568,7 +568,7 @@ describe('N3Lexer', function () {
                      { type: ']', line: 1 },
                      { type: '[', line: 1 },
                      { type: 'prefixed', prefix: 'a', value: 'b', line: 1 },
-                     { type: 'literal', value: '"c"', line: 1 },
+                     { type: 'literal', value: 'c', line: 1 },
                      { type: 'type', prefix: 'd', value: 'e', line: 1 },
                      { type: ']', line: 1 },
                      { type: '[', line: 1 },
@@ -603,16 +603,16 @@ describe('N3Lexer', function () {
                      { type: 'IRI', value: 'a', line: 1 },
                      { type: 'IRI', value: 'b', line: 1 },
                      { type: '(', line: 1 },
-                     { type: 'literal', value: '"1"^^http://www.w3.org/2001/XMLSchema#integer', line: 1 },
-                     { type: 'literal', value: '"2"', line: 1 },
+                     { type: 'literal', value: '1', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                     { type: 'literal', value: '2', line: 1 },
                      { type: 'prefixed', value: 'o', line: 1 },
                      { type: ')', line: 1 },
                      { type: '(', line: 1 },
-                     { type: 'literal', value: '"1"^^http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                     { type: 'literal', value: '1', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
                      { type: '(', line: 1 },
                      { type: ')', line: 1 },
                      { type: '(', line: 1 },
-                     { type: 'literal', value: '"1"^^http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                     { type: 'literal', value: '1', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
                      { type: ')', line: 1 },
                      { type: ')', line: 1 },
                      { type: 'eof', line: 1 }));
