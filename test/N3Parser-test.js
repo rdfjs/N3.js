@@ -1507,6 +1507,26 @@ describe('N3Parser', function () {
                   ['x', 'x', 'x']));
   });
 
+  describe('An N3Parser instance with a custom DataFactory', function () {
+    var parser, factory = {};
+    before(function () {
+      factory.quad = function (s, p, o, g) { return { s: s, p: p, o: o, g: g }; };
+      ['namedNode', 'blankNode', 'literal', 'variable', 'defaultGraph'].forEach(function (f) {
+        factory[f] = function (n) { return n ? f[0] + '-' + n : f; };
+      });
+      parser = new N3Parser({ baseIRI: BASE_IRI, format: 'n3', factory: factory });
+    });
+
+    beforeEach(N3Parser._resetBlankNodeIds);
+
+    it('should use the custom factory', function () {
+      parser.parse('<a> ?b 1, _:d.').should.deep.equal([
+        { s: 'n-http://example.org/a', p: 'v-b', o: 'l-1',    g: 'defaultGraph' },
+        { s: 'n-http://example.org/a', p: 'v-b', o: 'b-b0_d', g: 'defaultGraph' },
+      ]);
+    });
+  });
+
   describe('IRI resolution', function () {
     describe('RFC3986 normal examples', function () {
       itShouldResolve('http://a/bb/ccc/d;p?q', 'g:h',     'g:h');
