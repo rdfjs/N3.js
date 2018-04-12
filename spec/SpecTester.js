@@ -161,7 +161,7 @@ SpecTester.prototype._performTest = function (test, actionStream, callback) {
   // Try to parse the specified document
   var resultFile = path.join(this._testFolder, test.action.replace(/\.\w+$/, '-result.nq')),
       resultWriter = new N3.Writer(fs.createWriteStream(resultFile), { format: 'N-Quads' }),
-      config = { format: this._name, documentIRI: url.resolve(this._manifest, test.action) },
+      config = { format: this._name, baseIRI: url.resolve(this._manifest, test.action) },
       parser = new N3.Parser(config), self = this;
   parser.parse(actionStream, function (error, quad) {
     if (error)  test.error = error;

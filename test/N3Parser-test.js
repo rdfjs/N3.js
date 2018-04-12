@@ -875,7 +875,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance with a document IRI', function () {
-    function parser() { return new N3Parser({ documentIRI: 'http://ex.org/x/yy/zzz/f.ttl' }); }
+    function parser() { return new N3Parser({ baseIRI: 'http://ex.org/x/yy/zzz/f.ttl' }); }
 
     it('should resolve IRIs against the document IRI',
       shouldParse(parser,
@@ -954,7 +954,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance with a blank node prefix', function () {
-    function parser() { return new N3Parser({ documentIRI: BASE_IRI, blankNodePrefix: '_:blank' }); }
+    function parser() { return new N3Parser({ baseIRI: BASE_IRI, blankNodePrefix: '_:blank' }); }
 
     it('should use the given prefix for blank nodes',
       shouldParse(parser,
@@ -963,7 +963,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance with an empty blank node prefix', function () {
-    function parser() { return new N3Parser({ documentIRI: BASE_IRI, blankNodePrefix: '' }); }
+    function parser() { return new N3Parser({ baseIRI: BASE_IRI, blankNodePrefix: '' }); }
 
     it('should not use a prefix for blank nodes',
       shouldParse(parser,
@@ -972,7 +972,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance with a non-string format', function () {
-    function parser() { return new N3Parser({ documentIRI: BASE_IRI, format: 1 }); }
+    function parser() { return new N3Parser({ baseIRI: BASE_IRI, format: 1 }); }
 
     it('should parse a single triple',
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
@@ -982,7 +982,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance for the Turtle format', function () {
-    function parser() { return new N3Parser({ documentIRI: BASE_IRI, format: 'Turtle' }); }
+    function parser() { return new N3Parser({ baseIRI: BASE_IRI, format: 'Turtle' }); }
 
     it('should parse a single triple',
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
@@ -1022,7 +1022,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance for the TriG format', function () {
-    function parser() { return new N3Parser({ documentIRI: BASE_IRI, format: 'TriG' }); }
+    function parser() { return new N3Parser({ baseIRI: BASE_IRI, format: 'TriG' }); }
 
     it('should parse a single triple',
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
@@ -1062,7 +1062,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance for the N-Triples format', function () {
-    function parser() { return new N3Parser({ documentIRI: BASE_IRI, format: 'N-Triples' }); }
+    function parser() { return new N3Parser({ baseIRI: BASE_IRI, format: 'N-Triples' }); }
 
     it('should parse a single triple',
       shouldParse(parser, '_:a <http://ex.org/b> "c".',
@@ -1101,7 +1101,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance for the N-Quads format', function () {
-    function parser() { return new N3Parser({ documentIRI: BASE_IRI, format: 'N-Quads' }); }
+    function parser() { return new N3Parser({ baseIRI: BASE_IRI, format: 'N-Quads' }); }
 
     it('should parse a single triple',
       shouldParse(parser, '_:a <http://ex.org/b> "c".',
@@ -1140,7 +1140,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance for the N3 format', function () {
-    function parser() { return new N3Parser({ documentIRI: BASE_IRI, format: 'N3' }); }
+    function parser() { return new N3Parser({ baseIRI: BASE_IRI, format: 'N3' }); }
 
     it('should parse a single triple',
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
@@ -1442,7 +1442,7 @@ describe('N3Parser', function () {
   });
 
   describe('An N3Parser instance for the N3 format with the explicitQuantifiers option', function () {
-    function parser() { return new N3Parser({ documentIRI: BASE_IRI, format: 'N3', explicitQuantifiers: true }); }
+    function parser() { return new N3Parser({ baseIRI: BASE_IRI, format: 'N3', explicitQuantifiers: true }); }
 
     it('should parse a @forSome statement',
       shouldParse(parser, '@forSome <x>. <x> <x> <x>.',
@@ -1954,7 +1954,7 @@ function shouldParse(createParser, input) {
       return new Quad(item[0], item[1], item[2], item[3]);
     });
     N3Parser._resetBlankNodeIds();
-    createParser({ documentIRI: BASE_IRI }).parse(input, function (error, triple) {
+    createParser({ baseIRI: BASE_IRI }).parse(input, function (error, triple) {
       expect(error).not.to.exist;
       if (triple)
         results.push(triple);
@@ -1980,7 +1980,7 @@ function shouldNotParse(createParser, input, expectedError, expectedContext) {
     expectedContext = expectedError, expectedError = input, input = createParser, createParser = N3Parser;
 
   return function (done) {
-    createParser({ documentIRI: BASE_IRI }).parse(input, function (error, triple) {
+    createParser({ baseIRI: BASE_IRI }).parse(input, function (error, triple) {
       if (error) {
         expect(triple).not.to.exist;
         error.should.be.an.instanceof(Error);
@@ -2000,7 +2000,7 @@ function itShouldResolve(baseIri, relativeIri, expected) {
     before(function (done) {
       try {
         var doc = '<urn:ex:s> <urn:ex:p> <' + relativeIri + '>.';
-        new N3Parser({ documentIRI: baseIri }).parse(doc, function (error, triple) {
+        new N3Parser({ baseIRI: baseIri }).parse(doc, function (error, triple) {
           if (done)
             result = triple, done(error);
           done = null;
