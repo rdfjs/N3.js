@@ -995,6 +995,35 @@ describe('N3Store', function () {
     });
   });
 
+  describe('An N3Store with a custom DataFactory', function () {
+    var store, factory = {};
+    before(function () {
+      factory.quad = function (s, p, o, g) { return { s: s, p: p, o: o, g: g }; };
+      ['namedNode', 'blankNode', 'literal', 'variable', 'defaultGraph'].forEach(function (f) {
+        factory[f] = function (n) { return n ? f[0] + '-' + n : f; };
+      });
+
+      store = new N3Store({ factory: factory });
+      store.addQuad('s1', 'p1', 'o1').should.be.true;
+      store.addQuad({ subject: 's1', predicate: 'p1', object: 'o2' }).should.be.true;
+      store.addQuads([
+        { subject: 's1', predicate: 'p2', object: 'o2' },
+        { subject: 's2', predicate: 'p1', object: 'o1' },
+      ]);
+      store.addQuad('s1', 'p1', 'o1', 'c4').should.be.true;
+    });
+
+    it('should use the factory when returning quads', function () {
+      store.getQuads().should.deep.equal([
+        { s: 'n-s1', p: 'n-p1', o: 'n-o2', g: 'defaultGraph' },
+        { s: 'n-s1', p: 'n-p1', o: 'n-o1', g: 'defaultGraph' },
+        { s: 'n-s1', p: 'n-p2', o: 'n-o2', g: 'defaultGraph' },
+        { s: 'n-s2', p: 'n-p1', o: 'n-o1', g: 'defaultGraph' },
+        { s: 'n-s1', p: 'n-p1', o: 'n-o1', g: 'n-c4'         },
+      ]);
+    });
+  });
+
   describe('An N3Store', function () {
     var store = new N3Store();
 
