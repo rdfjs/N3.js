@@ -42,10 +42,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/RubenVerborgh/N3.js.git"
+    "url": "https://github.com/rdfjs/N3.js.git"
   },
   "bugs": {
-    "url": "https://github.com/RubenVerborgh/N3.js/issues"
+    "url": "https://github.com/rdfjs/N3.js/issues"
   },
   "pre-commit": [
     "lint",

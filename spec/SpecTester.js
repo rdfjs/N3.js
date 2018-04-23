@@ -243,7 +243,7 @@ SpecTester.prototype._generateEarlReport = function (tests, callback) {
   var reportFile = path.join(this._reportFolder, 'n3js-earl-report-' + this._name + '.ttl'),
       report = new N3.Writer(fs.createWriteStream(reportFile), { prefixes: prefixes }),
       date = '"' + new Date().toISOString() + '"^^' + prefixes.xsd + 'dateTime',
-      homepage = 'https://github.com/RubenVerborgh/N3.js', app = homepage + '#n3js',
+      homepage = 'https://github.com/rdfjs/N3.js', app = homepage + '#n3js',
       developer = 'https://ruben.verborgh.org/profile/#me', manifest = this._manifest + '#';
 
   report.addPrefix('manifest', manifest);
