@@ -71,6 +71,48 @@ describe('Term', function () {
         },
       });
     });
+
+    describe('with a custom factory', function () {
+      var factory = {
+        defaultGraph: function ()     { return ['d'];       },
+        namedNode:    function (n)    { return ['n', n];    },
+        blankNode:    function (b)    { return ['b', b];    },
+        variable:     function (v)    { return ['v', v];    },
+        literal:      function (l, m) { return ['l', l, m]; },
+      };
+
+      it('should create a DefaultGraph from a falsy value', function () {
+        fromId(null, factory).should.deep.equal(['d']);
+      });
+
+      it('should create a DefaultGraph from the empty string', function () {
+        fromId('', factory).should.deep.equal(['d']);
+      });
+
+      it('should create a NamedNode from an IRI', function () {
+        fromId('http://example.org/foo#bar', factory).should.deep.equal(['n', 'http://example.org/foo#bar']);
+      });
+
+      it('should create a BlankNode from a string that starts with an underscore', function () {
+        fromId('_:b1', factory).should.deep.equal(['b', 'b1']);
+      });
+
+      it('should create a Variable from a string that starts with a question mark', function () {
+        fromId('?v1', factory).should.deep.equal(['v', 'v1']);
+      });
+
+      it('should create a Literal without language or datatype', function () {
+        fromId('"abc"', factory).should.deep.equal(['l', 'abc', undefined]);
+      });
+
+      it('should create a Literal with a language', function () {
+        fromId('"abc"@en-us', factory).should.deep.equal(['l', 'abc', 'en-us']);
+      });
+
+      it('should create a Literal with a datatype', function () {
+        fromId('"abc"^^https://ex.org/type', factory).should.deep.equal(['l', 'abc', ['n', 'https://ex.org/type']]);
+      });
+    });
   });
 
   describe('toId', function () {
