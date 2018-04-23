@@ -195,6 +195,12 @@ describe('N3Util', function () {
       it('should expand the prefix', function () {
         expect(rdfs('label')).to.deep.equal(new NamedNode('http://www.w3.org/2000/01/rdf-schema#label'));
       });
+
+      it('should use a custom factory when specified', function () {
+        var factory = { namedNode: function (s) { return 'n-' + s; } };
+        var rdfs = N3Util.prefix('http://www.w3.org/2000/01/rdf-schema#', factory);
+        expect(rdfs('label')).to.equal('n-http://www.w3.org/2000/01/rdf-schema#label');
+      });
     });
   });
 
@@ -254,6 +260,15 @@ describe('N3Util', function () {
           var my = prefixes('my');
           expect(my('me')).to.deep.equal(new NamedNode('http://example.org/#me'));
         });
+      });
+    });
+
+    describe('called with a custom factory', function () {
+      var factory = { namedNode: function (s) { return 'n-' + s; } };
+      var prefixes = N3Util.prefixes({ my: 'http://example.org/#' }, factory);
+
+      it('should use the custom factory', function () {
+        expect(prefixes('my')('foo')).to.equal('n-http://example.org/#foo');
       });
     });
   });
