@@ -1015,8 +1015,8 @@ describe('N3Store', function () {
 
     it('should use the factory when returning quads', function () {
       store.getQuads().should.deep.equal([
-        { s: 'n-s1', p: 'n-p1', o: 'n-o2', g: 'defaultGraph' },
         { s: 'n-s1', p: 'n-p1', o: 'n-o1', g: 'defaultGraph' },
+        { s: 'n-s1', p: 'n-p1', o: 'n-o2', g: 'defaultGraph' },
         { s: 'n-s1', p: 'n-p2', o: 'n-o2', g: 'defaultGraph' },
         { s: 'n-s2', p: 'n-p1', o: 'n-o1', g: 'defaultGraph' },
         { s: 'n-s1', p: 'n-p1', o: 'n-o1', g: 'n-c4'         },
