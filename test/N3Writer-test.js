@@ -1,10 +1,10 @@
 var N3Writer = require('../N3').Writer;
 
 var DataFactory = require('../N3').DataFactory;
-var Term = DataFactory.Term,
-    NamedNode = DataFactory.NamedNode,
-    Literal = DataFactory.Literal,
-    Quad = DataFactory.Quad;
+var NamedNode = DataFactory.internal.NamedNode,
+    Literal = DataFactory.internal.Literal,
+    Quad = DataFactory.internal.Quad,
+    fromId = DataFactory.internal.fromId;
 
 describe('N3Writer', function () {
   describe('The N3Writer module', function () {
@@ -572,7 +572,7 @@ function shouldSerialize(/* prefixes?, tripleArrays..., expectedResult */) {
     (function next() {
       var item = tripleArrays.shift();
       if (item)
-        writer.addQuad(new Quad(Term.fromId(item[0]), Term.fromId(item[1]), Term.fromId(item[2]), Term.fromId(item[3])), next);
+        writer.addQuad(new Quad(fromId(item[0]), fromId(item[1]), fromId(item[2]), fromId(item[3])), next);
       else
         writer.end(function (error) {
           try {

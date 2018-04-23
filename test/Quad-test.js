@@ -1,9 +1,9 @@
 var DataFactory = require('../N3').DataFactory;
 
-var Quad = DataFactory.Quad,
-    Triple = DataFactory.Triple,
-    Term = DataFactory.Term,
-    DefaultGraph = DataFactory.DefaultGraph;
+var Quad = DataFactory.internal.Quad,
+    Triple = DataFactory.internal.Triple,
+    DefaultGraph = DataFactory.internal.DefaultGraph,
+    fromId = DataFactory.internal.fromId;
 
 describe('Quad', function () {
   describe('The Quad module', function () {
@@ -28,9 +28,9 @@ describe('Quad', function () {
     var quad, subject, predicate, object;
     before(function () {
       quad = new Quad(
-        subject   = Term.fromId('s'),
-        predicate = Term.fromId('p'),
-        object    = Term.fromId('o')
+        subject   = fromId('s'),
+        predicate = fromId('p'),
+        object    = fromId('o')
       );
     });
 
@@ -65,7 +65,7 @@ describe('Quad', function () {
 
     it('should not equal a quad with a different subject', function () {
       quad.equals({
-        subject:   Term.fromId('x'),
+        subject:   fromId('x'),
         predicate: predicate,
         object:    object,
         graph:     new DefaultGraph(),
@@ -75,7 +75,7 @@ describe('Quad', function () {
     it('should not equal a quad with a different predicate', function () {
       quad.equals({
         subject:   subject,
-        predicate: Term.fromId('x'),
+        predicate: fromId('x'),
         object:    object,
         graph:     new DefaultGraph(),
       }).should.be.false;
@@ -85,7 +85,7 @@ describe('Quad', function () {
       quad.equals({
         subject:   subject,
         predicate: predicate,
-        object:    Term.fromId('x'),
+        object:    fromId('x'),
         graph:     new DefaultGraph(),
       }).should.be.false;
     });
@@ -95,7 +95,7 @@ describe('Quad', function () {
         subject:   subject,
         predicate: predicate,
         object:    object,
-        graph:     Term.fromId('x'),
+        graph:     fromId('x'),
       }).should.be.false;
     });
 
@@ -113,10 +113,10 @@ describe('Quad', function () {
     var quad, subject, predicate, object, graph;
     before(function () {
       quad = new Quad(
-        subject   = Term.fromId('s'),
-        predicate = Term.fromId('p'),
-        object    = Term.fromId('o'),
-        graph     = Term.fromId('g')
+        subject   = fromId('s'),
+        predicate = fromId('p'),
+        object    = fromId('o'),
+        graph     = fromId('g')
       );
     });
 
@@ -151,7 +151,7 @@ describe('Quad', function () {
 
     it('should not equal a quad with a different subject', function () {
       quad.equals({
-        subject:   Term.fromId('x'),
+        subject:   fromId('x'),
         predicate: predicate,
         object:    object,
         graph:     graph,
@@ -161,7 +161,7 @@ describe('Quad', function () {
     it('should not equal a quad with a different predicate', function () {
       quad.equals({
         subject:   subject,
-        predicate: Term.fromId('x'),
+        predicate: fromId('x'),
         object:    object,
         graph:     graph,
       }).should.be.false;
@@ -171,7 +171,7 @@ describe('Quad', function () {
       quad.equals({
         subject:   subject,
         predicate: predicate,
-        object:    Term.fromId('x'),
+        object:    fromId('x'),
         graph:     graph,
       }).should.be.false;
     });
@@ -181,7 +181,7 @@ describe('Quad', function () {
         subject:   subject,
         predicate: predicate,
         object:    object,
-        graph:     Term.fromId('x'),
+        graph:     fromId('x'),
       }).should.be.false;
     });
 

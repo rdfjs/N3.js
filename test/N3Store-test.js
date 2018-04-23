@@ -2,10 +2,10 @@ var N3Store = require('../N3').Store;
 
 var Readable = require('stream').Readable,
     DataFactory = require('../N3').DataFactory;
-var Term = DataFactory.Term,
-    NamedNode = DataFactory.NamedNode,
-    DefaultGraph = DataFactory.DefaultGraph,
-    Quad = DataFactory.Quad;
+var NamedNode = DataFactory.internal.NamedNode,
+    DefaultGraph = DataFactory.internal.DefaultGraph,
+    Quad = DataFactory.internal.Quad,
+    fromId = DataFactory.internal.fromId;
 
 describe('N3Store', function () {
   describe('The N3Store module', function () {
@@ -1018,7 +1018,7 @@ function alwaysFalse() { return false; }
 
 function collect(store, method, arg1, arg2, arg3, arg4) {
   var results = [];
-  store[method](function (r) { results.push(r); }, arg1 && Term.fromId(arg1), arg2 && Term.fromId(arg2), arg3 && Term.fromId(arg3), arg4 && Term.fromId(arg4));
+  store[method](function (r) { results.push(r); }, arg1 && fromId(arg1), arg2 && fromId(arg2), arg3 && fromId(arg3), arg4 && fromId(arg4));
   return results;
 }
 
@@ -1031,7 +1031,7 @@ function itShouldBeEmpty(result) {
 
 function shouldIncludeAll(result) {
   var items = Array.prototype.slice.call(arguments, 1).map(function (arg) {
-    return new Quad(Term.fromId(arg[0]), Term.fromId(arg[1]), Term.fromId(arg[2]), Term.fromId(arg[3] || ''));
+    return new Quad(fromId(arg[0]), fromId(arg[1]), fromId(arg[2]), fromId(arg[3] || ''));
   });
   return function () {
     if (typeof result === 'function') result = result();

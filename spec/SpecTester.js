@@ -8,8 +8,7 @@ var N3 = require('../N3.js'),
     async = require('async');
 require('colors');
 
-var DataFactory = N3.DataFactory,
-    Term = DataFactory.Term;
+var fromId = N3.DataFactory.internal.fromId;
 
 // How many test cases may run in parallel?
 var workers = 1;
@@ -250,7 +249,7 @@ SpecTester.prototype._generateEarlReport = function (tests, callback) {
   report.addPrefix('manifest', manifest);
 
   function addTriple(s, p, o) {
-    report.addQuad(Term.fromId(s), Term.fromId(p), Term.fromId(o));
+    report.addQuad(fromId(s), fromId(p), fromId(o));
   }
 
   addTriple(reportFile, prefixes.foaf + 'primaryTopic', app);

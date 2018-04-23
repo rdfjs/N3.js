@@ -3,9 +3,9 @@ var N3StreamWriter = require('../N3').StreamWriter;
 var Readable = require('stream').Readable,
     Writable = require('stream').Writable,
     DataFactory = require('../N3').DataFactory;
-var Term = DataFactory.Term,
-    Quad = DataFactory.Quad,
-    NamedNode = DataFactory.NamedNode;
+var Quad = DataFactory.internal.Quad,
+    NamedNode = DataFactory.internal.NamedNode,
+    fromId = DataFactory.internal.fromId;
 
 describe('N3StreamWriter', function () {
   describe('The N3StreamWriter module', function () {
@@ -94,7 +94,7 @@ function shouldSerialize(/* options?, tripleArrays..., expectedResult */) {
       options = tripleArrays[0] instanceof Array ? null : tripleArrays.shift();
 
   tripleArrays = tripleArrays.map(function (i) {
-    return new Quad(Term.fromId(i[0]), Term.fromId(i[1]), Term.fromId(i[2]));
+    return new Quad(fromId(i[0]), fromId(i[1]), fromId(i[2]));
   });
 
   return function (done) {

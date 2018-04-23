@@ -1,9 +1,9 @@
 var N3Parser = require('../N3').Parser;
 
 var DataFactory = require('../N3').DataFactory;
-var Term = DataFactory.Term,
-    NamedNode = DataFactory.NamedNode,
-    Quad = DataFactory.Quad;
+var NamedNode = DataFactory.internal.NamedNode,
+    Quad = DataFactory.internal.Quad,
+    fromId = DataFactory.internal.fromId;
 
 var BASE_IRI = 'http://example.org/';
 
@@ -860,8 +860,8 @@ describe('N3Parser', function () {
     it('should parse a string synchronously if no callback is given', function () {
       var triples = new N3Parser().parse('@prefix a: <urn:a:>. a:a a:b a:c.');
       triples.should.deep.equal([
-        new Quad(Term.fromId('urn:a:a'), Term.fromId('urn:a:b'),
-                 Term.fromId('urn:a:c'), Term.fromId('')),
+        new Quad(fromId('urn:a:a'), fromId('urn:a:b'),
+                 fromId('urn:a:c'), fromId('')),
       ]);
     });
 
@@ -1971,7 +1971,7 @@ function shouldParse(createParser, input) {
         // Append base to relative IRIs
         if (!/^$|^["?]|:/.test(t))
           t = BASE_IRI + t;
-        return Term.fromId(t);
+        return fromId(t);
       });
       return new Quad(item[0], item[1], item[2], item[3]);
     });

@@ -1,8 +1,8 @@
 var DataFactory = require('../N3').DataFactory;
 
-var Literal = DataFactory.Literal,
-    NamedNode = DataFactory.NamedNode,
-    Term = DataFactory.Term;
+var Literal = DataFactory.internal.Literal,
+    NamedNode = DataFactory.internal.NamedNode,
+    Term = DataFactory.internal.Term;
 
 describe('Literal', function () {
   describe('The Literal module', function () {

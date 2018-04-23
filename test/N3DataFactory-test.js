@@ -1,11 +1,11 @@
 var DataFactory = require('../lib/N3DataFactory');
 
-var NamedNode = DataFactory.NamedNode,
-    Literal = DataFactory.Literal,
-    BlankNode = DataFactory.BlankNode,
-    Variable = DataFactory.Variable,
-    DefaultGraph = DataFactory.DefaultGraph,
-    Quad = DataFactory.Quad;
+var NamedNode = DataFactory.internal.NamedNode,
+    Literal = DataFactory.internal.Literal,
+    BlankNode = DataFactory.internal.BlankNode,
+    Variable = DataFactory.internal.Variable,
+    DefaultGraph = DataFactory.internal.DefaultGraph,
+    Quad = DataFactory.internal.Quad;
 
 describe('DataFactory', function () {
   describe('namedNode', function () {
