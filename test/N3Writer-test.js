@@ -123,7 +123,7 @@ describe('N3Writer', function () {
                       '<a> <b> "c\\u0000\\u0001".\n'));
 
     it('should serialize blank nodes',
-      shouldSerialize(['_:a', 'b', '_:c'],
+      shouldSerialize(['_:a', 'b', { termType: 'BlankNode', value: 'c' }],
                       '_:a <b> _:c.\n'));
 
     it('should not leave leading whitespace if the prefix set is empty',
@@ -571,8 +571,13 @@ function shouldSerialize(/* prefixes?, tripleArrays..., expectedResult */) {
         writer = N3Writer(outputStream, prefixes);
     (function next() {
       var item = tripleArrays.shift();
-      if (item)
-        writer.addQuad(new Quad(fromId(item[0]), fromId(item[1]), fromId(item[2]), fromId(item[3])), next);
+      if (item) {
+        var subject   = typeof item[0] === 'string' ? fromId(item[0]) : item[0];
+        var predicate = typeof item[1] === 'string' ? fromId(item[1]) : item[1];
+        var object    = typeof item[2] === 'string' ? fromId(item[2]) : item[2];
+        var graph     = typeof item[3] === 'string' ? fromId(item[3]) : item[3];
+        writer.addQuad(new Quad(subject, predicate, object, graph), next);
+      }
       else
         writer.end(function (error) {
           try {
