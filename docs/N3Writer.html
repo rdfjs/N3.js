@@ -20,6 +20,16 @@
             <div id="jump_page">
               
                 
+                <a class="source" href="IRIs.html">
+                  IRIs.js
+                </a>
+              
+                
+                <a class="source" href="N3DataFactory.html">
+                  N3DataFactory.js
+                </a>
+              
+                
                 <a class="source" href="N3Lexer.html">
                   N3Lexer.js
                 </a>
@@ -79,6 +89,15 @@
 
             </div>
             
+            <div class="content"><div class='highlight'><pre>
+<span class="hljs-keyword">var</span> namespaces = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./IRIs'</span>),
+    DataFactory = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./N3DataFactory'</span>);
+
+<span class="hljs-keyword">var</span> DEFAULTGRAPH = DataFactory.defaultGraph();
+
+<span class="hljs-keyword">var</span> rdf = namespaces.rdf,
+    xsd = namespaces.xsd;</pre></div></div>
+            
         </li>
         
         
@@ -87,37 +106,6 @@
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-2">&#182;</a>
-              </div>
-              <p>Matches a literal as represented in memory by the N3 library</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> N3LiteralMatcher = <span class="hljs-regexp">/^"([^]*)"(?:\^\^(.+)|@([a-z]+(?:-[a-z0-9]+)*))?$/i</span>;</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-3">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-3">&#182;</a>
-              </div>
-              <p>rdf:type predicate (for ‘a’ abbreviation)</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> RDF_PREFIX = <span class="hljs-string">'http://www.w3.org/1999/02/22-rdf-syntax-ns#'</span>,
-    RDF_TYPE   = RDF_PREFIX + <span class="hljs-string">'type'</span>;</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-4">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-4">&#182;</a>
               </div>
               <p>Characters in literals that require escaping</p>
 
@@ -133,11 +121,11 @@
         </li>
         
         
-        <li id="section-5">
+        <li id="section-3">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-5">&#182;</a>
+                <a class="pilcrow" href="#section-3">&#182;</a>
               </div>
               <h2 id="constructor">Constructor</h2>
 
@@ -150,11 +138,11 @@
         </li>
         
         
-        <li id="section-6">
+        <li id="section-4">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-6">&#182;</a>
+                <a class="pilcrow" href="#section-4">&#182;</a>
               </div>
               <p>Shift arguments if the first argument is not a stream</p>
 
@@ -167,11 +155,11 @@
         </li>
         
         
-        <li id="section-7">
+        <li id="section-5">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-7">&#182;</a>
+                <a class="pilcrow" href="#section-5">&#182;</a>
               </div>
               <p>If no output stream given, send the output as string through the end callback</p>
 
@@ -193,11 +181,11 @@
         </li>
         
         
-        <li id="section-8">
+        <li id="section-6">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-8">&#182;</a>
+                <a class="pilcrow" href="#section-6">&#182;</a>
               </div>
               <p>Initialize writer, depending on the format</p>
 
@@ -205,16 +193,46 @@
             
             <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">this</span>._subject = <span class="hljs-literal">null</span>;
   <span class="hljs-keyword">if</span> (!(<span class="hljs-regexp">/triple|quad/i</span>).test(options.format)) {
-    <span class="hljs-keyword">this</span>._graph = <span class="hljs-string">''</span>;
+    <span class="hljs-keyword">this</span>._graph = DEFAULTGRAPH;
     <span class="hljs-keyword">this</span>._prefixIRIs = <span class="hljs-built_in">Object</span>.create(<span class="hljs-literal">null</span>);
     options.prefixes &amp;&amp; <span class="hljs-keyword">this</span>.addPrefixes(options.prefixes);
   }
   <span class="hljs-keyword">else</span> {
-    <span class="hljs-keyword">this</span>._writeTriple = <span class="hljs-keyword">this</span>._writeTripleLine;
+    <span class="hljs-keyword">this</span>._writeQuad = <span class="hljs-keyword">this</span>._writeQuadLine;
   }
 }
 
 N3Writer.prototype = {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <h2 id="private-methods">Private methods</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <h3 id="whether-the-current-graph-is-the-default-graph">Whether the current graph is the default graph</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  get _inDefaultGraph() {
+    <span class="hljs-keyword">return</span> DEFAULTGRAPH.equals(<span class="hljs-keyword">this</span>._graph);
+  },</pre></div></div>
             
         </li>
         
@@ -224,19 +242,6 @@ N3Writer.prototype = {</pre></div></div>
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-9">&#182;</a>
-              </div>
-              <h2 id="private-methods">Private methods</h2>
-
-            </div>
-            
-        </li>
-        
-        
-        <li id="section-10">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-10">&#182;</a>
               </div>
               <h3 id="_write-writes-the-argument-to-the-output-stream"><code>_write</code> writes the argument to the output stream</h3>
 
@@ -249,18 +254,33 @@ N3Writer.prototype = {</pre></div></div>
         </li>
         
         
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <h3 id="_writequad-writes-the-quad-to-the-output-stream"><code>_writeQuad</code> writes the quad to the output stream</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _writeQuad: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">subject, predicate, object, graph, done</span>) </span>{
+    <span class="hljs-keyword">try</span> {</pre></div></div>
+            
+        </li>
+        
+        
         <li id="section-11">
             <div class="annotation">
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-11">&#182;</a>
               </div>
-              <h3 id="_writetriple-writes-the-triple-to-the-output-stream"><code>_writeTriple</code> writes the triple to the output stream</h3>
+              <p>Write the graph’s label if it has changed</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  _writeTriple: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">subject, predicate, object, graph, done</span>) </span>{
-    <span class="hljs-keyword">try</span> {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (!graph.equals(<span class="hljs-keyword">this</span>._graph)) {</pre></div></div>
             
         </li>
         
@@ -271,11 +291,15 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-12">&#182;</a>
               </div>
-              <p>Write the graph’s label if it has changed</p>
+              <p>Close the previous graph and start the new one</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>._graph !== graph) {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">this</span>._write((<span class="hljs-keyword">this</span>._subject === <span class="hljs-literal">null</span> ? <span class="hljs-string">''</span> : (<span class="hljs-keyword">this</span>._inDefaultGraph ? <span class="hljs-string">'.\n'</span> : <span class="hljs-string">'\n}\n'</span>)) +
+                    (DEFAULTGRAPH.equals(graph) ? <span class="hljs-string">''</span> : <span class="hljs-keyword">this</span>._encodeIriOrBlank(graph) + <span class="hljs-string">' {\n'</span>));
+        <span class="hljs-keyword">this</span>._graph = graph;
+        <span class="hljs-keyword">this</span>._subject = <span class="hljs-literal">null</span>;
+      }</pre></div></div>
             
         </li>
         
@@ -286,13 +310,11 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-13">&#182;</a>
               </div>
-              <p>Close the previous graph and start the new one</p>
+              <p>Don’t repeat the subject if it’s the same</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">this</span>._write((<span class="hljs-keyword">this</span>._subject === <span class="hljs-literal">null</span> ? <span class="hljs-string">''</span> : (<span class="hljs-keyword">this</span>._graph ? <span class="hljs-string">'\n}\n'</span> : <span class="hljs-string">'.\n'</span>)) +
-                    (graph ? <span class="hljs-keyword">this</span>._encodeIriOrBlankNode(graph) + <span class="hljs-string">' {\n'</span> : <span class="hljs-string">''</span>));
-        <span class="hljs-keyword">this</span>._subject = <span class="hljs-literal">null</span>;</pre></div></div>
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (subject.equals(<span class="hljs-keyword">this</span>._subject)) {</pre></div></div>
             
         </li>
         
@@ -303,12 +325,12 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-14">&#182;</a>
               </div>
-              <p>Don’t treat identical blank nodes as repeating graphs</p>
+              <p>Don’t repeat the predicate if it’s the same</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">this</span>._graph = graph[<span class="hljs-number">0</span>] !== <span class="hljs-string">'['</span> ? graph : <span class="hljs-string">']'</span>;
-      }</pre></div></div>
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (predicate.equals(<span class="hljs-keyword">this</span>._predicate))
+          <span class="hljs-keyword">this</span>._write(<span class="hljs-string">', '</span> + <span class="hljs-keyword">this</span>._encodeObject(object), done);</pre></div></div>
             
         </li>
         
@@ -318,37 +340,6 @@ N3Writer.prototype = {</pre></div></div>
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-15">&#182;</a>
-              </div>
-              <p>Don’t repeat the subject if it’s the same</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>._subject === subject) {</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-16">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-16">&#182;</a>
-              </div>
-              <p>Don’t repeat the predicate if it’s the same</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>._predicate === predicate)
-          <span class="hljs-keyword">this</span>._write(<span class="hljs-string">', '</span> + <span class="hljs-keyword">this</span>._encodeObject(object), done);</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-17">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-17">&#182;</a>
               </div>
               <p>Same subject, different predicate</p>
 
@@ -363,23 +354,55 @@ N3Writer.prototype = {</pre></div></div>
         </li>
         
         
+        <li id="section-16">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+              <p>Different subject; write the whole quad</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">else</span>
+        <span class="hljs-keyword">this</span>._write((<span class="hljs-keyword">this</span>._subject === <span class="hljs-literal">null</span> ? <span class="hljs-string">''</span> : <span class="hljs-string">'.\n'</span>) +
+                    <span class="hljs-keyword">this</span>._encodeIriOrBlank(<span class="hljs-keyword">this</span>._subject = subject) + <span class="hljs-string">' '</span> +
+                    <span class="hljs-keyword">this</span>._encodePredicate(<span class="hljs-keyword">this</span>._predicate = predicate) + <span class="hljs-string">' '</span> +
+                    <span class="hljs-keyword">this</span>._encodeObject(object), done);
+    }
+    <span class="hljs-keyword">catch</span> (error) { done &amp;&amp; done(error); }
+  },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+              <h3 id="_writequadline-writes-the-quad-to-the-output-stream-as-a-single-line"><code>_writeQuadLine</code> writes the quad to the output stream as a single line</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _writeQuadLine: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">subject, predicate, object, graph, done</span>) </span>{</pre></div></div>
+            
+        </li>
+        
+        
         <li id="section-18">
             <div class="annotation">
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-18">&#182;</a>
               </div>
-              <p>Different subject; write the whole triple</p>
+              <p>Write the quad without prefixes</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">else</span>
-        <span class="hljs-keyword">this</span>._write((<span class="hljs-keyword">this</span>._subject === <span class="hljs-literal">null</span> ? <span class="hljs-string">''</span> : <span class="hljs-string">'.\n'</span>) +
-                    <span class="hljs-keyword">this</span>._encodeSubject(<span class="hljs-keyword">this</span>._subject = subject) + <span class="hljs-string">' '</span> +
-                    <span class="hljs-keyword">this</span>._encodePredicate(<span class="hljs-keyword">this</span>._predicate = predicate) + <span class="hljs-string">' '</span> +
-                    <span class="hljs-keyword">this</span>._encodeObject(object), done);
-    }
-    <span class="hljs-keyword">catch</span> (error) { done &amp;&amp; done(error); }
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">delete</span> <span class="hljs-keyword">this</span>._prefixMatch;
+    <span class="hljs-keyword">this</span>._write(<span class="hljs-keyword">this</span>.quadToString(subject, predicate, object, graph), done);
   },</pre></div></div>
             
         </li>
@@ -391,11 +414,16 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-19">&#182;</a>
               </div>
-              <h3 id="_writetripleline-writes-the-triple-or-quad-to-the-output-stream-as-a-single-line"><code>_writeTripleLine</code> writes the triple or quad to the output stream as a single line</h3>
+              <h3 id="quadtostring-serializes-a-quad-as-a-string"><code>quadToString</code> serializes a quad as a string</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  _writeTripleLine: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">subject, predicate, object, graph, done</span>) </span>{</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  quadToString: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">subject, predicate, object, graph</span>) </span>{
+    <span class="hljs-keyword">return</span>  <span class="hljs-keyword">this</span>._encodeIriOrBlank(subject)   + <span class="hljs-string">' '</span> +
+            <span class="hljs-keyword">this</span>._encodeIriOrBlank(predicate) + <span class="hljs-string">' '</span> +
+            <span class="hljs-keyword">this</span>._encodeObject(object) +
+            (graph &amp;&amp; graph.value ? <span class="hljs-string">' '</span> + <span class="hljs-keyword">this</span>._encodeIriOrBlank(graph) + <span class="hljs-string">'.\n'</span> : <span class="hljs-string">'.\n'</span>);
+  },</pre></div></div>
             
         </li>
         
@@ -406,13 +434,14 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-20">&#182;</a>
               </div>
-              <p>Write the triple without prefixes</p>
+              <h3 id="quadstostring-serializes-an-array-of-quads-as-a-string"><code>quadsToString</code> serializes an array of quads as a string</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">delete</span> <span class="hljs-keyword">this</span>._prefixMatch;
-    <span class="hljs-keyword">try</span> { <span class="hljs-keyword">this</span>._write(<span class="hljs-keyword">this</span>.tripleToString(subject, predicate, object, graph), done); }
-    <span class="hljs-keyword">catch</span> (error) { done &amp;&amp; done(error); }
+            <div class="content"><div class='highlight'><pre>  quadsToString: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">quads</span>) </span>{
+    <span class="hljs-keyword">return</span> quads.map(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">t</span>) </span>{
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.quadToString(t.subject, t.predicate, t.object, t.graph);
+    }, <span class="hljs-keyword">this</span>).join(<span class="hljs-string">''</span>);
   },</pre></div></div>
             
         </li>
@@ -424,16 +453,11 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-21">&#182;</a>
               </div>
-              <h3 id="tripletostring-serializes-a-triple-or-quad-as-a-string"><code>tripleToString</code> serializes a triple or quad as a string</h3>
+              <h3 id="_encodeiriorblank-represents-an-iri-or-blank-node"><code>_encodeIriOrBlank</code> represents an IRI or blank node</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  tripleToString: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">subject, predicate, object, graph</span>) </span>{
-    <span class="hljs-keyword">return</span>  <span class="hljs-keyword">this</span>._encodeIriOrBlankNode(subject)   + <span class="hljs-string">' '</span> +
-            <span class="hljs-keyword">this</span>._encodeIriOrBlankNode(predicate) + <span class="hljs-string">' '</span> +
-            <span class="hljs-keyword">this</span>._encodeObject(object) +
-            (graph ? <span class="hljs-string">' '</span> + <span class="hljs-keyword">this</span>._encodeIriOrBlankNode(graph) + <span class="hljs-string">'.\n'</span> : <span class="hljs-string">'.\n'</span>);
-  },</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  _encodeIriOrBlank: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">entity</span>) </span>{</pre></div></div>
             
         </li>
         
@@ -444,15 +468,12 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-22">&#182;</a>
               </div>
-              <h3 id="triplestostring-serializes-an-array-of-triples-or-quads-as-a-string"><code>triplesToString</code> serializes an array of triples or quads as a string</h3>
+              <p>A blank node or list is represented as-is</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  triplesToString: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">triples</span>) </span>{
-    <span class="hljs-keyword">return</span> triples.map(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">t</span>) </span>{
-      <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.tripleToString(t.subject, t.predicate, t.object, t.graph);
-    }, <span class="hljs-keyword">this</span>).join(<span class="hljs-string">''</span>);
-  },</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (entity.termType !== <span class="hljs-string">'NamedNode'</span>)
+      <span class="hljs-keyword">return</span> <span class="hljs-string">'id'</span> <span class="hljs-keyword">in</span> entity ? entity.id : <span class="hljs-string">'_:'</span> + entity.value;</pre></div></div>
             
         </li>
         
@@ -463,11 +484,13 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-23">&#182;</a>
               </div>
-              <h3 id="_encodeiriorblanknode-represents-an-iri-or-blank-node"><code>_encodeIriOrBlankNode</code> represents an IRI or blank node</h3>
+              <p>Escape special characters</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  _encodeIriOrBlankNode: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">entity</span>) </span>{</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> iri = entity.value;
+    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">escape</span>.test(iri))
+      iri = iri.replace(escapeAll, characterReplacer);</pre></div></div>
             
         </li>
         
@@ -478,13 +501,14 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-24">&#182;</a>
               </div>
-              <p>A blank node or list is represented as-is</p>
+              <p>Try to represent the IRI as prefixed name</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> firstChar = entity[<span class="hljs-number">0</span>];
-    <span class="hljs-keyword">if</span> (firstChar === <span class="hljs-string">'['</span> || firstChar === <span class="hljs-string">'('</span> || firstChar === <span class="hljs-string">'_'</span> &amp;&amp; entity[<span class="hljs-number">1</span>] === <span class="hljs-string">':'</span>)
-      <span class="hljs-keyword">return</span> entity;</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> prefixMatch = <span class="hljs-keyword">this</span>._prefixRegex.exec(iri);
+    <span class="hljs-keyword">return</span> !prefixMatch ? <span class="hljs-string">'&lt;'</span> + iri + <span class="hljs-string">'&gt;'</span> :
+           (!prefixMatch[<span class="hljs-number">1</span>] ? iri : <span class="hljs-keyword">this</span>._prefixIRIs[prefixMatch[<span class="hljs-number">1</span>]] + prefixMatch[<span class="hljs-number">2</span>]);
+  },</pre></div></div>
             
         </li>
         
@@ -495,12 +519,11 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-25">&#182;</a>
               </div>
-              <p>Escape special characters</p>
+              <h3 id="_encodeliteral-represents-a-literal"><code>_encodeLiteral</code> represents a literal</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">escape</span>.test(entity))
-      entity = entity.replace(escapeAll, characterReplacer);</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  _encodeLiteral: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">literal</span>) </span>{</pre></div></div>
             
         </li>
         
@@ -511,14 +534,13 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-26">&#182;</a>
               </div>
-              <p>Try to represent the IRI as prefixed name</p>
+              <p>Escape special characters</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> prefixMatch = <span class="hljs-keyword">this</span>._prefixRegex.exec(entity);
-    <span class="hljs-keyword">return</span> !prefixMatch ? <span class="hljs-string">'&lt;'</span> + entity + <span class="hljs-string">'&gt;'</span> :
-           (!prefixMatch[<span class="hljs-number">1</span>] ? entity : <span class="hljs-keyword">this</span>._prefixIRIs[prefixMatch[<span class="hljs-number">1</span>]] + prefixMatch[<span class="hljs-number">2</span>]);
-  },</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> value = literal.value;
+    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">escape</span>.test(value))
+      value = value.replace(escapeAll, characterReplacer);</pre></div></div>
             
         </li>
         
@@ -529,11 +551,17 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-27">&#182;</a>
               </div>
-              <h3 id="_encodeliteral-represents-a-literal"><code>_encodeLiteral</code> represents a literal</h3>
+              <p>Write the literal, possibly with type or language</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  _encodeLiteral: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">value, type, language</span>) </span>{</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (literal.language)
+      <span class="hljs-keyword">return</span> <span class="hljs-string">'"'</span> + value + <span class="hljs-string">'"@'</span> + literal.language;
+    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (literal.datatype.value !== xsd.string)
+      <span class="hljs-keyword">return</span> <span class="hljs-string">'"'</span> + value + <span class="hljs-string">'"^^'</span> + <span class="hljs-keyword">this</span>._encodeIriOrBlank(literal.datatype);
+    <span class="hljs-keyword">else</span>
+      <span class="hljs-keyword">return</span> <span class="hljs-string">'"'</span> + value + <span class="hljs-string">'"'</span>;
+  },</pre></div></div>
             
         </li>
         
@@ -544,12 +572,13 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-28">&#182;</a>
               </div>
-              <p>Escape special characters</p>
+              <h3 id="_encodepredicate-represents-a-predicate"><code>_encodePredicate</code> represents a predicate</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">escape</span>.test(value))
-      value = value.replace(escapeAll, characterReplacer);</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  _encodePredicate: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">predicate</span>) </span>{
+    <span class="hljs-keyword">return</span> predicate.value === rdf.type ? <span class="hljs-string">'a'</span> : <span class="hljs-keyword">this</span>._encodeIriOrBlank(predicate);
+  },</pre></div></div>
             
         </li>
         
@@ -560,16 +589,12 @@ N3Writer.prototype = {</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-29">&#182;</a>
               </div>
-              <p>Write the literal, possibly with type or language</p>
+              <h3 id="_encodeobject-represents-an-object"><code>_encodeObject</code> represents an object</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (language)
-      <span class="hljs-keyword">return</span> <span class="hljs-string">'"'</span> + value + <span class="hljs-string">'"@'</span> + language;
-    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (type)
-      <span class="hljs-keyword">return</span> <span class="hljs-string">'"'</span> + value + <span class="hljs-string">'"^^'</span> + <span class="hljs-keyword">this</span>._encodeIriOrBlankNode(type);
-    <span class="hljs-keyword">else</span>
-      <span class="hljs-keyword">return</span> <span class="hljs-string">'"'</span> + value + <span class="hljs-string">'"'</span>;
+            <div class="content"><div class='highlight'><pre>  _encodeObject: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">object</span>) </span>{
+    <span class="hljs-keyword">return</span> object.termType === <span class="hljs-string">'Literal'</span> ? <span class="hljs-keyword">this</span>._encodeLiteral(object) : <span class="hljs-keyword">this</span>._encodeIriOrBlank(object);
   },</pre></div></div>
             
         </li>
@@ -580,109 +605,6 @@ N3Writer.prototype = {</pre></div></div>
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-30">&#182;</a>
-              </div>
-              <h3 id="_encodesubject-represents-a-subject"><code>_encodeSubject</code> represents a subject</h3>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>  _encodeSubject: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">subject</span>) </span>{
-    <span class="hljs-keyword">if</span> (subject[<span class="hljs-number">0</span>] === <span class="hljs-string">'"'</span>)
-      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'A literal as subject is not allowed: '</span> + subject);</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-31">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-31">&#182;</a>
-              </div>
-              <p>Don’t treat identical blank nodes as repeating subjects</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (subject[<span class="hljs-number">0</span>] === <span class="hljs-string">'['</span>)
-      <span class="hljs-keyword">this</span>._subject = <span class="hljs-string">']'</span>;
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>._encodeIriOrBlankNode(subject);
-  },</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-32">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-32">&#182;</a>
-              </div>
-              <h3 id="_encodepredicate-represents-a-predicate"><code>_encodePredicate</code> represents a predicate</h3>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>  _encodePredicate: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">predicate</span>) </span>{
-    <span class="hljs-keyword">if</span> (predicate[<span class="hljs-number">0</span>] === <span class="hljs-string">'"'</span>)
-      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'A literal as predicate is not allowed: '</span> + predicate);
-    <span class="hljs-keyword">return</span> predicate === RDF_TYPE ? <span class="hljs-string">'a'</span> : <span class="hljs-keyword">this</span>._encodeIriOrBlankNode(predicate);
-  },</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-33">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-33">&#182;</a>
-              </div>
-              <h3 id="_encodeobject-represents-an-object"><code>_encodeObject</code> represents an object</h3>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>  _encodeObject: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">object</span>) </span>{</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-34">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-34">&#182;</a>
-              </div>
-              <p>Represent an IRI or blank node</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (object[<span class="hljs-number">0</span>] !== <span class="hljs-string">'"'</span>)
-      <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>._encodeIriOrBlankNode(object);</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-35">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-35">&#182;</a>
-              </div>
-              <p>Represent a literal</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> match = N3LiteralMatcher.exec(object);
-    <span class="hljs-keyword">if</span> (!match) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'Invalid literal: '</span> + object);
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>._encodeLiteral(match[<span class="hljs-number">1</span>], match[<span class="hljs-number">2</span>], match[<span class="hljs-number">3</span>]);
-  },</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-36">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-36">&#182;</a>
               </div>
               <h3 id="_blockedwrite-replaces-_write-after-the-writer-has-been-closed"><code>_blockedWrite</code> replaces <code>_write</code> after the writer has been closed</h3>
 
@@ -695,94 +617,93 @@ N3Writer.prototype = {</pre></div></div>
         </li>
         
         
-        <li id="section-37">
+        <li id="section-31">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-37">&#182;</a>
+                <a class="pilcrow" href="#section-31">&#182;</a>
               </div>
-              <h3 id="addtriple-adds-the-triple-to-the-output-stream"><code>addTriple</code> adds the triple to the output stream</h3>
+              <h3 id="addquad-adds-the-quad-to-the-output-stream"><code>addQuad</code> adds the quad to the output stream</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  addTriple: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">subject, predicate, object, graph, done</span>) </span>{</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  addQuad: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">subject, predicate, object, graph, done</span>) </span>{</pre></div></div>
             
         </li>
         
         
-        <li id="section-38">
+        <li id="section-32">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-38">&#182;</a>
+                <a class="pilcrow" href="#section-32">&#182;</a>
               </div>
-              <p>The triple was given as a triple object, so shift parameters</p>
+              <p>The quad was given as an object, so shift parameters</p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (object === <span class="hljs-literal">undefined</span>)
-      <span class="hljs-keyword">this</span>._writeTriple(subject.subject, subject.predicate, subject.object,
-                        subject.graph || <span class="hljs-string">''</span>, predicate);</pre></div></div>
+      <span class="hljs-keyword">this</span>._writeQuad(subject.subject, subject.predicate, subject.object, subject.graph, predicate);</pre></div></div>
             
         </li>
         
         
-        <li id="section-39">
+        <li id="section-33">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-39">&#182;</a>
+                <a class="pilcrow" href="#section-33">&#182;</a>
               </div>
               <p>The optional <code>graph</code> parameter was not provided</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> graph !== <span class="hljs-string">'string'</span>)
-      <span class="hljs-keyword">this</span>._writeTriple(subject, predicate, object, <span class="hljs-string">''</span>, graph);</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> graph === <span class="hljs-string">'function'</span>)
+      <span class="hljs-keyword">this</span>._writeQuad(subject, predicate, object, DEFAULTGRAPH, graph);</pre></div></div>
             
         </li>
         
         
-        <li id="section-40">
+        <li id="section-34">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-40">&#182;</a>
+                <a class="pilcrow" href="#section-34">&#182;</a>
               </div>
               <p>The <code>graph</code> parameter was provided</p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">else</span>
-      <span class="hljs-keyword">this</span>._writeTriple(subject, predicate, object, graph, done);
+      <span class="hljs-keyword">this</span>._writeQuad(subject, predicate, object, graph || DEFAULTGRAPH, done);
   },</pre></div></div>
             
         </li>
         
         
-        <li id="section-41">
+        <li id="section-35">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-41">&#182;</a>
+                <a class="pilcrow" href="#section-35">&#182;</a>
               </div>
-              <h3 id="addtriples-adds-the-triples-to-the-output-stream"><code>addTriples</code> adds the triples to the output stream</h3>
+              <h3 id="addquads-adds-the-quads-to-the-output-stream"><code>addQuads</code> adds the quads to the output stream</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  addTriples: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">triples</span>) </span>{
-    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> i = <span class="hljs-number">0</span>; i &lt; triples.length; i++)
-      <span class="hljs-keyword">this</span>.addTriple(triples[i]);
+            <div class="content"><div class='highlight'><pre>  addQuads: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">quads</span>) </span>{
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> i = <span class="hljs-number">0</span>; i &lt; quads.length; i++)
+      <span class="hljs-keyword">this</span>.addQuad(quads[i]);
   },</pre></div></div>
             
         </li>
         
         
-        <li id="section-42">
+        <li id="section-36">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-42">&#182;</a>
+                <a class="pilcrow" href="#section-36">&#182;</a>
               </div>
               <h3 id="addprefix-adds-the-prefix-to-the-output-stream"><code>addPrefix</code> adds the prefix to the output stream</h3>
 
@@ -797,11 +718,11 @@ N3Writer.prototype = {</pre></div></div>
         </li>
         
         
-        <li id="section-43">
+        <li id="section-37">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-43">&#182;</a>
+                <a class="pilcrow" href="#section-37">&#182;</a>
               </div>
               <h3 id="addprefixes-adds-the-prefixes-to-the-output-stream"><code>addPrefixes</code> adds the prefixes to the output stream</h3>
 
@@ -812,11 +733,11 @@ N3Writer.prototype = {</pre></div></div>
         </li>
         
         
-        <li id="section-44">
+        <li id="section-38">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-44">&#182;</a>
+                <a class="pilcrow" href="#section-38">&#182;</a>
               </div>
               <p>Add all useful prefixes</p>
 
@@ -828,17 +749,19 @@ N3Writer.prototype = {</pre></div></div>
         </li>
         
         
-        <li id="section-45">
+        <li id="section-39">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-45">&#182;</a>
+                <a class="pilcrow" href="#section-39">&#182;</a>
               </div>
               <p>Verify whether the prefix can be used and does not exist yet</p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">var</span> iri = prefixes[prefix];
+      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> iri !== <span class="hljs-string">'string'</span>)
+        iri = iri.value;
       <span class="hljs-keyword">if</span> (<span class="hljs-regexp">/[#\/]$/</span>.test(iri) &amp;&amp; prefixIRIs[iri] !== (prefix += <span class="hljs-string">':'</span>)) {
         hasPrefixes = <span class="hljs-literal">true</span>;
         prefixIRIs[iri] = prefix;</pre></div></div>
@@ -846,29 +769,29 @@ N3Writer.prototype = {</pre></div></div>
         </li>
         
         
-        <li id="section-46">
+        <li id="section-40">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-46">&#182;</a>
+                <a class="pilcrow" href="#section-40">&#182;</a>
               </div>
-              <p>Finish a possible pending triple</p>
+              <p>Finish a possible pending quad</p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>._subject !== <span class="hljs-literal">null</span>) {
-          <span class="hljs-keyword">this</span>._write(<span class="hljs-keyword">this</span>._graph ? <span class="hljs-string">'\n}\n'</span> : <span class="hljs-string">'.\n'</span>);
+          <span class="hljs-keyword">this</span>._write(<span class="hljs-keyword">this</span>._inDefaultGraph ? <span class="hljs-string">'.\n'</span> : <span class="hljs-string">'\n}\n'</span>);
           <span class="hljs-keyword">this</span>._subject = <span class="hljs-literal">null</span>, <span class="hljs-keyword">this</span>._graph = <span class="hljs-string">''</span>;
         }</pre></div></div>
             
         </li>
         
         
-        <li id="section-47">
+        <li id="section-41">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-47">&#182;</a>
+                <a class="pilcrow" href="#section-41">&#182;</a>
               </div>
               <p>Write prefix</p>
 
@@ -881,11 +804,11 @@ N3Writer.prototype = {</pre></div></div>
         </li>
         
         
-        <li id="section-48">
+        <li id="section-42">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-48">&#182;</a>
+                <a class="pilcrow" href="#section-42">&#182;</a>
               </div>
               <p>Recreate the prefix matcher</p>
 
@@ -905,11 +828,11 @@ N3Writer.prototype = {</pre></div></div>
         </li>
         
         
-        <li id="section-49">
+        <li id="section-43">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-49">&#182;</a>
+                <a class="pilcrow" href="#section-43">&#182;</a>
               </div>
               <p>End a prefix block with a newline</p>
 
@@ -921,11 +844,11 @@ N3Writer.prototype = {</pre></div></div>
         </li>
         
         
-        <li id="section-50">
+        <li id="section-44">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-50">&#182;</a>
+                <a class="pilcrow" href="#section-44">&#182;</a>
               </div>
               <h3 id="blank-creates-a-blank-node-with-the-given-content"><code>blank</code> creates a blank node with the given content</h3>
 
@@ -937,11 +860,11 @@ N3Writer.prototype = {</pre></div></div>
         </li>
         
         
-        <li id="section-51">
+        <li id="section-45">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-51">&#182;</a>
+                <a class="pilcrow" href="#section-45">&#182;</a>
               </div>
               <p>Empty blank node</p>
 
@@ -953,27 +876,27 @@ N3Writer.prototype = {</pre></div></div>
         </li>
         
         
-        <li id="section-52">
+        <li id="section-46">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-52">&#182;</a>
+                <a class="pilcrow" href="#section-46">&#182;</a>
               </div>
-              <p>Blank node passed as blank(“predicate”, “object”)</p>
+              <p>Blank node passed as blank(Term(“predicate”), Term(“object”))</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> predicate === <span class="hljs-string">'string'</span>)
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (predicate.termType)
       children = [{ <span class="hljs-attr">predicate</span>: predicate, <span class="hljs-attr">object</span>: object }];</pre></div></div>
             
         </li>
         
         
-        <li id="section-53">
+        <li id="section-47">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-53">&#182;</a>
+                <a class="pilcrow" href="#section-47">&#182;</a>
               </div>
               <p>Blank node passed as blank({ predicate: predicate, object: object })</p>
 
@@ -987,27 +910,27 @@ N3Writer.prototype = {</pre></div></div>
         </li>
         
         
-        <li id="section-54">
+        <li id="section-48">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-54">&#182;</a>
+                <a class="pilcrow" href="#section-48">&#182;</a>
               </div>
               <p>Generate an empty blank node</p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-number">0</span>:
-      <span class="hljs-keyword">return</span> <span class="hljs-string">'[]'</span>;</pre></div></div>
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> SerializedTerm(<span class="hljs-string">'[]'</span>);</pre></div></div>
             
         </li>
         
         
-        <li id="section-55">
+        <li id="section-49">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-55">&#182;</a>
+                <a class="pilcrow" href="#section-49">&#182;</a>
               </div>
               <p>Generate a non-nested one-triple blank node</p>
 
@@ -1015,18 +938,18 @@ N3Writer.prototype = {</pre></div></div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-number">1</span>:
       child = children[<span class="hljs-number">0</span>];
-      <span class="hljs-keyword">if</span> (child.object[<span class="hljs-number">0</span>] !== <span class="hljs-string">'['</span>)
-        <span class="hljs-keyword">return</span> <span class="hljs-string">'[ '</span> + <span class="hljs-keyword">this</span>._encodePredicate(child.predicate) + <span class="hljs-string">' '</span> +
-                      <span class="hljs-keyword">this</span>._encodeObject(child.object) + <span class="hljs-string">' ]'</span>;</pre></div></div>
+      <span class="hljs-keyword">if</span> (!(child.object <span class="hljs-keyword">instanceof</span> SerializedTerm))
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> SerializedTerm(<span class="hljs-string">'[ '</span> + <span class="hljs-keyword">this</span>._encodePredicate(child.predicate) + <span class="hljs-string">' '</span> +
+                                  <span class="hljs-keyword">this</span>._encodeObject(child.object) + <span class="hljs-string">' ]'</span>);</pre></div></div>
             
         </li>
         
         
-        <li id="section-56">
+        <li id="section-50">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-56">&#182;</a>
+                <a class="pilcrow" href="#section-50">&#182;</a>
               </div>
               <p>Generate a multi-triple or nested blank node</p>
 
@@ -1038,11 +961,11 @@ N3Writer.prototype = {</pre></div></div>
         </li>
         
         
-        <li id="section-57">
+        <li id="section-51">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-57">&#182;</a>
+                <a class="pilcrow" href="#section-51">&#182;</a>
               </div>
               <p>Write all triples in order</p>
 
@@ -1054,27 +977,27 @@ N3Writer.prototype = {</pre></div></div>
         </li>
         
         
-        <li id="section-58">
+        <li id="section-52">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-58">&#182;</a>
+                <a class="pilcrow" href="#section-52">&#182;</a>
               </div>
               <p>Write only the object is the predicate is the same as the previous</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (child.predicate === predicate)
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (child.predicate.equals(predicate))
           contents += <span class="hljs-string">', '</span> + <span class="hljs-keyword">this</span>._encodeObject(child.object);</pre></div></div>
             
         </li>
         
         
-        <li id="section-59">
+        <li id="section-53">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-59">&#182;</a>
+                <a class="pilcrow" href="#section-53">&#182;</a>
               </div>
               <p>Otherwise, write the predicate and the object</p>
 
@@ -1087,18 +1010,18 @@ N3Writer.prototype = {</pre></div></div>
           predicate = child.predicate;
         }
       }
-      <span class="hljs-keyword">return</span> contents + <span class="hljs-string">'\n]'</span>;
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> SerializedTerm(contents + <span class="hljs-string">'\n]'</span>);
     }
   },</pre></div></div>
             
         </li>
         
         
-        <li id="section-60">
+        <li id="section-54">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-60">&#182;</a>
+                <a class="pilcrow" href="#section-54">&#182;</a>
               </div>
               <h3 id="list-creates-a-list-node-with-the-given-content"><code>list</code> creates a list node with the given content</h3>
 
@@ -1108,17 +1031,17 @@ N3Writer.prototype = {</pre></div></div>
     <span class="hljs-keyword">var</span> length = elements &amp;&amp; elements.length || <span class="hljs-number">0</span>, contents = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Array</span>(length);
     <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> i = <span class="hljs-number">0</span>; i &lt; length; i++)
       contents[i] = <span class="hljs-keyword">this</span>._encodeObject(elements[i]);
-    <span class="hljs-keyword">return</span> <span class="hljs-string">'('</span> + contents.join(<span class="hljs-string">' '</span>) + <span class="hljs-string">')'</span>;
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> SerializedTerm(<span class="hljs-string">'('</span> + contents.join(<span class="hljs-string">' '</span>) + <span class="hljs-string">')'</span>);
   },</pre></div></div>
             
         </li>
         
         
-        <li id="section-61">
+        <li id="section-55">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-61">&#182;</a>
+                <a class="pilcrow" href="#section-55">&#182;</a>
               </div>
               <h3 id="_prefixregex-matches-a-prefixed-name-or-iri-that-begins-with-one-of-the-added-prefixes"><code>_prefixRegex</code> matches a prefixed name or IRI that begins with one of the added prefixes</h3>
 
@@ -1129,11 +1052,11 @@ N3Writer.prototype = {</pre></div></div>
         </li>
         
         
-        <li id="section-62">
+        <li id="section-56">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-62">&#182;</a>
+                <a class="pilcrow" href="#section-56">&#182;</a>
               </div>
               <h3 id="end-signals-the-end-of-the-output-stream"><code>end</code> signals the end of the output stream</h3>
 
@@ -1144,29 +1067,29 @@ N3Writer.prototype = {</pre></div></div>
         </li>
         
         
-        <li id="section-63">
+        <li id="section-57">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-63">&#182;</a>
+                <a class="pilcrow" href="#section-57">&#182;</a>
               </div>
-              <p>Finish a possible pending triple</p>
+              <p>Finish a possible pending quad</p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>._subject !== <span class="hljs-literal">null</span>) {
-      <span class="hljs-keyword">this</span>._write(<span class="hljs-keyword">this</span>._graph ? <span class="hljs-string">'\n}\n'</span> : <span class="hljs-string">'.\n'</span>);
+      <span class="hljs-keyword">this</span>._write(<span class="hljs-keyword">this</span>._inDefaultGraph ? <span class="hljs-string">'.\n'</span> : <span class="hljs-string">'\n}\n'</span>);
       <span class="hljs-keyword">this</span>._subject = <span class="hljs-literal">null</span>;
     }</pre></div></div>
             
         </li>
         
         
-        <li id="section-64">
+        <li id="section-58">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-64">&#182;</a>
+                <a class="pilcrow" href="#section-58">&#182;</a>
               </div>
               <p>Disallow further writing</p>
 
@@ -1177,11 +1100,11 @@ N3Writer.prototype = {</pre></div></div>
         </li>
         
         
-        <li id="section-65">
+        <li id="section-59">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-65">&#182;</a>
+                <a class="pilcrow" href="#section-59">&#182;</a>
               </div>
               <p>Try to end the underlying stream, ensuring done is called exactly one time</p>
 
@@ -1199,11 +1122,11 @@ N3Writer.prototype = {</pre></div></div>
         </li>
         
         
-        <li id="section-66">
+        <li id="section-60">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-66">&#182;</a>
+                <a class="pilcrow" href="#section-60">&#182;</a>
               </div>
               <p>Replaces a character by its escaped version</p>
 
@@ -1214,11 +1137,11 @@ N3Writer.prototype = {</pre></div></div>
         </li>
         
         
-        <li id="section-67">
+        <li id="section-61">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-67">&#182;</a>
+                <a class="pilcrow" href="#section-61">&#182;</a>
               </div>
               <p>Replace a single character by its escaped version</p>
 
@@ -1230,11 +1153,11 @@ N3Writer.prototype = {</pre></div></div>
         </li>
         
         
-        <li id="section-68">
+        <li id="section-62">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-68">&#182;</a>
+                <a class="pilcrow" href="#section-62">&#182;</a>
               </div>
               <p>Replace a single character with its 4-bit unicode escape sequence</p>
 
@@ -1248,11 +1171,11 @@ N3Writer.prototype = {</pre></div></div>
         </li>
         
         
-        <li id="section-69">
+        <li id="section-63">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-69">&#182;</a>
+                <a class="pilcrow" href="#section-63">&#182;</a>
               </div>
               <p>Replace a surrogate pair with its 8-bit unicode escape sequence</p>
 
@@ -1270,11 +1193,45 @@ N3Writer.prototype = {</pre></div></div>
         </li>
         
         
-        <li id="section-70">
+        <li id="section-64">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-70">&#182;</a>
+                <a class="pilcrow" href="#section-64">&#182;</a>
+              </div>
+              <h2 id="placeholder-class-to-represent-already-pretty-printed-terms">Placeholder class to represent already pretty-printed terms</h2>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">SerializedTerm</span>(<span class="hljs-params">value</span>) </span>{
+  <span class="hljs-keyword">this</span>.id = value;
+}
+DataFactory.internal.Term.subclass(SerializedTerm);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-65">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-65">&#182;</a>
+              </div>
+              <p>Pretty-printed nodes are not equal to any other node
+(e.g., [] does not equal [])</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>SerializedTerm.prototype.equals = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{ <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>; };</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-66">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-66">&#182;</a>
               </div>
               <h2 id="exports">Exports</h2>
 

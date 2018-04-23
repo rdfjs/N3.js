@@ -20,6 +20,16 @@
             <div id="jump_page">
               
                 
+                <a class="source" href="IRIs.html">
+                  IRIs.js
+                </a>
+              
+                
+                <a class="source" href="N3DataFactory.html">
+                  N3DataFactory.js
+                </a>
+              
+                
                 <a class="source" href="N3Lexer.html">
                   N3Lexer.js
                 </a>
@@ -79,7 +89,9 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> fromCharCode = <span class="hljs-built_in">String</span>.fromCharCode;
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> xsd = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./IRIs'</span>).xsd;
+
+<span class="hljs-keyword">var</span> fromCharCode = <span class="hljs-built_in">String</span>.fromCharCode;
 <span class="hljs-keyword">var</span> immediately = <span class="hljs-keyword">typeof</span> setImmediate === <span class="hljs-string">'function'</span> ? setImmediate :
                   <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">setImmediate</span>(<span class="hljs-params">func</span>) </span>{ setTimeout(func, <span class="hljs-number">0</span>); };</pre></div></div>
             
@@ -230,9 +242,9 @@ N3Lexer.prototype = {</pre></div></div>
             <div class="content"><div class='highlight'><pre>
   _iri: <span class="hljs-regexp">/^&lt;((?:[^ &lt;&gt;{}\\]|\\[uU])+)&gt;[ \t]*/</span>, <span class="hljs-comment">// IRI with escape sequences; needs sanity check after unescaping</span>
   _unescapedIri: <span class="hljs-regexp">/^&lt;([^\x00-\x20&lt;&gt;\\"\{\}\|\^\`]*)&gt;[ \t]*/</span>, <span class="hljs-comment">// IRI without escape sequences; no unescaping</span>
-  _unescapedString: <span class="hljs-regexp">/^"[^"\\\r\n]+"/</span>, <span class="hljs-comment">// non-empty string without escape sequences</span>
-  _singleQuotedString: <span class="hljs-regexp">/^"(?:[^"\\\r\n]|\\.)*"(?=[^"])|^'(?:[^'\\\r\n]|\\.)*'(?=[^'])/</span>,
-  <span class="hljs-attr">_tripleQuotedString</span>: <span class="hljs-regexp">/^""("[^"\\]*(?:(?:\\.|"(?!""))[^"\\]*)*")""|^''('[^'\\]*(?:(?:\\.|'(?!''))[^'\\]*)*')''/</span>,
+  _unescapedString: <span class="hljs-regexp">/^"([^"\\\r\n]+)"/</span>, <span class="hljs-comment">// non-empty string without escape sequences</span>
+  _singleQuotedString: <span class="hljs-regexp">/^"((?:[^"\\\r\n]|\\.)*)"(?=[^"])|^'((?:[^'\\\r\n]|\\.)*)'(?=[^'])/</span>,
+  <span class="hljs-attr">_tripleQuotedString</span>: <span class="hljs-regexp">/^"""([^"\\]*(?:(?:\\.|"(?!""))[^"\\]*)*)"""|^'''([^'\\]*(?:(?:\\.|'(?!''))[^'\\]*)*)'''/</span>,
   <span class="hljs-attr">_langcode</span>: <span class="hljs-regexp">/^@([a-z]+(?:-[a-z0-9]+)*)(?=[^a-z0-9\-])/i</span>,
   <span class="hljs-attr">_prefix</span>: <span class="hljs-regexp">/^((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:(?=[#\s&lt;])/</span>,
   <span class="hljs-attr">_prefixed</span>: <span class="hljs-regexp">/^((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:((?:(?:[0-:A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])(?:(?:[\.\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])*(?:[\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~]))?)?)(?:[ \t]+|(?=\.?[,;!\^\s#()\[\]\{\}"'&lt;]))/</span>,
@@ -421,7 +433,7 @@ N3Lexer.prototype = {</pre></div></div>
             </div>
             
             <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">var</span> line = <span class="hljs-keyword">this</span>._line, type = <span class="hljs-string">''</span>, value = <span class="hljs-string">''</span>, prefix = <span class="hljs-string">''</span>,
-          firstChar = input[<span class="hljs-number">0</span>], match = <span class="hljs-literal">null</span>, matchLength = <span class="hljs-number">0</span>, unescaped, inconclusive = <span class="hljs-literal">false</span>;
+          firstChar = input[<span class="hljs-number">0</span>], match = <span class="hljs-literal">null</span>, matchLength = <span class="hljs-number">0</span>, inconclusive = <span class="hljs-literal">false</span>;
       <span class="hljs-keyword">switch</span> (firstChar) {
       <span class="hljs-keyword">case</span> <span class="hljs-string">'^'</span>:</pre></div></div>
             
@@ -543,10 +555,10 @@ N3Lexer.prototype = {</pre></div></div>
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (match = <span class="hljs-keyword">this</span>._iri.exec(input)) {
-          unescaped = <span class="hljs-keyword">this</span>._unescape(match[<span class="hljs-number">1</span>]);
-          <span class="hljs-keyword">if</span> (unescaped === <span class="hljs-literal">null</span> || illegalIriChars.test(unescaped))
+          value = <span class="hljs-keyword">this</span>._unescape(match[<span class="hljs-number">1</span>]);
+          <span class="hljs-keyword">if</span> (value === <span class="hljs-literal">null</span> || illegalIriChars.test(value))
             <span class="hljs-keyword">return</span> reportSyntaxError(<span class="hljs-keyword">this</span>);
-          type = <span class="hljs-string">'IRI'</span>, value = unescaped;
+          type = <span class="hljs-string">'IRI'</span>;
         }</pre></div></div>
             
         </li>
@@ -563,7 +575,7 @@ N3Lexer.prototype = {</pre></div></div>
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>._n3Mode &amp;&amp; input.length &gt; <span class="hljs-number">1</span> &amp;&amp; input[<span class="hljs-number">1</span>] === <span class="hljs-string">'='</span>)
-          type = <span class="hljs-string">'inverse'</span>, matchLength = <span class="hljs-number">2</span>, value = <span class="hljs-string">'http://www.w3.org/2000/10/swap/log#implies'</span>;
+          type = <span class="hljs-string">'inverse'</span>, matchLength = <span class="hljs-number">2</span>, value = <span class="hljs-string">'&gt;'</span>;
         <span class="hljs-keyword">break</span>;
 
       <span class="hljs-keyword">case</span> <span class="hljs-string">'_'</span>:</pre></div></div>
@@ -605,7 +617,7 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (match = <span class="hljs-keyword">this</span>._unescapedString.exec(input))
-          type = <span class="hljs-string">'literal'</span>, value = match[<span class="hljs-number">0</span>];</pre></div></div>
+          value = match[<span class="hljs-number">1</span>];</pre></div></div>
             
         </li>
         
@@ -620,12 +632,8 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (match = <span class="hljs-keyword">this</span>._singleQuotedString.exec(input)) {
-          unescaped = <span class="hljs-keyword">this</span>._unescape(match[<span class="hljs-number">0</span>]);
-          <span class="hljs-keyword">if</span> (unescaped === <span class="hljs-literal">null</span>)
-            <span class="hljs-keyword">return</span> reportSyntaxError(<span class="hljs-keyword">this</span>);
-          type = <span class="hljs-string">'literal'</span>, value = unescaped.replace(<span class="hljs-regexp">/^'|'$/g</span>, <span class="hljs-string">'"'</span>);
-        }</pre></div></div>
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (match = <span class="hljs-keyword">this</span>._singleQuotedString.exec(input))
+          value = <span class="hljs-keyword">this</span>._unescape(<span class="hljs-keyword">typeof</span> match[<span class="hljs-number">1</span>] === <span class="hljs-string">'string'</span> ? match[<span class="hljs-number">1</span>] : match[<span class="hljs-number">2</span>]);</pre></div></div>
             
         </li>
         
@@ -641,7 +649,7 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (match = <span class="hljs-keyword">this</span>._tripleQuotedString.exec(input)) {
-          unescaped = match[<span class="hljs-number">1</span>] || match[<span class="hljs-number">2</span>];</pre></div></div>
+          value = <span class="hljs-keyword">typeof</span> match[<span class="hljs-number">1</span>] === <span class="hljs-string">'string'</span> ? match[<span class="hljs-number">1</span>] : match[<span class="hljs-number">2</span>];</pre></div></div>
             
         </li>
         
@@ -652,16 +660,17 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-33">&#182;</a>
               </div>
-              <p>Count the newlines and advance line counter</p>
+              <p>Advance line counter</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">this</span>._line += unescaped.split(<span class="hljs-regexp">/\r\n|\r|\n/</span>).length - <span class="hljs-number">1</span>;
-          unescaped = <span class="hljs-keyword">this</span>._unescape(unescaped);
-          <span class="hljs-keyword">if</span> (unescaped === <span class="hljs-literal">null</span>)
-            <span class="hljs-keyword">return</span> reportSyntaxError(<span class="hljs-keyword">this</span>);
-          type = <span class="hljs-string">'literal'</span>, value = unescaped.replace(<span class="hljs-regexp">/^'|'$/g</span>, <span class="hljs-string">'"'</span>);
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">this</span>._line += value.split(<span class="hljs-regexp">/\r\n|\r|\n/</span>).length - <span class="hljs-number">1</span>;
+          value = <span class="hljs-keyword">this</span>._unescape(value);
         }
+        <span class="hljs-keyword">if</span> (value === <span class="hljs-literal">null</span>)
+          <span class="hljs-keyword">return</span> reportSyntaxError(<span class="hljs-keyword">this</span>);
+        <span class="hljs-keyword">if</span> (match !== <span class="hljs-literal">null</span>)
+          type = <span class="hljs-string">'literal'</span>;
         <span class="hljs-keyword">break</span>;
 
       <span class="hljs-keyword">case</span> <span class="hljs-string">'?'</span>:</pre></div></div>
@@ -783,9 +792,9 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
             
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (match = <span class="hljs-keyword">this</span>._number.exec(input) ||
             inputFinished &amp;&amp; (match = <span class="hljs-keyword">this</span>._number.exec(input + <span class="hljs-string">' '</span>))) {
-          type = <span class="hljs-string">'literal'</span>;
-          value = <span class="hljs-string">'"'</span> + match[<span class="hljs-number">0</span>] + <span class="hljs-string">'"^^http://www.w3.org/2001/XMLSchema#'</span> +
-                  (match[<span class="hljs-number">1</span>] ? <span class="hljs-string">'double'</span> : (<span class="hljs-regexp">/^[+\-]?\d+$/</span>.test(match[<span class="hljs-number">0</span>]) ? <span class="hljs-string">'integer'</span> : <span class="hljs-string">'decimal'</span>));
+          type = <span class="hljs-string">'literal'</span>, value = match[<span class="hljs-number">0</span>];
+          prefix = (match[<span class="hljs-number">1</span>] ? xsd.double :
+                    (<span class="hljs-regexp">/^[+\-]?\d+$/</span>.test(match[<span class="hljs-number">0</span>]) ? xsd.integer : xsd.decimal));
         }
         <span class="hljs-keyword">break</span>;
 
@@ -832,7 +841,7 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (match = <span class="hljs-keyword">this</span>._boolean.exec(input))
-          type = <span class="hljs-string">'literal'</span>, value = <span class="hljs-string">'"'</span> + match[<span class="hljs-number">0</span>] + <span class="hljs-string">'"^^http://www.w3.org/2001/XMLSchema#boolean'</span>;
+          type = <span class="hljs-string">'literal'</span>, value = match[<span class="hljs-number">0</span>], prefix = xsd.boolean;
         <span class="hljs-keyword">else</span>
           inconclusive = <span class="hljs-literal">true</span>;
         <span class="hljs-keyword">break</span>;
@@ -853,7 +862,7 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (match = <span class="hljs-keyword">this</span>._shortPredicates.exec(input))
-          type = <span class="hljs-string">'abbreviation'</span>, value = <span class="hljs-string">'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'</span>;
+          type = <span class="hljs-string">'abbreviation'</span>, value = <span class="hljs-string">'a'</span>;
         <span class="hljs-keyword">else</span>
           inconclusive = <span class="hljs-literal">true</span>;
         <span class="hljs-keyword">break</span>;
@@ -876,9 +885,9 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>._n3Mode &amp;&amp; input.length &gt; <span class="hljs-number">1</span>) {
           type = <span class="hljs-string">'abbreviation'</span>;
           <span class="hljs-keyword">if</span> (input[<span class="hljs-number">1</span>] !== <span class="hljs-string">'&gt;'</span>)
-            matchLength = <span class="hljs-number">1</span>, value = <span class="hljs-string">'http://www.w3.org/2002/07/owl#sameAs'</span>;
+            matchLength = <span class="hljs-number">1</span>, value = <span class="hljs-string">'='</span>;
           <span class="hljs-keyword">else</span>
-            matchLength = <span class="hljs-number">2</span>, value = <span class="hljs-string">'http://www.w3.org/2000/10/swap/log#implies'</span>;
+            matchLength = <span class="hljs-number">2</span>, value = <span class="hljs-string">'&gt;'</span>;
         }
         <span class="hljs-keyword">break</span>;
 

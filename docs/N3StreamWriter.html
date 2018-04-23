@@ -20,6 +20,16 @@
             <div id="jump_page">
               
                 
+                <a class="source" href="IRIs.html">
+                  IRIs.js
+                </a>
+              
+                
+                <a class="source" href="N3DataFactory.html">
+                  N3DataFactory.js
+                </a>
+              
+                
                 <a class="source" href="N3Lexer.html">
                   N3Lexer.js
                 </a>
@@ -75,7 +85,7 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-1">&#182;</a>
               </div>
-              <p><strong>N3StreamWriter</strong> serializes a triple stream into an N3 stream.</p>
+              <p><strong>N3StreamWriter</strong> serializes a quad stream into a text stream.</p>
 
             </div>
             
@@ -130,8 +140,8 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">var</span> self = <span class="hljs-keyword">this</span>;
-  <span class="hljs-keyword">var</span> writer = <span class="hljs-keyword">new</span> N3Writer({
-    <span class="hljs-attr">write</span>: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">chunk, encoding, callback</span>) </span>{ self.push(chunk); callback &amp;&amp; callback(); },
+  <span class="hljs-keyword">var</span> writer = <span class="hljs-keyword">this</span>._writer = <span class="hljs-keyword">new</span> N3Writer({
+    <span class="hljs-attr">write</span>: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">quad, encoding, callback</span>) </span>{ self.push(quad); callback &amp;&amp; callback(); },
     <span class="hljs-attr">end</span>: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">callback</span>) </span>{ self.push(<span class="hljs-literal">null</span>); callback &amp;&amp; callback(); },
   }, options);</pre></div></div>
             
@@ -148,7 +158,7 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">this</span>._transform = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">triple, encoding, done</span>) </span>{ writer.addTriple(triple, done); };
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">this</span>._transform = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">quad, encoding, done</span>) </span>{ writer.addQuad(quad, done); };
   <span class="hljs-keyword">this</span>._flush = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">done</span>) </span>{ writer.end(done); };
 }
 util.inherits(N3StreamWriter, Transform);</pre></div></div>
@@ -161,6 +171,28 @@ util.inherits(N3StreamWriter, Transform);</pre></div></div>
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <h3 id="serializes-a-stream-of-quads">Serializes a stream of quads</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>N3StreamWriter.prototype.import = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">stream</span>) </span>{
+  <span class="hljs-keyword">var</span> self = <span class="hljs-keyword">this</span>;
+  stream.on(<span class="hljs-string">'data'</span>,   <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">quad</span>)  </span>{ self.write(quad); });
+  stream.on(<span class="hljs-string">'end'</span>,    <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>)      </span>{ self.end(); });
+  stream.on(<span class="hljs-string">'error'</span>,  <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">error</span>) </span>{ self.emit(<span class="hljs-string">'error'</span>, error); });
+  stream.on(<span class="hljs-string">'prefix'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">prefix, iri</span>) </span>{ self._writer.addPrefix(prefix, iri); });
+  <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;
+};</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
               </div>
               <h2 id="exports">Exports</h2>
 

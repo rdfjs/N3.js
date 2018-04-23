@@ -20,6 +20,16 @@
             <div id="jump_page">
               
                 
+                <a class="source" href="IRIs.html">
+                  IRIs.js
+                </a>
+              
+                
+                <a class="source" href="N3DataFactory.html">
+                  N3DataFactory.js
+                </a>
+              
+                
                 <a class="source" href="N3Lexer.html">
                   N3Lexer.js
                 </a>
@@ -80,12 +90,7 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>
-<span class="hljs-keyword">var</span> Xsd = <span class="hljs-string">'http://www.w3.org/2001/XMLSchema#'</span>;
-<span class="hljs-keyword">var</span> XsdString  = Xsd + <span class="hljs-string">'string'</span>;
-<span class="hljs-keyword">var</span> XsdInteger = Xsd + <span class="hljs-string">'integer'</span>;
-<span class="hljs-keyword">var</span> XsdDouble = Xsd + <span class="hljs-string">'double'</span>;
-<span class="hljs-keyword">var</span> XsdBoolean = Xsd + <span class="hljs-string">'boolean'</span>;
-<span class="hljs-keyword">var</span> RdfLangString = <span class="hljs-string">'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString'</span>;
+<span class="hljs-keyword">var</span> DataFactory = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./N3DataFactory'</span>);
 
 <span class="hljs-keyword">var</span> N3Util = {</pre></div></div>
             
@@ -98,19 +103,12 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-2">&#182;</a>
               </div>
-              <p>Tests whether the given entity (triple object) represents an IRI in the N3 library</p>
+              <p>Tests whether the given term represents an IRI</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  isIRI: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">entity</span>) </span>{
-    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> entity !== <span class="hljs-string">'string'</span>)
-      <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
-    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (entity.length === <span class="hljs-number">0</span>)
-      <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
-    <span class="hljs-keyword">else</span> {
-      <span class="hljs-keyword">var</span> firstChar = entity[<span class="hljs-number">0</span>];
-      <span class="hljs-keyword">return</span> firstChar !== <span class="hljs-string">'"'</span> &amp;&amp; firstChar !== <span class="hljs-string">'_'</span>;
-    }
+            <div class="content"><div class='highlight'><pre>  isNamedNode: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">term</span>) </span>{
+    <span class="hljs-keyword">return</span> !!term &amp;&amp; term.termType === <span class="hljs-string">'NamedNode'</span>;
   },</pre></div></div>
             
         </li>
@@ -122,12 +120,12 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-3">&#182;</a>
               </div>
-              <p>Tests whether the given entity (triple object) represents a literal in the N3 library</p>
+              <p>Tests whether the given term represents a blank node</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  isLiteral: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">entity</span>) </span>{
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">typeof</span> entity === <span class="hljs-string">'string'</span> &amp;&amp; entity[<span class="hljs-number">0</span>] === <span class="hljs-string">'"'</span>;
+            <div class="content"><div class='highlight'><pre>  isBlankNode: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">term</span>) </span>{
+    <span class="hljs-keyword">return</span> !!term &amp;&amp; term.termType === <span class="hljs-string">'BlankNode'</span>;
   },</pre></div></div>
             
         </li>
@@ -139,12 +137,12 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-4">&#182;</a>
               </div>
-              <p>Tests whether the given entity (triple object) represents a blank node in the N3 library</p>
+              <p>Tests whether the given term represents a literal</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  isBlank: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">entity</span>) </span>{
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">typeof</span> entity === <span class="hljs-string">'string'</span> &amp;&amp; entity.substr(<span class="hljs-number">0</span>, <span class="hljs-number">2</span>) === <span class="hljs-string">'_:'</span>;
+            <div class="content"><div class='highlight'><pre>  isLiteral: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">term</span>) </span>{
+    <span class="hljs-keyword">return</span> !!term &amp;&amp; term.termType === <span class="hljs-string">'Literal'</span>;
   },</pre></div></div>
             
         </li>
@@ -156,12 +154,12 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-5">&#182;</a>
               </div>
-              <p>Tests whether the given entity represents the default graph</p>
+              <p>Tests whether the given term represents a variable</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  isDefaultGraph: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">entity</span>) </span>{
-    <span class="hljs-keyword">return</span> !entity;
+            <div class="content"><div class='highlight'><pre>  isVariable: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">term</span>) </span>{
+    <span class="hljs-keyword">return</span> !!term &amp;&amp; term.termType === <span class="hljs-string">'Variable'</span>;
   },</pre></div></div>
             
         </li>
@@ -173,12 +171,12 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-6">&#182;</a>
               </div>
-              <p>Tests whether the given triple is in the default graph</p>
+              <p>Tests whether the given term represents the default graph</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  inDefaultGraph: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">triple</span>) </span>{
-    <span class="hljs-keyword">return</span> !triple.graph;
+            <div class="content"><div class='highlight'><pre>  isDefaultGraph: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">term</span>) </span>{
+    <span class="hljs-keyword">return</span> !!term &amp;&amp; term.termType === <span class="hljs-string">'DefaultGraph'</span>;
   },</pre></div></div>
             
         </li>
@@ -190,15 +188,12 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-7">&#182;</a>
               </div>
-              <p>Gets the string value of a literal in the N3 library</p>
+              <p>Tests whether the given quad is in the default graph</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  getLiteralValue: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">literal</span>) </span>{
-    <span class="hljs-keyword">var</span> match = <span class="hljs-regexp">/^"([^]*)"/</span>.exec(literal);
-    <span class="hljs-keyword">if</span> (!match)
-      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(literal + <span class="hljs-string">' is not a literal'</span>);
-    <span class="hljs-keyword">return</span> match[<span class="hljs-number">1</span>];
+            <div class="content"><div class='highlight'><pre>  inDefaultGraph: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">quad</span>) </span>{
+    <span class="hljs-keyword">return</span> N3Util.isDefaultGraph(quad.graph);
   },</pre></div></div>
             
         </li>
@@ -210,15 +205,12 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-8">&#182;</a>
               </div>
-              <p>Gets the type of a literal in the N3 library</p>
+              <p>Creates a function that prepends the given IRI to a local name</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  getLiteralType: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">literal</span>) </span>{
-    <span class="hljs-keyword">var</span> match = <span class="hljs-regexp">/^"[^]*"(?:\^\^([^"]+)|(@)[^@"]+)?$/</span>.exec(literal);
-    <span class="hljs-keyword">if</span> (!match)
-      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(literal + <span class="hljs-string">' is not a literal'</span>);
-    <span class="hljs-keyword">return</span> match[<span class="hljs-number">1</span>] || (match[<span class="hljs-number">2</span>] ? RdfLangString : XsdString);
+            <div class="content"><div class='highlight'><pre>  prefix: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">iri, factory</span>) </span>{
+    <span class="hljs-keyword">return</span> N3Util.prefixes({ <span class="hljs-string">''</span>: iri }, factory)(<span class="hljs-string">''</span>);
   },</pre></div></div>
             
         </li>
@@ -230,16 +222,11 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-9">&#182;</a>
               </div>
-              <p>Gets the language of a literal in the N3 library</p>
+              <p>Creates a function that allows registering and expanding prefixes</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  getLiteralLanguage: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">literal</span>) </span>{
-    <span class="hljs-keyword">var</span> match = <span class="hljs-regexp">/^"[^]*"(?:@([^@"]+)|\^\^[^"]+)?$/</span>.exec(literal);
-    <span class="hljs-keyword">if</span> (!match)
-      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(literal + <span class="hljs-string">' is not a literal'</span>);
-    <span class="hljs-keyword">return</span> match[<span class="hljs-number">1</span>] ? match[<span class="hljs-number">1</span>].toLowerCase() : <span class="hljs-string">''</span>;
-  },</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  prefixes: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">defaultPrefixes, factory</span>) </span>{</pre></div></div>
             
         </li>
         
@@ -249,147 +236,6 @@
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-10">&#182;</a>
-              </div>
-              <p>Tests whether the given entity (triple object) represents a prefixed name</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>  isPrefixedName: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">entity</span>) </span>{
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">typeof</span> entity === <span class="hljs-string">'string'</span> &amp;&amp; <span class="hljs-regexp">/^[^:\/"']*:[^:\/"']+$/</span>.test(entity);
-  },</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-11">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-11">&#182;</a>
-              </div>
-              <p>Expands the prefixed name to a full IRI (also when it occurs as a literal’s type)</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>  expandPrefixedName: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">prefixedName, prefixes</span>) </span>{
-    <span class="hljs-keyword">var</span> match = <span class="hljs-regexp">/(?:^|"\^\^)([^:\/#"'\^_]*):[^\/]*$/</span>.exec(prefixedName), prefix, base, index;
-    <span class="hljs-keyword">if</span> (match)
-      prefix = match[<span class="hljs-number">1</span>], base = prefixes[prefix], index = match.index;
-    <span class="hljs-keyword">if</span> (base === <span class="hljs-literal">undefined</span>)
-      <span class="hljs-keyword">return</span> prefixedName;</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-12">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-12">&#182;</a>
-              </div>
-              <p>The match index is non-zero when expanding a literal’s type</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">return</span> index === <span class="hljs-number">0</span> ? base + prefixedName.substr(prefix.length + <span class="hljs-number">1</span>)
-                       : prefixedName.substr(<span class="hljs-number">0</span>, index + <span class="hljs-number">3</span>) +
-                         base + prefixedName.substr(index + prefix.length + <span class="hljs-number">4</span>);
-  },</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-13">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-13">&#182;</a>
-              </div>
-              <p>Creates an IRI in N3.js representation</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>  createIRI: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">iri</span>) </span>{
-    <span class="hljs-keyword">return</span> iri &amp;&amp; iri[<span class="hljs-number">0</span>] === <span class="hljs-string">'"'</span> ? N3Util.getLiteralValue(iri) : iri;
-  },</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-14">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-14">&#182;</a>
-              </div>
-              <p>Creates a literal in N3.js representation</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>  createLiteral: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">value, modifier</span>) </span>{
-    <span class="hljs-keyword">if</span> (!modifier) {
-      <span class="hljs-keyword">switch</span> (<span class="hljs-keyword">typeof</span> value) {
-      <span class="hljs-keyword">case</span> <span class="hljs-string">'boolean'</span>:
-        modifier = XsdBoolean;
-        <span class="hljs-keyword">break</span>;
-      <span class="hljs-keyword">case</span> <span class="hljs-string">'number'</span>:
-        <span class="hljs-keyword">if</span> (<span class="hljs-built_in">isFinite</span>(value))
-          modifier = value % <span class="hljs-number">1</span> === <span class="hljs-number">0</span> ? XsdInteger : XsdDouble;
-        <span class="hljs-keyword">else</span> {
-          modifier = XsdDouble;
-          <span class="hljs-keyword">if</span> (!<span class="hljs-built_in">isNaN</span>(value))
-            value = value &gt; <span class="hljs-number">0</span> ? <span class="hljs-string">'INF'</span> : <span class="hljs-string">'-INF'</span>;
-        }
-        <span class="hljs-keyword">break</span>;
-      <span class="hljs-keyword">default</span>:
-        <span class="hljs-keyword">return</span> <span class="hljs-string">'"'</span> + value + <span class="hljs-string">'"'</span>;
-      }
-    }
-    <span class="hljs-keyword">return</span> <span class="hljs-string">'"'</span> + value +
-           (<span class="hljs-regexp">/^[a-z]+(-[a-z0-9]+)*$/i</span>.test(modifier) ? <span class="hljs-string">'"@'</span>  + modifier.toLowerCase()
-                                                    : <span class="hljs-string">'"^^'</span> + modifier);
-  },</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-15">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-15">&#182;</a>
-              </div>
-              <p>Creates a function that prepends the given IRI to a local name</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>  prefix: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">iri</span>) </span>{
-    <span class="hljs-keyword">return</span> N3Util.prefixes({ <span class="hljs-string">''</span>: iri })(<span class="hljs-string">''</span>);
-  },</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-16">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-16">&#182;</a>
-              </div>
-              <p>Creates a function that allows registering and expanding prefixes</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>  prefixes: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">defaultPrefixes</span>) </span>{</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-17">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-17">&#182;</a>
               </div>
               <p>Add all of the default prefixes</p>
 
@@ -402,11 +248,26 @@
         </li>
         
         
-        <li id="section-18">
+        <li id="section-11">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-18">&#182;</a>
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p>Set the default factory if none was specified</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    factory = factory || DataFactory;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
               </div>
               <p>Registers a new prefix (if an IRI was specified)
 or retrieves a function that expands an existing prefix (if no IRI was specified)</p>
@@ -418,36 +279,38 @@ or retrieves a function that expands an existing prefix (if no IRI was specified
         </li>
         
         
-        <li id="section-19">
+        <li id="section-13">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-19">&#182;</a>
+                <a class="pilcrow" href="#section-13">&#182;</a>
               </div>
               <p>Create a new prefix if an IRI is specified or the prefix doesn’t exist</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (iri || !(prefix <span class="hljs-keyword">in</span> prefixes)) {
-        <span class="hljs-keyword">var</span> cache = <span class="hljs-built_in">Object</span>.create(<span class="hljs-literal">null</span>);
-        iri = iri || <span class="hljs-string">''</span>;</pre></div></div>
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> iri === <span class="hljs-string">'string'</span>) {</pre></div></div>
             
         </li>
         
         
-        <li id="section-20">
+        <li id="section-14">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-20">&#182;</a>
+                <a class="pilcrow" href="#section-14">&#182;</a>
               </div>
               <p>Create a function that expands the prefix</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        prefixes[prefix] = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">localName</span>) </span>{
-          <span class="hljs-keyword">return</span> cache[localName] || (cache[localName] = iri + localName);
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">var</span> cache = <span class="hljs-built_in">Object</span>.create(<span class="hljs-literal">null</span>);
+        prefixes[prefix] = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">local</span>) </span>{
+          <span class="hljs-keyword">return</span> cache[local] || (cache[local] = factory.namedNode(iri + local));
         };
+      }
+      <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (!(prefix <span class="hljs-keyword">in</span> prefixes)) {
+        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'Unknown prefix: '</span> + prefix);
       }
       <span class="hljs-keyword">return</span> prefixes[prefix];
     }
@@ -458,11 +321,11 @@ or retrieves a function that expands an existing prefix (if no IRI was specified
         </li>
         
         
-        <li id="section-21">
+        <li id="section-15">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-21">&#182;</a>
+                <a class="pilcrow" href="#section-15">&#182;</a>
               </div>
               <h2 id="exports">Exports</h2>
 

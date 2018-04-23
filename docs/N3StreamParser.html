@@ -20,6 +20,16 @@
             <div id="jump_page">
               
                 
+                <a class="source" href="IRIs.html">
+                  IRIs.js
+                </a>
+              
+                
+                <a class="source" href="N3DataFactory.html">
+                  N3DataFactory.js
+                </a>
+              
+                
                 <a class="source" href="N3Lexer.html">
                   N3Lexer.js
                 </a>
@@ -75,7 +85,7 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-1">&#182;</a>
               </div>
-              <p><strong>N3StreamParser</strong> parses an N3 stream into a triple stream.</p>
+              <p><strong>N3StreamParser</strong> parses a text stream into a quad stream.</p>
 
             </div>
             
@@ -145,10 +155,10 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>  parser.parse({
-    <span class="hljs-attr">on</span>: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">event, cb</span>) </span>{
+    <span class="hljs-attr">on</span>: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">event, callback</span>) </span>{
       <span class="hljs-keyword">switch</span> (event) {
-      <span class="hljs-keyword">case</span> <span class="hljs-string">'data'</span>: onData = cb; <span class="hljs-keyword">break</span>;
-      <span class="hljs-keyword">case</span> <span class="hljs-string">'end'</span>:   onEnd = cb; <span class="hljs-keyword">break</span>;
+      <span class="hljs-keyword">case</span> <span class="hljs-string">'data'</span>: onData = callback; <span class="hljs-keyword">break</span>;
+      <span class="hljs-keyword">case</span> <span class="hljs-string">'end'</span>:   onEnd = callback; <span class="hljs-keyword">break</span>;
       }
     },
   },</pre></div></div>
@@ -162,11 +172,11 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-6">&#182;</a>
               </div>
-              <p>Handle triples by pushing them down the pipeline</p>
+              <p>Handle quads by pushing them down the pipeline</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">error, t</span>) </span>{ error &amp;&amp; self.emit(<span class="hljs-string">'error'</span>, error) || t &amp;&amp; self.push(t); },</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">error, quad</span>) </span>{ error &amp;&amp; self.emit(<span class="hljs-string">'error'</span>, error) || quad &amp;&amp; self.push(quad); },</pre></div></div>
             
         </li>
         
@@ -209,6 +219,27 @@ util.inherits(N3StreamParser, Transform);</pre></div></div>
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <h3 id="parses-a-stream-of-strings">Parses a stream of strings</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>N3StreamParser.prototype.import = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">stream</span>) </span>{
+  <span class="hljs-keyword">var</span> self = <span class="hljs-keyword">this</span>;
+  stream.on(<span class="hljs-string">'data'</span>,  <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">chunk</span>) </span>{ self.write(chunk); });
+  stream.on(<span class="hljs-string">'end'</span>,   <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>)      </span>{ self.end(); });
+  stream.on(<span class="hljs-string">'error'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">error</span>) </span>{ self.emit(<span class="hljs-string">'error'</span>, error); });
+  <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;
+};</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
               </div>
               <h2 id="exports">Exports</h2>
 
