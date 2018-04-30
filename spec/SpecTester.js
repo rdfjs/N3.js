@@ -3,7 +3,7 @@ var N3 = require('../N3.js'),
     fs = require('fs'),
     url = require('url'),
     path = require('path'),
-    request = require('request'),
+    http = require('follow-redirects').http,
     exec = require('child_process').exec,
     async = require('async');
 require('colors');
@@ -108,12 +108,17 @@ SpecTester.prototype._fetch = function (filename, callback) {
   if (!filename) return callback(null, null);
   var localFile = path.join(this._testFolder, filename), self = this;
   fs.exists(localFile, function (exists) {
-    if (exists)
+    if (exists) {
       fs.readFile(localFile, 'utf8', callback);
-    else
-      request.get(url.resolve(self._manifest, filename),
-                  function (error, response, body) { callback(error, body); })
-             .pipe(fs.createWriteStream(localFile));
+    }
+    else {
+      var request = http.get(url.resolve(self._manifest, filename));
+      request.on('response', function (response) {
+        response.pipe(fs.createWriteStream(localFile))
+                .on('close', function () { self._fetch(filename, callback); });
+      });
+      request.on('error', callback);
+    }
   });
 };
 
