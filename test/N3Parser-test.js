@@ -535,6 +535,10 @@ describe('N3Parser', function () {
                   ['A:',  'b:',  'c:'],
                   ['a:a', 'b:B', 'C-D:c']));
 
+    it('should not allow relative URIs with a colon in the first path segment',
+      shouldNotParse('<entity.beeldbank_leiden_person:A.E._Stuur.> <x:x> <x:x> .',
+                     'Relative IRI cannot contain colon in first path segment on line 1.'));
+
     it('should resolve datatype IRIs against @base',
       shouldParse('@base <http://ex.org/>.\n' +
                   '<a> <b> "c"^^<d>.\n' +
