@@ -25,11 +25,11 @@
     "chai-things": "^0.2.0",
     "colors": "^1.1.2",
     "coveralls": "^3.0.0",
-    "docco": "^0.7.0",
+    "docco": "^0.8.0",
     "eslint": "^4.1.1",
     "follow-redirects": "^1.4.1",
     "mocha": "^5.0.1",
-    "nyc": "^11.0.3",
+    "nyc": "^12.0.2",
     "pre-commit": "^1.2.2"
   },
   "scripts": {
