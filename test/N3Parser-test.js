@@ -537,7 +537,11 @@ describe('N3Parser', function () {
 
     it('should not allow relative URIs with a colon in the first path segment',
       shouldNotParse('<entity.beeldbank_leiden_person:A.E._Stuur.> <x:x> <x:x> .',
-                     'Relative IRI cannot contain colon in first path segment on line 1.'));
+                     'Invalid IRI on line 1.'));
+
+    it('should not allow relative URIs with a colon in the first path segment as base',
+      shouldNotParse('@base <entity.beeldbank_leiden_person:A.E._Stuur.> .',
+                     'Expected valid IRI to follow base declaration on line 1.'));
 
     it('should resolve datatype IRIs against @base',
       shouldParse('@base <http://ex.org/>.\n' +
@@ -759,7 +763,7 @@ describe('N3Parser', function () {
 
     it('should not parse base declarations without IRI',
       shouldNotParse('@base a: ',
-                     'Expected IRI to follow base declaration on line 1.'));
+                     'Expected valid IRI to follow base declaration on line 1.'));
 
     it('should not parse improperly nested parentheses and brackets',
       shouldNotParse('<a> <b> [<c> (<d>]).',
@@ -845,7 +849,8 @@ describe('N3Parser', function () {
     });
 
     it('should return prefixes at the last triple callback', function (done) {
-      new N3Parser().parse('@prefix a: <IRIa>. a:a a:b a:c. @prefix b: <IRIb>.', tripleCallback);
+      new N3Parser({ baseIRI: BASE_IRI })
+        .parse('@prefix a: <IRIa>. a:a a:b a:c. @prefix b: <IRIb>.', tripleCallback);
 
       function tripleCallback(error, triple, prefixes) {
         expect(error).not.to.exist;
@@ -854,8 +859,8 @@ describe('N3Parser', function () {
         else {
           expect(prefixes).to.exist;
           Object.keys(prefixes).should.have.length(2);
-          expect(prefixes).to.have.property('a', 'IRIa');
-          expect(prefixes).to.have.property('b', 'IRIb');
+          expect(prefixes).to.have.property('a', 'http://example.org/IRIa');
+          expect(prefixes).to.have.property('b', 'http://example.org/IRIb');
           done();
         }
       }
@@ -1079,7 +1084,7 @@ describe('N3Parser', function () {
                              'Expected punctuation to follow ""c"" on line 1.'));
 
     it('should not parse relative IRIs',
-      shouldNotParse(parser, '<a> <b> <c>.', 'Disallowed relative IRI on line 1.'));
+      shouldNotParse(parser, '<a> <b> <c>.', 'Invalid IRI on line 1.'));
 
     it('should not parse a prefix declaration',
       shouldNotParse(parser, '@prefix : <p#>.', 'Unexpected "@prefix" on line 1.'));
@@ -1118,7 +1123,7 @@ describe('N3Parser', function () {
                           ['_:b0_a', 'http://ex.org/b', '"c"', 'http://ex.org/g']));
 
     it('should not parse relative IRIs',
-      shouldNotParse(parser, '<a> <b> <c>.', 'Disallowed relative IRI on line 1.'));
+      shouldNotParse(parser, '<a> <b> <c>.', 'Invalid IRI on line 1.'));
 
     it('should not parse a prefix declaration',
       shouldNotParse(parser, '@prefix : <p#>.', 'Unexpected "@prefix" on line 1.'));
