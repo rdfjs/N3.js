@@ -497,6 +497,11 @@ describe('N3Lexer', function () {
     it('should immediately signal an error if a carriage return occurs inside a single-quoted literal',
       shouldNotTokenize(streamOf('"abc\r', null), 'Unexpected ""abc" on line 1.'));
 
+    it('should tokenize a split single-quoted string',
+      shouldTokenize(streamOf("'abc", "def'"),
+                     { type: 'literal', value: 'abcdef', line: 1 },
+                     { type: 'eof', line: 1 }));
+
     it('should tokenize a split triple-quoted string',
       shouldTokenize(streamOf('"""abc\n', 'def"""'),
                      { type: 'literal', value: 'abc\ndef', line: 1 },
