@@ -294,8 +294,8 @@ describe('N3Lexer', function () {
                         'Unexpected ""\\uXYZX"" on line 1.'));
 
     it('should not tokenize a triple-quoted string with invalid characters',
-      shouldNotTokenize('"""\\uXYZX""" ',
-                        'Unexpected """"\\uXYZX"""" on line 1.'));
+      shouldNotTokenize("'''\\uXYZX''' ",
+                        "Unexpected \"'''\\uXYZX'''\" on line 1."));
 
     it('should tokenize a quoted string literal with language code',
       shouldTokenize('"string"@en "string"@nl-be "string"@EN ',
