@@ -2,7 +2,7 @@
 [![Build Status](https://travis-ci.org/rdfjs/N3.js.svg?branch=master)](https://travis-ci.org/rdfjs/N3.js)
 [![Coverage Status](https://coveralls.io/repos/github/rdfjs/N3.js/badge.svg)](https://coveralls.io/github/rdfjs/N3.js)
 [![npm version](https://badge.fury.io/js/n3.svg)](https://www.npmjs.com/package/n3)
-[![DOI](https://zenodo.org/badge/3058202.svg)](https://zenodo.org/badge/latestdoi/3058202)
+[![DOI](https://zenodo.org/badge/3058202.svg)](https://zenodo.org/badge/latestdoi/3058202) [![Greenkeeper badge](https://badges.greenkeeper.io/rdfjs/N3.js.svg)](https://greenkeeper.io/)
 
 The N3.js library is an implementation of the [RDF.js low-level specification](http://rdf.js.org/) that lets you handle [RDF](https://www.w3.org/TR/rdf-primer/) in JavaScript easily.
 It offers:
