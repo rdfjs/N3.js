@@ -258,7 +258,7 @@ Then, we find triples with `:Mickey` as subject.
 ```JavaScript
 const store = N3.Store();
 store.addQuad(
-  namedNode('http://ex.org/Pluto'),
+  namedNode('http://ex.org/Pluto'), 
   namedNode('http://ex.org/type'),
   namedNode('http://ex.org/Dog')
 );
