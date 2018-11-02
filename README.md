@@ -106,6 +106,12 @@ const parser4 = N3.Parser({ format: 'Notation3' });
 const parser5 = N3.Parser({ format: 'text/n3' });
 ```
 
+It is possible to provide the base IRI of the document that you want to parse.
+This is done by passing a `baseIRI` argument upon creation:
+```JavaScript
+const parser = new N3.Parser({ baseIRI: 'http://example.org/' });
+``` 
+
 ### From an RDF stream to quads
 
 `N3.Parser` can parse [Node.js streams](http://nodejs.org/api/stream.html) as they grow,
