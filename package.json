@@ -24,7 +24,6 @@
     "chai": "^4.0.2",
     "chai-things": "^0.2.0",
     "colors": "^1.1.2",
-    "coveralls": "^3.0.0",
     "docco": "^0.8.0",
     "eslint": "^4.1.1",
     "follow-redirects": "^1.4.1",
@@ -35,7 +34,6 @@
   "scripts": {
     "test": "nyc mocha",
     "lint": "eslint lib perf test spec",
-    "coveralls": "nyc --reporter=text-lcov mocha | coveralls",
     "spec": "node spec/turtle-spec && node spec/trig-spec && node spec/ntriples-spec && node spec/nquads-spec",
     "spec-clean": "rm -r spec/turtle spec/trig",
     "docs": "docco lib/*.js"
