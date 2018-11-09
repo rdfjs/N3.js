@@ -31,6 +31,14 @@ describe('N3StreamParser', function () {
     it('should parse decimals that are split across chunks in the stream',
       shouldParse('<sub> <pred> 11.2 .'.match(/.{1,2}/g), 1));
 
+    it.skip('should parse non-breaking spaces that are split across chunks in the stream correctly', function (done) {
+      var buffer = Buffer.from('<sub> <pred> " " .'),
+          chunks = [buffer, buffer.slice(0, 15), buffer.slice(15, buffer.length)];
+      shouldParse(chunks, 2, function (triples) {
+        triples[0].should.deep.equal(triples[1]);
+      })(done);
+    });
+
     it("doesn't parse an invalid stream",
       shouldNotParse(['z.'], 'Unexpected "z." on line 1.'), { token: undefined, line: 1, previousToken: undefined });
 
@@ -51,7 +59,7 @@ describe('N3StreamParser', function () {
 });
 
 
-function shouldParse(chunks, expectedLength) {
+function shouldParse(chunks, expectedLength, validateTriples) {
   return function (done) {
     var triples = [],
         inputStream = new ArrayReader(chunks),
@@ -62,6 +70,7 @@ function shouldParse(chunks, expectedLength) {
     parser.on('error', done);
     parser.on('end', function () {
       triples.should.have.length(expectedLength);
+      if (validateTriples) validateTriples(triples);
       done();
     });
   };
