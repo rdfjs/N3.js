@@ -31,7 +31,7 @@ describe('N3StreamParser', function () {
     it('should parse decimals that are split across chunks in the stream',
       shouldParse('<sub> <pred> 11.2 .'.match(/.{1,2}/g), 1));
 
-    it.skip('should parse non-breaking spaces that are split across chunks in the stream correctly', function (done) {
+    it('should parse non-breaking spaces that are split across chunks in the stream correctly', function (done) {
       var buffer = Buffer.from('<sub> <pred> " " .'),
           chunks = [buffer, buffer.slice(0, 15), buffer.slice(15, buffer.length)];
       shouldParse(chunks, 2, function (triples) {
