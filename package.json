@@ -20,22 +20,32 @@
     "lib"
   ],
   "devDependencies": {
-    "async": "^2.0.1",
+    "arrayify-stream": "^1.0.0",
     "chai": "^4.0.2",
     "chai-things": "^0.2.0",
     "colors": "^1.1.2",
     "docco": "^0.8.0",
     "eslint": "^4.1.1",
-    "follow-redirects": "^1.4.1",
     "mocha": "^5.0.1",
     "nyc": "^12.0.2",
-    "pre-commit": "^1.2.2"
+    "pre-commit": "^1.2.2",
+    "rdf-test-suite": "^1.2.0",
+    "streamify-string": "^1.0.1"
   },
   "scripts": {
     "test": "nyc mocha",
     "lint": "eslint lib perf test spec",
-    "spec": "node spec/turtle-spec && node spec/trig-spec && node spec/ntriples-spec && node spec/nquads-spec",
-    "spec-clean": "rm -r spec/turtle spec/trig",
+    "spec": "npm run spec-turtle && npm run spec-ntriples && npm run spec-nquads && npm run spec-trig",
+    "spec-earl": "npm run spec-earl-turtle && npm run spec-earl-ntriples && npm run spec-earl-nquads && npm run spec-earl-trig",
+    "spec-ntriples": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/ntriples/manifest.ttl -i '{ \"format\": \"n-triples\" }' -c .rdf-test-suite-cache/",
+    "spec-nquads": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/nquads/manifest.ttl -i '{ \"format\": \"n-quads\" }' -c .rdf-test-suite-cache/",
+    "spec-turtle": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/turtle/manifest.ttl -i '{ \"format\": \"turtle\" }' -c .rdf-test-suite-cache/",
+    "spec-trig": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/trig/manifest.ttl -i '{ \"format\": \"trig\" }' -c .rdf-test-suite-cache/",
+    "spec-earl-ntriples": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/ntriples/manifest.ttl -i '{ \"format\": \"n-triples\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-ntriples.ttl",
+    "spec-earl-nquads": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/nquads/manifest.ttl -i '{ \"format\": \"n-quads\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-nquads.ttl",
+    "spec-earl-turtle": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/turtle/manifest.ttl -i '{ \"format\": \"turtle\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-turtle.ttl",
+    "spec-earl-trig": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/trig/manifest.ttl -i '{ \"format\": \"trig\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-trig.ttl",
+    "spec-clean": "rm -r .rdf-test-suite-cache/",
     "docs": "docco lib/*.js"
   },
   "repository": {

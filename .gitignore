@@ -3,5 +3,6 @@
 docs
 browser/n3*
 node_modules
-spec/*/*
+spec/*.ttl
 coverage
+.rdf-test-suite-cache

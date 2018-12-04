@@ -1,0 +1,24 @@
+{
+  "applicationBugsUrl": "https://github.com/rdfjs/N3.js/issues",
+  "applicationDescription": "Lightning fast, asynchronous, streaming Turtle / N3 / RDF library.",
+  "applicationNameFull": "n3",
+  "applicationNameNpm": "n3",
+  "applicationHomepageUrl": "https://github.com/rdfjs/N3.js",
+  "applicationBlogUrl": "https://ruben.verborgh.org/blog/",
+  "applicationUri": "https://www.npmjs.com/package/n3/",
+  "authors": [
+    {
+      "homepage": null,
+      "name": "Ruben Verborgh <ruben.verborgh@gmail.com>",
+      "uri": "https://ruben.verborgh.org/"
+    }
+  ],
+  "licenseUri": "http://opensource.org/licenses/MIT",
+  "reportUri": null,
+  "specificationUris": [
+    "https://www.w3.org/TR/turtle/",
+    "https://www.w3.org/TR/trig/",
+    "https://www.w3.org/TR/n-triples/",
+    "https://www.w3.org/TR/n-quads/"
+  ]
+}
