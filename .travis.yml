@@ -22,7 +22,7 @@ after_success:
       ./.travis_build_pages;
     fi
 cache:
-  directories:
-    - node_modules
+  - npm
+  - directories:
     - .rdf-test-suite-cache
 sudo: false
