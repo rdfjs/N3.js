@@ -595,6 +595,14 @@ describe('N3Parser', function () {
                   ['a', 'd', 'e'],
                   ['a', 'd', 'f']));
 
+    it('should parse a default graph with a blank node ending with a dot',
+      shouldParse('{ [<p> <o>]. }',
+                  ['_:b0', 'p', 'o']));
+
+    it('should parse a default graph with a blank node ending without a dot',
+      shouldParse('{ [<p> <o>] }',
+                  ['_:b0', 'p', 'o']));
+
     it('should parse an empty named graph with an IRI',
       shouldParse('<g>{}'));
 
@@ -640,6 +648,14 @@ describe('N3Parser', function () {
                   ['a', 'b', 'c', 'g#h'],
                   ['a', 'd', 'e', 'g#h'],
                   ['a', 'd', 'f', 'g#h']));
+
+    it('should parse a named graph with a blank node ending with a dot',
+      shouldParse('<g> { [<p> <o>]. }',
+                  ['_:b0', 'p', 'o', 'g']));
+
+    it('should parse a named graph with a blank node ending without a dot',
+      shouldParse('<g> { [<p> <o>] }',
+                  ['_:b0', 'p', 'o', 'g']));
 
     it('should parse an empty anonymous graph',
       shouldParse('[] {}'));
