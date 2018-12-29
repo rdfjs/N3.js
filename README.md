@@ -340,7 +340,7 @@ The N3.js submodules are compatible with the following [RDF.js](http://rdf.js.or
   and
   [`Sink`](http://rdf.js.org/#sink-interface)
 - `N3.Store` implements
-  [`Sink`](http://rdf.js.org/#stream-interface)
+  [`Sink`](http://rdf.js.org/#sink-interface)
 
 ## License and contributions
 The N3.js library is copyrighted by [Ruben Verborgh](https://ruben.verborgh.org/)
