@@ -24,19 +24,19 @@ describe('N3Writer', function () {
   describe('An N3Writer instance', function () {
     it('should serialize a single triple', function () {
       var writer = N3Writer();
-      writer.quadToString(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')).should.equal('<a> <b> <c>.\n');
+      writer.quadToString(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')).should.equal('<a> <b> <c> .\n');
     });
 
     it('should serialize a single quad', function () {
       var writer = N3Writer();
-      writer.quadToString(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')).should.equal('<a> <b> <c> <g>.\n');
+      writer.quadToString(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')).should.equal('<a> <b> <c> <g> .\n');
     });
 
     it('should serialize an array of triples', function () {
       var writer = N3Writer();
       var triples = [new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')),
         new Quad(new NamedNode('d'), new NamedNode('e'), new NamedNode('f'))];
-      writer.quadsToString(triples).should.equal('<a> <b> <c>.\n<d> <e> <f>.\n');
+      writer.quadsToString(triples).should.equal('<a> <b> <c> .\n<d> <e> <f> .\n');
     });
 
 
@@ -514,7 +514,7 @@ describe('N3Writer', function () {
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'));
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('d'));
       writer.end(function (error, output) {
-        output.should.equal('<a> <b> <c>.\n<a> <b> <d>.\n');
+        output.should.equal('<a> <b> <c> .\n<a> <b> <d> .\n');
         done(error);
       });
     });
@@ -527,7 +527,7 @@ describe('N3Writer', function () {
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('d'), new NamedNode('g'));
       writer.end(function (error, output) {
         called.should.be.true;
-        output.should.equal('<a> <b> <c>.\n<a> <b> <d> <g>.\n');
+        output.should.equal('<a> <b> <c> .\n<a> <b> <d> <g> .\n');
         done(error);
       });
     });
