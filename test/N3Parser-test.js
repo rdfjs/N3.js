@@ -1126,7 +1126,7 @@ describe('N3Parser', function () {
       shouldNotParse(parser, '<urn:a:a> <= <urn:b:b>.', 'Unexpected "<=" on line 1.'));
 
     it('should not parse a formula as object',
-      shouldNotParse(parser, '<urn:a:a> <urn:b:b> {}.', 'Unexpected "{" on line 1.'));
+      shouldNotParse(parser, '<urn:a:a> <urn:b:b> {}.', 'Unexpected "{}." on line 1.'));
 
     it('should not parse @forSome',
       shouldNotParse(parser, '@forSome <x>.', 'Unexpected "@forSome" on line 1.'));
@@ -1165,7 +1165,7 @@ describe('N3Parser', function () {
       shouldNotParse(parser, '<urn:a:a> <= <urn:b:b>.', 'Unexpected "<=" on line 1.'));
 
     it('should not parse a formula as object',
-      shouldNotParse(parser, '<urn:a:a> <urn:b:b> {}.', 'Unexpected "{" on line 1.'));
+      shouldNotParse(parser, '<urn:a:a> <urn:b:b> {}.', 'Unexpected "{}." on line 1.'));
 
     it('should not parse @forSome',
       shouldNotParse(parser, '@forSome <x>.', 'Unexpected "@forSome" on line 1.'));
