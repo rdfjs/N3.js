@@ -13,10 +13,6 @@ describe('N3Parser', function () {
       N3Parser.should.be.a('function');
     });
 
-    it('should make N3Parser objects', function () {
-      N3Parser().should.be.an.instanceof(N3Parser);
-    });
-
     it('should be an N3Parser constructor', function () {
       new N3Parser().should.be.an.instanceof(N3Parser);
     });
@@ -1989,13 +1985,13 @@ describe('N3Parser', function () {
   });
 });
 
-function shouldParse(createParser, input) {
+function shouldParse(parser, input) {
   var expected = Array.prototype.slice.call(arguments, 1);
   // Shift parameters as necessary
-  if (createParser.call)
+  if (parser.call)
     expected.shift();
   else
-    input = createParser, createParser = N3Parser;
+    input = parser, parser = N3Parser;
 
   return function (done) {
     var results = [];
@@ -2009,7 +2005,7 @@ function shouldParse(createParser, input) {
       return new Quad(item[0], item[1], item[2], item[3]);
     });
     N3Parser._resetBlankNodeIds();
-    createParser({ baseIRI: BASE_IRI }).parse(input, function (error, triple) {
+    new parser({ baseIRI: BASE_IRI }).parse(input, function (error, triple) {
       expect(error).not.to.exist;
       if (triple)
         results.push(triple);
@@ -2029,13 +2025,13 @@ function toSortedJSON(triples) {
   return '[\n  ' + triples.join('\n  ') + '\n]';
 }
 
-function shouldNotParse(createParser, input, expectedError, expectedContext) {
+function shouldNotParse(parser, input, expectedError, expectedContext) {
   // Shift parameters if necessary
-  if (!createParser.call)
-    expectedContext = expectedError, expectedError = input, input = createParser, createParser = N3Parser;
+  if (!parser.call)
+    expectedContext = expectedError, expectedError = input, input = parser, parser = N3Parser;
 
   return function (done) {
-    createParser({ baseIRI: BASE_IRI }).parse(input, function (error, triple) {
+    new parser({ baseIRI: BASE_IRI }).parse(input, function (error, triple) {
       if (error) {
         expect(triple).not.to.exist;
         error.should.be.an.instanceof(Error);
