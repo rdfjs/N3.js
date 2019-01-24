@@ -13,10 +13,6 @@ describe('N3StreamWriter', function () {
       N3StreamWriter.should.be.a('function');
     });
 
-    it('should make N3Lexer objects', function () {
-      N3StreamWriter().should.be.an.instanceof(N3StreamWriter);
-    });
-
     it('should be an N3Lexer constructor', function () {
       new N3StreamWriter().should.be.an.instanceof(N3StreamWriter);
     });
