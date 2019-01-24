@@ -1,4 +1,5 @@
-var N3Store = require('../N3').Store;
+var N3Store = require('../N3').Store,
+    N3Stream = require('../N3').Stream;
 
 var Readable = require('stream').Readable,
     DataFactory = require('../N3').DataFactory;
@@ -1039,6 +1040,18 @@ describe('N3Store', function () {
       store.addQuad('null', 'null', 'null', 'null').should.be.true;
       shouldIncludeAll(store.getQuads(null, null, null, 'null'), ['null', 'null', 'null', 'null'])();
     });
+  });
+
+  describe('N3Store Source interface', function () {
+    var store = new N3Store();
+    var stream = store.match();
+
+    it('should create a Stream', function () {
+      (stream instanceof N3Stream).should.be.true;
+    });
+
+    // it('should emit quad every time a quad is added to the store', function () {
+    // });
   });
 });
 
