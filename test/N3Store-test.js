@@ -1040,14 +1040,34 @@ describe('N3Store', function () {
 
   describe('N3Store Source interface', function () {
     var store = new N3Store();
-    var stream = store.match();
 
     it('should create a Stream', function () {
+      var stream = store.match();
       (stream instanceof N3Stream).should.be.true;
     });
 
-    // it('should emit quad every time a quad is added to the store', function () {
-    // });
+    it('should emit quad every time a quad is added to the store', function () {
+      var stream = store.match();
+      var data = [];
+      stream.on('data', (quad) => {
+        data.push(quad);
+      });
+      store.addQuad('null', 'null', 'null', 'null');
+      data.should.deep.equal([new Quad('null', 'null', 'null', 'null')]);
+    });
+
+    it('should emit quad every time a matching quad is added to the store', function () {
+      var stream = store.match('http://example.com/1');
+      var data = [];
+      stream.on('data', (quad) => {
+        data.push(quad);
+      });
+      store.addQuad('null', 'null', 'null', 'null');
+      store.addQuad('http://example.com/1', 'http://example.com/2', 'http://example.com/3', DefaultGraph);
+      data.should.deep.equal([
+        new Quad('http://example.com/1', 'http://example.com/2', 'http://example.com/3', DefaultGraph),
+      ]);
+    });
   });
 });
 
