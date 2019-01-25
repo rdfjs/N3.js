@@ -11,10 +11,6 @@ describe('Quad', function () {
       Quad.should.be.a('function');
     });
 
-    it('should make Quad objects', function () {
-      Quad().should.be.an.instanceof(Quad);
-    });
-
     it('should be a Quad constructor', function () {
       new Quad().should.be.an.instanceof(Quad);
     });
@@ -51,7 +47,7 @@ describe('Quad', function () {
     });
 
     it('should have the default graph', function () {
-      quad.graph.should.equal(new DefaultGraph());
+      quad.graph.should.equal(DefaultGraph);
     });
 
     it('should equal a quad with the same components', function () {
@@ -59,7 +55,7 @@ describe('Quad', function () {
         subject:   subject,
         predicate: predicate,
         object:    object,
-        graph:     new DefaultGraph(),
+        graph:     DefaultGraph,
       }).should.be.true;
     });
 
@@ -68,7 +64,7 @@ describe('Quad', function () {
         subject:   fromId('x'),
         predicate: predicate,
         object:    object,
-        graph:     new DefaultGraph(),
+        graph:     DefaultGraph,
       }).should.be.false;
     });
 
@@ -77,7 +73,7 @@ describe('Quad', function () {
         subject:   subject,
         predicate: fromId('x'),
         object:    object,
-        graph:     new DefaultGraph(),
+        graph:     DefaultGraph,
       }).should.be.false;
     });
 
@@ -86,7 +82,7 @@ describe('Quad', function () {
         subject:   subject,
         predicate: predicate,
         object:    fromId('x'),
-        graph:     new DefaultGraph(),
+        graph:     DefaultGraph,
       }).should.be.false;
     });
 

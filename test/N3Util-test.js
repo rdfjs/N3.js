@@ -181,7 +181,7 @@ describe('N3Util', function () {
     });
 
     it('matches the default graph', function () {
-      N3Util.inDefaultGraph(new Quad(null, null, null, new DefaultGraph())).should.be.true;
+      N3Util.inDefaultGraph(new Quad(null, null, null, DefaultGraph)).should.be.true;
     });
   });
 

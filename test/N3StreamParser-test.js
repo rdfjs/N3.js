@@ -10,10 +10,6 @@ describe('N3StreamParser', function () {
       N3StreamParser.should.be.a('function');
     });
 
-    it('should make N3Lexer objects', function () {
-      N3StreamParser().should.be.an.instanceof(N3StreamParser);
-    });
-
     it('should be an N3Lexer constructor', function () {
       new N3StreamParser().should.be.an.instanceof(N3StreamParser);
     });
@@ -79,7 +75,7 @@ function shouldParse(chunks, expectedLength, validateTriples) {
 function shouldNotParse(chunks, expectedMessage, expectedContext) {
   return function (done) {
     var inputStream = new ArrayReader(chunks),
-        parser = N3StreamParser(),
+        parser = new N3StreamParser(),
         outputStream = new ArrayWriter([]);
     inputStream.pipe(parser);
     parser.pipe(outputStream);
@@ -95,7 +91,7 @@ function shouldNotParse(chunks, expectedMessage, expectedContext) {
 function shouldEmitPrefixes(chunks, expectedPrefixes) {
   return function (done) {
     var prefixes = {},
-        parser = N3StreamParser(),
+        parser = new N3StreamParser(),
         inputStream = new ArrayReader(chunks);
     inputStream.pipe(parser);
     parser.on('data', function () {});

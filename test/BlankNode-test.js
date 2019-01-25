@@ -9,14 +9,6 @@ describe('BlankNode', function () {
       BlankNode.should.be.a('function');
     });
 
-    it('should make BlankNode objects', function () {
-      BlankNode().should.be.an.instanceof(BlankNode);
-    });
-
-    it('should make Term objects', function () {
-      BlankNode().should.be.an.instanceof(Term);
-    });
-
     it('should be a BlankNode constructor', function () {
       new BlankNode().should.be.an.instanceof(BlankNode);
     });

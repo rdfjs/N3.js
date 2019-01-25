@@ -8,10 +8,6 @@ describe('N3Lexer', function () {
       N3Lexer.should.be.a('function');
     });
 
-    it('should make N3Lexer objects', function () {
-      N3Lexer().should.be.an.instanceof(N3Lexer);
-    });
-
     it('should be an N3Lexer constructor', function () {
       new N3Lexer().should.be.an.instanceof(N3Lexer);
     });

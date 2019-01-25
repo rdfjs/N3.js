@@ -10,14 +10,6 @@ describe('Literal', function () {
       Literal.should.be.a('function');
     });
 
-    it('should make Literal objects', function () {
-      Literal().should.be.an.instanceof(Literal);
-    });
-
-    it('should make Term objects', function () {
-      Literal().should.be.an.instanceof(Term);
-    });
-
     it('should be a Literal constructor', function () {
       new Literal().should.be.an.instanceof(Literal);
     });
