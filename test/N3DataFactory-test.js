@@ -91,7 +91,7 @@ describe('DataFactory', function () {
 
   describe('defaultGraph', function () {
     it('returns the default graph', function () {
-      DataFactory.defaultGraph().should.deep.equal(new DefaultGraph());
+      DataFactory.defaultGraph().should.deep.equal(DefaultGraph);
     });
   });
 
@@ -105,7 +105,7 @@ describe('DataFactory', function () {
         new NamedNode('http://ex.org/a'),
         new NamedNode('http://ex.org/b'),
         new Literal('abc'),
-        new DefaultGraph()
+        DefaultGraph
       ));
     });
   });
@@ -134,7 +134,7 @@ describe('DataFactory', function () {
         new NamedNode('http://ex.org/a'),
         new NamedNode('http://ex.org/b'),
         new Literal('abc'),
-        new DefaultGraph()
+        DefaultGraph
       ));
     });
   });

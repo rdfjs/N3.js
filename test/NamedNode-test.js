@@ -9,14 +9,6 @@ describe('NamedNode', function () {
       NamedNode.should.be.a('function');
     });
 
-    it('should make NamedNode objects', function () {
-      NamedNode().should.be.an.instanceof(NamedNode);
-    });
-
-    it('should make Term objects', function () {
-      NamedNode().should.be.an.instanceof(Term);
-    });
-
     it('should be a NamedNode constructor', function () {
       new NamedNode().should.be.an.instanceof(NamedNode);
     });

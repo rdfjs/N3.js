@@ -260,7 +260,7 @@ describe('N3Store', function () {
     });
 
     describe('when searched with non-existing predicate and object parameters in the default graph', function () {
-      itShouldBeEmpty(store.getQuads(null, new NamedNode('p2'), new NamedNode('o3'), new DefaultGraph()));
+      itShouldBeEmpty(store.getQuads(null, new NamedNode('p2'), new NamedNode('o3'), DefaultGraph));
     });
 
     describe('when searched with existing subject, predicate, and object parameters', function () {
@@ -276,7 +276,7 @@ describe('N3Store', function () {
 
     describe('when searched with the default graph parameter', function () {
       it('should return all items in the default graph',
-        shouldIncludeAll(store.getQuads(null, null, null, new DefaultGraph()),
+        shouldIncludeAll(store.getQuads(null, null, null, DefaultGraph),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o2'],
                          ['s1', 'p2', 'o2'],
@@ -308,13 +308,13 @@ describe('N3Store', function () {
 
       describe('with existing predicate and graph parameters', function () {
         it('should return all subjects with this predicate and graph', function () {
-          store.getSubjects(new NamedNode('p1'), null, new DefaultGraph()).should.have.deep.members([new NamedNode('s1'), new NamedNode('s2')]);
+          store.getSubjects(new NamedNode('p1'), null, DefaultGraph).should.have.deep.members([new NamedNode('s1'), new NamedNode('s2')]);
         });
       });
 
       describe('with existing object and graph parameters', function () {
         it('should return all subjects with this object and graph', function () {
-          store.getSubjects(null, new NamedNode('o1'), new DefaultGraph()).should.have.deep.members([new NamedNode('s1'), new NamedNode('s2')]);
+          store.getSubjects(null, new NamedNode('o1'), DefaultGraph).should.have.deep.members([new NamedNode('s1'), new NamedNode('s2')]);
         });
       });
 
@@ -358,13 +358,13 @@ describe('N3Store', function () {
 
       describe('with existing subject and graph parameters', function () {
         it('should return all predicates with this subject and graph', function () {
-          store.getPredicates(new NamedNode('s1'), null, new DefaultGraph()).should.have.deep.members([new NamedNode('p1'), new NamedNode('p2')]);
+          store.getPredicates(new NamedNode('s1'), null, DefaultGraph).should.have.deep.members([new NamedNode('p1'), new NamedNode('p2')]);
         });
       });
 
       describe('with existing object and graph parameters', function () {
         it('should return all predicates with this object and graph', function () {
-          store.getPredicates(null, new NamedNode('o1'), new DefaultGraph()).should.have.deep.members([new NamedNode('p1')]);
+          store.getPredicates(null, new NamedNode('o1'), DefaultGraph).should.have.deep.members([new NamedNode('p1')]);
         });
       });
 
@@ -396,7 +396,7 @@ describe('N3Store', function () {
     describe('getObjects', function () {
       describe('with existing subject, predicate and graph parameters', function () {
         it('should return all objects with this subject, predicate and graph', function () {
-          store.getObjects(new NamedNode('s1'), new NamedNode('p1'), new DefaultGraph()).should.have.deep.members([new NamedNode('o1'), new NamedNode('o2')]);
+          store.getObjects(new NamedNode('s1'), new NamedNode('p1'), DefaultGraph).should.have.deep.members([new NamedNode('o1'), new NamedNode('o2')]);
         });
       });
 
@@ -408,13 +408,13 @@ describe('N3Store', function () {
 
       describe('with existing subject and graph parameters', function () {
         it('should return all objects with this subject and graph', function () {
-          store.getObjects(new NamedNode('s1'), null, new DefaultGraph()).should.have.deep.members([new NamedNode('o1'), new NamedNode('o2')]);
+          store.getObjects(new NamedNode('s1'), null, DefaultGraph).should.have.deep.members([new NamedNode('o1'), new NamedNode('o2')]);
         });
       });
 
       describe('with existing predicate and graph parameters', function () {
         it('should return all objects with this predicate and graph', function () {
-          store.getObjects(null, new NamedNode('p1'), new DefaultGraph()).should.have.deep.members([new NamedNode('o1'), new NamedNode('o2')]);
+          store.getObjects(null, new NamedNode('p1'), DefaultGraph).should.have.deep.members([new NamedNode('o1'), new NamedNode('o2')]);
         });
       });
 
@@ -446,49 +446,49 @@ describe('N3Store', function () {
     describe('getGraphs', function () {
       describe('with existing subject, predicate and object parameters', function () {
         it('should return all graphs with this subject, predicate and object', function () {
-          store.getGraphs(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')).should.have.deep.members([new NamedNode('c4'), new DefaultGraph()]);
+          store.getGraphs(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')).should.have.deep.members([new NamedNode('c4'), DefaultGraph]);
         });
       });
 
       describe('with existing subject and predicate parameters', function () {
         it('should return all graphs with this subject and predicate', function () {
-          store.getGraphs(new NamedNode('s1'), new NamedNode('p1'), null).should.have.deep.members([new NamedNode('c4'), new DefaultGraph()]);
+          store.getGraphs(new NamedNode('s1'), new NamedNode('p1'), null).should.have.deep.members([new NamedNode('c4'),  DefaultGraph]);
         });
       });
 
       describe('with existing subject and object parameters', function () {
         it('should return all graphs with this subject and object', function () {
-          store.getGraphs(new NamedNode('s1'), null, new NamedNode('o2')).should.have.deep.members([new DefaultGraph()]);
+          store.getGraphs(new NamedNode('s1'), null, new NamedNode('o2')).should.have.deep.members([DefaultGraph]);
         });
       });
 
       describe('with existing predicate and object parameters', function () {
         it('should return all graphs with this predicate and object', function () {
-          store.getGraphs(null, new NamedNode('p1'), new NamedNode('o1')).should.have.deep.members([new DefaultGraph(), new NamedNode('c4')]);
+          store.getGraphs(null, new NamedNode('p1'), new NamedNode('o1')).should.have.deep.members([DefaultGraph, new NamedNode('c4')]);
         });
       });
 
       describe('with an existing subject parameter', function () {
         it('should return all graphs with this subject', function () {
-          store.getGraphs(new NamedNode('s1'), null, null).should.have.deep.members([new NamedNode('c4'), new DefaultGraph()]);
+          store.getGraphs(new NamedNode('s1'), null, null).should.have.deep.members([new NamedNode('c4'), DefaultGraph]);
         });
       });
 
       describe('with an existing predicate parameter', function () {
         it('should return all graphs with this predicate', function () {
-          store.getGraphs(null, new NamedNode('p1'), null).should.have.deep.members([new NamedNode('c4'), new DefaultGraph()]);
+          store.getGraphs(null, new NamedNode('p1'), null).should.have.deep.members([new NamedNode('c4'), DefaultGraph]);
         });
       });
 
       describe('with an existing object parameter', function () {
         it('should return all graphs with this object', function () {
-          store.getGraphs(null, null, new NamedNode('o2')).should.have.deep.members([new DefaultGraph()]);
+          store.getGraphs(null, null, new NamedNode('o2')).should.have.deep.members([DefaultGraph]);
         });
       });
 
       describe('with no parameters', function () {
         it('should return all graphs', function () {
-          store.getGraphs(null, null, null).should.have.deep.members([new NamedNode('c4'), new DefaultGraph()]);
+          store.getGraphs(null, null, null).should.have.deep.members([new NamedNode('c4'), DefaultGraph]);
         });
       });
     });
@@ -686,7 +686,7 @@ describe('N3Store', function () {
     describe('forGraphs', function () {
       describe('with existing subject, predicate and object parameters', function () {
         it('should iterate all graphs with this subject, predicate and object', function () {
-          collect(store, 'forGraphs', 's1', 'p1', 'o1').should.have.deep.members([new DefaultGraph(), new NamedNode('c4')]);
+          collect(store, 'forGraphs', 's1', 'p1', 'o1').should.have.deep.members([DefaultGraph, new NamedNode('c4')]);
         });
       });
       describe('with a non-existing subject', function () {
@@ -866,7 +866,7 @@ describe('N3Store', function () {
 
     describe('when counted with the default graph parameter', function () {
       it('should count all items in the default graph', function () {
-        store.countQuads(null, null, null, new DefaultGraph()).should.equal(4);
+        store.countQuads(null, null, null, DefaultGraph).should.equal(4);
       });
     });
 

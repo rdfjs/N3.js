@@ -9,14 +9,6 @@ describe('Variable', function () {
       Variable.should.be.a('function');
     });
 
-    it('should make Variable objects', function () {
-      Variable().should.be.an.instanceof(Variable);
-    });
-
-    it('should make Term objects', function () {
-      Variable().should.be.an.instanceof(Term);
-    });
-
     it('should be a Variable constructor', function () {
       new Variable().should.be.an.instanceof(Variable);
     });

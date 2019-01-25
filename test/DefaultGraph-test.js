@@ -5,34 +5,14 @@ var DefaultGraph = DataFactory.internal.DefaultGraph,
 
 describe('DefaultGraph', function () {
   describe('The DefaultGraph module', function () {
-    it('should be a function', function () {
-      DefaultGraph.should.be.a('function');
-    });
-
-    it('should make DefaultGraph objects', function () {
-      DefaultGraph().should.be.an.instanceof(DefaultGraph);
-    });
-
-    it('should make Term objects', function () {
-      DefaultGraph().should.be.an.instanceof(Term);
-    });
-
-    it('should be a DefaultGraph constructor', function () {
-      new DefaultGraph().should.be.an.instanceof(DefaultGraph);
-    });
-
-    it('should be a Term constructor', function () {
-      new DefaultGraph().should.be.an.instanceof(Term);
+    it('should be a Term', function () {
+      DefaultGraph.should.be.an.instanceof(Term);
     });
   });
 
   describe('A DefaultGraph instance', function () {
     var defaultGraph;
-    before(function () { defaultGraph = new DefaultGraph(); });
-
-    it('should be a DefaultGraph', function () {
-      defaultGraph.should.be.an.instanceof(DefaultGraph);
-    });
+    before(function () { defaultGraph = DefaultGraph; });
 
     it('should be a Term', function () {
       defaultGraph.should.be.an.instanceof(Term);
@@ -51,7 +31,7 @@ describe('DefaultGraph', function () {
     });
 
     it('should equal another DefaultGraph instance', function () {
-      defaultGraph.equals(new DefaultGraph()).should.be.true;
+      defaultGraph.equals(DefaultGraph).should.be.true;
     });
 
     it('should equal an object with the same term type', function () {

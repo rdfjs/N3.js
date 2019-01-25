@@ -15,10 +15,6 @@ describe('Term', function () {
       Term.should.be.a('function');
     });
 
-    it('should make Term objects', function () {
-      Term().should.be.an.instanceof(Term);
-    });
-
     it('should be a Term constructor', function () {
       new Term().should.be.an.instanceof(Term);
     });
@@ -123,8 +119,8 @@ describe('Term', function () {
     });
 
     it('should create the empty string from the DefaultGraph', function () {
-      toId(new DefaultGraph()).should.equal('');
-      toId(new DefaultGraph().toJSON()).should.equal('');
+      toId(DefaultGraph).should.equal('');
+      toId(DefaultGraph.toJSON()).should.equal('');
     });
 
     it('should create an id that starts with a question mark from a Variable', function () {
