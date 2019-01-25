@@ -1,6 +1,6 @@
 var N3Store = require('../N3').Store;
 
-var Readable = require('stream').Readable,
+var ArrayReadable = require('../lib/StreamUtil').ArrayReadable,
     DataFactory = require('../N3').DataFactory;
 var NamedNode = DataFactory.internal.NamedNode,
     DefaultGraph = DataFactory.internal.DefaultGraph,
@@ -31,7 +31,7 @@ describe('N3Store', function () {
 
     describe('when importing a stream of 2 quads', function () {
       before(function (done) {
-        var stream = new ArrayReader([
+        var stream = new ArrayReadable([
           new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
           new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
         ]);
@@ -44,7 +44,7 @@ describe('N3Store', function () {
 
     describe('when removing a stream of 2 quads', function () {
       before(function (done) {
-        var stream = new ArrayReader([
+        var stream = new ArrayReadable([
           new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
           new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
         ]);
@@ -1065,10 +1065,4 @@ function shouldIncludeAll(result) {
     for (var i = 0; i < items.length; i++)
       result.should.include.something.that.deep.equals(items[i].toJSON());
   };
-}
-
-function ArrayReader(items) {
-  var reader = new Readable({ objectMode: true });
-  reader._read = function () { this.push(items.shift() || null); };
-  return reader;
 }

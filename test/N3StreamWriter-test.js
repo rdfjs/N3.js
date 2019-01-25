@@ -2,6 +2,7 @@ var N3StreamWriter = require('../N3').StreamWriter;
 
 var Readable = require('stream').Readable,
     Writable = require('stream').Writable,
+    ArrayReadable = require('../lib/StreamUtil').ArrayReadable,
     DataFactory = require('../N3').DataFactory;
 var Quad = DataFactory.internal.Quad,
     NamedNode = DataFactory.internal.NamedNode,
@@ -94,7 +95,7 @@ function shouldSerialize(/* options?, tripleArrays..., expectedResult */) {
   });
 
   return function (done) {
-    var inputStream = new ArrayReader(tripleArrays),
+    var inputStream = new ArrayReadable(tripleArrays),
         writer = new N3StreamWriter(options),
         outputStream = new StringWriter();
     writer.import(inputStream).should.equal(writer);
@@ -105,12 +106,6 @@ function shouldSerialize(/* options?, tripleArrays..., expectedResult */) {
       done();
     });
   };
-}
-
-function ArrayReader(items) {
-  var reader = new Readable({ objectMode: true });
-  reader._read = function () { this.push(items.shift() || null); };
-  return reader;
 }
 
 function StringWriter() {

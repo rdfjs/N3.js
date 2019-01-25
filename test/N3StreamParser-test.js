@@ -2,6 +2,7 @@ var N3StreamParser = require('../N3').StreamParser;
 
 var Readable = require('stream').Readable,
     Writable = require('stream').Writable,
+    ArrayReadable = require('../lib/StreamUtil').ArrayReadable,
     NamedNode = require('../N3').DataFactory.internal.NamedNode;
 
 describe('N3StreamParser', function () {
@@ -58,7 +59,7 @@ describe('N3StreamParser', function () {
 function shouldParse(chunks, expectedLength, validateTriples) {
   return function (done) {
     var triples = [],
-        inputStream = new ArrayReader(chunks),
+        inputStream = new ArrayReadable(chunks),
         parser = new N3StreamParser(),
         outputStream = new ArrayWriter(triples);
     parser.import(inputStream).should.equal(parser);
@@ -74,7 +75,7 @@ function shouldParse(chunks, expectedLength, validateTriples) {
 
 function shouldNotParse(chunks, expectedMessage, expectedContext) {
   return function (done) {
-    var inputStream = new ArrayReader(chunks),
+    var inputStream = new ArrayReadable(chunks),
         parser = new N3StreamParser(),
         outputStream = new ArrayWriter([]);
     inputStream.pipe(parser);
@@ -92,7 +93,7 @@ function shouldEmitPrefixes(chunks, expectedPrefixes) {
   return function (done) {
     var prefixes = {},
         parser = new N3StreamParser(),
-        inputStream = new ArrayReader(chunks);
+        inputStream = new ArrayReadable(chunks);
     inputStream.pipe(parser);
     parser.on('data', function () {});
     parser.on('prefix', function (prefix, iri) { prefixes[prefix] = iri; });
@@ -102,12 +103,6 @@ function shouldEmitPrefixes(chunks, expectedPrefixes) {
       done(error);
     });
   };
-}
-
-function ArrayReader(items) {
-  var reader = new Readable();
-  reader._read = function () { this.push(items.shift() || null); };
-  return reader;
 }
 
 function ArrayWriter(items) {
