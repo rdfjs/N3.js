@@ -36,7 +36,13 @@ $ npm install n3
 const N3 = require('n3');
 ```
 
-N3.js seamlessly works in browsers via [webpack](https://webpack.js.org/) or [browserify](http://browserify.org/).
+N3.js seamlessly works in browsers via [webpack](https://webpack.js.org/)
+or [browserify](http://browserify.org/).
+If you're unfamiliar with these tools,
+you can read
+[_webpack: Creating a Bundle – getting started_](https://webpack.js.org/guides/getting-started/#creating-a-bundle)
+or
+[_Introduction to browserify_](https://writingjavascript.org/posts/introduction-to-browserify).
 
 ## Creating triples/quads
 N3.js follows the [RDF.js low-level specification](http://rdf.js.org/).
