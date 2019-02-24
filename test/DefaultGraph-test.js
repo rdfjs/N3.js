@@ -9,14 +9,6 @@ describe('DefaultGraph', function () {
       DefaultGraph.should.be.a('function');
     });
 
-    it('should make DefaultGraph objects', function () {
-      DefaultGraph().should.be.an.instanceof(DefaultGraph);
-    });
-
-    it('should make Term objects', function () {
-      DefaultGraph().should.be.an.instanceof(Term);
-    });
-
     it('should be a DefaultGraph constructor', function () {
       new DefaultGraph().should.be.an.instanceof(DefaultGraph);
     });

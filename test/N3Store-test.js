@@ -13,10 +13,6 @@ describe('N3Store', function () {
       N3Store.should.be.a('function');
     });
 
-    it('should make N3Store objects', function () {
-      N3Store().should.be.an.instanceof(N3Store);
-    });
-
     it('should be an N3Store constructor', function () {
       new N3Store().should.be.an.instanceof(N3Store);
     });
@@ -456,7 +452,7 @@ describe('N3Store', function () {
 
       describe('with existing subject and predicate parameters', function () {
         it('should return all graphs with this subject and predicate', function () {
-          store.getGraphs(new NamedNode('s1'), new NamedNode('p1'), null).should.have.deep.members([new NamedNode('c4'), new DefaultGraph()]);
+          store.getGraphs(new NamedNode('s1'), new NamedNode('p1'), null).should.have.deep.members([new NamedNode('c4'),  new DefaultGraph()]);
         });
       });
 

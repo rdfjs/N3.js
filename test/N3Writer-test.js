@@ -12,10 +12,6 @@ describe('N3Writer', function () {
       N3Writer.should.be.a('function');
     });
 
-    it('should make N3Writer objects', function () {
-      N3Writer().should.be.an.instanceof(N3Writer);
-    });
-
     it('should be an N3Writer constructor', function () {
       new N3Writer().should.be.an.instanceof(N3Writer);
     });
@@ -23,17 +19,17 @@ describe('N3Writer', function () {
 
   describe('An N3Writer instance', function () {
     it('should serialize a single triple', function () {
-      var writer = N3Writer();
+      var writer = new N3Writer();
       writer.quadToString(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')).should.equal('<a> <b> <c> .\n');
     });
 
     it('should serialize a single quad', function () {
-      var writer = N3Writer();
+      var writer = new N3Writer();
       writer.quadToString(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')).should.equal('<a> <b> <c> <g> .\n');
     });
 
     it('should serialize an array of triples', function () {
-      var writer = N3Writer();
+      var writer = new N3Writer();
       var triples = [new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')),
         new Quad(new NamedNode('d'), new NamedNode('e'), new NamedNode('f'))];
       writer.quadsToString(triples).should.equal('<a> <b> <c> .\n<d> <e> <f> .\n');
@@ -264,7 +260,7 @@ describe('N3Writer', function () {
     });
 
     it('should accept triples with separated components', function (done) {
-      var writer = N3Writer();
+      var writer = new N3Writer();
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'));
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('d'));
       writer.end(function (error, output) {
@@ -274,7 +270,7 @@ describe('N3Writer', function () {
     });
 
     it('should accept quads with separated components', function (done) {
-      var writer = N3Writer();
+      var writer = new N3Writer();
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g'));
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('d'), new NamedNode('g'));
       writer.end(function (error, output) {
@@ -284,7 +280,7 @@ describe('N3Writer', function () {
     });
 
     it('should serialize triples with an empty blank node as object', function (done) {
-      var writer = N3Writer();
+      var writer = new N3Writer();
       writer.addQuad(new NamedNode('a1'), new NamedNode('b'), writer.blank());
       writer.addQuad(new NamedNode('a2'), new NamedNode('b'), writer.blank([]));
       writer.end(function (error, output) {
@@ -295,7 +291,7 @@ describe('N3Writer', function () {
     });
 
     it('should serialize triples with a one-triple blank node as object', function (done) {
-      var writer = N3Writer();
+      var writer = new N3Writer();
       writer.addQuad(new NamedNode('a1'), new NamedNode('b'), writer.blank(new NamedNode('d'), new NamedNode('e')));
       writer.addQuad(new NamedNode('a2'), new NamedNode('b'), writer.blank({ predicate: new NamedNode('d'), object: new NamedNode('e') }));
       writer.addQuad(new NamedNode('a3'), new NamedNode('b'), writer.blank([{ predicate: new NamedNode('d'), object: new NamedNode('e') }]));
@@ -308,7 +304,7 @@ describe('N3Writer', function () {
     });
 
     it('should serialize triples with a two-triple blank node as object', function (done) {
-      var writer = N3Writer();
+      var writer = new N3Writer();
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), writer.blank([
           { predicate: new NamedNode('d'), object: new NamedNode('e') },
           { predicate: new NamedNode('f'), object: new Literal('"g"') },
@@ -323,7 +319,7 @@ describe('N3Writer', function () {
     });
 
     it('should serialize triples with a three-triple blank node as object', function (done) {
-      var writer = N3Writer();
+      var writer = new N3Writer();
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), writer.blank([
         { predicate: new NamedNode('d'), object: new NamedNode('e') },
         { predicate: new NamedNode('f'), object: new Literal('"g"') },
@@ -340,7 +336,7 @@ describe('N3Writer', function () {
     });
 
     it('should serialize triples with predicate-sharing blank node triples as object', function (done) {
-      var writer = N3Writer();
+      var writer = new N3Writer();
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), writer.blank([
         { predicate: new NamedNode('d'), object: new NamedNode('e') },
         { predicate: new NamedNode('d'), object: new NamedNode('f') },
@@ -357,7 +353,7 @@ describe('N3Writer', function () {
     });
 
     it('should serialize triples with nested blank nodes as object', function (done) {
-      var writer = N3Writer();
+      var writer = new N3Writer();
       writer.addQuad(new NamedNode('a1'), new NamedNode('b'), writer.blank([
         { predicate: new NamedNode('d'), object: writer.blank() },
       ]));
@@ -390,7 +386,7 @@ describe('N3Writer', function () {
     });
 
     it('should serialize triples with an empty blank node as subject', function (done) {
-      var writer = N3Writer();
+      var writer = new N3Writer();
       writer.addQuad(writer.blank(), new NamedNode('b'), new NamedNode('c'));
       writer.addQuad(writer.blank([]), new NamedNode('b'), new NamedNode('c'));
       writer.end(function (error, output) {
@@ -401,7 +397,7 @@ describe('N3Writer', function () {
     });
 
     it('should serialize triples with a one-triple blank node as subject', function (done) {
-      var writer = N3Writer();
+      var writer = new N3Writer();
       writer.addQuad(writer.blank(new NamedNode('a'), new NamedNode('b')), new NamedNode('c'), new NamedNode('d'));
       writer.addQuad(writer.blank({ predicate: new NamedNode('a'), object: new NamedNode('b') }), new NamedNode('c'), new NamedNode('d'));
       writer.addQuad(writer.blank([{ predicate: new NamedNode('a'), object: new NamedNode('b') }]), new NamedNode('c'), new NamedNode('d'));
@@ -414,7 +410,7 @@ describe('N3Writer', function () {
     });
 
     it('should serialize triples with an empty blank node as graph', function (done) {
-      var writer = N3Writer();
+      var writer = new N3Writer();
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), writer.blank());
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), writer.blank([]));
       writer.end(function (error, output) {
@@ -425,7 +421,7 @@ describe('N3Writer', function () {
     });
 
     it('should serialize triples with an empty list as object', function (done) {
-      var writer = N3Writer();
+      var writer = new N3Writer();
       writer.addQuad(new NamedNode('a1'), new NamedNode('b'), writer.list());
       writer.addQuad(new NamedNode('a2'), new NamedNode('b'), writer.list([]));
       writer.end(function (error, output) {
@@ -436,7 +432,7 @@ describe('N3Writer', function () {
     });
 
     it('should serialize triples with a one-element list as object', function (done) {
-      var writer = N3Writer();
+      var writer = new N3Writer();
       writer.addQuad(new NamedNode('a1'), new NamedNode('b'), writer.list([new NamedNode('c')]));
       writer.addQuad(new NamedNode('a2'), new NamedNode('b'), writer.list([new Literal('"c"')]));
       writer.end(function (error, output) {
@@ -447,7 +443,7 @@ describe('N3Writer', function () {
     });
 
     it('should serialize triples with a three-element list as object', function (done) {
-      var writer = N3Writer();
+      var writer = new N3Writer();
       writer.addQuad(new NamedNode('a1'), new NamedNode('b'), writer.list([new NamedNode('c'), new NamedNode('d'), new NamedNode('e')]));
       writer.addQuad(new NamedNode('a2'), new NamedNode('b'), writer.list([new Literal('"c"'), new Literal('"d"'), new Literal('"e"')]));
       writer.end(function (error, output) {
@@ -458,7 +454,7 @@ describe('N3Writer', function () {
     });
 
     it('should serialize triples with an empty list as subject', function (done) {
-      var writer = N3Writer();
+      var writer = new N3Writer();
       writer.addQuad(writer.list(),   new NamedNode('b1'), new NamedNode('c'));
       writer.addQuad(writer.list([]), new NamedNode('b2'), new NamedNode('c'));
       writer.end(function (error, output) {
@@ -469,7 +465,7 @@ describe('N3Writer', function () {
     });
 
     it('should serialize triples with a one-element list as subject', function (done) {
-      var writer = N3Writer();
+      var writer = new N3Writer();
       writer.addQuad(writer.list([new NamedNode('a')]), new NamedNode('b1'), new NamedNode('c'));
       writer.addQuad(writer.list([new NamedNode('a')]), new NamedNode('b2'), new NamedNode('c'));
       writer.end(function (error, output) {
@@ -480,7 +476,7 @@ describe('N3Writer', function () {
     });
 
     it('should serialize triples with a three-element list as subject', function (done) {
-      var writer = N3Writer();
+      var writer = new N3Writer();
       writer.addQuad(writer.list([new NamedNode('a1'), new Literal('"b"'), new Literal('"c"')]), new NamedNode('d'), new NamedNode('e'));
       writer.end(function (error, output) {
         output.should.equal('(<a1> "b" "c") <d> <e>.\n');
@@ -489,7 +485,7 @@ describe('N3Writer', function () {
     });
 
     it('should accept triples in bulk', function (done) {
-      var writer = N3Writer();
+      var writer = new N3Writer();
       writer.addQuads([new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')),
         new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('d'))]);
       writer.end(function (error, output) {
@@ -499,7 +495,7 @@ describe('N3Writer', function () {
     });
 
     it('should not allow writing after end', function (done) {
-      var writer = N3Writer();
+      var writer = new N3Writer();
       writer.addQuad(new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')));
       writer.end();
       writer.addQuad(new Quad(new NamedNode('d'), new NamedNode('e'), new NamedNode('f')), function (error) {
@@ -510,7 +506,7 @@ describe('N3Writer', function () {
     });
 
     it('should write simple triples in N-Quads mode', function (done) {
-      var writer = N3Writer({ format: 'N-Quads' });
+      var writer = new N3Writer({ format: 'N-Quads' });
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'));
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('d'));
       writer.end(function (error, output) {
@@ -520,7 +516,7 @@ describe('N3Writer', function () {
     });
 
     it('should write simple quads in N-Quads mode', function (done) {
-      var writer = N3Writer({ format: 'N-Quads' });
+      var writer = new N3Writer({ format: 'N-Quads' });
       var called = false;
       function callback() { called = true; }
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), callback);
@@ -533,7 +529,7 @@ describe('N3Writer', function () {
     });
 
     it('should end when the end option is not set', function (done) {
-      var outputStream = new QuickStream(), writer = N3Writer(outputStream, {});
+      var outputStream = new QuickStream(), writer = new N3Writer(outputStream, {});
       outputStream.should.have.property('ended', false);
       writer.end(function () {
         outputStream.should.have.property('ended', true);
@@ -542,7 +538,7 @@ describe('N3Writer', function () {
     });
 
     it('should end when the end option is set to true', function (done) {
-      var outputStream = new QuickStream(), writer = N3Writer(outputStream, { end: true });
+      var outputStream = new QuickStream(), writer = new N3Writer(outputStream, { end: true });
       outputStream.should.have.property('ended', false);
       writer.end(function () {
         outputStream.should.have.property('ended', true);
@@ -551,7 +547,7 @@ describe('N3Writer', function () {
     });
 
     it('should not end when the end option is set to false', function (done) {
-      var outputStream = new QuickStream(), writer = N3Writer(outputStream, { end: false });
+      var outputStream = new QuickStream(), writer = new N3Writer(outputStream, { end: false });
       outputStream.should.have.property('ended', false);
       writer.end(function () {
         outputStream.should.have.property('ended', false);
@@ -568,7 +564,7 @@ function shouldSerialize(/* prefixes?, tripleArrays..., expectedResult */) {
 
   return function (done) {
     var outputStream = new QuickStream(),
-        writer = N3Writer(outputStream, prefixes);
+        writer = new N3Writer(outputStream, prefixes);
     (function next() {
       var item = tripleArrays.shift();
       if (item) {
