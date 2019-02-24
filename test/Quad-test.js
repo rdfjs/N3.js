@@ -11,10 +11,6 @@ describe('Quad', function () {
       Quad.should.be.a('function');
     });
 
-    it('should make Quad objects', function () {
-      Quad().should.be.an.instanceof(Quad);
-    });
-
     it('should be a Quad constructor', function () {
       new Quad().should.be.an.instanceof(Quad);
     });
