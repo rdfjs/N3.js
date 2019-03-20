@@ -1,3 +1,4 @@
+var Readable = require('stream').Readable;
 var N3Store = require('../N3').Store;
 
 var ArrayReadable = require('../lib/StreamUtil').ArrayReadable,
@@ -1034,6 +1035,32 @@ describe('N3Store', function () {
     it('should be able to contain entities named "null"', function () {
       store.addQuad('null', 'null', 'null', 'null').should.be.true;
       shouldIncludeAll(store.getQuads(null, null, null, 'null'), ['null', 'null', 'null', 'null'])();
+    });
+  });
+
+  describe('N3Store Source interface', function () {
+    var store = new N3Store();
+
+    it('should create a Stream', function () {
+      var stream = store.match();
+      (stream instanceof Readable).should.be.true;
+    });
+
+    var data = [];
+    before(function (done) {
+      store.addQuad('null', 'null', 'null', 'null');
+      store.addQuad('http://example.com/1', 'http://example.com/2', 'http://example.com/3', new DefaultGraph());
+      var stream = store.match('http://example.com/1');
+      stream.on('data', (quad) => {
+        data.push(quad);
+      });
+      stream.on('end', done);
+    });
+
+    it('should emit every matching quad added to the store before calling match()', function () {
+      data.should.deep.equal([
+        new Quad(DataFactory.namedNode('http://example.com/1'), DataFactory.namedNode('http://example.com/2'), DataFactory.namedNode('http://example.com/3'), new DefaultGraph()),
+      ]);
     });
   });
 });
