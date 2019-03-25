@@ -100,16 +100,16 @@ By default, `N3.Parser` parses a permissive superset of Turtle, TriG, N-Triples
 For strict compatibility with any of those languages, pass a `format` argument upon creation:
 
 ```JavaScript
-const parser1 = N3.Parser({ format: 'N-Triples' });
-const parser2 = N3.Parser({ format: 'application/trig' });
+const parser1 = new N3.Parser({ format: 'N-Triples' });
+const parser2 = new N3.Parser({ format: 'application/trig' });
 ```
 
 Notation3 (N3) is supported _only_ through the `format` argument:
 
 ```JavaScript
-const parser3 = N3.Parser({ format: 'N3' });
-const parser4 = N3.Parser({ format: 'Notation3' });
-const parser5 = N3.Parser({ format: 'text/n3' });
+const parser3 = new N3.Parser({ format: 'N3' });
+const parser4 = new N3.Parser({ format: 'Notation3' });
+const parser5 = new N3.Parser({ format: 'text/n3' });
 ```
 
 It is possible to provide the base IRI of the document that you want to parse.
@@ -124,7 +124,7 @@ const parser = new N3.Parser({ baseIRI: 'http://example.org/' });
 returning quads as soon as they're ready.
 
 ```JavaScript
-const parser = N3.Parser(),
+const parser = new N3.Parser(),
       rdfStream = fs.createReadStream('cartoons.ttl');
 parser.parse(rdfStream, console.log);
 ```
@@ -134,7 +134,7 @@ This solution is ideal if your consumer is slower,
 since source data is only read when the consumer is ready.
 
 ```JavaScript
-const streamParser = N3.StreamParser(),
+const streamParser = new N3.StreamParser(),
       rdfStream = fs.createReadStream('cartoons.ttl');
 rdfStream.pipe(streamParser);
 streamParser.pipe(new SlowConsumer());
@@ -159,7 +159,7 @@ A dedicated `prefix` event signals every prefix with `prefix` and `term` argumen
 Write quads through `addQuad`.
 
 ```JavaScript
-const writer = N3.Writer({ prefixes: { c: 'http://example.org/cartoons#' } });
+const writer = new N3.Writer({ prefixes: { c: 'http://example.org/cartoons#' } });
 writer.addQuad(
   namedNode('http://example.org/cartoons#Tom'),
   namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
@@ -178,8 +178,8 @@ By default, `N3.Writer` writes Turtle (or TriG if some quads are in a named grap
 To write N-Triples (or N-Quads) instead, pass a `format` argument upon creation:
 
 ```JavaScript
-const writer1 = N3.Writer({ format: 'N-Triples' });
-const writer2 = N3.Writer({ format: 'application/trig' });
+const writer1 = new N3.Writer({ format: 'N-Triples' });
+const writer2 = new N3.Writer({ format: 'application/trig' });
 ```
 
 ### From quads to an RDF stream
@@ -187,7 +187,7 @@ const writer2 = N3.Writer({ format: 'application/trig' });
 `N3.Writer` can also write quads to a Node.js stream.
 
 ```JavaScript
-const writer = N3.Writer(process.stdout, { end: false, prefixes: { c: 'http://example.org/cartoons#' } });
+const writer = new N3.Writer(process.stdout, { end: false, prefixes: { c: 'http://example.org/cartoons#' } });
 writer.addQuad(
   namedNode('http://example.org/cartoons#Tom'),
   namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
@@ -222,7 +222,7 @@ which can only be determined conclusively at the end of the stream.
 
 The `blank` and `list` functions allow you to create them manually instead:
 ```JavaScript
-const writer = N3.Writer({ prefixes: { c: 'http://example.org/cartoons#',
+const writer = new N3.Writer({ prefixes: { c: 'http://example.org/cartoons#',
                                        foaf: 'http://xmlns.com/foaf/0.1/' } });
 writer.addQuad(
   writer.blank(
@@ -262,7 +262,7 @@ In this example, we create a new store and add the triples `:Pluto a :Dog.` and 
 Then, we find triples with `:Mickey` as subject.
 
 ```JavaScript
-const store = N3.Store();
+const store = new N3.Store();
 store.addQuad(
   namedNode('http://ex.org/Pluto'), 
   namedNode('http://ex.org/type'),
