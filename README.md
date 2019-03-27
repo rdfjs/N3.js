@@ -43,6 +43,7 @@ you can read
 [_webpack: Creating a Bundle – getting started_](https://webpack.js.org/guides/getting-started/#creating-a-bundle)
 or
 [_Introduction to browserify_](https://writingjavascript.org/posts/introduction-to-browserify).
+You will need to create a "UMD bundle" and supply a name (e.g. with the `-s N3` option in browserify).
 
 ## Creating triples/quads
 N3.js follows the [RDF.js low-level specification](http://rdf.js.org/).
