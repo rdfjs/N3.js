@@ -33,6 +33,8 @@
     "streamify-string": "^1.0.1"
   },
   "scripts": {
+    "browser-browserify": "npx browserify -s N3 -o browser/n3-browserify.js node_modules/n3/N3.js && npx terser browser/n3-browserify.js -o browser/n3-browserify.min.js -c -m",
+    "browser-webpack": "npx webpack --config webpack.config.js --mode production",
     "test": "nyc mocha",
     "lint": "eslint lib perf test spec",
     "spec": "npm run spec-turtle && npm run spec-ntriples && npm run spec-nquads && npm run spec-trig",

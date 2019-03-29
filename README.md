@@ -38,8 +38,29 @@ const N3 = require('n3');
 
 N3.js seamlessly works in browsers via [webpack](https://webpack.js.org/)
 or [browserify](http://browserify.org/).
-If you're unfamiliar with these tools,
-you can read
+
+**browserify**
+```Bash
+$ npm install browserify terser
+$ npm run browser-browserify
+```
+
+**webpack**
+```Bash
+$ npm install webpack-cli terser-webpack-plugin
+$ npm run browser-webpack
+```
+
+You can test out the results with the `browser/simple.html` page. You can choose at the bottom which browser version to load:
+
+```html
+<script src="n3-browserify.js"></script>
+<!-- <script src="n3-browserify.min.js"></script> -->
+<!-- <script src="n3-webpack.js"></script> -->
+<!-- <script src="n3-webpack.min.js"></script> -->
+```
+
+If you're unfamiliar with these tools, you can read
 [_webpack: Creating a Bundle – getting started_](https://webpack.js.org/guides/getting-started/#creating-a-bundle)
 or
 [_Introduction to browserify_](https://writingjavascript.org/posts/introduction-to-browserify).
