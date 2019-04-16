@@ -330,29 +330,30 @@ for strict, fault-intolerant behavior.
 The N3.js submodules are compatible with the following [RDF.js](http://rdf.js.org) interfaces:
 
 - `N3.DataFactory` implements
-  [`DataFactory`](http://rdf.js.org/#datafactory-interface)
-  - the terms it creates implement [`Term`](http://rdf.js.org/#term-interface)
+  [`DataFactory`](http://rdf.js.org/data-model-spec/#datafactory-interface)
+  - the terms it creates implement [`Term`](http://rdf.js.org/data-model-spec/#term-interface)
     and one of
-    [`NamedNode`](http://rdf.js.org/#namednode-interface),
-    [`BlankNode`](http://rdf.js.org/#blanknode-interface),
-    [`Literal`](http://rdf.js.org/#litereal-interface),
-    [`Variable`](http://rdf.js.org/#variable-interface),
-    [`DefaultGraph`](http://rdf.js.org/#defaultgraph-interface)
+    [`NamedNode`](http://rdf.js.org/data-model-spec/#namednode-interface),
+    [`BlankNode`](http://rdf.js.org/data-model-spec/#blanknode-interface),
+    [`Literal`](http://rdf.js.org/data-model-spec/#litereal-interface),
+    [`Variable`](http://rdf.js.org/data-model-spec/#variable-interface),
+    [`DefaultGraph`](http://rdf.js.org/data-model-spec/#defaultgraph-interface)
   - the triples/quads it creates implement
-    [`Triple`](http://rdf.js.org/#triple-interface)
+    [`Triple`](http://rdf.js.org/data-model-spec/#triple-interface)
     and
-    [`Quad`](http://rdf.js.org/#quad-interface)
+    [`Quad`](http://rdf.js.org/data-model-spec/#quad-interface)
 - `N3.StreamParser` implements
-  [`Stream`](http://rdf.js.org/#stream-interface)
+  [`Stream`](http://rdf.js.org/stream-spec/#stream-interface)
   and
-  [`Sink`](http://rdf.js.org/#sink-interface)
+  [`Sink`](http://rdf.js.org/stream-spec/#sink-interface)
 - `N3.StreamWriter` implements
-  [`Stream`](http://rdf.js.org/#stream-interface)
+  [`Stream`](http://rdf.js.org/stream-spec/#stream-interface)
   and
-  [`Sink`](http://rdf.js.org/#sink-interface)
+  [`Sink`](http://rdf.js.org/stream-spec/#sink-interface)
 - `N3.Store` implements
-  [`Source`](http://rdf.js.org/#source-interface)
-  [`Sink`](http://rdf.js.org/#sink-interface)
+  [`Store`](http://rdf.js.org/stream-spec/#store-interface)
+  [`Source`](http://rdf.js.org/stream-spec/#source-interface)
+  [`Sink`](http://rdf.js.org/stream-spec/#sink-interface)
 
 ## License and contributions
 The N3.js library is copyrighted by [Ruben Verborgh](https://ruben.verborgh.org/)
