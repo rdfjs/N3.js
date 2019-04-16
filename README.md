@@ -117,7 +117,7 @@ It is possible to provide the base IRI of the document that you want to parse.
 This is done by passing a `baseIRI` argument upon creation:
 ```JavaScript
 const parser = new N3.Parser({ baseIRI: 'http://example.org/' });
-``` 
+```
 
 ### From an RDF stream to quads
 
@@ -265,7 +265,7 @@ Then, we find triples with `:Mickey` as subject.
 ```JavaScript
 const store = new N3.Store();
 store.addQuad(
-  namedNode('http://ex.org/Pluto'), 
+  namedNode('http://ex.org/Pluto'),
   namedNode('http://ex.org/type'),
   namedNode('http://ex.org/Dog')
 );
@@ -286,12 +286,16 @@ The store provides the following manipulation methods
 - `addQuads` to insert an array of quads
 - `removeQuad` to remove one quad
 - `removeQuads` to remove an array of quads
+- `remove` to remove a stream of quads
+- `removeMatches` to remove all quads matching the given pattern
+- `deleteGraph` to remove all quads with the given graph
 - `createBlankNode` returns an unused blank node identifier
 
 ### Searching quads or entities
 The store provides the following search methods
 ([documentation](http://rdfjs.github.io/N3.js/docs/N3Store.html)):
 - `getQuads` returns an array of quads matching the given pattern
+- `match` returns a stream of quads matching the given pattern
 - `countQuads` counts the number of quads matching the given pattern
 - `forEach` executes a callback on all matching quads
 - `every` returns whether a callback on matching quads always returns true
@@ -326,28 +330,30 @@ for strict, fault-intolerant behavior.
 The N3.js submodules are compatible with the following [RDF.js](http://rdf.js.org) interfaces:
 
 - `N3.DataFactory` implements
-  [`DataFactory`](http://rdf.js.org/#datafactory-interface)
-  - the terms it creates implement [`Term`](http://rdf.js.org/#term-interface)
+  [`DataFactory`](http://rdf.js.org/data-model-spec/#datafactory-interface)
+  - the terms it creates implement [`Term`](http://rdf.js.org/data-model-spec/#term-interface)
     and one of
-    [`NamedNode`](http://rdf.js.org/#namednode-interface),
-    [`BlankNode`](http://rdf.js.org/#blanknode-interface),
-    [`Literal`](http://rdf.js.org/#litereal-interface),
-    [`Variable`](http://rdf.js.org/#variable-interface),
-    [`DefaultGraph`](http://rdf.js.org/#defaultgraph-interface)
+    [`NamedNode`](http://rdf.js.org/data-model-spec/#namednode-interface),
+    [`BlankNode`](http://rdf.js.org/data-model-spec/#blanknode-interface),
+    [`Literal`](http://rdf.js.org/data-model-spec/#litereal-interface),
+    [`Variable`](http://rdf.js.org/data-model-spec/#variable-interface),
+    [`DefaultGraph`](http://rdf.js.org/data-model-spec/#defaultgraph-interface)
   - the triples/quads it creates implement
-    [`Triple`](http://rdf.js.org/#triple-interface)
+    [`Triple`](http://rdf.js.org/data-model-spec/#triple-interface)
     and
-    [`Quad`](http://rdf.js.org/#quad-interface)
+    [`Quad`](http://rdf.js.org/data-model-spec/#quad-interface)
 - `N3.StreamParser` implements
-  [`Stream`](http://rdf.js.org/#stream-interface)
+  [`Stream`](http://rdf.js.org/stream-spec/#stream-interface)
   and
-  [`Sink`](http://rdf.js.org/#sink-interface)
+  [`Sink`](http://rdf.js.org/stream-spec/#sink-interface)
 - `N3.StreamWriter` implements
-  [`Stream`](http://rdf.js.org/#stream-interface)
+  [`Stream`](http://rdf.js.org/stream-spec/#stream-interface)
   and
-  [`Sink`](http://rdf.js.org/#sink-interface)
+  [`Sink`](http://rdf.js.org/stream-spec/#sink-interface)
 - `N3.Store` implements
-  [`Sink`](http://rdf.js.org/#sink-interface)
+  [`Store`](http://rdf.js.org/stream-spec/#store-interface)
+  [`Source`](http://rdf.js.org/stream-spec/#source-interface)
+  [`Sink`](http://rdf.js.org/stream-spec/#sink-interface)
 
 ## License and contributions
 The N3.js library is copyrighted by [Ruben Verborgh](https://ruben.verborgh.org/)

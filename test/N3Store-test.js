@@ -1,7 +1,8 @@
 var N3Store = require('../N3').Store;
 
 var Readable = require('stream').Readable,
-    DataFactory = require('../N3').DataFactory;
+    DataFactory = require('../N3').DataFactory,
+    arrayifyStream = require('arrayify-stream');
 var NamedNode = DataFactory.internal.NamedNode,
     DefaultGraph = DataFactory.internal.DefaultGraph,
     Quad = DataFactory.internal.Quad,
@@ -115,10 +116,11 @@ describe('N3Store', function () {
       new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
       new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
       new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o3')),
+      new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2'), new NamedNode('g1')),
     ]);
 
     it('should have size 3', function () {
-      store.size.should.eql(3);
+      store.size.should.eql(4);
     });
 
     describe('adding a triple that already exists', function () {
@@ -127,7 +129,7 @@ describe('N3Store', function () {
       });
 
       it('should not increase the size', function () {
-        store.size.should.eql(3);
+        store.size.should.eql(4);
       });
     });
 
@@ -137,7 +139,7 @@ describe('N3Store', function () {
       });
 
       it('should increase the size', function () {
-        store.size.should.eql(4);
+        store.size.should.eql(5);
       });
     });
 
@@ -147,7 +149,7 @@ describe('N3Store', function () {
       });
 
       it('should decrease the size', function () {
-        store.size.should.eql(3);
+        store.size.should.eql(4);
       });
     });
 
@@ -157,7 +159,29 @@ describe('N3Store', function () {
       });
 
       it('should not decrease the size', function () {
-        store.size.should.eql(3);
+        store.size.should.eql(4);
+      });
+    });
+
+    describe('removing matching quads', function () {
+      it('should return the removed quads',
+        forResultStream(shouldIncludeAll, function () { return store.removeMatches('s1', 'p1'); },
+          ['s1', 'p1', 'o1'],
+          ['s1', 'p1', 'o2'],
+          ['s1', 'p1', 'o3']));
+
+      it('should decrease the size', function () {
+        store.size.should.eql(1);
+      });
+    });
+
+    describe('removing a graph', function () {
+      it('should return the removed quads',
+        forResultStream(shouldIncludeAll, function () { return store.deleteGraph('g1'); },
+          ['s2', 'p2', 'o2', 'g1']));
+
+      it('should decrease the size', function () {
+        store.size.should.eql(0);
       });
     });
   });
@@ -291,6 +315,31 @@ describe('N3Store', function () {
 
     describe('when searched with a non-existing named graph parameter', function () {
       itShouldBeEmpty(store.getQuads(null, null, null, new NamedNode('c5')));
+    });
+
+    describe('match', function () {
+      describe('without parameters', function () {
+        it('should return all items',
+          forResultStream(shouldIncludeAll, store.match(),
+            ['s1', 'p1', 'o1'],
+            ['s1', 'p1', 'o2'],
+            ['s1', 'p2', 'o2'],
+            ['s2', 'p1', 'o1'],
+            ['s1', 'p1', 'o1', 'c4']));
+      });
+
+      describe('with an existing subject parameter', function () {
+        it('should return all items with this subject in all graphs',
+          forResultStream(shouldIncludeAll, store.match(new NamedNode('s1'), null, null),
+            ['s1', 'p1', 'o1'],
+            ['s1', 'p1', 'o2'],
+            ['s1', 'p2', 'o2'],
+            ['s1', 'p1', 'o1', 'c4']));
+      });
+
+      describe('with non-existing predicate and object parameters in the default graph', function () {
+        forResultStream(itShouldBeEmpty, store.match(null, new NamedNode('p2'), new NamedNode('o3'), new DefaultGraph()));
+      });
     });
 
     describe('getSubjects', function () {
@@ -1064,6 +1113,19 @@ function shouldIncludeAll(result) {
     result.should.have.length(items.length);
     for (var i = 0; i < items.length; i++)
       result.should.include.something.that.deep.equals(items[i].toJSON());
+  };
+}
+
+function forResultStream(testFunction, result) {
+  var items = Array.prototype.slice.call(arguments, 2);
+  return function (done) {
+    if (typeof result === 'function') result = result();
+    arrayifyStream(result)
+      .then(function (array) {
+        items.unshift(array);
+        testFunction.apply(this, items)();
+      })
+      .then(done, done);
   };
 }
 
