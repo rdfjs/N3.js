@@ -1,7 +1,8 @@
 var N3Store = require('../N3').Store;
 
 var Readable = require('stream').Readable,
-    DataFactory = require('../N3').DataFactory;
+    DataFactory = require('../N3').DataFactory,
+    arrayifyStream = require('arrayify-stream');
 var NamedNode = DataFactory.internal.NamedNode,
     DefaultGraph = DataFactory.internal.DefaultGraph,
     Quad = DataFactory.internal.Quad,
@@ -291,6 +292,31 @@ describe('N3Store', function () {
 
     describe('when searched with a non-existing named graph parameter', function () {
       itShouldBeEmpty(store.getQuads(null, null, null, new NamedNode('c5')));
+    });
+
+    describe('match', function () {
+      describe('without parameters', function () {
+        it('should return all items',
+          forResultStream(shouldIncludeAll, store.match(),
+            ['s1', 'p1', 'o1'],
+            ['s1', 'p1', 'o2'],
+            ['s1', 'p2', 'o2'],
+            ['s2', 'p1', 'o1'],
+            ['s1', 'p1', 'o1', 'c4']));
+      });
+
+      describe('with an existing subject parameter', function () {
+        it('should return all items with this subject in all graphs',
+          forResultStream(shouldIncludeAll, store.match(new NamedNode('s1'), null, null),
+            ['s1', 'p1', 'o1'],
+            ['s1', 'p1', 'o2'],
+            ['s1', 'p2', 'o2'],
+            ['s1', 'p1', 'o1', 'c4']));
+      });
+
+      describe('with non-existing predicate and object parameters in the default graph', function () {
+        forResultStream(itShouldBeEmpty, store.match(null, new NamedNode('p2'), new NamedNode('o3'), new DefaultGraph()));
+      });
     });
 
     describe('getSubjects', function () {
@@ -1064,6 +1090,18 @@ function shouldIncludeAll(result) {
     result.should.have.length(items.length);
     for (var i = 0; i < items.length; i++)
       result.should.include.something.that.deep.equals(items[i].toJSON());
+  };
+}
+
+function forResultStream(testFunction, result) {
+  var items = Array.prototype.slice.call(arguments, 2);
+  return function (done) {
+    arrayifyStream(result)
+      .then(function (array) {
+        items.unshift(array);
+        testFunction.apply(this, items)();
+      })
+      .then(done, done);
   };
 }
 

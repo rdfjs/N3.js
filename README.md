@@ -117,7 +117,7 @@ It is possible to provide the base IRI of the document that you want to parse.
 This is done by passing a `baseIRI` argument upon creation:
 ```JavaScript
 const parser = new N3.Parser({ baseIRI: 'http://example.org/' });
-``` 
+```
 
 ### From an RDF stream to quads
 
@@ -265,7 +265,7 @@ Then, we find triples with `:Mickey` as subject.
 ```JavaScript
 const store = new N3.Store();
 store.addQuad(
-  namedNode('http://ex.org/Pluto'), 
+  namedNode('http://ex.org/Pluto'),
   namedNode('http://ex.org/type'),
   namedNode('http://ex.org/Dog')
 );
@@ -292,6 +292,7 @@ The store provides the following manipulation methods
 The store provides the following search methods
 ([documentation](http://rdfjs.github.io/N3.js/docs/N3Store.html)):
 - `getQuads` returns an array of quads matching the given pattern
+- `match` returns a stream of quads matching the given pattern
 - `countQuads` counts the number of quads matching the given pattern
 - `forEach` executes a callback on all matching quads
 - `every` returns whether a callback on matching quads always returns true
@@ -347,6 +348,7 @@ The N3.js submodules are compatible with the following [RDF.js](http://rdf.js.or
   and
   [`Sink`](http://rdf.js.org/#sink-interface)
 - `N3.Store` implements
+  [`Source`](http://rdf.js.org/#source-interface)
   [`Sink`](http://rdf.js.org/#sink-interface)
 
 ## License and contributions
