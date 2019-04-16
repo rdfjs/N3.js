@@ -161,6 +161,18 @@ describe('N3Store', function () {
         store.size.should.eql(3);
       });
     });
+
+    describe('removing matching quads', function () {
+      it('should return the removed quads',
+        forResultStream(shouldIncludeAll, function () { return store.removeMatches('s1', 'p1'); },
+          ['s1', 'p1', 'o1'],
+          ['s1', 'p1', 'o2'],
+          ['s1', 'p1', 'o3']));
+
+      it('should decrease the size', function () {
+        store.size.should.eql(0);
+      });
+    });
   });
 
   describe('An N3Store with 5 elements', function () {
@@ -1096,6 +1108,7 @@ function shouldIncludeAll(result) {
 function forResultStream(testFunction, result) {
   var items = Array.prototype.slice.call(arguments, 2);
   return function (done) {
+    if (typeof result === 'function') result = result();
     arrayifyStream(result)
       .then(function (array) {
         items.unshift(array);
