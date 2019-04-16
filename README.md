@@ -288,6 +288,7 @@ The store provides the following manipulation methods
 - `removeQuads` to remove an array of quads
 - `remove` to remove a stream of quads
 - `removeMatches` to remove all quads matching the given pattern
+- `deleteGraph` to remove all quads with the given graph
 - `createBlankNode` returns an unused blank node identifier
 
 ### Searching quads or entities

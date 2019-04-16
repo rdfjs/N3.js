@@ -116,10 +116,11 @@ describe('N3Store', function () {
       new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
       new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
       new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o3')),
+      new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2'), new NamedNode('g1')),
     ]);
 
     it('should have size 3', function () {
-      store.size.should.eql(3);
+      store.size.should.eql(4);
     });
 
     describe('adding a triple that already exists', function () {
@@ -128,7 +129,7 @@ describe('N3Store', function () {
       });
 
       it('should not increase the size', function () {
-        store.size.should.eql(3);
+        store.size.should.eql(4);
       });
     });
 
@@ -138,7 +139,7 @@ describe('N3Store', function () {
       });
 
       it('should increase the size', function () {
-        store.size.should.eql(4);
+        store.size.should.eql(5);
       });
     });
 
@@ -148,7 +149,7 @@ describe('N3Store', function () {
       });
 
       it('should decrease the size', function () {
-        store.size.should.eql(3);
+        store.size.should.eql(4);
       });
     });
 
@@ -158,7 +159,7 @@ describe('N3Store', function () {
       });
 
       it('should not decrease the size', function () {
-        store.size.should.eql(3);
+        store.size.should.eql(4);
       });
     });
 
@@ -168,6 +169,16 @@ describe('N3Store', function () {
           ['s1', 'p1', 'o1'],
           ['s1', 'p1', 'o2'],
           ['s1', 'p1', 'o3']));
+
+      it('should decrease the size', function () {
+        store.size.should.eql(1);
+      });
+    });
+
+    describe('removing a graph', function () {
+      it('should return the removed quads',
+        forResultStream(shouldIncludeAll, function () { return store.deleteGraph('g1'); },
+          ['s2', 'p2', 'o2', 'g1']));
 
       it('should decrease the size', function () {
         store.size.should.eql(0);
