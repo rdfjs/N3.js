@@ -135,11 +135,15 @@ describe('N3Writer', function () {
     it('should use prefixes when possible',
       shouldSerialize({ prefixes: { a: 'http://a.org/', b: 'http://a.org/b#', c: 'http://a.org/b' } },
                       ['http://a.org/bc', 'http://a.org/b#ef', 'http://a.org/bhi'],
+                      ['http://a.org/bc.d', 'http://a.org/b#ef', 'http://a.org/bhi'],
+                      ['http://a.org/bc.', 'http://a.org/b#ef', 'http://a.org/bhi'],
                       ['http://a.org/bc/de', 'http://a.org/b#e#f', 'http://a.org/b#x/t'],
                       ['http://a.org/3a', 'http://a.org/b#3a', 'http://a.org/b#a3'],
                       '@prefix a: <http://a.org/>.\n' +
                       '@prefix b: <http://a.org/b#>.\n\n' +
                       'a:bc b:ef a:bhi.\n' +
+                      'a:bc.d b:ef a:bhi.\n' +
+                      '<http://a.org/bc.> b:ef a:bhi.\n' +
                       '<http://a.org/bc/de> <http://a.org/b#e#f> <http://a.org/b#x/t>.\n' +
                       '<http://a.org/3a> <http://a.org/b#3a> b:a3.\n'));
 
