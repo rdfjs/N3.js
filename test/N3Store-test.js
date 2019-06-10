@@ -4,9 +4,14 @@ var Readable = require('stream').Readable,
     DataFactory = require('../N3').DataFactory,
     arrayifyStream = require('arrayify-stream');
 var NamedNode = DataFactory.internal.NamedNode,
+    Literal = DataFactory.internal.Literal,
     DefaultGraph = DataFactory.internal.DefaultGraph,
     Quad = DataFactory.internal.Quad,
     fromId = DataFactory.internal.fromId;
+const NsXsd = 'http://www.w3.org/2001/XMLSchema#';
+const NsRdf = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
+const first = NsRdf + 'first', rest = NsRdf + 'rest', nil = NsRdf + 'nil';
+var nNil = new NamedNode(nil);
 
 describe('N3Store', function () {
   describe('The N3Store module', function () {
@@ -1085,7 +1090,251 @@ describe('N3Store', function () {
       shouldIncludeAll(store.getQuads(null, null, null, 'null'), ['null', 'null', 'null', 'null'])();
     });
   });
+
+  describe('An N3Store containing a well-formed rdf:Collection as subject', function () {
+    var member0 = new NamedNode('element1');
+    var member1 = new Literal('"element2"');
+    var store = new N3Store();
+    var listElements = makeList(store, null, member0, member1);
+    store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o1')).should.be.true;
+    var listItemsJSON = {
+      b0: [
+        { termType: 'NamedNode', value: 'element1' },
+        { termType: 'Literal', value: 'element2',
+          language: '', datatype: { termType: 'NamedNode', value: NsXsd + 'string' } },
+      ],
+    };
+
+    describe('sequesterLists with failParam', function () {
+      var failures = [];
+      var listHeads = store.sequesterLists((li, msg) => failures.push([li, msg]));
+      var struct = mapToObject(listHeads);
+      it('should not delete triples',
+        shouldIncludeAll(store.getQuads(),
+                         ['_:' + listElements[0].value, 'p1', 'o1'],
+                         ['_:' + listElements[0].value, first, 'element1'],
+                         ['_:' + listElements[0].value, rest, '_:' + listElements[1].value],
+                         ['_:' + listElements[1].value, first, '"element2"'],
+                         ['_:' + listElements[1].value, rest, nil]
+                        ));
+      it('should not call failParam', function () {
+        expect(failures).to.be.empty;
+      });
+      it('should generate a list of Collections', function () {
+        expect(struct).to.deep.equal(listItemsJSON);
+      });
+    });
+
+    describe('sequesterLists without failParam', function () {
+      var listHeads = store.sequesterLists();
+      var struct = mapToObject(listHeads);
+      it('should remove the first/rest triples and return the list members',
+        shouldIncludeAll(store.getQuads(),
+                         ['_:' + listElements[0].value, 'p1', 'o1']));
+      it('should generate a list of Collections', function () {
+        expect(struct).to.deep.equal(listItemsJSON);
+      });
+    });
+  });
+
+  describe('An N3Store containing a well-formed rdf:Collection as object', function () {
+    var member0 = new NamedNode('element1');
+    var member1 = new Literal('"element2"');
+    var store = new N3Store();
+    var listElements = makeList(store, null, member0, member1);
+    store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0]).should.be.true;
+    var listItemsJSON = {
+      b0: [
+        { termType: 'NamedNode', value: 'element1' },
+        { termType: 'Literal', value: 'element2',
+          language: '', datatype: { termType: 'NamedNode', value: NsXsd + 'string' } },
+      ],
+    };
+
+    describe('sequesterLists with failParam', function () {
+      var failures = [];
+      var listHeads = store.sequesterLists((li, msg) => failures.push([li, msg]));
+      var struct = mapToObject(listHeads);
+      it('should not delete triples',
+        shouldIncludeAll(store.getQuads(),
+                         ['s1', 'p1', '_:' + listElements[0].value],
+                         ['_:' + listElements[0].value, first, 'element1'],
+                         ['_:' + listElements[0].value, rest, '_:' + listElements[1].value],
+                         ['_:' + listElements[1].value, first, '"element2"'],
+                         ['_:' + listElements[1].value, rest, nil]
+                        ));
+      it('should not call failParam', function () {
+        expect(failures).to.be.empty;
+      });
+      it('should generate a list of Collections', function () {
+        expect(struct).to.deep.equal(listItemsJSON);
+      });
+    });
+
+    describe('sequesterLists without failParam', function () {
+      var listHeads = store.sequesterLists();
+      var struct = mapToObject(listHeads);
+      it('should remove the first/rest triples and return the list members',
+        shouldIncludeAll(store.getQuads(),
+                         ['s1', 'p1', '_:' + listElements[0].value]));
+      it('should generate a list of Collections', function () {
+        expect(struct).to.deep.equal(listItemsJSON);
+      });
+    });
+  });
+
+  describe('An N3Store containing a rdf:Collection with multiple rdf:first arcs on head', function () {
+    var store = new N3Store();
+    var listElements = makeList(store, null, store.createBlankNode(), store.createBlankNode());
+    store.addQuad(listElements[0], new NamedNode(first), store.createBlankNode()).should.be.true;
+    expectFailure(store, listElements[0]);
+  });
+
+  describe('An N3Store containing a rdf:Collection with multiple rdf:first arcs on tail', function () {
+    var store = new N3Store();
+    var listElements = makeList(store, null, store.createBlankNode(), store.createBlankNode());
+    store.addQuad(listElements[1], new NamedNode(first), store.createBlankNode()).should.be.true;
+    expectFailure(store, listElements[1]);
+  });
+
+  describe('An N3Store containing a rdf:Collection with multiple rdf:rest arcs on head', function () {
+    var store = new N3Store();
+    var listElements = makeList(store, null, store.createBlankNode(), store.createBlankNode());
+    store.addQuad(listElements[0], new NamedNode(rest), store.createBlankNode()).should.be.true;
+    expectFailure(store, listElements[0]);
+  });
+
+  describe('An N3Store containing a rdf:Collection with multiple rdf:rest arcs on tail', function () {
+    var store = new N3Store();
+    var listElements = makeList(store, null, store.createBlankNode(), store.createBlankNode());
+    store.addQuad(listElements[1], new NamedNode(rest), store.createBlankNode()).should.be.true;
+    expectFailure(store, listElements[1]);
+  });
+
+  describe('An N3Store containing a rdf:Collection with non-list arcs out', function () {
+    var store = new N3Store();
+    var listElements = makeList(store, null, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
+    store.addQuad(listElements[1], new NamedNode('http://a.example/foo'), store.createBlankNode()).should.be.true;
+    expectFailure(store, listElements[1]);
+  });
+
+  describe('An N3Store containing a rdf:Collection with multiple incoming rdf:rest arcs', function () {
+    var store = new N3Store();
+    var listElements = makeList(store, null, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
+    store.addQuad(store.createBlankNode(), new NamedNode(rest), listElements[1]).should.be.true;
+    expectFailure(store, listElements[1]);
+  });
+
+  describe('An N3Store containing a rdf:Collection with co-references out of head', function () {
+    var store = new N3Store();
+    var listElements = makeList(store, null, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
+    store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o1')).should.be.true;
+    store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o2')).should.be.true;
+    expectFailure(store, listElements[0]);
+  });
+
+  describe('An N3Store containing a rdf:Collection with co-references into head', function () {
+    var store = new N3Store();
+    var listElements = makeList(store, null, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
+    store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0]).should.be.true;
+    store.addQuad(new NamedNode('s2'), new NamedNode(rest), listElements[0]).should.be.true;
+    store.addQuad(new NamedNode('s2'), new NamedNode('p1'), listElements[0]).should.be.true;
+    expectFailure(store, listElements[0]);
+  });
+
+  describe('An N3Store containing a rdf:Collection spread across graphs', function () {
+    var member0 = new NamedNode('element1');
+    var member1 = new Literal('"element2"');
+    var store = new N3Store();
+    var listElements = [
+      store.createBlankNode(),
+      store.createBlankNode(),
+    ];
+    store.addQuad(listElements[0], new NamedNode(first), member0).should.be.true;
+    store.addQuad(listElements[0], new NamedNode(rest), listElements[1], new NamedNode('g1')).should.be.true;
+    store.addQuad(listElements[1], new NamedNode(first), member1).should.be.true;
+    store.addQuad(listElements[1], new NamedNode(rest), new NamedNode(nil)).should.be.true;
+    store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0]).should.be.true;
+    describe('sequesterLists with failParam', function () {
+      var failures = [];
+      var listHeads = store.sequesterLists((li, msg) => failures.push([li, msg]));
+      var struct = mapToObject(listHeads);
+      it('should call failParam', function () {
+        expect(failures.length).to.equal(1);
+        expect(failures[0][0]).to.deep.equal(listElements[0]);
+      });
+      it('should not generate a list of Collections', function () {
+        expect(struct).to.deep.equal({});
+      });
+    });
+
+    describe('sequesterLists without failParam', function () {
+      var listHeads = store.sequesterLists();
+      var struct = mapToObject(listHeads);
+      it('should not delete triples',
+        shouldIncludeAll(store.getQuads(),
+                         ['s1', 'p1', '_:' + listElements[0].value],
+                         ['_:' + listElements[0].value, first, 'element1'],
+                         ['_:' + listElements[0].value, rest, '_:' + listElements[1].value, 'g1'],
+                         ['_:' + listElements[1].value, first, '"element2"'],
+                         ['_:' + listElements[1].value, rest, nil]
+                        ));
+      it('should generate an empty list of Collections', function () {
+        expect(struct).to.deep.equal({});
+      });
+    });
+  });
 });
+
+function expectFailure(store, b0rked) {
+  describe('sequesterLists with failParam', function () {
+    var failures = [];
+    var listHeads = store.sequesterLists((li, msg) => failures.push([li, msg]));
+    var struct = mapToObject(listHeads);
+    it('should call failParam', function () {
+      expect(failures.length).to.equal(1);
+      expect(failures[0][0]).to.deep.equal(b0rked);
+    });
+    it('should not generate a list of Collections', function () {
+      expect(struct).to.deep.equal({});
+    });
+  });
+
+  describe('sequesterLists without failParam', function () {
+    var listHeads = store.sequesterLists();
+    var struct = mapToObject(listHeads);
+    it('should generate an empty list of Collections', function () {
+      expect(struct).to.deep.equal({});
+    });
+  });
+}
+
+function mapToObject(listHeads) {
+  return Array.from(listHeads.entries()).reduce(
+    (acc, pair) => {
+      acc[pair[0]] = pair[1].map(m => m.toJSON());
+      return acc;
+    }, {});
+}
+
+function makeList(store, graph) {
+  if (arguments.length < 3)
+    return nNil;
+
+  var listElements = [store.createBlankNode()];
+  var args = Array.prototype.slice.call(arguments, 2);
+  args.forEach(function (member, idx) {
+    store.addQuad(listElements[idx], new NamedNode(first), member, graph);
+    if (idx === args.length - 1) {
+      store.addQuad(listElements[idx], new NamedNode(rest), new NamedNode(nil), graph);
+    }
+    else {
+      listElements.push(store.createBlankNode());
+      store.addQuad(listElements[idx], new NamedNode(rest), listElements[idx + 1], graph);
+    }
+  });
+  return listElements;
+}
 
 function alwaysTrue()  { return true;  }
 function alwaysFalse() { return false; }
