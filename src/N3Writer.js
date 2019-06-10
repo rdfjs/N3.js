@@ -33,6 +33,7 @@ export default class N3Writer {
     if (outputStream && typeof outputStream.write !== 'function')
       options = outputStream, outputStream = null;
     options = options || {};
+    this._lists = options.lists;
 
     // If no output stream given, send the output as string through the end callback
     if (!outputStream) {
@@ -129,8 +130,12 @@ export default class N3Writer {
   // ### `_encodeIriOrBlank` represents an IRI or blank node
   _encodeIriOrBlank(entity) {
     // A blank node or list is represented as-is
-    if (entity.termType !== 'NamedNode')
+    if (entity.termType !== 'NamedNode') {
+      // If it is a list head, pretty-print it
+      if (this._lists && (entity.value in this._lists))
+        entity = this.list(this._lists[entity.value]);
       return 'id' in entity ? entity.id : '_:' + entity.value;
+    }
     // Escape special characters
     var iri = entity.value;
     if (escape.test(iri))

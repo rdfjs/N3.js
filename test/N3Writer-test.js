@@ -1,6 +1,6 @@
 import { Writer, DataFactory } from '../src/';
 
-const { NamedNode, Literal, Quad, fromId } = DataFactory.internal;
+const { NamedNode, BlankNode, Literal, Quad, fromId } = DataFactory.internal;
 
 describe('Writer', function () {
   describe('The Writer export', function () {
@@ -476,6 +476,22 @@ describe('Writer', function () {
       writer.addQuad(writer.list([new NamedNode('a1'), new Literal('"b"'), new Literal('"c"')]), new NamedNode('d'), new NamedNode('e'));
       writer.end(function (error, output) {
         output.should.equal('(<a1> "b" "c") <d> <e>.\n');
+        done(error);
+      });
+    });
+
+    it('should serialize subject and object triples passed by options.listHeads', function (done) {
+      var lists = {
+        l1: [new NamedNode('c'), new NamedNode('d'), new NamedNode('e')],
+        l2: [new Literal('c'), new Literal('d'), new Literal('e')],
+      };
+
+      var writer = new Writer({ lists });
+      writer.addQuad(new BlankNode('l1'), new NamedNode('b'), new BlankNode('l2'));
+      writer.addQuad(new NamedNode('a3'), new NamedNode('b'), new BlankNode('m3'));
+      writer.end(function (error, output) {
+        output.should.equal('(<c> <d> <e>) <b> ("c" "d" "e").\n' +
+                            '<a3> <b> _:m3.\n');
         done(error);
       });
     });
