@@ -11,12 +11,12 @@
     "asynchronous"
   ],
   "license": "MIT",
-  "main": "./lib/index.js",
+  "main": "./src/index.js",
   "engines": {
     "node": ">=8.0"
   },
   "files": [
-    "lib"
+    "src"
   ],
   "devDependencies": {
     "arrayify-stream": "^1.0.0",
@@ -33,7 +33,7 @@
   },
   "scripts": {
     "test": "nyc mocha",
-    "lint": "eslint lib perf test spec",
+    "lint": "eslint src perf test spec",
     "spec": "npm run spec-turtle && npm run spec-ntriples && npm run spec-nquads && npm run spec-trig",
     "spec-earl": "npm run spec-earl-turtle && npm run spec-earl-ntriples && npm run spec-earl-nquads && npm run spec-earl-trig",
     "spec-ntriples": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/ntriples/manifest.ttl -i '{ \"format\": \"n-triples\" }' -c .rdf-test-suite-cache/",
@@ -45,7 +45,7 @@
     "spec-earl-turtle": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/turtle/manifest.ttl -i '{ \"format\": \"turtle\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-turtle.ttl",
     "spec-earl-trig": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/trig/manifest.ttl -i '{ \"format\": \"trig\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-trig.ttl",
     "spec-clean": "rm -r .rdf-test-suite-cache/",
-    "docs": "docco lib/*.js"
+    "docs": "docco src/*.js"
   },
   "repository": {
     "type": "git",
