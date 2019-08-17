@@ -1,10 +1,19 @@
-module.exports = {
-  DataFactory:  require('./N3DataFactory'),
-  Lexer:        require('./N3Lexer'),
-  Parser:       require('./N3Parser'),
-  Writer:       require('./N3Writer'),
-  Store:        require('./N3Store'),
-  StreamParser: require('./N3StreamParser'),
-  StreamWriter: require('./N3StreamWriter'),
-  Util:         require('./N3Util'),
+import DataFactory from './N3DataFactory';
+import Lexer from './N3Lexer';
+import Parser from './N3Parser';
+import Writer from './N3Writer';
+import Store from './N3Store';
+import StreamParser from './N3StreamParser';
+import StreamWriter from './N3StreamWriter';
+import * as Util from './N3Util';
+
+export {
+  DataFactory,
+  Lexer,
+  Parser,
+  Writer,
+  Store,
+  StreamParser,
+  StreamWriter,
+  Util,
 };

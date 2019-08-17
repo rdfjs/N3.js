@@ -1,9 +1,9 @@
 // **N3StreamWriter** serializes a quad stream into a text stream.
-var Transform = require('stream').Transform,
-    N3Writer = require('./N3Writer.js');
+import { Transform } from 'stream';
+import N3Writer from './N3Writer';
 
 // ## Constructor
-class N3StreamWriter extends Transform {
+export default class N3StreamWriter extends Transform {
   constructor(options) {
     super({ encoding: 'utf8' });
     this._writableState.objectMode = true;
@@ -30,8 +30,3 @@ class N3StreamWriter extends Transform {
     return this;
   }
 }
-
-
-
-// ## Exports
-module.exports = N3StreamWriter;

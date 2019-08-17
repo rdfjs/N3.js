@@ -3,8 +3,10 @@ var N3 = require('..');
 var fs = require('fs'),
     assert = require('assert');
 
-if (process.argv.length !== 3)
-  return console.error('Usage: N3Lexer-perf.js filename');
+if (process.argv.length !== 3) {
+  console.error('Usage: N3Lexer-perf.js filename');
+  process.exit(1);
+}
 
 var filename = process.argv[2];
 

@@ -11,7 +11,9 @@
     "asynchronous"
   ],
   "license": "MIT",
-  "main": "./src/index.js",
+  "main": "./lib/index.js",
+  "module": "./src/index.js",
+  "sideEffects": false,
   "engines": {
     "node": ">=8.0"
   },
@@ -24,6 +26,7 @@
     "@babel/cli": "^7.5.5",
     "@babel/core": "^7.5.5",
     "@babel/preset-env": "^7.5.5",
+    "@babel/register": "^7.5.5",
     "arrayify-stream": "^1.0.0",
     "chai": "^4.0.2",
     "chai-things": "^0.2.0",
@@ -38,7 +41,7 @@
   },
   "scripts": {
     "build": "babel src -d lib",
-    "test": "npm run build && nyc mocha",
+    "test": "nyc mocha --require @babel/register",
     "lint": "eslint src perf test spec",
     "prepare": "npm run build",
     "spec": "npm run spec-turtle && npm run spec-ntriples && npm run spec-nquads && npm run spec-trig",

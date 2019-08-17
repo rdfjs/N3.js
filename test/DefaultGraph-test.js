@@ -1,7 +1,6 @@
-var DataFactory = require('..').DataFactory;
+import { DataFactory } from '../src/';
 
-var DefaultGraph = DataFactory.internal.DefaultGraph,
-    Term = DataFactory.internal.Term;
+const { DefaultGraph, Term } = DataFactory.internal;
 
 describe('DefaultGraph', function () {
   describe('The DefaultGraph module', function () {

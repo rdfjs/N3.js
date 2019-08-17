@@ -1,21 +1,20 @@
-var N3StreamParser = require('..').StreamParser;
+import { StreamParser, DataFactory } from '../src/';
+import { Readable, Writable } from 'stream';
 
-var Readable = require('stream').Readable,
-    Writable = require('stream').Writable,
-    NamedNode = require('..').DataFactory.internal.NamedNode;
+const { NamedNode } = DataFactory.internal;
 
-describe('N3StreamParser', function () {
-  describe('The N3StreamParser module', function () {
+describe('StreamParser', function () {
+  describe('The StreamParser export', function () {
     it('should be a function', function () {
-      N3StreamParser.should.be.a('function');
+      StreamParser.should.be.a('function');
     });
 
-    it('should be an N3Lexer constructor', function () {
-      new N3StreamParser().should.be.an.instanceof(N3StreamParser);
+    it('should be a StreamParser constructor', function () {
+      new StreamParser().should.be.an.instanceof(StreamParser);
     });
   });
 
-  describe('An N3StreamParser instance', function () {
+  describe('A StreamParser instance', function () {
     it('parses the empty stream', shouldParse([], 0));
 
     it('parses the zero-length stream', shouldParse([''], 0));
@@ -44,7 +43,7 @@ describe('N3StreamParser', function () {
 
     it('passes an error', function () {
       var input = new Readable(),
-          parser = new N3StreamParser(),
+          parser = new StreamParser(),
           error = null;
       parser.on('error', function (e) { error = e; });
       parser.import(input);
@@ -59,7 +58,7 @@ function shouldParse(chunks, expectedLength, validateTriples) {
   return function (done) {
     var triples = [],
         inputStream = new ArrayReader(chunks),
-        parser = new N3StreamParser(),
+        parser = new StreamParser(),
         outputStream = new ArrayWriter(triples);
     parser.import(inputStream).should.equal(parser);
     parser.pipe(outputStream);
@@ -75,7 +74,7 @@ function shouldParse(chunks, expectedLength, validateTriples) {
 function shouldNotParse(chunks, expectedMessage, expectedContext) {
   return function (done) {
     var inputStream = new ArrayReader(chunks),
-        parser = new N3StreamParser(),
+        parser = new StreamParser(),
         outputStream = new ArrayWriter([]);
     inputStream.pipe(parser);
     parser.pipe(outputStream);
@@ -91,7 +90,7 @@ function shouldNotParse(chunks, expectedMessage, expectedContext) {
 function shouldEmitPrefixes(chunks, expectedPrefixes) {
   return function (done) {
     var prefixes = {},
-        parser = new N3StreamParser(),
+        parser = new StreamParser(),
         inputStream = new ArrayReader(chunks);
     inputStream.pipe(parser);
     parser.on('data', function () {});

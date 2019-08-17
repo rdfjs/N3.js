@@ -1,7 +1,7 @@
-var DataFactory = require('..').DataFactory;
+import { DataFactory } from '../src/';
 
-var Variable = DataFactory.internal.Variable,
-    Term = DataFactory.internal.Term;
+const { Variable, Term } = DataFactory.internal;
+
 
 describe('Variable', function () {
   describe('The Variable module', function () {

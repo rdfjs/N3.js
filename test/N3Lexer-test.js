@@ -1,33 +1,19 @@
-var N3Lexer = require('..').Lexer;
+import { Lexer } from '../src/';
 
-var EventEmitter = require('events');
+import { EventEmitter } from 'events';
 
-describe('N3Lexer', function () {
-  describe('The N3Lexer module', function () {
+describe('Lexer', function () {
+  describe('The Lexer export', function () {
     it('should be a function', function () {
-      N3Lexer.should.be.a('function');
+      Lexer.should.be.a('function');
     });
 
-    it('should be an N3Lexer constructor', function () {
-      new N3Lexer().should.be.an.instanceof(N3Lexer);
-    });
-
-    it('should provide a shim for setImmediate', function (done) {
-      // Delete global setImmediate
-      var setImmediate = global.setImmediate;
-      global.setImmediate = null;
-      // Clear require cache
-      for (var key in require.cache)
-        delete require.cache[key];
-      // N3Lexer must now fall back to shim
-      var N3LexerWithShim = require('..').Lexer;
-      new N3LexerWithShim().tokenize('', done);
-      // Restore global setImmediate
-      global.setImmediate = setImmediate;
+    it('should be an Lexer constructor', function () {
+      new Lexer().should.be.an.instanceof(Lexer);
     });
   });
 
-  describe('An N3Lexer instance', function () {
+  describe('A Lexer instance', function () {
     it('should tokenize the empty string',
       shouldTokenize('',
                      { type: 'eof', line: 1 }));
@@ -66,7 +52,7 @@ describe('N3Lexer', function () {
       var isNaN = global.isNaN;
       global.isNaN = function () { return true; };
       // Try parsing
-      var stream = new EventEmitter(), lexer = new N3Lexer();
+      var stream = new EventEmitter(), lexer = new Lexer();
       lexer.tokenize(stream, function (error, token) {
         error.should.be.an.instanceof(Error);
         error.message.should.equal('Unexpected "<\\u1234>" on line 1.');
@@ -82,7 +68,7 @@ describe('N3Lexer', function () {
       var isNaN = global.isNaN;
       global.isNaN = function () { return true; };
       // Try parsing
-      var stream = new EventEmitter(), lexer = new N3Lexer();
+      var stream = new EventEmitter(), lexer = new Lexer();
       lexer.tokenize(stream, function (error, token) {
         error.should.be.an.instanceof(Error);
         error.message.should.equal('Unexpected "<\\U12345678>" on line 1.');
@@ -782,13 +768,13 @@ describe('N3Lexer', function () {
       shouldNotTokenize(' \n @!', 'Unexpected "@!" on line 2.'));
 
     it('does not call setEncoding if not available', function () {
-      new N3Lexer().tokenize({ on: function () {} });
+      new Lexer().tokenize({ on: function () {} });
     });
 
     describe('passing data after the stream has been finished', function () {
       var tokens = [], error;
       before(function () {
-        var stream = new EventEmitter(), lexer = new N3Lexer();
+        var stream = new EventEmitter(), lexer = new Lexer();
         lexer.tokenize(stream, function (err, token) {
           if (err)
             error = err;
@@ -813,7 +799,7 @@ describe('N3Lexer', function () {
     describe('passing data after a syntax error', function () {
       var tokens = [], error;
       before(function () {
-        var stream = new EventEmitter(), lexer = new N3Lexer();
+        var stream = new EventEmitter(), lexer = new Lexer();
         lexer.tokenize(stream, function (err, token) {
           if (err)
             error = err;
@@ -840,7 +826,7 @@ describe('N3Lexer', function () {
     describe('when the stream errors', function () {
       var tokens = [], error;
       before(function () {
-        var stream = new EventEmitter(), lexer = new N3Lexer();
+        var stream = new EventEmitter(), lexer = new Lexer();
         lexer.tokenize(stream, function (err, token) {
           if (err)
             error = err;
@@ -857,7 +843,7 @@ describe('N3Lexer', function () {
     });
 
     describe('called with a string and without callback', function () {
-      var lexer = new N3Lexer(),
+      var lexer = new Lexer(),
           tokens = lexer.tokenize('<a> <b> <c>.');
 
       it('returns all tokens synchronously', function () {
@@ -872,7 +858,7 @@ describe('N3Lexer', function () {
     });
 
     describe('called with an erroneous string and without callback', function () {
-      var lexer = new N3Lexer();
+      var lexer = new Lexer();
 
       it('throws an error', function () {
         (function () { lexer.tokenize('<a> bar'); })
@@ -882,8 +868,8 @@ describe('N3Lexer', function () {
   });
 });
 
-describe('An N3Lexer instance with the n3 option set to false', function () {
-  function createLexer() { return new N3Lexer({ n3: false }); }
+describe('A Lexer instance with the n3 option set to false', function () {
+  function createLexer() { return new Lexer({ n3: false }); }
 
   it('should not tokenize a variable',
     shouldNotTokenize(createLexer(), '?a', 'Unexpected "?a" on line 1.'));
@@ -904,8 +890,8 @@ describe('An N3Lexer instance with the n3 option set to false', function () {
     shouldNotTokenize(createLexer(), ':joe^fam:father', 'Unexpected "^fam:father" on line 1.'));
 });
 
-describe('An N3Lexer instance with the comment option set to true', function () {
-  function createLexer() { return new N3Lexer({ comments: true }); }
+describe('A Lexer instance with the comment option set to true', function () {
+  function createLexer() { return new Lexer({ comments: true }); }
 
   it('should tokenize a single comment',
     shouldTokenize(createLexer(), '#mycomment',
@@ -932,10 +918,10 @@ describe('An N3Lexer instance with the comment option set to true', function () 
 function shouldTokenize(lexer, input) {
   var expected = Array.prototype.slice.call(arguments, 1);
   // Shift parameters as necessary
-  if (lexer instanceof N3Lexer)
+  if (lexer instanceof Lexer)
     expected.shift();
   else
-    input = lexer, lexer = new N3Lexer();
+    input = lexer, lexer = new Lexer();
 
   return function (done) {
     var result = [];
@@ -960,8 +946,8 @@ function shouldTokenize(lexer, input) {
 
 function shouldNotTokenize(lexer, input, expectedError) {
   // Shift parameters if necessary
-  if (!(lexer instanceof N3Lexer))
-    expectedError = input, input = lexer, lexer = new N3Lexer();
+  if (!(lexer instanceof Lexer))
+    expectedError = input, input = lexer, lexer = new Lexer();
 
   return function (done) {
     lexer.tokenize(input, tokenCallback);

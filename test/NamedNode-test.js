@@ -1,7 +1,6 @@
-var DataFactory = require('..').DataFactory;
+import { DataFactory } from '../src/';
 
-var NamedNode = DataFactory.internal.NamedNode,
-    Term = DataFactory.internal.Term;
+const { NamedNode, Term } = DataFactory.internal;
 
 describe('NamedNode', function () {
   describe('The NamedNode module', function () {

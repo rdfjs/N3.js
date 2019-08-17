@@ -1,26 +1,22 @@
-var N3Store = require('..').Store;
+import { Store, DataFactory } from '../src/';
+import { Readable } from 'stream';
+import arrayifyStream from 'arrayify-stream';
 
-var Readable = require('stream').Readable,
-    DataFactory = require('..').DataFactory,
-    arrayifyStream = require('arrayify-stream');
-var NamedNode = DataFactory.internal.NamedNode,
-    DefaultGraph = DataFactory.internal.DefaultGraph,
-    Quad = DataFactory.internal.Quad,
-    fromId = DataFactory.internal.fromId;
+const { NamedNode, DefaultGraph, Quad, fromId } = DataFactory.internal;
 
-describe('N3Store', function () {
-  describe('The N3Store module', function () {
+describe('Store', function () {
+  describe('The Store export', function () {
     it('should be a function', function () {
-      N3Store.should.be.a('function');
+      Store.should.be.a('function');
     });
 
-    it('should be an N3Store constructor', function () {
-      new N3Store().should.be.an.instanceof(N3Store);
+    it('should be an Store constructor', function () {
+      new Store().should.be.an.instanceof(Store);
     });
   });
 
-  describe('An empty N3Store', function () {
-    var store = new N3Store({});
+  describe('An empty Store', function () {
+    var store = new Store({});
 
     it('should have size 0', function () {
       expect(store.size).to.eql(0);
@@ -111,8 +107,8 @@ describe('N3Store', function () {
     });
   });
 
-  describe('An N3Store with initialized with 3 elements', function () {
-    var store = new N3Store([
+  describe('A Store with initialized with 3 elements', function () {
+    var store = new Store([
       new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
       new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
       new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o3')),
@@ -186,8 +182,8 @@ describe('N3Store', function () {
     });
   });
 
-  describe('An N3Store with 5 elements', function () {
-    var store = new N3Store();
+  describe('A Store with 5 elements', function () {
+    var store = new Store();
     store.addQuad('s1', 'p1', 'o1').should.be.true;
     store.addQuad({ subject: 's1', predicate: 'p1', object: 'o2' }).should.be.true;
     store.addQuads([
@@ -1022,8 +1018,8 @@ describe('N3Store', function () {
     });
   });
 
-  describe('An N3Store containing a blank node', function () {
-    var store = new N3Store();
+  describe('A Store containing a blank node', function () {
+    var store = new Store();
     var b1 = store.createBlankNode();
     store.addQuad(new NamedNode('s1'), new NamedNode('p1'), b1).should.be.true;
 
@@ -1040,7 +1036,7 @@ describe('N3Store', function () {
     });
   });
 
-  describe('An N3Store with a custom DataFactory', function () {
+  describe('A Store with a custom DataFactory', function () {
     var store, factory = {};
     before(function () {
       factory.quad = function (s, p, o, g) { return { s: s, p: p, o: o, g: g }; };
@@ -1048,7 +1044,7 @@ describe('N3Store', function () {
         factory[f] = function (n) { return n ? f[0] + '-' + n : f; };
       });
 
-      store = new N3Store({ factory: factory });
+      store = new Store({ factory: factory });
       store.addQuad('s1', 'p1', 'o1').should.be.true;
       store.addQuad({ subject: 's1', predicate: 'p1', object: 'o2' }).should.be.true;
       store.addQuads([
@@ -1069,8 +1065,8 @@ describe('N3Store', function () {
     });
   });
 
-  describe('An N3Store', function () {
-    var store = new N3Store();
+  describe('A Store', function () {
+    var store = new Store();
 
     // Test inspired by http://www.devthought.com/2012/01/18/an-object-is-not-a-hash/.
     // The value `__proto__` is not supported however – fixing it introduces too much overhead.
@@ -1123,7 +1119,7 @@ function forResultStream(testFunction, result) {
     arrayifyStream(result)
       .then(function (array) {
         items.unshift(array);
-        testFunction.apply(this, items)();
+        testFunction.apply({}, items)();
       })
       .then(done, done);
   };

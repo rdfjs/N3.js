@@ -4,8 +4,10 @@ var fs = require('fs'),
     path = require('path'),
     assert = require('assert');
 
-if (process.argv.length !== 3)
-  return console.error('Usage: N3Parser-perf.js filename');
+if (process.argv.length !== 3) {
+  console.error('Usage: N3Parser-perf.js filename');
+  process.exit(1);
+}
 
 var filename = path.resolve(process.cwd(), process.argv[2]),
     base = 'file://' + filename;

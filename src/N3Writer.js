@@ -1,12 +1,10 @@
 // **N3Writer** writes N3 documents.
+import namespaces from './IRIs';
+import N3DataFactory from './N3DataFactory';
 
-var namespaces = require('./IRIs'),
-    DataFactory = require('./N3DataFactory');
+const DEFAULTGRAPH = N3DataFactory.defaultGraph();
 
-var DEFAULTGRAPH = DataFactory.defaultGraph();
-
-var rdf = namespaces.rdf,
-    xsd = namespaces.xsd;
+const { rdf, xsd } = namespaces;
 
 // Characters in literals that require escaping
 var escape    = /["\\\t\n\r\b\f\u0000-\u0019\ud800-\udbff]/,
@@ -17,7 +15,7 @@ var escape    = /["\\\t\n\r\b\f\u0000-\u0019\ud800-\udbff]/,
     };
 
 // ## Placeholder class to represent already pretty-printed terms
-class SerializedTerm extends DataFactory.internal.Term {
+class SerializedTerm extends N3DataFactory.internal.Term {
   // Pretty-printed nodes are not equal to any other node
   // (e.g., [] does not equal [])
   equals() {
@@ -26,7 +24,7 @@ class SerializedTerm extends DataFactory.internal.Term {
 }
 
 // ## Constructor
-class N3Writer {
+export default class N3Writer {
   constructor(outputStream, options) {
     // ### `_prefixRegex` matches a prefixed name or IRI that begins with one of the added prefixes
     this._prefixRegex = /$0^/;
@@ -326,6 +324,3 @@ function characterReplacer(character) {
   }
   return result;
 }
-
-// ## Exports
-module.exports = N3Writer;

@@ -1,8 +1,6 @@
-var DataFactory = require('..').DataFactory;
+import { DataFactory } from '../src/';
 
-var Literal = DataFactory.internal.Literal,
-    NamedNode = DataFactory.internal.NamedNode,
-    Term = DataFactory.internal.Term;
+const { Literal, NamedNode, Term } = DataFactory.internal;
 
 describe('Literal', function () {
   describe('The Literal module', function () {

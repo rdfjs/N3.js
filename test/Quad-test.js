@@ -1,9 +1,6 @@
-var DataFactory = require('..').DataFactory;
+import { DataFactory } from '../src/';
 
-var Quad = DataFactory.internal.Quad,
-    Triple = DataFactory.internal.Triple,
-    DefaultGraph = DataFactory.internal.DefaultGraph,
-    fromId = DataFactory.internal.fromId;
+const { Quad, Triple, DefaultGraph, fromId } = DataFactory.internal;
 
 describe('Quad', function () {
   describe('The Quad module', function () {

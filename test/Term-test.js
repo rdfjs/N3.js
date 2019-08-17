@@ -1,13 +1,15 @@
-var DataFactory = require('..').DataFactory;
+import { DataFactory } from '../src/';
 
-var Term      = DataFactory.internal.Term,
-    NamedNode = DataFactory.internal.NamedNode,
-    BlankNode = DataFactory.internal.BlankNode,
-    Literal   = DataFactory.internal.Literal,
-    Variable  = DataFactory.internal.Variable,
-    DefaultGraph = DataFactory.internal.DefaultGraph,
-    toId = DataFactory.internal.toId,
-    fromId = DataFactory.internal.fromId;
+const {
+  Term,
+  NamedNode,
+  BlankNode,
+  Literal,
+  Variable,
+  DefaultGraph,
+  toId,
+  fromId,
+} = DataFactory.internal;
 
 describe('Term', function () {
   describe('The Term module', function () {

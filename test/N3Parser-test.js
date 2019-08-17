@@ -1,25 +1,22 @@
-var N3Parser = require('..').Parser;
+import { Parser, DataFactory } from '../src/';
 
-var DataFactory = require('..').DataFactory;
-var NamedNode = DataFactory.internal.NamedNode,
-    Quad = DataFactory.internal.Quad,
-    fromId = DataFactory.internal.fromId;
+const { NamedNode, Quad, fromId } = DataFactory.internal;
 
-var BASE_IRI = 'http://example.org/';
+const BASE_IRI = 'http://example.org/';
 
-describe('N3Parser', function () {
-  describe('The N3Parser module', function () {
+describe('Parser', function () {
+  describe('The Parser export', function () {
     it('should be a function', function () {
-      N3Parser.should.be.a('function');
+      Parser.should.be.a('function');
     });
 
-    it('should be an N3Parser constructor', function () {
-      new N3Parser().should.be.an.instanceof(N3Parser);
+    it('should be a Parser constructor', function () {
+      new Parser().should.be.an.instanceof(Parser);
     });
   });
 
-  describe('An N3Parser instance', function () {
-    beforeEach(N3Parser._resetBlankNodeIds);
+  describe('A Parser instance', function () {
+    beforeEach(Parser._resetBlankNodeIds);
 
     it('should parse the empty string',
       shouldParse(''
@@ -819,12 +816,12 @@ describe('N3Parser', function () {
                      });
 
     it('should not error if there is no triple callback', function () {
-      new N3Parser().parse('');
+      new Parser().parse('');
     });
 
     it('should return prefixes through a callback', function (done) {
       var prefixes = {};
-      new N3Parser().parse('@prefix a: <http://a.org/#>. a:a a:b a:c. @prefix b: <http://b.org/#>.',
+      new Parser().parse('@prefix a: <http://a.org/#>. a:a a:b a:c. @prefix b: <http://b.org/#>.',
                            tripleCallback, prefixCallback);
 
       function tripleCallback(error, triple) {
@@ -848,7 +845,7 @@ describe('N3Parser', function () {
 
     it('should return prefixes through a callback without triple callback', function (done) {
       var prefixes = {};
-      new N3Parser().parse('@prefix a: <IRIa>. a:a a:b a:c. @prefix b: <IRIb>.',
+      new Parser().parse('@prefix a: <IRIa>. a:a a:b a:c. @prefix b: <IRIb>.',
                            null, prefixCallback);
 
       function prefixCallback(prefix, iri) {
@@ -861,7 +858,7 @@ describe('N3Parser', function () {
     });
 
     it('should return prefixes at the last triple callback', function (done) {
-      new N3Parser({ baseIRI: BASE_IRI })
+      new Parser({ baseIRI: BASE_IRI })
         .parse('@prefix a: <IRIa>. a:a a:b a:c. @prefix b: <IRIb>.', tripleCallback);
 
       function tripleCallback(error, triple, prefixes) {
@@ -879,7 +876,7 @@ describe('N3Parser', function () {
     });
 
     it('should parse a string synchronously if no callback is given', function () {
-      var triples = new N3Parser().parse('@prefix a: <urn:a:>. a:a a:b a:c.');
+      var triples = new Parser().parse('@prefix a: <urn:a:>. a:a a:b a:c.');
       triples.should.deep.equal([
         new Quad(fromId('urn:a:a'), fromId('urn:a:b'),
                  fromId('urn:a:c'), fromId('')),
@@ -887,18 +884,18 @@ describe('N3Parser', function () {
     });
 
     it('should throw on syntax errors if no callback is given', function () {
-      (function () { new N3Parser().parse('<a> bar <c>'); })
+      (function () { new Parser().parse('<a> bar <c>'); })
       .should.throw('Unexpected "bar" on line 1.').with.property('context').with.property('line', 1);
     });
 
     it('should throw on grammar errors if no callback is given', function () {
-      (function () { new N3Parser().parse('<a> <b> <c>'); })
+      (function () { new Parser().parse('<a> <b> <c>'); })
       .should.throw('Expected entity but got eof on line 1');
     });
   });
 
-  describe('An N3Parser instance with a document IRI', function () {
-    function parser() { return new N3Parser({ baseIRI: 'http://ex.org/x/yy/zzz/f.ttl' }); }
+  describe('An Parser instance with a document IRI', function () {
+    function parser() { return new Parser({ baseIRI: 'http://ex.org/x/yy/zzz/f.ttl' }); }
 
     it('should resolve IRIs against the document IRI',
       shouldParse(parser,
@@ -976,8 +973,8 @@ describe('N3Parser', function () {
                   ['http://ex.org/e/k', 'http://ex.org/e/l', 'http://ex.org/e/m']));
   });
 
-  describe('An N3Parser instance with a blank node prefix', function () {
-    function parser() { return new N3Parser({ baseIRI: BASE_IRI, blankNodePrefix: '_:blank' }); }
+  describe('A Parser instance with a blank node prefix', function () {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, blankNodePrefix: '_:blank' }); }
 
     it('should use the given prefix for blank nodes',
       shouldParse(parser,
@@ -985,8 +982,8 @@ describe('N3Parser', function () {
                   ['_:blanka', 'b', '_:blankc']));
   });
 
-  describe('An N3Parser instance with an empty blank node prefix', function () {
-    function parser() { return new N3Parser({ baseIRI: BASE_IRI, blankNodePrefix: '' }); }
+  describe('A Parser instance with an empty blank node prefix', function () {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, blankNodePrefix: '' }); }
 
     it('should not use a prefix for blank nodes',
       shouldParse(parser,
@@ -994,8 +991,8 @@ describe('N3Parser', function () {
                   ['_:a', 'b', '_:c']));
   });
 
-  describe('An N3Parser instance with a non-string format', function () {
-    function parser() { return new N3Parser({ baseIRI: BASE_IRI, format: 1 }); }
+  describe('A Parser instance with a non-string format', function () {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 1 }); }
 
     it('should parse a single triple',
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
@@ -1004,8 +1001,8 @@ describe('N3Parser', function () {
       shouldParse(parser, '{<a> <b> <c>}', ['a', 'b', 'c']));
   });
 
-  describe('An N3Parser instance for the Turtle format', function () {
-    function parser() { return new N3Parser({ baseIRI: BASE_IRI, format: 'Turtle' }); }
+  describe('A Parser instance for the Turtle format', function () {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'Turtle' }); }
 
     it('should parse a single triple',
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
@@ -1044,8 +1041,8 @@ describe('N3Parser', function () {
       shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'));
   });
 
-  describe('An N3Parser instance for the TriG format', function () {
-    function parser() { return new N3Parser({ baseIRI: BASE_IRI, format: 'TriG' }); }
+  describe('A Parser instance for the TriG format', function () {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'TriG' }); }
 
     it('should parse a single triple',
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
@@ -1084,8 +1081,8 @@ describe('N3Parser', function () {
       shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'));
   });
 
-  describe('An N3Parser instance for the N-Triples format', function () {
-    function parser() { return new N3Parser({ baseIRI: BASE_IRI, format: 'N-Triples' }); }
+  describe('A Parser instance for the N-Triples format', function () {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N-Triples' }); }
 
     it('should parse a single triple',
       shouldParse(parser, '_:a <http://ex.org/b> "c".',
@@ -1131,8 +1128,8 @@ describe('N3Parser', function () {
       shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'));
   });
 
-  describe('An N3Parser instance for the N-Quads format', function () {
-    function parser() { return new N3Parser({ baseIRI: BASE_IRI, format: 'N-Quads' }); }
+  describe('A Parser instance for the N-Quads format', function () {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N-Quads' }); }
 
     it('should parse a single triple',
       shouldParse(parser, '_:a <http://ex.org/b> "c".',
@@ -1170,8 +1167,8 @@ describe('N3Parser', function () {
       shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'));
   });
 
-  describe('An N3Parser instance for the N3 format', function () {
-    function parser() { return new N3Parser({ baseIRI: BASE_IRI, format: 'N3' }); }
+  describe('A Parser instance for the N3 format', function () {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3' }); }
 
     it('should parse a single triple',
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
@@ -1472,8 +1469,8 @@ describe('N3Parser', function () {
       shouldNotParse(parser, '<a>^"invalid" ', 'Expected entity but got literal on line 1.'));
   });
 
-  describe('An N3Parser instance for the N3 format with the explicitQuantifiers option', function () {
-    function parser() { return new N3Parser({ baseIRI: BASE_IRI, format: 'N3', explicitQuantifiers: true }); }
+  describe('A Parser instance for the N3 format with the explicitQuantifiers option', function () {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3', explicitQuantifiers: true }); }
 
     it('should parse a @forSome statement',
       shouldParse(parser, '@forSome <x>. <x> <x> <x>.',
@@ -1536,17 +1533,17 @@ describe('N3Parser', function () {
                   ['x', 'x', 'x']));
   });
 
-  describe('An N3Parser instance with a custom DataFactory', function () {
+  describe('A Parser instance with a custom DataFactory', function () {
     var parser, factory = {};
     before(function () {
       factory.quad = function (s, p, o, g) { return { s: s, p: p, o: o, g: g }; };
       ['namedNode', 'blankNode', 'literal', 'variable', 'defaultGraph'].forEach(function (f) {
         factory[f] = function (n) { return n ? f[0] + '-' + n : f; };
       });
-      parser = new N3Parser({ baseIRI: BASE_IRI, format: 'n3', factory: factory });
+      parser = new Parser({ baseIRI: BASE_IRI, format: 'n3', factory: factory });
     });
 
-    beforeEach(N3Parser._resetBlankNodeIds);
+    beforeEach(Parser._resetBlankNodeIds);
 
     it('should use the custom factory', function () {
       parser.parse('<a> ?b 1, _:d.').should.deep.equal([
@@ -1991,7 +1988,7 @@ function shouldParse(parser, input) {
   if (parser.call)
     expected.shift();
   else
-    input = parser, parser = N3Parser;
+    input = parser, parser = Parser;
 
   return function (done) {
     var results = [];
@@ -2004,7 +2001,7 @@ function shouldParse(parser, input) {
       });
       return new Quad(item[0], item[1], item[2], item[3]);
     });
-    N3Parser._resetBlankNodeIds();
+    Parser._resetBlankNodeIds();
     new parser({ baseIRI: BASE_IRI }).parse(input, function (error, triple) {
       expect(error).not.to.exist;
       if (triple)
@@ -2028,7 +2025,7 @@ function toSortedJSON(triples) {
 function shouldNotParse(parser, input, expectedError, expectedContext) {
   // Shift parameters if necessary
   if (!parser.call)
-    expectedContext = expectedError, expectedError = input, input = parser, parser = N3Parser;
+    expectedContext = expectedError, expectedError = input, input = parser, parser = Parser;
 
   return function (done) {
     new parser({ baseIRI: BASE_IRI }).parse(input, function (error, triple) {
@@ -2051,7 +2048,7 @@ function itShouldResolve(baseIri, relativeIri, expected) {
     before(function (done) {
       try {
         var doc = '<urn:ex:s> <urn:ex:p> <' + relativeIri + '>.';
-        new N3Parser({ baseIRI: baseIri }).parse(doc, function (error, triple) {
+        new Parser({ baseIRI: baseIri }).parse(doc, function (error, triple) {
           if (done)
             result = triple, done(error);
           done = null;

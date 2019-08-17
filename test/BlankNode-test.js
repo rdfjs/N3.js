@@ -1,7 +1,6 @@
-var DataFactory = require('..').DataFactory;
+import { DataFactory } from '../src/';
 
-var BlankNode = DataFactory.internal.BlankNode,
-    Term = DataFactory.internal.Term;
+const { BlankNode, Term } = DataFactory.internal;
 
 describe('BlankNode', function () {
   describe('The BlankNode module', function () {

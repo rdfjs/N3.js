@@ -1,13 +1,13 @@
 // **N3Parser** parses N3 documents.
-var Lexer = require('./N3Lexer'),
-    DataFactory = require('./N3DataFactory'),
-    namespaces = require('./IRIs');
+import N3Lexer from './N3Lexer';
+import N3DataFactory from './N3DataFactory';
+import namespaces from './IRIs';
 
 // The next ID for new blank nodes
 var blankNodePrefix = 0, blankNodeCount = 0;
 
 // ## Constructor
-class N3Parser {
+export default class N3Parser {
   constructor(options) {
     this._contextStack = [];
     this._graph = null;
@@ -32,7 +32,7 @@ class N3Parser {
       this._resolveRelativeIRI = function (iri) { return ''; };
     this._blankNodePrefix = typeof options.blankNodePrefix !== 'string' ? '' :
                               options.blankNodePrefix.replace(/^(?!_:)/, '_:');
-    this._lexer = options.lexer || new Lexer({ lineMode: isLineMode, n3: isN3 });
+    this._lexer = options.lexer || new N3Lexer({ lineMode: isLineMode, n3: isN3 });
     // Disable explicit quantifiers by default
     this._explicitQuantifiers = !!options.explicitQuantifiers;
   }
@@ -957,7 +957,4 @@ function initDataFactory(parser, factory) {
   };
   parser.QUANTIFIERS_GRAPH = namedNode('urn:n3:quantifiers');
 }
-initDataFactory(N3Parser.prototype, DataFactory);
-
-// ## Exports
-module.exports = N3Parser;
+initDataFactory(N3Parser.prototype, N3DataFactory);
