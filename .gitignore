@@ -1,8 +1,6 @@
-.nyc_output
 *.log
-docs
-browser/n3*
-node_modules
-spec/*.ttl
-coverage
+.nyc_output
 .rdf-test-suite-cache
+docs
+lib
+node_modules
