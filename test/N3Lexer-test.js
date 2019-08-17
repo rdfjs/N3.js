@@ -1,4 +1,4 @@
-var N3Lexer = require('../N3').Lexer;
+var N3Lexer = require('..').Lexer;
 
 var EventEmitter = require('events');
 
@@ -20,7 +20,7 @@ describe('N3Lexer', function () {
       for (var key in require.cache)
         delete require.cache[key];
       // N3Lexer must now fall back to shim
-      var N3LexerWithShim = require('../N3').Lexer;
+      var N3LexerWithShim = require('..').Lexer;
       new N3LexerWithShim().tokenize('', done);
       // Restore global setImmediate
       global.setImmediate = setImmediate;

@@ -1,7 +1,7 @@
-var N3Store = require('../N3').Store;
+var N3Store = require('..').Store;
 
 var Readable = require('stream').Readable,
-    DataFactory = require('../N3').DataFactory,
+    DataFactory = require('..').DataFactory,
     arrayifyStream = require('arrayify-stream');
 var NamedNode = DataFactory.internal.NamedNode,
     DefaultGraph = DataFactory.internal.DefaultGraph,

@@ -1,8 +1,8 @@
-var N3StreamWriter = require('../N3').StreamWriter;
+var N3StreamWriter = require('..').StreamWriter;
 
 var Readable = require('stream').Readable,
     Writable = require('stream').Writable,
-    DataFactory = require('../N3').DataFactory;
+    DataFactory = require('..').DataFactory;
 var Quad = DataFactory.internal.Quad,
     NamedNode = DataFactory.internal.NamedNode,
     fromId = DataFactory.internal.fromId;

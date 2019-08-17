@@ -1,4 +1,4 @@
-var DataFactory = require('../N3').DataFactory;
+var DataFactory = require('..').DataFactory;
 
 var DefaultGraph = DataFactory.internal.DefaultGraph,
     Term = DataFactory.internal.Term;

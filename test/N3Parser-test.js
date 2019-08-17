@@ -1,6 +1,6 @@
-var N3Parser = require('../N3').Parser;
+var N3Parser = require('..').Parser;
 
-var DataFactory = require('../N3').DataFactory;
+var DataFactory = require('..').DataFactory;
 var NamedNode = DataFactory.internal.NamedNode,
     Quad = DataFactory.internal.Quad,
     fromId = DataFactory.internal.fromId;

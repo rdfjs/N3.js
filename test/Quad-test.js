@@ -1,4 +1,4 @@
-var DataFactory = require('../N3').DataFactory;
+var DataFactory = require('..').DataFactory;
 
 var Quad = DataFactory.internal.Quad,
     Triple = DataFactory.internal.Triple,

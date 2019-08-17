@@ -1,8 +1,8 @@
-var N3StreamParser = require('../N3').StreamParser;
+var N3StreamParser = require('..').StreamParser;
 
 var Readable = require('stream').Readable,
     Writable = require('stream').Writable,
-    NamedNode = require('../N3').DataFactory.internal.NamedNode;
+    NamedNode = require('..').DataFactory.internal.NamedNode;
 
 describe('N3StreamParser', function () {
   describe('The N3StreamParser module', function () {

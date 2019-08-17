@@ -1,6 +1,6 @@
-var N3Util = require('../N3').Util;
+var N3Util = require('..').Util;
 
-var DataFactory = require('../N3').DataFactory;
+var DataFactory = require('..').DataFactory;
 var NamedNode = DataFactory.internal.NamedNode,
     Literal = DataFactory.internal.Literal,
     BlankNode = DataFactory.internal.BlankNode,

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-var N3 = require('../N3');
+var N3 = require('..');
 var fs = require('fs'),
     assert = require('assert');
 

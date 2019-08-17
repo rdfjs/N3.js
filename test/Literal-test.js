@@ -1,4 +1,4 @@
-var DataFactory = require('../N3').DataFactory;
+var DataFactory = require('..').DataFactory;
 
 var Literal = DataFactory.internal.Literal,
     NamedNode = DataFactory.internal.NamedNode,

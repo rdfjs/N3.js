@@ -1,6 +1,6 @@
-var N3Writer = require('../N3').Writer;
+var N3Writer = require('..').Writer;
 
-var DataFactory = require('../N3').DataFactory;
+var DataFactory = require('..').DataFactory;
 var NamedNode = DataFactory.internal.NamedNode,
     Literal = DataFactory.internal.Literal,
     Quad = DataFactory.internal.Quad,

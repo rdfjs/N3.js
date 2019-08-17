@@ -11,12 +11,11 @@
     "asynchronous"
   ],
   "license": "MIT",
-  "main": "./N3.js",
+  "main": "./lib/index.js",
   "engines": {
     "node": ">=8.0"
   },
   "files": [
-    "N3.js",
     "lib"
   ],
   "devDependencies": {
