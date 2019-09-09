@@ -2,7 +2,7 @@ var RDF  = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
     XSD  = 'http://www.w3.org/2001/XMLSchema#',
     SWAP = 'http://www.w3.org/2000/10/swap/';
 
-module.exports = {
+export default {
   xsd: {
     decimal: XSD + 'decimal',
     boolean: XSD + 'boolean',

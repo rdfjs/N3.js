@@ -1,9 +1,9 @@
 // **N3StreamParser** parses a text stream into a quad stream.
-var Transform = require('stream').Transform,
-    N3Parser = require('./N3Parser.js');
+import N3Parser from './N3Parser';
+import { Transform } from 'stream';
 
 // ## Constructor
-class N3StreamParser extends Transform {
+export default class N3StreamParser extends Transform {
   constructor(options) {
     super({ decodeStrings: true });
     this._readableState.objectMode = true;
@@ -38,6 +38,3 @@ class N3StreamParser extends Transform {
     return this;
   }
 }
-
-// ## Exports
-module.exports = N3StreamParser;

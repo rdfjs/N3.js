@@ -1,31 +1,26 @@
-var N3Store = require('../N3').Store;
+import { Store, DataFactory } from '../src/';
+import { Readable } from 'stream';
+import arrayifyStream from 'arrayify-stream';
 
-var Readable = require('stream').Readable,
-    DataFactory = require('../N3').DataFactory,
-    arrayifyStream = require('arrayify-stream');
-var NamedNode = DataFactory.internal.NamedNode,
-    Literal = DataFactory.internal.Literal,
-    DefaultGraph = DataFactory.internal.DefaultGraph,
-    Quad = DataFactory.internal.Quad,
-    fromId = DataFactory.internal.fromId;
+const { NamedNode, Literal, DefaultGraph, Quad, fromId } = DataFactory.internal;
 const NsXsd = 'http://www.w3.org/2001/XMLSchema#';
 const NsRdf = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
 const first = NsRdf + 'first', rest = NsRdf + 'rest', nil = NsRdf + 'nil';
-var nNil = new NamedNode(nil);
+const nNil = new NamedNode(nil);
 
-describe('N3Store', function () {
-  describe('The N3Store module', function () {
+describe('Store', function () {
+  describe('The Store export', function () {
     it('should be a function', function () {
-      N3Store.should.be.a('function');
+      Store.should.be.a('function');
     });
 
-    it('should be an N3Store constructor', function () {
-      new N3Store().should.be.an.instanceof(N3Store);
+    it('should be an Store constructor', function () {
+      new Store().should.be.an.instanceof(Store);
     });
   });
 
-  describe('An empty N3Store', function () {
-    var store = new N3Store({});
+  describe('An empty Store', function () {
+    var store = new Store({});
 
     it('should have size 0', function () {
       expect(store.size).to.eql(0);
@@ -116,8 +111,8 @@ describe('N3Store', function () {
     });
   });
 
-  describe('An N3Store with initialized with 3 elements', function () {
-    var store = new N3Store([
+  describe('A Store with initialized with 3 elements', function () {
+    var store = new Store([
       new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
       new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
       new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o3')),
@@ -191,8 +186,8 @@ describe('N3Store', function () {
     });
   });
 
-  describe('An N3Store with 5 elements', function () {
-    var store = new N3Store();
+  describe('A Store with 5 elements', function () {
+    var store = new Store();
     store.addQuad('s1', 'p1', 'o1').should.be.true;
     store.addQuad({ subject: 's1', predicate: 'p1', object: 'o2' }).should.be.true;
     store.addQuads([
@@ -1027,8 +1022,8 @@ describe('N3Store', function () {
     });
   });
 
-  describe('An N3Store containing a blank node', function () {
-    var store = new N3Store();
+  describe('A Store containing a blank node', function () {
+    var store = new Store();
     var b1 = store.createBlankNode();
     store.addQuad(new NamedNode('s1'), new NamedNode('p1'), b1).should.be.true;
 
@@ -1045,7 +1040,7 @@ describe('N3Store', function () {
     });
   });
 
-  describe('An N3Store with a custom DataFactory', function () {
+  describe('A Store with a custom DataFactory', function () {
     var store, factory = {};
     before(function () {
       factory.quad = function (s, p, o, g) { return { s: s, p: p, o: o, g: g }; };
@@ -1053,7 +1048,7 @@ describe('N3Store', function () {
         factory[f] = function (n) { return n ? f[0] + '-' + n : f; };
       });
 
-      store = new N3Store({ factory: factory });
+      store = new Store({ factory: factory });
       store.addQuad('s1', 'p1', 'o1').should.be.true;
       store.addQuad({ subject: 's1', predicate: 'p1', object: 'o2' }).should.be.true;
       store.addQuads([
@@ -1074,8 +1069,8 @@ describe('N3Store', function () {
     });
   });
 
-  describe('An N3Store', function () {
-    var store = new N3Store();
+  describe('A Store', function () {
+    var store = new Store();
 
     // Test inspired by http://www.devthought.com/2012/01/18/an-object-is-not-a-hash/.
     // The value `__proto__` is not supported however – fixing it introduces too much overhead.
@@ -1091,10 +1086,10 @@ describe('N3Store', function () {
     });
   });
 
-  describe('An N3Store containing a well-formed rdf:Collection as subject', function () {
+  describe('A Store containing a well-formed rdf:Collection as subject', function () {
     var member0 = new NamedNode('element1');
     var member1 = new Literal('"element2"');
-    var store = new N3Store();
+    var store = new Store();
     var listElements = makeList(store, null, member0, member1);
     store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o1')).should.be.true;
     var listItemsJSON = {
@@ -1137,10 +1132,10 @@ describe('N3Store', function () {
     });
   });
 
-  describe('An N3Store containing a well-formed rdf:Collection as object', function () {
+  describe('A Store containing a well-formed rdf:Collection as object', function () {
     var member0 = new NamedNode('element1');
     var member1 = new Literal('"element2"');
-    var store = new N3Store();
+    var store = new Store();
     var listElements = makeList(store, null, member0, member1);
     store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0]).should.be.true;
     var listItemsJSON = {
@@ -1183,58 +1178,58 @@ describe('N3Store', function () {
     });
   });
 
-  describe('An N3Store containing a rdf:Collection with multiple rdf:first arcs on head', function () {
-    var store = new N3Store();
+  describe('A Store containing a rdf:Collection with multiple rdf:first arcs on head', function () {
+    var store = new Store();
     var listElements = makeList(store, null, store.createBlankNode(), store.createBlankNode());
     store.addQuad(listElements[0], new NamedNode(first), store.createBlankNode()).should.be.true;
     expectFailure(store, listElements[0]);
   });
 
-  describe('An N3Store containing a rdf:Collection with multiple rdf:first arcs on tail', function () {
-    var store = new N3Store();
+  describe('A Store containing a rdf:Collection with multiple rdf:first arcs on tail', function () {
+    var store = new Store();
     var listElements = makeList(store, null, store.createBlankNode(), store.createBlankNode());
     store.addQuad(listElements[1], new NamedNode(first), store.createBlankNode()).should.be.true;
     expectFailure(store, listElements[1]);
   });
 
-  describe('An N3Store containing a rdf:Collection with multiple rdf:rest arcs on head', function () {
-    var store = new N3Store();
+  describe('A Store containing a rdf:Collection with multiple rdf:rest arcs on head', function () {
+    var store = new Store();
     var listElements = makeList(store, null, store.createBlankNode(), store.createBlankNode());
     store.addQuad(listElements[0], new NamedNode(rest), store.createBlankNode()).should.be.true;
     expectFailure(store, listElements[0]);
   });
 
-  describe('An N3Store containing a rdf:Collection with multiple rdf:rest arcs on tail', function () {
-    var store = new N3Store();
+  describe('A Store containing a rdf:Collection with multiple rdf:rest arcs on tail', function () {
+    var store = new Store();
     var listElements = makeList(store, null, store.createBlankNode(), store.createBlankNode());
     store.addQuad(listElements[1], new NamedNode(rest), store.createBlankNode()).should.be.true;
     expectFailure(store, listElements[1]);
   });
 
-  describe('An N3Store containing a rdf:Collection with non-list arcs out', function () {
-    var store = new N3Store();
+  describe('A Store containing a rdf:Collection with non-list arcs out', function () {
+    var store = new Store();
     var listElements = makeList(store, null, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
     store.addQuad(listElements[1], new NamedNode('http://a.example/foo'), store.createBlankNode()).should.be.true;
     expectFailure(store, listElements[1]);
   });
 
-  describe('An N3Store containing a rdf:Collection with multiple incoming rdf:rest arcs', function () {
-    var store = new N3Store();
+  describe('A Store containing a rdf:Collection with multiple incoming rdf:rest arcs', function () {
+    var store = new Store();
     var listElements = makeList(store, null, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
     store.addQuad(store.createBlankNode(), new NamedNode(rest), listElements[1]).should.be.true;
     expectFailure(store, listElements[1]);
   });
 
-  describe('An N3Store containing a rdf:Collection with co-references out of head', function () {
-    var store = new N3Store();
+  describe('A Store containing a rdf:Collection with co-references out of head', function () {
+    var store = new Store();
     var listElements = makeList(store, null, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
     store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o1')).should.be.true;
     store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o2')).should.be.true;
     expectFailure(store, listElements[0]);
   });
 
-  describe('An N3Store containing a rdf:Collection with co-references into head', function () {
-    var store = new N3Store();
+  describe('A Store containing a rdf:Collection with co-references into head', function () {
+    var store = new Store();
     var listElements = makeList(store, null, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
     store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0]).should.be.true;
     store.addQuad(new NamedNode('s2'), new NamedNode(rest), listElements[0]).should.be.true;
@@ -1242,10 +1237,10 @@ describe('N3Store', function () {
     expectFailure(store, listElements[0]);
   });
 
-  describe('An N3Store containing a rdf:Collection spread across graphs', function () {
+  describe('A Store containing a rdf:Collection spread across graphs', function () {
     var member0 = new NamedNode('element1');
     var member1 = new Literal('"element2"');
-    var store = new N3Store();
+    var store = new Store();
     var listElements = [
       store.createBlankNode(),
       store.createBlankNode(),
@@ -1372,7 +1367,7 @@ function forResultStream(testFunction, result) {
     arrayifyStream(result)
       .then(function (array) {
         items.unshift(array);
-        testFunction.apply(this, items)();
+        testFunction.apply({}, items)();
       })
       .then(done, done);
   };

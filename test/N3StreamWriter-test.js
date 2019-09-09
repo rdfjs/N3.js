@@ -1,24 +1,20 @@
-var N3StreamWriter = require('../N3').StreamWriter;
+import { StreamWriter, DataFactory } from '../src/';
+import { Readable, Writable } from 'stream';
 
-var Readable = require('stream').Readable,
-    Writable = require('stream').Writable,
-    DataFactory = require('../N3').DataFactory;
-var Quad = DataFactory.internal.Quad,
-    NamedNode = DataFactory.internal.NamedNode,
-    fromId = DataFactory.internal.fromId;
+const { Quad, NamedNode, fromId } = DataFactory.internal;
 
-describe('N3StreamWriter', function () {
-  describe('The N3StreamWriter module', function () {
+describe('StreamWriter', function () {
+  describe('The StreamWriter export', function () {
     it('should be a function', function () {
-      N3StreamWriter.should.be.a('function');
+      StreamWriter.should.be.a('function');
     });
 
-    it('should be an N3Lexer constructor', function () {
-      new N3StreamWriter().should.be.an.instanceof(N3StreamWriter);
+    it('should be a StreamWriter constructor', function () {
+      new StreamWriter().should.be.an.instanceof(StreamWriter);
     });
   });
 
-  describe('An N3StreamWriter instance', function () {
+  describe('A StreamWriter instance', function () {
     it('should serialize 0 triples',
       shouldSerialize(''));
 
@@ -53,7 +49,7 @@ describe('N3StreamWriter', function () {
 
     it('should take over prefixes from the input stream', function (done) {
       var inputStream = new Readable(),
-          writer = new N3StreamWriter(),
+          writer = new StreamWriter(),
           outputStream = new StringWriter();
       writer.import(inputStream);
       writer.pipe(outputStream);
@@ -74,7 +70,7 @@ describe('N3StreamWriter', function () {
 
   it('passes an error', function () {
     var input = new Readable(),
-        writer = new N3StreamWriter(),
+        writer = new StreamWriter(),
         error = null;
     writer.on('error', function (e) { error = e; });
     writer.import(input);
@@ -95,7 +91,7 @@ function shouldSerialize(/* options?, tripleArrays..., expectedResult */) {
 
   return function (done) {
     var inputStream = new ArrayReader(tripleArrays),
-        writer = new N3StreamWriter(options),
+        writer = new StreamWriter(options),
         outputStream = new StringWriter();
     writer.import(inputStream).should.equal(writer);
     writer.pipe(outputStream);

@@ -4,6 +4,10 @@
     es6: true,
   },
 
+  parserOptions: {
+    sourceType: "module",
+  },
+
   rules: {
     // Possible Errors
     comma-dangle: [2, "always-multiline"],

@@ -1,12 +1,11 @@
 // **N3Store** objects store N3 quads by graph in memory.
+import N3DataFactory from './N3DataFactory';
+import { Readable } from 'stream';
 
-var DataFactory = require('./N3DataFactory'),
-    Readable = require('stream').Readable;
-var toId = DataFactory.internal.toId,
-    fromId = DataFactory.internal.fromId;
+const { toId, fromId } = N3DataFactory.internal;
 
 // ## Constructor
-class N3Store {
+export default class N3Store {
   constructor(quads, options) {
     // The number of quads is initially zero
     this._size = 0;
@@ -25,7 +24,7 @@ class N3Store {
     if (!options && quads && !quads[0])
       options = quads, quads = null;
     options = options || {};
-    this._factory = options.factory || DataFactory;
+    this._factory = options.factory || N3DataFactory;
 
     // Add quads if passed
     if (quads)
@@ -823,6 +822,3 @@ class N3Store {
 function isString(s) {
   return typeof s === 'string' || s instanceof String;
 }
-
-// ## Exports
-module.exports = N3Store;

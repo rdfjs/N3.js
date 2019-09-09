@@ -1,6 +1,6 @@
 {
   "name": "n3",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Lightning fast, asynchronous, streaming Turtle / N3 / RDF library.",
   "author": "Ruben Verborgh <ruben.verborgh@gmail.com>",
   "keywords": [
@@ -11,15 +11,22 @@
     "asynchronous"
   ],
   "license": "MIT",
-  "main": "./N3.js",
+  "main": "./lib/index.js",
+  "module": "./src/index.js",
+  "sideEffects": false,
   "engines": {
     "node": ">=8.0"
   },
   "files": [
-    "N3.js",
+    ".babelrc",
+    "src",
     "lib"
   ],
   "devDependencies": {
+    "@babel/cli": "^7.5.5",
+    "@babel/core": "^7.5.5",
+    "@babel/preset-env": "^7.5.5",
+    "@babel/register": "^7.5.5",
     "arrayify-stream": "^1.0.0",
     "chai": "^4.0.2",
     "chai-things": "^0.2.0",
@@ -27,14 +34,16 @@
     "docco": "^0.8.0",
     "eslint": "^5.14.1",
     "mocha": "^5.0.1",
-    "nyc": "^13.3.0",
+    "nyc": "^14.1.1",
     "pre-commit": "^1.2.2",
     "rdf-test-suite": "^1.2.0",
     "streamify-string": "^1.0.1"
   },
   "scripts": {
-    "test": "nyc mocha",
-    "lint": "eslint lib perf test spec",
+    "build": "babel src -d lib",
+    "test": "nyc mocha --require @babel/register",
+    "lint": "eslint src perf test spec",
+    "prepare": "npm run build",
     "spec": "npm run spec-turtle && npm run spec-ntriples && npm run spec-nquads && npm run spec-trig",
     "spec-earl": "npm run spec-earl-turtle && npm run spec-earl-ntriples && npm run spec-earl-nquads && npm run spec-earl-trig",
     "spec-ntriples": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/ntriples/manifest.ttl -i '{ \"format\": \"n-triples\" }' -c .rdf-test-suite-cache/",
@@ -46,7 +55,7 @@
     "spec-earl-turtle": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/turtle/manifest.ttl -i '{ \"format\": \"turtle\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-turtle.ttl",
     "spec-earl-trig": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/trig/manifest.ttl -i '{ \"format\": \"trig\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-trig.ttl",
     "spec-clean": "rm -r .rdf-test-suite-cache/",
-    "docs": "docco lib/*.js"
+    "docs": "docco src/*.js"
   },
   "repository": {
     "type": "git",

@@ -1,14 +1,14 @@
 // N3.js implementations of the RDF/JS core data types
 // See https://github.com/rdfjs/representation-task-force/blob/master/interface-spec.md
 
-var namespaces = require('./IRIs');
-var rdf = namespaces.rdf,
-    xsd = namespaces.xsd;
+import namespaces from './IRIs';
+const { rdf, xsd } = namespaces;
 
 var DataFactory, DEFAULTGRAPH;
 
 var _blankNodeCounter = 0;
 
+// ## Term constructor
 class Term {
   constructor(id) {
     this.id = id;
@@ -245,7 +245,32 @@ class Quad {
 }
 
 
-// ## DataFactory functions
+// ## DataFactory singleton
+DataFactory = {
+  // ### Public factory functions
+  namedNode,
+  blankNode,
+  variable,
+  literal,
+  defaultGraph,
+  quad,
+  triple: quad,
+
+  // ### Internal datatype constructors
+  internal: {
+    Term,
+    NamedNode,
+    BlankNode,
+    Variable,
+    Literal,
+    DefaultGraph,
+    Quad,
+    Triple: Quad,
+    fromId,
+    toId,
+  },
+};
+export default DataFactory;
 
 // ### Creates an IRI
 function namedNode(iri) {
@@ -305,30 +330,3 @@ function defaultGraph() {
 function quad(subject, predicate, object, graph) {
   return new Quad(subject, predicate, object, graph);
 }
-
-
-// ## Module exports
-module.exports = DataFactory = {
-  // ### Public factory functions
-  namedNode: namedNode,
-  blankNode: blankNode,
-  variable:  variable,
-  literal:   literal,
-  defaultGraph: defaultGraph,
-  quad:      quad,
-  triple:    quad,
-
-  // ### Internal datatype constructors
-  internal: {
-    Term:      Term,
-    NamedNode: NamedNode,
-    BlankNode: BlankNode,
-    Variable:  Variable,
-    Literal:   Literal,
-    DefaultGraph: DefaultGraph,
-    Quad:      Quad,
-    Triple:    Quad,
-    fromId:    fromId,
-    toId:      toId,
-  },
-};

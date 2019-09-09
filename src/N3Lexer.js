@@ -1,9 +1,8 @@
 // **N3Lexer** tokenizes N3 documents.
-var xsd = require('./IRIs').xsd;
+import namespaces from './IRIs';
+const { xsd } = namespaces;
 
-var fromCharCode = String.fromCharCode;
-var immediately = typeof setImmediate === 'function' ? setImmediate :
-                  function setImmediate(func) { setTimeout(func, 0); };
+const { fromCharCode } = String;
 
 // Regular expression and replacement string to escape N3 strings.
 // Note how we catch invalid unicode sequences separately (they will trigger an error).
@@ -32,7 +31,7 @@ var lineModeRegExps = {
 var invalidRegExp = /$0^/;
 
 // ## Constructor
-class N3Lexer {
+export default class N3Lexer {
   constructor(options) {
     // ## Regular expressions
     // It's slightly faster to have these as properties than as in-scope variables
@@ -416,7 +415,7 @@ class N3Lexer {
       this._input = input;
       // If a callback was passed, asynchronously call it
       if (typeof callback === 'function')
-        immediately(function () { self._tokenizeToEnd(callback, true); });
+        setImmediate(function () { self._tokenizeToEnd(callback, true); });
       // If no callback was passed, tokenize synchronously and return
       else {
         var tokens = [], error;
@@ -459,7 +458,3 @@ class N3Lexer {
     }
   }
 }
-
-
-// ## Exports
-module.exports = N3Lexer;
