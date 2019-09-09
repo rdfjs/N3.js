@@ -697,10 +697,10 @@ export default class N3Store {
 
   // ### `extractLists` finds and removes all list triples
   // and returns the items per list.
-  extractLists(onError) {
+  extractLists({ remove = false, ignoreErrors = false } = {}) {
     var lists = {}; // has scalar keys so could be a simple Object
-    var remove = !onError;
-    onError = onError || (() => true);
+    var onError = ignoreErrors ? (() => true) :
+                  ((node, message) => { throw new Error(`${node.value} ${message}`); });
 
     // Traverse each list from its tail
     var tails = this.getQuads(null, namespaces.rdf.rest, namespaces.rdf.nil, null);
@@ -723,14 +723,14 @@ export default class N3Store {
         for (i = 0; i < subjectQuads.length && !malformed; i++) {
           quad = subjectQuads[i];
           if (!quad.graph.equals(graph))
-            malformed = onError(current, 'list not confined to single graph');
+            malformed = onError(current, 'not confined to single graph');
           else if (head)
-            malformed = onError(current, 'intermediate list element has non-list arcs out');
+            malformed = onError(current, 'has non-list arcs out');
 
           // one rdf:first
           else if (quad.predicate.value === namespaces.rdf.first) {
             if (first)
-              malformed = onError(current, 'multiple rdf:first arcs');
+              malformed = onError(current, 'has multiple rdf:first arcs');
             else
               toRemove.push(first = quad);
           }
@@ -738,7 +738,7 @@ export default class N3Store {
           // one rdf:rest
           else if (quad.predicate.value === namespaces.rdf.rest) {
             if (rest)
-              malformed = onError(current, 'multiple rdf:rest arcs');
+              malformed = onError(current, 'has multiple rdf:rest arcs');
             else
               toRemove.push(rest = quad);
           }
@@ -757,11 +757,11 @@ export default class N3Store {
         for (i = 0; i < objectQuads.length && !malformed; ++i) {
           quad = objectQuads[i];
           if (head)
-            malformed = onError(current, 'list item can\'t have coreferences');
+            malformed = onError(current, 'can\'t have coreferences');
           // one rdf:rest
           else if (quad.predicate.value === namespaces.rdf.rest) {
             if (parent)
-              malformed = onError(current, 'multiple incoming rdf:rest arcs');
+              malformed = onError(current, 'has incoming rdf:rest arcs');
             else
               parent = quad;
           }
@@ -771,7 +771,11 @@ export default class N3Store {
           }
         }
 
-        items.unshift(first.object);
+        // Store the list item and continue with parent
+        if (!first)
+          malformed = onError(current, 'has no list head');
+        else
+          items.unshift(first.object);
         current = parent && parent.subject;
       }
 

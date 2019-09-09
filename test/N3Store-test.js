@@ -1095,9 +1095,8 @@ describe('Store', function () {
       ],
     };
 
-    describe('extractLists with error handler', function () {
-      var failures = [];
-      var lists = store.extractLists((li, msg) => failures.push([li, msg]));
+    describe('extractLists without remove', function () {
+      var lists = store.extractLists();
       it('should not delete triples',
         shouldIncludeAll(store.getQuads(),
           ['_:' + listElements[0].value, 'p1', 'o1'],
@@ -1106,16 +1105,13 @@ describe('Store', function () {
           ['_:' + listElements[1].value, namespaces.rdf.first, '"element2"'],
           ['_:' + listElements[1].value, namespaces.rdf.rest, namespaces.rdf.nil]
         ));
-      it('should not call error handler', function () {
-        expect(failures).to.be.empty;
-      });
       it('should generate a list of Collections', function () {
         expect(listsToJSON(lists)).to.deep.equal(listItemsJSON);
       });
     });
 
-    describe('extractLists without error handler', function () {
-      var lists = store.extractLists();
+    describe('extractLists with remove', function () {
+      var lists = store.extractLists({ remove: true });
       it('should remove the first/rest triples and return the list members',
         shouldIncludeAll(store.getQuads(),
                          ['_:' + listElements[0].value, 'p1', 'o1']));
@@ -1137,9 +1133,8 @@ describe('Store', function () {
       ],
     };
 
-    describe('extractLists with error handler', function () {
-      var failures = [];
-      var lists = store.extractLists((li, msg) => failures.push([li, msg]));
+    describe('extractLists without remove', function () {
+      var lists = store.extractLists();
       it('should not delete triples',
         shouldIncludeAll(store.getQuads(),
           ['s1', 'p1', '_:' + listElements[0].value],
@@ -1148,16 +1143,13 @@ describe('Store', function () {
           ['_:' + listElements[1].value, namespaces.rdf.first, '"element2"'],
           ['_:' + listElements[1].value, namespaces.rdf.rest, namespaces.rdf.nil]
         ));
-      it('should not call error handler', function () {
-        expect(failures).to.be.empty;
-      });
       it('should generate a list of Collections', function () {
         expect(listsToJSON(lists)).to.deep.equal(listItemsJSON);
       });
     });
 
-    describe('extractLists without error handler', function () {
-      var lists = store.extractLists();
+    describe('extractLists with remove', function () {
+      var lists = store.extractLists({ remove: true });
       it('should remove the first/rest triples and return the list members',
         shouldIncludeAll(store.getQuads(),
                          ['s1', 'p1', '_:' + listElements[0].value]));
@@ -1167,66 +1159,130 @@ describe('Store', function () {
     });
   });
 
-  describe('A Store containing a rdf:Collection with multiple rdf:first arcs on head', function () {
+  describe('A Store containing a well-formed rdf:Collection that is not attached', function () {
+    var store = new Store();
+    var listElements = addList(store, new NamedNode('element1'), new Literal('"element2"'));
+    store.addQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'));
+
+    describe('extractLists without remove', function () {
+      var lists = store.extractLists();
+      it('should not delete triples',
+        shouldIncludeAll(store.getQuads(),
+          ['s1', 'p1', 'o1'],
+          ['_:' + listElements[0].value, namespaces.rdf.first, 'element1'],
+          ['_:' + listElements[0].value, namespaces.rdf.rest, '_:' + listElements[1].value],
+          ['_:' + listElements[1].value, namespaces.rdf.first, '"element2"'],
+          ['_:' + listElements[1].value, namespaces.rdf.rest, namespaces.rdf.nil]
+        ));
+      it('should generate a list of Collections', function () {
+        expect(listsToJSON(lists)).to.deep.equal({});
+      });
+    });
+
+    describe('extractLists with remove', function () {
+      var lists = store.extractLists({ remove: true });
+      it('should remove the first/rest triples and return the list members',
+        shouldIncludeAll(store.getQuads(),
+                         ['s1', 'p1', 'o1']));
+      it('should generate a list of Collections', function () {
+        expect(listsToJSON(lists)).to.deep.equal({});
+      });
+    });
+  });
+
+  describe('A Store containing a rdf:Collection without first', function () {
+    var store = new Store();
+    store.addQuad(store.createBlankNode(), new NamedNode(namespaces.rdf.rest), namespaces.rdf.nil).should.be.true;
+
+    it('extractLists throws an error', function () {
+      expect(() => store.extractLists()).throws('b0 has no list head');
+    });
+  });
+
+  describe('A Store containing an rdf:Collection with multiple rdf:first arcs on head', function () {
     var store = new Store();
     var listElements = addList(store, store.createBlankNode(), store.createBlankNode());
     store.addQuad(listElements[0], new NamedNode(namespaces.rdf.first), store.createBlankNode()).should.be.true;
-    expectFailure(store, listElements[0]);
+
+    it('extractLists throws an error', function () {
+      expect(() => store.extractLists()).throws('b2 has multiple rdf:first arcs');
+    });
   });
 
-  describe('A Store containing a rdf:Collection with multiple rdf:first arcs on tail', function () {
+  describe('A Store containing an rdf:Collection with multiple rdf:first arcs on tail', function () {
     var store = new Store();
     var listElements = addList(store, store.createBlankNode(), store.createBlankNode());
     store.addQuad(listElements[1], new NamedNode(namespaces.rdf.first), store.createBlankNode()).should.be.true;
-    expectFailure(store, listElements[1]);
+
+    it('extractLists throws an error', function () {
+      expect(() => store.extractLists()).throws('b3 has multiple rdf:first arcs');
+    });
   });
 
-  describe('A Store containing a rdf:Collection with multiple rdf:rest arcs on head', function () {
+  describe('A Store containing an rdf:Collection with multiple rdf:rest arcs on head', function () {
     var store = new Store();
     var listElements = addList(store, store.createBlankNode(), store.createBlankNode());
     store.addQuad(listElements[0], new NamedNode(namespaces.rdf.rest), store.createBlankNode()).should.be.true;
-    expectFailure(store, listElements[0]);
+
+    it('extractLists throws an error', function () {
+      expect(() => store.extractLists()).throws('b2 has multiple rdf:rest arcs');
+    });
   });
 
-  describe('A Store containing a rdf:Collection with multiple rdf:rest arcs on tail', function () {
+  describe('A Store containing an rdf:Collection with multiple rdf:rest arcs on tail', function () {
     var store = new Store();
     var listElements = addList(store, store.createBlankNode(), store.createBlankNode());
     store.addQuad(listElements[1], new NamedNode(namespaces.rdf.rest), store.createBlankNode()).should.be.true;
-    expectFailure(store, listElements[1]);
+
+    it('extractLists throws an error', function () {
+      expect(() => store.extractLists()).throws('b3 has multiple rdf:rest arcs');
+    });
   });
 
-  describe('A Store containing a rdf:Collection with non-list arcs out', function () {
+  describe('A Store containing an rdf:Collection with non-list arcs out', function () {
     var store = new Store();
     var listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
     store.addQuad(listElements[1], new NamedNode('http://a.example/foo'), store.createBlankNode()).should.be.true;
-    expectFailure(store, listElements[1]);
+
+    it('extractLists throws an error', function () {
+      expect(() => store.extractLists()).throws('b4 can\'t be subject and object');
+    });
   });
 
-  describe('A Store containing a rdf:Collection with multiple incoming rdf:rest arcs', function () {
+  describe('A Store containing an rdf:Collection with multiple incoming rdf:rest arcs', function () {
     var store = new Store();
     var listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
     store.addQuad(store.createBlankNode(), new NamedNode(namespaces.rdf.rest), listElements[1]).should.be.true;
-    expectFailure(store, listElements[1]);
+
+    it('extractLists throws an error', function () {
+      expect(() => store.extractLists()).throws('b4 has incoming rdf:rest arcs');
+    });
   });
 
-  describe('A Store containing a rdf:Collection with co-references out of head', function () {
+  describe('A Store containing an rdf:Collection with co-references out of head', function () {
     var store = new Store();
     var listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
     store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o1')).should.be.true;
     store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o2')).should.be.true;
-    expectFailure(store, listElements[0]);
+
+    it('extractLists throws an error', function () {
+      expect(() => store.extractLists()).throws('b3 has non-list arcs out');
+    });
   });
 
-  describe('A Store containing a rdf:Collection with co-references into head', function () {
+  describe('A Store containing an rdf:Collection with co-references into head', function () {
     var store = new Store();
     var listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
     store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0]).should.be.true;
     store.addQuad(new NamedNode('s2'), new NamedNode(namespaces.rdf.rest), listElements[0]).should.be.true;
     store.addQuad(new NamedNode('s2'), new NamedNode('p1'), listElements[0]).should.be.true;
-    expectFailure(store, listElements[0]);
+
+    it('extractLists throws an error', function () {
+      expect(() => store.extractLists()).throws('b3 can\'t have coreferences');
+    });
   });
 
-  describe('A Store containing a rdf:Collection spread across graphs', function () {
+  describe('A Store containing an rdf:Collection spread across graphs', function () {
     var member0 = new NamedNode('element1');
     var member1 = new Literal('"element2"');
     var store = new Store();
@@ -1239,20 +1295,15 @@ describe('Store', function () {
     store.addQuad(listElements[1], new NamedNode(namespaces.rdf.first), member1).should.be.true;
     store.addQuad(listElements[1], new NamedNode(namespaces.rdf.rest), new NamedNode(namespaces.rdf.nil)).should.be.true;
     store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0]).should.be.true;
-    describe('extractLists with error handler', function () {
-      var failures = [];
-      var lists = store.extractLists((li, msg) => failures.push([li, msg]));
-      it('should call error handler', function () {
-        expect(failures.length).to.equal(1);
-        expect(failures[0][0]).to.deep.equal(listElements[0]);
-      });
-      it('should not generate a list of Collections', function () {
-        expect(listsToJSON(lists)).to.deep.equal({});
+
+    describe('extractLists without ignoreErrors', function () {
+      it('extractLists throws an error', function () {
+        expect(() => store.extractLists()).throws('b0 not confined to single graph');
       });
     });
 
-    describe('extractLists without error handler', function () {
-      var lists = store.extractLists();
+    describe('extractLists with ignoreErrors', function () {
+      var lists = store.extractLists({ ignoreErrors: true });
       it('should not delete triples',
         shouldIncludeAll(store.getQuads(),
           ['s1', 'p1', '_:' + listElements[0].value],
@@ -1267,27 +1318,6 @@ describe('Store', function () {
     });
   });
 });
-
-function expectFailure(store, b0rked) {
-  describe('extractLists with error handler', function () {
-    var failures = [];
-    var lists = store.extractLists((li, msg) => failures.push([li, msg]));
-    it('should call error handler', function () {
-      expect(failures.length).to.equal(1);
-      expect(failures[0][0]).to.deep.equal(b0rked);
-    });
-    it('should not generate a list of Collections', function () {
-      expect(listsToJSON(lists)).to.deep.equal({});
-    });
-  });
-
-  describe('extractLists without error handler', function () {
-    var lists = store.extractLists();
-    it('should generate an empty list of Collections', function () {
-      expect(listsToJSON(lists)).to.deep.equal({});
-    });
-  });
-}
 
 function alwaysTrue()  { return true;  }
 function alwaysFalse() { return false; }
