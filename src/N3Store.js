@@ -1,6 +1,7 @@
 // **N3Store** objects store N3 quads by graph in memory.
 import N3DataFactory from './N3DataFactory';
 import { Readable } from 'stream';
+import namespaces from './IRIs';
 
 const { toId, fromId } = N3DataFactory.internal;
 
@@ -694,127 +695,98 @@ export default class N3Store {
     return this._factory.blankNode(name.substr(2));
   }
 
-  // ### `sequesterLists` removes all triples first/rest triples in valid rdf
-  // Collections. It returns a map from blank node identifier at the list head
-  // to an array of Collection members. For example calling with these quads:
-  //   <n1> <p1> _:b1
-  //   _:b1 rdf:first <element1> ; rdf:rest _:b2
-  //   _:b2 rdf:first "element2" ; rdf:rest rdf:nill
-  // will change the database to:
-  //   <n1> <p1> _:b1
-  // and return a map from "b1" to [<element1>, "element2"]. This can be passed
-  // to N3Writer like:
-  //   new N3Writer({ prefixes: {...}, listHeads: myStore.sequesterLists() })
-  // The fail parameter is a function to handle malformed lists. sequesterLists
-  // will non-destructively test Collections if passed a fail function like:
-  //   myStore.sequesterLists((node, msg) => {
-  //     console.log(node, message);
-  //     return false;
-  //   })
-  sequesterLists(failParam) {
-    const NsRdf = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
-    const first = NsRdf + 'first', rest = NsRdf + 'rest', nil = NsRdf + 'nil';
-    const nonEmptyLists = new Map(); // has scalar keys so could be a simple Object
-    const fail = failParam || defaultListFailFunction;
+  // ### `extractLists` finds and removes all list triples
+  // and returns the items per list.
+  extractLists(onError) {
+    var lists = {}; // has scalar keys so could be a simple Object
+    var remove = !onError;
+    onError = onError || (() => true);
 
-    // start from the tail of each list
-    const tails = this.getQuads(null, rest, nil, null);
+    // Traverse each list from its tail
+    var tails = this.getQuads(null, namespaces.rdf.rest, namespaces.rdf.nil, null);
+    var toRemove = remove ? [...tails] : [];
     tails.forEach(tailQuad => {
-      let skipList = false; // signals the current list is malformed
-      let listQuads = [tailQuad]; // which triples to remove of list is well-formed
-      let head = null; // the head of the list (_:b1 in above example)
-      let headPOS = null; // set to subject or object when head is set
-      let graph = tailQuad.graph; // make sure list is in exactly one graph
-      let members = []; // the members found as objects of rdf:first quads
+      var items = [];             // the members found as objects of rdf:first quads
+      var malformed = false;      // signals whether the current list is malformed
+      var head;                   // the head of the list (_:b1 in above example)
+      var headPos;                // set to subject or object when head is set
+      var graph = tailQuad.graph; // make sure list is in exactly one graph
 
-      let li = tailQuad.subject; // li walks from the tail to the head
-      while (li && !skipList) {
-        let ins = this.getQuads(null, null, li, null);
-        let outs = this.getQuads(li, null, null, null);
-        let f = null, r = null, parent = null;
-        var i, q;
-        for (i = 0; i < outs.length && !skipList; ++i) {
-          q = outs[i];
-          if (!q.graph.equals(graph)) {
-            skipList = fail(li, 'list not confined to single graph');
-          }
-          else if (head) {
-            skipList = fail(li, 'intermediate list element has non-list arcs out');
-          }
+      // Traverse the list from tail to end
+      var current = tailQuad.subject;
+      while (current && !malformed) {
+        var objectQuads = this.getQuads(null, null, current, null);
+        var subjectQuads = this.getQuads(current, null, null, null);
+        var i, quad, first = null, rest = null, parent = null;
+
+        // Find the first and rest of this list node
+        for (i = 0; i < subjectQuads.length && !malformed; i++) {
+          quad = subjectQuads[i];
+          if (!quad.graph.equals(graph))
+            malformed = onError(current, 'list not confined to single graph');
+          else if (head)
+            malformed = onError(current, 'intermediate list element has non-list arcs out');
 
           // one rdf:first
-          else if (q.predicate.value === first) {
-            if (f) {
-              skipList = fail(li, 'multiple rdf:first arcs');
-            }
-            else {
-              f = q;
-              listQuads.push(q);
-            }
+          else if (quad.predicate.value === namespaces.rdf.first) {
+            if (first)
+              malformed = onError(current, 'multiple rdf:first arcs');
+            else
+              toRemove.push(first = quad);
           }
 
           // one rdf:rest
-          else if (q.predicate.value === rest) {
-            if (r) {
-              skipList = fail(li, 'multiple rdf:rest arcs');
-            }
-            else {
-              r = q;
-              listQuads.push(q);
-            }
+          else if (quad.predicate.value === namespaces.rdf.rest) {
+            if (rest)
+              malformed = onError(current, 'multiple rdf:rest arcs');
+            else
+              toRemove.push(rest = quad);
           }
 
           // alien triple
-          else if (ins.length) {
-            skipList = fail(li, 'can\'t be subject and object');
-          }
+          else if (objectQuads.length)
+            malformed = onError(current, 'can\'t be subject and object');
           else {
-            head = q; // e.g. { (1 2 3) :p :o }
-            headPOS = 'subject';
+            head = quad; // e.g. { (1 2 3) :p :o }
+            headPos = 'subject';
           }
         }
+
         // { :s :p (1 2) } arrives here with no head
         // { (1 2) :p :o } arrives here with head set to the list.
-
-        for (i = 0; i < ins.length && !skipList; ++i) {
-          q = ins[i];
-          if (head) {
-            skipList = fail(li, 'list item can\'t have coreferences');
-          }
-
+        for (i = 0; i < objectQuads.length && !malformed; ++i) {
+          quad = objectQuads[i];
+          if (head)
+            malformed = onError(current, 'list item can\'t have coreferences');
           // one rdf:rest
-          else if (q.predicate.value === rest) {
-            if (parent) {
-              skipList = fail(li, 'multiple incoming rdf:rest arcs');
-            }
-            else {
-              parent = q;
-            }
+          else if (quad.predicate.value === namespaces.rdf.rest) {
+            if (parent)
+              malformed = onError(current, 'multiple incoming rdf:rest arcs');
+            else
+              parent = quad;
           }
           else {
-            head = q; // e.g. { :s :p (1 2) }
-            headPOS = 'object';
+            head = quad; // e.g. { :s :p (1 2) }
+            headPos = 'object';
           }
         }
 
-        members.unshift(f.object);
-        li = parent ? parent.subject : null; // null means we're done
+        items.unshift(first.object);
+        current = parent && parent.subject;
       }
 
-      if (head && !skipList) {
-        if (!failParam)
-          this.removeQuads(listQuads);
-        nonEmptyLists.set(head[headPOS].value, members);
-      }
+      // Don't remove any quads if the list is malformed
+      if (malformed)
+        remove = false;
+      // Store the list under the value of its head
+      else if (head)
+        lists[head[headPos].value] = items;
     });
 
-    return nonEmptyLists;
-
-    // ### `defaultListFailFunction` return true to signal an error and
-    // to abort recognition of the current list.
-    function defaultListFailFunction(listNode, failureMessage) {
-      return true;
-    }
+    // Remove list quads if requested
+    if (remove)
+      this.removeQuads(toRemove);
+    return lists;
   }
 }
 
