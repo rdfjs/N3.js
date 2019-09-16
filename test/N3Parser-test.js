@@ -894,6 +894,18 @@ describe('Parser', function () {
     });
   });
 
+  describe('An Parser instance without document IRI', function () {
+    function parser() { return new Parser(); }
+
+    it('should not resolve the IRIs',
+      shouldParse(parser,
+        '@prefix : <#>.\n' +
+        '<a> <b> <c> <g>.\n' +
+        ':d :e :f :g.',
+        ['a', 'b', 'c', 'g'],
+        ['#d', '#e', '#f', '#g']));
+  });
+
   describe('An Parser instance with a document IRI', function () {
     function parser() { return new Parser({ baseIRI: 'http://ex.org/x/yy/zzz/f.ttl' }); }
 
