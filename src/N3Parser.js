@@ -56,7 +56,8 @@ export default class N3Parser {
     if (!baseIRI) {
       this._base = '';
       this._basePath = '';
-    } else {
+    }
+    else {
       // Remove fragment if present
       var fragmentPos = baseIRI.indexOf('#');
       if (fragmentPos >= 0)

@@ -902,8 +902,8 @@ describe('Parser', function () {
         '@prefix : <#>.\n' +
         '<a> <b> <c> <g>.\n' +
         ':d :e :f :g.',
-        ['a', 'b', 'c', 'g'],
-        ['#d', '#e', '#f', '#g']));
+        [fromId('a'), fromId('b'), fromId('c'), fromId('g')],
+        [fromId('#d'), fromId('#e'), fromId('#f'), fromId('#g')]));
   });
 
   describe('An Parser instance with a document IRI', function () {
@@ -2006,6 +2006,10 @@ function shouldParse(parser, input) {
     var results = [];
     var items = expected.map(function (item) {
       item = item.map(function (t) {
+        // don't touch if it's already an object
+        if (typeof t === 'object')
+          return t;
+
         // Append base to relative IRIs
         if (!/^$|^["?]|:/.test(t))
           t = BASE_IRI + t;
