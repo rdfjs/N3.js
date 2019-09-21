@@ -119,6 +119,14 @@ This is done by passing a `baseIRI` argument upon creation:
 const parser = new N3.Parser({ baseIRI: 'http://example.org/' });
 ```
 
+By default, `N3.Parser` will prefix blank node labels with a `b{digit}_` prefix.
+This is done to prevent collisions of unrelated blank nodes having identical 
+labels. The `blankNodePrefix` constructor argument can be used to modify the
+prefix or, if set to an empty string, completely disable prefixing:
+```JavaScript
+const parser = new N3.Parser({ blankNodePrefix: '' });
+```
+
 ### From an RDF stream to quads
 
 `N3.Parser` can parse [Node.js streams](http://nodejs.org/api/stream.html) as they grow,
