@@ -53,8 +53,10 @@ export default class N3Parser {
 
   // ### `_setBase` sets the base IRI to resolve relative IRIs
   _setBase(baseIRI) {
-    if (!baseIRI)
-      this._base = null;
+    if (!baseIRI) {
+      this._base = '';
+      this._basePath = '';
+    }
     else {
       // Remove fragment if present
       var fragmentPos = baseIRI.indexOf('#');
