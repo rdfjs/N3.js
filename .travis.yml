@@ -9,7 +9,7 @@ env:
  - DEFAULT_NODE_VERSION=12
 script:
   - npm run lint
-  - npm test
+  - npm test -- --timeout 500
   - npm run spec-turtle
   - npm run spec-ntriples
   - npm run spec-nquads
