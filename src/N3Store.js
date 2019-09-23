@@ -376,16 +376,12 @@ export default class N3Store {
   // ### `match` returns a stream of quads matching a pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   match(subject, predicate, object, graph) {
-    var self = this;
     var stream = new Readable({ objectMode: true });
 
     // Initialize stream once it is being read
-    stream._read = function () {
-      stream._read = function () {};
-      var quads = self.getQuads(subject, predicate, object, graph);
-      for (var quad of quads) {
+    stream._read = () => {
+      for (var quad of this.getQuads(subject, predicate, object, graph))
         stream.push(quad);
-      }
       stream.push(null);
     };
 
