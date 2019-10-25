@@ -247,7 +247,7 @@ describe('Writer', function () {
       writer.addPrefix('a', 'b#');
       writer.addQuad(new Quad(new NamedNode('b#a'), new NamedNode('b#b'), new NamedNode('b#c'), new NamedNode('b#g')));
       writer.addPrefix('d', 'e#');
-      writer.addQuad(new Quad(new NamedNode('b#a'), new NamedNode('b#b'), new NamedNode('b#d'), new NamedNode('b#g')));
+      writer.addQuad({ subject: new NamedNode('b#a'), predicate: new NamedNode('b#b'), object: new NamedNode('b#d'), graph: new NamedNode('b#g') });
       writer.end(function (error, output) {
         output.should.equal('@prefix a: <b#>.\n\na:g {\na:a a:b a:c\n}\n' +
                             '@prefix d: <e#>.\n\na:g {\na:a a:b a:d\n}\n');
