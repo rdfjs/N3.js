@@ -123,10 +123,11 @@ describe('Writer', function () {
                       ['a', 'b', 'c'],
                       '<a> <b> <c>.\n'));
 
-    it('should serialize valid prefixes',
-      shouldSerialize({ prefixes: { a: 'http://a.org/', b: new NamedNode('http://a.org/b#'), c: 'http://a.org/b' } },
+    it('should serialize prefixes',
+      shouldSerialize({ prefixes: { a: 'http://a.org/', b: new NamedNode('http://a.org/b#'), c: 'http://a.org/c' } },
                       '@prefix a: <http://a.org/>.\n' +
-                      '@prefix b: <http://a.org/b#>.\n\n'));
+                      '@prefix b: <http://a.org/b#>.\n' +
+                      '@prefix c: <http://a.org/c>.\n\n'));
 
     it('should use prefixes when possible',
       shouldSerialize({ prefixes: { a: 'http://a.org/', b: 'http://a.org/b#', c: 'http://a.org/b' } },
@@ -134,7 +135,8 @@ describe('Writer', function () {
                       ['http://a.org/bc/de', 'http://a.org/b#e#f', 'http://a.org/b#x/t'],
                       ['http://a.org/3a', 'http://a.org/b#3a', 'http://a.org/b#a3'],
                       '@prefix a: <http://a.org/>.\n' +
-                      '@prefix b: <http://a.org/b#>.\n\n' +
+                      '@prefix b: <http://a.org/b#>.\n' +
+                      '@prefix c: <http://a.org/b>.\n\n' +
                       'a:bc b:ef a:bhi.\n' +
                       '<http://a.org/bc/de> <http://a.org/b#e#f> <http://a.org/b#x/t>.\n' +
                       '<http://a.org/3a> <http://a.org/b#3a> b:a3.\n'));
@@ -226,30 +228,26 @@ describe('Writer', function () {
       });
     });
 
-    it('does not repeat identical prefixes', function (done) {
+    it('ignores an empty prefix list', function (done) {
       var writer = new Writer();
-      writer.addPrefix('a', 'b#');
-      writer.addPrefix('a', 'b#');
+      writer.addPrefixes({});
       writer.addQuad(new Quad(new NamedNode('b#a'), new NamedNode('b#b'), new NamedNode('b#c')));
-      writer.addPrefix('a', 'b#');
-      writer.addPrefix('a', 'b#');
-      writer.addPrefix('b', 'b#');
-      writer.addPrefix('a', 'c#');
       writer.end(function (error, output) {
-        output.should.equal('@prefix a: <b#>.\n\na:a a:b a:c.\n' +
-                            '@prefix b: <b#>.\n\n@prefix a: <c#>.\n\n');
+        output.should.equal('<b#a> <b#b> <b#c>.\n');
         done(error);
       });
     });
 
     it('serializes triples of a graph with a prefix declaration in between', function (done) {
       var writer = new Writer();
+      writer.addQuad(new Quad(new NamedNode('b#a'), new NamedNode('b#b'), new NamedNode('b#c')));
       writer.addPrefix('a', 'b#');
       writer.addQuad(new Quad(new NamedNode('b#a'), new NamedNode('b#b'), new NamedNode('b#c'), new NamedNode('b#g')));
       writer.addPrefix('d', 'e#');
       writer.addQuad({ subject: new NamedNode('b#a'), predicate: new NamedNode('b#b'), object: new NamedNode('b#d'), graph: new NamedNode('b#g') });
       writer.end(function (error, output) {
-        output.should.equal('@prefix a: <b#>.\n\na:g {\na:a a:b a:c\n}\n' +
+        output.should.equal('<b#a> <b#b> <b#c>.\n' +
+                            '@prefix a: <b#>.\n\na:g {\na:a a:b a:c\n}\n' +
                             '@prefix d: <e#>.\n\na:g {\na:a a:b a:d\n}\n');
         done(error);
       });

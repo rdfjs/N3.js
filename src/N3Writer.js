@@ -204,24 +204,20 @@ export default class N3Writer {
 
   // ### `addPrefixes` adds the prefixes to the output stream
   addPrefixes(prefixes, done) {
-    // Add all useful prefixes
     var prefixIRIs = this._prefixIRIs, hasPrefixes = false;
     for (var prefix in prefixes) {
-      // Verify whether the prefix can be used and does not exist yet
       var iri = prefixes[prefix];
       if (typeof iri !== 'string')
         iri = iri.value;
-      if (/[#\/]$/.test(iri) && prefixIRIs[iri] !== (prefix += ':')) {
-        hasPrefixes = true;
-        prefixIRIs[iri] = prefix;
-        // Finish a possible pending quad
-        if (this._subject !== null) {
-          this._write(this._inDefaultGraph ? '.\n' : '\n}\n');
-          this._subject = null, this._graph = '';
-        }
-        // Write prefix
-        this._write('@prefix ' + prefix + ' <' + iri + '>.\n');
+      hasPrefixes = true;
+      // Finish a possible pending quad
+      if (this._subject !== null) {
+        this._write(this._inDefaultGraph ? '.\n' : '\n}\n');
+        this._subject = null, this._graph = '';
       }
+      // Store and write the prefix
+      prefixIRIs[iri] = (prefix += ':');
+      this._write('@prefix ' + prefix + ' <' + iri + '>.\n');
     }
     // Recreate the prefix matcher
     if (hasPrefixes) {

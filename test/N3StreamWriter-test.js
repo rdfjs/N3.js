@@ -42,7 +42,8 @@ describe('StreamWriter', function () {
                       ['http://a.org/bc/de', 'http://a.org/b#e#f', 'http://a.org/b#x/t'],
                       ['http://a.org/3a', 'http://a.org/b#3a', 'http://a.org/b#a3'],
                       '@prefix a: <http://a.org/>.\n' +
-                      '@prefix b: <http://a.org/b#>.\n\n' +
+                      '@prefix b: <http://a.org/b#>.\n' +
+                      '@prefix c: <http://a.org/b>.\n\n' +
                       'a:bc b:ef a:bhi.\n' +
                       '<http://a.org/bc/de> <http://a.org/b#e#f> <http://a.org/b#x/t>.\n' +
                       '<http://a.org/3a> <http://a.org/b#3a> b:a3.\n'));
