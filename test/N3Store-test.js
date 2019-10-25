@@ -1,8 +1,9 @@
 import { Store, DataFactory } from '../src/';
+import namespaces from '../src/IRIs';
 import { Readable } from 'stream';
 import arrayifyStream from 'arrayify-stream';
 
-const { NamedNode, DefaultGraph, Quad, fromId } = DataFactory.internal;
+const { NamedNode, Literal, DefaultGraph, Quad, fromId } = DataFactory.internal;
 
 describe('Store', function () {
   describe('The Store export', function () {
@@ -1081,6 +1082,241 @@ describe('Store', function () {
       shouldIncludeAll(store.getQuads(null, null, null, 'null'), ['null', 'null', 'null', 'null'])();
     });
   });
+
+  describe('A Store containing a well-formed rdf:Collection as subject', function () {
+    var store = new Store();
+    var listElements = addList(store, new NamedNode('element1'), new Literal('"element2"'));
+    store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o1')).should.be.true;
+    var listItemsJSON = {
+      b0: [
+        { termType: 'NamedNode', value: 'element1' },
+        { termType: 'Literal', value: 'element2',
+          language: '', datatype: { termType: 'NamedNode', value: namespaces.xsd.string } },
+      ],
+    };
+
+    describe('extractLists without remove', function () {
+      var lists = store.extractLists();
+      it('should not delete triples',
+        shouldIncludeAll(store.getQuads(),
+          ['_:' + listElements[0].value, 'p1', 'o1'],
+          ['_:' + listElements[0].value, namespaces.rdf.first, 'element1'],
+          ['_:' + listElements[0].value, namespaces.rdf.rest, '_:' + listElements[1].value],
+          ['_:' + listElements[1].value, namespaces.rdf.first, '"element2"'],
+          ['_:' + listElements[1].value, namespaces.rdf.rest, namespaces.rdf.nil]
+        ));
+      it('should generate a list of Collections', function () {
+        expect(listsToJSON(lists)).to.deep.equal(listItemsJSON);
+      });
+    });
+
+    describe('extractLists with remove', function () {
+      var lists = store.extractLists({ remove: true });
+      it('should remove the first/rest triples and return the list members',
+        shouldIncludeAll(store.getQuads(),
+                         ['_:' + listElements[0].value, 'p1', 'o1']));
+      it('should generate a list of Collections', function () {
+        expect(listsToJSON(lists)).to.deep.equal(listItemsJSON);
+      });
+    });
+  });
+
+  describe('A Store containing a well-formed rdf:Collection as object', function () {
+    var store = new Store();
+    var listElements = addList(store, new NamedNode('element1'), new Literal('"element2"'));
+    store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0]).should.be.true;
+    var listItemsJSON = {
+      b0: [
+        { termType: 'NamedNode', value: 'element1' },
+        { termType: 'Literal', value: 'element2',
+          language: '', datatype: { termType: 'NamedNode', value: namespaces.xsd.string } },
+      ],
+    };
+
+    describe('extractLists without remove', function () {
+      var lists = store.extractLists();
+      it('should not delete triples',
+        shouldIncludeAll(store.getQuads(),
+          ['s1', 'p1', '_:' + listElements[0].value],
+          ['_:' + listElements[0].value, namespaces.rdf.first, 'element1'],
+          ['_:' + listElements[0].value, namespaces.rdf.rest, '_:' + listElements[1].value],
+          ['_:' + listElements[1].value, namespaces.rdf.first, '"element2"'],
+          ['_:' + listElements[1].value, namespaces.rdf.rest, namespaces.rdf.nil]
+        ));
+      it('should generate a list of Collections', function () {
+        expect(listsToJSON(lists)).to.deep.equal(listItemsJSON);
+      });
+    });
+
+    describe('extractLists with remove', function () {
+      var lists = store.extractLists({ remove: true });
+      it('should remove the first/rest triples and return the list members',
+        shouldIncludeAll(store.getQuads(),
+                         ['s1', 'p1', '_:' + listElements[0].value]));
+      it('should generate a list of Collections', function () {
+        expect(listsToJSON(lists)).to.deep.equal(listItemsJSON);
+      });
+    });
+  });
+
+  describe('A Store containing a well-formed rdf:Collection that is not attached', function () {
+    var store = new Store();
+    var listElements = addList(store, new NamedNode('element1'), new Literal('"element2"'));
+    store.addQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'));
+
+    describe('extractLists without remove', function () {
+      var lists = store.extractLists();
+      it('should not delete triples',
+        shouldIncludeAll(store.getQuads(),
+          ['s1', 'p1', 'o1'],
+          ['_:' + listElements[0].value, namespaces.rdf.first, 'element1'],
+          ['_:' + listElements[0].value, namespaces.rdf.rest, '_:' + listElements[1].value],
+          ['_:' + listElements[1].value, namespaces.rdf.first, '"element2"'],
+          ['_:' + listElements[1].value, namespaces.rdf.rest, namespaces.rdf.nil]
+        ));
+      it('should generate a list of Collections', function () {
+        expect(listsToJSON(lists)).to.deep.equal({});
+      });
+    });
+
+    describe('extractLists with remove', function () {
+      var lists = store.extractLists({ remove: true });
+      it('should remove the first/rest triples and return the list members',
+        shouldIncludeAll(store.getQuads(),
+                         ['s1', 'p1', 'o1']));
+      it('should generate a list of Collections', function () {
+        expect(listsToJSON(lists)).to.deep.equal({});
+      });
+    });
+  });
+
+  describe('A Store containing a rdf:Collection without first', function () {
+    var store = new Store();
+    store.addQuad(store.createBlankNode(), new NamedNode(namespaces.rdf.rest), namespaces.rdf.nil).should.be.true;
+
+    it('extractLists throws an error', function () {
+      expect(() => store.extractLists()).throws('b0 has no list head');
+    });
+  });
+
+  describe('A Store containing an rdf:Collection with multiple rdf:first arcs on head', function () {
+    var store = new Store();
+    var listElements = addList(store, store.createBlankNode(), store.createBlankNode());
+    store.addQuad(listElements[0], new NamedNode(namespaces.rdf.first), store.createBlankNode()).should.be.true;
+
+    it('extractLists throws an error', function () {
+      expect(() => store.extractLists()).throws('b2 has multiple rdf:first arcs');
+    });
+  });
+
+  describe('A Store containing an rdf:Collection with multiple rdf:first arcs on tail', function () {
+    var store = new Store();
+    var listElements = addList(store, store.createBlankNode(), store.createBlankNode());
+    store.addQuad(listElements[1], new NamedNode(namespaces.rdf.first), store.createBlankNode()).should.be.true;
+
+    it('extractLists throws an error', function () {
+      expect(() => store.extractLists()).throws('b3 has multiple rdf:first arcs');
+    });
+  });
+
+  describe('A Store containing an rdf:Collection with multiple rdf:rest arcs on head', function () {
+    var store = new Store();
+    var listElements = addList(store, store.createBlankNode(), store.createBlankNode());
+    store.addQuad(listElements[0], new NamedNode(namespaces.rdf.rest), store.createBlankNode()).should.be.true;
+
+    it('extractLists throws an error', function () {
+      expect(() => store.extractLists()).throws('b2 has multiple rdf:rest arcs');
+    });
+  });
+
+  describe('A Store containing an rdf:Collection with multiple rdf:rest arcs on tail', function () {
+    var store = new Store();
+    var listElements = addList(store, store.createBlankNode(), store.createBlankNode());
+    store.addQuad(listElements[1], new NamedNode(namespaces.rdf.rest), store.createBlankNode()).should.be.true;
+
+    it('extractLists throws an error', function () {
+      expect(() => store.extractLists()).throws('b3 has multiple rdf:rest arcs');
+    });
+  });
+
+  describe('A Store containing an rdf:Collection with non-list arcs out', function () {
+    var store = new Store();
+    var listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
+    store.addQuad(listElements[1], new NamedNode('http://a.example/foo'), store.createBlankNode()).should.be.true;
+
+    it('extractLists throws an error', function () {
+      expect(() => store.extractLists()).throws('b4 can\'t be subject and object');
+    });
+  });
+
+  describe('A Store containing an rdf:Collection with multiple incoming rdf:rest arcs', function () {
+    var store = new Store();
+    var listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
+    store.addQuad(store.createBlankNode(), new NamedNode(namespaces.rdf.rest), listElements[1]).should.be.true;
+
+    it('extractLists throws an error', function () {
+      expect(() => store.extractLists()).throws('b4 has incoming rdf:rest arcs');
+    });
+  });
+
+  describe('A Store containing an rdf:Collection with co-references out of head', function () {
+    var store = new Store();
+    var listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
+    store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o1')).should.be.true;
+    store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o2')).should.be.true;
+
+    it('extractLists throws an error', function () {
+      expect(() => store.extractLists()).throws('b3 has non-list arcs out');
+    });
+  });
+
+  describe('A Store containing an rdf:Collection with co-references into head', function () {
+    var store = new Store();
+    var listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
+    store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0]).should.be.true;
+    store.addQuad(new NamedNode('s2'), new NamedNode(namespaces.rdf.rest), listElements[0]).should.be.true;
+    store.addQuad(new NamedNode('s2'), new NamedNode('p1'), listElements[0]).should.be.true;
+
+    it('extractLists throws an error', function () {
+      expect(() => store.extractLists()).throws('b3 can\'t have coreferences');
+    });
+  });
+
+  describe('A Store containing an rdf:Collection spread across graphs', function () {
+    var member0 = new NamedNode('element1');
+    var member1 = new Literal('"element2"');
+    var store = new Store();
+    var listElements = [
+      store.createBlankNode(),
+      store.createBlankNode(),
+    ];
+    store.addQuad(listElements[0], new NamedNode(namespaces.rdf.first), member0).should.be.true;
+    store.addQuad(listElements[0], new NamedNode(namespaces.rdf.rest), listElements[1], new NamedNode('g1')).should.be.true;
+    store.addQuad(listElements[1], new NamedNode(namespaces.rdf.first), member1).should.be.true;
+    store.addQuad(listElements[1], new NamedNode(namespaces.rdf.rest), new NamedNode(namespaces.rdf.nil)).should.be.true;
+    store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0]).should.be.true;
+
+    describe('extractLists without ignoreErrors', function () {
+      it('extractLists throws an error', function () {
+        expect(() => store.extractLists()).throws('b0 not confined to single graph');
+      });
+    });
+
+    describe('extractLists with ignoreErrors', function () {
+      var lists = store.extractLists({ ignoreErrors: true });
+      it('should not delete triples',
+        shouldIncludeAll(store.getQuads(),
+          ['s1', 'p1', '_:' + listElements[0].value],
+          ['_:' + listElements[0].value, namespaces.rdf.first, 'element1'],
+          ['_:' + listElements[0].value, namespaces.rdf.rest, '_:' + listElements[1].value, 'g1'],
+          ['_:' + listElements[1].value, namespaces.rdf.first, '"element2"'],
+          ['_:' + listElements[1].value, namespaces.rdf.rest, namespaces.rdf.nil]
+        ));
+      it('should generate an empty list of Collections', function () {
+        expect(listsToJSON(lists)).to.deep.equal({});
+      });
+    });
+  });
 });
 
 function alwaysTrue()  { return true;  }
@@ -1129,4 +1365,27 @@ function ArrayReader(items) {
   var reader = new Readable({ objectMode: true });
   reader._read = function () { this.push(items.shift() || null); };
   return reader;
+}
+
+function addList(store, ...items) {
+  if (!items.length)
+    return new NamedNode(namespaces.rdf.nil);
+
+  var listElements = [store.createBlankNode()];
+  items.forEach(function (item, i) {
+    store.addQuad(listElements[i], new NamedNode(namespaces.rdf.first), item);
+    if (i === items.length - 1)
+      store.addQuad(listElements[i], new NamedNode(namespaces.rdf.rest), new NamedNode(namespaces.rdf.nil));
+    else {
+      listElements.push(store.createBlankNode());
+      store.addQuad(listElements[i], new NamedNode(namespaces.rdf.rest), listElements[i + 1]);
+    }
+  });
+  return listElements;
+}
+
+function listsToJSON(lists) {
+  for (var list in lists)
+    lists[list] = lists[list].map(i => i.toJSON());
+  return lists;
 }

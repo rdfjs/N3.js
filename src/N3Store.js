@@ -1,6 +1,7 @@
 // **N3Store** objects store N3 quads by graph in memory.
 import N3DataFactory from './N3DataFactory';
 import { Readable } from 'stream';
+import namespaces from './IRIs';
 
 const { toId, fromId } = N3DataFactory.internal;
 
@@ -688,6 +689,104 @@ export default class N3Store {
     this._ids[name] = ++this._id;
     this._entities[this._id] = name;
     return this._factory.blankNode(name.substr(2));
+  }
+
+  // ### `extractLists` finds and removes all list triples
+  // and returns the items per list.
+  extractLists({ remove = false, ignoreErrors = false } = {}) {
+    var lists = {}; // has scalar keys so could be a simple Object
+    var onError = ignoreErrors ? (() => true) :
+                  ((node, message) => { throw new Error(`${node.value} ${message}`); });
+
+    // Traverse each list from its tail
+    var tails = this.getQuads(null, namespaces.rdf.rest, namespaces.rdf.nil, null);
+    var toRemove = remove ? [...tails] : [];
+    tails.forEach(tailQuad => {
+      var items = [];             // the members found as objects of rdf:first quads
+      var malformed = false;      // signals whether the current list is malformed
+      var head;                   // the head of the list (_:b1 in above example)
+      var headPos;                // set to subject or object when head is set
+      var graph = tailQuad.graph; // make sure list is in exactly one graph
+
+      // Traverse the list from tail to end
+      var current = tailQuad.subject;
+      while (current && !malformed) {
+        var objectQuads = this.getQuads(null, null, current, null);
+        var subjectQuads = this.getQuads(current, null, null, null);
+        var i, quad, first = null, rest = null, parent = null;
+
+        // Find the first and rest of this list node
+        for (i = 0; i < subjectQuads.length && !malformed; i++) {
+          quad = subjectQuads[i];
+          if (!quad.graph.equals(graph))
+            malformed = onError(current, 'not confined to single graph');
+          else if (head)
+            malformed = onError(current, 'has non-list arcs out');
+
+          // one rdf:first
+          else if (quad.predicate.value === namespaces.rdf.first) {
+            if (first)
+              malformed = onError(current, 'has multiple rdf:first arcs');
+            else
+              toRemove.push(first = quad);
+          }
+
+          // one rdf:rest
+          else if (quad.predicate.value === namespaces.rdf.rest) {
+            if (rest)
+              malformed = onError(current, 'has multiple rdf:rest arcs');
+            else
+              toRemove.push(rest = quad);
+          }
+
+          // alien triple
+          else if (objectQuads.length)
+            malformed = onError(current, 'can\'t be subject and object');
+          else {
+            head = quad; // e.g. { (1 2 3) :p :o }
+            headPos = 'subject';
+          }
+        }
+
+        // { :s :p (1 2) } arrives here with no head
+        // { (1 2) :p :o } arrives here with head set to the list.
+        for (i = 0; i < objectQuads.length && !malformed; ++i) {
+          quad = objectQuads[i];
+          if (head)
+            malformed = onError(current, 'can\'t have coreferences');
+          // one rdf:rest
+          else if (quad.predicate.value === namespaces.rdf.rest) {
+            if (parent)
+              malformed = onError(current, 'has incoming rdf:rest arcs');
+            else
+              parent = quad;
+          }
+          else {
+            head = quad; // e.g. { :s :p (1 2) }
+            headPos = 'object';
+          }
+        }
+
+        // Store the list item and continue with parent
+        if (!first)
+          malformed = onError(current, 'has no list head');
+        else
+          items.unshift(first.object);
+        current = parent && parent.subject;
+      }
+
+      // Don't remove any quads if the list is malformed
+      if (malformed)
+        remove = false;
+      // Store the list under the value of its head
+      else if (head)
+        lists[head[headPos].value] = items;
+    });
+
+    // Remove list quads if requested
+    if (remove)
+      this.removeQuads(toRemove);
+    return lists;
   }
 }
 
