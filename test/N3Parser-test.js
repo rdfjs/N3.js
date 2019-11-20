@@ -1110,6 +1110,10 @@ describe('Parser', function () {
     it('should not parse a prefix declaration',
       shouldNotParse(parser, '@prefix : <p#>.', 'Unexpected "@prefix" on line 1.'));
 
+    it('should not parse apostrophe literals',
+      shouldNotParse(parser, "_:a <http://ex.org/b> 'c'.",
+                             "Unexpected \"'c'.\" on line 1."));
+
     it('should not parse triple-quoted literals',
       shouldNotParse(parser, '_:a <http://ex.org/b> """c""".',
                              'Unexpected """"c"""." on line 1.'));

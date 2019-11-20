@@ -261,9 +261,9 @@ describe('Lexer', function () {
                      { type: 'eof', line: 1 }));
 
     it('should tokenize a triple quoted string literal with quoted newlines inside',
-      shouldTokenize('"""st"r\ni""ng"""',
-                     { type: 'literal', value: 'st"r\ni""ng', line: 1 },
-                     { type: 'eof', line: 2 }));
+      shouldTokenize('"""st"r\r\ni""\n\rng"""',
+                     { type: 'literal', value: 'st"r\r\ni""\n\rng', line: 1 },
+                     { type: 'eof', line: 4 }));
 
     it('should tokenize a string with escape characters',
       shouldTokenize('"\\\\ \\\' \\" \\n \\r \\t \\ua1b2" \n """\\\\ \\\' \\" \\n \\r \\t \\U0000a1b2"""',
@@ -274,6 +274,34 @@ describe('Lexer', function () {
     it('should not tokenize a string with invalid characters',
       shouldNotTokenize('"\\uXYZX" ',
                         'Unexpected ""\\uXYZX"" on line 1.'));
+
+    it('should not tokenize a double-quoted string ending with an escaped quote',
+      shouldNotTokenize('"abc\\"',
+                        'Unexpected ""abc\\"" on line 1.'));
+
+    it('should not tokenize a single-quoted string ending with an escaped quote',
+      shouldNotTokenize("'abc\\'",
+                        'Unexpected "\'abc\\\'" on line 1.'));
+
+    it('should not tokenize a double-quoted string ending with a backslash and escaped quote',
+      shouldNotTokenize('"abc\\\\\\"',
+                        'Unexpected ""abc\\\\\\"" on line 1.'));
+
+    it('should not tokenize a single-quoted string ending with a backslash and escaped quote',
+      shouldNotTokenize("'abc\\\\\\'",
+                        'Unexpected "\'abc\\\\\\\'" on line 1.'));
+
+    it('should tokenize a double-quoted string ending in backslashes',
+      shouldTokenize('"abc\\\\" "abc\\\\\\\\"',
+                     { type: 'literal', value: 'abc\\', line: 1 },
+                     { type: 'literal', value: 'abc\\\\', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize a single-quoted string ending in backslashes',
+      shouldTokenize("'abc\\\\' 'abc\\\\\\\\'",
+                     { type: 'literal', value: 'abc\\', line: 1 },
+                     { type: 'literal', value: 'abc\\\\', line: 1 },
+                     { type: 'eof', line: 1 }));
 
     it('should not tokenize a triple-quoted string with invalid characters',
       shouldNotTokenize("'''\\uXYZX''' ",
@@ -480,7 +508,7 @@ describe('Lexer', function () {
       shouldNotTokenize(streamOf('"abc\r', null), 'Unexpected ""abc" on line 1.'));
 
     it('should tokenize a split single-quoted string',
-      shouldTokenize(streamOf("'abc", "def'"),
+      shouldTokenize(streamOf("'abc", "def' "),
                      { type: 'literal', value: 'abcdef', line: 1 },
                      { type: 'eof', line: 1 }));
 

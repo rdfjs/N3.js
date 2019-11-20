@@ -19,8 +19,7 @@ var illegalIriChars = /[\x00-\x20<>\\"\{\}\|\^\`]/;
 var lineModeRegExps = {
   _iri: true,
   _unescapedIri: true,
-  _unescapedQuote: true,
-  _singleQuote: true,
+  _simpleQuotedString: true,
   _langcode: true,
   _blank: true,
   _newline: true,
@@ -37,12 +36,8 @@ export default class N3Lexer {
     // It's slightly faster to have these as properties than as in-scope variables
     this._iri = /^<((?:[^ <>{}\\]|\\[uU])+)>[ \t]*/; // IRI with escape sequences; needs sanity check after unescaping
     this._unescapedIri = /^<([^\x00-\x20<>\\"\{\}\|\^\`]*)>[ \t]*/; // IRI without escape sequences; no unescaping
-    this._unescapedQuote = /^"([^"\\\r\n]+)"/; // non-empty string without escape sequences
-    this._unescapedApos =  /^'([^'\\\r\n]+)'/;
-    this._singleQuote = /^"((?:[^"\\\r\n]|\\.)*)"(?=[^"])/;
-    this._singleApos =  /^'((?:[^'\\\r\n]|\\.)*)'(?=[^'])/;
-    this._tripleQuote = /^"""([^"\\]*(?:(?:\\.|"(?!""))[^"\\]*)*)"""/;
-    this._tripleApos =  /^'''([^'\\]*(?:(?:\\.|'(?!''))[^'\\]*)*)'''/;
+    this._simpleQuotedString = /^"([^"\\\r\n]*)"(?=[^"])/; // string without escape sequences
+    this._simpleApostropheString = /^'([^'\\\r\n]*)'(?=[^'])/;
     this._langcode = /^@([a-z]+(?:-[a-z0-9]+)*)(?=[^a-z0-9\-])/i;
     this._prefix = /^((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:(?=[#\s<])/;
     this._prefixed = /^((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:((?:(?:[0-:A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])(?:(?:[\.\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])*(?:[\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~]))?)?)(?:[ \t]+|(?=\.?[,;!\^\s#()\[\]\{\}"'<]))/;
@@ -163,48 +158,32 @@ export default class N3Lexer {
 
       case '"':
         // Try to find a literal without escape sequences
-        if (match = this._unescapedQuote.exec(input))
+        if (match = this._simpleQuotedString.exec(input))
           value = match[1];
-        // Before attempting more complex string patterns, try to detect a closing quote
-        else if (input.indexOf('"', 1) > 0) {
-          // Try to find any other literal wrapped in a pair of quotes
-          if (match = this._singleQuote.exec(input))
-            value = this._unescape(match[1]);
-          // Try to find a literal wrapped in three pairs of quotes
-          else if (match = this._tripleQuote.exec(input)) {
-            value = match[1];
-            // Advance line counter
-            this._line += value.split(/\r\n|\r|\n/).length - 1;
-            value = this._unescape(value);
-          }
+        // Try to find a literal wrapped in three pairs of quotes
+        else {
+          ({ value, matchLength } = this._parseLiteral(input));
           if (value === null)
             return reportSyntaxError(this);
         }
-        if (match !== null)
+        if (match !== null || matchLength !== 0)
           type = 'literal';
         break;
 
       case "'":
-        // Try to find a literal without escape sequences
-        if (match = this._unescapedApos.exec(input))
-          value = match[1];
-        // Before attempting more complex string patterns, try to detect a closing apostrophe
-        else if (input.indexOf("'", 1) > 0) {
-          // Try to find any other literal wrapped in a pair of apostrophes
-          if (match = this._singleApos.exec(input))
-            value = this._unescape(match[1]);
-          // Try to find a literal wrapped in three pairs of apostrophes
-          else if (match = this._tripleApos.exec(input)) {
+        if (!this._lineMode) {
+          // Try to find a literal without escape sequences
+          if (match = this._simpleApostropheString.exec(input))
             value = match[1];
-            // Advance line counter
-            this._line += value.split(/\r\n|\r|\n/).length - 1;
-            value = this._unescape(value);
+          // Try to find a literal wrapped in three pairs of quotes
+          else {
+            ({ value, matchLength } = this._parseLiteral(input));
+            if (value === null)
+              return reportSyntaxError(this);
           }
-          if (value === null)
-            return reportSyntaxError(this);
+          if (match !== null || matchLength !== 0)
+            type = 'literal';
         }
-        if (match !== null)
-          type = 'literal';
         break;
 
       case '?':
@@ -388,6 +367,38 @@ export default class N3Lexer {
       });
     }
     catch (error) { return null; }
+  }
+
+  // ### `_parseLiteral` parses a literal into an unescaped value
+  _parseLiteral(input) {
+    // Identify the opening quote(s)
+    const opening = input.match(/^(?:"""|"|'''|'|)/)[0];
+    const openingLength = opening.length;
+
+    // Find the next candidate closing quotes
+    let closingPos = openingLength;
+    while ((closingPos = input.indexOf(opening, closingPos)) > 0) {
+      // Count backslashes right before the closing quotes
+      let backslashCount = 0;
+      while (input[closingPos - backslashCount - 1] === '\\')
+        backslashCount++;
+
+      // An even number of backslashes (in particular 0)
+      // means these are actual, non-escaped closing quotes
+      if (backslashCount % 2 === 0) {
+        // Extract and unescape the value
+        const raw = input.substring(openingLength, closingPos);
+        const lines = raw.split(/\r\n|\r|\n/).length - 1;
+        // Only triple-quoted strings can be multi-line
+        if (openingLength === 1 && lines !== 0 ||
+            openingLength === 3 && this._lineMode)
+          break;
+        this._line += lines;
+        return { value: this._unescape(raw), matchLength: closingPos + openingLength };
+      }
+      closingPos++;
+    }
+    return { value: '', matchLength: 0 };
   }
 
   // ### `_syntaxError` creates a syntax error for the given issue
