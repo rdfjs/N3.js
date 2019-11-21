@@ -91,7 +91,7 @@ export default class N3Lexer {
         this._line++;
       }
       // Skip whitespace on current line
-      if (whiteSpaceMatch = this._whitespace.exec(input))
+      if (!whiteSpaceMatch && (whiteSpaceMatch = this._whitespace.exec(input)))
         input = input.substr(whiteSpaceMatch[0].length, input.length);
 
       // Stop for now if we're at the end
