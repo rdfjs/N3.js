@@ -512,6 +512,13 @@ describe('Lexer', function () {
                      { type: 'literal', value: 'abcdef', line: 1 },
                      { type: 'eof', line: 1 }));
 
+    it('should tokenize a split single-quoted string followed by a triple-quoted string',
+      // Checks whether _literalClosingPos is properly reset
+      shouldTokenize(streamOf("'abcdef", "' '''a'''"),
+                     { type: 'literal', value: 'abcdef', line: 1 },
+                     { type: 'literal', value: 'a', line: 1 },
+                     { type: 'eof', line: 1 }));
+
     it('should tokenize split triple-quoted strings',
       shouldTokenize(streamOf('"', '""abc""" ',
                               '""', '"def""" ',

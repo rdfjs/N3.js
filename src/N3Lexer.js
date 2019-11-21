@@ -168,8 +168,10 @@ export default class N3Lexer {
           if (value === null)
             return reportSyntaxError(this);
         }
-        if (match !== null || matchLength !== 0)
+        if (match !== null || matchLength !== 0) {
           type = 'literal';
+          this._literalClosingPos = 0;
+        }
         break;
 
       case "'":
@@ -183,8 +185,10 @@ export default class N3Lexer {
             if (value === null)
               return reportSyntaxError(this);
           }
-          if (match !== null || matchLength !== 0)
+          if (match !== null || matchLength !== 0) {
             type = 'literal';
+            this._literalClosingPos = 0;
+          }
         }
         break;
 
@@ -399,7 +403,6 @@ export default class N3Lexer {
               openingLength === 3 && this._lineMode)
             break;
           this._line += lines;
-          this._literalClosingPos = 0;
           return { value: this._unescape(raw), matchLength };
         }
         closingPos++;
