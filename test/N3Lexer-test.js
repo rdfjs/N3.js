@@ -512,7 +512,22 @@ describe('Lexer', function () {
                      { type: 'literal', value: 'abcdef', line: 1 },
                      { type: 'eof', line: 1 }));
 
-    it('should tokenize a split triple-quoted string',
+    it('should tokenize split triple-quoted strings',
+      shouldTokenize(streamOf('"', '""abc""" ',
+                              '""', '"def""" ',
+                              '"""', 'ghi""" ',
+                              '"""jkl', '""" ',
+                              '"""mno"', '"" ',
+                              '"""pqr""', '" '),
+                     { type: 'literal', value: 'abc', line: 1 },
+                     { type: 'literal', value: 'def', line: 1 },
+                     { type: 'literal', value: 'ghi', line: 1 },
+                     { type: 'literal', value: 'jkl', line: 1 },
+                     { type: 'literal', value: 'mno', line: 1 },
+                     { type: 'literal', value: 'pqr', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize a triple-quoted string split after a newline',
       shouldTokenize(streamOf('"""abc\n', 'def"""'),
                      { type: 'literal', value: 'abc\ndef', line: 1 },
                      { type: 'eof', line: 2 }));

@@ -69,6 +69,8 @@ export default class N3Lexer {
     }
     // Don't output comment tokens by default
     this._comments = !!options.comments;
+    // Cache the last tested closing position of long literals
+    this._literalClosingPos = 0;
   }
 
   // ## Private methods
@@ -371,32 +373,38 @@ export default class N3Lexer {
 
   // ### `_parseLiteral` parses a literal into an unescaped value
   _parseLiteral(input) {
-    // Identify the opening quote(s)
-    const opening = input.match(/^(?:"""|"|'''|'|)/)[0];
-    const openingLength = opening.length;
+    // Ensure we have enough lookahead to identify triple-quoted strings
+    if (input.length >= 3) {
+      // Identify the opening quote(s)
+      const opening = input.match(/^(?:"""|"|'''|'|)/)[0];
+      const openingLength = opening.length;
 
-    // Find the next candidate closing quotes
-    let closingPos = openingLength;
-    while ((closingPos = input.indexOf(opening, closingPos)) > 0) {
-      // Count backslashes right before the closing quotes
-      let backslashCount = 0;
-      while (input[closingPos - backslashCount - 1] === '\\')
-        backslashCount++;
+      // Find the next candidate closing quotes
+      let closingPos = Math.max(this._literalClosingPos, openingLength);
+      while ((closingPos = input.indexOf(opening, closingPos)) > 0) {
+        // Count backslashes right before the closing quotes
+        let backslashCount = 0;
+        while (input[closingPos - backslashCount - 1] === '\\')
+          backslashCount++;
 
-      // An even number of backslashes (in particular 0)
-      // means these are actual, non-escaped closing quotes
-      if (backslashCount % 2 === 0) {
-        // Extract and unescape the value
-        const raw = input.substring(openingLength, closingPos);
-        const lines = raw.split(/\r\n|\r|\n/).length - 1;
-        // Only triple-quoted strings can be multi-line
-        if (openingLength === 1 && lines !== 0 ||
-            openingLength === 3 && this._lineMode)
-          break;
-        this._line += lines;
-        return { value: this._unescape(raw), matchLength: closingPos + openingLength };
+        // An even number of backslashes (in particular 0)
+        // means these are actual, non-escaped closing quotes
+        if (backslashCount % 2 === 0) {
+          // Extract and unescape the value
+          const raw = input.substring(openingLength, closingPos);
+          const lines = raw.split(/\r\n|\r|\n/).length - 1;
+          const matchLength = closingPos + openingLength;
+          // Only triple-quoted strings can be multi-line
+          if (openingLength === 1 && lines !== 0 ||
+              openingLength === 3 && this._lineMode)
+            break;
+          this._line += lines;
+          this._literalClosingPos = 0;
+          return { value: this._unescape(raw), matchLength };
+        }
+        closingPos++;
       }
-      closingPos++;
+      this._literalClosingPos = input.length - openingLength + 1;
     }
     return { value: '', matchLength: 0 };
   }
