@@ -23,7 +23,8 @@ It offers:
 Parsing and writing is:
 - **asynchronous** – triples arrive as soon as possible
 - **streaming** – streams are parsed as data comes in, so you can parse files larger than memory
-- **fast** – by far the [fastest spec-compatible parser in JavaScript](https://github.com/rdfjs/N3.js/tree/master/perf)
+- **fast** – once the [fastest spec-compatible parser in JavaScript](https://github.com/rdfjs/N3.js/tree/master/perf)
+  (but then [graphy.js](https://github.com/blake-regalia/graphy.js) came along)
 
 ## Installation
 For Node.js, N3.js comes as an [npm package](https://npmjs.org/package/n3).
