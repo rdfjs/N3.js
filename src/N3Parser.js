@@ -29,7 +29,7 @@ export default class N3Parser {
     this._supportsQuads = !(isTurtle || isTriG || isNTriples || isN3);
     // Disable relative IRIs in N-Triples or N-Quads mode
     if (isLineMode)
-      this._resolveRelativeIRI = function (iri) { return ''; };
+      this._resolveRelativeIRI = function (iri) { return null; };
     this._blankNodePrefix = typeof options.blankNodePrefix !== 'string' ? '' :
                               options.blankNodePrefix.replace(/^(?!_:)/, '_:');
     this._lexer = options.lexer || new N3Lexer({ lineMode: isLineMode, n3: isN3 });
@@ -154,7 +154,7 @@ export default class N3Parser {
     case 'IRI':
     case 'typeIRI':
       var iri = this._resolveIRI(token.value);
-      if (iri === '')
+      if (iri === null)
         return this._error('Invalid IRI', token);
       value = this._namedNode(iri);
       break;
@@ -828,7 +828,7 @@ export default class N3Parser {
     // Resolve all other IRIs at the base IRI's path
     default:
       // Relative IRIs cannot contain a colon in the first path segment
-      return (/^[^/:]*:/.test(iri)) ? '' : this._removeDotSegments(this._basePath + iri);
+      return (/^[^/:]*:/.test(iri)) ? null : this._removeDotSegments(this._basePath + iri);
     }
   }
 

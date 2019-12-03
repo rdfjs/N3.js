@@ -897,13 +897,21 @@ describe('Parser', function () {
   describe('An Parser instance without document IRI', function () {
     function parser() { return new Parser(); }
 
-    it('should not resolve the IRIs',
+    it('should keep relative IRIs',
       shouldParse(parser,
         '@prefix : <#>.\n' +
         '<a> <b> <c> <g>.\n' +
         ':d :e :f :g.',
         [fromId('a'), fromId('b'), fromId('c'), fromId('g')],
         [fromId('#d'), fromId('#e'), fromId('#f'), fromId('#g')]));
+
+    it('should keep empty IRIs',
+      shouldParse(parser,
+        '@prefix : <>.\n' +
+        '<> <> <> <>.\n' +
+        ': : : :.',
+        [new NamedNode(''), new NamedNode(''), new NamedNode(''), new NamedNode('')],
+        [new NamedNode(''), new NamedNode(''), new NamedNode(''), new NamedNode('')]));
   });
 
   describe('An Parser instance with a document IRI', function () {
