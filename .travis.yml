@@ -9,7 +9,7 @@ env:
  - DEFAULT_NODE_VERSION=12
 script:
   - npm run lint
-  - npm test -- --timeout 500
+  - npm run mocha -- --timeout 500
   - npm run spec-turtle
   - npm run spec-ntriples
   - npm run spec-nquads
@@ -18,7 +18,7 @@ script:
 after_success:
   - if [ "$TRAVIS_NODE_VERSION" == "$DEFAULT_NODE_VERSION" ]; then
       npm install coveralls;
-      node_modules/.bin/nyc --reporter=text-lcov mocha |
+      node_modules/.bin/nyc --reporter=text-lcov npm run mocha |
         node_modules/.bin/coveralls;
       ./.travis_build_pages;
     fi
