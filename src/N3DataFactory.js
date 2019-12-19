@@ -290,16 +290,14 @@ function literal(value, languageOrDataType) {
   if (typeof languageOrDataType === 'string')
     return new Literal('"' + value + '"@' + languageOrDataType.toLowerCase());
 
-  // Create a datatyped literal
-  var datatype = languageOrDataType && languageOrDataType.value || '';
-  if (!datatype) {
-    switch (typeof value) {
+  // Automatically determine datatype for booleans and numbers
+  let datatype = languageOrDataType ? languageOrDataType.value : '';
+  if (datatype === '') {
     // Convert a boolean
-    case 'boolean':
+    if (typeof value === 'boolean')
       datatype = xsd.boolean;
-      break;
     // Convert an integer or double
-    case 'number':
+    else if (typeof value === 'number') {
       if (Number.isFinite(value))
         datatype = Number.isInteger(value) ? xsd.integer : xsd.double;
       else {
@@ -307,13 +305,13 @@ function literal(value, languageOrDataType) {
         if (!Number.isNaN(value))
           value = value > 0 ? 'INF' : '-INF';
       }
-      break;
-    // No datatype, so convert a plain string
-    default:
-      return new Literal('"' + value + '"');
     }
   }
-  return new Literal('"' + value + '"^^' + datatype);
+
+  // Create a datatyped literal
+  return (datatype === '' || datatype === xsd.string) ?
+    new Literal('"' + value + '"') :
+    new Literal('"' + value + '"^^' + datatype);
 }
 
 // ### Creates a variable

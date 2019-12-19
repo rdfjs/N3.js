@@ -49,6 +49,10 @@ describe('DataFactory', function () {
       DataFactory.literal('abc', new NamedNode('http://ex.org/type')).should.deep.equal(new Literal('"abc"^^http://ex.org/type'));
     });
 
+    it('converts a non-empty string with an xsd:string type', function () {
+      DataFactory.literal('abc', new NamedNode('http://www.w3.org/2001/XMLSchema#string')).should.deep.equal(new Literal('"abc"'));
+    });
+
     it('converts an integer', function () {
       DataFactory.literal(123).should.deep.equal(new Literal('"123"^^http://www.w3.org/2001/XMLSchema#integer'));
     });
