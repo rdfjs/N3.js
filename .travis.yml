@@ -14,6 +14,7 @@ script:
   - npm run spec-ntriples
   - npm run spec-nquads
   - npm run spec-trig
+  - npm run spec-n3
   - npm run docs
 after_success:
   - if [ "$TRAVIS_NODE_VERSION" == "$DEFAULT_NODE_VERSION" ]; then
