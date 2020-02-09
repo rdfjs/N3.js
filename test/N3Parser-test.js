@@ -1059,6 +1059,10 @@ describe('Parser', function () {
 
     it('should not parse @forAll',
       shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'));
+
+    it('should not parse a formula as list item',
+      shouldNotParse(parser, '( <a> { <b> <c> <d> } <e> ).',
+        'Unexpected graph on line 1.'));
   });
 
   describe('A Parser instance for the TriG format', function () {
@@ -1485,6 +1489,17 @@ describe('Parser', function () {
                   ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
                   ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
                   ['_:b2', 'f:son', 'ex:joe']));
+
+    it('should parse a formula as list item',
+        shouldParse(parser, '<a> <findAll> ( <b> { <b> a <type>. <b> <something> <foo> } <o> ).',
+        ['a', 'findAll', '_:b0'],
+        ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'b'],
+        ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2'],
+        ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'o'],
+        ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+        ['b', 'something', 'foo', '_:b1'],
+        ['b', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'type', '_:b1']
+    ));
 
     it('should not parse an invalid ! path',
       shouldNotParse(parser, '<a>!"invalid" ', 'Expected entity but got literal on line 1.'));

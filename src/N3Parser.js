@@ -429,6 +429,13 @@ export default class N3Parser {
         next = this._getContextEndReader();
       }
       break;
+    case '{':
+      // Start a new formula
+      if (!this._n3Mode)
+        return this._error('Unexpected graph', token);
+      this._saveContext('formula', this._graph, this._subject, this._predicate,
+                        this._graph = this._blank());
+      return this._readSubject;
     default:
       if ((item = this._readEntity(token)) === undefined)
         return;
