@@ -222,6 +222,18 @@ export default class N3Parser {
       this._predicate = this.N3_FORALL;
       this._quantifier = this._variable;
       return this._readQuantifierList;
+    case 'literal':
+      if (!this._n3Mode)
+        return this._error('Unexpected literal', token);
+
+      if (token.prefix.length === 0) {
+        this._literalValue = token.value;
+        return this._completeSubjectLiteral;
+      }
+      else
+        this._subject = this._literal(token.value, this._namedNode(token.prefix));
+
+      break;
     default:
       // Read the subject entity
       if ((this._subject = this._readEntity(token)) === undefined)
@@ -475,45 +487,63 @@ export default class N3Parser {
 
   // ### `_readDataTypeOrLang` reads an _optional_ datatype or language
   _readDataTypeOrLang(token) {
-    return this._completeLiteral(token, false);
+    return this._completeObjectLiteral(token, false);
   }
+
 
   // ### `_readListItemDataTypeOrLang` reads an _optional_ datatype or language in a list
   _readListItemDataTypeOrLang(token) {
-    return this._completeLiteral(token, true);
+    return this._completeObjectLiteral(token, true);
   }
 
   // ### `_completeLiteral` completes a literal with an optional datatype or language
-  _completeLiteral(token, listItem) {
+  _completeLiteral(token) {
+    // Create a simple string literal by default
+    let literal = this._literal(this._literalValue);
+
     switch (token.type) {
     // Create a datatyped literal
     case 'type':
     case 'typeIRI':
       var datatype = this._readEntity(token);
       if (datatype === undefined) return; // No datatype means an error occurred
-      this._object = this._literal(this._literalValue, datatype);
+      literal = this._literal(this._literalValue, datatype);
       token = null;
       break;
     // Create a language-tagged string
     case 'langcode':
-      this._object = this._literal(this._literalValue, token.value);
+      literal = this._literal(this._literalValue, token.value);
       token = null;
       break;
-    // Create a simple string literal
-    default:
-      this._object = this._literal(this._literalValue);
     }
+
+    return { token, literal };
+  }
+
+  // Completes a literal in subject position
+  _completeSubjectLiteral(token) {
+    this._subject = this._completeLiteral(token).literal;
+    return this._readPredicateOrNamedGraph;
+  }
+
+  // Completes a literal in object position
+  _completeObjectLiteral(token, listItem) {
+    const completed = this._completeLiteral(token);
+    if (!completed)
+      return;
+    this._object = completed.literal;
+
     // If this literal was part of a list, write the item
     // (we could also check the context stack, but passing in a flag is faster)
     if (listItem)
       this._emit(this._subject, this.RDF_FIRST, this._object, this._graph);
     // If the token was consumed, continue with the rest of the input
-    if (token === null)
+    if (completed.token === null)
       return this._getContextEndReader();
     // Otherwise, consume the token now
     else {
       this._readCallback = this._getContextEndReader();
-      return this._readCallback(token);
+      return this._readCallback(completed.token);
     }
   }
 

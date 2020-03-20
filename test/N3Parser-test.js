@@ -1063,6 +1063,10 @@ describe('Parser', function () {
     it('should not parse a formula as list item',
       shouldNotParse(parser, '( <a> { <b> <c> <d> } <e> ).',
         'Unexpected graph on line 1.'));
+
+    it('should not parse a literal as subject',
+      shouldNotParse(parser, '1 <a> <b>.',
+        'Unexpected literal on line 1.'));
   });
 
   describe('A Parser instance for the TriG format', function () {
@@ -1506,6 +1510,24 @@ describe('Parser', function () {
 
     it('should not parse an invalid ^ path',
       shouldNotParse(parser, '<a>^"invalid" ', 'Expected entity but got literal on line 1.'));
+
+    it('should parse literal as subject',
+        shouldParse(parser, '<a> <b> {1 <greaterThan> 0}.',
+            ['a', 'b', '_:b0'],
+            ['"1"^^http://www.w3.org/2001/XMLSchema#integer', 'greaterThan', '"0"^^http://www.w3.org/2001/XMLSchema#integer', '_:b0']
+        ));
+
+    it('should parse literals with datatype as subject',
+        shouldParse(parser, '<a> <b> {"a"^^<c> <greaterThan> "b"^^<c>}.',
+            ['a', 'b', '_:b0'],
+            ['"a"^^http://example.org/c', 'greaterThan', '"b"^^http://example.org/c', '_:b0']
+        ));
+
+    it('should parse literals with language as subject',
+        shouldParse(parser, '<a> <b> {"bonjour"@fr <sameAs> "hello"@en}.',
+            ['a', 'b', '_:b0'],
+            ['"bonjour"@fr', 'sameAs', '"hello"@en', '_:b0']
+        ));
   });
 
   describe('A Parser instance for the N3 format with the explicitQuantifiers option', function () {
