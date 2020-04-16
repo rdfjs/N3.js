@@ -15,6 +15,8 @@ describe('DataFactory', function () {
     });
 
     it('creates an anonymous blank node', function () {
+      DataFactory.internal._setBlankNodePrefix('n3-');
+      DataFactory.internal._resetBlankNodeIds();
       DataFactory.blankNode().should.deep.equal(new BlankNode('n3-0'));
       DataFactory.blankNode().should.deep.equal(new BlankNode('n3-1'));
     });

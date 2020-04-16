@@ -4,6 +4,12 @@ const { NamedNode, Quad, fromId } = DataFactory.internal;
 
 const BASE_IRI = 'http://example.org/';
 
+beforeEach(() => {
+  DataFactory.internal._setBlankNodePrefix('b');
+  DataFactory.internal._resetBlankNodeIds();
+  Parser._resetBlankNodePrefix();
+});
+
 describe('Parser', function () {
   describe('The Parser export', function () {
     it('should be a function', function () {
@@ -16,8 +22,6 @@ describe('Parser', function () {
   });
 
   describe('A Parser instance', function () {
-    beforeEach(Parser._resetBlankNodeIds);
-
     it('should parse the empty string',
       shouldParse(''
                   /* no triples */));
@@ -1604,8 +1608,6 @@ describe('Parser', function () {
       parser = new Parser({ baseIRI: BASE_IRI, format: 'n3', factory: factory });
     });
 
-    beforeEach(Parser._resetBlankNodeIds);
-
     it('should use the custom factory', function () {
       parser.parse('<a> ?b 1, _:d.').should.deep.equal([
         { s: 'n-http://example.org/a', p: 'v-b', o: 'l-1',    g: 'defaultGraph' },
@@ -2066,7 +2068,6 @@ function shouldParse(parser, input) {
       });
       return new Quad(item[0], item[1], item[2], item[3]);
     });
-    Parser._resetBlankNodeIds();
     new parser({ baseIRI: BASE_IRI }).parse(input, function (error, triple) {
       expect(error).not.to.exist;
       if (triple)

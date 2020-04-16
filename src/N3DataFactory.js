@@ -6,6 +6,7 @@ const { rdf, xsd } = namespaces;
 
 var DataFactory, DEFAULTGRAPH;
 
+var _blankNodePrefix = 'n3-';
 var _blankNodeCounter = 0;
 
 // ## Term constructor
@@ -268,6 +269,8 @@ DataFactory = {
     Triple: Quad,
     fromId,
     toId,
+    _resetBlankNodeIds: () => { _blankNodeCounter = 0; },
+    _setBlankNodePrefix: (prefix) => { _blankNodePrefix = prefix; },
   },
 };
 export default DataFactory;
@@ -280,7 +283,7 @@ function namedNode(iri) {
 // ### Creates a blank node
 function blankNode(name) {
   if (!name)
-    name = 'n3-' + _blankNodeCounter++;
+    name = _blankNodePrefix + _blankNodeCounter++;
   return new BlankNode(name);
 }
 
