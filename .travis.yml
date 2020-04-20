@@ -14,7 +14,9 @@ script:
   - npm run spec-ntriples
   - npm run spec-nquads
   - npm run spec-trig
-  - npm run docs
+  - if [ "$TRAVIS_NODE_VERSION" != "8" ]; then
+      npm run docs;
+    fi
 after_success:
   - if [ "$TRAVIS_NODE_VERSION" == "$DEFAULT_NODE_VERSION" ]; then
       npm install coveralls;
