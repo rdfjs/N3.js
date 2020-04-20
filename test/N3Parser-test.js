@@ -1,14 +1,16 @@
 import { Parser, DataFactory } from '../src/';
 
-const { NamedNode, Quad, fromId } = DataFactory.internal;
+const { NamedNode, BlankNode, Quad, fromId } = DataFactory.internal;
 
 const BASE_IRI = 'http://example.org/';
 
+// Reset blank node identifiers between tests
+let blankId;
 beforeEach(() => {
-  DataFactory.internal._setBlankNodePrefix('b');
-  DataFactory.internal._resetBlankNodeIds();
-  Parser._resetBlankNodePrefix();
+  blankId = 0; // reset per-node ID
+  Parser._resetBlankNodePrefix(); // reset per-parser ID
 });
+Parser.prototype._blankNode = name => new BlankNode(name || `b${blankId++}`);
 
 describe('Parser', function () {
   describe('The Parser export', function () {
