@@ -279,9 +279,7 @@ function namedNode(iri) {
 
 // ### Creates a blank node
 function blankNode(name) {
-  if (!name)
-    name = 'n3-' + _blankNodeCounter++;
-  return new BlankNode(name);
+  return new BlankNode(name || `n3-${_blankNodeCounter++}`);
 }
 
 // ### Creates a literal

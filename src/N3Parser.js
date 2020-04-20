@@ -3,8 +3,7 @@ import N3Lexer from './N3Lexer';
 import N3DataFactory from './N3DataFactory';
 import namespaces from './IRIs';
 
-// The next ID for new blank nodes
-var blankNodePrefix = 0, blankNodeCount = 0;
+let blankNodePrefix = 0;
 
 // ## Constructor
 export default class N3Parser {
@@ -39,17 +38,12 @@ export default class N3Parser {
 
   // ## Static class methods
 
-// ### `_resetBlankNodeIds` restarts blank node identification
-  static _resetBlankNodeIds() {
-    blankNodePrefix = blankNodeCount = 0;
+  // ### `_resetBlankNodePrefix` restarts blank node prefix identification
+  static _resetBlankNodePrefix() {
+    blankNodePrefix = 0;
   }
 
   // ## Private methods
-
-  // ### `_blank` creates a new blank node
-  _blank() {
-    return this._blankNode('b' + blankNodeCount++);
-  }
 
   // ### `_setBase` sets the base IRI to resolve relative IRIs
   _setBase(baseIRI) {
@@ -191,7 +185,7 @@ export default class N3Parser {
     case '[':
       // Start a new quad with a new blank node as subject
       this._saveContext('blank', this._graph,
-                        this._subject = this._blank(), null, null);
+                        this._subject = this._blankNode(), null, null);
       return this._readBlankNodeHead;
     case '(':
       // Start a new list
@@ -203,7 +197,7 @@ export default class N3Parser {
       if (!this._n3Mode)
         return this._error('Unexpected graph', token);
       this._saveContext('formula', this._graph,
-                        this._graph = this._blank(), null, null);
+                        this._graph = this._blankNode(), null, null);
       return this._readSubject;
     case '}':
        // No subject; the graph in which we are reading is closed instead
@@ -296,7 +290,7 @@ export default class N3Parser {
     case '[':
       // Start a new quad with a new blank node as subject
       this._saveContext('blank', this._graph, this._subject, this._predicate,
-                        this._subject = this._blank());
+                        this._subject = this._blankNode());
       return this._readBlankNodeHead;
     case '(':
       // Start a new list
@@ -308,7 +302,7 @@ export default class N3Parser {
       if (!this._n3Mode)
         return this._error('Unexpected graph', token);
       this._saveContext('formula', this._graph, this._subject, this._predicate,
-                        this._graph = this._blank());
+                        this._graph = this._blankNode());
       return this._readSubject;
     default:
       // Read the object entity
@@ -394,14 +388,14 @@ export default class N3Parser {
     case '[':
       // Stack the current list quad and start a new quad with a blank node as subject
       this._saveContext('blank', this._graph,
-                        list = this._blank(), this.RDF_FIRST,
-                        this._subject = item = this._blank());
+                        list = this._blankNode(), this.RDF_FIRST,
+                        this._subject = item = this._blankNode());
       next = this._readBlankNodeHead;
       break;
     case '(':
       // Stack the current list quad and start a new list
       this._saveContext('list', this._graph,
-                        list = this._blank(), this.RDF_FIRST, this.RDF_NIL);
+                        list = this._blankNode(), this.RDF_FIRST, this.RDF_NIL);
       this._subject = null;
       break;
     case ')':
@@ -446,7 +440,7 @@ export default class N3Parser {
       if (!this._n3Mode)
         return this._error('Unexpected graph', token);
       this._saveContext('formula', this._graph, this._subject, this._predicate,
-                        this._graph = this._blank());
+                        this._graph = this._blankNode());
       return this._readSubject;
     default:
       if ((item = this._readEntity(token)) === undefined)
@@ -455,7 +449,7 @@ export default class N3Parser {
 
      // Create a new blank node if no item head was assigned yet
     if (list === null)
-      this._subject = list = this._blank();
+      this._subject = list = this._blankNode();
 
     // Is this the first element of the list?
     if (previousList === null) {
@@ -680,7 +674,7 @@ export default class N3Parser {
   _readNamedGraphBlankLabel(token) {
     if (token.type !== ']')
       return this._error('Invalid graph label', token);
-    this._subject = this._blank();
+    this._subject = this._blankNode();
     return this._readGraph;
   }
 
@@ -710,17 +704,17 @@ export default class N3Parser {
     }
     // Without explicit quantifiers, map entities to a quantified entity
     if (!this._explicitQuantifiers)
-      this._quantified[entity.id] = this._quantifier('b' + blankNodeCount++);
+      this._quantified[entity.id] = this._quantifier(this._blankNode().value);
     // With explicit quantifiers, output the reified quantifier
     else {
       // If this is the first item, start a new quantifier list
       if (this._subject === null)
         this._emit(this._graph || this.DEFAULTGRAPH, this._predicate,
-                   this._subject = this._blank(), this.QUANTIFIERS_GRAPH);
+                   this._subject = this._blankNode(), this.QUANTIFIERS_GRAPH);
       // Otherwise, continue the previous list
       else
         this._emit(this._subject, this.RDF_REST,
-                   this._subject = this._blank(), this.QUANTIFIERS_GRAPH);
+                   this._subject = this._blankNode(), this.QUANTIFIERS_GRAPH);
       // Output the list item
       this._emit(this._subject, this.RDF_FIRST, entity, this.QUANTIFIERS_GRAPH);
     }
@@ -776,7 +770,7 @@ export default class N3Parser {
 
   // ### `_readForwardPath` reads a '!' path
   _readForwardPath(token) {
-    var subject, predicate, object = this._blank();
+    var subject, predicate, object = this._blankNode();
     // The next token is the predicate
     if ((predicate = this._readEntity(token)) === undefined)
       return;
@@ -793,7 +787,7 @@ export default class N3Parser {
 
   // ### `_readBackwardPath` reads a '^' path
   _readBackwardPath(token) {
-    var subject = this._blank(), predicate, object;
+    var subject = this._blankNode(), predicate, object;
     // The next token is the predicate
     if ((predicate = this._readEntity(token)) === undefined)
       return;
