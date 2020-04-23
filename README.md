@@ -344,7 +344,7 @@ The N3.js submodules are compatible with the following [RDF.js](http://rdf.js.or
     and one of
     [`NamedNode`](http://rdf.js.org/data-model-spec/#namednode-interface),
     [`BlankNode`](http://rdf.js.org/data-model-spec/#blanknode-interface),
-    [`Literal`](http://rdf.js.org/data-model-spec/#litereal-interface),
+    [`Literal`](http://rdf.js.org/data-model-spec/#literal-interface),
     [`Variable`](http://rdf.js.org/data-model-spec/#variable-interface),
     [`DefaultGraph`](http://rdf.js.org/data-model-spec/#defaultgraph-interface)
   - the triples/quads it creates implement
