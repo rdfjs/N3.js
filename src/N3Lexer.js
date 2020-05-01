@@ -437,7 +437,7 @@ export default class N3Lexer {
       this._input = input;
       // If a callback was passed, asynchronously call it
       if (typeof callback === 'function')
-        setImmediate(function () { self._tokenizeToEnd(callback, true); });
+        setTimeout(function () { self._tokenizeToEnd(callback, true); }, 0);
       // If no callback was passed, tokenize synchronously and return
       else {
         var tokens = [], error;

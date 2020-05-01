@@ -1014,16 +1014,13 @@ function shouldNotTokenize(lexer, input, expectedError) {
   };
 }
 
-var immediately = typeof setImmediate === 'function' ? setImmediate :
-                  function setImmediate(func) { setTimeout(func, 0); };
-
 function streamOf() {
   var elements = Array.prototype.slice.call(arguments),
       stream = new EventEmitter();
 
   stream.setEncoding = function (encoding) {
     if (encoding === 'utf8')
-      immediately(next, 0);
+      setTimeout(function () { next(0); }, 0);
   };
 
   function next() {
@@ -1032,7 +1029,7 @@ function streamOf() {
       // use "null" to stall the stream
       if (element !== null) {
         stream.emit('data', element);
-        immediately(next, 0);
+        setTimeout(function () { next(0); }, 0);
       }
     }
     else {
