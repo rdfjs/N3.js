@@ -46,6 +46,8 @@ or
 [_Introduction to browserify_](https://writingjavascript.org/posts/introduction-to-browserify).
 You will need to create a "UMD bundle" and supply a name (e.g. with the `-s N3` option in browserify).
 
+> **Note:** In some browser environments you may need to include a shim for the [setImmediate](https://developer.mozilla.org/en-US/docs/Web/API/Window/setImmediate) method.
+
 ## Creating triples/quads
 N3.js follows the [RDF.js low-level specification](http://rdf.js.org/).
 
