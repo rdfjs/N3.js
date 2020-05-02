@@ -73,6 +73,7 @@ describe('StreamWriter', function () {
     var input = new Readable(),
         writer = new StreamWriter(),
         error = null;
+    input._read = function () {};
     writer.on('error', function (e) { error = e; });
     writer.import(input);
     input.emit('error', new Error());

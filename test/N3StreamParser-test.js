@@ -45,6 +45,7 @@ describe('StreamParser', function () {
       var input = new Readable(),
           parser = new StreamParser(),
           error = null;
+      input._read = function () {};
       parser.on('error', function (e) { error = e; });
       parser.import(input);
       input.emit('error', new Error());
