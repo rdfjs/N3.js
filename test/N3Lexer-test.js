@@ -407,12 +407,14 @@ describe('Lexer', function () {
                      { type: 'eof', line: 1 }));
 
     it('should tokenize a double literal',
-      shouldTokenize('10e20, +30.40E+50. -60.70e-80. ',
+      shouldTokenize('10e20, +30.40E+50. -60.70e-80. .171e-11.',
                      { type: 'literal', value:      '10e20', prefix: 'http://www.w3.org/2001/XMLSchema#double', line: 1 },
                      { type: ',', line: 1 },
                      { type: 'literal', value: '+30.40E+50', prefix: 'http://www.w3.org/2001/XMLSchema#double', line: 1 },
                      { type: '.', line: 1 },
                      { type: 'literal', value: '-60.70e-80', prefix: 'http://www.w3.org/2001/XMLSchema#double', line: 1 },
+                     { type: '.', line: 1 },
+                     { type: 'literal', value: '.171e-11', prefix: 'http://www.w3.org/2001/XMLSchema#double', line: 1 },
                      { type: '.', line: 1 },
                      { type: 'eof', line: 1 }));
 
