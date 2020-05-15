@@ -42,7 +42,7 @@
   "scripts": {
     "build": "babel src -d lib",
     "test": "nyc npm run mocha",
-    "mocha": "mocha --require @babel/register",
+    "mocha": "mocha",
     "lint": "eslint src perf test spec",
     "prepare": "npm run build",
     "spec": "npm run spec-turtle && npm run spec-ntriples && npm run spec-nquads && npm run spec-trig",
