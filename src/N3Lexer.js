@@ -3,11 +3,9 @@ import namespaces from './IRIs';
 import queueMicrotask from 'queue-microtask';
 
 const { xsd } = namespaces;
-const { fromCharCode } = String;
 
-// Regular expression and replacement string to escape N3 strings.
-// Note how we catch invalid unicode sequences separately (they will trigger an error).
-var escapeSequence = /\\u([a-fA-F0-9]{4})|\\U([a-fA-F0-9]{8})|\\[uU]|\\(.)/g;
+// Regular expression and replacement string to escape N3 strings
+var escapeSequence = /\\u([a-fA-F0-9]{4})|\\U([a-fA-F0-9]{8})|\\([^])/g;
 var escapeReplacements = {
   '\\': '\\', "'": "'", '"': '"',
   'n': '\n', 'r': '\r', 't': '\t', 'f': '\f', 'b': '\b',
@@ -351,29 +349,25 @@ export default class N3Lexer {
 
   // ### `_unescape` replaces N3 escape codes by their corresponding characters
   _unescape(item) {
-    try {
-      return item.replace(escapeSequence, function (sequence, unicode4, unicode8, escapedChar) {
-        var charCode;
-        if (unicode4) {
-          charCode = parseInt(unicode4, 16);
-          if (isNaN(charCode)) throw new Error(); // can never happen (regex), but helps performance
-          return fromCharCode(charCode);
-        }
-        else if (unicode8) {
-          charCode = parseInt(unicode8, 16);
-          if (isNaN(charCode)) throw new Error(); // can never happen (regex), but helps performance
-          if (charCode <= 0xFFFF) return fromCharCode(charCode);
-          return fromCharCode(0xD800 + ((charCode -= 0x10000) / 0x400), 0xDC00 + (charCode & 0x3FF));
-        }
-        else {
-          var replacement = escapeReplacements[escapedChar];
-          if (!replacement)
-            throw new Error();
-          return replacement;
-        }
-      });
-    }
-    catch (error) { return null; }
+    let invalid = false;
+    const replaced = item.replace(escapeSequence, (sequence, unicode4, unicode8, escapedChar) => {
+      // 4-digit unicode character
+      if (typeof unicode4 === 'string')
+        return String.fromCharCode(Number.parseInt(unicode4, 16));
+      // 8-digit unicode character
+      if (typeof unicode8 === 'string') {
+        let charCode = Number.parseInt(unicode8, 16);
+        return charCode <= 0xFFFF ? String.fromCharCode(Number.parseInt(unicode8, 16)) :
+          String.fromCharCode(0xD800 + ((charCode -= 0x10000) >> 10), 0xDC00 + (charCode & 0x3FF));
+      }
+      // fixed escape sequence
+      if (escapedChar in escapeReplacements)
+        return escapeReplacements[escapedChar];
+      // invalid escape sequence
+      invalid = true;
+      return '';
+    });
+    return invalid ? null : replaced;
   }
 
   // ### `_parseLiteral` parses a literal into an unescaped value

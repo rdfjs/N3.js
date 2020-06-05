@@ -8,7 +8,7 @@ var prefix = 'http://example.org/#';
 var TEST, dim, dimSquared, dimCubed, dimQuads, store;
 
 /* Test triples */
-dim = parseInt(process.argv[2], 10) || 256;
+dim = Number.parseInt(process.argv[2], 10) || 256;
 dimSquared = dim * dim;
 dimCubed = dimSquared * dim;
 

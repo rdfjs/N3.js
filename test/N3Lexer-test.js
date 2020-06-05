@@ -49,35 +49,23 @@ describe('Lexer', function () {
                         'Unexpected "<http://ex.org/bla\\uXYZZxyzzfoo>" on line 1.'));
 
     it('should not tokenize an IRI with a non-numeric 4-digit unicode escapes', function (done) {
-      // Replace global isNaN
-      var isNaN = global.isNaN;
-      global.isNaN = function () { return true; };
-      // Try parsing
       var stream = new EventEmitter(), lexer = new Lexer();
       lexer.tokenize(stream, function (error, token) {
         error.should.be.an.instanceof(Error);
-        error.message.should.equal('Unexpected "<\\u1234>" on line 1.');
+        error.message.should.equal('Unexpected "<\\uz234>" on line 1.');
         done(token);
       });
-      stream.emit('data', '<\\u1234>');
-      // Restore global isNaN
-      global.isNaN = isNaN;
+      stream.emit('data', '<\\uz234>');
     });
 
     it('should not tokenize an IRI with a non-numeric 8-digit unicode escapes', function (done) {
-      // Replace global isNaN
-      var isNaN = global.isNaN;
-      global.isNaN = function () { return true; };
-      // Try parsing
       var stream = new EventEmitter(), lexer = new Lexer();
       lexer.tokenize(stream, function (error, token) {
         error.should.be.an.instanceof(Error);
-        error.message.should.equal('Unexpected "<\\U12345678>" on line 1.');
+        error.message.should.equal('Unexpected "<\\Uz2345678>" on line 1.');
         done(token);
       });
-      stream.emit('data', '<\\U12345678>');
-      // Restore global isNaN
-      global.isNaN = isNaN;
+      stream.emit('data', '<\\Uz2345678>');
     });
 
     it('should tokenize an IRI with four-digit unicode escapes',
