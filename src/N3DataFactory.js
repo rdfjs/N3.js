@@ -4,12 +4,23 @@
 import namespaces from './IRIs';
 const { rdf, xsd } = namespaces;
 
-var DataFactory, DEFAULTGRAPH;
+let DEFAULTGRAPH;
+let _blankNodeCounter = 0;
 
-var _blankNodeCounter = 0;
+// ## DataFactory singleton
+const DataFactory = {
+  namedNode,
+  blankNode,
+  variable,
+  literal,
+  defaultGraph,
+  quad,
+  triple: quad,
+};
+export default DataFactory;
 
 // ## Term constructor
-class Term {
+export class Term {
   constructor(id) {
     this.id = id;
   }
@@ -41,7 +52,7 @@ class Term {
 
 
 // ## NamedNode constructor
-class NamedNode extends Term {
+export class NamedNode extends Term {
   // ### The term type of this term
   get termType() {
     return 'NamedNode';
@@ -49,7 +60,7 @@ class NamedNode extends Term {
 }
 
 // ## Literal constructor
-class Literal extends Term {
+export class Literal extends Term {
   // ### The term type of this term
   get termType() {
     return 'Literal';
@@ -108,7 +119,7 @@ class Literal extends Term {
 }
 
 // ## BlankNode constructor
-class BlankNode extends Term {
+export class BlankNode extends Term {
   constructor(name) {
     super('_:' + name);
   }
@@ -124,7 +135,7 @@ class BlankNode extends Term {
   }
 }
 
-class Variable extends Term {
+export class Variable extends Term {
   constructor(name) {
     super('?' + name);
   }
@@ -141,7 +152,7 @@ class Variable extends Term {
 }
 
 // ## DefaultGraph constructor
-class DefaultGraph extends Term {
+export class DefaultGraph extends Term {
   constructor() {
     super('');
     return DEFAULTGRAPH || this;
@@ -166,7 +177,7 @@ DEFAULTGRAPH = new DefaultGraph();
 
 
 // ### Constructs a term from the given internal string ID
-function fromId(id, factory) {
+export function termFromId(id, factory) {
   factory = factory || DataFactory;
 
   // Falsy value or empty string indicate the default graph
@@ -194,7 +205,7 @@ function fromId(id, factory) {
 }
 
 // ### Constructs an internal string ID from the given term or ID string
-function toId(term) {
+export function termToId(term) {
   if (typeof term === 'string')
     return term;
   if (term instanceof Term)
@@ -217,7 +228,7 @@ function toId(term) {
 
 
 // ## Quad constructor
-class Quad {
+export class Quad {
   constructor(subject, predicate, object, graph) {
     this.subject   = subject;
     this.predicate = predicate;
@@ -243,34 +254,8 @@ class Quad {
                       this.graph.equals(other.graph);
   }
 }
+export { Quad as Triple };
 
-
-// ## DataFactory singleton
-DataFactory = {
-  // ### Public factory functions
-  namedNode,
-  blankNode,
-  variable,
-  literal,
-  defaultGraph,
-  quad,
-  triple: quad,
-
-  // ### Internal datatype constructors
-  internal: {
-    Term,
-    NamedNode,
-    BlankNode,
-    Variable,
-    Literal,
-    DefaultGraph,
-    Quad,
-    Triple: Quad,
-    fromId,
-    toId,
-  },
-};
-export default DataFactory;
 
 // ### Creates an IRI
 function namedNode(iri) {

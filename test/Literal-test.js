@@ -1,6 +1,4 @@
-import { DataFactory } from '../src/';
-
-const { Literal, NamedNode, Term } = DataFactory.internal;
+import { Literal, NamedNode, Term } from '../src/';
 
 describe('Literal', function () {
   describe('The Literal module', function () {

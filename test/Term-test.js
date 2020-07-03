@@ -1,15 +1,13 @@
-import { DataFactory } from '../src/';
-
-const {
+import {
   Term,
   NamedNode,
   BlankNode,
   Literal,
   Variable,
   DefaultGraph,
-  toId,
-  fromId,
-} = DataFactory.internal;
+  termToId,
+  termFromId,
+} from '../src/';
 
 describe('Term', function () {
   describe('The Term module', function () {
@@ -22,44 +20,44 @@ describe('Term', function () {
     });
   });
 
-  describe('fromId', function () {
+  describe('termFromId', function () {
     it('should create a DefaultGraph from a falsy value', function () {
-      fromId(null).toJSON().should.deep.equal({
+      termFromId(null).toJSON().should.deep.equal({
         termType: 'DefaultGraph',
         value: '',
       });
     });
 
     it('should create a DefaultGraph from the empty string', function () {
-      fromId('').toJSON().should.deep.equal({
+      termFromId('').toJSON().should.deep.equal({
         termType: 'DefaultGraph',
         value: '',
       });
     });
 
     it('should create a NamedNode from an IRI', function () {
-      fromId('http://example.org/foo#bar').toJSON().should.deep.equal({
+      termFromId('http://example.org/foo#bar').toJSON().should.deep.equal({
         termType: 'NamedNode',
         value: 'http://example.org/foo#bar',
       });
     });
 
     it('should create a BlankNode from a string that starts with an underscore', function () {
-      fromId('_:b1').toJSON().should.deep.equal({
+      termFromId('_:b1').toJSON().should.deep.equal({
         termType: 'BlankNode',
         value: 'b1',
       });
     });
 
     it('should create a Variable from a string that starts with a question mark', function () {
-      fromId('?v1').toJSON().should.deep.equal({
+      termFromId('?v1').toJSON().should.deep.equal({
         termType: 'Variable',
         value: 'v1',
       });
     });
 
     it('should create a Literal from a string that starts with a quotation mark', function () {
-      fromId('"abc"@en-us').toJSON().should.deep.equal({
+      termFromId('"abc"@en-us').toJSON().should.deep.equal({
         termType: 'Literal',
         value: 'abc',
         language: 'en-us',
@@ -80,116 +78,116 @@ describe('Term', function () {
       };
 
       it('should create a DefaultGraph from a falsy value', function () {
-        fromId(null, factory).should.deep.equal(['d']);
+        termFromId(null, factory).should.deep.equal(['d']);
       });
 
       it('should create a DefaultGraph from the empty string', function () {
-        fromId('', factory).should.deep.equal(['d']);
+        termFromId('', factory).should.deep.equal(['d']);
       });
 
       it('should create a NamedNode from an IRI', function () {
-        fromId('http://example.org/foo#bar', factory).should.deep.equal(['n', 'http://example.org/foo#bar']);
+        termFromId('http://example.org/foo#bar', factory).should.deep.equal(['n', 'http://example.org/foo#bar']);
       });
 
       it('should create a BlankNode from a string that starts with an underscore', function () {
-        fromId('_:b1', factory).should.deep.equal(['b', 'b1']);
+        termFromId('_:b1', factory).should.deep.equal(['b', 'b1']);
       });
 
       it('should create a Variable from a string that starts with a question mark', function () {
-        fromId('?v1', factory).should.deep.equal(['v', 'v1']);
+        termFromId('?v1', factory).should.deep.equal(['v', 'v1']);
       });
 
       it('should create a Literal without language or datatype', function () {
-        fromId('"abc"', factory).should.deep.equal(['l', 'abc', undefined]);
+        termFromId('"abc"', factory).should.deep.equal(['l', 'abc', undefined]);
       });
 
       it('should create a Literal with a language', function () {
-        fromId('"abc"@en-us', factory).should.deep.equal(['l', 'abc', 'en-us']);
+        termFromId('"abc"@en-us', factory).should.deep.equal(['l', 'abc', 'en-us']);
       });
 
       it('should create a Literal with a datatype', function () {
-        fromId('"abc"^^https://ex.org/type', factory).should.deep.equal(['l', 'abc', ['n', 'https://ex.org/type']]);
+        termFromId('"abc"^^https://ex.org/type', factory).should.deep.equal(['l', 'abc', ['n', 'https://ex.org/type']]);
       });
     });
   });
 
-  describe('toId', function () {
+  describe('termToId', function () {
     it('should create the empty string a falsy value', function () {
-      toId(null).should.equal('');
-      toId(false).should.equal('');
-      toId('').should.equal('');
+      termToId(null).should.equal('');
+      termToId(false).should.equal('');
+      termToId('').should.equal('');
     });
 
     it('should create the empty string from the DefaultGraph', function () {
-      toId(new DefaultGraph()).should.equal('');
-      toId(new DefaultGraph().toJSON()).should.equal('');
+      termToId(new DefaultGraph()).should.equal('');
+      termToId(new DefaultGraph().toJSON()).should.equal('');
     });
 
     it('should create an id that starts with a question mark from a Variable', function () {
-      toId(new Variable('abc')).should.equal('?abc');
-      toId(new Variable('abc').toJSON()).should.equal('?abc');
+      termToId(new Variable('abc')).should.equal('?abc');
+      termToId(new Variable('abc').toJSON()).should.equal('?abc');
     });
 
     it('should create an id that starts with a question mark from a Variable string', function () {
-      toId('?abc').should.equal('?abc');
+      termToId('?abc').should.equal('?abc');
     });
 
     it('should create an id that starts with a quotation mark from a Literal', function () {
-      toId(new Literal('"abc"')).should.equal('"abc"');
-      toId(new Literal('"abc"').toJSON()).should.equal('"abc"');
+      termToId(new Literal('"abc"')).should.equal('"abc"');
+      termToId(new Literal('"abc"').toJSON()).should.equal('"abc"');
     });
 
     it('should create an id that starts with a quotation mark from a Literal string', function () {
-      toId('"abc"').should.equal('"abc"');
+      termToId('"abc"').should.equal('"abc"');
     });
 
     it('should create an id that starts with a quotation mark and datatype from a Literal with a datatype', function () {
-      toId(new Literal('"abc"^^http://example.org')).should.equal('"abc"^^http://example.org');
-      toId(new Literal('"abc"^^http://example.org').toJSON()).should.equal('"abc"^^http://example.org');
+      termToId(new Literal('"abc"^^http://example.org')).should.equal('"abc"^^http://example.org');
+      termToId(new Literal('"abc"^^http://example.org').toJSON()).should.equal('"abc"^^http://example.org');
     });
 
     it('should create an id that starts with a quotation mark and datatype from a Literal string with a datatype', function () {
-      toId('"abc"^^http://example.org').should.equal('"abc"^^http://example.org');
+      termToId('"abc"^^http://example.org').should.equal('"abc"^^http://example.org');
     });
 
     it('should create an id that starts with a quotation mark and language tag from a Literal with a language', function () {
-      toId(new Literal('"abc"@en-us')).should.equal('"abc"@en-us');
-      toId(new Literal('"abc"@en-us').toJSON()).should.equal('"abc"@en-us');
+      termToId(new Literal('"abc"@en-us')).should.equal('"abc"@en-us');
+      termToId(new Literal('"abc"@en-us').toJSON()).should.equal('"abc"@en-us');
     });
 
     it('should create an id that starts with a quotation mark and language tag from a Literal string with a language', function () {
-      toId('"abc"@en-us').should.equal('"abc"@en-us');
+      termToId('"abc"@en-us').should.equal('"abc"@en-us');
     });
 
     it('should create an id that starts with a quotation mark, datatype and language tag from a Literal with a datatype and language', function () {
-      toId(new Literal('"abc"^^http://example.org@en-us')).should.equal('"abc"^^http://example.org@en-us');
-      toId(new Literal('"abc"^^http://example.org@en-us').toJSON()).should.equal('"abc"^^http://example.org@en-us');
+      termToId(new Literal('"abc"^^http://example.org@en-us')).should.equal('"abc"^^http://example.org@en-us');
+      termToId(new Literal('"abc"^^http://example.org@en-us').toJSON()).should.equal('"abc"^^http://example.org@en-us');
     });
 
     it('should create an id that starts with a quotation mark, datatype and language tag from a Literal string with a datatype and language', function () {
-      toId('"abc"^^http://example.org@en-us').should.equal('"abc"^^http://example.org@en-us');
+      termToId('"abc"^^http://example.org@en-us').should.equal('"abc"^^http://example.org@en-us');
     });
 
     it('should create an id that starts with an underscore from a BlankNode', function () {
-      toId(new BlankNode('abc')).should.equal('_:abc');
-      toId(new BlankNode('abc').toJSON()).should.equal('_:abc');
+      termToId(new BlankNode('abc')).should.equal('_:abc');
+      termToId(new BlankNode('abc').toJSON()).should.equal('_:abc');
     });
 
     it('should create an id that starts with an underscore from a BlankNode string', function () {
-      toId('_:abc').should.equal('_:abc');
+      termToId('_:abc').should.equal('_:abc');
     });
 
     it('should create an IRI from a NamedNode', function () {
-      toId(new NamedNode('http://example.org/')).should.equal('http://example.org/');
-      toId(new NamedNode('http://example.org/').toJSON()).should.equal('http://example.org/');
+      termToId(new NamedNode('http://example.org/')).should.equal('http://example.org/');
+      termToId(new NamedNode('http://example.org/').toJSON()).should.equal('http://example.org/');
     });
 
     it('should create an IRI from a NamedNode string', function () {
-      toId('http://example.org/').should.equal('http://example.org/');
+      termToId('http://example.org/').should.equal('http://example.org/');
     });
 
     it('should throw on an unknown type', function () {
-      (function () { toId({ termType: 'unknown' }); })
+      (function () { termToId({ termType: 'unknown' }); })
         .should.throw('Unexpected termType: unknown');
     });
   });

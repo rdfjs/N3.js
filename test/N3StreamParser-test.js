@@ -1,7 +1,5 @@
-import { StreamParser, DataFactory } from '../src/';
+import { StreamParser, NamedNode } from '../src/';
 import { Readable, Writable } from 'stream';
-
-const { NamedNode } = DataFactory.internal;
 
 describe('StreamParser', function () {
   describe('The StreamParser export', function () {

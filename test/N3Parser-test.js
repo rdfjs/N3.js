@@ -1,6 +1,4 @@
-import { Parser, DataFactory } from '../src/';
-
-const { NamedNode, BlankNode, Quad, fromId } = DataFactory.internal;
+import { Parser, NamedNode, BlankNode, Quad, termFromId } from '../src/';
 
 const BASE_IRI = 'http://example.org/';
 
@@ -884,8 +882,8 @@ describe('Parser', function () {
     it('should parse a string synchronously if no callback is given', function () {
       var triples = new Parser().parse('@prefix a: <urn:a:>. a:a a:b a:c.');
       triples.should.deep.equal([
-        new Quad(fromId('urn:a:a'), fromId('urn:a:b'),
-                 fromId('urn:a:c'), fromId('')),
+        new Quad(termFromId('urn:a:a'), termFromId('urn:a:b'),
+                 termFromId('urn:a:c'), termFromId('')),
       ]);
     });
 
@@ -908,8 +906,8 @@ describe('Parser', function () {
         '@prefix : <#>.\n' +
         '<a> <b> <c> <g>.\n' +
         ':d :e :f :g.',
-        [fromId('a'), fromId('b'), fromId('c'), fromId('g')],
-        [fromId('#d'), fromId('#e'), fromId('#f'), fromId('#g')]));
+        [termFromId('a'), termFromId('b'), termFromId('c'), termFromId('g')],
+        [termFromId('#d'), termFromId('#e'), termFromId('#f'), termFromId('#g')]));
 
     it('should keep empty IRIs',
       shouldParse(parser,
@@ -2066,7 +2064,7 @@ function shouldParse(parser, input) {
         // Append base to relative IRIs
         if (!/^$|^["?]|:/.test(t))
           t = BASE_IRI + t;
-        return fromId(t);
+        return termFromId(t);
       });
       return new Quad(item[0], item[1], item[2], item[3]);
     });

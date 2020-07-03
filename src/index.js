@@ -1,4 +1,3 @@
-import DataFactory from './N3DataFactory';
 import Lexer from './N3Lexer';
 import Parser from './N3Parser';
 import Writer from './N3Writer';
@@ -7,8 +6,23 @@ import StreamParser from './N3StreamParser';
 import StreamWriter from './N3StreamWriter';
 import * as Util from './N3Util';
 
+import {
+  default as DataFactory,
+
+  Term,
+  NamedNode,
+  Literal,
+  BlankNode,
+  Variable,
+  DefaultGraph,
+  Quad,
+  Triple,
+
+  termFromId,
+  termToId,
+} from './N3DataFactory';
+
 export {
-  DataFactory,
   Lexer,
   Parser,
   Writer,
@@ -16,4 +30,18 @@ export {
   StreamParser,
   StreamWriter,
   Util,
+
+  DataFactory,
+
+  Term,
+  NamedNode,
+  Literal,
+  BlankNode,
+  Variable,
+  DefaultGraph,
+  Quad,
+  Triple,
+
+  termFromId,
+  termToId,
 };

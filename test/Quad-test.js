@@ -1,6 +1,4 @@
-import { DataFactory } from '../src/';
-
-const { Quad, Triple, DefaultGraph, fromId } = DataFactory.internal;
+import { Quad, Triple, DefaultGraph, termFromId } from '../src/';
 
 describe('Quad', function () {
   describe('The Quad module', function () {
@@ -21,9 +19,9 @@ describe('Quad', function () {
     var quad, subject, predicate, object;
     before(function () {
       quad = new Quad(
-        subject   = fromId('s'),
-        predicate = fromId('p'),
-        object    = fromId('o')
+        subject   = termFromId('s'),
+        predicate = termFromId('p'),
+        object    = termFromId('o')
       );
     });
 
@@ -58,7 +56,7 @@ describe('Quad', function () {
 
     it('should not equal a quad with a different subject', function () {
       quad.equals({
-        subject:   fromId('x'),
+        subject:   termFromId('x'),
         predicate: predicate,
         object:    object,
         graph:     new DefaultGraph(),
@@ -68,7 +66,7 @@ describe('Quad', function () {
     it('should not equal a quad with a different predicate', function () {
       quad.equals({
         subject:   subject,
-        predicate: fromId('x'),
+        predicate: termFromId('x'),
         object:    object,
         graph:     new DefaultGraph(),
       }).should.be.false;
@@ -78,7 +76,7 @@ describe('Quad', function () {
       quad.equals({
         subject:   subject,
         predicate: predicate,
-        object:    fromId('x'),
+        object:    termFromId('x'),
         graph:     new DefaultGraph(),
       }).should.be.false;
     });
@@ -88,7 +86,7 @@ describe('Quad', function () {
         subject:   subject,
         predicate: predicate,
         object:    object,
-        graph:     fromId('x'),
+        graph:     termFromId('x'),
       }).should.be.false;
     });
 
@@ -106,10 +104,10 @@ describe('Quad', function () {
     var quad, subject, predicate, object, graph;
     before(function () {
       quad = new Quad(
-        subject   = fromId('s'),
-        predicate = fromId('p'),
-        object    = fromId('o'),
-        graph     = fromId('g')
+        subject   = termFromId('s'),
+        predicate = termFromId('p'),
+        object    = termFromId('o'),
+        graph     = termFromId('g')
       );
     });
 
@@ -144,7 +142,7 @@ describe('Quad', function () {
 
     it('should not equal a quad with a different subject', function () {
       quad.equals({
-        subject:   fromId('x'),
+        subject:   termFromId('x'),
         predicate: predicate,
         object:    object,
         graph:     graph,
@@ -154,7 +152,7 @@ describe('Quad', function () {
     it('should not equal a quad with a different predicate', function () {
       quad.equals({
         subject:   subject,
-        predicate: fromId('x'),
+        predicate: termFromId('x'),
         object:    object,
         graph:     graph,
       }).should.be.false;
@@ -164,7 +162,7 @@ describe('Quad', function () {
       quad.equals({
         subject:   subject,
         predicate: predicate,
-        object:    fromId('x'),
+        object:    termFromId('x'),
         graph:     graph,
       }).should.be.false;
     });
@@ -174,7 +172,7 @@ describe('Quad', function () {
         subject:   subject,
         predicate: predicate,
         object:    object,
-        graph:     fromId('x'),
+        graph:     termFromId('x'),
       }).should.be.false;
     });
 

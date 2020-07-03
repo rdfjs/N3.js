@@ -1,6 +1,12 @@
-import { Util, DataFactory } from '../src/';
-
-const { NamedNode, Literal, BlankNode, Variable, DefaultGraph, Quad } = DataFactory.internal;
+import {
+  Util,
+  NamedNode,
+  Literal,
+  BlankNode,
+  Variable,
+  DefaultGraph,
+  Quad,
+} from '../src/';
 
 describe('Util', function () {
   describe('isNamedNode', function () {

@@ -1,7 +1,4 @@
-import { DataFactory } from '../src/';
-
-const { Variable, Term } = DataFactory.internal;
-
+import { Variable, Term } from '../src/';
 
 describe('Variable', function () {
   describe('The Variable module', function () {

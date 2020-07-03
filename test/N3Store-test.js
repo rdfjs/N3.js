@@ -1,9 +1,14 @@
-import { Store, DataFactory } from '../src/';
+import {
+  Store,
+  NamedNode,
+  Literal,
+  DefaultGraph,
+  Quad,
+  termFromId,
+} from '../src/';
 import namespaces from '../src/IRIs';
 import { Readable } from 'stream';
 import arrayifyStream from 'arrayify-stream';
-
-const { NamedNode, Literal, DefaultGraph, Quad, fromId } = DataFactory.internal;
 
 describe('Store', function () {
   describe('The Store export', function () {
@@ -1324,7 +1329,12 @@ function alwaysFalse() { return false; }
 
 function collect(store, method, arg1, arg2, arg3, arg4) {
   var results = [];
-  store[method](function (r) { results.push(r); }, arg1 && fromId(arg1), arg2 && fromId(arg2), arg3 && fromId(arg3), arg4 && fromId(arg4));
+  store[method](r => results.push(r),
+    arg1 && termFromId(arg1),
+    arg2 && termFromId(arg2),
+    arg3 && termFromId(arg3),
+    arg4 && termFromId(arg4)
+  );
   return results;
 }
 
@@ -1337,7 +1347,7 @@ function itShouldBeEmpty(result) {
 
 function shouldIncludeAll(result) {
   var items = Array.prototype.slice.call(arguments, 1).map(function (arg) {
-    return new Quad(fromId(arg[0]), fromId(arg[1]), fromId(arg[2]), fromId(arg[3] || ''));
+    return new Quad(termFromId(arg[0]), termFromId(arg[1]), termFromId(arg[2]), termFromId(arg[3] || ''));
   });
   return function () {
     if (typeof result === 'function') result = result();

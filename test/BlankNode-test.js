@@ -1,6 +1,4 @@
-import { DataFactory } from '../src/';
-
-const { BlankNode, Term } = DataFactory.internal;
+import { BlankNode, Term } from '../src/';
 
 describe('BlankNode', function () {
   describe('The BlankNode module', function () {

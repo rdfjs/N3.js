@@ -1,7 +1,5 @@
-import { StreamWriter, DataFactory } from '../src/';
+import { StreamWriter, Quad, NamedNode, termFromId } from '../src/';
 import { Readable, Writable } from 'stream';
-
-const { Quad, NamedNode, fromId } = DataFactory.internal;
 
 describe('StreamWriter', function () {
   describe('The StreamWriter export', function () {
@@ -88,7 +86,7 @@ function shouldSerialize(/* options?, tripleArrays..., expectedResult */) {
       options = tripleArrays[0] instanceof Array ? null : tripleArrays.shift();
 
   tripleArrays = tripleArrays.map(function (i) {
-    return new Quad(fromId(i[0]), fromId(i[1]), fromId(i[2]));
+    return new Quad(termFromId(i[0]), termFromId(i[1]), termFromId(i[2]));
   });
 
   return function (done) {

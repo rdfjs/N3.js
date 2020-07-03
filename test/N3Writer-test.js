@@ -1,6 +1,11 @@
-import { Writer, DataFactory } from '../src/';
-
-const { NamedNode, BlankNode, Literal, Quad, fromId } = DataFactory.internal;
+import {
+  Writer,
+  NamedNode,
+  BlankNode,
+  Literal,
+  Quad,
+  termFromId,
+} from '../src/';
 
 describe('Writer', function () {
   describe('The Writer export', function () {
@@ -578,10 +583,10 @@ function shouldSerialize(/* prefixes?, tripleArrays..., expectedResult */) {
     (function next() {
       var item = tripleArrays.shift();
       if (item) {
-        var subject   = typeof item[0] === 'string' ? fromId(item[0]) : item[0];
-        var predicate = typeof item[1] === 'string' ? fromId(item[1]) : item[1];
-        var object    = typeof item[2] === 'string' ? fromId(item[2]) : item[2];
-        var graph     = typeof item[3] === 'string' ? fromId(item[3]) : item[3];
+        var subject   = typeof item[0] === 'string' ? termFromId(item[0]) : item[0];
+        var predicate = typeof item[1] === 'string' ? termFromId(item[1]) : item[1];
+        var object    = typeof item[2] === 'string' ? termFromId(item[2]) : item[2];
+        var graph     = typeof item[3] === 'string' ? termFromId(item[3]) : item[3];
         writer.addQuad(new Quad(subject, predicate, object, graph), next);
       }
       else

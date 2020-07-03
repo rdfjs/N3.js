@@ -1,6 +1,4 @@
-import { DataFactory } from '../src/';
-
-const { DefaultGraph, Term } = DataFactory.internal;
+import { DefaultGraph, Term } from '../src/';
 
 describe('DefaultGraph', function () {
   describe('The DefaultGraph module', function () {
