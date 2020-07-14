@@ -17,6 +17,7 @@ import {
   DefaultGraph,
   Quad,
   Triple,
+  QuadTerm,
 
   termFromId,
   termToId,
@@ -41,6 +42,7 @@ export {
   DefaultGraph,
   Quad,
   Triple,
+  QuadTerm,
 
   termFromId,
   termToId,

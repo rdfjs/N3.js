@@ -2,6 +2,7 @@
 // See https://github.com/rdfjs/representation-task-force/blob/master/interface-spec.md
 
 import namespaces from './IRIs';
+import { isDefaultGraph } from './N3Util';
 const { rdf, xsd } = namespaces;
 
 let DEFAULTGRAPH;
@@ -16,6 +17,7 @@ const DataFactory = {
   defaultGraph,
   quad,
   triple: quad,
+  quadTerm: quadTerm,
 };
 export default DataFactory;
 
@@ -200,6 +202,12 @@ export function termFromId(id, factory) {
     return factory.literal(id.substr(1, endPos - 1),
             id[endPos + 1] === '@' ? id.substr(endPos + 2)
                                    : factory.namedNode(id.substr(endPos + 3)));
+  case '<':
+    // Parse quad
+    let result = id.match(/^<<("(?:""|[^"])*"[^ ]*|[^ ]+) ("(?:""|[^"])*"[^ ]*|[^ ]+) ("(?:""|[^"])*"[^ ]*|[^ ]+) ?("(?:""|[^"])*"[^ ]*|[^ ]+)?>>$/);
+    result = result.splice(1).filter((x) => x !== undefined).map((id) => termFromId(unEscape(id), factory));
+
+    return factory.quadTerm(factory.quad(...result));
   default:  return factory.namedNode(id);
   }
 }
@@ -222,6 +230,7 @@ export function termToId(term) {
   case 'Literal':      return '"' + term.value + '"' +
     (term.language ? '@' + term.language :
       (term.datatype && term.datatype.value !== xsd.string ? '^^' + term.datatype.value : ''));
+  case 'QuadTerm':     return `<<${quadToId(term.value)}>>`;
   default: throw new Error('Unexpected termType: ' + term.termType);
   }
 }
@@ -256,6 +265,53 @@ export class Quad {
 }
 export { Quad as Triple };
 
+// QuadTerm constructor
+export class QuadTerm extends Term {
+  constructor(quad) {
+    super(`<<${quadToId(quad)}>>`);
+    this.quad = quad;
+  }
+
+  // ### The term type of this term
+  get termType() {
+    return 'QuadTerm';
+  }
+
+  // ### The text value of this literal
+  get value() {
+    return this.quad;
+  }
+}
+
+// ### Creates a string from a Quad
+function quadToId(quad) {
+  let result = [quad.subject, quad.predicate, quad.object].map(termToId).map(escape).join(' ');
+
+  // Omit default graph
+  if (!isDefaultGraph(quad.graph)) {
+    result += ` ${termToId(quad.graph)}`;
+  }
+  return result;
+}
+
+// ### Escapes the quotes within the given literal
+function escape(id) {
+  return escapeHelper(id, /"/g, '""');
+}
+
+// ### Unescapes the quotes within the given literal
+function unEscape(id) {
+  return escapeHelper(id, /""/g, '"');
+}
+
+function escapeHelper(id, regex, replacement) {
+  let result = id;
+  let m = id.match(/^"(.*)"([^"]*)$/);
+  if (m) {
+    result = `"${m[1].replace(regex, replacement)}"${m[2]}`;
+  }
+  return result;
+}
 
 // ### Creates an IRI
 function namedNode(iri) {
@@ -310,4 +366,9 @@ function defaultGraph() {
 // ### Creates a quad
 function quad(subject, predicate, object, graph) {
   return new Quad(subject, predicate, object, graph);
+}
+
+// ### Creates a quadTerm
+function quadTerm(quad) {
+  return new QuadTerm(quad);
 }

@@ -143,4 +143,31 @@ describe('DataFactory', function () {
       ));
     });
   });
+
+  describe('quadTerm', function () {
+    it('should return a quadTerm with the correct value', function () {
+      DataFactory.quadTerm(new Quad(
+        new NamedNode('http://ex.org/a'),
+        new NamedNode('http://ex.org/b'),
+        new Literal('abc'),
+        new DefaultGraph()
+      )).value
+        .should.deep.equal(new Quad(
+        new NamedNode('http://ex.org/a'),
+        new NamedNode('http://ex.org/b'),
+        new Literal('abc'),
+        new DefaultGraph()
+      ));
+    });
+
+    it('should return a quadTerm', function () {
+      DataFactory.quadTerm(new Quad(
+        new NamedNode('http://ex.org/a'),
+        new NamedNode('http://ex.org/b'),
+        new Literal('abc'),
+        new DefaultGraph()
+      )).termType
+        .should.equal('QuadTerm');
+    });
+  });
 });
