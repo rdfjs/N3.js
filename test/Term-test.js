@@ -9,6 +9,8 @@ import {
   Quad,
   termToId,
   termFromId,
+  unescape,
+  escape,
 } from '../src/';
 
 describe('Term', function () {
@@ -299,6 +301,43 @@ describe('Term', function () {
     it('should throw on an unknown type', function () {
       (function () { termToId({ termType: 'unknown' }); })
         .should.throw('Unexpected termType: unknown');
+    });
+  });
+
+  describe('escape', function () {
+    it('should unescape an escaped string correctly', function () {
+      let id = '"Hello ""World"""@en-us';
+      unescape(id).should.equal('"Hello "World""@en-us');
+    });
+
+    it('should escape an unescaped string correctly', function () {
+      let id = '"Hello "World""@en-us';
+      escape(id).should.equal('"Hello ""World"""@en-us');
+    });
+
+    it('should not change an unescaped string', function () {
+      let id = '"Hello "World""@en-us';
+      unescape(id).should.equal(id);
+    });
+
+    it('should not change a string without quotes', function () {
+      let id = '"Hello World"@en-us';
+      escape(id).should.equal(id);
+    });
+
+    it('should not change a blank node', function () {
+      let id = '_:b1';
+      escape(id).should.equal(id);
+    });
+
+    it('should not change a variable', function () {
+      let id = '?v1';
+      escape(id).should.equal(id);
+    });
+
+    it('should not change the empty string', function () {
+      let id = '';
+      escape(id).should.equal(id);
     });
   });
 });
