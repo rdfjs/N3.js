@@ -7,6 +7,7 @@ const { rdf, xsd } = namespaces;
 
 let DEFAULTGRAPH;
 let _blankNodeCounter = 0;
+let quotedMatchingRegex = /^"(.*".*)(?="[^"]*$)/;
 
 // ## DataFactory singleton
 const DataFactory = {
@@ -304,22 +305,12 @@ function quadToId(quad) {
 
 // ### Escapes the quotes within the given literal
 export function escape(id) {
-  return escapeHelper(id, /"/g, '""');
+  return id.replace(quotedMatchingRegex, (_, quoted) => `"${quoted.replace(/"/g, '""')}`);
 }
 
 // ### Unescapes the quotes within the given literal
 export function unescape(id) {
-  return escapeHelper(id, /""/g, '"');
-}
-
-function escapeHelper(id, regex, replacement) {
-  let result = id;
-  let m = id.match(/^"(.*)"([^"]*)$/);
-  if (m) {
-    result = `"${m[1].replace(regex, replacement)}"${m[2]}`;
-  }
-
-  return result;
+  return id.replace(quotedMatchingRegex, (_, quoted) => `"${quoted.replace(/""/g, '"')}`);
 }
 
 // ### Creates an IRI
