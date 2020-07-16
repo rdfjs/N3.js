@@ -303,12 +303,12 @@ function quadToId(quad) {
 }
 
 // ### Escapes the quotes within the given literal
-function escape(id) {
+export function escape(id) {
   return escapeHelper(id, /"/g, '""');
 }
 
 // ### Unescapes the quotes within the given literal
-function unescape(id) {
+export function unescape(id) {
   return escapeHelper(id, /""/g, '"');
 }
 
@@ -318,6 +318,7 @@ function escapeHelper(id, regex, replacement) {
   if (m) {
     result = `"${m[1].replace(regex, replacement)}"${m[2]}`;
   }
+
   return result;
 }
 

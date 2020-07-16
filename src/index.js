@@ -18,6 +18,8 @@ import {
   Quad,
   Triple,
   QuadTerm,
+  escape,
+  unescape,
 
   termFromId,
   termToId,
@@ -43,6 +45,8 @@ export {
   Quad,
   Triple,
   QuadTerm,
+  escape,
+  unescape,
 
   termFromId,
   termToId,
