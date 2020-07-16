@@ -208,7 +208,7 @@ export function termFromId(id, factory) {
     let quad = [];
     for (let i = 1; i < result.length; i++) {
       if (typeof result[i] !== 'undefined')
-        quad.push(termFromId(unEscape(result[i]), factory));
+        quad.push(termFromId(unescape(result[i]), factory));
     }
 
     return factory.quadTerm(factory.quad(...quad));
@@ -308,7 +308,7 @@ function escape(id) {
 }
 
 // ### Unescapes the quotes within the given literal
-function unEscape(id) {
+function unescape(id) {
   return escapeHelper(id, /""/g, '"');
 }
 
