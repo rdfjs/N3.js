@@ -205,9 +205,13 @@ export function termFromId(id, factory) {
   case '<':
     // Parse quad
     let result = id.match(/^<<("(?:""|[^"])*"[^ ]*|[^ ]+) ("(?:""|[^"])*"[^ ]*|[^ ]+) ("(?:""|[^"])*"[^ ]*|[^ ]+) ?("(?:""|[^"])*"[^ ]*|[^ ]+)?>>$/);
-    result = result.splice(1).filter((x) => x !== undefined).map((id) => termFromId(unEscape(id), factory));
+    let quad = [];
+    for (let i = 1; i < result.length; i++) {
+      if (typeof result[i] !== 'undefined')
+        quad.push(termFromId(unEscape(result[i]), factory));
+    }
 
-    return factory.quadTerm(factory.quad(...result));
+    return factory.quadTerm(factory.quad(...quad));
   default:  return factory.namedNode(id);
   }
 }
@@ -285,12 +289,16 @@ export class QuadTerm extends Term {
 
 // ### Creates a string from a Quad
 function quadToId(quad) {
-  let result = [quad.subject, quad.predicate, quad.object].map(termToId).map(escape).join(' ');
+  let result = `${
+    escape(termToId(quad.subject))
+  } ${
+    escape(termToId(quad.predicate))
+  } ${
+    escape(termToId(quad.object))
+  }${
+    (isDefaultGraph(quad.graph)) ? '' : ` ${termToId(quad.graph)}`
+  }`;
 
-  // Omit default graph
-  if (!isDefaultGraph(quad.graph)) {
-    result += ` ${termToId(quad.graph)}`;
-  }
   return result;
 }
 
