@@ -5,8 +5,11 @@ import {
   Literal,
   Variable,
   DefaultGraph,
+  Quad,
   termToId,
   termFromId,
+  unescape,
+  escape,
 } from '../src/';
 
 describe('Term', function () {
@@ -66,6 +69,85 @@ describe('Term', function () {
           value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString',
         },
       });
+    });
+
+    it('should create a Quad with the default graph if the id doesnt specify the graph', function () {
+      termFromId('<<http://ex.org/a http://ex.org/b "abc"@en-us>>').should.deep.equal(new Quad(
+        new NamedNode('http://ex.org/a'),
+        new NamedNode('http://ex.org/b'),
+        new Literal('"abc"@en-us'),
+        new DefaultGraph()
+      ));
+    });
+
+    it('should create a Quad with the correct graph if the id specifies a graph', function () {
+      const id = '<<http://ex.org/a http://ex.org/b "abc"@en-us http://ex.org/d>>';
+      termFromId(id).should.deep.equal(new Quad(
+        new NamedNode('http://ex.org/a'),
+        new NamedNode('http://ex.org/b'),
+        new Literal('"abc"@en-us'),
+        new NamedNode('http://ex.org/d')
+      ));
+    });
+
+    it('should create a Quad correctly', function () {
+      const id = '<<http://ex.org/a http://ex.org/b http://ex.org/c>>';
+      termFromId(id).should.deep.equal(new Quad(
+        new NamedNode('http://ex.org/a'),
+        new NamedNode('http://ex.org/b'),
+        new NamedNode('http://ex.org/c'),
+        new DefaultGraph()
+      ));
+    });
+
+    it('should create a Quad correctly', function () {
+      const id = '<<_:n3-123 ?var-a ?var-b _:n3-000>>';
+      termFromId(id).should.deep.equal(new Quad(
+        new BlankNode('n3-123'),
+        new Variable('var-a'),
+        new Variable('var-b'),
+        new BlankNode('n3-000')
+      ));
+    });
+
+    it('should create a Quad correctly', function () {
+      const id = '<<?var-a ?var-b "abc"@en-us ?var-d>>';
+      termFromId(id).should.deep.equal(new Quad(
+        new Variable('var-a'),
+        new Variable('var-b'),
+        new Literal('"abc"@en-us'),
+        new Variable('var-d')
+      ));
+    });
+
+    it('should create a Quad correctly', function () {
+      const id = '<<_:n3-000 ?var-b _:n3-123 http://ex.org/d>>';
+      termFromId(id).should.deep.equal(new Quad(
+        new BlankNode('n3-000'),
+        new Variable('var-b'),
+        new BlankNode('n3-123'),
+        new NamedNode('http://ex.org/d')
+      ));
+    });
+
+    it('should create a Quad correctly from literal containing escaped quotes', function () {
+      const id = '<<_:n3-000 ?var-b "Hello ""W""orl""d!"@en-us http://ex.org/d>>';
+      termFromId(id).should.deep.equal(new Quad(
+        new BlankNode('n3-000'),
+        new Variable('var-b'),
+        new Literal('"Hello "W"orl"d!"@en-us'),
+        new NamedNode('http://ex.org/d')
+      ));
+    });
+
+    it('should create a Quad correctly from literal containing escaped quotes', function () {
+      const id = '<<"Hello ""W""orl""d!"@en-us http://ex.org/b http://ex.org/c>>';
+      termFromId(id).should.deep.equal(new Quad(
+        new Literal('"Hello "W"orl"d!"@en-us'),
+        new NamedNode('http://ex.org/b'),
+        new NamedNode('http://ex.org/c'),
+        new DefaultGraph()
+      ));
     });
 
     describe('with a custom factory', function () {
@@ -186,9 +268,246 @@ describe('Term', function () {
       termToId('http://example.org/').should.equal('http://example.org/');
     });
 
+    it('should create an id without graph if default graph is used', function () {
+      termToId(new Quad(
+        new NamedNode('http://ex.org/a'),
+        new NamedNode('http://ex.org/b'),
+        new Literal('"abc"@en-us'),
+        new DefaultGraph()
+      )).should.equal('<<http://ex.org/a http://ex.org/b "abc"@en-us>>');
+    });
+
+    it('should create an id from a Quad', function () {
+      termToId(new Quad(
+        new NamedNode('http://ex.org/a'),
+        new NamedNode('http://ex.org/b'),
+        new Literal('"abc"@en-us'),
+        new NamedNode('http://ex.org/d')
+      )).should.equal('<<http://ex.org/a http://ex.org/b "abc"@en-us http://ex.org/d>>');
+    });
+
+    it('should create an id from a manually created Quad', function () {
+      termToId({
+        subject: new NamedNode('http://ex.org/a'),
+        predicate: new NamedNode('http://ex.org/b'),
+        object: new Literal('"abc"@en-us'),
+        graph: new NamedNode('http://ex.org/d'),
+        termType: 'Quad',
+        value: '',
+      }).should.equal('<<http://ex.org/a http://ex.org/b "abc"@en-us http://ex.org/d>>');
+    });
+
+    it('should create an id with escaped literals from a Quad', function () {
+      termToId(new Quad(
+        new BlankNode('n3-000'),
+        new Variable('var-b'),
+        new Literal('"Hello "W"orl"d!"@en-us'),
+        new NamedNode('http://ex.org/d')
+      )).should.equal('<<_:n3-000 ?var-b "Hello ""W""orl""d!"@en-us http://ex.org/d>>');
+    });
+
+    it('should create an id without graph from a Quad with default graph and Quad as subject', function () {
+      termToId(new Quad(
+        new Quad(
+          new BlankNode('n3-000'),
+          new Variable('var-b'),
+          new Literal('"abc"@en-us'),
+          new NamedNode('http://ex.org/d')
+        ),
+        new NamedNode('http://ex.org/b'),
+        new Literal('"abc"@en-us'),
+        new DefaultGraph()
+      )).should.equal('<<<<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/b "abc"@en-us>>');
+    });
+
+    it('should create an id without graph from a Quad with default graph and Quad as object', function () {
+      termToId(new Quad(
+        new Literal('"abc"@en-us'),
+        new NamedNode('http://ex.org/b'),
+        new Quad(
+          new BlankNode('n3-000'),
+          new Variable('var-b'),
+          new Literal('"abc"@en-us'),
+          new NamedNode('http://ex.org/d')
+        ),
+        new DefaultGraph()
+      )).should.equal('<<"abc"@en-us http://ex.org/b <<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>>>>');
+    });
+
+    it('should create an id without graph from a Quad with default graph and Quad as subject and object', function () {
+      termToId(new Quad(
+        new Quad(
+          new BlankNode('n3-000'),
+          new Variable('var-b'),
+          new Literal('"abc"@en-us'),
+          new NamedNode('http://ex.org/d')
+        ),
+        new NamedNode('http://ex.org/b'),
+        new Quad(
+          new BlankNode('n3-000'),
+          new Variable('var-b'),
+          new Literal('"abc"@en-us'),
+          new NamedNode('http://ex.org/d')
+        ),
+        new DefaultGraph()
+      )).should.equal('<<<<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/b <<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>>>>');
+    });
+
+    it('should create an id without graph from a Quad with Quad as subject', function () {
+      termToId(new Quad(
+        new Quad(
+          new BlankNode('n3-000'),
+          new Variable('var-b'),
+          new Literal('"abc"@en-us'),
+          new NamedNode('http://ex.org/d')
+        ),
+        new NamedNode('http://ex.org/b'),
+        new Literal('"abc"@en-us'),
+        new NamedNode('http://ex.org/d')
+      )).should.equal('<<<<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/b "abc"@en-us http://ex.org/d>>');
+    });
+
+    it('should create an id without graph from a Quad with Quad as object', function () {
+      termToId(new Quad(
+        new Literal('"abc"@en-us'),
+        new NamedNode('http://ex.org/b'),
+        new Quad(
+          new BlankNode('n3-000'),
+          new Variable('var-b'),
+          new Literal('"abc"@en-us'),
+          new NamedNode('http://ex.org/d')
+        ),
+        new NamedNode('http://ex.org/d')
+      )).should.equal('<<"abc"@en-us http://ex.org/b <<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/d>>');
+    });
+
+    it('should create an id from a Quad with Quad as subject and object', function () {
+      termToId(new Quad(
+        new Quad(
+          new BlankNode('n3-000'),
+          new Variable('var-b'),
+          new Literal('"abc"@en-us'),
+          new NamedNode('http://ex.org/d')
+        ),
+        new NamedNode('http://ex.org/b'),
+        new Quad(
+          new BlankNode('n3-000'),
+          new Variable('var-b'),
+          new Literal('"abc"@en-us'),
+          new NamedNode('http://ex.org/d')
+        ),
+        new NamedNode('http://ex.org/d')
+      )).should.equal('<<<<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/b <<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/d>>');
+    });
+
+    it('should escape literals in nested Quads', function () {
+      termToId(new Quad(
+        new Quad(
+          new BlankNode('n3-000'),
+          new Variable('var-b'),
+          new Literal('"Hello "W"orl"d!"@en-us'),
+          new NamedNode('http://ex.org/d')
+        ),
+        new NamedNode('http://ex.org/b'),
+        new Quad(
+          new BlankNode('n3-000'),
+          new Variable('var-b'),
+          new Literal('"Hello "W"orl"d!"@en-us'),
+          new NamedNode('http://ex.org/d')
+        ),
+        new DefaultGraph()
+      )).should.equal('<<<<_:n3-000 ?var-b "Hello ""W""orl""d!"@en-us http://ex.org/d>> http://ex.org/b <<_:n3-000 ?var-b "Hello ""W""orl""d!"@en-us http://ex.org/d>>>>');
+    });
+
+    it('should correctly handle deeply nested quads', function () {
+      termToId(new Quad(
+        new Quad(
+          new Quad(
+            new Quad(
+              new BlankNode('n3-000'),
+              new Variable('var-b'),
+              new Literal('"abc"@en-us'),
+              new NamedNode('http://ex.org/d')
+            ),
+            new Variable('var-b'),
+            new Quad(
+              new BlankNode('n3-000'),
+              new Variable('var-b'),
+              new Literal('"abc"@en-us'),
+              new NamedNode('http://ex.org/d')
+            ),
+            new NamedNode('http://ex.org/d')
+          ),
+          new Variable('var-b'),
+          new Quad(
+            new BlankNode('n3-000'),
+            new Variable('var-b'),
+            new Literal('"abc"@en-us'),
+            new NamedNode('http://ex.org/d')
+          ),
+          new NamedNode('http://ex.org/d')
+        ),
+        new NamedNode('http://ex.org/b'),
+        new Quad(
+          new Quad(
+            new BlankNode('n3-000'),
+            new Variable('var-b'),
+            new Literal('"abc"@en-us'),
+            new NamedNode('http://ex.org/d')
+          ),
+          new Variable('var-b'),
+          new Quad(
+            new BlankNode('n3-000'),
+            new Variable('var-b'),
+            new Literal('"abc"@en-us'),
+            new NamedNode('http://ex.org/d')
+          ),
+          new NamedNode('http://ex.org/d')
+        ),
+        new NamedNode('http://ex.org/d')
+      )).should.equal('<<<<<<<<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> ?var-b <<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/d>> ?var-b <<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/d>> http://ex.org/b <<<<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> ?var-b <<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/d>> http://ex.org/d>>');
+    });
+
     it('should throw on an unknown type', function () {
       (function () { termToId({ termType: 'unknown' }); })
         .should.throw('Unexpected termType: unknown');
+    });
+  });
+
+  describe('escape', function () {
+    it('should unescape an escaped string correctly', function () {
+      let id = '"Hello ""World"""@en-us';
+      unescape(id).should.equal('"Hello "World""@en-us');
+    });
+
+    it('should escape an unescaped string correctly', function () {
+      let id = '"Hello "World""@en-us';
+      escape(id).should.equal('"Hello ""World"""@en-us');
+    });
+
+    it('should not change an unescaped string', function () {
+      let id = '"Hello "World""@en-us';
+      unescape(id).should.equal(id);
+    });
+
+    it('should not change a string without quotes', function () {
+      let id = '"Hello World"@en-us';
+      escape(id).should.equal(id);
+    });
+
+    it('should not change a blank node', function () {
+      let id = '_:b1';
+      escape(id).should.equal(id);
+    });
+
+    it('should not change a variable', function () {
+      let id = '?v1';
+      escape(id).should.equal(id);
+    });
+
+    it('should not change the empty string', function () {
+      let id = '';
+      escape(id).should.equal(id);
     });
   });
 });
