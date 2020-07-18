@@ -8,9 +8,9 @@ import {
   Quad,
   termToId,
   termFromId,
-  unescape,
-  escape,
 } from '../src/';
+
+import { escape, unescape } from '../src/N3DataFactory';
 
 describe('Term', function () {
   describe('The Term module', function () {

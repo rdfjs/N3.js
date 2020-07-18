@@ -17,8 +17,6 @@ import {
   DefaultGraph,
   Quad,
   Triple,
-  escape,
-  unescape,
 
   termFromId,
   termToId,
@@ -43,8 +41,6 @@ export {
   DefaultGraph,
   Quad,
   Triple,
-  escape,
-  unescape,
 
   termFromId,
   termToId,
