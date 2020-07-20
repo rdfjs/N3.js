@@ -228,6 +228,11 @@ export default class N3Parser {
         this._subject = this._literal(token.value, this._namedNode(token.prefix));
 
       break;
+    case '<<':
+      // Start a new nested triple
+      this._saveContext('<<', this._graph, null, null, null);
+      // Read the subject
+      return this._readSubject;
     default:
       // Read the subject entity
       if ((this._subject = this._readEntity(token)) === undefined)
@@ -303,6 +308,11 @@ export default class N3Parser {
         return this._error('Unexpected graph', token);
       this._saveContext('formula', this._graph, this._subject, this._predicate,
                         this._graph = this._blankNode());
+      return this._readSubject;
+    case '<<':
+      // Start a new nested triple
+      this._saveContext('<<', this._graph, this._subject, this._predicate, null);
+      // Read the object
       return this._readSubject;
     default:
       // Read the object entity
@@ -802,6 +812,27 @@ export default class N3Parser {
     return this._readPath;
   }
 
+  // ### `_readRDFStarTail` reads the end of a nested RDF* triple
+  _readRDFStarTail(token) {
+    if (token.type !== '>>')
+      return this._error(`Expected >> but got ${token.type}`, token);
+
+    // Get the triples value
+    let value = this._quad(this._subject, this._predicate, this._object, this.DEFAULTGRAPH);
+    // Restore the parent context containing this formula
+    this._restoreContext();
+    // If the triple was the subject, continue reading the predicate.
+    if (this._subject === null) {
+      this._subject = value;
+      return this._readPredicate;
+    }
+    else {
+      // If the triple was the object, read punctuation.
+      this._object = value;
+      return this._getContextEndReader();
+    }
+  }
+
   // ### `_getContextEndReader` gets the next reader function at the end of a context
   _getContextEndReader() {
     var contextStack = this._contextStack;
@@ -815,6 +846,8 @@ export default class N3Parser {
       return this._readListItem;
     case 'formula':
       return this._readFormulaTail;
+    case '<<':
+      return this._readRDFStarTail;
     }
   }
 

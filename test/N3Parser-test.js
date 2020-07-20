@@ -896,6 +896,93 @@ describe('Parser', function () {
       (function () { new Parser().parse('<a> <b> <c>'); })
       .should.throw('Expected entity but got eof on line 1');
     });
+
+    it('should parse an RDF* triple with a triple with iris as subject correctly', function () {
+      shouldParse('<<<a> <b> <c>>> <b> <c>.',
+        [['a', 'b', 'c'], 'b', 'c']);
+    });
+
+    it('should not parse an RDF* triple with a triple as predicate',
+      shouldNotParse('<a> <<<b> <c> <d>>> <e>',
+        'Expected entity but got << on line 1.'));
+
+    it('should parse an RDF* triple with a triple with blanknodes as subject correctly',
+      shouldParse('<<_:a <b> _:c>> <b> <c>.',
+        [['_:b0_a', 'b', '_:b0_c'], 'b', 'c']));
+
+    it('should parse an RDF* triple with a triple with blanknodes and literals as subject correctly',
+      shouldParse('<<_:a <b> "c"^^<d>>> <b> <c>.',
+        [['_:b0_a', 'b', '"c"^^http://example.org/d'], 'b', 'c']));
+
+    it('should parse an RDF* triple with a triple as object correctly',
+      shouldParse('<a> <b> <<<a> <b> <c>>>.',
+        ['a', 'b', ['a', 'b', 'c']]));
+
+    it('should parse an RDF* triple with a triple as object correctly',
+      shouldParse('<a> <b> <<_:a <b> _:c>>.',
+        ['a', 'b', ['_:b0_a', 'b', '_:b0_c']]));
+
+    it('should parse an RDF* triple with a triple as object correctly',
+      shouldParse('<a> <b> <<_:a <b> "c"^^<d>>>.',
+        ['a', 'b', ['_:b0_a', 'b', '"c"^^http://example.org/d']]));
+
+    it('should parse nested triples correctly',
+      shouldParse('<<<<<a> <b> <c>>> <f> <g>>> <d> <e>.',
+        [[['a', 'b', 'c'], 'f', 'g'], 'd', 'e']));
+    it('should parse nested triples correctly',
+      shouldParse('<d> <e> <<<f> <g> <<<a> <b> <c>>>>>.',
+        ['d', 'e', ['f', 'g', ['a', 'b', 'c']]]));
+    it('should parse nested triples correctly',
+      shouldParse('<<<f> <g> <<<a> <b> <c>>>>> <d> <e>.',
+        [['f', 'g', ['a', 'b', 'c']], 'd', 'e']));
+    it('should parse nested triples correctly',
+      shouldParse('<d> <e> <<<<<a> <b> <c>>> <f> <g>>>.',
+        ['d', 'e', [['a', 'b', 'c'], 'f', 'g']]));
+
+    it('should not parse nested RDF* statements that are partially closed',
+      shouldNotParse('<d> <e> <<<<<a> <b> <c>>> <f> <g>.',
+        'Expected >> but got . on line 1.'
+      ));
+
+    it('should not parse partially closed nested RDF* statements',
+      shouldNotParse('<d> <e> <<<<<a> <b> <c> <f> <g>>>.',
+        'Expected >> but got IRI on line 1.'
+      ));
+
+    it('should not parse nested RDF* statements with too many closing tags',
+      shouldNotParse('<d> <e> <<<<<a> <b> <c>>>>> <f> <g>>>.',
+        'Expected entity but got >> on line 1.'
+      ));
+
+    it('should not parse nested RDF* statements with too many closing tags',
+      shouldNotParse('<d> <e> <<<<<a> <b> <c>>> <f> <g>>>>>.',
+        'Expected entity but got >> on line 1.'
+      ));
+
+    it('should not parse RDF* statements with too many closing tags',
+      shouldNotParse('<a> <b> <c>>>.',
+        'Expected entity but got >> on line 1.'
+      ));
+
+    it('should not parse incomplete RDF* statements',
+      shouldNotParse('<d> <e> <<<a> <b>>>.',
+        'Expected entity but got >> on line 1.'
+      ));
+
+    it('should not parse incomplete RDF* statements',
+      shouldNotParse('<<<a> <b>>> <d> <e>.',
+        'Expected entity but got >> on line 1.'
+      ));
+
+    it('should not parse incorrectly nested RDF* statements',
+      shouldNotParse('>> <<',
+        'Expected entity but got >> on line 1.'
+      ));
+
+    it('should not parse a nested triple on its own',
+      shouldNotParse('<<<a> <b> <c>>>.',
+        'Unexpected . on line 1.'
+      ));
   });
 
   describe('An Parser instance without document IRI', function () {
@@ -2055,19 +2142,7 @@ function shouldParse(parser, input) {
 
   return function (done) {
     var results = [];
-    var items = expected.map(function (item) {
-      item = item.map(function (t) {
-        // don't touch if it's already an object
-        if (typeof t === 'object')
-          return t;
-
-        // Append base to relative IRIs
-        if (!/^$|^["?]|:/.test(t))
-          t = BASE_IRI + t;
-        return termFromId(t);
-      });
-      return new Quad(item[0], item[1], item[2], item[3]);
-    });
+    var items = expected.map(mapToQuad);
     new parser({ baseIRI: BASE_IRI }).parse(input, function (error, triple) {
       expect(error).not.to.exist;
       if (triple)
@@ -2076,6 +2151,23 @@ function shouldParse(parser, input) {
         toSortedJSON(results).should.equal(toSortedJSON(items)), done();
     });
   };
+}
+
+function mapToQuad(item) {
+  item = item.map(function (t) {
+    // recursively map content if it's an array
+    if (t instanceof Array)
+      t = mapToQuad(t);
+    // don't touch if it's already an object
+    if (typeof t === 'object')
+      return t;
+
+    // Append base to relative IRIs
+    if (!/^$|^["?]|:/.test(t))
+      t = BASE_IRI + t;
+    return termFromId(t);
+  });
+  return new Quad(item[0], item[1], item[2], item[3]);
 }
 
 function toSortedJSON(triples) {
