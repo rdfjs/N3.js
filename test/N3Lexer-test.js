@@ -28,6 +28,11 @@ describe('Lexer', function () {
                      { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
                      { type: 'eof', line: 1 }));
 
+    it('should tokenize a split IRI',
+      shouldTokenize(streamOf('<', 'http://ex.org/?bla#foo>'),
+        { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
+        { type: 'eof', line: 1 }));
+
     it('should not tokenize an IRI with disallowed characters',
       shouldNotTokenize('<http://ex.org/bla"foo>',
                         'Unexpected "<http://ex.org/bla"foo>" on line 1.'));
@@ -788,6 +793,13 @@ describe('Lexer', function () {
                      { type: 'IRI', value: 'b', line: 1 },
                      { type: 'eof', line: 1 }));
 
+    it('should tokenize a split left implication',
+      shouldTokenize(streamOf('<a> <', '= <b> '),
+        { type: 'IRI', value: 'a', line: 1 },
+        { type: 'inverse', value: '>', line: 1 },
+        { type: 'IRI', value: 'b', line: 1 },
+        { type: 'eof', line: 1 }));
+
     it('should tokenize paths',
       shouldTokenize(':joe!fam:mother!loc:office!loc:zip :joe!fam:mother^fam:mother',
                      { type: 'prefixed', prefix: '', value: 'joe', line: 1 },
@@ -811,6 +823,220 @@ describe('Lexer', function () {
     it('does not call setEncoding if not available', function () {
       new Lexer().tokenize({ on: function () {} });
     });
+
+    it('should tokenize an Quadterm start',
+      shouldTokenize('<<',
+        { type: '<<', line: 1 }, { type: 'eof', line: 1 }));
+
+    it('should tokenize a split Quadterm start',
+      shouldTokenize(streamOf('<', '<'),
+        { type: '<<', line: 1 }, { type: 'eof', line: 1 }));
+
+    it('should tokenize an Quadterm end',
+      shouldTokenize('>>',
+        { type: '>>', line: 1 }, { type: 'eof', line: 1 }));
+
+    it('should tokenize an empty Quadterm',
+      shouldTokenize('<< >>',
+        { type: '<<', line: 1 },
+        { type: '>>', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should tokenize an RDF* statement with IRIs',
+      shouldTokenize('<<<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo>>> .',
+        { type: '<<', line: 1 },
+        { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
+        { type: 'IRI', value: 'http://ex.org/?bla#bar', line: 2 },
+        { type: 'IRI', value: 'http://ex.org/?bla#boo', line: 3 },
+        { type: '>>', line: 3 },
+        { type: '.', line: 3 },
+        { type: 'eof', line: 3 }));
+
+    it('should not tokenize a wrongly closed RDF* statement with IRIs',
+      shouldNotTokenize('<<<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo>> .',
+        'Unexpected ">" on line 3.'));
+
+    it('should tokenize a split RDF* statement with IRIs',
+      shouldTokenize(streamOf('<', '<<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo>>> .'),
+        { type: '<<', line: 1 },
+        { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
+        { type: 'IRI', value: 'http://ex.org/?bla#bar', line: 2 },
+        { type: 'IRI', value: 'http://ex.org/?bla#boo', line: 3 },
+        { type: '>>', line: 3 },
+        { type: '.', line: 3 },
+        { type: 'eof', line: 3 }));
+
+    it('should tokenize an RDF* statement with literals',
+      shouldTokenize('<<"string"@en "string"@nl-be "string"@EN>> .',
+        { type: '<<', line: 1 },
+        { type: 'literal', value: 'string', line: 1 },
+        { type: 'langcode', value: 'en', line: 1 },
+        { type: 'literal', value: 'string', line: 1 },
+        { type: 'langcode', value: 'nl-be', line: 1 },
+        { type: 'literal', value: 'string', line: 1 },
+        { type: 'langcode', value: 'EN', line: 1 },
+        { type: '>>', line: 1 },
+        { type: '.', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should tokenize a prefixed iri followed by the end of a QuadTerm',
+      shouldTokenize('c:c>> .',
+        { type: 'prefixed', prefix: 'c', value: 'c', line: 1 },
+        { type: '>>', line: 1 },
+        { type: '.', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should tokenize an RDF* statement with prefixed names',
+      shouldTokenize('<<a:a b:b c:c>> .',
+        { type: '<<', line: 1 },
+        { type: 'prefixed', prefix: 'a', value: 'a', line: 1 },
+        { type: 'prefixed', prefix: 'b', value: 'b', line: 1 },
+        { type: 'prefixed', prefix: 'c', value: 'c', line: 1 },
+        { type: '>>', line: 1 },
+        { type: '.', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should tokenize an RDF* statement with blank nodes',
+      shouldTokenize('<<_:a _:b _:c>> .',
+        { type: '<<', line: 1 },
+        { type: 'blank', prefix: '_', value: 'a', line: 1 },
+        { type: 'blank', prefix: '_', value: 'b', line: 1 },
+        { type: 'blank', prefix: '_', value: 'c', line: 1 },
+        { type: '>>', line: 1 },
+        { type: '.', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should tokenize an RDF* statement with mixed types',
+      shouldTokenize('<<<http://ex.org/?bla#foo> "string"@nl-be c:c>> .',
+        { type: '<<', line: 1 },
+        { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
+        { type: 'literal', value: 'string', line: 1 },
+        { type: 'langcode', value: 'nl-be', line: 1 },
+        { type: 'prefixed', prefix: 'c', value: 'c', line: 1 },
+        { type: '>>', line: 1 },
+        { type: '.', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should tokenize an RDF* statement with mixed types',
+      shouldTokenize('<<_:a a:a "string"@EN>> .',
+        { type: '<<', line: 1 },
+        { type: 'blank', prefix: '_', value: 'a', line: 1 },
+        { type: 'prefixed', prefix: 'a', value: 'a', line: 1 },
+        { type: 'literal', value: 'string', line: 1 },
+        { type: 'langcode', value: 'EN', line: 1 },
+        { type: '>>', line: 1 },
+        { type: '.', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should tokenize an RDF* statement with mixed types',
+      shouldTokenize('<<"literal"@AU <http://ex.org/?bla#foo> _:a>> .',
+        { type: '<<', line: 1 },
+        { type: 'literal', value: 'literal', line: 1 },
+        { type: 'langcode', value: 'AU', line: 1 },
+        { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
+        { type: 'blank', prefix: '_', value: 'a', line: 1 },
+        { type: '>>', line: 1 },
+        { type: '.', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should tokenize RDF* statements with shared subjects',
+      shouldTokenize('<<<a> <b> <c>;\n<d> <e>>>.',
+        { type: '<<', line: 1 },
+        { type: 'IRI', value: 'a', line: 1 },
+        { type: 'IRI', value: 'b', line: 1 },
+        { type: 'IRI', value: 'c', line: 1 },
+        { type: ';', line: 1 },
+        { type: 'IRI', value: 'd', line: 2 },
+        { type: 'IRI', value: 'e', line: 2 },
+        { type: '>>', line: 2 },
+        { type: '.', line: 2 },
+        { type: 'eof', line: 2 }));
+
+    it('should tokenize RDF* statements with shared subjects and predicates',
+      shouldTokenize('<<<a> <b> <c>,\n<d>>>.',
+        { type: '<<', line: 1 },
+        { type: 'IRI', value: 'a', line: 1 },
+        { type: 'IRI', value: 'b', line: 1 },
+        { type: 'IRI', value: 'c', line: 1 },
+        { type: ',', line: 1 },
+        { type: 'IRI', value: 'd', line: 2 },
+        { type: '>>', line: 2 },
+        { type: '.', line: 2 },
+        { type: 'eof', line: 2 }));
+
+    it('should tokenize an RDF* statement with shared subjects and predicates and prefixed names',
+      shouldTokenize('<<a:a b:b c:c;d:d e:e,f:f>> .',
+        { type: '<<', line: 1 },
+        { type: 'prefixed', prefix: 'a', value: 'a', line: 1 },
+        { type: 'prefixed', prefix: 'b', value: 'b', line: 1 },
+        { type: 'prefixed', prefix: 'c', value: 'c', line: 1 },
+        { type: ';', line: 1 },
+        { type: 'prefixed', prefix: 'd', value: 'd', line: 1 },
+        { type: 'prefixed', prefix: 'e', value: 'e', line: 1 },
+        { type: ',', line: 1 },
+        { type: 'prefixed', prefix: 'f', value: 'f', line: 1 },
+        { type: '>>', line: 1 },
+        { type: '.', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should tokenize a QuadTerm followed by other tokens',
+      shouldTokenize('<<_:a <b> "lit"@EN>> _:a b:b.',
+        { type: '<<', line: 1 },
+        { type: 'blank', prefix: '_', value: 'a', line: 1 },
+        { type: 'IRI', value: 'b', line: 1 },
+        { type: 'literal', value: 'lit', line: 1 },
+        { type: 'langcode', value: 'EN', line: 1 },
+        { type: '>>', line: 1 },
+        { type: 'blank', prefix: '_', value: 'a', line: 1 },
+        { type: 'prefixed', prefix: 'b', value: 'b', line: 1 },
+        { type: '.', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should tokenize a QuadTerm preceded by other tokens',
+      shouldTokenize('"lit"@DE _:b <<_:a b:b "lit"@EN>>.',
+        { type: 'literal', value: 'lit', line: 1 },
+        { type: 'langcode', value: 'DE', line: 1 },
+        { type: 'blank', prefix: '_', value: 'b', line: 1 },
+        { type: '<<', line: 1 },
+        { type: 'blank', prefix: '_', value: 'a', line: 1 },
+        { type: 'prefixed', prefix: 'b', value: 'b', line: 1 },
+        { type: 'literal', value: 'lit', line: 1 },
+        { type: 'langcode', value: 'EN', line: 1 },
+        { type: '>>', line: 1 },
+        { type: '.', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should tokenize a nested QuadTerm as subject in a statement',
+      shouldTokenize('<<<<_:b <b> "lit"@DE>> <a> "lit"@EN>>.',
+        { type: '<<', line: 1 },
+        { type: '<<', line: 1 },
+        { type: 'blank', prefix: '_', value: 'b', line: 1 },
+        { type: 'IRI', value: 'b', line: 1 },
+        { type: 'literal', value: 'lit', line: 1 },
+        { type: 'langcode', value: 'DE', line: 1 },
+        { type: '>>', line: 1 },
+        { type: 'IRI', value: 'a', line: 1 },
+        { type: 'literal', value: 'lit', line: 1 },
+        { type: 'langcode', value: 'EN', line: 1 },
+        { type: '>>', line: 1 },
+        { type: '.', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should tokenize a nested QuadTerm as object in a statement',
+      shouldTokenize('<<a:a _:a <<_:b <b> "lit"@DE>>>>.',
+        { type: '<<', line: 1 },
+        { type: 'prefixed', prefix: 'a', value: 'a', line: 1 },
+        { type: 'blank', prefix: '_', value: 'a', line: 1 },
+        { type: '<<', line: 1 },
+        { type: 'blank', prefix: '_', value: 'b', line: 1 },
+        { type: 'IRI', value: 'b', line: 1 },
+        { type: 'literal', value: 'lit', line: 1 },
+        { type: 'langcode', value: 'DE', line: 1 },
+        { type: '>>', line: 1 },
+        { type: '>>', line: 1 },
+        { type: '.', line: 1 },
+        { type: 'eof', line: 1 }));
+
 
     describe('passing data after the stream has been finished', function () {
       var tokens = [], error;
