@@ -2155,15 +2155,12 @@ function shouldParse(parser, input) {
 
 function mapToQuad(item) {
   item = item.map(function (t) {
-    // recursively map content if it's an array
-    if (t instanceof Array)
-      t = mapToQuad(t);
     // don't touch if it's already an object
     if (typeof t === 'object')
-      return t;
-
+      // recursively map content if it's an array
+      return (t instanceof Array) ? mapToQuad(t) : t;
     // Append base to relative IRIs
-    if (!/^$|^["?]|:/.test(t))
+    else if (!/^$|^["?]|:/.test(t))
       t = BASE_IRI + t;
     return termFromId(t);
   });
