@@ -19,13 +19,14 @@ export default class N3Parser {
     // Set supported features depending on the format
     var format = (typeof options.format === 'string') ?
                  options.format.match(/\w*$/)[0].toLowerCase() : '',
-        isTurtle = format === 'turtle', isTriG = format === 'trig',
+        isTurtle = /turtle/.test(format), isTriG = /trig/.test(format),
         isNTriples = /triple/.test(format), isNQuads = /quad/.test(format),
         isN3 = this._n3Mode = /n3/.test(format),
         isLineMode = isNTriples || isNQuads;
     if (!(this._supportsNamedGraphs = !(isTurtle || isN3)))
       this._readPredicateOrNamedGraph = this._readPredicate;
     this._supportsQuads = !(isTurtle || isTriG || isNTriples || isN3);
+    this._supportsRDFStar = format === '' || /star|\*$/.test(format);
     // Disable relative IRIs in N-Triples or N-Quads mode
     if (isLineMode)
       this._resolveRelativeIRI = function (iri) { return null; };
@@ -229,11 +230,16 @@ export default class N3Parser {
 
       break;
     case '<<':
-      // Start a new nested triple
-      this._saveContext('<<', this._graph, null, null, null);
-      this._graph = null;
-      // Read the subject
-      return this._readSubject;
+      if (!this._supportsRDFStar) {
+        this._error(`${token.type} is not allowed in this format`, token);
+      }
+      else {
+        // Start a new nested triple
+        this._saveContext('<<', this._graph, null, null, null);
+        this._graph = null;
+        // Read the subject
+        return this._readSubject;
+      }
     default:
       // Read the subject entity
       if ((this._subject = this._readEntity(token)) === undefined)
@@ -311,11 +317,16 @@ export default class N3Parser {
                         this._graph = this._blankNode());
       return this._readSubject;
     case '<<':
-      // Start a new nested triple
-      this._saveContext('<<', this._graph, this._subject, this._predicate, null);
-      this._graph = null;
-      // Read the object
-      return this._readSubject;
+      if (!this._supportsRDFStar) {
+        this._error(`${token.type} is not allowed in this format`, token);
+      }
+      else {
+        // Start a new nested triple
+        this._saveContext('<<', this._graph, this._subject, this._predicate, null);
+        this._graph = null;
+        // Read the object
+        return this._readSubject;
+      }
     default:
       // Read the object entity
       if ((this._object = this._readEntity(token)) === undefined)

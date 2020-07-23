@@ -1182,9 +1182,26 @@ describe('Parser', function () {
       shouldNotParse(parser, '1 <a> <b>.',
         'Unexpected literal on line 1.'));
 
+    it('should not parse RDF*',
+      shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
+        '<< is not allowed in this format on line 1.'));
+
+    it('should not parse RDF*',
+      shouldNotParse(parser, '<a> <b> <<a> <b> <c>>>.',
+        '<< is not allowed in this format on line 1.'));
+  });
+
+  describe('A Parser instance for the TurtleStar format', function () {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'TurtleStar' }); }
+
+    it('should parse RDF*',
+      shouldParse(parser,
+        '<<<a> <b> <c>>> <b> <c> .',
+        [['a', 'b', 'c'], 'b', 'c']));
+
     it('should not parse nested quads',
-      shouldNotParse(parser, '<<<a> <b> <c> <d>>> <a> <b> .',
-        'Expected >> to follow "http://example.org/c" on line 1.'));
+      shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
+        'Expected >> to follow "_:b0_b" on line 1.'));
   });
 
   describe('A Parser instance for the TriG format', function () {
@@ -1226,9 +1243,25 @@ describe('Parser', function () {
     it('should not parse @forAll',
       shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'));
 
+    it('should not parse RDF*',
+      shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
+        '<< is not allowed in this format on line 1.'));
+
+    it('should not parse RDF*',
+      shouldNotParse(parser, '<a> <b> <<<a> <b> <c>>>.',
+        '<< is not allowed in this format on line 1.'));
+  });
+
+  describe('A Parser instance for the TriGStar format', function () {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'TriGStar' }); }
+
+    it('should parse RDF*',
+      shouldParse(parser, '<<<a> <b> <c>>> <a> <b> .',
+        [['a', 'b', 'c'], 'a', 'b']));
+
     it('should not parse nested quads',
-      shouldNotParse(parser, '<<<a> <b> <c> <d>>> <a> <b> .',
-        'Expected >> to follow "http://example.org/c" on line 1.'));
+      shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
+        'Expected >> to follow "_:b0_b" on line 1.'));
   });
 
   describe('A Parser instance for the N-Triples format', function () {
@@ -1281,6 +1314,22 @@ describe('Parser', function () {
     it('should not parse @forAll',
       shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'));
 
+    it('should not parse RDF*',
+      shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
+        '<< is not allowed in this format on line 1.'));
+
+    it('should not parse RDF*',
+      shouldNotParse(parser, '<http://ex.org/a> <http://ex.org/b> <<<a> <b> <c>>>.',
+        '<< is not allowed in this format on line 1.'));
+  });
+
+  describe('A Parser instance for the N-TriplesStar format', function () {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N-TriplesStar' }); }
+
+    it('should parse RDF*',
+      shouldParse(parser, '<<_:a <http://example.org/b> _:c>> <http://example.org/a> _:b .',
+        [['_:b0_a', 'b', '_:b0_c'], 'a', '_:b0_b']));
+
     it('should not parse nested quads',
       shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
         'Expected >> to follow "_:b0_b" on line 1.'));
@@ -1323,6 +1372,22 @@ describe('Parser', function () {
 
     it('should not parse @forAll',
       shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'));
+
+    it('should not parse RDF*',
+      shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
+        '<< is not allowed in this format on line 1.'));
+
+    it('should not parse RDF*',
+      shouldNotParse(parser, '_:a <http://ex.org/b> <<<a> <b> <c>>>.',
+        '<< is not allowed in this format on line 1.'));
+  });
+
+  describe('A Parser instance for the N-QuadsStar format', function () {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N-QuadsStar' }); }
+
+    it('should parse RDF*',
+      shouldParse(parser, '<<_:a <http://example.org/b> _:c>> <http://example.org/a> _:c .',
+        [['_:b0_a', 'b', '_:b0_c'], 'a', '_:b0_c']));
   });
 
   describe('A Parser instance for the N3 format', function () {
@@ -1655,9 +1720,25 @@ describe('Parser', function () {
             ['"bonjour"@fr', 'sameAs', '"hello"@en', '_:b0']
         ));
 
+    it('should not parse RDF*',
+      shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
+        '<< is not allowed in this format on line 1.'));
+
+    it('should not parse RDF*',
+      shouldNotParse(parser, '<a> <b> <<<a> <b> <c>>>.',
+        '<< is not allowed in this format on line 1.'));
+  });
+
+  describe('A Parser instance for the N3Star format', function () {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3Star' }); }
+
+    it('should parse RDF*',
+      shouldParse(parser, '<<<a> <b> <c>>> <a> <b> .',
+        [['a', 'b', 'c'], 'a', 'b']));
+
     it('should not parse nested quads',
-      shouldNotParse(parser, '<<<a> <b> <c> <d>>> <a> <b> .',
-        'Expected >> to follow "http://example.org/c" on line 1.'));
+      shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
+        'Expected >> to follow "_:.b" on line 1.'));
   });
 
   describe('A Parser instance for the N3 format with the explicitQuantifiers option', function () {
