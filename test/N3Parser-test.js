@@ -941,7 +941,7 @@ describe('Parser', function () {
 
     it('should not parse nested RDF* statements that are partially closed',
       shouldNotParse('<d> <e> <<<<<a> <b> <c>>> <f> <g>.',
-        'Expected >> but got . on line 1.'
+        'Expected entity but got . on line 1.'
       ));
 
     it('should not parse partially closed nested RDF* statements',
@@ -983,6 +983,29 @@ describe('Parser', function () {
       shouldNotParse('<<<a> <b> <c>>>.',
         'Unexpected . on line 1.'
       ));
+
+    it('should parse an RDF* quad',
+      shouldParse('<<<a> <b> <c> <d>>> <a> <b> .',
+        [['a', 'b', 'c', 'd'], 'a', 'b']));
+
+    it('should not parse a malformed RDF* quad',
+      shouldNotParse('<<<a> <b> <c> <d> <e>>> <a> <b> .',
+        'Expected >> but got IRI on line 1.'));
+
+    it('should parse statements with a shared RDF* subject',
+      shouldParse('<<<a> <b> <c>>> <b> <c>;\n<d> <c>.',
+        [['a', 'b', 'c'], 'b', 'c'],
+        [['a', 'b', 'c'], 'd', 'c']));
+
+    it('should parse statements with a shared RDF* subject',
+      shouldParse('<<<a> <b> <c>>> <b> <c>;\n<d> <<<a> <b> <c>>>.',
+        [['a', 'b', 'c'], 'b', 'c'],
+        [['a', 'b', 'c'], 'd', ['a', 'b', 'c']]));
+
+    it('should put nested triples in the default graph',
+      shouldParse('<a> <b> <c> <g>.\n<<<a> <b> <c>>> <d> <e>.',
+          ['a', 'b', 'c', 'g'],
+          [['a', 'b', 'c'], 'd', 'e']));
   });
 
   describe('An Parser instance without document IRI', function () {
@@ -1158,6 +1181,10 @@ describe('Parser', function () {
     it('should not parse a literal as subject',
       shouldNotParse(parser, '1 <a> <b>.',
         'Unexpected literal on line 1.'));
+
+    it('should not parse nested quads',
+      shouldNotParse(parser, '<<<a> <b> <c> <d>>> <a> <b> .',
+        'Expected >> to follow "http://example.org/c" on line 1.'));
   });
 
   describe('A Parser instance for the TriG format', function () {
@@ -1198,6 +1225,10 @@ describe('Parser', function () {
 
     it('should not parse @forAll',
       shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'));
+
+    it('should not parse nested quads',
+      shouldNotParse(parser, '<<<a> <b> <c> <d>>> <a> <b> .',
+        'Expected >> to follow "http://example.org/c" on line 1.'));
   });
 
   describe('A Parser instance for the N-Triples format', function () {
@@ -1249,6 +1280,10 @@ describe('Parser', function () {
 
     it('should not parse @forAll',
       shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'));
+
+    it('should not parse nested quads',
+      shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
+        'Expected >> to follow "_:b0_b" on line 1.'));
   });
 
   describe('A Parser instance for the N-Quads format', function () {
@@ -1619,6 +1654,10 @@ describe('Parser', function () {
             ['a', 'b', '_:b0'],
             ['"bonjour"@fr', 'sameAs', '"hello"@en', '_:b0']
         ));
+
+    it('should not parse nested quads',
+      shouldNotParse(parser, '<<<a> <b> <c> <d>>> <a> <b> .',
+        'Expected >> to follow "http://example.org/c" on line 1.'));
   });
 
   describe('A Parser instance for the N3 format with the explicitQuantifiers option', function () {
