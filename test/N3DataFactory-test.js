@@ -130,6 +130,54 @@ describe('DataFactory', function () {
       ));
     });
 
+    it('should return a nested quad', function () {
+      DataFactory.quad(
+        new Quad(
+          new NamedNode('http://ex.org/a'),
+          new NamedNode('http://ex.org/b'),
+          new Literal('abc'),
+          new NamedNode('http://ex.org/d')
+        ),
+        new NamedNode('http://ex.org/b'),
+        new Literal('abc'),
+        new NamedNode('http://ex.org/d')
+      ).should.deep.equal(new Quad(
+        new Quad(
+          new NamedNode('http://ex.org/a'),
+          new NamedNode('http://ex.org/b'),
+          new Literal('abc'),
+          new NamedNode('http://ex.org/d')
+        ),
+        new NamedNode('http://ex.org/b'),
+        new Literal('abc'),
+        new NamedNode('http://ex.org/d')
+      ));
+    });
+
+    it('should return a nested quad', function () {
+      DataFactory.quad(
+        new NamedNode('http://ex.org/a'),
+        new NamedNode('http://ex.org/b'),
+        new Literal('abc'),
+        new Quad(
+          new NamedNode('http://ex.org/a'),
+          new NamedNode('http://ex.org/b'),
+          new Literal('abc'),
+          new NamedNode('http://ex.org/d')
+        )
+      ).should.deep.equal(new Quad(
+        new NamedNode('http://ex.org/a'),
+        new NamedNode('http://ex.org/b'),
+        new Literal('abc'),
+        new Quad(
+          new NamedNode('http://ex.org/a'),
+          new NamedNode('http://ex.org/b'),
+          new Literal('abc'),
+          new NamedNode('http://ex.org/d')
+        )
+      ));
+    });
+
     it('without graph parameter returns a quad in the default graph', function () {
       DataFactory.quad(
         new NamedNode('http://ex.org/a'),

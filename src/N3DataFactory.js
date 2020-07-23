@@ -2,10 +2,14 @@
 // See https://github.com/rdfjs/representation-task-force/blob/master/interface-spec.md
 
 import namespaces from './IRIs';
+import { isDefaultGraph } from './N3Util';
 const { rdf, xsd } = namespaces;
 
 let DEFAULTGRAPH;
 let _blankNodeCounter = 0;
+
+const escapedLiteral = /^"(.*".*)(?="[^"]*$)/;
+const quadId = /^<<("(?:""|[^"])*"[^ ]*|[^ ]+) ("(?:""|[^"])*"[^ ]*|[^ ]+) ("(?:""|[^"])*"[^ ]*|[^ ]+) ?("(?:""|[^"])*"[^ ]*|[^ ]+)?>>$/;
 
 // ## DataFactory singleton
 const DataFactory = {
@@ -186,8 +190,10 @@ export function termFromId(id, factory) {
 
   // Identify the term type based on the first character
   switch (id[0]) {
-  case '_': return factory.blankNode(id.substr(2));
-  case '?': return factory.variable(id.substr(1));
+  case '?':
+    return factory.variable(id.substr(1));
+  case '_':
+    return factory.blankNode(id.substr(2));
   case '"':
     // Shortcut for internal literals
     if (factory === DataFactory)
@@ -200,7 +206,16 @@ export function termFromId(id, factory) {
     return factory.literal(id.substr(1, endPos - 1),
             id[endPos + 1] === '@' ? id.substr(endPos + 2)
                                    : factory.namedNode(id.substr(endPos + 3)));
-  default:  return factory.namedNode(id);
+  case '<':
+    const components = quadId.exec(id);
+    return factory.quad(
+      termFromId(unescapeQuotes(components[1]), factory),
+      termFromId(unescapeQuotes(components[2]), factory),
+      termFromId(unescapeQuotes(components[3]), factory),
+      components[4] && termFromId(unescapeQuotes(components[4]), factory)
+    );
+  default:
+    return factory.namedNode(id);
   }
 }
 
@@ -208,7 +223,7 @@ export function termFromId(id, factory) {
 export function termToId(term) {
   if (typeof term === 'string')
     return term;
-  if (term instanceof Term)
+  if (term instanceof Term && term.termType !== 'Quad')
     return term.id;
   if (!term)
     return DEFAULTGRAPH.id;
@@ -222,18 +237,36 @@ export function termToId(term) {
   case 'Literal':      return '"' + term.value + '"' +
     (term.language ? '@' + term.language :
       (term.datatype && term.datatype.value !== xsd.string ? '^^' + term.datatype.value : ''));
+  case 'Quad':
+    // To identify RDF* quad components, we escape quotes by doubling them.
+    // This avoids the overhead of backslash parsing of Turtle-like syntaxes.
+    return `<<${
+        escapeQuotes(termToId(term.subject))
+      } ${
+        escapeQuotes(termToId(term.predicate))
+      } ${
+        escapeQuotes(termToId(term.object))
+      }${
+        (isDefaultGraph(term.graph)) ? '' : ` ${termToId(term.graph)}`
+      }>>`;
   default: throw new Error('Unexpected termType: ' + term.termType);
   }
 }
 
 
 // ## Quad constructor
-export class Quad {
+export class Quad extends Term {
   constructor(subject, predicate, object, graph) {
+    super('');
     this.subject   = subject;
     this.predicate = predicate;
     this.object    = object;
     this.graph     = graph || DEFAULTGRAPH;
+  }
+
+  // ### The term type of this term
+  get termType() {
+    return 'Quad';
   }
 
   // ### Returns a plain object representation of this quad
@@ -256,6 +289,15 @@ export class Quad {
 }
 export { Quad as Triple };
 
+// ### Escapes the quotes within the given literal
+export function escapeQuotes(id) {
+  return id.replace(escapedLiteral, (_, quoted) => `"${quoted.replace(/"/g, '""')}`);
+}
+
+// ### Unescapes the quotes within the given literal
+export function unescapeQuotes(id) {
+  return id.replace(escapedLiteral, (_, quoted) => `"${quoted.replace(/""/g, '"')}`);
+}
 
 // ### Creates an IRI
 function namedNode(iri) {
