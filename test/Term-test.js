@@ -10,7 +10,10 @@ import {
   termFromId,
 } from '../src/';
 
-import { escape, unescape } from '../src/N3DataFactory';
+import {
+  escapeQuotes,
+  unescapeQuotes,
+} from '../src/N3DataFactory';
 
 describe('Term', function () {
   describe('The Term module', function () {
@@ -474,40 +477,40 @@ describe('Term', function () {
     });
   });
 
-  describe('escape', function () {
+  describe('escaping', function () {
     it('should unescape an escaped string correctly', function () {
       let id = '"Hello ""World"""@en-us';
-      unescape(id).should.equal('"Hello "World""@en-us');
+      unescapeQuotes(id).should.equal('"Hello "World""@en-us');
     });
 
     it('should escape an unescaped string correctly', function () {
       let id = '"Hello "World""@en-us';
-      escape(id).should.equal('"Hello ""World"""@en-us');
+      escapeQuotes(id).should.equal('"Hello ""World"""@en-us');
     });
 
     it('should not change an unescaped string', function () {
       let id = '"Hello "World""@en-us';
-      unescape(id).should.equal(id);
+      unescapeQuotes(id).should.equal(id);
     });
 
     it('should not change a string without quotes', function () {
       let id = '"Hello World"@en-us';
-      escape(id).should.equal(id);
+      escapeQuotes(id).should.equal(id);
     });
 
     it('should not change a blank node', function () {
       let id = '_:b1';
-      escape(id).should.equal(id);
+      escapeQuotes(id).should.equal(id);
     });
 
     it('should not change a variable', function () {
       let id = '?v1';
-      escape(id).should.equal(id);
+      escapeQuotes(id).should.equal(id);
     });
 
     it('should not change the empty string', function () {
       let id = '';
-      escape(id).should.equal(id);
+      escapeQuotes(id).should.equal(id);
     });
   });
 });
