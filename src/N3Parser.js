@@ -19,13 +19,16 @@ export default class N3Parser {
     // Set supported features depending on the format
     var format = (typeof options.format === 'string') ?
                  options.format.match(/\w*$/)[0].toLowerCase() : '',
-        isTurtle = format === 'turtle', isTriG = format === 'trig',
+        isTurtle = /turtle/.test(format), isTriG = /trig/.test(format),
         isNTriples = /triple/.test(format), isNQuads = /quad/.test(format),
         isN3 = this._n3Mode = /n3/.test(format),
         isLineMode = isNTriples || isNQuads;
     if (!(this._supportsNamedGraphs = !(isTurtle || isN3)))
       this._readPredicateOrNamedGraph = this._readPredicate;
+    // Support triples in other graphs
     this._supportsQuads = !(isTurtle || isTriG || isNTriples || isN3);
+    // Support nesting of triples
+    this._supportsRDFStar = format === '' || /star|\*$/.test(format);
     // Disable relative IRIs in N-Triples or N-Quads mode
     if (isLineMode)
       this._resolveRelativeIRI = function (iri) { return null; };
@@ -228,6 +231,12 @@ export default class N3Parser {
         this._subject = this._literal(token.value, this._namedNode(token.prefix));
 
       break;
+    case '<<':
+      if (!this._supportsRDFStar)
+        return this._error('Unexpected RDF* syntax', token);
+      this._saveContext('<<', this._graph, null, null, null);
+      this._graph = null;
+      return this._readSubject;
     default:
       // Read the subject entity
       if ((this._subject = this._readEntity(token)) === undefined)
@@ -303,6 +312,12 @@ export default class N3Parser {
         return this._error('Unexpected graph', token);
       this._saveContext('formula', this._graph, this._subject, this._predicate,
                         this._graph = this._blankNode());
+      return this._readSubject;
+    case '<<':
+      if (!this._supportsRDFStar)
+        return this._error('Unexpected RDF* syntax', token);
+      this._saveContext('<<', this._graph, this._subject, this._predicate, null);
+      this._graph = null;
       return this._readSubject;
     default:
       // Read the object entity
@@ -802,6 +817,37 @@ export default class N3Parser {
     return this._readPath;
   }
 
+  // ### `_readRDFStarTailOrGraph` reads the graph of a nested RDF* quad or the end of a nested RDF* triple
+  _readRDFStarTailOrGraph(token) {
+    if (token.type !== '>>') {
+      // An entity means this is a quad (only allowed if not already inside a graph)
+      if (this._supportsQuads && this._graph === null && (this._graph = this._readEntity(token)) !== undefined)
+        return this._readRDFStarTail;
+      return this._error('Expected >> to follow "' + this._object.id + '"', token);
+    }
+    return this._readRDFStarTail(token);
+  }
+
+  // ### `_readRDFStarTail` reads the end of a nested RDF* triple
+  _readRDFStarTail(token) {
+    if (token.type !== '>>')
+      return this._error(`Expected >> but got ${token.type}`, token);
+    // Read the quad and restore the previous context
+    const quad = this._quad(this._subject, this._predicate, this._object,
+      this._graph || this.DEFAULTGRAPH);
+    this._restoreContext();
+    // If the triple was the subject, continue by reading the predicate.
+    if (this._subject === null) {
+      this._subject = quad;
+      return this._readPredicate;
+    }
+    // If the triple was the object, read context end.
+    else {
+      this._object = quad;
+      return this._getContextEndReader();
+    }
+  }
+
   // ### `_getContextEndReader` gets the next reader function at the end of a context
   _getContextEndReader() {
     var contextStack = this._contextStack;
@@ -815,6 +861,8 @@ export default class N3Parser {
       return this._readListItem;
     case 'formula':
       return this._readFormulaTail;
+    case '<<':
+      return this._readRDFStarTailOrGraph;
     }
   }
 
