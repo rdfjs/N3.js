@@ -1182,13 +1182,13 @@ describe('Parser', function () {
       shouldNotParse(parser, '1 <a> <b>.',
         'Unexpected literal on line 1.'));
 
-    it('should not parse RDF*',
+    it('should not parse RDF* in the subject position',
       shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
-        '<< is not allowed in this format on line 1.'));
+        'Unexpected RDF* syntax on line 1.'));
 
-    it('should not parse RDF*',
+    it('should not parse RDF* in the object position',
       shouldNotParse(parser, '<a> <b> <<a> <b> <c>>>.',
-        '<< is not allowed in this format on line 1.'));
+        'Unexpected RDF* syntax on line 1.'));
   });
 
   describe('A Parser instance for the TurtleStar format', function () {
@@ -1243,13 +1243,13 @@ describe('Parser', function () {
     it('should not parse @forAll',
       shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'));
 
-    it('should not parse RDF*',
+    it('should not parse RDF* in the subject position',
       shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
-        '<< is not allowed in this format on line 1.'));
+        'Unexpected RDF* syntax on line 1.'));
 
-    it('should not parse RDF*',
+    it('should not parse RDF* in the object position',
       shouldNotParse(parser, '<a> <b> <<<a> <b> <c>>>.',
-        '<< is not allowed in this format on line 1.'));
+        'Unexpected RDF* syntax on line 1.'));
   });
 
   describe('A Parser instance for the TriGStar format', function () {
@@ -1314,13 +1314,13 @@ describe('Parser', function () {
     it('should not parse @forAll',
       shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'));
 
-    it('should not parse RDF*',
+    it('should not parse RDF* in the subject position',
       shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
-        '<< is not allowed in this format on line 1.'));
+        'Unexpected RDF* syntax on line 1.'));
 
-    it('should not parse RDF*',
+    it('should not parse RDF* in the object position',
       shouldNotParse(parser, '<http://ex.org/a> <http://ex.org/b> <<<a> <b> <c>>>.',
-        '<< is not allowed in this format on line 1.'));
+        'Unexpected RDF* syntax on line 1.'));
   });
 
   describe('A Parser instance for the N-TriplesStar format', function () {
@@ -1373,13 +1373,13 @@ describe('Parser', function () {
     it('should not parse @forAll',
       shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'));
 
-    it('should not parse RDF*',
+    it('should not parse RDF* in the subject position',
       shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
-        '<< is not allowed in this format on line 1.'));
+        'Unexpected RDF* syntax on line 1.'));
 
-    it('should not parse RDF*',
+    it('should not parse RDF* in the object position',
       shouldNotParse(parser, '_:a <http://ex.org/b> <<<a> <b> <c>>>.',
-        '<< is not allowed in this format on line 1.'));
+        'Unexpected RDF* syntax on line 1.'));
   });
 
   describe('A Parser instance for the N-QuadsStar format', function () {
@@ -1720,13 +1720,13 @@ describe('Parser', function () {
             ['"bonjour"@fr', 'sameAs', '"hello"@en', '_:b0']
         ));
 
-    it('should not parse RDF*',
+    it('should not parse RDF* in the subject position',
       shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
-        '<< is not allowed in this format on line 1.'));
+        'Unexpected RDF* syntax on line 1.'));
 
-    it('should not parse RDF*',
+    it('should not parse RDF* in the object position',
       shouldNotParse(parser, '<a> <b> <<<a> <b> <c>>>.',
-        '<< is not allowed in this format on line 1.'));
+        'Unexpected RDF* syntax on line 1.'));
   });
 
   describe('A Parser instance for the N3Star format', function () {

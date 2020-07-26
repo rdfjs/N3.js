@@ -232,16 +232,11 @@ export default class N3Parser {
 
       break;
     case '<<':
-      if (!this._supportsRDFStar) {
-        this._error(`${token.type} is not allowed in this format`, token);
-      }
-      else {
-        // Start a new nested triple
-        this._saveContext('<<', this._graph, null, null, null);
-        this._graph = null;
-        // Read the subject
-        return this._readSubject;
-      }
+      if (!this._supportsRDFStar)
+        return this._error('Unexpected RDF* syntax', token);
+      this._saveContext('<<', this._graph, null, null, null);
+      this._graph = null;
+      return this._readSubject;
     default:
       // Read the subject entity
       if ((this._subject = this._readEntity(token)) === undefined)
@@ -319,16 +314,11 @@ export default class N3Parser {
                         this._graph = this._blankNode());
       return this._readSubject;
     case '<<':
-      if (!this._supportsRDFStar) {
-        this._error(`${token.type} is not allowed in this format`, token);
-      }
-      else {
-        // Start a new nested triple
-        this._saveContext('<<', this._graph, this._subject, this._predicate, null);
-        this._graph = null;
-        // Read the object
-        return this._readSubject;
-      }
+      if (!this._supportsRDFStar)
+        return this._error('Unexpected RDF* syntax', token);
+      this._saveContext('<<', this._graph, this._subject, this._predicate, null);
+      this._graph = null;
+      return this._readSubject;
     default:
       // Read the object entity
       if ((this._object = this._readEntity(token)) === undefined)
@@ -831,34 +821,29 @@ export default class N3Parser {
   _readRDFStarTailOrGraph(token) {
     if (token.type !== '>>') {
       // An entity means this is a quad (only allowed if not already inside a graph)
-      if (this._supportsQuads && this._graph === null && (this._graph = this._readEntity(token)) !== undefined) {
-        // continue by reading '>>'
+      if (this._supportsQuads && this._graph === null && (this._graph = this._readEntity(token)) !== undefined)
         return this._readRDFStarTail;
-      }
       return this._error('Expected >> to follow "' + this._object.id + '"', token);
     }
-    else {
-      return this._readRDFStarTail(token);
-    }
+    return this._readRDFStarTail(token);
   }
 
   // ### `_readRDFStarTail` reads the end of a nested RDF* triple
   _readRDFStarTail(token) {
     if (token.type !== '>>')
       return this._error(`Expected >> but got ${token.type}`, token);
-
-    // Get the triples value
-    let value = this._quad(this._subject, this._predicate, this._object, this._graph || this.DEFAULTGRAPH);
-    // Restore the parent context containing this formula
+    // Read the quad and restore the previous context
+    const quad = this._quad(this._subject, this._predicate, this._object,
+      this._graph || this.DEFAULTGRAPH);
     this._restoreContext();
     // If the triple was the subject, continue by reading the predicate.
     if (this._subject === null) {
-      this._subject = value;
+      this._subject = quad;
       return this._readPredicate;
     }
+    // If the triple was the object, read context end.
     else {
-      // If the triple was the object, read context end.
-      this._object = value;
+      this._object = quad;
       return this._getContextEndReader();
     }
   }
