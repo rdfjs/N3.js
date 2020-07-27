@@ -1,6 +1,7 @@
 // **N3Writer** writes N3 documents.
 import namespaces from './IRIs';
 import { default as N3DataFactory, Term } from './N3DataFactory';
+import { isDefaultGraph } from './N3Util';
 
 const DEFAULTGRAPH = N3DataFactory.defaultGraph();
 
@@ -98,7 +99,7 @@ export default class N3Writer {
       // Different subject; write the whole quad
       else
         this._write((this._subject === null ? '' : '.\n') +
-                    this._encodeIriOrBlank(this._subject = subject) + ' ' +
+                    this._encodeSubject(this._subject = subject) + ' ' +
                     this._encodePredicate(this._predicate = predicate) + ' ' +
                     this._encodeObject(object), done);
     }
@@ -114,7 +115,7 @@ export default class N3Writer {
 
   // ### `quadToString` serializes a quad as a string
   quadToString(subject, predicate, object, graph) {
-    return  this._encodeIriOrBlank(subject)   + ' ' +
+    return  this._encodeSubject(subject)   + ' ' +
             this._encodeIriOrBlank(predicate) + ' ' +
             this._encodeObject(object) +
             (graph && graph.value ? ' ' + this._encodeIriOrBlank(graph) + ' .\n' : ' .\n');
@@ -125,6 +126,12 @@ export default class N3Writer {
     return quads.map(function (t) {
       return this.quadToString(t.subject, t.predicate, t.object, t.graph);
     }, this).join('');
+  }
+
+  // ### `_encodeSubject` represents a subject
+  _encodeSubject(entity) {
+    return entity.termType === 'Quad' ?
+      this._encodeQuad(entity) : this._encodeIriOrBlank(entity);
   }
 
   // ### `_encodeIriOrBlank` represents an IRI or blank node
@@ -168,7 +175,23 @@ export default class N3Writer {
 
   // ### `_encodeObject` represents an object
   _encodeObject(object) {
-    return object.termType === 'Literal' ? this._encodeLiteral(object) : this._encodeIriOrBlank(object);
+    switch (object.termType) {
+    case 'Quad':
+      return this._encodeQuad(object);
+    case 'Literal':
+      return this._encodeLiteral(object);
+    default:
+      return this._encodeIriOrBlank(object);
+    }
+  }
+
+  // ### `_encodeQuad` encodes an RDF* quad
+  _encodeQuad({ subject, predicate, object, graph }) {
+    return `<<${
+      this._encodeSubject(subject)} ${
+      this._encodePredicate(predicate)} ${
+      this._encodeObject(object)}${
+      isDefaultGraph(graph) ? '' : ` ${this._encodeIriOrBlank(graph)}`}>>`;
   }
 
   // ### `_blockedWrite` replaces `_write` after the writer has been closed
