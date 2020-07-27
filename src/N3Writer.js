@@ -1,6 +1,7 @@
 // **N3Writer** writes N3 documents.
 import namespaces from './IRIs';
 import { default as N3DataFactory, Term } from './N3DataFactory';
+import { isDefaultGraph } from './N3Util';
 
 const DEFAULTGRAPH = N3DataFactory.defaultGraph();
 
@@ -127,6 +128,16 @@ export default class N3Writer {
     }, this).join('');
   }
 
+  // ### `_encodeSubject` represents a subject
+  _encodeSubject(entity) {
+    if (entity.termType === 'Quad') {
+      return `<<${this._encodeSubject(entity.subject)} ${this._encodeIriOrBlank(entity.predicate)} ${this._encodeObject(entity.object)}${isDefaultGraph(entity._graph) ? '' : ` ${this._encodeIriOrBlank(entity._graph)}`}>>`;
+    }
+    else {
+      return this._encodeIriOrBlank(entity);
+    }
+  }
+
   // ### `_encodeIriOrBlank` represents an IRI or blank node
   _encodeIriOrBlank(entity) {
     // A blank node or list is represented as-is
@@ -168,7 +179,15 @@ export default class N3Writer {
 
   // ### `_encodeObject` represents an object
   _encodeObject(object) {
-    return object.termType === 'Literal' ? this._encodeLiteral(object) : this._encodeIriOrBlank(object);
+    if (object.termType === 'Quad') {
+      return `<<${this._encodeSubject(object.subject)} ${this._encodeIriOrBlank(object.predicate)} ${this._encodeObject(object.object)}${isDefaultGraph(object._graph) ? '' : ` ${this._encodeIriOrBlank(object._graph)}`}>>`;
+    }
+    else if (object.termType === 'Literal') {
+      return this._encodeLiteral(object);
+    }
+    else {
+      return this._encodeIriOrBlank(object);
+    }
   }
 
   // ### `_blockedWrite` replaces `_write` after the writer has been closed
