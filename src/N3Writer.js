@@ -130,12 +130,8 @@ export default class N3Writer {
 
   // ### `_encodeSubject` represents a subject
   _encodeSubject(entity) {
-    if (entity.termType === 'Quad') {
-      return `<<${this._encodeSubject(entity.subject)} ${this._encodePredicate(entity.predicate)} ${this._encodeObject(entity.object)}${isDefaultGraph(entity.graph) ? '' : ` ${this._encodeIriOrBlank(entity.graph)}`}>>`;
-    }
-    else {
-      return this._encodeIriOrBlank(entity);
-    }
+    return entity.termType === 'Quad' ?
+      this._encodeQuad(entity) : this._encodeIriOrBlank(entity);
   }
 
   // ### `_encodeIriOrBlank` represents an IRI or blank node
@@ -179,15 +175,23 @@ export default class N3Writer {
 
   // ### `_encodeObject` represents an object
   _encodeObject(object) {
-    if (object.termType === 'Quad') {
-      return `<<${this._encodeSubject(object.subject)} ${this._encodePredicate(object.predicate)} ${this._encodeObject(object.object)}${isDefaultGraph(object.graph) ? '' : ` ${this._encodeIriOrBlank(object.graph)}`}>>`;
-    }
-    else if (object.termType === 'Literal') {
+    switch (object.termType) {
+    case 'Quad':
+      return this._encodeQuad(object);
+    case 'Literal':
       return this._encodeLiteral(object);
-    }
-    else {
+    default:
       return this._encodeIriOrBlank(object);
     }
+  }
+
+  // ### `_encodeQuad` encodes an RDF* quad
+  _encodeQuad({ subject, predicate, object, graph }) {
+    return `<<${
+      this._encodeSubject(subject)} ${
+      this._encodePredicate(predicate)} ${
+      this._encodeObject(object)}${
+      isDefaultGraph(graph) ? '' : ` ${this._encodeIriOrBlank(graph)}`}>>`;
   }
 
   // ### `_blockedWrite` replaces `_write` after the writer has been closed
