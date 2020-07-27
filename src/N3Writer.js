@@ -99,7 +99,7 @@ export default class N3Writer {
       // Different subject; write the whole quad
       else
         this._write((this._subject === null ? '' : '.\n') +
-                    this._encodeIriOrBlank(this._subject = subject) + ' ' +
+                    this._encodeSubject(this._subject = subject) + ' ' +
                     this._encodePredicate(this._predicate = predicate) + ' ' +
                     this._encodeObject(object), done);
     }
@@ -115,7 +115,7 @@ export default class N3Writer {
 
   // ### `quadToString` serializes a quad as a string
   quadToString(subject, predicate, object, graph) {
-    return  this._encodeIriOrBlank(subject)   + ' ' +
+    return  this._encodeSubject(subject)   + ' ' +
             this._encodeIriOrBlank(predicate) + ' ' +
             this._encodeObject(object) +
             (graph && graph.value ? ' ' + this._encodeIriOrBlank(graph) + ' .\n' : ' .\n');
@@ -131,7 +131,7 @@ export default class N3Writer {
   // ### `_encodeSubject` represents a subject
   _encodeSubject(entity) {
     if (entity.termType === 'Quad') {
-      return `<<${this._encodeSubject(entity.subject)} ${this._encodeIriOrBlank(entity.predicate)} ${this._encodeObject(entity.object)}${isDefaultGraph(entity._graph) ? '' : ` ${this._encodeIriOrBlank(entity._graph)}`}>>`;
+      return `<<${this._encodeSubject(entity.subject)} ${this._encodePredicate(entity.predicate)} ${this._encodeObject(entity.object)}${isDefaultGraph(entity.graph) ? '' : ` ${this._encodeIriOrBlank(entity.graph)}`}>>`;
     }
     else {
       return this._encodeIriOrBlank(entity);
@@ -180,7 +180,7 @@ export default class N3Writer {
   // ### `_encodeObject` represents an object
   _encodeObject(object) {
     if (object.termType === 'Quad') {
-      return `<<${this._encodeSubject(object.subject)} ${this._encodeIriOrBlank(object.predicate)} ${this._encodeObject(object.object)}${isDefaultGraph(object._graph) ? '' : ` ${this._encodeIriOrBlank(object._graph)}`}>>`;
+      return `<<${this._encodeSubject(object.subject)} ${this._encodePredicate(object.predicate)} ${this._encodeObject(object.object)}${isDefaultGraph(object.graph) ? '' : ` ${this._encodeIriOrBlank(object.graph)}`}>>`;
     }
     else if (object.termType === 'Literal') {
       return this._encodeLiteral(object);
