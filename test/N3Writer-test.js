@@ -570,15 +570,17 @@ describe('Writer', function () {
       });
     });
 
-    it('should serialize a triple with a triple as subject', function () {
+    it('should serialize a triple with a triple with mixed component types as subject', function () {
       var writer = new Writer();
       writer.quadToString(new Quad(new BlankNode('b1'), new NamedNode('b'), new Literal('l1')), new NamedNode('b'), new NamedNode('c')).should.equal('<<_:b1 <b> "l">> <b> <c> .\n');
     });
-    it('should serialize a triple with a triple as subject', function () {
+
+    it('should serialize a triple with a triple with iris as subject', function () {
       var writer = new Writer();
       writer.quadToString(new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')), new NamedNode('b'), new NamedNode('c')).should.equal('<<<a> <b> <c>>> <b> <c> .\n');
     });
-    it('should serialize a triple with a triple as subject', function () {
+
+    it('should serialize a triple with a triple with blanknodes as subject', function () {
       var writer = new Writer();
       writer.quadToString(new Quad(new BlankNode('b1'), new BlankNode('b2'), new BlankNode('b3')), new NamedNode('b'), new NamedNode('c')).should.equal('<<_:b1 _:b2 _:b3>> <b> <c> .\n');
     });
@@ -587,16 +589,18 @@ describe('Writer', function () {
       var writer = new Writer();
       writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new BlankNode('b1'), new NamedNode('b'), new Literal('l1'))).should.equal('<a> <b> <<_:b1 <b> "l">> .\n');
     });
-    it('should serialize a triple with a triple as object', function () {
+
+    it('should serialize a triple with a triple with iris as object', function () {
       var writer = new Writer();
       writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))).should.equal('<a> <b> <<<a> <b> <c>>> .\n');
     });
-    it('should serialize a triple with a triple as object', function () {
+
+    it('should serialize a triple with a triple with blanknodes as object', function () {
       var writer = new Writer();
       writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new BlankNode('b1'), new BlankNode('b2'), new BlankNode('b3'))).should.equal('<a> <b> <<_:b1 _:b2 _:b3>> .\n');
     });
 
-    it('should serialize a quad with a triple as subject', function () {
+    it('should serialize a quad with a triple with mixed component types as subject', function () {
       var writer = new Writer();
       writer.quadToString(new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')).should.equal('<<<a> <b> <c>>> <b> <c> <g> .\n');
     });
