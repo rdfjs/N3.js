@@ -339,13 +339,13 @@ In addition, the N3.js parser also supports [Notation3 (N3)](https://www.w3.org/
 The N3.js parser and writer are also fully compatible with the RDF* variants 
 of the W3C specifications.
 
+The default mode is permissive
+and allows a mixture of different syntaxes, including RDF*.
 Pass a `format` option to the constructor with the name or MIME type of a format
 for strict, fault-intolerant behavior.
-
-In the default mode (i.e. no format provided), the parser will parse RDF*.
-Pass a MIME type containing `star` or `*`, e.g. `turtlestar` or `TriG*` to parse one format
-with its RDF* extension.
-
+If a format string contains `star` or `*`
+(e.g., `turtlestar` or `TriG*`),
+RDF* support for that format will be enabled.
 
 ### Interface specifications
 The N3.js submodules are compatible with the following [RDF.js](http://rdf.js.org) interfaces:
