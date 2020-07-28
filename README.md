@@ -342,6 +342,11 @@ of the W3C specifications.
 Pass a `format` option to the constructor with the name or MIME type of a format
 for strict, fault-intolerant behavior.
 
+In the default mode (i.e. no format provided), the parser will parse RDF*.
+Pass a MIME type containing `star` or `*`, e.g. `turtlestar` or `TriG*` to parse one format
+with its RDF* extension.
+
+
 ### Interface specifications
 The N3.js submodules are compatible with the following [RDF.js](http://rdf.js.org) interfaces:
 
