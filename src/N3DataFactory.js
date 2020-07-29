@@ -272,6 +272,7 @@ export class Quad extends Term {
   // ### Returns a plain object representation of this quad
   toJSON() {
     return {
+      termType:  this.termType,
       subject:   this.subject.toJSON(),
       predicate: this.predicate.toJSON(),
       object:    this.object.toJSON(),
