@@ -100,6 +100,7 @@ describe('Quad', function () {
 
     it('should provide a JSON representation', function () {
       quad.toJSON().should.deep.equal({
+        termType:  'Quad',
         subject:   { termType: 'NamedNode', value: 's' },
         predicate: { termType: 'NamedNode', value: 'p' },
         object:    { termType: 'NamedNode', value: 'o' },
@@ -194,6 +195,7 @@ describe('Quad', function () {
 
     it('should provide a JSON representation', function () {
       quad.toJSON().should.deep.equal({
+        termType:  'Quad',
         subject:   { termType: 'NamedNode', value: 's' },
         predicate: { termType: 'NamedNode', value: 'p' },
         object:    { termType: 'NamedNode', value: 'o' },
@@ -295,6 +297,7 @@ describe('Quad', function () {
 
     it('should provide a JSON representation', function () {
       quad.toJSON().should.deep.equal({
+        termType:  'Quad',
         subject:   termFromId('<<_:n3-123 ?var-a ?var-b _:n3-000>>').toJSON(),
         predicate: { termType: 'NamedNode', value: 'p' },
         object:    termFromId('<<http://ex.org/a http://ex.org/b http://ex.org/c>>').toJSON(),
