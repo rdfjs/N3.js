@@ -22,6 +22,10 @@
     "src",
     "lib"
   ],
+  "dependencies": {
+    "queue-microtask": "^1.1.2",
+    "readable-stream": "^3.6.0"
+  },
   "devDependencies": {
     "@babel/cli": "^7.5.5",
     "@babel/core": "^7.5.5",
@@ -68,8 +72,5 @@
   "pre-commit": [
     "lint",
     "test"
-  ],
-  "dependencies": {
-    "queue-microtask": "^1.1.2"
-  }
+  ]
 }

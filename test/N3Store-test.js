@@ -7,7 +7,7 @@ import {
   termFromId, termToId,
 } from '../src/';
 import namespaces from '../src/IRIs';
-import { Readable } from 'stream';
+import { Readable } from 'readable-stream';
 import arrayifyStream from 'arrayify-stream';
 
 describe('Store', function () {

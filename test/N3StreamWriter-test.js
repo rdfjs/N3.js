@@ -1,5 +1,5 @@
 import { StreamWriter, Quad, NamedNode, termFromId } from '../src/';
-import { Readable, Writable } from 'stream';
+import { Readable, Writable } from 'readable-stream';
 
 describe('StreamWriter', function () {
   describe('The StreamWriter export', function () {

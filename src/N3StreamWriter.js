@@ -1,5 +1,5 @@
 // **N3StreamWriter** serializes a quad stream into a text stream.
-import { Transform } from 'stream';
+import { Transform } from 'readable-stream';
 import N3Writer from './N3Writer';
 
 // ## Constructor
