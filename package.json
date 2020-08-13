@@ -1,6 +1,6 @@
 {
   "name": "n3",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "description": "Lightning fast, asynchronous, streaming Turtle / N3 / RDF library.",
   "author": "Ruben Verborgh <ruben.verborgh@gmail.com>",
   "keywords": [
