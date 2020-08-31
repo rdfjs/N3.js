@@ -866,7 +866,7 @@ describe('Lexer', function () {
         { type: '.', line: 3 },
         { type: 'eof', line: 3 }));
 
-    it('should tokenize an RDF* statement with literals',
+    it('should tokenize an RDF* statement with string literals',
       shouldTokenize('<<"string"@en "string"@nl-be "string"@EN>> .',
         { type: '<<', line: 1 },
         { type: 'literal', value: 'string', line: 1 },
@@ -875,6 +875,36 @@ describe('Lexer', function () {
         { type: 'langcode', value: 'nl-be', line: 1 },
         { type: 'literal', value: 'string', line: 1 },
         { type: 'langcode', value: 'EN', line: 1 },
+        { type: '>>', line: 1 },
+        { type: '.', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should tokenize an RDF* statement with integers',
+      shouldTokenize('<<1 2 3>>.',
+        { type: '<<', line: 1 },
+        { type: 'literal', value: '1', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+        { type: 'literal', value: '2', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+        { type: 'literal', value: '3', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+        { type: '>>', line: 1 },
+        { type: '.', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should tokenize an RDF* statement with decimals',
+      shouldTokenize('<<1.2 3.4 5.6>>.',
+        { type: '<<', line: 1 },
+        { type: 'literal', value: '1.2', prefix: 'http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
+        { type: 'literal', value: '3.4', prefix: 'http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
+        { type: 'literal', value: '5.6', prefix: 'http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
+        { type: '>>', line: 1 },
+        { type: '.', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should tokenize an RDF* statement with booleans',
+      shouldTokenize('<<true false true>>.',
+        { type: '<<', line: 1 },
+        { type: 'literal', value: 'true',  prefix: 'http://www.w3.org/2001/XMLSchema#boolean', line: 1 },
+        { type: 'literal', value: 'false', prefix: 'http://www.w3.org/2001/XMLSchema#boolean', line: 1 },
+        { type: 'literal', value: 'true',  prefix: 'http://www.w3.org/2001/XMLSchema#boolean', line: 1 },
         { type: '>>', line: 1 },
         { type: '.', line: 1 },
         { type: 'eof', line: 1 }));
@@ -902,6 +932,16 @@ describe('Lexer', function () {
         { type: 'blank', prefix: '_', value: 'a', line: 1 },
         { type: 'blank', prefix: '_', value: 'b', line: 1 },
         { type: 'blank', prefix: '_', value: 'c', line: 1 },
+        { type: '>>', line: 1 },
+        { type: '.', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should tokenize an RDF* statement with variables',
+      shouldTokenize('<<?a ?b ?c>> .',
+        { type: '<<', line: 1 },
+        { type: 'var', value: '?a', line: 1 },
+        { type: 'var', value: '?b', line: 1 },
+        { type: 'var', value: '?c', line: 1 },
         { type: '>>', line: 1 },
         { type: '.', line: 1 },
         { type: 'eof', line: 1 }));
