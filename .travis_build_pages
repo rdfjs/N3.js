@@ -1,6 +1,6 @@
 #!/bin/bash
 # Only publish from the main repository's master branch
-REPO_NAME="RubenVerborgh/N3.js"
+REPO_NAME="rdfjs/N3.js"
 if [ "$TRAVIS_REPO_SLUG" != "$REPO_NAME" ] || [ "$TRAVIS_BRANCH" != "master" ] || [ "$TRAVIS_PULL_REQUEST" != "false" ]; then exit; fi
 echo -e "Generating gh-pages...\n"
 
