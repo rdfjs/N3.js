@@ -1,0 +1,3583 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>N3Parser.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="../docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page_wrapper">
+            <div id="jump_page">
+              
+                
+                <a class="source" href="IRIs.html">
+                  src/IRIs.js
+                </a>
+              
+                
+                <a class="source" href="N3DataFactory.html">
+                  src/N3DataFactory.js
+                </a>
+              
+                
+                <a class="source" href="N3Lexer.html">
+                  src/N3Lexer.js
+                </a>
+              
+                
+                <a class="source" href="N3Parser.html">
+                  src/N3Parser.js
+                </a>
+              
+                
+                <a class="source" href="N3Store.html">
+                  src/N3Store.js
+                </a>
+              
+                
+                <a class="source" href="N3StreamParser.html">
+                  src/N3StreamParser.js
+                </a>
+              
+                
+                <a class="source" href="N3StreamWriter.html">
+                  src/N3StreamWriter.js
+                </a>
+              
+                
+                <a class="source" href="N3Util.html">
+                  src/N3Util.js
+                </a>
+              
+                
+                <a class="source" href="N3Writer.html">
+                  src/N3Writer.js
+                </a>
+              
+                
+                <a class="source" href="index.html">
+                  src/index.js
+                </a>
+              
+            </div>
+          </div>
+        </li>
+      </ul>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>N3Parser.js</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              <p><strong>N3Parser</strong> parses N3 documents.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">import</span> N3Lexer <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3Lexer&#x27;</span>;
+<span class="hljs-keyword">import</span> N3DataFactory <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3DataFactory&#x27;</span>;
+<span class="hljs-keyword">import</span> namespaces <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./IRIs&#x27;</span>;
+
+<span class="hljs-keyword">let</span> blankNodePrefix = <span class="hljs-number">0</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <h2 id="constructor">Constructor</h2>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">N3Parser</span> </span>{
+  <span class="hljs-keyword">constructor</span>(options) {
+    <span class="hljs-built_in">this</span>._contextStack = [];
+    <span class="hljs-built_in">this</span>._graph = <span class="hljs-literal">null</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <p>Set the document IRI</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    options = options || {};
+    <span class="hljs-built_in">this</span>._setBase(options.baseIRI);
+    options.factory &amp;&amp; initDataFactory(<span class="hljs-built_in">this</span>, options.factory);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <p>Set supported features depending on the format</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> format = (<span class="hljs-keyword">typeof</span> options.format === <span class="hljs-string">&#x27;string&#x27;</span>) ?
+                 options.format.match(<span class="hljs-regexp">/\w*$/</span>)[<span class="hljs-number">0</span>].toLowerCase() : <span class="hljs-string">&#x27;&#x27;</span>,
+        isTurtle = <span class="hljs-regexp">/turtle/</span>.test(format), isTriG = <span class="hljs-regexp">/trig/</span>.test(format),
+        isNTriples = <span class="hljs-regexp">/triple/</span>.test(format), isNQuads = <span class="hljs-regexp">/quad/</span>.test(format),
+        isN3 = <span class="hljs-built_in">this</span>._n3Mode = <span class="hljs-regexp">/n3/</span>.test(format),
+        isLineMode = isNTriples || isNQuads;
+    <span class="hljs-keyword">if</span> (!(<span class="hljs-built_in">this</span>._supportsNamedGraphs = !(isTurtle || isN3)))
+      <span class="hljs-built_in">this</span>._readPredicateOrNamedGraph = <span class="hljs-built_in">this</span>._readPredicate;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p>Support triples in other graphs</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-built_in">this</span>._supportsQuads = !(isTurtle || isTriG || isNTriples || isN3);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <p>Support nesting of triples</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-built_in">this</span>._supportsRDFStar = format === <span class="hljs-string">&#x27;&#x27;</span> || <span class="hljs-regexp">/star|\*$/</span>.test(format);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>Disable relative IRIs in N-Triples or N-Quads mode</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (isLineMode)
+      <span class="hljs-built_in">this</span>._resolveRelativeIRI = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">iri</span>) </span>{ <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>; };
+    <span class="hljs-built_in">this</span>._blankNodePrefix = <span class="hljs-keyword">typeof</span> options.blankNodePrefix !== <span class="hljs-string">&#x27;string&#x27;</span> ? <span class="hljs-string">&#x27;&#x27;</span> :
+                              options.blankNodePrefix.replace(<span class="hljs-regexp">/^(?!_:)/</span>, <span class="hljs-string">&#x27;_:&#x27;</span>);
+    <span class="hljs-built_in">this</span>._lexer = options.lexer || <span class="hljs-keyword">new</span> N3Lexer({ <span class="hljs-attr">lineMode</span>: isLineMode, <span class="hljs-attr">n3</span>: isN3 });</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>Disable explicit quantifiers by default</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-built_in">this</span>._explicitQuantifiers = !!options.explicitQuantifiers;
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <h2 id="static-class-methods">Static class methods</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <h3 id="_resetblanknodeprefix-restarts-blank-node-prefix-identification"><code>_resetBlankNodePrefix</code> restarts blank node prefix identification</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">static</span> _resetBlankNodePrefix() {
+    blankNodePrefix = <span class="hljs-number">0</span>;
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <h2 id="private-methods">Private methods</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <h3 id="_setbase-sets-the-base-iri-to-resolve-relative-iris"><code>_setBase</code> sets the base IRI to resolve relative IRIs</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _setBase(baseIRI) {
+    <span class="hljs-keyword">if</span> (!baseIRI) {
+      <span class="hljs-built_in">this</span>._base = <span class="hljs-string">&#x27;&#x27;</span>;
+      <span class="hljs-built_in">this</span>._basePath = <span class="hljs-string">&#x27;&#x27;</span>;
+    }
+    <span class="hljs-keyword">else</span> {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <p>Remove fragment if present</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">var</span> fragmentPos = baseIRI.indexOf(<span class="hljs-string">&#x27;#&#x27;</span>);
+      <span class="hljs-keyword">if</span> (fragmentPos &gt;= <span class="hljs-number">0</span>)
+        baseIRI = baseIRI.substr(<span class="hljs-number">0</span>, fragmentPos);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <p>Set base IRI and its components</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-built_in">this</span>._base = baseIRI;
+      <span class="hljs-built_in">this</span>._basePath   = baseIRI.indexOf(<span class="hljs-string">&#x27;/&#x27;</span>) &lt; <span class="hljs-number">0</span> ? baseIRI :
+                         baseIRI.replace(<span class="hljs-regexp">/[^\/?]*(?:\?.*)?$/</span>, <span class="hljs-string">&#x27;&#x27;</span>);
+      baseIRI = baseIRI.match(<span class="hljs-regexp">/^(?:([a-z][a-z0-9+.-]*:))?(?:\/\/[^\/]*)?/i</span>);
+      <span class="hljs-built_in">this</span>._baseRoot   = baseIRI[<span class="hljs-number">0</span>];
+      <span class="hljs-built_in">this</span>._baseScheme = baseIRI[<span class="hljs-number">1</span>];
+    }
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-15">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+              <h3 id="_savecontext-stores-the-current-parsing-context"><code>_saveContext</code> stores the current parsing context</h3>
+<p>when entering a new scope (list, blank node, formula)</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _saveContext(type, graph, subject, predicate, object) {
+    <span class="hljs-keyword">var</span> n3Mode = <span class="hljs-built_in">this</span>._n3Mode;
+    <span class="hljs-built_in">this</span>._contextStack.push({
+      <span class="hljs-attr">subject</span>: subject, <span class="hljs-attr">predicate</span>: predicate, <span class="hljs-attr">object</span>: object,
+      <span class="hljs-attr">graph</span>: graph, <span class="hljs-attr">type</span>: type,
+      <span class="hljs-attr">inverse</span>: n3Mode ? <span class="hljs-built_in">this</span>._inversePredicate : <span class="hljs-literal">false</span>,
+      <span class="hljs-attr">blankPrefix</span>: n3Mode ? <span class="hljs-built_in">this</span>._prefixes._ : <span class="hljs-string">&#x27;&#x27;</span>,
+      <span class="hljs-attr">quantified</span>: n3Mode ? <span class="hljs-built_in">this</span>._quantified : <span class="hljs-literal">null</span>,
+    });</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-16">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+              <p>The settings below only apply to N3 streams</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (n3Mode) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+              <p>Every new scope resets the predicate direction</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-built_in">this</span>._inversePredicate = <span class="hljs-literal">false</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-18">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-18">&#182;</a>
+              </div>
+              <p>In N3, blank nodes are scoped to a formula
+(using a dot as separator, as a blank node label cannot start with it)</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-built_in">this</span>._prefixes._ = (<span class="hljs-built_in">this</span>._graph ? <span class="hljs-built_in">this</span>._graph.id.substr(<span class="hljs-number">2</span>) + <span class="hljs-string">&#x27;.&#x27;</span> : <span class="hljs-string">&#x27;.&#x27;</span>);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-19">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-19">&#182;</a>
+              </div>
+              <p>Quantifiers are scoped to a formula</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-built_in">this</span>._quantified = <span class="hljs-built_in">Object</span>.create(<span class="hljs-built_in">this</span>._quantified);
+    }
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-20">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-20">&#182;</a>
+              </div>
+              <h3 id="_restorecontext-restores-the-parent-context"><code>_restoreContext</code> restores the parent context</h3>
+<p>when leaving a scope (list, blank node, formula)</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _restoreContext() {
+    <span class="hljs-keyword">var</span> context = <span class="hljs-built_in">this</span>._contextStack.pop(), n3Mode = <span class="hljs-built_in">this</span>._n3Mode;
+    <span class="hljs-built_in">this</span>._subject   = context.subject;
+    <span class="hljs-built_in">this</span>._predicate = context.predicate;
+    <span class="hljs-built_in">this</span>._object    = context.object;
+    <span class="hljs-built_in">this</span>._graph     = context.graph;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-21">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-21">&#182;</a>
+              </div>
+              <p>The settings below only apply to N3 streams</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (n3Mode) {
+      <span class="hljs-built_in">this</span>._inversePredicate = context.inverse;
+      <span class="hljs-built_in">this</span>._prefixes._ = context.blankPrefix;
+      <span class="hljs-built_in">this</span>._quantified = context.quantified;
+    }
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-22">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-22">&#182;</a>
+              </div>
+              <h3 id="_readintopcontext-reads-a-token-when-in-the-top-context"><code>_readInTopContext</code> reads a token when in the top context</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readInTopContext(token) {
+    <span class="hljs-keyword">switch</span> (token.type) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-23">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-23">&#182;</a>
+              </div>
+              <p>If an EOF token arrives in the top context, signal that we’re done</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;eof&#x27;</span>:
+      <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._graph !== <span class="hljs-literal">null</span>)
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Unclosed graph&#x27;</span>, token);
+      <span class="hljs-keyword">delete</span> <span class="hljs-built_in">this</span>._prefixes._;
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._callback(<span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>, <span class="hljs-built_in">this</span>._prefixes);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-24">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-24">&#182;</a>
+              </div>
+              <p>It could be a prefix declaration</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;PREFIX&#x27;</span>:
+      <span class="hljs-built_in">this</span>._sparqlStyle = <span class="hljs-literal">true</span>;
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;@prefix&#x27;</span>:
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readPrefix;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-25">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-25">&#182;</a>
+              </div>
+              <p>It could be a base declaration</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;BASE&#x27;</span>:
+      <span class="hljs-built_in">this</span>._sparqlStyle = <span class="hljs-literal">true</span>;
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;@base&#x27;</span>:
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readBaseIRI;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-26">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-26">&#182;</a>
+              </div>
+              <p>It could be a graph</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;{&#x27;</span>:
+      <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._supportsNamedGraphs) {
+        <span class="hljs-built_in">this</span>._graph = <span class="hljs-string">&#x27;&#x27;</span>;
+        <span class="hljs-built_in">this</span>._subject = <span class="hljs-literal">null</span>;
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readSubject;
+      }
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;GRAPH&#x27;</span>:
+      <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._supportsNamedGraphs)
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readNamedGraphLabel;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-27">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-27">&#182;</a>
+              </div>
+              <p>Otherwise, the next token must be a subject</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">default</span>:
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readSubject(token);
+    }
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-28">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-28">&#182;</a>
+              </div>
+              <h3 id="_readentity-reads-an-iri-prefixed-name-blank-node-or-variable"><code>_readEntity</code> reads an IRI, prefixed name, blank node, or variable</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readEntity(token, quantifier) {
+    <span class="hljs-keyword">var</span> value;
+    <span class="hljs-keyword">switch</span> (token.type) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-29">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-29">&#182;</a>
+              </div>
+              <p>Read a relative or absolute IRI</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;IRI&#x27;</span>:
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;typeIRI&#x27;</span>:
+      <span class="hljs-keyword">var</span> iri = <span class="hljs-built_in">this</span>._resolveIRI(token.value);
+      <span class="hljs-keyword">if</span> (iri === <span class="hljs-literal">null</span>)
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Invalid IRI&#x27;</span>, token);
+      value = <span class="hljs-built_in">this</span>._namedNode(iri);
+      <span class="hljs-keyword">break</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-30">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-30">&#182;</a>
+              </div>
+              <p>Read a prefixed name</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;type&#x27;</span>:
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;prefixed&#x27;</span>:
+      <span class="hljs-keyword">var</span> prefix = <span class="hljs-built_in">this</span>._prefixes[token.prefix];
+      <span class="hljs-keyword">if</span> (prefix === <span class="hljs-literal">undefined</span>)
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Undefined prefix &quot;&#x27;</span> + token.prefix + <span class="hljs-string">&#x27;:&quot;&#x27;</span>, token);
+      value = <span class="hljs-built_in">this</span>._namedNode(prefix + token.value);
+      <span class="hljs-keyword">break</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-31">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-31">&#182;</a>
+              </div>
+              <p>Read a blank node</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;blank&#x27;</span>:
+      value = <span class="hljs-built_in">this</span>._blankNode(<span class="hljs-built_in">this</span>._prefixes[token.prefix] + token.value);
+      <span class="hljs-keyword">break</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-32">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-32">&#182;</a>
+              </div>
+              <p>Read a variable</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;var&#x27;</span>:
+      value = <span class="hljs-built_in">this</span>._variable(token.value.substr(<span class="hljs-number">1</span>));
+      <span class="hljs-keyword">break</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-33">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-33">&#182;</a>
+              </div>
+              <p>Everything else is not an entity</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">default</span>:
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Expected entity but got &#x27;</span> + token.type, token);
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-34">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-34">&#182;</a>
+              </div>
+              <p>In N3 mode, replace the entity if it is quantified</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (!quantifier &amp;&amp; <span class="hljs-built_in">this</span>._n3Mode &amp;&amp; (value.id <span class="hljs-keyword">in</span> <span class="hljs-built_in">this</span>._quantified))
+      value = <span class="hljs-built_in">this</span>._quantified[value.id];
+    <span class="hljs-keyword">return</span> value;
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-35">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-35">&#182;</a>
+              </div>
+              <h3 id="_readsubject-reads-a-quads-subject"><code>_readSubject</code> reads a quad’s subject</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readSubject(token) {
+    <span class="hljs-built_in">this</span>._predicate = <span class="hljs-literal">null</span>;
+    <span class="hljs-keyword">switch</span> (token.type) {
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;[&#x27;</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-36">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-36">&#182;</a>
+              </div>
+              <p>Start a new quad with a new blank node as subject</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-built_in">this</span>._saveContext(<span class="hljs-string">&#x27;blank&#x27;</span>, <span class="hljs-built_in">this</span>._graph,
+                        <span class="hljs-built_in">this</span>._subject = <span class="hljs-built_in">this</span>._blankNode(), <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>);
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readBlankNodeHead;
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;(&#x27;</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-37">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-37">&#182;</a>
+              </div>
+              <p>Start a new list</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-built_in">this</span>._saveContext(<span class="hljs-string">&#x27;list&#x27;</span>, <span class="hljs-built_in">this</span>._graph, <span class="hljs-built_in">this</span>.RDF_NIL, <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>);
+      <span class="hljs-built_in">this</span>._subject = <span class="hljs-literal">null</span>;
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readListItem;
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;{&#x27;</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-38">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-38">&#182;</a>
+              </div>
+              <p>Start a new formula</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (!<span class="hljs-built_in">this</span>._n3Mode)
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Unexpected graph&#x27;</span>, token);
+      <span class="hljs-built_in">this</span>._saveContext(<span class="hljs-string">&#x27;formula&#x27;</span>, <span class="hljs-built_in">this</span>._graph,
+                        <span class="hljs-built_in">this</span>._graph = <span class="hljs-built_in">this</span>._blankNode(), <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>);
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readSubject;
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;}&#x27;</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-39">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-39">&#182;</a>
+              </div>
+              <p>No subject; the graph in which we are reading is closed instead</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readPunctuation(token);
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;@forSome&#x27;</span>:
+      <span class="hljs-keyword">if</span> (!<span class="hljs-built_in">this</span>._n3Mode)
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Unexpected &quot;@forSome&quot;&#x27;</span>, token);
+      <span class="hljs-built_in">this</span>._subject = <span class="hljs-literal">null</span>;
+      <span class="hljs-built_in">this</span>._predicate = <span class="hljs-built_in">this</span>.N3_FORSOME;
+      <span class="hljs-built_in">this</span>._quantifier = <span class="hljs-built_in">this</span>._blankNode;
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readQuantifierList;
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;@forAll&#x27;</span>:
+      <span class="hljs-keyword">if</span> (!<span class="hljs-built_in">this</span>._n3Mode)
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Unexpected &quot;@forAll&quot;&#x27;</span>, token);
+      <span class="hljs-built_in">this</span>._subject = <span class="hljs-literal">null</span>;
+      <span class="hljs-built_in">this</span>._predicate = <span class="hljs-built_in">this</span>.N3_FORALL;
+      <span class="hljs-built_in">this</span>._quantifier = <span class="hljs-built_in">this</span>._variable;
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readQuantifierList;
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;literal&#x27;</span>:
+      <span class="hljs-keyword">if</span> (!<span class="hljs-built_in">this</span>._n3Mode)
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Unexpected literal&#x27;</span>, token);
+
+      <span class="hljs-keyword">if</span> (token.prefix.length === <span class="hljs-number">0</span>) {
+        <span class="hljs-built_in">this</span>._literalValue = token.value;
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._completeSubjectLiteral;
+      }
+      <span class="hljs-keyword">else</span>
+        <span class="hljs-built_in">this</span>._subject = <span class="hljs-built_in">this</span>._literal(token.value, <span class="hljs-built_in">this</span>._namedNode(token.prefix));
+
+      <span class="hljs-keyword">break</span>;
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;&lt;&lt;&#x27;</span>:
+      <span class="hljs-keyword">if</span> (!<span class="hljs-built_in">this</span>._supportsRDFStar)
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Unexpected RDF* syntax&#x27;</span>, token);
+      <span class="hljs-built_in">this</span>._saveContext(<span class="hljs-string">&#x27;&lt;&lt;&#x27;</span>, <span class="hljs-built_in">this</span>._graph, <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>);
+      <span class="hljs-built_in">this</span>._graph = <span class="hljs-literal">null</span>;
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readSubject;
+    <span class="hljs-keyword">default</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-40">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-40">&#182;</a>
+              </div>
+              <p>Read the subject entity</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> ((<span class="hljs-built_in">this</span>._subject = <span class="hljs-built_in">this</span>._readEntity(token)) === <span class="hljs-literal">undefined</span>)
+        <span class="hljs-keyword">return</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-41">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-41">&#182;</a>
+              </div>
+              <p>In N3 mode, the subject might be a path</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._n3Mode)
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._getPathReader(<span class="hljs-built_in">this</span>._readPredicateOrNamedGraph);
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-42">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-42">&#182;</a>
+              </div>
+              <p>The next token must be a predicate,
+or, if the subject was actually a graph IRI, a named graph</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readPredicateOrNamedGraph;
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-43">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-43">&#182;</a>
+              </div>
+              <h3 id="_readpredicate-reads-a-quads-predicate"><code>_readPredicate</code> reads a quad’s predicate</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readPredicate(token) {
+    <span class="hljs-keyword">var</span> type = token.type;
+    <span class="hljs-keyword">switch</span> (type) {
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;inverse&#x27;</span>:
+      <span class="hljs-built_in">this</span>._inversePredicate = <span class="hljs-literal">true</span>;
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;abbreviation&#x27;</span>:
+      <span class="hljs-built_in">this</span>._predicate = <span class="hljs-built_in">this</span>.ABBREVIATIONS[token.value];
+      <span class="hljs-keyword">break</span>;
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;.&#x27;</span>:
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;]&#x27;</span>:
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;}&#x27;</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-44">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-44">&#182;</a>
+              </div>
+              <p>Expected predicate didn’t come, must have been trailing semicolon</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._predicate === <span class="hljs-literal">null</span>)
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Unexpected &#x27;</span> + type, token);
+      <span class="hljs-built_in">this</span>._subject = <span class="hljs-literal">null</span>;
+      <span class="hljs-keyword">return</span> type === <span class="hljs-string">&#x27;]&#x27;</span> ? <span class="hljs-built_in">this</span>._readBlankNodeTail(token) : <span class="hljs-built_in">this</span>._readPunctuation(token);
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;;&#x27;</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-45">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-45">&#182;</a>
+              </div>
+              <p>Additional semicolons can be safely ignored</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._predicate !== <span class="hljs-literal">null</span> ? <span class="hljs-built_in">this</span>._readPredicate :
+             <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Expected predicate but got ;&#x27;</span>, token);
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;blank&#x27;</span>:
+      <span class="hljs-keyword">if</span> (!<span class="hljs-built_in">this</span>._n3Mode)
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Disallowed blank node as predicate&#x27;</span>, token);
+    <span class="hljs-keyword">default</span>:
+      <span class="hljs-keyword">if</span> ((<span class="hljs-built_in">this</span>._predicate = <span class="hljs-built_in">this</span>._readEntity(token)) === <span class="hljs-literal">undefined</span>)
+        <span class="hljs-keyword">return</span>;
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-46">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-46">&#182;</a>
+              </div>
+              <p>The next token must be an object</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readObject;
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-47">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-47">&#182;</a>
+              </div>
+              <h3 id="_readobject-reads-a-quads-object"><code>_readObject</code> reads a quad’s object</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readObject(token) {
+    <span class="hljs-keyword">switch</span> (token.type) {
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;literal&#x27;</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-48">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-48">&#182;</a>
+              </div>
+              <p>Regular literal, can still get a datatype or language</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (token.prefix.length === <span class="hljs-number">0</span>) {
+        <span class="hljs-built_in">this</span>._literalValue = token.value;
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readDataTypeOrLang;
+      }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-49">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-49">&#182;</a>
+              </div>
+              <p>Pre-datatyped string literal (prefix stores the datatype)</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">else</span>
+        <span class="hljs-built_in">this</span>._object = <span class="hljs-built_in">this</span>._literal(token.value, <span class="hljs-built_in">this</span>._namedNode(token.prefix));
+      <span class="hljs-keyword">break</span>;
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;[&#x27;</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-50">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-50">&#182;</a>
+              </div>
+              <p>Start a new quad with a new blank node as subject</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-built_in">this</span>._saveContext(<span class="hljs-string">&#x27;blank&#x27;</span>, <span class="hljs-built_in">this</span>._graph, <span class="hljs-built_in">this</span>._subject, <span class="hljs-built_in">this</span>._predicate,
+                        <span class="hljs-built_in">this</span>._subject = <span class="hljs-built_in">this</span>._blankNode());
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readBlankNodeHead;
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;(&#x27;</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-51">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-51">&#182;</a>
+              </div>
+              <p>Start a new list</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-built_in">this</span>._saveContext(<span class="hljs-string">&#x27;list&#x27;</span>, <span class="hljs-built_in">this</span>._graph, <span class="hljs-built_in">this</span>._subject, <span class="hljs-built_in">this</span>._predicate, <span class="hljs-built_in">this</span>.RDF_NIL);
+      <span class="hljs-built_in">this</span>._subject = <span class="hljs-literal">null</span>;
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readListItem;
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;{&#x27;</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-52">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-52">&#182;</a>
+              </div>
+              <p>Start a new formula</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (!<span class="hljs-built_in">this</span>._n3Mode)
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Unexpected graph&#x27;</span>, token);
+      <span class="hljs-built_in">this</span>._saveContext(<span class="hljs-string">&#x27;formula&#x27;</span>, <span class="hljs-built_in">this</span>._graph, <span class="hljs-built_in">this</span>._subject, <span class="hljs-built_in">this</span>._predicate,
+                        <span class="hljs-built_in">this</span>._graph = <span class="hljs-built_in">this</span>._blankNode());
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readSubject;
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;&lt;&lt;&#x27;</span>:
+      <span class="hljs-keyword">if</span> (!<span class="hljs-built_in">this</span>._supportsRDFStar)
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Unexpected RDF* syntax&#x27;</span>, token);
+      <span class="hljs-built_in">this</span>._saveContext(<span class="hljs-string">&#x27;&lt;&lt;&#x27;</span>, <span class="hljs-built_in">this</span>._graph, <span class="hljs-built_in">this</span>._subject, <span class="hljs-built_in">this</span>._predicate, <span class="hljs-literal">null</span>);
+      <span class="hljs-built_in">this</span>._graph = <span class="hljs-literal">null</span>;
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readSubject;
+    <span class="hljs-keyword">default</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-53">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-53">&#182;</a>
+              </div>
+              <p>Read the object entity</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> ((<span class="hljs-built_in">this</span>._object = <span class="hljs-built_in">this</span>._readEntity(token)) === <span class="hljs-literal">undefined</span>)
+        <span class="hljs-keyword">return</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-54">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-54">&#182;</a>
+              </div>
+              <p>In N3 mode, the object might be a path</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._n3Mode)
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._getPathReader(<span class="hljs-built_in">this</span>._getContextEndReader());
+    }
+    <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._getContextEndReader();
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-55">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-55">&#182;</a>
+              </div>
+              <h3 id="_readpredicateornamedgraph-reads-a-quads-predicate-or-a-named-graph"><code>_readPredicateOrNamedGraph</code> reads a quad’s predicate, or a named graph</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readPredicateOrNamedGraph(token) {
+    <span class="hljs-keyword">return</span> token.type === <span class="hljs-string">&#x27;{&#x27;</span> ? <span class="hljs-built_in">this</span>._readGraph(token) : <span class="hljs-built_in">this</span>._readPredicate(token);
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-56">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-56">&#182;</a>
+              </div>
+              <h3 id="_readgraph-reads-a-graph"><code>_readGraph</code> reads a graph</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readGraph(token) {
+    <span class="hljs-keyword">if</span> (token.type !== <span class="hljs-string">&#x27;{&#x27;</span>)
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Expected graph but got &#x27;</span> + token.type, token);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-57">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-57">&#182;</a>
+              </div>
+              <p>The “subject” we read is actually the GRAPH’s label</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-built_in">this</span>._graph = <span class="hljs-built_in">this</span>._subject, <span class="hljs-built_in">this</span>._subject = <span class="hljs-literal">null</span>;
+    <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readSubject;
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-58">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-58">&#182;</a>
+              </div>
+              <h3 id="_readblanknodehead-reads-the-head-of-a-blank-node"><code>_readBlankNodeHead</code> reads the head of a blank node</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readBlankNodeHead(token) {
+    <span class="hljs-keyword">if</span> (token.type === <span class="hljs-string">&#x27;]&#x27;</span>) {
+      <span class="hljs-built_in">this</span>._subject = <span class="hljs-literal">null</span>;
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readBlankNodeTail(token);
+    }
+    <span class="hljs-keyword">else</span> {
+      <span class="hljs-built_in">this</span>._predicate = <span class="hljs-literal">null</span>;
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readPredicate(token);
+    }
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-59">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-59">&#182;</a>
+              </div>
+              <h3 id="_readblanknodetail-reads-the-end-of-a-blank-node"><code>_readBlankNodeTail</code> reads the end of a blank node</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readBlankNodeTail(token) {
+    <span class="hljs-keyword">if</span> (token.type !== <span class="hljs-string">&#x27;]&#x27;</span>)
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readBlankNodePunctuation(token);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-60">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-60">&#182;</a>
+              </div>
+              <p>Store blank node quad</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._subject !== <span class="hljs-literal">null</span>)
+      <span class="hljs-built_in">this</span>._emit(<span class="hljs-built_in">this</span>._subject, <span class="hljs-built_in">this</span>._predicate, <span class="hljs-built_in">this</span>._object, <span class="hljs-built_in">this</span>._graph);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-61">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-61">&#182;</a>
+              </div>
+              <p>Restore the parent context containing this blank node</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> empty = <span class="hljs-built_in">this</span>._predicate === <span class="hljs-literal">null</span>;
+    <span class="hljs-built_in">this</span>._restoreContext();</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-62">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-62">&#182;</a>
+              </div>
+              <p>If the blank node was the subject, continue reading the predicate</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._object === <span class="hljs-literal">null</span>)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-63">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-63">&#182;</a>
+              </div>
+              <p>If the blank node was empty, it could be a named graph label</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">return</span> empty ? <span class="hljs-built_in">this</span>._readPredicateOrNamedGraph : <span class="hljs-built_in">this</span>._readPredicateAfterBlank;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-64">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-64">&#182;</a>
+              </div>
+              <p>If the blank node was the object, restore previous context and read punctuation</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">else</span>
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._getContextEndReader();
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-65">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-65">&#182;</a>
+              </div>
+              <h3 id="_readpredicateafterblank-reads-a-predicate-after-an-anonymous-blank-node"><code>_readPredicateAfterBlank</code> reads a predicate after an anonymous blank node</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readPredicateAfterBlank(token) {
+    <span class="hljs-keyword">switch</span> (token.type) {
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;.&#x27;</span>:
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;}&#x27;</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-66">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-66">&#182;</a>
+              </div>
+              <p>No predicate is coming if the triple is terminated here</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-built_in">this</span>._subject = <span class="hljs-literal">null</span>;
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readPunctuation(token);
+    <span class="hljs-keyword">default</span>:
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readPredicate(token);
+    }
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-67">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-67">&#182;</a>
+              </div>
+              <h3 id="_readlistitem-reads-items-from-a-list"><code>_readListItem</code> reads items from a list</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readListItem(token) {
+    <span class="hljs-keyword">var</span> item = <span class="hljs-literal">null</span>,                      <span class="hljs-comment">// The item of the list</span>
+        list = <span class="hljs-literal">null</span>,                      <span class="hljs-comment">// The list itself</span>
+        previousList = <span class="hljs-built_in">this</span>._subject,     <span class="hljs-comment">// The previous list that contains this list</span>
+        stack = <span class="hljs-built_in">this</span>._contextStack,       <span class="hljs-comment">// The stack of parent contexts</span>
+        parent = stack[stack.length - <span class="hljs-number">1</span>], <span class="hljs-comment">// The parent containing the current list</span>
+        next = <span class="hljs-built_in">this</span>._readListItem;        <span class="hljs-comment">// The next function to execute</span>
+
+    <span class="hljs-keyword">switch</span> (token.type) {
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;[&#x27;</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-68">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-68">&#182;</a>
+              </div>
+              <p>Stack the current list quad and start a new quad with a blank node as subject</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-built_in">this</span>._saveContext(<span class="hljs-string">&#x27;blank&#x27;</span>, <span class="hljs-built_in">this</span>._graph,
+                        list = <span class="hljs-built_in">this</span>._blankNode(), <span class="hljs-built_in">this</span>.RDF_FIRST,
+                        <span class="hljs-built_in">this</span>._subject = item = <span class="hljs-built_in">this</span>._blankNode());
+      next = <span class="hljs-built_in">this</span>._readBlankNodeHead;
+      <span class="hljs-keyword">break</span>;
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;(&#x27;</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-69">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-69">&#182;</a>
+              </div>
+              <p>Stack the current list quad and start a new list</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-built_in">this</span>._saveContext(<span class="hljs-string">&#x27;list&#x27;</span>, <span class="hljs-built_in">this</span>._graph,
+                        list = <span class="hljs-built_in">this</span>._blankNode(), <span class="hljs-built_in">this</span>.RDF_FIRST, <span class="hljs-built_in">this</span>.RDF_NIL);
+      <span class="hljs-built_in">this</span>._subject = <span class="hljs-literal">null</span>;
+      <span class="hljs-keyword">break</span>;
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;)&#x27;</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-70">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-70">&#182;</a>
+              </div>
+              <p>Closing the list; restore the parent context</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-built_in">this</span>._restoreContext();</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-71">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-71">&#182;</a>
+              </div>
+              <p>If this list is contained within a parent list, return the membership quad here.
+This will be <code>&lt;parent list element&gt; rdf:first &lt;this list&gt;.</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (stack.length !== <span class="hljs-number">0</span> &amp;&amp; stack[stack.length - <span class="hljs-number">1</span>].type === <span class="hljs-string">&#x27;list&#x27;</span>)
+        <span class="hljs-built_in">this</span>._emit(<span class="hljs-built_in">this</span>._subject, <span class="hljs-built_in">this</span>._predicate, <span class="hljs-built_in">this</span>._object, <span class="hljs-built_in">this</span>._graph);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-72">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-72">&#182;</a>
+              </div>
+              <p>Was this list the parent’s subject?</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._predicate === <span class="hljs-literal">null</span>) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-73">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-73">&#182;</a>
+              </div>
+              <p>The next token is the predicate</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        next = <span class="hljs-built_in">this</span>._readPredicate;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-74">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-74">&#182;</a>
+              </div>
+              <p>No list tail if this was an empty list</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._subject === <span class="hljs-built_in">this</span>.RDF_NIL)
+          <span class="hljs-keyword">return</span> next;
+      }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-75">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-75">&#182;</a>
+              </div>
+              <p>The list was in the parent context’s object</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">else</span> {
+        next = <span class="hljs-built_in">this</span>._getContextEndReader();</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-76">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-76">&#182;</a>
+              </div>
+              <p>No list tail if this was an empty list</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._object === <span class="hljs-built_in">this</span>.RDF_NIL)
+          <span class="hljs-keyword">return</span> next;
+      }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-77">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-77">&#182;</a>
+              </div>
+              <p>Close the list by making the head nil</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      list = <span class="hljs-built_in">this</span>.RDF_NIL;
+      <span class="hljs-keyword">break</span>;
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;literal&#x27;</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-78">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-78">&#182;</a>
+              </div>
+              <p>Regular literal, can still get a datatype or language</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (token.prefix.length === <span class="hljs-number">0</span>) {
+        <span class="hljs-built_in">this</span>._literalValue = token.value;
+        next = <span class="hljs-built_in">this</span>._readListItemDataTypeOrLang;
+      }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-79">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-79">&#182;</a>
+              </div>
+              <p>Pre-datatyped string literal (prefix stores the datatype)</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">else</span> {
+        item = <span class="hljs-built_in">this</span>._literal(token.value, <span class="hljs-built_in">this</span>._namedNode(token.prefix));
+        next = <span class="hljs-built_in">this</span>._getContextEndReader();
+      }
+      <span class="hljs-keyword">break</span>;
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;{&#x27;</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-80">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-80">&#182;</a>
+              </div>
+              <p>Start a new formula</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (!<span class="hljs-built_in">this</span>._n3Mode)
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Unexpected graph&#x27;</span>, token);
+      <span class="hljs-built_in">this</span>._saveContext(<span class="hljs-string">&#x27;formula&#x27;</span>, <span class="hljs-built_in">this</span>._graph, <span class="hljs-built_in">this</span>._subject, <span class="hljs-built_in">this</span>._predicate,
+                        <span class="hljs-built_in">this</span>._graph = <span class="hljs-built_in">this</span>._blankNode());
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readSubject;
+    <span class="hljs-keyword">default</span>:
+      <span class="hljs-keyword">if</span> ((item = <span class="hljs-built_in">this</span>._readEntity(token)) === <span class="hljs-literal">undefined</span>)
+        <span class="hljs-keyword">return</span>;
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-81">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-81">&#182;</a>
+              </div>
+              <p>Create a new blank node if no item head was assigned yet</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (list === <span class="hljs-literal">null</span>)
+      <span class="hljs-built_in">this</span>._subject = list = <span class="hljs-built_in">this</span>._blankNode();</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-82">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-82">&#182;</a>
+              </div>
+              <p>Is this the first element of the list?</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (previousList === <span class="hljs-literal">null</span>) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-83">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-83">&#182;</a>
+              </div>
+              <p>This list is either the subject or the object of its parent</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (parent.predicate === <span class="hljs-literal">null</span>)
+        parent.subject = list;
+      <span class="hljs-keyword">else</span>
+        parent.object = list;
+    }
+    <span class="hljs-keyword">else</span> {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-84">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-84">&#182;</a>
+              </div>
+              <p>Continue the previous list with the current list</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-built_in">this</span>._emit(previousList, <span class="hljs-built_in">this</span>.RDF_REST, list, <span class="hljs-built_in">this</span>._graph);
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-85">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-85">&#182;</a>
+              </div>
+              <p>If an item was read, add it to the list</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (item !== <span class="hljs-literal">null</span>) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-86">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-86">&#182;</a>
+              </div>
+              <p>In N3 mode, the item might be a path</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._n3Mode &amp;&amp; (token.type === <span class="hljs-string">&#x27;IRI&#x27;</span> || token.type === <span class="hljs-string">&#x27;prefixed&#x27;</span>)) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-87">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-87">&#182;</a>
+              </div>
+              <p>Create a new context to add the item’s path</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-built_in">this</span>._saveContext(<span class="hljs-string">&#x27;item&#x27;</span>, <span class="hljs-built_in">this</span>._graph, list, <span class="hljs-built_in">this</span>.RDF_FIRST, item);
+        <span class="hljs-built_in">this</span>._subject = item, <span class="hljs-built_in">this</span>._predicate = <span class="hljs-literal">null</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-88">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-88">&#182;</a>
+              </div>
+              <p>_readPath will restore the context and output the item</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._getPathReader(<span class="hljs-built_in">this</span>._readListItem);
+      }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-89">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-89">&#182;</a>
+              </div>
+              <p>Output the item</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-built_in">this</span>._emit(list, <span class="hljs-built_in">this</span>.RDF_FIRST, item, <span class="hljs-built_in">this</span>._graph);
+    }
+    <span class="hljs-keyword">return</span> next;
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-90">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-90">&#182;</a>
+              </div>
+              <h3 id="_readdatatypeorlang-reads-an-optional-datatype-or-language"><code>_readDataTypeOrLang</code> reads an <em>optional</em> datatype or language</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readDataTypeOrLang(token) {
+    <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._completeObjectLiteral(token, <span class="hljs-literal">false</span>);
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-91">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-91">&#182;</a>
+              </div>
+              <h3 id="_readlistitemdatatypeorlang-reads-an-optional-datatype-or-language-in-a-list"><code>_readListItemDataTypeOrLang</code> reads an <em>optional</em> datatype or language in a list</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readListItemDataTypeOrLang(token) {
+    <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._completeObjectLiteral(token, <span class="hljs-literal">true</span>);
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-92">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-92">&#182;</a>
+              </div>
+              <h3 id="_completeliteral-completes-a-literal-with-an-optional-datatype-or-language"><code>_completeLiteral</code> completes a literal with an optional datatype or language</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _completeLiteral(token) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-93">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-93">&#182;</a>
+              </div>
+              <p>Create a simple string literal by default</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">let</span> literal = <span class="hljs-built_in">this</span>._literal(<span class="hljs-built_in">this</span>._literalValue);
+
+    <span class="hljs-keyword">switch</span> (token.type) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-94">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-94">&#182;</a>
+              </div>
+              <p>Create a datatyped literal</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;type&#x27;</span>:
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;typeIRI&#x27;</span>:
+      <span class="hljs-keyword">var</span> datatype = <span class="hljs-built_in">this</span>._readEntity(token);
+      <span class="hljs-keyword">if</span> (datatype === <span class="hljs-literal">undefined</span>) <span class="hljs-keyword">return</span>; <span class="hljs-comment">// No datatype means an error occurred</span>
+      literal = <span class="hljs-built_in">this</span>._literal(<span class="hljs-built_in">this</span>._literalValue, datatype);
+      token = <span class="hljs-literal">null</span>;
+      <span class="hljs-keyword">break</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-95">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-95">&#182;</a>
+              </div>
+              <p>Create a language-tagged string</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;langcode&#x27;</span>:
+      literal = <span class="hljs-built_in">this</span>._literal(<span class="hljs-built_in">this</span>._literalValue, token.value);
+      token = <span class="hljs-literal">null</span>;
+      <span class="hljs-keyword">break</span>;
+    }
+
+    <span class="hljs-keyword">return</span> { token, literal };
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-96">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-96">&#182;</a>
+              </div>
+              <p>Completes a literal in subject position</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _completeSubjectLiteral(token) {
+    <span class="hljs-built_in">this</span>._subject = <span class="hljs-built_in">this</span>._completeLiteral(token).literal;
+    <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readPredicateOrNamedGraph;
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-97">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-97">&#182;</a>
+              </div>
+              <p>Completes a literal in object position</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _completeObjectLiteral(token, listItem) {
+    <span class="hljs-keyword">const</span> completed = <span class="hljs-built_in">this</span>._completeLiteral(token);
+    <span class="hljs-keyword">if</span> (!completed)
+      <span class="hljs-keyword">return</span>;
+    <span class="hljs-built_in">this</span>._object = completed.literal;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-98">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-98">&#182;</a>
+              </div>
+              <p>If this literal was part of a list, write the item
+(we could also check the context stack, but passing in a flag is faster)</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (listItem)
+      <span class="hljs-built_in">this</span>._emit(<span class="hljs-built_in">this</span>._subject, <span class="hljs-built_in">this</span>.RDF_FIRST, <span class="hljs-built_in">this</span>._object, <span class="hljs-built_in">this</span>._graph);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-99">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-99">&#182;</a>
+              </div>
+              <p>If the token was consumed, continue with the rest of the input</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (completed.token === <span class="hljs-literal">null</span>)
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._getContextEndReader();</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-100">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-100">&#182;</a>
+              </div>
+              <p>Otherwise, consume the token now</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">else</span> {
+      <span class="hljs-built_in">this</span>._readCallback = <span class="hljs-built_in">this</span>._getContextEndReader();
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readCallback(completed.token);
+    }
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-101">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-101">&#182;</a>
+              </div>
+              <h3 id="_readformulatail-reads-the-end-of-a-formula"><code>_readFormulaTail</code> reads the end of a formula</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readFormulaTail(token) {
+    <span class="hljs-keyword">if</span> (token.type !== <span class="hljs-string">&#x27;}&#x27;</span>)
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readPunctuation(token);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-102">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-102">&#182;</a>
+              </div>
+              <p>Store the last quad of the formula</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._subject !== <span class="hljs-literal">null</span>)
+      <span class="hljs-built_in">this</span>._emit(<span class="hljs-built_in">this</span>._subject, <span class="hljs-built_in">this</span>._predicate, <span class="hljs-built_in">this</span>._object, <span class="hljs-built_in">this</span>._graph);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-103">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-103">&#182;</a>
+              </div>
+              <p>Restore the parent context containing this formula</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-built_in">this</span>._restoreContext();</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-104">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-104">&#182;</a>
+              </div>
+              <p>If the formula was the subject, continue reading the predicate.
+If the formula was the object, read punctuation.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._object === <span class="hljs-literal">null</span> ? <span class="hljs-built_in">this</span>._readPredicate : <span class="hljs-built_in">this</span>._getContextEndReader();
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-105">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-105">&#182;</a>
+              </div>
+              <h3 id="_readpunctuation-reads-punctuation-between-quads-or-quad-parts"><code>_readPunctuation</code> reads punctuation between quads or quad parts</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readPunctuation(token) {
+    <span class="hljs-keyword">var</span> next, subject = <span class="hljs-built_in">this</span>._subject, graph = <span class="hljs-built_in">this</span>._graph,
+        inversePredicate = <span class="hljs-built_in">this</span>._inversePredicate;
+    <span class="hljs-keyword">switch</span> (token.type) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-106">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-106">&#182;</a>
+              </div>
+              <p>A closing brace ends a graph</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;}&#x27;</span>:
+      <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._graph === <span class="hljs-literal">null</span>)
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Unexpected graph closing&#x27;</span>, token);
+      <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._n3Mode)
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readFormulaTail(token);
+      <span class="hljs-built_in">this</span>._graph = <span class="hljs-literal">null</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-107">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-107">&#182;</a>
+              </div>
+              <p>A dot just ends the statement, without sharing anything with the next</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;.&#x27;</span>:
+      <span class="hljs-built_in">this</span>._subject = <span class="hljs-literal">null</span>;
+      next = <span class="hljs-built_in">this</span>._contextStack.length ? <span class="hljs-built_in">this</span>._readSubject : <span class="hljs-built_in">this</span>._readInTopContext;
+      <span class="hljs-keyword">if</span> (inversePredicate) <span class="hljs-built_in">this</span>._inversePredicate = <span class="hljs-literal">false</span>;
+      <span class="hljs-keyword">break</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-108">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-108">&#182;</a>
+              </div>
+              <p>Semicolon means the subject is shared; predicate and object are different</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;;&#x27;</span>:
+      next = <span class="hljs-built_in">this</span>._readPredicate;
+      <span class="hljs-keyword">break</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-109">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-109">&#182;</a>
+              </div>
+              <p>Comma means both the subject and predicate are shared; the object is different</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;,&#x27;</span>:
+      next = <span class="hljs-built_in">this</span>._readObject;
+      <span class="hljs-keyword">break</span>;
+    <span class="hljs-keyword">default</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-110">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-110">&#182;</a>
+              </div>
+              <p>An entity means this is a quad (only allowed if not already inside a graph)</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._supportsQuads &amp;&amp; <span class="hljs-built_in">this</span>._graph === <span class="hljs-literal">null</span> &amp;&amp; (graph = <span class="hljs-built_in">this</span>._readEntity(token)) !== <span class="hljs-literal">undefined</span>) {
+        next = <span class="hljs-built_in">this</span>._readQuadPunctuation;
+        <span class="hljs-keyword">break</span>;
+      }
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Expected punctuation to follow &quot;&#x27;</span> + <span class="hljs-built_in">this</span>._object.id + <span class="hljs-string">&#x27;&quot;&#x27;</span>, token);
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-111">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-111">&#182;</a>
+              </div>
+              <p>A quad has been completed now, so return it</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (subject !== <span class="hljs-literal">null</span>) {
+      <span class="hljs-keyword">var</span> predicate = <span class="hljs-built_in">this</span>._predicate, object = <span class="hljs-built_in">this</span>._object;
+      <span class="hljs-keyword">if</span> (!inversePredicate)
+        <span class="hljs-built_in">this</span>._emit(subject, predicate, object,  graph);
+      <span class="hljs-keyword">else</span>
+        <span class="hljs-built_in">this</span>._emit(object,  predicate, subject, graph);
+    }
+    <span class="hljs-keyword">return</span> next;
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-112">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-112">&#182;</a>
+              </div>
+              <h3 id="_readblanknodepunctuation-reads-punctuation-in-a-blank-node"><code>_readBlankNodePunctuation</code> reads punctuation in a blank node</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readBlankNodePunctuation(token) {
+    <span class="hljs-keyword">var</span> next;
+    <span class="hljs-keyword">switch</span> (token.type) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-113">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-113">&#182;</a>
+              </div>
+              <p>Semicolon means the subject is shared; predicate and object are different</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;;&#x27;</span>:
+      next = <span class="hljs-built_in">this</span>._readPredicate;
+      <span class="hljs-keyword">break</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-114">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-114">&#182;</a>
+              </div>
+              <p>Comma means both the subject and predicate are shared; the object is different</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;,&#x27;</span>:
+      next = <span class="hljs-built_in">this</span>._readObject;
+      <span class="hljs-keyword">break</span>;
+    <span class="hljs-keyword">default</span>:
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Expected punctuation to follow &quot;&#x27;</span> + <span class="hljs-built_in">this</span>._object.id + <span class="hljs-string">&#x27;&quot;&#x27;</span>, token);
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-115">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-115">&#182;</a>
+              </div>
+              <p>A quad has been completed now, so return it</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-built_in">this</span>._emit(<span class="hljs-built_in">this</span>._subject, <span class="hljs-built_in">this</span>._predicate, <span class="hljs-built_in">this</span>._object, <span class="hljs-built_in">this</span>._graph);
+    <span class="hljs-keyword">return</span> next;
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-116">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-116">&#182;</a>
+              </div>
+              <h3 id="_readquadpunctuation-reads-punctuation-after-a-quad"><code>_readQuadPunctuation</code> reads punctuation after a quad</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readQuadPunctuation(token) {
+    <span class="hljs-keyword">if</span> (token.type !== <span class="hljs-string">&#x27;.&#x27;</span>)
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Expected dot to follow quad&#x27;</span>, token);
+    <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readInTopContext;
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-117">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-117">&#182;</a>
+              </div>
+              <h3 id="_readprefix-reads-the-prefix-of-a-prefix-declaration"><code>_readPrefix</code> reads the prefix of a prefix declaration</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readPrefix(token) {
+    <span class="hljs-keyword">if</span> (token.type !== <span class="hljs-string">&#x27;prefix&#x27;</span>)
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Expected prefix to follow @prefix&#x27;</span>, token);
+    <span class="hljs-built_in">this</span>._prefix = token.value;
+    <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readPrefixIRI;
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-118">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-118">&#182;</a>
+              </div>
+              <h3 id="_readprefixiri-reads-the-iri-of-a-prefix-declaration"><code>_readPrefixIRI</code> reads the IRI of a prefix declaration</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readPrefixIRI(token) {
+    <span class="hljs-keyword">if</span> (token.type !== <span class="hljs-string">&#x27;IRI&#x27;</span>)
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Expected IRI to follow prefix &quot;&#x27;</span> + <span class="hljs-built_in">this</span>._prefix + <span class="hljs-string">&#x27;:&quot;&#x27;</span>, token);
+    <span class="hljs-keyword">var</span> prefixNode = <span class="hljs-built_in">this</span>._readEntity(token);
+    <span class="hljs-built_in">this</span>._prefixes[<span class="hljs-built_in">this</span>._prefix] = prefixNode.value;
+    <span class="hljs-built_in">this</span>._prefixCallback(<span class="hljs-built_in">this</span>._prefix, prefixNode);
+    <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readDeclarationPunctuation;
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-119">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-119">&#182;</a>
+              </div>
+              <h3 id="_readbaseiri-reads-the-iri-of-a-base-declaration"><code>_readBaseIRI</code> reads the IRI of a base declaration</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readBaseIRI(token) {
+    <span class="hljs-keyword">var</span> iri = token.type === <span class="hljs-string">&#x27;IRI&#x27;</span> &amp;&amp; <span class="hljs-built_in">this</span>._resolveIRI(token.value);
+    <span class="hljs-keyword">if</span> (!iri)
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Expected valid IRI to follow base declaration&#x27;</span>, token);
+    <span class="hljs-built_in">this</span>._setBase(iri);
+    <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readDeclarationPunctuation;
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-120">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-120">&#182;</a>
+              </div>
+              <h3 id="_readnamedgraphlabel-reads-the-label-of-a-named-graph"><code>_readNamedGraphLabel</code> reads the label of a named graph</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readNamedGraphLabel(token) {
+    <span class="hljs-keyword">switch</span> (token.type) {
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;IRI&#x27;</span>:
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;blank&#x27;</span>:
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;prefixed&#x27;</span>:
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readSubject(token), <span class="hljs-built_in">this</span>._readGraph;
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;[&#x27;</span>:
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readNamedGraphBlankLabel;
+    <span class="hljs-keyword">default</span>:
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Invalid graph label&#x27;</span>, token);
+    }
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-121">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-121">&#182;</a>
+              </div>
+              <h3 id="_readnamedgraphlabel-reads-a-blank-node-label-of-a-named-graph"><code>_readNamedGraphLabel</code> reads a blank node label of a named graph</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readNamedGraphBlankLabel(token) {
+    <span class="hljs-keyword">if</span> (token.type !== <span class="hljs-string">&#x27;]&#x27;</span>)
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Invalid graph label&#x27;</span>, token);
+    <span class="hljs-built_in">this</span>._subject = <span class="hljs-built_in">this</span>._blankNode();
+    <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readGraph;
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-122">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-122">&#182;</a>
+              </div>
+              <h3 id="_readdeclarationpunctuation-reads-the-punctuation-of-a-declaration"><code>_readDeclarationPunctuation</code> reads the punctuation of a declaration</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readDeclarationPunctuation(token) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-123">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-123">&#182;</a>
+              </div>
+              <p>SPARQL-style declarations don’t have punctuation</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._sparqlStyle) {
+      <span class="hljs-built_in">this</span>._sparqlStyle = <span class="hljs-literal">false</span>;
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readInTopContext(token);
+    }
+
+    <span class="hljs-keyword">if</span> (token.type !== <span class="hljs-string">&#x27;.&#x27;</span>)
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Expected declaration to end with a dot&#x27;</span>, token);
+    <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readInTopContext;
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-124">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-124">&#182;</a>
+              </div>
+              <p>Reads a list of quantified symbols from a @forSome or @forAll statement</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readQuantifierList(token) {
+    <span class="hljs-keyword">var</span> entity;
+    <span class="hljs-keyword">switch</span> (token.type) {
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;IRI&#x27;</span>:
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;prefixed&#x27;</span>:
+      <span class="hljs-keyword">if</span> ((entity = <span class="hljs-built_in">this</span>._readEntity(token, <span class="hljs-literal">true</span>)) !== <span class="hljs-literal">undefined</span>)
+        <span class="hljs-keyword">break</span>;
+    <span class="hljs-keyword">default</span>:
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Unexpected &#x27;</span> + token.type, token);
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-125">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-125">&#182;</a>
+              </div>
+              <p>Without explicit quantifiers, map entities to a quantified entity</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (!<span class="hljs-built_in">this</span>._explicitQuantifiers)
+      <span class="hljs-built_in">this</span>._quantified[entity.id] = <span class="hljs-built_in">this</span>._quantifier(<span class="hljs-built_in">this</span>._blankNode().value);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-126">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-126">&#182;</a>
+              </div>
+              <p>With explicit quantifiers, output the reified quantifier</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">else</span> {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-127">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-127">&#182;</a>
+              </div>
+              <p>If this is the first item, start a new quantifier list</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._subject === <span class="hljs-literal">null</span>)
+        <span class="hljs-built_in">this</span>._emit(<span class="hljs-built_in">this</span>._graph || <span class="hljs-built_in">this</span>.DEFAULTGRAPH, <span class="hljs-built_in">this</span>._predicate,
+                   <span class="hljs-built_in">this</span>._subject = <span class="hljs-built_in">this</span>._blankNode(), <span class="hljs-built_in">this</span>.QUANTIFIERS_GRAPH);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-128">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-128">&#182;</a>
+              </div>
+              <p>Otherwise, continue the previous list</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">else</span>
+        <span class="hljs-built_in">this</span>._emit(<span class="hljs-built_in">this</span>._subject, <span class="hljs-built_in">this</span>.RDF_REST,
+                   <span class="hljs-built_in">this</span>._subject = <span class="hljs-built_in">this</span>._blankNode(), <span class="hljs-built_in">this</span>.QUANTIFIERS_GRAPH);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-129">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-129">&#182;</a>
+              </div>
+              <p>Output the list item</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-built_in">this</span>._emit(<span class="hljs-built_in">this</span>._subject, <span class="hljs-built_in">this</span>.RDF_FIRST, entity, <span class="hljs-built_in">this</span>.QUANTIFIERS_GRAPH);
+    }
+    <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readQuantifierPunctuation;
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-130">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-130">&#182;</a>
+              </div>
+              <p>Reads punctuation from a @forSome or @forAll statement</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readQuantifierPunctuation(token) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-131">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-131">&#182;</a>
+              </div>
+              <p>Read more quantifiers</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (token.type === <span class="hljs-string">&#x27;,&#x27;</span>)
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readQuantifierList;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-132">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-132">&#182;</a>
+              </div>
+              <p>End of the quantifier list</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">else</span> {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-133">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-133">&#182;</a>
+              </div>
+              <p>With explicit quantifiers, close the quantifier list</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._explicitQuantifiers) {
+        <span class="hljs-built_in">this</span>._emit(<span class="hljs-built_in">this</span>._subject, <span class="hljs-built_in">this</span>.RDF_REST, <span class="hljs-built_in">this</span>.RDF_NIL, <span class="hljs-built_in">this</span>.QUANTIFIERS_GRAPH);
+        <span class="hljs-built_in">this</span>._subject = <span class="hljs-literal">null</span>;
+      }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-134">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-134">&#182;</a>
+              </div>
+              <p>Read a dot</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-built_in">this</span>._readCallback = <span class="hljs-built_in">this</span>._getContextEndReader();
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readCallback(token);
+    }
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-135">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-135">&#182;</a>
+              </div>
+              <h3 id="_getpathreader-reads-a-potential-path-and-then-resumes-with-the-given-function"><code>_getPathReader</code> reads a potential path and then resumes with the given function</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _getPathReader(afterPath) {
+    <span class="hljs-built_in">this</span>._afterPath = afterPath;
+    <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readPath;
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-136">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-136">&#182;</a>
+              </div>
+              <h3 id="_readpath-reads-a-potential-path"><code>_readPath</code> reads a potential path</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readPath(token) {
+    <span class="hljs-keyword">switch</span> (token.type) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-137">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-137">&#182;</a>
+              </div>
+              <p>Forward path</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;!&#x27;</span>: <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readForwardPath;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-138">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-138">&#182;</a>
+              </div>
+              <p>Backward path</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;^&#x27;</span>: <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readBackwardPath;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-139">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-139">&#182;</a>
+              </div>
+              <p>Not a path; resume reading where we left off</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">default</span>:
+      <span class="hljs-keyword">var</span> stack = <span class="hljs-built_in">this</span>._contextStack, parent = stack.length &amp;&amp; stack[stack.length - <span class="hljs-number">1</span>];</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-140">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-140">&#182;</a>
+              </div>
+              <p>If we were reading a list item, we still need to output it</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (parent &amp;&amp; parent.type === <span class="hljs-string">&#x27;item&#x27;</span>) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-141">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-141">&#182;</a>
+              </div>
+              <p>The list item is the remaining subejct after reading the path</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">var</span> item = <span class="hljs-built_in">this</span>._subject;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-142">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-142">&#182;</a>
+              </div>
+              <p>Switch back to the context of the list</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-built_in">this</span>._restoreContext();</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-143">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-143">&#182;</a>
+              </div>
+              <p>Output the list item</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-built_in">this</span>._emit(<span class="hljs-built_in">this</span>._subject, <span class="hljs-built_in">this</span>.RDF_FIRST, item, <span class="hljs-built_in">this</span>._graph);
+      }
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._afterPath(token);
+    }
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-144">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-144">&#182;</a>
+              </div>
+              <h3 id="_readforwardpath-reads-a--path"><code>_readForwardPath</code> reads a ‘!’ path</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readForwardPath(token) {
+    <span class="hljs-keyword">var</span> subject, predicate, object = <span class="hljs-built_in">this</span>._blankNode();</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-145">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-145">&#182;</a>
+              </div>
+              <p>The next token is the predicate</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> ((predicate = <span class="hljs-built_in">this</span>._readEntity(token)) === <span class="hljs-literal">undefined</span>)
+      <span class="hljs-keyword">return</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-146">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-146">&#182;</a>
+              </div>
+              <p>If we were reading a subject, replace the subject by the path’s object</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._predicate === <span class="hljs-literal">null</span>)
+      subject = <span class="hljs-built_in">this</span>._subject, <span class="hljs-built_in">this</span>._subject = object;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-147">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-147">&#182;</a>
+              </div>
+              <p>If we were reading an object, replace the subject by the path’s object</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">else</span>
+      subject = <span class="hljs-built_in">this</span>._object,  <span class="hljs-built_in">this</span>._object  = object;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-148">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-148">&#182;</a>
+              </div>
+              <p>Emit the path’s current quad and read its next section</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-built_in">this</span>._emit(subject, predicate, object, <span class="hljs-built_in">this</span>._graph);
+    <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readPath;
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-149">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-149">&#182;</a>
+              </div>
+              <h3 id="_readbackwardpath-reads-a--path"><code>_readBackwardPath</code> reads a ‘^’ path</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readBackwardPath(token) {
+    <span class="hljs-keyword">var</span> subject = <span class="hljs-built_in">this</span>._blankNode(), predicate, object;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-150">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-150">&#182;</a>
+              </div>
+              <p>The next token is the predicate</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> ((predicate = <span class="hljs-built_in">this</span>._readEntity(token)) === <span class="hljs-literal">undefined</span>)
+      <span class="hljs-keyword">return</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-151">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-151">&#182;</a>
+              </div>
+              <p>If we were reading a subject, replace the subject by the path’s subject</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._predicate === <span class="hljs-literal">null</span>)
+      object = <span class="hljs-built_in">this</span>._subject, <span class="hljs-built_in">this</span>._subject = subject;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-152">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-152">&#182;</a>
+              </div>
+              <p>If we were reading an object, replace the subject by the path’s subject</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">else</span>
+      object = <span class="hljs-built_in">this</span>._object,  <span class="hljs-built_in">this</span>._object  = subject;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-153">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-153">&#182;</a>
+              </div>
+              <p>Emit the path’s current quad and read its next section</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-built_in">this</span>._emit(subject, predicate, object, <span class="hljs-built_in">this</span>._graph);
+    <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readPath;
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-154">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-154">&#182;</a>
+              </div>
+              <h3 id="_readrdfstartailorgraph-reads-the-graph-of-a-nested-rdf-quad-or-the-end-of-a-nested-rdf-triple"><code>_readRDFStarTailOrGraph</code> reads the graph of a nested RDF* quad or the end of a nested RDF* triple</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readRDFStarTailOrGraph(token) {
+    <span class="hljs-keyword">if</span> (token.type !== <span class="hljs-string">&#x27;&gt;&gt;&#x27;</span>) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-155">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-155">&#182;</a>
+              </div>
+              <p>An entity means this is a quad (only allowed if not already inside a graph)</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._supportsQuads &amp;&amp; <span class="hljs-built_in">this</span>._graph === <span class="hljs-literal">null</span> &amp;&amp; (<span class="hljs-built_in">this</span>._graph = <span class="hljs-built_in">this</span>._readEntity(token)) !== <span class="hljs-literal">undefined</span>)
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readRDFStarTail;
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Expected &gt;&gt; to follow &quot;&#x27;</span> + <span class="hljs-built_in">this</span>._object.id + <span class="hljs-string">&#x27;&quot;&#x27;</span>, token);
+    }
+    <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readRDFStarTail(token);
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-156">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-156">&#182;</a>
+              </div>
+              <h3 id="_readrdfstartail-reads-the-end-of-a-nested-rdf-triple"><code>_readRDFStarTail</code> reads the end of a nested RDF* triple</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _readRDFStarTail(token) {
+    <span class="hljs-keyword">if</span> (token.type !== <span class="hljs-string">&#x27;&gt;&gt;&#x27;</span>)
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">`Expected &gt;&gt; but got <span class="hljs-subst">${token.type}</span>`</span>, token);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-157">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-157">&#182;</a>
+              </div>
+              <p>Read the quad and restore the previous context</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">const</span> quad = <span class="hljs-built_in">this</span>._quad(<span class="hljs-built_in">this</span>._subject, <span class="hljs-built_in">this</span>._predicate, <span class="hljs-built_in">this</span>._object,
+      <span class="hljs-built_in">this</span>._graph || <span class="hljs-built_in">this</span>.DEFAULTGRAPH);
+    <span class="hljs-built_in">this</span>._restoreContext();</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-158">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-158">&#182;</a>
+              </div>
+              <p>If the triple was the subject, continue by reading the predicate.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._subject === <span class="hljs-literal">null</span>) {
+      <span class="hljs-built_in">this</span>._subject = quad;
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readPredicate;
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-159">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-159">&#182;</a>
+              </div>
+              <p>If the triple was the object, read context end.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">else</span> {
+      <span class="hljs-built_in">this</span>._object = quad;
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._getContextEndReader();
+    }
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-160">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-160">&#182;</a>
+              </div>
+              <h3 id="_getcontextendreader-gets-the-next-reader-function-at-the-end-of-a-context"><code>_getContextEndReader</code> gets the next reader function at the end of a context</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _getContextEndReader() {
+    <span class="hljs-keyword">var</span> contextStack = <span class="hljs-built_in">this</span>._contextStack;
+    <span class="hljs-keyword">if</span> (!contextStack.length)
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readPunctuation;
+
+    <span class="hljs-keyword">switch</span> (contextStack[contextStack.length - <span class="hljs-number">1</span>].type) {
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;blank&#x27;</span>:
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readBlankNodeTail;
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;list&#x27;</span>:
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readListItem;
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;formula&#x27;</span>:
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readFormulaTail;
+    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;&lt;&lt;&#x27;</span>:
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readRDFStarTailOrGraph;
+    }
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-161">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-161">&#182;</a>
+              </div>
+              <h3 id="_emit-sends-a-quad-through-the-callback"><code>_emit</code> sends a quad through the callback</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _emit(subject, predicate, object, graph) {
+    <span class="hljs-built_in">this</span>._callback(<span class="hljs-literal">null</span>, <span class="hljs-built_in">this</span>._quad(subject, predicate, object, graph || <span class="hljs-built_in">this</span>.DEFAULTGRAPH));
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-162">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-162">&#182;</a>
+              </div>
+              <h3 id="_error-emits-an-error-message-through-the-callback"><code>_error</code> emits an error message through the callback</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _error(message, token) {
+    <span class="hljs-keyword">var</span> err = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(message + <span class="hljs-string">&#x27; on line &#x27;</span> + token.line + <span class="hljs-string">&#x27;.&#x27;</span>);
+    err.context = {
+      <span class="hljs-attr">token</span>: token,
+      <span class="hljs-attr">line</span>: token.line,
+      <span class="hljs-attr">previousToken</span>: <span class="hljs-built_in">this</span>._lexer.previousToken,
+    };
+    <span class="hljs-built_in">this</span>._callback(err);
+    <span class="hljs-built_in">this</span>._callback = noop;
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-163">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-163">&#182;</a>
+              </div>
+              <h3 id="_resolveiri-resolves-an-iri-against-the-base-path"><code>_resolveIRI</code> resolves an IRI against the base path</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _resolveIRI(iri) {
+    <span class="hljs-keyword">return</span> <span class="hljs-regexp">/^[a-z][a-z0-9+.-]*:/i</span>.test(iri) ? iri : <span class="hljs-built_in">this</span>._resolveRelativeIRI(iri);
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-164">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-164">&#182;</a>
+              </div>
+              <h3 id="_resolverelativeiri-resolves-an-iri-against-the-base-path"><code>_resolveRelativeIRI</code> resolves an IRI against the base path,</h3>
+<p>assuming that a base path has been set and that the IRI is indeed relative</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _resolveRelativeIRI(iri) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-165">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-165">&#182;</a>
+              </div>
+              <p>An empty relative IRI indicates the base IRI</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (!iri.length)
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._base;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-166">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-166">&#182;</a>
+              </div>
+              <p>Decide resolving strategy based in the first character</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">switch</span> (iri[<span class="hljs-number">0</span>]) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-167">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-167">&#182;</a>
+              </div>
+              <p>Resolve relative fragment IRIs against the base IRI</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;#&#x27;</span>: <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._base + iri;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-168">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-168">&#182;</a>
+              </div>
+              <p>Resolve relative query string IRIs by replacing the query string</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;?&#x27;</span>: <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._base.replace(<span class="hljs-regexp">/(?:\?.*)?$/</span>, iri);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-169">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-169">&#182;</a>
+              </div>
+              <p>Resolve root-relative IRIs at the root of the base IRI</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;/&#x27;</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-170">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-170">&#182;</a>
+              </div>
+              <p>Resolve scheme-relative IRIs to the scheme</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">return</span> (iri[<span class="hljs-number">1</span>] === <span class="hljs-string">&#x27;/&#x27;</span> ? <span class="hljs-built_in">this</span>._baseScheme : <span class="hljs-built_in">this</span>._baseRoot) + <span class="hljs-built_in">this</span>._removeDotSegments(iri);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-171">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-171">&#182;</a>
+              </div>
+              <p>Resolve all other IRIs at the base IRI’s path</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">default</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-172">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-172">&#182;</a>
+              </div>
+              <p>Relative IRIs cannot contain a colon in the first path segment</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">return</span> (<span class="hljs-regexp">/^[^/:]*:/</span>.test(iri)) ? <span class="hljs-literal">null</span> : <span class="hljs-built_in">this</span>._removeDotSegments(<span class="hljs-built_in">this</span>._basePath + iri);
+    }
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-173">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-173">&#182;</a>
+              </div>
+              <h3 id="_removedotsegments-resolves--and--path-segments-in-an-iri-as-per-rfc3986"><code>_removeDotSegments</code> resolves ‘./‘ and ‘../‘ path segments in an IRI as per RFC3986</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  _removeDotSegments(iri) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-174">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-174">&#182;</a>
+              </div>
+              <p>Don’t modify the IRI if it does not contain any dot segments</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (!<span class="hljs-regexp">/(^|\/)\.\.?($|[/#?])/</span>.test(iri))
+      <span class="hljs-keyword">return</span> iri;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-175">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-175">&#182;</a>
+              </div>
+              <p>Start with an imaginary slash before the IRI in order to resolve trailing ‘./‘ and ‘../‘</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> result = <span class="hljs-string">&#x27;&#x27;</span>, length = iri.length, i = <span class="hljs-number">-1</span>, pathStart = <span class="hljs-number">-1</span>, segmentStart = <span class="hljs-number">0</span>, next = <span class="hljs-string">&#x27;/&#x27;</span>;
+
+    <span class="hljs-keyword">while</span> (i &lt; length) {
+      <span class="hljs-keyword">switch</span> (next) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-176">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-176">&#182;</a>
+              </div>
+              <p>The path starts with the first slash after the authority</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;:&#x27;</span>:
+        <span class="hljs-keyword">if</span> (pathStart &lt; <span class="hljs-number">0</span>) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-177">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-177">&#182;</a>
+              </div>
+              <p>Skip two slashes before the authority</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">if</span> (iri[++i] === <span class="hljs-string">&#x27;/&#x27;</span> &amp;&amp; iri[++i] === <span class="hljs-string">&#x27;/&#x27;</span>)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-178">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-178">&#182;</a>
+              </div>
+              <p>Skip to slash after the authority</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">while</span> ((pathStart = i + <span class="hljs-number">1</span>) &lt; length &amp;&amp; iri[pathStart] !== <span class="hljs-string">&#x27;/&#x27;</span>)
+              i = pathStart;
+        }
+        <span class="hljs-keyword">break</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-179">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-179">&#182;</a>
+              </div>
+              <p>Don’t modify a query string or fragment</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;?&#x27;</span>:
+      <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;#&#x27;</span>:
+        i = length;
+        <span class="hljs-keyword">break</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-180">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-180">&#182;</a>
+              </div>
+              <p>Handle ‘/.’ or ‘/..’ path segments</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;/&#x27;</span>:
+        <span class="hljs-keyword">if</span> (iri[i + <span class="hljs-number">1</span>] === <span class="hljs-string">&#x27;.&#x27;</span>) {
+          next = iri[++i + <span class="hljs-number">1</span>];
+          <span class="hljs-keyword">switch</span> (next) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-181">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-181">&#182;</a>
+              </div>
+              <p>Remove a ‘/.’ segment</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;/&#x27;</span>:
+            result += iri.substring(segmentStart, i - <span class="hljs-number">1</span>);
+            segmentStart = i + <span class="hljs-number">1</span>;
+            <span class="hljs-keyword">break</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-182">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-182">&#182;</a>
+              </div>
+              <p>Remove a trailing ‘/.’ segment</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">case</span> <span class="hljs-literal">undefined</span>:
+          <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;?&#x27;</span>:
+          <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;#&#x27;</span>:
+            <span class="hljs-keyword">return</span> result + iri.substring(segmentStart, i) + iri.substr(i + <span class="hljs-number">1</span>);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-183">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-183">&#182;</a>
+              </div>
+              <p>Remove a ‘/..’ segment</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;.&#x27;</span>:
+            next = iri[++i + <span class="hljs-number">1</span>];
+            <span class="hljs-keyword">if</span> (next === <span class="hljs-literal">undefined</span> || next === <span class="hljs-string">&#x27;/&#x27;</span> || next === <span class="hljs-string">&#x27;?&#x27;</span> || next === <span class="hljs-string">&#x27;#&#x27;</span>) {
+              result += iri.substring(segmentStart, i - <span class="hljs-number">2</span>);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-184">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-184">&#182;</a>
+              </div>
+              <p>Try to remove the parent path from result</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>              <span class="hljs-keyword">if</span> ((segmentStart = result.lastIndexOf(<span class="hljs-string">&#x27;/&#x27;</span>)) &gt;= pathStart)
+                result = result.substr(<span class="hljs-number">0</span>, segmentStart);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-185">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-185">&#182;</a>
+              </div>
+              <p>Remove a trailing ‘/..’ segment</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>              <span class="hljs-keyword">if</span> (next !== <span class="hljs-string">&#x27;/&#x27;</span>)
+                <span class="hljs-keyword">return</span> result + <span class="hljs-string">&#x27;/&#x27;</span> + iri.substr(i + <span class="hljs-number">1</span>);
+              segmentStart = i + <span class="hljs-number">1</span>;
+            }
+          }
+        }
+      }
+      next = iri[++i];
+    }
+    <span class="hljs-keyword">return</span> result + iri.substring(segmentStart);
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-186">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-186">&#182;</a>
+              </div>
+              <h2 id="public-methods">Public methods</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-187">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-187">&#182;</a>
+              </div>
+              <h3 id="parse-parses-the-n3-input-and-emits-each-parsed-quad-through-the-callback"><code>parse</code> parses the N3 input and emits each parsed quad through the callback</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  parse(input, quadCallback, prefixCallback) {
+    <span class="hljs-keyword">var</span> self = <span class="hljs-built_in">this</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-188">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-188">&#182;</a>
+              </div>
+              <p>The read callback is the next function to be executed when a token arrives.
+We start reading in the top context.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-built_in">this</span>._readCallback = <span class="hljs-built_in">this</span>._readInTopContext;
+    <span class="hljs-built_in">this</span>._sparqlStyle = <span class="hljs-literal">false</span>;
+    <span class="hljs-built_in">this</span>._prefixes = <span class="hljs-built_in">Object</span>.create(<span class="hljs-literal">null</span>);
+    <span class="hljs-built_in">this</span>._prefixes._ = <span class="hljs-built_in">this</span>._blankNodePrefix ? <span class="hljs-built_in">this</span>._blankNodePrefix.substr(<span class="hljs-number">2</span>)
+                                             : <span class="hljs-string">&#x27;b&#x27;</span> + blankNodePrefix++ + <span class="hljs-string">&#x27;_&#x27;</span>;
+    <span class="hljs-built_in">this</span>._prefixCallback = prefixCallback || noop;
+    <span class="hljs-built_in">this</span>._inversePredicate = <span class="hljs-literal">false</span>;
+    <span class="hljs-built_in">this</span>._quantified = <span class="hljs-built_in">Object</span>.create(<span class="hljs-literal">null</span>);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-189">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-189">&#182;</a>
+              </div>
+              <p>Parse synchronously if no quad callback is given</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (!quadCallback) {
+      <span class="hljs-keyword">var</span> quads = [], error;
+      <span class="hljs-built_in">this</span>._callback = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">e, t</span>) </span>{ e ? (error = e) : t &amp;&amp; quads.push(t); };
+      <span class="hljs-built_in">this</span>._lexer.tokenize(input).every(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">token</span>) </span>{
+        <span class="hljs-keyword">return</span> self._readCallback = self._readCallback(token);
+      });
+      <span class="hljs-keyword">if</span> (error) <span class="hljs-keyword">throw</span> error;
+      <span class="hljs-keyword">return</span> quads;
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-190">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-190">&#182;</a>
+              </div>
+              <p>Parse asynchronously otherwise, executing the read callback when a token arrives</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-built_in">this</span>._callback = quadCallback;
+    <span class="hljs-built_in">this</span>._lexer.tokenize(input, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">error, token</span>) </span>{
+      <span class="hljs-keyword">if</span> (error !== <span class="hljs-literal">null</span>)
+        self._callback(error), self._callback = noop;
+      <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (self._readCallback)
+        self._readCallback = self._readCallback(token);
+    });
+  }
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-191">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-191">&#182;</a>
+              </div>
+              <p>The empty function</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">noop</span>(<span class="hljs-params"></span>) </span>{}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-192">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-192">&#182;</a>
+              </div>
+              <p>Initializes the parser with the given data factory</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">initDataFactory</span>(<span class="hljs-params">parser, factory</span>) </span>{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-193">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-193">&#182;</a>
+              </div>
+              <p>Set factory methods</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">var</span> namedNode = factory.namedNode;
+  parser._namedNode   = namedNode;
+  parser._blankNode   = factory.blankNode;
+  parser._literal     = factory.literal;
+  parser._variable    = factory.variable;
+  parser._quad        = factory.quad;
+  parser.DEFAULTGRAPH = factory.defaultGraph();</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-194">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-194">&#182;</a>
+              </div>
+              <p>Set common named nodes</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  parser.RDF_FIRST  = namedNode(namespaces.rdf.first);
+  parser.RDF_REST   = namedNode(namespaces.rdf.rest);
+  parser.RDF_NIL    = namedNode(namespaces.rdf.nil);
+  parser.N3_FORALL  = namedNode(namespaces.r.forAll);
+  parser.N3_FORSOME = namedNode(namespaces.r.forSome);
+  parser.ABBREVIATIONS = {
+    <span class="hljs-string">&#x27;a&#x27;</span>: namedNode(namespaces.rdf.type),
+    <span class="hljs-string">&#x27;=&#x27;</span>: namedNode(namespaces.owl.sameAs),
+    <span class="hljs-string">&#x27;&gt;&#x27;</span>: namedNode(namespaces.log.implies),
+  };
+  parser.QUANTIFIERS_GRAPH = namedNode(<span class="hljs-string">&#x27;urn:n3:quantifiers&#x27;</span>);
+}
+initDataFactory(N3Parser.prototype, N3DataFactory);</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>

@@ -5,7 +5,7 @@
   <title>N3Util.js</title>
   <meta http-equiv="content-type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
-  <link rel="stylesheet" media="all" href="docco.css" />
+  <link rel="stylesheet" media="all" href="../docco.css" />
 </head>
 <body>
   <div id="container">
@@ -21,47 +21,52 @@
               
                 
                 <a class="source" href="IRIs.html">
-                  IRIs.js
+                  src/IRIs.js
                 </a>
               
                 
                 <a class="source" href="N3DataFactory.html">
-                  N3DataFactory.js
+                  src/N3DataFactory.js
                 </a>
               
                 
                 <a class="source" href="N3Lexer.html">
-                  N3Lexer.js
+                  src/N3Lexer.js
                 </a>
               
                 
                 <a class="source" href="N3Parser.html">
-                  N3Parser.js
+                  src/N3Parser.js
                 </a>
               
                 
                 <a class="source" href="N3Store.html">
-                  N3Store.js
+                  src/N3Store.js
                 </a>
               
                 
                 <a class="source" href="N3StreamParser.html">
-                  N3StreamParser.js
+                  src/N3StreamParser.js
                 </a>
               
                 
                 <a class="source" href="N3StreamWriter.html">
-                  N3StreamWriter.js
+                  src/N3StreamWriter.js
                 </a>
               
                 
                 <a class="source" href="N3Util.html">
-                  N3Util.js
+                  src/N3Util.js
                 </a>
               
                 
                 <a class="source" href="N3Writer.html">
-                  N3Writer.js
+                  src/N3Writer.js
+                </a>
+              
+                
+                <a class="source" href="index.html">
+                  src/index.js
                 </a>
               
             </div>
@@ -90,9 +95,7 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>
-<span class="hljs-keyword">var</span> DataFactory = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./N3DataFactory'</span>);
-
-<span class="hljs-keyword">var</span> N3Util = {</pre></div></div>
+<span class="hljs-keyword">import</span> N3DataFactory <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3DataFactory&#x27;</span>;</pre></div></div>
             
         </li>
         
@@ -107,9 +110,9 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  isNamedNode: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">term</span>) </span>{
-    <span class="hljs-keyword">return</span> !!term &amp;&amp; term.termType === <span class="hljs-string">'NamedNode'</span>;
-  },</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">isNamedNode</span>(<span class="hljs-params">term</span>) </span>{
+  <span class="hljs-keyword">return</span> !!term &amp;&amp; term.termType === <span class="hljs-string">&#x27;NamedNode&#x27;</span>;
+}</pre></div></div>
             
         </li>
         
@@ -124,9 +127,9 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  isBlankNode: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">term</span>) </span>{
-    <span class="hljs-keyword">return</span> !!term &amp;&amp; term.termType === <span class="hljs-string">'BlankNode'</span>;
-  },</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">isBlankNode</span>(<span class="hljs-params">term</span>) </span>{
+  <span class="hljs-keyword">return</span> !!term &amp;&amp; term.termType === <span class="hljs-string">&#x27;BlankNode&#x27;</span>;
+}</pre></div></div>
             
         </li>
         
@@ -141,9 +144,9 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  isLiteral: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">term</span>) </span>{
-    <span class="hljs-keyword">return</span> !!term &amp;&amp; term.termType === <span class="hljs-string">'Literal'</span>;
-  },</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">isLiteral</span>(<span class="hljs-params">term</span>) </span>{
+  <span class="hljs-keyword">return</span> !!term &amp;&amp; term.termType === <span class="hljs-string">&#x27;Literal&#x27;</span>;
+}</pre></div></div>
             
         </li>
         
@@ -158,9 +161,9 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  isVariable: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">term</span>) </span>{
-    <span class="hljs-keyword">return</span> !!term &amp;&amp; term.termType === <span class="hljs-string">'Variable'</span>;
-  },</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">isVariable</span>(<span class="hljs-params">term</span>) </span>{
+  <span class="hljs-keyword">return</span> !!term &amp;&amp; term.termType === <span class="hljs-string">&#x27;Variable&#x27;</span>;
+}</pre></div></div>
             
         </li>
         
@@ -175,9 +178,9 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  isDefaultGraph: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">term</span>) </span>{
-    <span class="hljs-keyword">return</span> !!term &amp;&amp; term.termType === <span class="hljs-string">'DefaultGraph'</span>;
-  },</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">isDefaultGraph</span>(<span class="hljs-params">term</span>) </span>{
+  <span class="hljs-keyword">return</span> !!term &amp;&amp; term.termType === <span class="hljs-string">&#x27;DefaultGraph&#x27;</span>;
+}</pre></div></div>
             
         </li>
         
@@ -192,9 +195,9 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  inDefaultGraph: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">quad</span>) </span>{
-    <span class="hljs-keyword">return</span> N3Util.isDefaultGraph(quad.graph);
-  },</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">inDefaultGraph</span>(<span class="hljs-params">quad</span>) </span>{
+  <span class="hljs-keyword">return</span> isDefaultGraph(quad.graph);
+}</pre></div></div>
             
         </li>
         
@@ -209,9 +212,9 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  prefix: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">iri, factory</span>) </span>{
-    <span class="hljs-keyword">return</span> N3Util.prefixes({ <span class="hljs-string">''</span>: iri }, factory)(<span class="hljs-string">''</span>);
-  },</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">prefix</span>(<span class="hljs-params">iri, factory</span>) </span>{
+  <span class="hljs-keyword">return</span> prefixes({ <span class="hljs-string">&#x27;&#x27;</span>: iri }, factory)(<span class="hljs-string">&#x27;&#x27;</span>);
+}</pre></div></div>
             
         </li>
         
@@ -226,7 +229,7 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  prefixes: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">defaultPrefixes, factory</span>) </span>{</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">prefixes</span>(<span class="hljs-params">defaultPrefixes, factory</span>) </span>{</pre></div></div>
             
         </li>
         
@@ -241,9 +244,9 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> prefixes = <span class="hljs-built_in">Object</span>.create(<span class="hljs-literal">null</span>);
-    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> prefix <span class="hljs-keyword">in</span> defaultPrefixes)
-      processPrefix(prefix, defaultPrefixes[prefix]);</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">var</span> prefixes = <span class="hljs-built_in">Object</span>.create(<span class="hljs-literal">null</span>);
+  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> prefix <span class="hljs-keyword">in</span> defaultPrefixes)
+    processPrefix(prefix, defaultPrefixes[prefix]);</pre></div></div>
             
         </li>
         
@@ -258,7 +261,7 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    factory = factory || DataFactory;</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  factory = factory || N3DataFactory;</pre></div></div>
             
         </li>
         
@@ -274,7 +277,7 @@ or retrieves a function that expands an existing prefix (if no IRI was specified
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">processPrefix</span>(<span class="hljs-params">prefix, iri</span>) </span>{</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">processPrefix</span>(<span class="hljs-params">prefix, iri</span>) </span>{</pre></div></div>
             
         </li>
         
@@ -289,7 +292,7 @@ or retrieves a function that expands an existing prefix (if no IRI was specified
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> iri === <span class="hljs-string">'string'</span>) {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> iri === <span class="hljs-string">&#x27;string&#x27;</span>) {</pre></div></div>
             
         </li>
         
@@ -304,34 +307,18 @@ or retrieves a function that expands an existing prefix (if no IRI was specified
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">var</span> cache = <span class="hljs-built_in">Object</span>.create(<span class="hljs-literal">null</span>);
-        prefixes[prefix] = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">local</span>) </span>{
-          <span class="hljs-keyword">return</span> cache[local] || (cache[local] = factory.namedNode(iri + local));
-        };
-      }
-      <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (!(prefix <span class="hljs-keyword">in</span> prefixes)) {
-        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'Unknown prefix: '</span> + prefix);
-      }
-      <span class="hljs-keyword">return</span> prefixes[prefix];
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">var</span> cache = <span class="hljs-built_in">Object</span>.create(<span class="hljs-literal">null</span>);
+      prefixes[prefix] = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">local</span>) </span>{
+        <span class="hljs-keyword">return</span> cache[local] || (cache[local] = factory.namedNode(iri + local));
+      };
     }
-    <span class="hljs-keyword">return</span> processPrefix;
-  },
-};</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-15">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-15">&#182;</a>
-              </div>
-              <h2 id="exports">Exports</h2>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre><span class="hljs-built_in">module</span>.exports = N3Util;</pre></div></div>
+    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (!(prefix <span class="hljs-keyword">in</span> prefixes)) {
+      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&#x27;Unknown prefix: &#x27;</span> + prefix);
+    }
+    <span class="hljs-keyword">return</span> prefixes[prefix];
+  }
+  <span class="hljs-keyword">return</span> processPrefix;
+}</pre></div></div>
             
         </li>
         
