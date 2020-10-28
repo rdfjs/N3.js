@@ -259,8 +259,7 @@ export default class N3Store {
 
   // ### `import` adds a stream of quads to the store
   import(stream) {
-    var self = this;
-    stream.on('data', function (quad) { self.addQuad(quad); });
+    stream.on('data', quad => { this.addQuad(quad); });
     return stream;
   }
 
@@ -307,8 +306,7 @@ export default class N3Store {
 
   // ### `remove` removes a stream of quads from the store
   remove(stream) {
-    var self = this;
-    stream.on('data', function (quad) { self.removeQuad(quad); });
+    stream.on('data', quad => { this.removeQuad(quad); });
     return stream;
   }
 
@@ -433,7 +431,7 @@ export default class N3Store {
   // ### `forEach` executes the callback on all quads.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   forEach(callback, subject, predicate, object, graph) {
-    this.some(function (quad) {
+    this.some(quad => {
       callback(quad);
       return false;
     }, subject, predicate, object, graph);
@@ -444,7 +442,7 @@ export default class N3Store {
   // Setting any field to `undefined` or `null` indicates a wildcard.
   every(callback, subject, predicate, object, graph) {
     var some = false;
-    var every = !this.some(function (quad) {
+    var every = !this.some(quad => {
       some = true;
       return !callback(quad);
     }, subject, predicate, object, graph);
@@ -516,7 +514,7 @@ export default class N3Store {
   // Setting any field to `undefined` or `null` indicates a wildcard.
   getSubjects(predicate, object, graph) {
     var results = [];
-    this.forSubjects(function (s) { results.push(s); }, predicate, object, graph);
+    this.forSubjects(s => { results.push(s); }, predicate, object, graph);
     return results;
   }
 
@@ -562,7 +560,7 @@ export default class N3Store {
   // Setting any field to `undefined` or `null` indicates a wildcard.
   getPredicates(subject, object, graph) {
     var results = [];
-    this.forPredicates(function (p) { results.push(p); }, subject, object, graph);
+    this.forPredicates(p => { results.push(p); }, subject, object, graph);
     return results;
   }
 
@@ -608,7 +606,7 @@ export default class N3Store {
   // Setting any field to `undefined` or `null` indicates a wildcard.
   getObjects(subject, predicate, graph) {
     var results = [];
-    this.forObjects(function (o) { results.push(o); }, subject, predicate, graph);
+    this.forObjects(o => { results.push(o); }, subject, predicate, graph);
     return results;
   }
 
@@ -654,7 +652,7 @@ export default class N3Store {
   // Setting any field to `undefined` or `null` indicates a wildcard.
   getGraphs(subject, predicate, object) {
     var results = [];
-    this.forGraphs(function (g) { results.push(g); }, subject, predicate, object);
+    this.forGraphs(g => { results.push(g); }, subject, predicate, object);
     return results;
   }
 
@@ -662,7 +660,7 @@ export default class N3Store {
   // Setting any field to `undefined` or `null` indicates a wildcard.
   forGraphs(callback, subject, predicate, object) {
     for (var graph in this._graphs) {
-      this.some(function (quad) {
+      this.some(quad => {
         callback(quad.graph);
         return true; // Halt iteration of some()
       }, subject, predicate, object, graph);

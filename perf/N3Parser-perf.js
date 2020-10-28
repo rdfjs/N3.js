@@ -16,7 +16,7 @@ var TEST = '- Parsing file ' + filename;
 console.time(TEST);
 
 var count = 0;
-new N3.Parser({ baseIRI: base }).parse(fs.createReadStream(filename), function (error, quad) {
+new N3.Parser({ baseIRI: base }).parse(fs.createReadStream(filename), (error, quad) => {
   assert(!error, error);
   if (quad)
     count++;

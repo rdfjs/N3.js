@@ -3,18 +3,18 @@ import queueMicrotask from 'queue-microtask';
 
 import { EventEmitter } from 'events';
 
-describe('Lexer', function () {
-  describe('The Lexer export', function () {
-    it('should be a function', function () {
+describe('Lexer', () => {
+  describe('The Lexer export', () => {
+    it('should be a function', () => {
       Lexer.should.be.a('function');
     });
 
-    it('should be an Lexer constructor', function () {
+    it('should be an Lexer constructor', () => {
       new Lexer().should.be.an.instanceof(Lexer);
     });
   });
 
-  describe('A Lexer instance', function () {
+  describe('A Lexer instance', () => {
     it('should tokenize the empty string',
       shouldTokenize('',
                      { type: 'eof', line: 1 }));
@@ -53,9 +53,9 @@ describe('Lexer', function () {
       shouldNotTokenize('<http://ex.org/bla\\uXYZZxyzzfoo>',
                         'Unexpected "<http://ex.org/bla\\uXYZZxyzzfoo>" on line 1.'));
 
-    it('should not tokenize an IRI with a non-numeric 4-digit unicode escapes', function (done) {
+    it('should not tokenize an IRI with a non-numeric 4-digit unicode escapes', done => {
       var stream = new EventEmitter(), lexer = new Lexer();
-      lexer.tokenize(stream, function (error, token) {
+      lexer.tokenize(stream, (error, token) => {
         error.should.be.an.instanceof(Error);
         error.message.should.equal('Unexpected "<\\uz234>" on line 1.');
         done(token);
@@ -63,9 +63,9 @@ describe('Lexer', function () {
       stream.emit('data', '<\\uz234>');
     });
 
-    it('should not tokenize an IRI with a non-numeric 8-digit unicode escapes', function (done) {
+    it('should not tokenize an IRI with a non-numeric 8-digit unicode escapes', done => {
       var stream = new EventEmitter(), lexer = new Lexer();
-      lexer.tokenize(stream, function (error, token) {
+      lexer.tokenize(stream, (error, token) => {
         error.should.be.an.instanceof(Error);
         error.message.should.equal('Unexpected "<\\Uz2345678>" on line 1.');
         done(token);
@@ -820,7 +820,7 @@ describe('Lexer', function () {
     it('should not tokenize an invalid document',
       shouldNotTokenize(' \n @!', 'Unexpected "@!" on line 2.'));
 
-    it('does not call setEncoding if not available', function () {
+    it('does not call setEncoding if not available', () => {
       new Lexer().tokenize({ on: function () {} });
     });
 
@@ -1078,11 +1078,11 @@ describe('Lexer', function () {
         { type: 'eof', line: 1 }));
 
 
-    describe('passing data after the stream has been finished', function () {
+    describe('passing data after the stream has been finished', () => {
       var tokens = [], error;
-      before(function () {
+      before(() => {
         var stream = new EventEmitter(), lexer = new Lexer();
-        lexer.tokenize(stream, function (err, token) {
+        lexer.tokenize(stream, (err, token) => {
           if (err)
             error = err;
           else
@@ -1094,20 +1094,20 @@ describe('Lexer', function () {
         stream.emit('end');
       });
 
-      it('parses only the first chunk (plus EOF)', function () {
+      it('parses only the first chunk (plus EOF)', () => {
         tokens.should.have.length(2);
       });
 
-      it('does not emit an error', function () {
+      it('does not emit an error', () => {
         expect(error).to.not.exist;
       });
     });
 
-    describe('passing data after a syntax error', function () {
+    describe('passing data after a syntax error', () => {
       var tokens = [], error;
-      before(function () {
+      before(() => {
         var stream = new EventEmitter(), lexer = new Lexer();
-        lexer.tokenize(stream, function (err, token) {
+        lexer.tokenize(stream, (err, token) => {
           if (err)
             error = err;
           else
@@ -1120,21 +1120,21 @@ describe('Lexer', function () {
         stream.emit('end');
       });
 
-      it('parses only the first chunk', function () {
+      it('parses only the first chunk', () => {
         tokens.should.have.length(1);
       });
 
-      it('emits the error', function () {
+      it('emits the error', () => {
         expect(error).to.exist;
         expect(error).to.have.property('message', 'Unexpected "error" on line 1.');
       });
     });
 
-    describe('when the stream errors', function () {
+    describe('when the stream errors', () => {
       var tokens = [], error;
-      before(function () {
+      before(() => {
         var stream = new EventEmitter(), lexer = new Lexer();
-        lexer.tokenize(stream, function (err, token) {
+        lexer.tokenize(stream, (err, token) => {
           if (err)
             error = err;
           else
@@ -1143,17 +1143,17 @@ describe('Lexer', function () {
         stream.emit('error', new Error('my error'));
       });
 
-      it('passes the error', function () {
+      it('passes the error', () => {
         expect(error).to.exist;
         expect(error).to.have.property('message', 'my error');
       });
     });
 
-    describe('called with a string and without callback', function () {
+    describe('called with a string and without callback', () => {
       var lexer = new Lexer(),
           tokens = lexer.tokenize('<a> <b> <c>.');
 
-      it('returns all tokens synchronously', function () {
+      it('returns all tokens synchronously', () => {
         tokens.should.deep.equal([
           { line: 1, type: 'IRI', value: 'a', prefix: '' },
           { line: 1, type: 'IRI', value: 'b', prefix: '' },
@@ -1164,10 +1164,10 @@ describe('Lexer', function () {
       });
     });
 
-    describe('called with an erroneous string and without callback', function () {
+    describe('called with an erroneous string and without callback', () => {
       var lexer = new Lexer();
 
-      it('throws an error', function () {
+      it('throws an error', () => {
         (function () { lexer.tokenize('<a> bar'); })
         .should.throw('Unexpected "bar" on line 1.');
       });
@@ -1175,7 +1175,7 @@ describe('Lexer', function () {
   });
 });
 
-describe('A Lexer instance with the n3 option set to false', function () {
+describe('A Lexer instance with the n3 option set to false', () => {
   function createLexer() { return new Lexer({ n3: false }); }
 
   it('should not tokenize a variable',
@@ -1197,7 +1197,7 @@ describe('A Lexer instance with the n3 option set to false', function () {
     shouldNotTokenize(createLexer(), ':joe^fam:father', 'Unexpected "^fam:father" on line 1.'));
 });
 
-describe('A Lexer instance with the comment option set to true', function () {
+describe('A Lexer instance with the comment option set to true', () => {
   function createLexer() { return new Lexer({ comments: true }); }
 
   it('should tokenize a single comment',

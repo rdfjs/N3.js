@@ -1,23 +1,23 @@
 import { Quad, Triple, DefaultGraph, termFromId, Term } from '../src/';
 
-describe('Quad', function () {
-  describe('The Quad module', function () {
-    it('should be a function', function () {
+describe('Quad', () => {
+  describe('The Quad module', () => {
+    it('should be a function', () => {
       Quad.should.be.a('function');
     });
 
-    it('should be a Quad constructor', function () {
+    it('should be a Quad constructor', () => {
       new Quad().should.be.an.instanceof(Quad);
     });
 
-    it('should equal Triple', function () {
+    it('should equal Triple', () => {
       Quad.should.equal(Triple);
     });
   });
 
-  describe('A Quad instance created with subject/predicate/object', function () {
+  describe('A Quad instance created with subject/predicate/object', () => {
     var quad, subject, predicate, object;
-    before(function () {
+    before(() => {
       quad = new Quad(
         subject   = termFromId('s'),
         predicate = termFromId('p'),
@@ -25,35 +25,35 @@ describe('Quad', function () {
       );
     });
 
-    it('should be a Quad', function () {
+    it('should be a Quad', () => {
       quad.should.be.an.instanceof(Quad);
     });
 
-    it('should be a Term', function () {
+    it('should be a Term', () => {
       quad.should.be.an.instanceof(Term);
     });
 
-    it('should have the correct termType', function () {
+    it('should have the correct termType', () => {
       quad.termType.should.equal('Quad');
     });
 
-    it('should have the correct subject', function () {
+    it('should have the correct subject', () => {
       quad.subject.should.equal(subject);
     });
 
-    it('should have the correct predicate', function () {
+    it('should have the correct predicate', () => {
       quad.predicate.should.equal(predicate);
     });
 
-    it('should have the correct object', function () {
+    it('should have the correct object', () => {
       quad.object.should.equal(object);
     });
 
-    it('should have the default graph', function () {
+    it('should have the default graph', () => {
       quad.graph.should.equal(new DefaultGraph());
     });
 
-    it('should equal a quad with the same components', function () {
+    it('should equal a quad with the same components', () => {
       quad.equals({
         subject:   subject,
         predicate: predicate,
@@ -62,7 +62,7 @@ describe('Quad', function () {
       }).should.be.true;
     });
 
-    it('should not equal a quad with a different subject', function () {
+    it('should not equal a quad with a different subject', () => {
       quad.equals({
         subject:   termFromId('x'),
         predicate: predicate,
@@ -71,7 +71,7 @@ describe('Quad', function () {
       }).should.be.false;
     });
 
-    it('should not equal a quad with a different predicate', function () {
+    it('should not equal a quad with a different predicate', () => {
       quad.equals({
         subject:   subject,
         predicate: termFromId('x'),
@@ -80,7 +80,7 @@ describe('Quad', function () {
       }).should.be.false;
     });
 
-    it('should not equal a quad with a different object', function () {
+    it('should not equal a quad with a different object', () => {
       quad.equals({
         subject:   subject,
         predicate: predicate,
@@ -89,7 +89,7 @@ describe('Quad', function () {
       }).should.be.false;
     });
 
-    it('should not equal a quad with a different graph', function () {
+    it('should not equal a quad with a different graph', () => {
       quad.equals({
         subject:   subject,
         predicate: predicate,
@@ -98,7 +98,7 @@ describe('Quad', function () {
       }).should.be.false;
     });
 
-    it('should provide a JSON representation', function () {
+    it('should provide a JSON representation', () => {
       quad.toJSON().should.deep.equal({
         termType:  'Quad',
         subject:   { termType: 'NamedNode', value: 's' },
@@ -109,9 +109,9 @@ describe('Quad', function () {
     });
   });
 
-  describe('A Quad instance created with subject/predicate/object/graph', function () {
+  describe('A Quad instance created with subject/predicate/object/graph', () => {
     var quad, subject, predicate, object, graph;
-    before(function () {
+    before(() => {
       quad = new Quad(
         subject   = termFromId('s'),
         predicate = termFromId('p'),
@@ -120,35 +120,35 @@ describe('Quad', function () {
       );
     });
 
-    it('should be a Quad', function () {
+    it('should be a Quad', () => {
       quad.should.be.an.instanceof(Quad);
     });
 
-    it('should be a Term', function () {
+    it('should be a Term', () => {
       quad.should.be.an.instanceof(Term);
     });
 
-    it('should have the correct termType', function () {
+    it('should have the correct termType', () => {
       quad.termType.should.equal('Quad');
     });
 
-    it('should have the correct subject', function () {
+    it('should have the correct subject', () => {
       quad.subject.should.equal(subject);
     });
 
-    it('should have the correct predicate', function () {
+    it('should have the correct predicate', () => {
       quad.predicate.should.equal(predicate);
     });
 
-    it('should have the correct object', function () {
+    it('should have the correct object', () => {
       quad.object.should.equal(object);
     });
 
-    it('should have the default graph', function () {
+    it('should have the default graph', () => {
       quad.graph.should.equal(graph);
     });
 
-    it('should equal a quad with the same components', function () {
+    it('should equal a quad with the same components', () => {
       quad.equals({
         subject:   subject,
         predicate: predicate,
@@ -157,7 +157,7 @@ describe('Quad', function () {
       }).should.be.true;
     });
 
-    it('should not equal a quad with a different subject', function () {
+    it('should not equal a quad with a different subject', () => {
       quad.equals({
         subject:   termFromId('x'),
         predicate: predicate,
@@ -166,7 +166,7 @@ describe('Quad', function () {
       }).should.be.false;
     });
 
-    it('should not equal a quad with a different predicate', function () {
+    it('should not equal a quad with a different predicate', () => {
       quad.equals({
         subject:   subject,
         predicate: termFromId('x'),
@@ -175,7 +175,7 @@ describe('Quad', function () {
       }).should.be.false;
     });
 
-    it('should not equal a quad with a different object', function () {
+    it('should not equal a quad with a different object', () => {
       quad.equals({
         subject:   subject,
         predicate: predicate,
@@ -184,7 +184,7 @@ describe('Quad', function () {
       }).should.be.false;
     });
 
-    it('should not equal a quad with a different graph', function () {
+    it('should not equal a quad with a different graph', () => {
       quad.equals({
         subject:   subject,
         predicate: predicate,
@@ -193,7 +193,7 @@ describe('Quad', function () {
       }).should.be.false;
     });
 
-    it('should provide a JSON representation', function () {
+    it('should provide a JSON representation', () => {
       quad.toJSON().should.deep.equal({
         termType:  'Quad',
         subject:   { termType: 'NamedNode', value: 's' },
@@ -204,9 +204,9 @@ describe('Quad', function () {
     });
   });
 
-  describe('A Quad instance with nested quads', function () {
+  describe('A Quad instance with nested quads', () => {
     var quad, subject, predicate, object;
-    before(function () {
+    before(() => {
       quad = new Quad(
         subject   = termFromId('<<_:n3-123 ?var-a ?var-b _:n3-000>>'),
         predicate = termFromId('p'),
@@ -214,35 +214,35 @@ describe('Quad', function () {
       );
     });
 
-    it('should be a Quad', function () {
+    it('should be a Quad', () => {
       quad.should.be.an.instanceof(Quad);
     });
 
-    it('should be a Term', function () {
+    it('should be a Term', () => {
       quad.should.be.an.instanceof(Term);
     });
 
-    it('should have the correct termType', function () {
+    it('should have the correct termType', () => {
       quad.termType.should.equal('Quad');
     });
 
-    it('should have the correct subject', function () {
+    it('should have the correct subject', () => {
       quad.subject.should.equal(subject);
     });
 
-    it('should have the correct predicate', function () {
+    it('should have the correct predicate', () => {
       quad.predicate.should.equal(predicate);
     });
 
-    it('should have the correct object', function () {
+    it('should have the correct object', () => {
       quad.object.should.equal(object);
     });
 
-    it('should have the default graph', function () {
+    it('should have the default graph', () => {
       quad.graph.should.equal(new DefaultGraph());
     });
 
-    it('should equal a quad with the same components', function () {
+    it('should equal a quad with the same components', () => {
       quad.equals({
         subject:   subject,
         predicate: predicate,
@@ -251,7 +251,7 @@ describe('Quad', function () {
       }).should.be.true;
     });
 
-    it('should not equal a quad with a different subject', function () {
+    it('should not equal a quad with a different subject', () => {
       quad.equals({
         termType: 'Quad',
         value: '',
@@ -262,7 +262,7 @@ describe('Quad', function () {
       }).should.be.false;
     });
 
-    it('should not equal a quad with a different predicate', function () {
+    it('should not equal a quad with a different predicate', () => {
       quad.equals({
         termType: 'Quad',
         value: '',
@@ -273,7 +273,7 @@ describe('Quad', function () {
       }).should.be.false;
     });
 
-    it('should not equal a quad with a different object', function () {
+    it('should not equal a quad with a different object', () => {
       quad.equals({
         termType: 'Quad',
         value: '',
@@ -284,7 +284,7 @@ describe('Quad', function () {
       }).should.be.false;
     });
 
-    it('should not equal a quad with a different graph', function () {
+    it('should not equal a quad with a different graph', () => {
       quad.equals({
         termType: 'Quad',
         value: '',
@@ -295,7 +295,7 @@ describe('Quad', function () {
       }).should.be.false;
     });
 
-    it('should provide a JSON representation', function () {
+    it('should provide a JSON representation', () => {
       quad.toJSON().should.deep.equal({
         termType:  'Quad',
         subject:   termFromId('<<_:n3-123 ?var-a ?var-b _:n3-000>>').toJSON(),

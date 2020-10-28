@@ -31,7 +31,7 @@ export default class N3Parser {
     this._supportsRDFStar = format === '' || /star|\*$/.test(format);
     // Disable relative IRIs in N-Triples or N-Quads mode
     if (isLineMode)
-      this._resolveRelativeIRI = function (iri) { return null; };
+      this._resolveRelativeIRI = iri => { return null; };
     this._blankNodePrefix = typeof options.blankNodePrefix !== 'string' ? '' :
                               options.blankNodePrefix.replace(/^(?!_:)/, '_:');
     this._lexer = options.lexer || new N3Lexer({ lineMode: isLineMode, n3: isN3 });
@@ -977,7 +977,6 @@ export default class N3Parser {
 
   // ### `parse` parses the N3 input and emits each parsed quad through the callback
   parse(input, quadCallback, prefixCallback) {
-    var self = this;
     // The read callback is the next function to be executed when a token arrives.
     // We start reading in the top context.
     this._readCallback = this._readInTopContext;
@@ -992,9 +991,9 @@ export default class N3Parser {
     // Parse synchronously if no quad callback is given
     if (!quadCallback) {
       var quads = [], error;
-      this._callback = function (e, t) { e ? (error = e) : t && quads.push(t); };
-      this._lexer.tokenize(input).every(function (token) {
-        return self._readCallback = self._readCallback(token);
+      this._callback = (e, t) => { e ? (error = e) : t && quads.push(t); };
+      this._lexer.tokenize(input).every(token => {
+        return this._readCallback = this._readCallback(token);
       });
       if (error) throw error;
       return quads;
@@ -1002,11 +1001,11 @@ export default class N3Parser {
 
     // Parse asynchronously otherwise, executing the read callback when a token arrives
     this._callback = quadCallback;
-    this._lexer.tokenize(input, function (error, token) {
+    this._lexer.tokenize(input, (error, token) => {
       if (error !== null)
-        self._callback(error), self._callback = noop;
-      else if (self._readCallback)
-        self._readCallback = self._readCallback(token);
+        this._callback(error), this._callback = noop;
+      else if (this._readCallback)
+        this._readCallback = this._readCallback(token);
     });
   }
 }

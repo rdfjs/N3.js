@@ -53,7 +53,7 @@ export function prefixes(defaultPrefixes, factory) {
     if (typeof iri === 'string') {
       // Create a function that expands the prefix
       var cache = Object.create(null);
-      prefixes[prefix] = function (local) {
+      prefixes[prefix] = local => {
         return cache[local] || (cache[local] = factory.namedNode(iri + local));
       };
     }

@@ -432,7 +432,6 @@ export default class N3Lexer {
   // ### `tokenize` starts the transformation of an N3 document into an array of tokens.
   // The input can be a string or a stream.
   tokenize(input, callback) {
-    var self = this;
     this._line = 1;
 
     // If the input is a string, continuously emit tokens through the callback until the end
@@ -440,11 +439,11 @@ export default class N3Lexer {
       this._input = input;
       // If a callback was passed, asynchronously call it
       if (typeof callback === 'function')
-        queueMicrotask(() => self._tokenizeToEnd(callback, true));
+        queueMicrotask(() => this._tokenizeToEnd(callback, true));
       // If no callback was passed, tokenize synchronously and return
       else {
         var tokens = [], error;
-        this._tokenizeToEnd(function (e, t) { e ? (error = e) : tokens.push(t); }, true);
+        this._tokenizeToEnd((e, t) => { e ? (error = e) : tokens.push(t); }, true);
         if (error) throw error;
         return tokens;
       }
@@ -456,28 +455,28 @@ export default class N3Lexer {
       if (typeof input.setEncoding === 'function')
         input.setEncoding('utf8');
       // Adds the data chunk to the buffer and parses as far as possible
-      input.on('data', function (data) {
-        if (self._input !== null && data.length !== 0) {
+      input.on('data', data => {
+        if (this._input !== null && data.length !== 0) {
           // Prepend any previous pending writes
-          if (self._pendingBuffer) {
-            data = Buffer.concat([self._pendingBuffer, data]);
-            self._pendingBuffer = null;
+          if (this._pendingBuffer) {
+            data = Buffer.concat([this._pendingBuffer, data]);
+            this._pendingBuffer = null;
           }
           // Hold if the buffer ends in an incomplete unicode sequence
           if (data[data.length - 1] & 0x80) {
-            self._pendingBuffer = data;
+            this._pendingBuffer = data;
           }
           // Otherwise, tokenize as far as possible
           else {
-            self._input += data;
-            self._tokenizeToEnd(callback, false);
+            this._input += data;
+            this._tokenizeToEnd(callback, false);
           }
         }
       });
       // Parses until the end
-      input.on('end', function () {
-        if (self._input !== null)
-          self._tokenizeToEnd(callback, true);
+      input.on('end', () => {
+        if (this._input !== null)
+          this._tokenizeToEnd(callback, true);
       });
       input.on('error', callback);
     }
