@@ -198,11 +198,11 @@ export default class N3Store {
   // ### `_uniqueEntities` returns a function that accepts an entity ID
   // and passes the corresponding entity to callback if it hasn't occurred before.
   _uniqueEntities(callback) {
-    var uniqueIds = Object.create(null), entities = this._entities;
-    return function (id) {
+    var uniqueIds = Object.create(null);
+    return id => {
       if (!(id in uniqueIds)) {
         uniqueIds[id] = true;
-        callback(termFromId(entities[id]));
+        callback(termFromId(this._entities[id], this._factory));
       }
     };
   }
