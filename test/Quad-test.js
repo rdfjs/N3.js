@@ -16,7 +16,7 @@ describe('Quad', () => {
   });
 
   describe('A Quad instance created with subject/predicate/object', () => {
-    var quad, subject, predicate, object;
+    let quad, subject, predicate, object;
     before(() => {
       quad = new Quad(
         subject   = termFromId('s'),
@@ -110,7 +110,7 @@ describe('Quad', () => {
   });
 
   describe('A Quad instance created with subject/predicate/object/graph', () => {
-    var quad, subject, predicate, object, graph;
+    let quad, subject, predicate, object, graph;
     before(() => {
       quad = new Quad(
         subject   = termFromId('s'),
@@ -205,7 +205,7 @@ describe('Quad', () => {
   });
 
   describe('A Quad instance with nested quads', () => {
-    var quad, subject, predicate, object;
+    let quad, subject, predicate, object;
     before(() => {
       quad = new Quad(
         subject   = termFromId('<<_:n3-123 ?var-a ?var-b _:n3-000>>'),

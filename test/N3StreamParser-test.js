@@ -25,7 +25,7 @@ describe('StreamParser', () => {
       shouldParse('<sub> <pred> 11.2 .'.match(/.{1,2}/g), 1));
 
     it('should parse non-breaking spaces that are split across chunks in the stream correctly', done => {
-      var buffer = Buffer.from('<sub> <pred> " " .'),
+      const buffer = Buffer.from('<sub> <pred> " " .'),
           chunks = [buffer, buffer.slice(0, 15), buffer.slice(15, buffer.length)];
       shouldParse(chunks, 2, triples => {
         triples[0].should.deep.equal(triples[1]);
@@ -40,9 +40,8 @@ describe('StreamParser', () => {
                          { a: new NamedNode('http://a.org/#'), b: new NamedNode('http://b.org/#') }));
 
     it('passes an error', () => {
-      var input = new Readable(),
-          parser = new StreamParser(),
-          error = null;
+      const input = new Readable(), parser = new StreamParser();
+      let error = null;
       input._read = function () {};
       parser.on('error', e => { error = e; });
       parser.import(input);
@@ -55,7 +54,7 @@ describe('StreamParser', () => {
 
 function shouldParse(chunks, expectedLength, validateTriples) {
   return function (done) {
-    var triples = [],
+    const triples = [],
         inputStream = new ArrayReader(chunks),
         parser = new StreamParser(),
         outputStream = new ArrayWriter(triples);
@@ -72,7 +71,7 @@ function shouldParse(chunks, expectedLength, validateTriples) {
 
 function shouldNotParse(chunks, expectedMessage, expectedContext) {
   return function (done) {
-    var inputStream = new ArrayReader(chunks),
+    const inputStream = new ArrayReader(chunks),
         parser = new StreamParser(),
         outputStream = new ArrayWriter([]);
     inputStream.pipe(parser);
@@ -88,7 +87,7 @@ function shouldNotParse(chunks, expectedMessage, expectedContext) {
 
 function shouldEmitPrefixes(chunks, expectedPrefixes) {
   return function (done) {
-    var prefixes = {},
+    const prefixes = {},
         parser = new StreamParser(),
         inputStream = new ArrayReader(chunks);
     inputStream.pipe(parser);
@@ -103,13 +102,13 @@ function shouldEmitPrefixes(chunks, expectedPrefixes) {
 }
 
 function ArrayReader(items) {
-  var reader = new Readable();
+  const reader = new Readable();
   reader._read = function () { this.push(items.shift() || null); };
   return reader;
 }
 
 function ArrayWriter(items) {
-  var writer = new Writable({ objectMode: true });
+  const writer = new Writable({ objectMode: true });
   writer._write = function (chunk, encoding, done) { items.push(chunk); done(); };
   return writer;
 }

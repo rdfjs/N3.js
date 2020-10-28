@@ -16,7 +16,7 @@ describe('NamedNode', () => {
   });
 
   describe('A NamedNode instance created from an IRI', () => {
-    var namedNode;
+    let namedNode;
     before(() => { namedNode = new NamedNode('http://example.org/foo#bar'); });
 
     it('should be a NamedNode', () => {

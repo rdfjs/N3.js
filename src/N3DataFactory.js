@@ -5,6 +5,7 @@ import namespaces from './IRIs';
 import { isDefaultGraph } from './N3Util';
 const { rdf, xsd } = namespaces;
 
+// eslint-disable-next-line prefer-const
 let DEFAULTGRAPH;
 let _blankNodeCounter = 0;
 
@@ -78,7 +79,8 @@ export class Literal extends Term {
   // ### The language of this literal
   get language() {
     // Find the last quotation mark (e.g., '"abc"@en-us')
-    var id = this.id, atPos = id.lastIndexOf('"') + 1;
+    const id = this.id;
+    let atPos = id.lastIndexOf('"') + 1;
     // If "@" it follows, return the remaining substring; empty otherwise
     return atPos < id.length && id[atPos++] === '@' ? id.substr(atPos).toLowerCase() : '';
   }
@@ -91,11 +93,12 @@ export class Literal extends Term {
   // ### The datatype string of this literal
   get datatypeString() {
     // Find the last quotation mark (e.g., '"abc"^^http://ex.org/types#t')
-    var id = this.id, dtPos = id.lastIndexOf('"') + 1, ch;
+    const id = this.id, dtPos = id.lastIndexOf('"') + 1;
+    const char = dtPos < id.length ? id[dtPos] : '';
     // If "^" it follows, return the remaining substring
-    return dtPos < id.length && (ch = id[dtPos]) === '^' ? id.substr(dtPos + 2) :
+    return char === '^' ? id.substr(dtPos + 2) :
            // If "@" follows, return rdf:langString; xsd:string otherwise
-           (ch !== '@' ? xsd.string : rdf.langString);
+           (char !== '@' ? xsd.string : rdf.langString);
   }
 
   // ### Returns whether this object represents the same term as the other
@@ -202,7 +205,7 @@ export function termFromId(id, factory) {
     if (id[id.length - 1] === '"')
       return factory.literal(id.substr(1, id.length - 2));
     // Literal with datatype or language
-    var endPos = id.lastIndexOf('"', id.length - 1);
+    const endPos = id.lastIndexOf('"', id.length - 1);
     return factory.literal(id.substr(1, endPos - 1),
             id[endPos + 1] === '@' ? id.substr(endPos + 2)
                                    : factory.namedNode(id.substr(endPos + 3)));

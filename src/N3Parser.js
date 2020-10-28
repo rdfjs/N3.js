@@ -17,7 +17,7 @@ export default class N3Parser {
     options.factory && initDataFactory(this, options.factory);
 
     // Set supported features depending on the format
-    var format = (typeof options.format === 'string') ?
+    const format = (typeof options.format === 'string') ?
                  options.format.match(/\w*$/)[0].toLowerCase() : '',
         isTurtle = /turtle/.test(format), isTriG = /trig/.test(format),
         isNTriples = /triple/.test(format), isNQuads = /quad/.test(format),
@@ -56,7 +56,7 @@ export default class N3Parser {
     }
     else {
       // Remove fragment if present
-      var fragmentPos = baseIRI.indexOf('#');
+      const fragmentPos = baseIRI.indexOf('#');
       if (fragmentPos >= 0)
         baseIRI = baseIRI.substr(0, fragmentPos);
       // Set base IRI and its components
@@ -72,7 +72,7 @@ export default class N3Parser {
   // ### `_saveContext` stores the current parsing context
   // when entering a new scope (list, blank node, formula)
   _saveContext(type, graph, subject, predicate, object) {
-    var n3Mode = this._n3Mode;
+    const n3Mode = this._n3Mode;
     this._contextStack.push({
       subject: subject, predicate: predicate, object: object,
       graph: graph, type: type,
@@ -95,7 +95,7 @@ export default class N3Parser {
   // ### `_restoreContext` restores the parent context
   // when leaving a scope (list, blank node, formula)
   _restoreContext() {
-    var context = this._contextStack.pop(), n3Mode = this._n3Mode;
+    const context = this._contextStack.pop(), n3Mode = this._n3Mode;
     this._subject   = context.subject;
     this._predicate = context.predicate;
     this._object    = context.object;
@@ -145,12 +145,12 @@ export default class N3Parser {
 
   // ### `_readEntity` reads an IRI, prefixed name, blank node, or variable
   _readEntity(token, quantifier) {
-    var value;
+    let value;
     switch (token.type) {
     // Read a relative or absolute IRI
     case 'IRI':
     case 'typeIRI':
-      var iri = this._resolveIRI(token.value);
+      const iri = this._resolveIRI(token.value);
       if (iri === null)
         return this._error('Invalid IRI', token);
       value = this._namedNode(iri);
@@ -158,7 +158,7 @@ export default class N3Parser {
     // Read a prefixed name
     case 'type':
     case 'prefixed':
-      var prefix = this._prefixes[token.prefix];
+      const prefix = this._prefixes[token.prefix];
       if (prefix === undefined)
         return this._error('Undefined prefix "' + token.prefix + ':"', token);
       value = this._namedNode(prefix + token.value);
@@ -253,7 +253,7 @@ export default class N3Parser {
 
   // ### `_readPredicate` reads a quad's predicate
   _readPredicate(token) {
-    var type = token.type;
+    const type = token.type;
     switch (type) {
     case 'inverse':
       this._inversePredicate = true;
@@ -366,7 +366,7 @@ export default class N3Parser {
       this._emit(this._subject, this._predicate, this._object, this._graph);
 
     // Restore the parent context containing this blank node
-    var empty = this._predicate === null;
+    const empty = this._predicate === null;
     this._restoreContext();
     // If the blank node was the subject, continue reading the predicate
     if (this._object === null)
@@ -392,12 +392,12 @@ export default class N3Parser {
 
   // ### `_readListItem` reads items from a list
   _readListItem(token) {
-    var item = null,                      // The item of the list
+    let item = null,                      // The item of the list
         list = null,                      // The list itself
-        previousList = this._subject,     // The previous list that contains this list
-        stack = this._contextStack,       // The stack of parent contexts
-        parent = stack[stack.length - 1], // The parent containing the current list
         next = this._readListItem;        // The next function to execute
+    const previousList = this._subject,   // The previous list that contains this list
+        stack = this._contextStack,       // The stack of parent contexts
+        parent = stack[stack.length - 1]; // The parent containing the current list
 
     switch (token.type) {
     case '[':
@@ -514,7 +514,7 @@ export default class N3Parser {
     // Create a datatyped literal
     case 'type':
     case 'typeIRI':
-      var datatype = this._readEntity(token);
+      const datatype = this._readEntity(token);
       if (datatype === undefined) return; // No datatype means an error occurred
       literal = this._literal(this._literalValue, datatype);
       token = null;
@@ -574,8 +574,8 @@ export default class N3Parser {
 
   // ### `_readPunctuation` reads punctuation between quads or quad parts
   _readPunctuation(token) {
-    var next, subject = this._subject, graph = this._graph,
-        inversePredicate = this._inversePredicate;
+    let next, graph = this._graph;
+    const subject = this._subject, inversePredicate = this._inversePredicate;
     switch (token.type) {
     // A closing brace ends a graph
     case '}':
@@ -608,7 +608,7 @@ export default class N3Parser {
     }
     // A quad has been completed now, so return it
     if (subject !== null) {
-      var predicate = this._predicate, object = this._object;
+      const predicate = this._predicate, object = this._object;
       if (!inversePredicate)
         this._emit(subject, predicate, object,  graph);
       else
@@ -619,7 +619,7 @@ export default class N3Parser {
 
     // ### `_readBlankNodePunctuation` reads punctuation in a blank node
   _readBlankNodePunctuation(token) {
-    var next;
+    let next;
     switch (token.type) {
     // Semicolon means the subject is shared; predicate and object are different
     case ';':
@@ -656,7 +656,7 @@ export default class N3Parser {
   _readPrefixIRI(token) {
     if (token.type !== 'IRI')
       return this._error('Expected IRI to follow prefix "' + this._prefix + ':"', token);
-    var prefixNode = this._readEntity(token);
+    const prefixNode = this._readEntity(token);
     this._prefixes[this._prefix] = prefixNode.value;
     this._prefixCallback(this._prefix, prefixNode);
     return this._readDeclarationPunctuation;
@@ -664,7 +664,7 @@ export default class N3Parser {
 
   // ### `_readBaseIRI` reads the IRI of a base declaration
   _readBaseIRI(token) {
-    var iri = token.type === 'IRI' && this._resolveIRI(token.value);
+    const iri = token.type === 'IRI' && this._resolveIRI(token.value);
     if (!iri)
       return this._error('Expected valid IRI to follow base declaration', token);
     this._setBase(iri);
@@ -708,7 +708,7 @@ export default class N3Parser {
 
   // Reads a list of quantified symbols from a @forSome or @forAll statement
   _readQuantifierList(token) {
-    var entity;
+    let entity;
     switch (token.type) {
     case 'IRI':
     case 'prefixed':
@@ -769,11 +769,11 @@ export default class N3Parser {
     case '^': return this._readBackwardPath;
     // Not a path; resume reading where we left off
     default:
-      var stack = this._contextStack, parent = stack.length && stack[stack.length - 1];
+      const stack = this._contextStack, parent = stack.length && stack[stack.length - 1];
       // If we were reading a list item, we still need to output it
       if (parent && parent.type === 'item') {
         // The list item is the remaining subejct after reading the path
-        var item = this._subject;
+        const item = this._subject;
         // Switch back to the context of the list
         this._restoreContext();
         // Output the list item
@@ -785,7 +785,8 @@ export default class N3Parser {
 
   // ### `_readForwardPath` reads a '!' path
   _readForwardPath(token) {
-    var subject, predicate, object = this._blankNode();
+    let subject, predicate;
+    const object = this._blankNode();
     // The next token is the predicate
     if ((predicate = this._readEntity(token)) === undefined)
       return;
@@ -802,7 +803,8 @@ export default class N3Parser {
 
   // ### `_readBackwardPath` reads a '^' path
   _readBackwardPath(token) {
-    var subject = this._blankNode(), predicate, object;
+    const subject = this._blankNode();
+    let predicate, object;
     // The next token is the predicate
     if ((predicate = this._readEntity(token)) === undefined)
       return;
@@ -850,7 +852,7 @@ export default class N3Parser {
 
   // ### `_getContextEndReader` gets the next reader function at the end of a context
   _getContextEndReader() {
-    var contextStack = this._contextStack;
+    const contextStack = this._contextStack;
     if (!contextStack.length)
       return this._readPunctuation;
 
@@ -873,7 +875,7 @@ export default class N3Parser {
 
   // ### `_error` emits an error message through the callback
   _error(message, token) {
-    var err = new Error(message + ' on line ' + token.line + '.');
+    const err = new Error(message + ' on line ' + token.line + '.');
     err.context = {
       token: token,
       line: token.line,
@@ -918,7 +920,8 @@ export default class N3Parser {
       return iri;
 
     // Start with an imaginary slash before the IRI in order to resolve trailing './' and '../'
-    var result = '', length = iri.length, i = -1, pathStart = -1, segmentStart = 0, next = '/';
+    const length = iri.length;
+    let result = '', i = -1, pathStart = -1, segmentStart = 0, next = '/';
 
     while (i < length) {
       switch (next) {
@@ -990,7 +993,8 @@ export default class N3Parser {
 
     // Parse synchronously if no quad callback is given
     if (!quadCallback) {
-      var quads = [], error;
+      const quads = [];
+      let error;
       this._callback = (e, t) => { e ? (error = e) : t && quads.push(t); };
       this._lexer.tokenize(input).every(token => {
         return this._readCallback = this._readCallback(token);
@@ -1016,7 +1020,7 @@ function noop() {}
 // Initializes the parser with the given data factory
 function initDataFactory(parser, factory) {
   // Set factory methods
-  var namedNode = factory.namedNode;
+  const namedNode = factory.namedNode;
   parser._namedNode   = namedNode;
   parser._blankNode   = factory.blankNode;
   parser._literal     = factory.literal;

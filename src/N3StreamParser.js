@@ -9,7 +9,8 @@ export default class N3StreamParser extends Transform {
     this._readableState.objectMode = true;
 
     // Set up parser with dummy stream to obtain `data` and `end` callbacks
-    var parser = new N3Parser(options), onData, onEnd;
+    const parser = new N3Parser(options);
+    let onData, onEnd;
     parser.parse({
       on: (event, callback) => {
         switch (event) {

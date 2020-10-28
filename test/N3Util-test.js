@@ -186,7 +186,7 @@ describe('Util', () => {
   });
 
   describe('prefix', () => {
-    var rdfs = Util.prefix('http://www.w3.org/2000/01/rdf-schema#');
+    const rdfs = Util.prefix('http://www.w3.org/2000/01/rdf-schema#');
     it('should return a function', () => {
       expect(rdfs).to.be.an.instanceof(Function);
     });
@@ -197,8 +197,8 @@ describe('Util', () => {
       });
 
       it('should use a custom factory when specified', () => {
-        var factory = { namedNode: function (s) { return 'n-' + s; } };
-        var rdfs = Util.prefix('http://www.w3.org/2000/01/rdf-schema#', factory);
+        const factory = { namedNode: function (s) { return 'n-' + s; } };
+        const rdfs = Util.prefix('http://www.w3.org/2000/01/rdf-schema#', factory);
         expect(rdfs('label')).to.equal('n-http://www.w3.org/2000/01/rdf-schema#label');
       });
     });
@@ -206,7 +206,7 @@ describe('Util', () => {
 
   describe('prefixes', () => {
     describe('called without arguments', () => {
-      var prefixes = Util.prefixes();
+      const prefixes = Util.prefixes();
       it('should return a function', () => {
         expect(prefixes).to.be.an.instanceof(Function);
       });
@@ -217,21 +217,21 @@ describe('Util', () => {
         });
 
         it('should allow registering prefixes', () => {
-          var p = prefixes('rdfs', 'http://www.w3.org/2000/01/rdf-schema#');
-          var rdfs = prefixes('rdfs');
+          const p = prefixes('rdfs', 'http://www.w3.org/2000/01/rdf-schema#');
+          const rdfs = prefixes('rdfs');
           expect(p).to.exist;
           expect(p).to.equal(rdfs);
         });
 
         it('should expand the newly registered prefix', () => {
-          var rdfs = prefixes('rdfs');
+          const rdfs = prefixes('rdfs');
           expect(rdfs('label')).to.deep.equal(new NamedNode('http://www.w3.org/2000/01/rdf-schema#label'));
         });
       });
     });
 
     describe('called with a hash of prefixes', () => {
-      var prefixes = Util.prefixes({
+      const prefixes = Util.prefixes({
         rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
         owl: 'http://www.w3.org/2002/07/owl#',
       });
@@ -250,22 +250,22 @@ describe('Util', () => {
         });
 
         it('should allow registering prefixes', () => {
-          var p = prefixes('my', 'http://example.org/#');
-          var my = prefixes('my');
+          const p = prefixes('my', 'http://example.org/#');
+          const my = prefixes('my');
           expect(p).to.exist;
           expect(p).to.equal(my);
         });
 
         it('should expand the newly registered prefix', () => {
-          var my = prefixes('my');
+          const my = prefixes('my');
           expect(my('me')).to.deep.equal(new NamedNode('http://example.org/#me'));
         });
       });
     });
 
     describe('called with a custom factory', () => {
-      var factory = { namedNode: function (s) { return 'n-' + s; } };
-      var prefixes = Util.prefixes({ my: 'http://example.org/#' }, factory);
+      const factory = { namedNode: function (s) { return 'n-' + s; } };
+      const prefixes = Util.prefixes({ my: 'http://example.org/#' }, factory);
 
       it('should use the custom factory', () => {
         expect(prefixes('my')('foo')).to.equal('n-http://example.org/#foo');

@@ -5,17 +5,17 @@ import queueMicrotask from 'queue-microtask';
 const { xsd } = namespaces;
 
 // Regular expression and replacement string to escape N3 strings
-var escapeSequence = /\\u([a-fA-F0-9]{4})|\\U([a-fA-F0-9]{8})|\\([^])/g;
-var escapeReplacements = {
+const escapeSequence = /\\u([a-fA-F0-9]{4})|\\U([a-fA-F0-9]{8})|\\([^])/g;
+const escapeReplacements = {
   '\\': '\\', "'": "'", '"': '"',
   'n': '\n', 'r': '\r', 't': '\t', 'f': '\f', 'b': '\b',
   '_': '_', '~': '~', '.': '.', '-': '-', '!': '!', '$': '$', '&': '&',
   '(': '(', ')': ')', '*': '*', '+': '+', ',': ',', ';': ';', '=': '=',
   '/': '/', '?': '?', '#': '#', '@': '@', '%': '%',
 };
-var illegalIriChars = /[\x00-\x20<>\\"\{\}\|\^\`]/;
+const illegalIriChars = /[\x00-\x20<>\\"\{\}\|\^\`]/;
 
-var lineModeRegExps = {
+const lineModeRegExps = {
   _iri: true,
   _unescapedIri: true,
   _simpleQuotedString: true,
@@ -26,7 +26,7 @@ var lineModeRegExps = {
   _whitespace: true,
   _endOfFile: true,
 };
-var invalidRegExp = /$0^/;
+const invalidRegExp = /$0^/;
 
 // ## Constructor
 export default class N3Lexer {
@@ -57,7 +57,7 @@ export default class N3Lexer {
     if (this._lineMode = !!options.lineMode) {
       this._n3Mode = false;
       // Don't tokenize special literals
-      for (var key in this) {
+      for (const key in this) {
         if (!(key in lineModeRegExps) && this[key] instanceof RegExp)
           this[key] = invalidRegExp;
       }
@@ -77,10 +77,11 @@ export default class N3Lexer {
   // ### `_tokenizeToEnd` tokenizes as for as possible, emitting tokens through the callback
   _tokenizeToEnd(callback, inputFinished) {
     // Continue parsing as far as possible; the loop will return eventually
-    var input = this._input, outputComments = this._comments;
+    let input = this._input;
+    const outputComments = this._comments;
     while (true) {
       // Count and skip whitespace lines
-      var whiteSpaceMatch, comment;
+      let whiteSpaceMatch, comment;
       while (whiteSpaceMatch = this._newline.exec(input)) {
         // Try to find a comment
         if (outputComments && (comment = this._comment.exec(whiteSpaceMatch[0])))
@@ -106,8 +107,9 @@ export default class N3Lexer {
       }
 
       // Look for specific token types based on the first character
-      var line = this._line, type = '', value = '', prefix = '',
-          firstChar = input[0], match = null, matchLength = 0, inconclusive = false;
+      const line = this._line, firstChar = input[0];
+      let type = '', value = '', prefix = '',
+          match = null, matchLength = 0, inconclusive = false;
       switch (firstChar) {
       case '^':
         // We need at least 3 tokens lookahead to distinguish ^^<IRI> and ^^pre:fixed
@@ -343,7 +345,7 @@ export default class N3Lexer {
       }
 
       // Emit the parsed token
-      var token = { line: line, type: type, value: value, prefix: prefix };
+      const token = { line: line, type: type, value: value, prefix: prefix };
       callback(null, token);
       this.previousToken = token;
       this._previousMarker = type;
@@ -418,7 +420,7 @@ export default class N3Lexer {
   // ### `_syntaxError` creates a syntax error for the given issue
   _syntaxError(issue) {
     this._input = null;
-    var err = new Error('Unexpected "' + issue + '" on line ' + this._line + '.');
+    const err = new Error('Unexpected "' + issue + '" on line ' + this._line + '.');
     err.context = {
       token: undefined,
       line: this._line,
@@ -442,8 +444,9 @@ export default class N3Lexer {
         queueMicrotask(() => this._tokenizeToEnd(callback, true));
       // If no callback was passed, tokenize synchronously and return
       else {
-        var tokens = [], error;
-        this._tokenizeToEnd((e, t) => { e ? (error = e) : tokens.push(t); }, true);
+        const tokens = [];
+        let error;
+        this._tokenizeToEnd((e, t) => e ? (error = e) : tokens.push(t), true);
         if (error) throw error;
         return tokens;
       }

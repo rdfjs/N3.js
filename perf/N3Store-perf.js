@@ -1,21 +1,20 @@
 #!/usr/bin/env node
-var N3 = require('..');
-var assert = require('assert');
+const N3 = require('..');
+const assert = require('assert');
 
 console.log('N3Store performance test');
 
-var prefix = 'http://example.org/#';
-var TEST, dim, dimSquared, dimCubed, dimQuads, store;
+const prefix = 'http://example.org/#';
 
 /* Test triples */
-dim = Number.parseInt(process.argv[2], 10) || 256;
-dimSquared = dim * dim;
-dimCubed = dimSquared * dim;
+let dim = Number.parseInt(process.argv[2], 10) || 256;
+let dimSquared = dim * dim;
+let dimCubed = dimSquared * dim;
 
-store = new N3.Store();
-TEST = '- Adding ' + dimCubed + ' triples to the default graph';
+let store = new N3.Store();
+let TEST = '- Adding ' + dimCubed + ' triples to the default graph';
 console.time(TEST);
-var i, j, k, l;
+let i, j, k, l;
 for (i = 0; i < dim; i++)
   for (j = 0; j < dim; j++)
     for (k = 0; k < dim; k++)
@@ -58,10 +57,10 @@ console.timeEnd(TEST);
 console.log();
 
 /* Test quads */
-dim /= 4,
+dim /= 4;
 dimSquared = dim * dim;
 dimCubed = dimSquared * dim;
-dimQuads = dimCubed * dim;
+const dimQuads = dimCubed * dim;
 
 store = new N3.Store();
 TEST = '- Adding ' + dimQuads + ' quads';

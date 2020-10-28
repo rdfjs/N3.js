@@ -16,7 +16,7 @@ describe('Literal', () => {
   });
 
   describe('A Literal instance created from the empty string without language or datatype', () => {
-    var literal;
+    let literal;
     before(() => { literal = new Literal('""'); });
 
     it('should be a Literal', () => {
@@ -120,7 +120,7 @@ describe('Literal', () => {
   });
 
   describe('A Literal instance created from a string without language or datatype', () => {
-    var literal;
+    let literal;
     before(() => { literal = new Literal('"my @^^ string"'); });
 
     it('should be a Literal', () => {
@@ -224,7 +224,7 @@ describe('Literal', () => {
   });
 
   describe('A Literal instance created from the empty string with a language', () => {
-    var literal;
+    let literal;
     before(() => { literal = new Literal('""@en-us'); });
 
     it('should be a Literal', () => {
@@ -328,7 +328,7 @@ describe('Literal', () => {
   });
 
   describe('A Literal instance created from a string without language or datatype', () => {
-    var literal;
+    let literal;
     before(() => { literal = new Literal('"my @^^ string"@en-us'); });
 
     it('should be a Literal', () => {
@@ -432,7 +432,7 @@ describe('Literal', () => {
   });
 
   describe('A Literal instance created from the empty string with a datatype', () => {
-    var literal;
+    let literal;
     before(() => { literal = new Literal('""^^http://example.org/types#type'); });
 
     it('should be a Literal', () => {
@@ -536,7 +536,7 @@ describe('Literal', () => {
   });
 
   describe('A Literal instance created from a string with a datatype', () => {
-    var literal;
+    let literal;
     before(() => { literal = new Literal('"my @^^ string"^^http://example.org/types#type'); });
 
     it('should be a Literal', () => {

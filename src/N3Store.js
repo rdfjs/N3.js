@@ -35,16 +35,17 @@ export default class N3Store {
   // ### `size` returns the number of quads in the store
   get size() {
     // Return the quad count if if was cached
-    var size = this._size;
+    let size = this._size;
     if (size !== null)
       return size;
 
     // Calculate the number of quads by counting to the deepest level
     size = 0;
-    var graphs = this._graphs, subjects, subject;
-    for (var graphKey in graphs)
-      for (var subjectKey in (subjects = graphs[graphKey].subjects))
-        for (var predicateKey in (subject = subjects[subjectKey]))
+    const graphs = this._graphs;
+    let subjects, subject;
+    for (const graphKey in graphs)
+      for (const subjectKey in (subjects = graphs[graphKey].subjects))
+        for (const predicateKey in (subject = subjects[subjectKey]))
           size += Object.keys(subject[predicateKey]).length;
     return this._size = size;
   }
@@ -55,10 +56,10 @@ export default class N3Store {
   // Returns if the index has changed, if the entry did not already exist.
   _addToIndex(index0, key0, key1, key2) {
     // Create layers as necessary
-    var index1 = index0[key0] || (index0[key0] = {});
-    var index2 = index1[key1] || (index1[key1] = {});
+    const index1 = index0[key0] || (index0[key0] = {});
+    const index2 = index1[key1] || (index1[key1] = {});
     // Setting the key to _any_ value signals the presence of the quad
-    var existed = key2 in index2;
+    const existed = key2 in index2;
     if (!existed)
       index2[key2] = null;
     return !existed;
@@ -67,13 +68,13 @@ export default class N3Store {
   // ### `_removeFromIndex` removes a quad from a three-layered index
   _removeFromIndex(index0, key0, key1, key2) {
     // Remove the quad from the index
-    var index1 = index0[key0], index2 = index1[key1], key;
+    const index1 = index0[key0], index2 = index1[key1];
     delete index2[key2];
 
     // Remove intermediary index layers if they are empty
-    for (key in index2) return;
+    for (const key in index2) return;
     delete index1[key1];
-    for (key in index1) return;
+    for (const key in index1) return;
     delete index0[key0];
   }
 
@@ -88,31 +89,32 @@ export default class N3Store {
   // and iteration halts when it returns truthy for any quad.
   // If instead `array` is given, each result is added to the array.
   _findInIndex(index0, key0, key1, key2, name0, name1, name2, graph, callback, array) {
-    var tmp, index1, index2, varCount = !key0 + !key1 + !key2,
-        // depending on the number of variables, keys or reverse index are faster
+    let tmp, index1, index2;
+    // Depending on the number of variables, keys or reverse index are faster
+    const varCount = !key0 + !key1 + !key2,
         entityKeys = varCount > 1 ? Object.keys(this._ids) : this._entities;
 
     // If a key is specified, use only that part of index 0.
     if (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
-    for (var value0 in index0) {
-      var entity0 = entityKeys[value0];
+    for (const value0 in index0) {
+      const entity0 = entityKeys[value0];
 
       if (index1 = index0[value0]) {
         // If a key is specified, use only that part of index 1.
         if (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
-        for (var value1 in index1) {
-          var entity1 = entityKeys[value1];
+        for (const value1 in index1) {
+          const entity1 = entityKeys[value1];
 
           if (index2 = index1[value1]) {
             // If a key is specified, use only that part of index 2, if it exists.
-            var values = key2 ? (key2 in index2 ? [key2] : []) : Object.keys(index2);
+            const values = key2 ? (key2 in index2 ? [key2] : []) : Object.keys(index2);
             // Create quads for all items found in index 2.
-            for (var l = 0; l < values.length; l++) {
-              var parts = { subject: null, predicate: null, object: null };
+            for (let l = 0; l < values.length; l++) {
+              const parts = { subject: null, predicate: null, object: null };
               parts[name0] = termFromId(entity0, this._factory);
               parts[name1] = termFromId(entity1, this._factory);
               parts[name2] = termFromId(entityKeys[values[l]], this._factory);
-              var quad = this._factory.quad(
+              const quad = this._factory.quad(
                 parts.subject, parts.predicate, parts.object, termFromId(graph, this._factory));
               if (array)
                 array.push(quad);
@@ -128,13 +130,13 @@ export default class N3Store {
 
   // ### `_loop` executes the callback on all keys of index 0
   _loop(index0, callback) {
-    for (var key0 in index0)
+    for (const key0 in index0)
       callback(key0);
   }
 
   // ### `_loopByKey0` executes the callback on all keys of a certain entry in index 0
   _loopByKey0(index0, key0, callback) {
-    var index1, key1;
+    let index1, key1;
     if (index1 = index0[key0]) {
       for (key1 in index1)
         callback(key1);
@@ -143,7 +145,7 @@ export default class N3Store {
 
   // ### `_loopByKey1` executes the callback on given keys of all entries in index 0
   _loopByKey1(index0, key1, callback) {
-    var key0, index1;
+    let key0, index1;
     for (key0 in index0) {
       index1 = index0[key0];
       if (index1[key1])
@@ -153,7 +155,7 @@ export default class N3Store {
 
   // ### `_loopBy2Keys` executes the callback on given keys of certain entries in index 2
   _loopBy2Keys(index0, key0, key1, callback) {
-    var index1, index2, key2;
+    let index1, index2, key2;
     if ((index1 = index0[key0]) && (index2 = index1[key1])) {
       for (key2 in index2)
         callback(key2);
@@ -164,15 +166,15 @@ export default class N3Store {
   // The index base is `index0` and the keys at each level are `key0`, `key1`, and `key2`.
   // Any of these keys can be undefined, which is interpreted as a wildcard.
   _countInIndex(index0, key0, key1, key2) {
-    var count = 0, tmp, index1, index2;
+    let count = 0, tmp, index1, index2;
 
     // If a key is specified, count only that part of index 0
     if (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
-    for (var value0 in index0) {
+    for (const value0 in index0) {
       if (index1 = index0[value0]) {
         // If a key is specified, count only that part of index 1
         if (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
-        for (var value1 in index1) {
+        for (const value1 in index1) {
           if (index2 = index1[value1]) {
             // If a key is specified, count the quad if it exists
             if (key2) (key2 in index2) && count++;
@@ -190,7 +192,7 @@ export default class N3Store {
   _getGraphs(graph) {
     if (!isString(graph))
       return this._graphs;
-    var graphs = {};
+    const graphs = {};
     graphs[graph] = this._graphs[graph];
     return graphs;
   }
@@ -198,7 +200,7 @@ export default class N3Store {
   // ### `_uniqueEntities` returns a function that accepts an entity ID
   // and passes the corresponding entity to callback if it hasn't occurred before.
   _uniqueEntities(callback) {
-    var uniqueIds = Object.create(null);
+    const uniqueIds = Object.create(null);
     return id => {
       if (!(id in uniqueIds)) {
         uniqueIds[id] = true;
@@ -224,7 +226,7 @@ export default class N3Store {
     graph = termToId(graph);
 
     // Find the graph that will contain the triple
-    var graphItem = this._graphs[graph];
+    let graphItem = this._graphs[graph];
     // Create the graph if it doesn't exist yet
     if (!graphItem) {
       graphItem = this._graphs[graph] = { subjects: {}, predicates: {}, objects: {} };
@@ -236,13 +238,13 @@ export default class N3Store {
     // Since entities can often be long IRIs, we avoid storing them in every index.
     // Instead, we have a separate index that maps entities to numbers,
     // which are then used as keys in the other indexes.
-    var ids = this._ids;
-    var entities = this._entities;
+    const ids = this._ids;
+    const entities = this._entities;
     subject   = ids[subject]   || (ids[entities[++this._id] = subject]   = this._id);
     predicate = ids[predicate] || (ids[entities[++this._id] = predicate] = this._id);
     object    = ids[object]    || (ids[entities[++this._id] = object]    = this._id);
 
-    var changed = this._addToIndex(graphItem.subjects,   subject,   predicate, object);
+    const changed = this._addToIndex(graphItem.subjects,   subject,   predicate, object);
     this._addToIndex(graphItem.predicates, predicate, object,    subject);
     this._addToIndex(graphItem.objects,    object,    subject,   predicate);
 
@@ -253,7 +255,7 @@ export default class N3Store {
 
   // ### `addQuads` adds multiple quads to the store
   addQuads(quads) {
-    for (var i = 0; i < quads.length; i++)
+    for (let i = 0; i < quads.length; i++)
       this.addQuad(quads[i]);
   }
 
@@ -278,7 +280,8 @@ export default class N3Store {
 
     // Find internal identifiers for all components
     // and verify the quad exists.
-    var graphItem, ids = this._ids, graphs = this._graphs, subjects, predicates;
+    const ids = this._ids, graphs = this._graphs;
+    let graphItem, subjects, predicates;
     if (!(subject    = ids[subject]) || !(predicate = ids[predicate]) ||
         !(object     = ids[object])  || !(graphItem = graphs[graph])  ||
         !(subjects   = graphItem.subjects[subject]) ||
@@ -300,7 +303,7 @@ export default class N3Store {
 
   // ### `removeQuads` removes multiple quads from the store
   removeQuads(quads) {
-    for (var i = 0; i < quads.length; i++)
+    for (let i = 0; i < quads.length; i++)
       this.removeQuad(quads[i]);
   }
 
@@ -330,8 +333,8 @@ export default class N3Store {
     object = object && termToId(object);
     graph = graph && termToId(graph);
 
-    var quads = [], graphs = this._getGraphs(graph), content,
-        ids = this._ids, subjectId, predicateId, objectId;
+    const quads = [], graphs = this._getGraphs(graph), ids = this._ids;
+    let content, subjectId, predicateId, objectId;
 
     // Translate IRIs to internal index keys.
     if (isString(subject)   && !(subjectId   = ids[subject])   ||
@@ -339,7 +342,7 @@ export default class N3Store {
         isString(object)    && !(objectId    = ids[object]))
       return quads;
 
-    for (var graphId in graphs) {
+    for (const graphId in graphs) {
       // Only if the specified graph contains triples, there can be results
       if (content = graphs[graphId]) {
         // Choose the optimal index, based on what fields are present
@@ -373,11 +376,11 @@ export default class N3Store {
   // ### `match` returns a stream of quads matching a pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   match(subject, predicate, object, graph) {
-    var stream = new Readable({ objectMode: true });
+    const stream = new Readable({ objectMode: true });
 
     // Initialize stream once it is being read
     stream._read = () => {
-      for (var quad of this.getQuads(subject, predicate, object, graph))
+      for (const quad of this.getQuads(subject, predicate, object, graph))
         stream.push(quad);
       stream.push(null);
     };
@@ -394,8 +397,8 @@ export default class N3Store {
     object = object && termToId(object);
     graph = graph && termToId(graph);
 
-    var count = 0, graphs = this._getGraphs(graph), content,
-        ids = this._ids, subjectId, predicateId, objectId;
+    const graphs = this._getGraphs(graph), ids = this._ids;
+    let count = 0, content, subjectId, predicateId, objectId;
 
     // Translate IRIs to internal index keys.
     if (isString(subject)   && !(subjectId   = ids[subject])   ||
@@ -403,7 +406,7 @@ export default class N3Store {
         isString(object)    && !(objectId    = ids[object]))
       return 0;
 
-    for (var graphId in graphs) {
+    for (const graphId in graphs) {
       // Only if the specified graph contains triples, there can be results
       if (content = graphs[graphId]) {
         // Choose the optimal index, based on what fields are present
@@ -441,8 +444,8 @@ export default class N3Store {
   // and returns `true` if it returns truthy for all them.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   every(callback, subject, predicate, object, graph) {
-    var some = false;
-    var every = !this.some(quad => {
+    let some = false;
+    const every = !this.some(quad => {
       some = true;
       return !callback(quad);
     }, subject, predicate, object, graph);
@@ -459,8 +462,8 @@ export default class N3Store {
     object = object && termToId(object);
     graph = graph && termToId(graph);
 
-    var graphs = this._getGraphs(graph), content,
-        ids = this._ids, subjectId, predicateId, objectId;
+    const graphs = this._getGraphs(graph), ids = this._ids;
+    let content, subjectId, predicateId, objectId;
 
     // Translate IRIs to internal index keys.
     if (isString(subject)   && !(subjectId   = ids[subject])   ||
@@ -468,7 +471,7 @@ export default class N3Store {
         isString(object)    && !(objectId    = ids[object]))
       return false;
 
-    for (var graphId in graphs) {
+    for (const graphId in graphs) {
       // Only if the specified graph contains triples, there can be results
       if (content = graphs[graphId]) {
         // Choose the optimal index, based on what fields are present
@@ -513,7 +516,7 @@ export default class N3Store {
   // ### `getSubjects` returns all subjects that match the pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   getSubjects(predicate, object, graph) {
-    var results = [];
+    const results = [];
     this.forSubjects(s => { results.push(s); }, predicate, object, graph);
     return results;
   }
@@ -526,7 +529,8 @@ export default class N3Store {
     object = object && termToId(object);
     graph = graph && termToId(graph);
 
-    var ids = this._ids, graphs = this._getGraphs(graph), content, predicateId, objectId;
+    const ids = this._ids, graphs = this._getGraphs(graph);
+    let content, predicateId, objectId;
     callback = this._uniqueEntities(callback);
 
     // Translate IRIs to internal index keys.
@@ -559,7 +563,7 @@ export default class N3Store {
   // ### `getPredicates` returns all predicates that match the pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   getPredicates(subject, object, graph) {
-    var results = [];
+    const results = [];
     this.forPredicates(p => { results.push(p); }, subject, object, graph);
     return results;
   }
@@ -572,7 +576,8 @@ export default class N3Store {
     object = object && termToId(object);
     graph = graph && termToId(graph);
 
-    var ids = this._ids, graphs = this._getGraphs(graph), content, subjectId, objectId;
+    const ids = this._ids, graphs = this._getGraphs(graph);
+    let content, subjectId, objectId;
     callback = this._uniqueEntities(callback);
 
     // Translate IRIs to internal index keys.
@@ -605,7 +610,7 @@ export default class N3Store {
   // ### `getObjects` returns all objects that match the pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   getObjects(subject, predicate, graph) {
-    var results = [];
+    const results = [];
     this.forObjects(o => { results.push(o); }, subject, predicate, graph);
     return results;
   }
@@ -618,7 +623,8 @@ export default class N3Store {
     predicate = predicate && termToId(predicate);
     graph = graph && termToId(graph);
 
-    var ids = this._ids, graphs = this._getGraphs(graph), content, subjectId, predicateId;
+    const ids = this._ids, graphs = this._getGraphs(graph);
+    let content, subjectId, predicateId;
     callback = this._uniqueEntities(callback);
 
     // Translate IRIs to internal index keys.
@@ -651,7 +657,7 @@ export default class N3Store {
   // ### `getGraphs` returns all graphs that match the pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   getGraphs(subject, predicate, object) {
-    var results = [];
+    const results = [];
     this.forGraphs(g => { results.push(g); }, subject, predicate, object);
     return results;
   }
@@ -659,7 +665,7 @@ export default class N3Store {
   // ### `forGraphs` executes the callback on all graphs that match the pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   forGraphs(callback, subject, predicate, object) {
-    for (var graph in this._graphs) {
+    for (const graph in this._graphs) {
       this.some(quad => {
         callback(quad.graph);
         return true; // Halt iteration of some()
@@ -669,7 +675,7 @@ export default class N3Store {
 
   // ### `createBlankNode` creates a new blank node, returning its name
   createBlankNode(suggestedName) {
-    var name, index;
+    let name, index;
     // Generate a name based on the suggested name
     if (suggestedName) {
       name = suggestedName = '_:' + suggestedName, index = 1;
@@ -690,29 +696,29 @@ export default class N3Store {
   // ### `extractLists` finds and removes all list triples
   // and returns the items per list.
   extractLists({ remove = false, ignoreErrors = false } = {}) {
-    var lists = {}; // has scalar keys so could be a simple Object
-    var onError = ignoreErrors ? (() => true) :
+    const lists = {}; // has scalar keys so could be a simple Object
+    const onError = ignoreErrors ? (() => true) :
                   ((node, message) => { throw new Error(`${node.value} ${message}`); });
 
     // Traverse each list from its tail
-    var tails = this.getQuads(null, namespaces.rdf.rest, namespaces.rdf.nil, null);
-    var toRemove = remove ? [...tails] : [];
+    const tails = this.getQuads(null, namespaces.rdf.rest, namespaces.rdf.nil, null);
+    const toRemove = remove ? [...tails] : [];
     tails.forEach(tailQuad => {
-      var items = [];             // the members found as objects of rdf:first quads
-      var malformed = false;      // signals whether the current list is malformed
-      var head;                   // the head of the list (_:b1 in above example)
-      var headPos;                // set to subject or object when head is set
-      var graph = tailQuad.graph; // make sure list is in exactly one graph
+      const items = [];             // the members found as objects of rdf:first quads
+      let malformed = false;      // signals whether the current list is malformed
+      let head;                   // the head of the list (_:b1 in above example)
+      let headPos;                // set to subject or object when head is set
+      const graph = tailQuad.graph; // make sure list is in exactly one graph
 
       // Traverse the list from tail to end
-      var current = tailQuad.subject;
+      let current = tailQuad.subject;
       while (current && !malformed) {
-        var objectQuads = this.getQuads(null, null, current, null);
-        var subjectQuads = this.getQuads(current, null, null, null);
-        var i, quad, first = null, rest = null, parent = null;
+        const objectQuads = this.getQuads(null, null, current, null);
+        const subjectQuads = this.getQuads(current, null, null, null);
+        let quad, first = null, rest = null, parent = null;
 
         // Find the first and rest of this list node
-        for (i = 0; i < subjectQuads.length && !malformed; i++) {
+        for (let i = 0; i < subjectQuads.length && !malformed; i++) {
           quad = subjectQuads[i];
           if (!quad.graph.equals(graph))
             malformed = onError(current, 'not confined to single graph');
@@ -746,7 +752,7 @@ export default class N3Store {
 
         // { :s :p (1 2) } arrives here with no head
         // { (1 2) :p :o } arrives here with head set to the list.
-        for (i = 0; i < objectQuads.length && !malformed; ++i) {
+        for (let i = 0; i < objectQuads.length && !malformed; ++i) {
           quad = objectQuads[i];
           if (head)
             malformed = onError(current, 'can\'t have coreferences');

@@ -16,7 +16,7 @@ describe('Variable', () => {
   });
 
   describe('A Variable instance created from a name', () => {
-    var variable;
+    let variable;
     before(() => { variable = new Variable('v1'); });
 
     it('should be a Variable', () => {

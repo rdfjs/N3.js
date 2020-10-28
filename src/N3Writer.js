@@ -8,7 +8,7 @@ const DEFAULTGRAPH = N3DataFactory.defaultGraph();
 const { rdf, xsd } = namespaces;
 
 // Characters in literals that require escaping
-var escape    = /["\\\t\n\r\b\f\u0000-\u0019\ud800-\udbff]/,
+const escape    = /["\\\t\n\r\b\f\u0000-\u0019\ud800-\udbff]/,
     escapeAll = /["\\\t\n\r\b\f\u0000-\u0019]|[\ud800-\udbff][\udc00-\udfff]/g,
     escapedCharacters = {
       '\\': '\\\\', '"': '\\"', '\t': '\\t',
@@ -38,7 +38,7 @@ export default class N3Writer {
 
     // If no output stream given, send the output as string through the end callback
     if (!outputStream) {
-      var output = '';
+      let output = '';
       this._outputStream = {
         write(chunk, encoding, done) { output += chunk; done && done(); },
         end: done => { done && done(null, output); },
@@ -144,11 +144,11 @@ export default class N3Writer {
       return 'id' in entity ? entity.id : '_:' + entity.value;
     }
     // Escape special characters
-    var iri = entity.value;
+    let iri = entity.value;
     if (escape.test(iri))
       iri = iri.replace(escapeAll, characterReplacer);
     // Try to represent the IRI as prefixed name
-    var prefixMatch = this._prefixRegex.exec(iri);
+    const prefixMatch = this._prefixRegex.exec(iri);
     return !prefixMatch ? '<' + iri + '>' :
            (!prefixMatch[1] ? iri : this._prefixIRIs[prefixMatch[1]] + prefixMatch[2]);
   }
@@ -156,7 +156,7 @@ export default class N3Writer {
   // ### `_encodeLiteral` represents a literal
   _encodeLiteral(literal) {
     // Escape special characters
-    var value = literal.value;
+    let value = literal.value;
     if (escape.test(value))
       value = value.replace(escapeAll, characterReplacer);
     // Write the literal, possibly with type or language
@@ -214,22 +214,22 @@ export default class N3Writer {
 
   // ### `addQuads` adds the quads to the output stream
   addQuads(quads) {
-    for (var i = 0; i < quads.length; i++)
+    for (let i = 0; i < quads.length; i++)
       this.addQuad(quads[i]);
   }
 
   // ### `addPrefix` adds the prefix to the output stream
   addPrefix(prefix, iri, done) {
-    var prefixes = {};
+    const prefixes = {};
     prefixes[prefix] = iri;
     this.addPrefixes(prefixes, done);
   }
 
   // ### `addPrefixes` adds the prefixes to the output stream
   addPrefixes(prefixes, done) {
-    var prefixIRIs = this._prefixIRIs, hasPrefixes = false;
-    for (var prefix in prefixes) {
-      var iri = prefixes[prefix];
+    let hasPrefixes = false;
+    for (let prefix in prefixes) {
+      let iri = prefixes[prefix];
       if (typeof iri !== 'string')
         iri = iri.value;
       hasPrefixes = true;
@@ -239,15 +239,15 @@ export default class N3Writer {
         this._subject = null, this._graph = '';
       }
       // Store and write the prefix
-      prefixIRIs[iri] = (prefix += ':');
+      this._prefixIRIs[iri] = (prefix += ':');
       this._write('@prefix ' + prefix + ' <' + iri + '>.\n');
     }
     // Recreate the prefix matcher
     if (hasPrefixes) {
-      var IRIlist = '', prefixList = '';
-      for (var prefixIRI in prefixIRIs) {
+      let IRIlist = '', prefixList = '';
+      for (const prefixIRI in this._prefixIRIs) {
         IRIlist += IRIlist ? '|' + prefixIRI : prefixIRI;
-        prefixList += (prefixList ? '|' : '') + prefixIRIs[prefixIRI];
+        prefixList += (prefixList ? '|' : '') + this._prefixIRIs[prefixIRI];
       }
       IRIlist = IRIlist.replace(/[\]\/\(\)\*\+\?\.\\\$]/g, '\\$&');
       this._prefixRegex = new RegExp('^(?:' + prefixList + ')[^\/]*$|' +
@@ -259,7 +259,7 @@ export default class N3Writer {
 
   // ### `blank` creates a blank node with the given content
   blank(predicate, object) {
-    var children = predicate, child, length;
+    let children = predicate, child, length;
     // Empty blank node
     if (predicate === undefined)
       children = [];
@@ -282,9 +282,9 @@ export default class N3Writer {
                                   this._encodeObject(child.object) + ' ]');
     // Generate a multi-triple or nested blank node
     default:
-      var contents = '[';
+      let contents = '[';
       // Write all triples in order
-      for (var i = 0; i < length; i++) {
+      for (let i = 0; i < length; i++) {
         child = children[i];
         // Write only the object is the predicate is the same as the previous
         if (child.predicate.equals(predicate))
@@ -303,8 +303,8 @@ export default class N3Writer {
 
   // ### `list` creates a list node with the given content
   list(elements) {
-    var length = elements && elements.length || 0, contents = new Array(length);
-    for (var i = 0; i < length; i++)
+    const length = elements && elements.length || 0, contents = new Array(length);
+    for (let i = 0; i < length; i++)
       contents[i] = this._encodeObject(elements[i]);
     return new SerializedTerm('(' + contents.join(' ') + ')');
   }
@@ -320,7 +320,7 @@ export default class N3Writer {
     this._write = this._blockedWrite;
 
     // Try to end the underlying stream, ensuring done is called exactly one time
-    var singleDone = done && ((error, result) => { singleDone = null, done(error, result); });
+    let singleDone = done && ((error, result) => { singleDone = null, done(error, result); });
     if (this._endStream) {
       try { return this._outputStream.end(singleDone); }
       catch (error) { /* error closing stream */ }
@@ -332,7 +332,7 @@ export default class N3Writer {
 // Replaces a character by its escaped version
 function characterReplacer(character) {
   // Replace a single character by its escaped version
-  var result = escapedCharacters[character];
+  let result = escapedCharacters[character];
   if (result === undefined) {
     // Replace a single character with its 4-bit unicode escape sequence
     if (character.length === 1) {

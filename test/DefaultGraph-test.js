@@ -16,7 +16,7 @@ describe('DefaultGraph', () => {
   });
 
   describe('A DefaultGraph instance', () => {
-    var defaultGraph;
+    let defaultGraph;
     before(() => { defaultGraph = new DefaultGraph(); });
 
     it('should be a DefaultGraph', () => {

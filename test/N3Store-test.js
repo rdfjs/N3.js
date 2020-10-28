@@ -22,7 +22,7 @@ describe('Store', () => {
   });
 
   describe('An empty Store', () => {
-    var store = new Store({});
+    const store = new Store({});
 
     it('should have size 0', () => {
       expect(store.size).to.eql(0);
@@ -34,11 +34,11 @@ describe('Store', () => {
 
     describe('when importing a stream of 2 quads', () => {
       before(done => {
-        var stream = new ArrayReader([
+        const stream = new ArrayReader([
           new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
           new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
         ]);
-        var events = store.import(stream);
+        const events = store.import(stream);
         events.on('end', done);
       });
 
@@ -47,11 +47,11 @@ describe('Store', () => {
 
     describe('when removing a stream of 2 quads', () => {
       before(done => {
-        var stream = new ArrayReader([
+        const stream = new ArrayReader([
           new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
           new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
         ]);
-        var events = store.remove(stream);
+        const events = store.remove(stream);
         events.on('end', done);
       });
 
@@ -60,11 +60,11 @@ describe('Store', () => {
 
     describe('when importing a stream of 2 nested quads', () => {
       before(done => {
-        var stream = new ArrayReader([
+        const stream = new ArrayReader([
           new Quad(new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')), new NamedNode('p2'), new NamedNode('o2')),
           new Quad(new NamedNode('s1'), new NamedNode('p1'), new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2'))),
         ]);
-        var events = store.import(stream);
+        const events = store.import(stream);
         events.on('end', done);
       });
 
@@ -73,11 +73,11 @@ describe('Store', () => {
 
     describe('when removing a stream of 2 nested quads', () => {
       before(done => {
-        var stream = new ArrayReader([
+        const stream = new ArrayReader([
           new Quad(new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')), new NamedNode('p2'), new NamedNode('o2')),
           new Quad(new NamedNode('s1'), new NamedNode('p1'), new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2'))),
         ]);
-        var events = store.remove(stream);
+        const events = store.remove(stream);
         events.on('end', done);
       });
 
@@ -140,7 +140,7 @@ describe('Store', () => {
   });
 
   describe('A Store with initialized with 5 elements', () => {
-    var store = new Store([
+    const store = new Store([
       new Quad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), new NamedNode('p1'), new NamedNode('o1')),
       new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
       new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
@@ -268,7 +268,7 @@ describe('Store', () => {
     });
 
     it('should match RDF* and normal quads at the same time', done => {
-      let stream = store.removeMatches(null, 'p1', 'o2');
+      const stream = store.removeMatches(null, 'p1', 'o2');
       stream.on('end', () => {
         store.size.should.eql(3);
         done();
@@ -276,7 +276,7 @@ describe('Store', () => {
     });
 
     it('should allow matching using a quad', done => {
-      let stream = store.removeMatches(termToId(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'))));
+      const stream = store.removeMatches(termToId(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'))));
       stream.on('end', () => {
         store.size.should.eql(1);
         done();
@@ -286,7 +286,7 @@ describe('Store', () => {
 
 
   describe('A Store with 5 elements', () => {
-    var store = new Store();
+    const store = new Store();
     store.addQuad('s1', 'p1', 'o1').should.be.true;
     store.addQuad({ subject: 's1', predicate: 'p1', object: 'o2' }).should.be.true;
     store.addQuads([
@@ -864,7 +864,7 @@ describe('Store', () => {
     });
 
     describe('every', () => {
-      var count = 3;
+      let count = 3;
       function thirdTimeFalse() { return count-- === 0; }
 
       describe('with no parameters and a callback always returning true', () => {
@@ -885,7 +885,7 @@ describe('Store', () => {
     });
 
     describe('some', () => {
-      var count = 3;
+      let count = 3;
       function thirdTimeFalse() { return count-- !== 0; }
 
       describe('with no parameters and a callback always returning true', () => {
@@ -1133,8 +1133,8 @@ describe('Store', () => {
   });
 
   describe('A Store containing a blank node', () => {
-    var store = new Store();
-    var b1 = store.createBlankNode();
+    const store = new Store();
+    const b1 = store.createBlankNode();
     store.addQuad(new NamedNode('s1'), new NamedNode('p1'), b1).should.be.true;
 
     describe('when searched with more than one variable', () => {
@@ -1151,7 +1151,8 @@ describe('Store', () => {
   });
 
   describe('A Store with a custom DataFactory', () => {
-    var store, factory = {};
+    const factory = {};
+    let store;
     before(() => {
       factory.quad = function (s, p, o, g) { return { s: s, p: p, o: o, g: g }; };
       ['namedNode', 'blankNode', 'literal', 'variable', 'defaultGraph'].forEach(f => {
@@ -1180,7 +1181,7 @@ describe('Store', () => {
   });
 
   describe('A Store', () => {
-    var store = new Store();
+    const store = new Store();
 
     // Test inspired by http://www.devthought.com/2012/01/18/an-object-is-not-a-hash/.
     // The value `__proto__` is not supported however – fixing it introduces too much overhead.
@@ -1197,10 +1198,10 @@ describe('Store', () => {
   });
 
   describe('A Store containing a well-formed rdf:Collection as subject', () => {
-    var store = new Store();
-    var listElements = addList(store, new NamedNode('element1'), new Literal('"element2"'));
+    const store = new Store();
+    const listElements = addList(store, new NamedNode('element1'), new Literal('"element2"'));
     store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o1')).should.be.true;
-    var listItemsJSON = {
+    const listItemsJSON = {
       b0: [
         { termType: 'NamedNode', value: 'element1' },
         { termType: 'Literal', value: 'element2',
@@ -1209,7 +1210,7 @@ describe('Store', () => {
     };
 
     describe('extractLists without remove', () => {
-      var lists = store.extractLists();
+      const lists = store.extractLists();
       it('should not delete triples',
         shouldIncludeAll(store.getQuads(),
           ['_:' + listElements[0].value, 'p1', 'o1'],
@@ -1224,7 +1225,7 @@ describe('Store', () => {
     });
 
     describe('extractLists with remove', () => {
-      var lists = store.extractLists({ remove: true });
+      const lists = store.extractLists({ remove: true });
       it('should remove the first/rest triples and return the list members',
         shouldIncludeAll(store.getQuads(),
                          ['_:' + listElements[0].value, 'p1', 'o1']));
@@ -1235,10 +1236,10 @@ describe('Store', () => {
   });
 
   describe('A Store containing a well-formed rdf:Collection as object', () => {
-    var store = new Store();
-    var listElements = addList(store, new NamedNode('element1'), new Literal('"element2"'));
+    const store = new Store();
+    const listElements = addList(store, new NamedNode('element1'), new Literal('"element2"'));
     store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0]).should.be.true;
-    var listItemsJSON = {
+    const listItemsJSON = {
       b0: [
         { termType: 'NamedNode', value: 'element1' },
         { termType: 'Literal', value: 'element2',
@@ -1247,7 +1248,7 @@ describe('Store', () => {
     };
 
     describe('extractLists without remove', () => {
-      var lists = store.extractLists();
+      const lists = store.extractLists();
       it('should not delete triples',
         shouldIncludeAll(store.getQuads(),
           ['s1', 'p1', '_:' + listElements[0].value],
@@ -1262,7 +1263,7 @@ describe('Store', () => {
     });
 
     describe('extractLists with remove', () => {
-      var lists = store.extractLists({ remove: true });
+      const lists = store.extractLists({ remove: true });
       it('should remove the first/rest triples and return the list members',
         shouldIncludeAll(store.getQuads(),
                          ['s1', 'p1', '_:' + listElements[0].value]));
@@ -1273,12 +1274,12 @@ describe('Store', () => {
   });
 
   describe('A Store containing a well-formed rdf:Collection that is not attached', () => {
-    var store = new Store();
-    var listElements = addList(store, new NamedNode('element1'), new Literal('"element2"'));
+    const store = new Store();
+    const listElements = addList(store, new NamedNode('element1'), new Literal('"element2"'));
     store.addQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'));
 
     describe('extractLists without remove', () => {
-      var lists = store.extractLists();
+      const lists = store.extractLists();
       it('should not delete triples',
         shouldIncludeAll(store.getQuads(),
           ['s1', 'p1', 'o1'],
@@ -1293,7 +1294,7 @@ describe('Store', () => {
     });
 
     describe('extractLists with remove', () => {
-      var lists = store.extractLists({ remove: true });
+      const lists = store.extractLists({ remove: true });
       it('should remove the first/rest triples and return the list members',
         shouldIncludeAll(store.getQuads(),
                          ['s1', 'p1', 'o1']));
@@ -1304,7 +1305,7 @@ describe('Store', () => {
   });
 
   describe('A Store containing a rdf:Collection without first', () => {
-    var store = new Store();
+    const store = new Store();
     store.addQuad(store.createBlankNode(), new NamedNode(namespaces.rdf.rest), namespaces.rdf.nil).should.be.true;
 
     it('extractLists throws an error', () => {
@@ -1313,8 +1314,8 @@ describe('Store', () => {
   });
 
   describe('A Store containing an rdf:Collection with multiple rdf:first arcs on head', () => {
-    var store = new Store();
-    var listElements = addList(store, store.createBlankNode(), store.createBlankNode());
+    const store = new Store();
+    const listElements = addList(store, store.createBlankNode(), store.createBlankNode());
     store.addQuad(listElements[0], new NamedNode(namespaces.rdf.first), store.createBlankNode()).should.be.true;
 
     it('extractLists throws an error', () => {
@@ -1323,8 +1324,8 @@ describe('Store', () => {
   });
 
   describe('A Store containing an rdf:Collection with multiple rdf:first arcs on tail', () => {
-    var store = new Store();
-    var listElements = addList(store, store.createBlankNode(), store.createBlankNode());
+    const store = new Store();
+    const listElements = addList(store, store.createBlankNode(), store.createBlankNode());
     store.addQuad(listElements[1], new NamedNode(namespaces.rdf.first), store.createBlankNode()).should.be.true;
 
     it('extractLists throws an error', () => {
@@ -1333,8 +1334,8 @@ describe('Store', () => {
   });
 
   describe('A Store containing an rdf:Collection with multiple rdf:rest arcs on head', () => {
-    var store = new Store();
-    var listElements = addList(store, store.createBlankNode(), store.createBlankNode());
+    const store = new Store();
+    const listElements = addList(store, store.createBlankNode(), store.createBlankNode());
     store.addQuad(listElements[0], new NamedNode(namespaces.rdf.rest), store.createBlankNode()).should.be.true;
 
     it('extractLists throws an error', () => {
@@ -1343,8 +1344,8 @@ describe('Store', () => {
   });
 
   describe('A Store containing an rdf:Collection with multiple rdf:rest arcs on tail', () => {
-    var store = new Store();
-    var listElements = addList(store, store.createBlankNode(), store.createBlankNode());
+    const store = new Store();
+    const listElements = addList(store, store.createBlankNode(), store.createBlankNode());
     store.addQuad(listElements[1], new NamedNode(namespaces.rdf.rest), store.createBlankNode()).should.be.true;
 
     it('extractLists throws an error', () => {
@@ -1353,8 +1354,8 @@ describe('Store', () => {
   });
 
   describe('A Store containing an rdf:Collection with non-list arcs out', () => {
-    var store = new Store();
-    var listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
+    const store = new Store();
+    const listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
     store.addQuad(listElements[1], new NamedNode('http://a.example/foo'), store.createBlankNode()).should.be.true;
 
     it('extractLists throws an error', () => {
@@ -1363,8 +1364,8 @@ describe('Store', () => {
   });
 
   describe('A Store containing an rdf:Collection with multiple incoming rdf:rest arcs', () => {
-    var store = new Store();
-    var listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
+    const store = new Store();
+    const listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
     store.addQuad(store.createBlankNode(), new NamedNode(namespaces.rdf.rest), listElements[1]).should.be.true;
 
     it('extractLists throws an error', () => {
@@ -1373,8 +1374,8 @@ describe('Store', () => {
   });
 
   describe('A Store containing an rdf:Collection with co-references out of head', () => {
-    var store = new Store();
-    var listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
+    const store = new Store();
+    const listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
     store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o1')).should.be.true;
     store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o2')).should.be.true;
 
@@ -1384,8 +1385,8 @@ describe('Store', () => {
   });
 
   describe('A Store containing an rdf:Collection with co-references into head', () => {
-    var store = new Store();
-    var listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
+    const store = new Store();
+    const listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
     store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0]).should.be.true;
     store.addQuad(new NamedNode('s2'), new NamedNode(namespaces.rdf.rest), listElements[0]).should.be.true;
     store.addQuad(new NamedNode('s2'), new NamedNode('p1'), listElements[0]).should.be.true;
@@ -1396,10 +1397,10 @@ describe('Store', () => {
   });
 
   describe('A Store containing an rdf:Collection spread across graphs', () => {
-    var member0 = new NamedNode('element1');
-    var member1 = new Literal('"element2"');
-    var store = new Store();
-    var listElements = [
+    const member0 = new NamedNode('element1');
+    const member1 = new Literal('"element2"');
+    const store = new Store();
+    const listElements = [
       store.createBlankNode(),
       store.createBlankNode(),
     ];
@@ -1416,7 +1417,7 @@ describe('Store', () => {
     });
 
     describe('extractLists with ignoreErrors', () => {
-      var lists = store.extractLists({ ignoreErrors: true });
+      const lists = store.extractLists({ ignoreErrors: true });
       it('should not delete triples',
         shouldIncludeAll(store.getQuads(),
           ['s1', 'p1', '_:' + listElements[0].value],
@@ -1436,7 +1437,7 @@ function alwaysTrue()  { return true;  }
 function alwaysFalse() { return false; }
 
 function collect(store, method, arg1, arg2, arg3, arg4) {
-  var results = [];
+  const results = [];
   store[method](r => results.push(r),
     arg1 && termFromId(arg1),
     arg2 && termFromId(arg2),
@@ -1454,20 +1455,20 @@ function itShouldBeEmpty(result) {
 }
 
 function shouldIncludeAll(result) {
-  var items = Array.prototype.slice.call(arguments, 1).map(arg => {
+  const items = Array.prototype.slice.call(arguments, 1).map(arg => {
     return new Quad(termFromId(arg[0]), termFromId(arg[1]), termFromId(arg[2]), termFromId(arg[3] || ''));
   });
   return function () {
     if (typeof result === 'function') result = result();
     result = result.map(r => { return r.toJSON(); });
     result.should.have.length(items.length);
-    for (var i = 0; i < items.length; i++)
+    for (let i = 0; i < items.length; i++)
       result.should.include.something.that.deep.equals(items[i].toJSON());
   };
 }
 
 function forResultStream(testFunction, result) {
-  var items = Array.prototype.slice.call(arguments, 2);
+  const items = Array.prototype.slice.call(arguments, 2);
   return function (done) {
     if (typeof result === 'function') result = result();
     arrayifyStream(result)
@@ -1480,7 +1481,7 @@ function forResultStream(testFunction, result) {
 }
 
 function ArrayReader(items) {
-  var reader = new Readable({ objectMode: true });
+  const reader = new Readable({ objectMode: true });
   reader._read = function () { this.push(items.shift() || null); };
   return reader;
 }
@@ -1489,7 +1490,7 @@ function addList(store, ...items) {
   if (!items.length)
     return new NamedNode(namespaces.rdf.nil);
 
-  var listElements = [store.createBlankNode()];
+  const listElements = [store.createBlankNode()];
   items.forEach((item, i) => {
     store.addQuad(listElements[i], new NamedNode(namespaces.rdf.first), item);
     if (i === items.length - 1)
@@ -1503,7 +1504,7 @@ function addList(store, ...items) {
 }
 
 function listsToJSON(lists) {
-  for (var list in lists)
+  for (const list in lists)
     lists[list] = lists[list].map(i => i.toJSON());
   return lists;
 }

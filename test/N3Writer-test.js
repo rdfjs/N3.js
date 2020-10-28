@@ -20,18 +20,18 @@ describe('Writer', () => {
 
   describe('A Writer instance', () => {
     it('should serialize a single triple', () => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.quadToString(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')).should.equal('<a> <b> <c> .\n');
     });
 
     it('should serialize a single quad', () => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.quadToString(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')).should.equal('<a> <b> <c> <g> .\n');
     });
 
     it('should serialize an array of triples', () => {
-      var writer = new Writer();
-      var triples = [new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')),
+      const writer = new Writer();
+      const triples = [new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')),
         new Quad(new NamedNode('d'), new NamedNode('e'), new NamedNode('f'))];
       writer.quadsToString(triples).should.equal('<a> <b> <c> .\n<d> <e> <f> .\n');
     });
@@ -208,7 +208,7 @@ describe('Writer', () => {
                       '_:\ud835\udc00 {\n_:\ud835\udc00 _:\ud835\udc00 _:\ud835\udc00\n}\n'));
 
     it('calls the done callback when ending the outputstream errors', done => {
-      var writer = new Writer({
+      const writer = new Writer({
         write: function () {},
         end: function () { throw new Error('error'); },
       });
@@ -216,7 +216,8 @@ describe('Writer', () => {
     });
 
     it('sends output through end when no stream argument is given', done => {
-      var writer = new Writer(), notCalled = true;
+      const writer = new Writer();
+      let notCalled = true;
       writer.addQuad(new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')), () => { notCalled = false; });
       writer.end((error, output) => {
         output.should.equal('<a> <b> <c>.\n');
@@ -225,7 +226,7 @@ describe('Writer', () => {
     });
 
     it('respects the prefixes argument when no stream argument is given', done => {
-      var writer = new Writer({ prefixes: { a: 'b#' } });
+      const writer = new Writer({ prefixes: { a: 'b#' } });
       writer.addQuad(new Quad(new NamedNode('b#a'), new NamedNode('b#b'), new NamedNode('b#c')));
       writer.end((error, output) => {
         output.should.equal('@prefix a: <b#>.\n\na:a a:b a:c.\n');
@@ -234,7 +235,7 @@ describe('Writer', () => {
     });
 
     it('ignores an empty prefix list', done => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.addPrefixes({});
       writer.addQuad(new Quad(new NamedNode('b#a'), new NamedNode('b#b'), new NamedNode('b#c')));
       writer.end((error, output) => {
@@ -244,7 +245,7 @@ describe('Writer', () => {
     });
 
     it('serializes triples of a graph with a prefix declaration in between', done => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.addQuad(new Quad(new NamedNode('b#a'), new NamedNode('b#b'), new NamedNode('b#c')));
       writer.addPrefix('a', 'b#');
       writer.addQuad(new Quad(new NamedNode('b#a'), new NamedNode('b#b'), new NamedNode('b#c'), new NamedNode('b#g')));
@@ -259,7 +260,7 @@ describe('Writer', () => {
     });
 
     it('should accept triples with separated components', done => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'));
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('d'));
       writer.end((error, output) => {
@@ -269,7 +270,7 @@ describe('Writer', () => {
     });
 
     it('should accept quads with separated components', done => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g'));
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('d'), new NamedNode('g'));
       writer.end((error, output) => {
@@ -279,7 +280,7 @@ describe('Writer', () => {
     });
 
     it('should serialize triples with an empty blank node as object', done => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.addQuad(new NamedNode('a1'), new NamedNode('b'), writer.blank());
       writer.addQuad(new NamedNode('a2'), new NamedNode('b'), writer.blank([]));
       writer.end((error, output) => {
@@ -290,7 +291,7 @@ describe('Writer', () => {
     });
 
     it('should serialize triples with a one-triple blank node as object', done => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.addQuad(new NamedNode('a1'), new NamedNode('b'), writer.blank(new NamedNode('d'), new NamedNode('e')));
       writer.addQuad(new NamedNode('a2'), new NamedNode('b'), writer.blank({ predicate: new NamedNode('d'), object: new NamedNode('e') }));
       writer.addQuad(new NamedNode('a3'), new NamedNode('b'), writer.blank([{ predicate: new NamedNode('d'), object: new NamedNode('e') }]));
@@ -303,7 +304,7 @@ describe('Writer', () => {
     });
 
     it('should serialize triples with a two-triple blank node as object', done => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), writer.blank([
           { predicate: new NamedNode('d'), object: new NamedNode('e') },
           { predicate: new NamedNode('f'), object: new Literal('"g"') },
@@ -318,7 +319,7 @@ describe('Writer', () => {
     });
 
     it('should serialize triples with a three-triple blank node as object', done => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), writer.blank([
         { predicate: new NamedNode('d'), object: new NamedNode('e') },
         { predicate: new NamedNode('f'), object: new Literal('"g"') },
@@ -335,7 +336,7 @@ describe('Writer', () => {
     });
 
     it('should serialize triples with predicate-sharing blank node triples as object', done => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), writer.blank([
         { predicate: new NamedNode('d'), object: new NamedNode('e') },
         { predicate: new NamedNode('d'), object: new NamedNode('f') },
@@ -352,7 +353,7 @@ describe('Writer', () => {
     });
 
     it('should serialize triples with nested blank nodes as object', done => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.addQuad(new NamedNode('a1'), new NamedNode('b'), writer.blank([
         { predicate: new NamedNode('d'), object: writer.blank() },
       ]));
@@ -385,7 +386,7 @@ describe('Writer', () => {
     });
 
     it('should serialize triples with an empty blank node as subject', done => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.addQuad(writer.blank(), new NamedNode('b'), new NamedNode('c'));
       writer.addQuad(writer.blank([]), new NamedNode('b'), new NamedNode('c'));
       writer.end((error, output) => {
@@ -396,7 +397,7 @@ describe('Writer', () => {
     });
 
     it('should serialize triples with a one-triple blank node as subject', done => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.addQuad(writer.blank(new NamedNode('a'), new NamedNode('b')), new NamedNode('c'), new NamedNode('d'));
       writer.addQuad(writer.blank({ predicate: new NamedNode('a'), object: new NamedNode('b') }), new NamedNode('c'), new NamedNode('d'));
       writer.addQuad(writer.blank([{ predicate: new NamedNode('a'), object: new NamedNode('b') }]), new NamedNode('c'), new NamedNode('d'));
@@ -409,7 +410,7 @@ describe('Writer', () => {
     });
 
     it('should serialize triples with an empty blank node as graph', done => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), writer.blank());
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), writer.blank([]));
       writer.end((error, output) => {
@@ -420,7 +421,7 @@ describe('Writer', () => {
     });
 
     it('should serialize triples with an empty list as object', done => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.addQuad(new NamedNode('a1'), new NamedNode('b'), writer.list());
       writer.addQuad(new NamedNode('a2'), new NamedNode('b'), writer.list([]));
       writer.end((error, output) => {
@@ -431,7 +432,7 @@ describe('Writer', () => {
     });
 
     it('should serialize triples with a one-element list as object', done => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.addQuad(new NamedNode('a1'), new NamedNode('b'), writer.list([new NamedNode('c')]));
       writer.addQuad(new NamedNode('a2'), new NamedNode('b'), writer.list([new Literal('"c"')]));
       writer.end((error, output) => {
@@ -442,7 +443,7 @@ describe('Writer', () => {
     });
 
     it('should serialize triples with a three-element list as object', done => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.addQuad(new NamedNode('a1'), new NamedNode('b'), writer.list([new NamedNode('c'), new NamedNode('d'), new NamedNode('e')]));
       writer.addQuad(new NamedNode('a2'), new NamedNode('b'), writer.list([new Literal('"c"'), new Literal('"d"'), new Literal('"e"')]));
       writer.end((error, output) => {
@@ -453,7 +454,7 @@ describe('Writer', () => {
     });
 
     it('should serialize triples with an empty list as subject', done => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.addQuad(writer.list(),   new NamedNode('b1'), new NamedNode('c'));
       writer.addQuad(writer.list([]), new NamedNode('b2'), new NamedNode('c'));
       writer.end((error, output) => {
@@ -464,7 +465,7 @@ describe('Writer', () => {
     });
 
     it('should serialize triples with a one-element list as subject', done => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.addQuad(writer.list([new NamedNode('a')]), new NamedNode('b1'), new NamedNode('c'));
       writer.addQuad(writer.list([new NamedNode('a')]), new NamedNode('b2'), new NamedNode('c'));
       writer.end((error, output) => {
@@ -475,7 +476,7 @@ describe('Writer', () => {
     });
 
     it('should serialize triples with a three-element list as subject', done => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.addQuad(writer.list([new NamedNode('a1'), new Literal('"b"'), new Literal('"c"')]), new NamedNode('d'), new NamedNode('e'));
       writer.end((error, output) => {
         output.should.equal('(<a1> "b" "c") <d> <e>.\n');
@@ -484,12 +485,12 @@ describe('Writer', () => {
     });
 
     it('should serialize subject and object triples passed by options.listHeads', done => {
-      var lists = {
+      const lists = {
         l1: [new NamedNode('c'), new NamedNode('d'), new NamedNode('e')],
         l2: [new Literal('c'), new Literal('d'), new Literal('e')],
       };
 
-      var writer = new Writer({ lists });
+      const writer = new Writer({ lists });
       writer.addQuad(new BlankNode('l1'), new NamedNode('b'), new BlankNode('l2'));
       writer.addQuad(new NamedNode('a3'), new NamedNode('b'), new BlankNode('m3'));
       writer.end((error, output) => {
@@ -500,7 +501,7 @@ describe('Writer', () => {
     });
 
     it('should accept triples in bulk', done => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.addQuads([new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')),
         new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('d'))]);
       writer.end((error, output) => {
@@ -510,7 +511,7 @@ describe('Writer', () => {
     });
 
     it('should not allow writing after end', done => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.addQuad(new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')));
       writer.end();
       writer.addQuad(new Quad(new NamedNode('d'), new NamedNode('e'), new NamedNode('f')), error => {
@@ -521,7 +522,7 @@ describe('Writer', () => {
     });
 
     it('should write simple triples in N-Quads mode', done => {
-      var writer = new Writer({ format: 'N-Quads' });
+      const writer = new Writer({ format: 'N-Quads' });
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'));
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('d'));
       writer.end((error, output) => {
@@ -531,8 +532,8 @@ describe('Writer', () => {
     });
 
     it('should write simple quads in N-Quads mode', done => {
-      var writer = new Writer({ format: 'N-Quads' });
-      var called = false;
+      const writer = new Writer({ format: 'N-Quads' });
+      let called = false;
       function callback() { called = true; }
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), callback);
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('d'), new NamedNode('g'));
@@ -544,7 +545,7 @@ describe('Writer', () => {
     });
 
     it('should end when the end option is not set', done => {
-      var outputStream = new QuickStream(), writer = new Writer(outputStream, {});
+      const outputStream = new QuickStream(), writer = new Writer(outputStream, {});
       outputStream.should.have.property('ended', false);
       writer.end(() => {
         outputStream.should.have.property('ended', true);
@@ -553,7 +554,7 @@ describe('Writer', () => {
     });
 
     it('should end when the end option is set to true', done => {
-      var outputStream = new QuickStream(), writer = new Writer(outputStream, { end: true });
+      const outputStream = new QuickStream(), writer = new Writer(outputStream, { end: true });
       outputStream.should.have.property('ended', false);
       writer.end(() => {
         outputStream.should.have.property('ended', true);
@@ -562,7 +563,7 @@ describe('Writer', () => {
     });
 
     it('should not end when the end option is set to false', done => {
-      var outputStream = new QuickStream(), writer = new Writer(outputStream, { end: false });
+      const outputStream = new QuickStream(), writer = new Writer(outputStream, { end: false });
       outputStream.should.have.property('ended', false);
       writer.end(() => {
         outputStream.should.have.property('ended', false);
@@ -571,82 +572,82 @@ describe('Writer', () => {
     });
 
     it('should serialize a triple with a triple with mixed component types as subject', () => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.quadToString(new Quad(new BlankNode('b1'), new NamedNode('b'), new Literal('l1')), new NamedNode('b'), new NamedNode('c')).should.equal('<<_:b1 <b> "l">> <b> <c> .\n');
     });
 
     it('should serialize a triple with a triple with iris as subject', () => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.quadToString(new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')), new NamedNode('b'), new NamedNode('c')).should.equal('<<<a> <b> <c>>> <b> <c> .\n');
     });
 
     it('should serialize a triple with a triple with blanknodes as subject', () => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.quadToString(new Quad(new BlankNode('b1'), new BlankNode('b2'), new BlankNode('b3')), new NamedNode('b'), new NamedNode('c')).should.equal('<<_:b1 _:b2 _:b3>> <b> <c> .\n');
     });
 
     it('should serialize a triple with a triple as object', () => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new BlankNode('b1'), new NamedNode('b'), new Literal('l1'))).should.equal('<a> <b> <<_:b1 <b> "l">> .\n');
     });
 
     it('should serialize a triple with a triple with iris as object', () => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))).should.equal('<a> <b> <<<a> <b> <c>>> .\n');
     });
 
     it('should serialize a triple with a triple with blanknodes as object', () => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new BlankNode('b1'), new BlankNode('b2'), new BlankNode('b3'))).should.equal('<a> <b> <<_:b1 _:b2 _:b3>> .\n');
     });
 
     it('should serialize a quad with a triple with mixed component types as subject', () => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.quadToString(new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')).should.equal('<<<a> <b> <c>>> <b> <c> <g> .\n');
     });
 
     it('should serialize a quad with a triple as object', () => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')), new NamedNode('g')).should.equal('<a> <b> <<<a> <b> <c>>> <g> .\n');
     });
 
     it('should serialize a quad with a quad as subject', () => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.quadToString(new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')).should.equal('<<<a> <b> <c> <g>>> <b> <c> <g> .\n');
     });
 
     it('should serialize a quad with a quad as object', () => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')), new NamedNode('g')).should.equal('<a> <b> <<<a> <b> <c> <g>>> <g> .\n');
     });
 
     it('should serialize a triple with a quad as subject', () => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.quadToString(new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')), new NamedNode('b'), new NamedNode('c')).should.equal('<<<a> <b> <c> <g>>> <b> <c> .\n');
     });
 
     it('should serialize a triple with a quad as object', () => {
-      var writer = new Writer();
+      const writer = new Writer();
       writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g'))).should.equal('<a> <b> <<<a> <b> <c> <g>>> .\n');
     });
   });
 });
 
 function shouldSerialize(/* prefixes?, tripleArrays..., expectedResult */) {
-  var tripleArrays = Array.prototype.slice.call(arguments),
+  const tripleArrays = Array.prototype.slice.call(arguments),
       expectedResult = tripleArrays.pop(),
       prefixes = tripleArrays[0] instanceof Array ? null : tripleArrays.shift();
 
   return function (done) {
-    var outputStream = new QuickStream(),
+    const outputStream = new QuickStream(),
         writer = new Writer(outputStream, prefixes);
     (function next() {
-      var item = tripleArrays.shift();
+      const item = tripleArrays.shift();
       if (item) {
-        var subject   = typeof item[0] === 'string' ? termFromId(item[0]) : item[0];
-        var predicate = typeof item[1] === 'string' ? termFromId(item[1]) : item[1];
-        var object    = typeof item[2] === 'string' ? termFromId(item[2]) : item[2];
-        var graph     = typeof item[3] === 'string' ? termFromId(item[3]) : item[3];
+        const subject   = typeof item[0] === 'string' ? termFromId(item[0]) : item[0];
+        const predicate = typeof item[1] === 'string' ? termFromId(item[1]) : item[1];
+        const object    = typeof item[2] === 'string' ? termFromId(item[2]) : item[2];
+        const graph     = typeof item[3] === 'string' ? termFromId(item[3]) : item[3];
         writer.addQuad(new Quad(subject, predicate, object, graph), next);
       }
       else
@@ -665,7 +666,8 @@ function shouldSerialize(/* prefixes?, tripleArrays..., expectedResult */) {
 }
 
 function QuickStream() {
-  var stream = { ended: false }, buffer = '';
+  const stream = { ended: false };
+  let buffer = '';
   stream.write = function (chunk, encoding, callback) {
     buffer += chunk;
     callback && callback();

@@ -47,7 +47,7 @@ describe('StreamWriter', () => {
                       '<http://a.org/3a> <http://a.org/b#3a> b:a3.\n'));
 
     it('should take over prefixes from the input stream', done => {
-      var inputStream = new Readable(),
+      const inputStream = new Readable(),
           writer = new StreamWriter(),
           outputStream = new StringWriter();
       writer.import(inputStream);
@@ -68,9 +68,8 @@ describe('StreamWriter', () => {
   });
 
   it('passes an error', () => {
-    var input = new Readable(),
-        writer = new StreamWriter(),
-        error = null;
+    const input = new Readable(), writer = new StreamWriter();
+    let error = null;
     input._read = function () {};
     writer.on('error', e => { error = e; });
     writer.import(input);
@@ -81,8 +80,8 @@ describe('StreamWriter', () => {
 
 
 function shouldSerialize(/* options?, tripleArrays..., expectedResult */) {
-  var tripleArrays = Array.prototype.slice.call(arguments),
-      expectedResult = tripleArrays.pop(),
+  let tripleArrays = Array.prototype.slice.call(arguments);
+  const expectedResult = tripleArrays.pop(),
       options = tripleArrays[0] instanceof Array ? null : tripleArrays.shift();
 
   tripleArrays = tripleArrays.map(i => {
@@ -90,7 +89,7 @@ function shouldSerialize(/* options?, tripleArrays..., expectedResult */) {
   });
 
   return function (done) {
-    var inputStream = new ArrayReader(tripleArrays),
+    const inputStream = new ArrayReader(tripleArrays),
         writer = new StreamWriter(options),
         outputStream = new StringWriter();
     writer.import(inputStream).should.equal(writer);
@@ -104,13 +103,13 @@ function shouldSerialize(/* options?, tripleArrays..., expectedResult */) {
 }
 
 function ArrayReader(items) {
-  var reader = new Readable({ objectMode: true });
+  const reader = new Readable({ objectMode: true });
   reader._read = function () { this.push(items.shift() || null); };
   return reader;
 }
 
 function StringWriter() {
-  var writer = new Writable({ encoding: 'utf-8', decodeStrings: false });
+  const writer = new Writable({ encoding: 'utf-8', decodeStrings: false });
   writer.result = '';
   writer._write = function (chunk, encoding, done) { this.result += chunk; done(); };
   return writer;

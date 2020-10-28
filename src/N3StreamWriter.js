@@ -9,7 +9,7 @@ export default class N3StreamWriter extends Transform {
     this._writableState.objectMode = true;
 
     // Set up writer with a dummy stream object
-    var writer = this._writer = new N3Writer({
+    const writer = this._writer = new N3Writer({
       write: (quad, encoding, callback) => { this.push(quad); callback && callback(); },
       end: callback => { this.push(null); callback && callback(); },
     }, options);

@@ -154,7 +154,7 @@ describe('Term', () => {
     });
 
     describe('with a custom factory', () => {
-      var factory = {
+      const factory = {
         defaultGraph: function ()     { return ['d'];       },
         namedNode:    function (n)    { return ['n', n];    },
         blankNode:    function (b)    { return ['b', b];    },
@@ -479,37 +479,37 @@ describe('Term', () => {
 
   describe('escaping', () => {
     it('should unescape an escaped string correctly', () => {
-      let id = '"Hello ""World"""@en-us';
+      const id = '"Hello ""World"""@en-us';
       unescapeQuotes(id).should.equal('"Hello "World""@en-us');
     });
 
     it('should escape an unescaped string correctly', () => {
-      let id = '"Hello "World""@en-us';
+      const id = '"Hello "World""@en-us';
       escapeQuotes(id).should.equal('"Hello ""World"""@en-us');
     });
 
     it('should not change an unescaped string', () => {
-      let id = '"Hello "World""@en-us';
+      const id = '"Hello "World""@en-us';
       unescapeQuotes(id).should.equal(id);
     });
 
     it('should not change a string without quotes', () => {
-      let id = '"Hello World"@en-us';
+      const id = '"Hello World"@en-us';
       escapeQuotes(id).should.equal(id);
     });
 
     it('should not change a blank node', () => {
-      let id = '_:b1';
+      const id = '_:b1';
       escapeQuotes(id).should.equal(id);
     });
 
     it('should not change a variable', () => {
-      let id = '?v1';
+      const id = '?v1';
       escapeQuotes(id).should.equal(id);
     });
 
     it('should not change the empty string', () => {
-      let id = '';
+      const id = '';
       escapeQuotes(id).should.equal(id);
     });
   });

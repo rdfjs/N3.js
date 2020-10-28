@@ -54,7 +54,7 @@ describe('Lexer', () => {
                         'Unexpected "<http://ex.org/bla\\uXYZZxyzzfoo>" on line 1.'));
 
     it('should not tokenize an IRI with a non-numeric 4-digit unicode escapes', done => {
-      var stream = new EventEmitter(), lexer = new Lexer();
+      const stream = new EventEmitter(), lexer = new Lexer();
       lexer.tokenize(stream, (error, token) => {
         error.should.be.an.instanceof(Error);
         error.message.should.equal('Unexpected "<\\uz234>" on line 1.');
@@ -64,7 +64,7 @@ describe('Lexer', () => {
     });
 
     it('should not tokenize an IRI with a non-numeric 8-digit unicode escapes', done => {
-      var stream = new EventEmitter(), lexer = new Lexer();
+      const stream = new EventEmitter(), lexer = new Lexer();
       lexer.tokenize(stream, (error, token) => {
         error.should.be.an.instanceof(Error);
         error.message.should.equal('Unexpected "<\\Uz2345678>" on line 1.');
@@ -1079,9 +1079,10 @@ describe('Lexer', () => {
 
 
     describe('passing data after the stream has been finished', () => {
-      var tokens = [], error;
+      const tokens = [];
+      let error;
       before(() => {
-        var stream = new EventEmitter(), lexer = new Lexer();
+        const stream = new EventEmitter(), lexer = new Lexer();
         lexer.tokenize(stream, (err, token) => {
           if (err)
             error = err;
@@ -1104,9 +1105,10 @@ describe('Lexer', () => {
     });
 
     describe('passing data after a syntax error', () => {
-      var tokens = [], error;
+      const tokens = [];
+      let error;
       before(() => {
-        var stream = new EventEmitter(), lexer = new Lexer();
+        const stream = new EventEmitter(), lexer = new Lexer();
         lexer.tokenize(stream, (err, token) => {
           if (err)
             error = err;
@@ -1131,9 +1133,10 @@ describe('Lexer', () => {
     });
 
     describe('when the stream errors', () => {
-      var tokens = [], error;
+      const tokens = [];
+      let error;
       before(() => {
-        var stream = new EventEmitter(), lexer = new Lexer();
+        const stream = new EventEmitter(), lexer = new Lexer();
         lexer.tokenize(stream, (err, token) => {
           if (err)
             error = err;
@@ -1150,7 +1153,7 @@ describe('Lexer', () => {
     });
 
     describe('called with a string and without callback', () => {
-      var lexer = new Lexer(),
+      const lexer = new Lexer(),
           tokens = lexer.tokenize('<a> <b> <c>.');
 
       it('returns all tokens synchronously', () => {
@@ -1165,7 +1168,7 @@ describe('Lexer', () => {
     });
 
     describe('called with an erroneous string and without callback', () => {
-      var lexer = new Lexer();
+      const lexer = new Lexer();
 
       it('throws an error', () => {
         (function () { lexer.tokenize('<a> bar'); })
@@ -1223,7 +1226,7 @@ describe('A Lexer instance with the comment option set to true', () => {
 });
 
 function shouldTokenize(lexer, input) {
-  var expected = Array.prototype.slice.call(arguments, 1);
+  const expected = Array.prototype.slice.call(arguments, 1);
   // Shift parameters as necessary
   if (lexer instanceof Lexer)
     expected.shift();
@@ -1231,15 +1234,15 @@ function shouldTokenize(lexer, input) {
     input = lexer, lexer = new Lexer();
 
   return function (done) {
-    var result = [];
+    const result = [];
     lexer.tokenize(input, tokenCallback);
 
     function tokenCallback(error, token) {
       expect(error).not.to.exist;
       expect(token).to.exist;
-      var expectedItem = expected[result.length];
+      const expectedItem = expected[result.length];
       if (expectedItem)
-        for (var attribute in token)
+        for (const attribute in token)
           if (token[attribute] === '' && expectedItem[attribute] !== '')
             delete token[attribute];
       result.push(token);
@@ -1272,7 +1275,7 @@ function shouldNotTokenize(lexer, input, expectedError) {
 }
 
 function streamOf() {
-  var elements = Array.prototype.slice.call(arguments),
+  const elements = Array.prototype.slice.call(arguments),
       stream = new EventEmitter();
 
   stream.setEncoding = function (encoding) {
@@ -1282,7 +1285,7 @@ function streamOf() {
 
   function next() {
     if (elements.length) {
-      var element = elements.shift();
+      const element = elements.shift();
       // use "null" to stall the stream
       if (element !== null) {
         stream.emit('data', element);

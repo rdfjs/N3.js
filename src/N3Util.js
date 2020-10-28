@@ -40,8 +40,8 @@ export function prefix(iri, factory) {
 // Creates a function that allows registering and expanding prefixes
 export function prefixes(defaultPrefixes, factory) {
   // Add all of the default prefixes
-  var prefixes = Object.create(null);
-  for (var prefix in defaultPrefixes)
+  const prefixes = Object.create(null);
+  for (const prefix in defaultPrefixes)
     processPrefix(prefix, defaultPrefixes[prefix]);
   // Set the default factory if none was specified
   factory = factory || N3DataFactory;
@@ -52,7 +52,7 @@ export function prefixes(defaultPrefixes, factory) {
     // Create a new prefix if an IRI is specified or the prefix doesn't exist
     if (typeof iri === 'string') {
       // Create a function that expands the prefix
-      var cache = Object.create(null);
+      const cache = Object.create(null);
       prefixes[prefix] = local => {
         return cache[local] || (cache[local] = factory.namedNode(iri + local));
       };

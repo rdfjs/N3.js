@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-var N3 = require('..');
-var fs = require('fs'),
+const N3 = require('..');
+const fs = require('fs'),
     assert = require('assert');
 
 if (process.argv.length !== 3) {
@@ -8,12 +8,12 @@ if (process.argv.length !== 3) {
   process.exit(1);
 }
 
-var filename = process.argv[2];
+const filename = process.argv[2];
 
-var TEST = '- Lexing file ' + filename;
+const TEST = '- Lexing file ' + filename;
 console.time(TEST);
 
-var count = 0;
+let count = 0;
 new N3.Lexer().tokenize(fs.createReadStream(filename), (error, token) => {
   assert(!error, error);
   count++;

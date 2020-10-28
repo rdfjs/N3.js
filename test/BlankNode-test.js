@@ -16,7 +16,7 @@ describe('BlankNode', () => {
   });
 
   describe('A BlankNode instance created from a name', () => {
-    var blankNode;
+    let blankNode;
     before(() => { blankNode = new BlankNode('b1'); });
 
     it('should be a BlankNode', () => {

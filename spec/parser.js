@@ -1,4 +1,4 @@
-var StreamParser = require('..').StreamParser;
+const { StreamParser } = require('..');
 
 // Implements the IParser interface from rdf-test-suite
 // https://github.com/rubensworks/rdf-test-suite.js/blob/master/lib/testcase/rdfsyntax/IParser.ts

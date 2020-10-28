@@ -824,7 +824,7 @@ describe('Parser', () => {
     });
 
     it('should return prefixes through a callback', done => {
-      var prefixes = {};
+      const prefixes = {};
       new Parser().parse('@prefix a: <http://a.org/#>. a:a a:b a:c. @prefix b: <http://b.org/#>.',
                            tripleCallback, prefixCallback);
 
@@ -848,7 +848,7 @@ describe('Parser', () => {
     });
 
     it('should return prefixes through a callback without triple callback', done => {
-      var prefixes = {};
+      const prefixes = {};
       new Parser().parse('@prefix a: <IRIa>. a:a a:b a:c. @prefix b: <IRIb>.',
                            null, prefixCallback);
 
@@ -880,7 +880,7 @@ describe('Parser', () => {
     });
 
     it('should parse a string synchronously if no callback is given', () => {
-      var triples = new Parser().parse('@prefix a: <urn:a:>. a:a a:b a:c.');
+      const triples = new Parser().parse('@prefix a: <urn:a:>. a:a a:b a:c.');
       triples.should.deep.equal([
         new Quad(termFromId('urn:a:a'), termFromId('urn:a:b'),
                  termFromId('urn:a:c'), termFromId('')),
@@ -1806,7 +1806,8 @@ describe('Parser', () => {
   });
 
   describe('A Parser instance with a custom DataFactory', () => {
-    var parser, factory = {};
+    const factory = {};
+    let parser;
     before(() => {
       factory.quad = function (s, p, o, g) { return { s: s, p: p, o: o, g: g }; };
       ['namedNode', 'blankNode', 'literal', 'variable', 'defaultGraph'].forEach(f => {
@@ -2253,7 +2254,7 @@ describe('Parser', () => {
 });
 
 function shouldParse(parser, input) {
-  var expected = Array.prototype.slice.call(arguments, 1);
+  const expected = Array.prototype.slice.call(arguments, 1);
   // Shift parameters as necessary
   if (parser.call)
     expected.shift();
@@ -2261,8 +2262,8 @@ function shouldParse(parser, input) {
     input = parser, parser = Parser;
 
   return function (done) {
-    var results = [];
-    var items = expected.map(mapToQuad);
+    const results = [];
+    const items = expected.map(mapToQuad);
     new parser({ baseIRI: BASE_IRI }).parse(input, (error, triple) => {
       expect(error).not.to.exist;
       if (triple)
@@ -2318,11 +2319,11 @@ function shouldNotParse(parser, input, expectedError, expectedContext) {
 }
 
 function itShouldResolve(baseIri, relativeIri, expected) {
-  var result;
+  let result;
   describe('resolving <' + relativeIri + '> against <' + baseIri + '>', () => {
     before(done => {
       try {
-        var doc = '<urn:ex:s> <urn:ex:p> <' + relativeIri + '>.';
+        const doc = '<urn:ex:s> <urn:ex:p> <' + relativeIri + '>.';
         new Parser({ baseIRI: baseIri }).parse(doc, (error, triple) => {
           if (done)
             result = triple, done(error);

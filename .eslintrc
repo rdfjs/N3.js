@@ -107,7 +107,7 @@
     no-undef: 2,
     no-undefined: 0,
     no-unused-vars: [ 2, { args: "none" }],
-    no-use-before-define: [2, "nofunc"],
+    no-use-before-define: [2, { functions: false }],
 
     // Node.js
     callback-return: 0,
@@ -143,6 +143,7 @@
     new-parens: 2,
     newline-after-var: 0,
     no-array-constructor: 2,
+    no-const-assign: 2,
     no-continue: 2,
     no-inline-comments: 0,
     no-lonely-if: 2,
@@ -155,6 +156,7 @@
     no-trailing-spaces: 2,
     no-underscore-dangle: 0,
     no-unneeded-ternary: 2,
+    no-var: 2,
     object-curly-spacing: [2, "always"],
     object-curly-newline: 0,
     object-property-newline: 0,
@@ -163,6 +165,7 @@
     operator-linebreak: [2, "after", { overrides: { ":": "ignore" } }],
     padded-blocks: [2, "never"],
     prefer-arrow-callback: 2,
+    prefer-const: 2,
     quote-props: [2, "consistent-as-needed"],
     quotes: [2, "single", "avoid-escape"],
     semi-spacing: 2,
