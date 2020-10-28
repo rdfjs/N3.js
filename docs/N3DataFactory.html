@@ -98,13 +98,7 @@ See <a href="https://github.com/rdfjs/representation-task-force/blob/master/inte
             <div class="content"><div class='highlight'><pre>
 <span class="hljs-keyword">import</span> namespaces <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./IRIs&#x27;</span>;
 <span class="hljs-keyword">import</span> { isDefaultGraph } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3Util&#x27;</span>;
-<span class="hljs-keyword">const</span> { rdf, xsd } = namespaces;
-
-<span class="hljs-keyword">let</span> DEFAULTGRAPH;
-<span class="hljs-keyword">let</span> _blankNodeCounter = <span class="hljs-number">0</span>;
-
-<span class="hljs-keyword">const</span> escapedLiteral = <span class="hljs-regexp">/^&quot;(.*&quot;.*)(?=&quot;[^&quot;]*$)/</span>;
-<span class="hljs-keyword">const</span> quadId = <span class="hljs-regexp">/^&lt;&lt;(&quot;(?:&quot;&quot;|[^&quot;])*&quot;[^ ]*|[^ ]+) (&quot;(?:&quot;&quot;|[^&quot;])*&quot;[^ ]*|[^ ]+) (&quot;(?:&quot;&quot;|[^&quot;])*&quot;[^ ]*|[^ ]+) ?(&quot;(?:&quot;&quot;|[^&quot;])*&quot;[^ ]*|[^ ]+)?&gt;&gt;$/</span>;</pre></div></div>
+<span class="hljs-keyword">const</span> { rdf, xsd } = namespaces;</pre></div></div>
             
         </li>
         
@@ -114,6 +108,25 @@ See <a href="https://github.com/rdfjs/representation-task-force/blob/master/inte
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <p>eslint-disable-next-line prefer-const</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">let</span> DEFAULTGRAPH;
+<span class="hljs-keyword">let</span> _blankNodeCounter = <span class="hljs-number">0</span>;
+
+<span class="hljs-keyword">const</span> escapedLiteral = <span class="hljs-regexp">/^&quot;(.*&quot;.*)(?=&quot;[^&quot;]*$)/</span>;
+<span class="hljs-keyword">const</span> quadId = <span class="hljs-regexp">/^&lt;&lt;(&quot;(?:&quot;&quot;|[^&quot;])*&quot;[^ ]*|[^ ]+) (&quot;(?:&quot;&quot;|[^&quot;])*&quot;[^ ]*|[^ ]+) (&quot;(?:&quot;&quot;|[^&quot;])*&quot;[^ ]*|[^ ]+) ?(&quot;(?:&quot;&quot;|[^&quot;])*&quot;[^ ]*|[^ ]+)?&gt;&gt;$/</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-3">&#182;</a>
               </div>
               <h2 id="datafactory-singleton">DataFactory singleton</h2>
 
@@ -133,11 +146,11 @@ See <a href="https://github.com/rdfjs/representation-task-force/blob/master/inte
         </li>
         
         
-        <li id="section-3">
+        <li id="section-4">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-3">&#182;</a>
+                <a class="pilcrow" href="#section-4">&#182;</a>
               </div>
               <h2 id="term-constructor">Term constructor</h2>
 
@@ -151,11 +164,11 @@ See <a href="https://github.com/rdfjs/representation-task-force/blob/master/inte
         </li>
         
         
-        <li id="section-4">
+        <li id="section-5">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-4">&#182;</a>
+                <a class="pilcrow" href="#section-5">&#182;</a>
               </div>
               <h3 id="the-value-of-this-term">The value of this term</h3>
 
@@ -168,11 +181,11 @@ See <a href="https://github.com/rdfjs/representation-task-force/blob/master/inte
         </li>
         
         
-        <li id="section-5">
+        <li id="section-6">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-5">&#182;</a>
+                <a class="pilcrow" href="#section-6">&#182;</a>
               </div>
               <h3 id="returns-whether-this-object-represents-the-same-term-as-the-other">Returns whether this object represents the same term as the other</h3>
 
@@ -183,11 +196,11 @@ See <a href="https://github.com/rdfjs/representation-task-force/blob/master/inte
         </li>
         
         
-        <li id="section-6">
+        <li id="section-7">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-6">&#182;</a>
+                <a class="pilcrow" href="#section-7">&#182;</a>
               </div>
               <p>If both terms were created by this library,
 equality can be computed through ids</p>
@@ -200,11 +213,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-7">
+        <li id="section-8">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-7">&#182;</a>
+                <a class="pilcrow" href="#section-8">&#182;</a>
               </div>
               <p>Otherwise, compare term type and value</p>
 
@@ -217,11 +230,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-8">
+        <li id="section-9">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-8">&#182;</a>
+                <a class="pilcrow" href="#section-9">&#182;</a>
               </div>
               <h3 id="returns-a-plain-object-representation-of-this-term">Returns a plain object representation of this term</h3>
 
@@ -238,11 +251,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-9">
+        <li id="section-10">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-9">&#182;</a>
+                <a class="pilcrow" href="#section-10">&#182;</a>
               </div>
               <h2 id="namednode-constructor">NamedNode constructor</h2>
 
@@ -253,11 +266,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-10">
+        <li id="section-11">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-10">&#182;</a>
+                <a class="pilcrow" href="#section-11">&#182;</a>
               </div>
               <h3 id="the-term-type-of-this-term">The term type of this term</h3>
 
@@ -271,11 +284,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-11">
+        <li id="section-12">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-11">&#182;</a>
+                <a class="pilcrow" href="#section-12">&#182;</a>
               </div>
               <h2 id="literal-constructor">Literal constructor</h2>
 
@@ -286,11 +299,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-12">
+        <li id="section-13">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-12">&#182;</a>
+                <a class="pilcrow" href="#section-13">&#182;</a>
               </div>
               <h3 id="the-term-type-of-this-term">The term type of this term</h3>
 
@@ -303,11 +316,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-13">
+        <li id="section-14">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-13">&#182;</a>
+                <a class="pilcrow" href="#section-14">&#182;</a>
               </div>
               <h3 id="the-text-value-of-this-literal">The text value of this literal</h3>
 
@@ -320,11 +333,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-14">
+        <li id="section-15">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-14">&#182;</a>
+                <a class="pilcrow" href="#section-15">&#182;</a>
               </div>
               <h3 id="the-language-of-this-literal">The language of this literal</h3>
 
@@ -335,26 +348,27 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-15">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-15">&#182;</a>
-              </div>
-              <p>Find the last quotation mark (e.g., ‘“abc”@en-us’)</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> id = <span class="hljs-built_in">this</span>.id, atPos = id.lastIndexOf(<span class="hljs-string">&#x27;&quot;&#x27;</span>) + <span class="hljs-number">1</span>;</pre></div></div>
-            
-        </li>
-        
-        
         <li id="section-16">
             <div class="annotation">
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+              <p>Find the last quotation mark (e.g., ‘“abc”@en-us’)</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">const</span> id = <span class="hljs-built_in">this</span>.id;
+    <span class="hljs-keyword">let</span> atPos = id.lastIndexOf(<span class="hljs-string">&#x27;&quot;&#x27;</span>) + <span class="hljs-number">1</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
               </div>
               <p>If “@” it follows, return the remaining substring; empty otherwise</p>
 
@@ -366,11 +380,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-17">
+        <li id="section-18">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-17">&#182;</a>
+                <a class="pilcrow" href="#section-18">&#182;</a>
               </div>
               <h3 id="the-datatype-iri-of-this-literal">The datatype IRI of this literal</h3>
 
@@ -383,11 +397,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-18">
+        <li id="section-19">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-18">&#182;</a>
+                <a class="pilcrow" href="#section-19">&#182;</a>
               </div>
               <h3 id="the-datatype-string-of-this-literal">The datatype string of this literal</h3>
 
@@ -398,32 +412,18 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-19">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-19">&#182;</a>
-              </div>
-              <p>Find the last quotation mark (e.g., ‘“abc”^^<a href="http://ex.org/types#t&#39;">http://ex.org/types#t&#39;</a>)</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> id = <span class="hljs-built_in">this</span>.id, dtPos = id.lastIndexOf(<span class="hljs-string">&#x27;&quot;&#x27;</span>) + <span class="hljs-number">1</span>, ch;</pre></div></div>
-            
-        </li>
-        
-        
         <li id="section-20">
             <div class="annotation">
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-20">&#182;</a>
               </div>
-              <p>If “^” it follows, return the remaining substring</p>
+              <p>Find the last quotation mark (e.g., ‘“abc”^^<a href="http://ex.org/types#t&#39;">http://ex.org/types#t&#39;</a>)</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">return</span> dtPos &lt; id.length &amp;&amp; (ch = id[dtPos]) === <span class="hljs-string">&#x27;^&#x27;</span> ? id.substr(dtPos + <span class="hljs-number">2</span>) :</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">const</span> id = <span class="hljs-built_in">this</span>.id, dtPos = id.lastIndexOf(<span class="hljs-string">&#x27;&quot;&#x27;</span>) + <span class="hljs-number">1</span>;
+    <span class="hljs-keyword">const</span> char = dtPos &lt; id.length ? id[dtPos] : <span class="hljs-string">&#x27;&#x27;</span>;</pre></div></div>
             
         </li>
         
@@ -434,12 +434,11 @@ equality can be computed through ids</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-21">&#182;</a>
               </div>
-              <p>If “@” follows, return rdf:langString; xsd:string otherwise</p>
+              <p>If “^” it follows, return the remaining substring</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>           (ch !== <span class="hljs-string">&#x27;@&#x27;</span> ? xsd.string : rdf.langString);
-  }</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">return</span> char === <span class="hljs-string">&#x27;^&#x27;</span> ? id.substr(dtPos + <span class="hljs-number">2</span>) :</pre></div></div>
             
         </li>
         
@@ -450,11 +449,12 @@ equality can be computed through ids</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-22">&#182;</a>
               </div>
-              <h3 id="returns-whether-this-object-represents-the-same-term-as-the-other">Returns whether this object represents the same term as the other</h3>
+              <p>If “@” follows, return rdf:langString; xsd:string otherwise</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  equals(other) {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>           (char !== <span class="hljs-string">&#x27;@&#x27;</span> ? xsd.string : rdf.langString);
+  }</pre></div></div>
             
         </li>
         
@@ -464,6 +464,21 @@ equality can be computed through ids</p>
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-23">&#182;</a>
+              </div>
+              <h3 id="returns-whether-this-object-represents-the-same-term-as-the-other">Returns whether this object represents the same term as the other</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  equals(other) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-24">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-24">&#182;</a>
               </div>
               <p>If both literals were created by this library,
 equality can be computed through ids</p>
@@ -476,11 +491,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-24">
+        <li id="section-25">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-24">&#182;</a>
+                <a class="pilcrow" href="#section-25">&#182;</a>
               </div>
               <p>Otherwise, compare term type, value, language, and datatype</p>
 
@@ -506,11 +521,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-25">
+        <li id="section-26">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-25">&#182;</a>
+                <a class="pilcrow" href="#section-26">&#182;</a>
               </div>
               <h2 id="blanknode-constructor">BlankNode constructor</h2>
 
@@ -524,11 +539,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-26">
+        <li id="section-27">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-26">&#182;</a>
+                <a class="pilcrow" href="#section-27">&#182;</a>
               </div>
               <h3 id="the-term-type-of-this-term">The term type of this term</h3>
 
@@ -541,11 +556,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-27">
+        <li id="section-28">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-27">&#182;</a>
+                <a class="pilcrow" href="#section-28">&#182;</a>
               </div>
               <h3 id="the-name-of-this-blank-node">The name of this blank node</h3>
 
@@ -564,11 +579,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-28">
+        <li id="section-29">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-28">&#182;</a>
+                <a class="pilcrow" href="#section-29">&#182;</a>
               </div>
               <h3 id="the-term-type-of-this-term">The term type of this term</h3>
 
@@ -581,11 +596,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-29">
+        <li id="section-30">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-29">&#182;</a>
+                <a class="pilcrow" href="#section-30">&#182;</a>
               </div>
               <h3 id="the-name-of-this-variable">The name of this variable</h3>
 
@@ -599,11 +614,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-30">
+        <li id="section-31">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-30">&#182;</a>
+                <a class="pilcrow" href="#section-31">&#182;</a>
               </div>
               <h2 id="defaultgraph-constructor">DefaultGraph constructor</h2>
 
@@ -618,11 +633,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-31">
+        <li id="section-32">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-31">&#182;</a>
+                <a class="pilcrow" href="#section-32">&#182;</a>
               </div>
               <h3 id="the-term-type-of-this-term">The term type of this term</h3>
 
@@ -635,11 +650,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-32">
+        <li id="section-33">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-32">&#182;</a>
+                <a class="pilcrow" href="#section-33">&#182;</a>
               </div>
               <h3 id="returns-whether-this-object-represents-the-same-term-as-the-other">Returns whether this object represents the same term as the other</h3>
 
@@ -650,11 +665,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-33">
+        <li id="section-34">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-33">&#182;</a>
+                <a class="pilcrow" href="#section-34">&#182;</a>
               </div>
               <p>If both terms were created by this library,
 equality can be computed through strict equality;
@@ -669,11 +684,11 @@ otherwise, compare term types.</p>
         </li>
         
         
-        <li id="section-34">
+        <li id="section-35">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-34">&#182;</a>
+                <a class="pilcrow" href="#section-35">&#182;</a>
               </div>
               <h2 id="defaultgraph-singleton">DefaultGraph singleton</h2>
 
@@ -684,11 +699,11 @@ otherwise, compare term types.</p>
         </li>
         
         
-        <li id="section-35">
+        <li id="section-36">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-35">&#182;</a>
+                <a class="pilcrow" href="#section-36">&#182;</a>
               </div>
               <h3 id="constructs-a-term-from-the-given-internal-string-id">Constructs a term from the given internal string ID</h3>
 
@@ -700,11 +715,11 @@ otherwise, compare term types.</p>
         </li>
         
         
-        <li id="section-36">
+        <li id="section-37">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-36">&#182;</a>
+                <a class="pilcrow" href="#section-37">&#182;</a>
               </div>
               <p>Falsy value or empty string indicate the default graph</p>
 
@@ -716,11 +731,11 @@ otherwise, compare term types.</p>
         </li>
         
         
-        <li id="section-37">
+        <li id="section-38">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-37">&#182;</a>
+                <a class="pilcrow" href="#section-38">&#182;</a>
               </div>
               <p>Identify the term type based on the first character</p>
 
@@ -736,11 +751,11 @@ otherwise, compare term types.</p>
         </li>
         
         
-        <li id="section-38">
+        <li id="section-39">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-38">&#182;</a>
+                <a class="pilcrow" href="#section-39">&#182;</a>
               </div>
               <p>Shortcut for internal literals</p>
 
@@ -752,11 +767,11 @@ otherwise, compare term types.</p>
         </li>
         
         
-        <li id="section-39">
+        <li id="section-40">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-39">&#182;</a>
+                <a class="pilcrow" href="#section-40">&#182;</a>
               </div>
               <p>Literal without datatype or language</p>
 
@@ -768,17 +783,17 @@ otherwise, compare term types.</p>
         </li>
         
         
-        <li id="section-40">
+        <li id="section-41">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-40">&#182;</a>
+                <a class="pilcrow" href="#section-41">&#182;</a>
               </div>
               <p>Literal with datatype or language</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> endPos = id.lastIndexOf(<span class="hljs-string">&#x27;&quot;&#x27;</span>, id.length - <span class="hljs-number">1</span>);
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">const</span> endPos = id.lastIndexOf(<span class="hljs-string">&#x27;&quot;&#x27;</span>, id.length - <span class="hljs-number">1</span>);
     <span class="hljs-keyword">return</span> factory.literal(id.substr(<span class="hljs-number">1</span>, endPos - <span class="hljs-number">1</span>),
             id[endPos + <span class="hljs-number">1</span>] === <span class="hljs-string">&#x27;@&#x27;</span> ? id.substr(endPos + <span class="hljs-number">2</span>)
                                    : factory.namedNode(id.substr(endPos + <span class="hljs-number">3</span>)));
@@ -798,11 +813,11 @@ otherwise, compare term types.</p>
         </li>
         
         
-        <li id="section-41">
+        <li id="section-42">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-41">&#182;</a>
+                <a class="pilcrow" href="#section-42">&#182;</a>
               </div>
               <h3 id="constructs-an-internal-string-id-from-the-given-term-or-id-string">Constructs an internal string ID from the given term or ID string</h3>
 
@@ -819,11 +834,11 @@ otherwise, compare term types.</p>
         </li>
         
         
-        <li id="section-42">
+        <li id="section-43">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-42">&#182;</a>
+                <a class="pilcrow" href="#section-43">&#182;</a>
               </div>
               <p>Term instantiated with another library</p>
 
@@ -842,11 +857,11 @@ otherwise, compare term types.</p>
         </li>
         
         
-        <li id="section-43">
+        <li id="section-44">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-43">&#182;</a>
+                <a class="pilcrow" href="#section-44">&#182;</a>
               </div>
               <p>To identify RDF* quad components, we escape quotes by doubling them.
 This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
@@ -869,11 +884,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-44">
+        <li id="section-45">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-44">&#182;</a>
+                <a class="pilcrow" href="#section-45">&#182;</a>
               </div>
               <h2 id="quad-constructor">Quad constructor</h2>
 
@@ -891,11 +906,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-45">
+        <li id="section-46">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-45">&#182;</a>
+                <a class="pilcrow" href="#section-46">&#182;</a>
               </div>
               <h3 id="the-term-type-of-this-term">The term type of this term</h3>
 
@@ -908,11 +923,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-46">
+        <li id="section-47">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-46">&#182;</a>
+                <a class="pilcrow" href="#section-47">&#182;</a>
               </div>
               <h3 id="returns-a-plain-object-representation-of-this-quad">Returns a plain object representation of this quad</h3>
 
@@ -931,11 +946,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-47">
+        <li id="section-48">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-47">&#182;</a>
+                <a class="pilcrow" href="#section-48">&#182;</a>
               </div>
               <h3 id="returns-whether-this-object-represents-the-same-quad-as-the-other">Returns whether this object represents the same quad as the other</h3>
 
@@ -953,11 +968,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-48">
+        <li id="section-49">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-48">&#182;</a>
+                <a class="pilcrow" href="#section-49">&#182;</a>
               </div>
               <h3 id="escapes-the-quotes-within-the-given-literal">Escapes the quotes within the given literal</h3>
 
@@ -970,11 +985,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-49">
+        <li id="section-50">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-49">&#182;</a>
+                <a class="pilcrow" href="#section-50">&#182;</a>
               </div>
               <h3 id="unescapes-the-quotes-within-the-given-literal">Unescapes the quotes within the given literal</h3>
 
@@ -987,11 +1002,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-50">
+        <li id="section-51">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-50">&#182;</a>
+                <a class="pilcrow" href="#section-51">&#182;</a>
               </div>
               <h3 id="creates-an-iri">Creates an IRI</h3>
 
@@ -1004,11 +1019,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-51">
+        <li id="section-52">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-51">&#182;</a>
+                <a class="pilcrow" href="#section-52">&#182;</a>
               </div>
               <h3 id="creates-a-blank-node">Creates a blank node</h3>
 
@@ -1021,11 +1036,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-52">
+        <li id="section-53">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-52">&#182;</a>
+                <a class="pilcrow" href="#section-53">&#182;</a>
               </div>
               <h3 id="creates-a-literal">Creates a literal</h3>
 
@@ -1036,11 +1051,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-53">
+        <li id="section-54">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-53">&#182;</a>
+                <a class="pilcrow" href="#section-54">&#182;</a>
               </div>
               <p>Create a language-tagged string</p>
 
@@ -1052,11 +1067,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-54">
+        <li id="section-55">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-54">&#182;</a>
+                <a class="pilcrow" href="#section-55">&#182;</a>
               </div>
               <p>Automatically determine datatype for booleans and numbers</p>
 
@@ -1068,11 +1083,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-55">
+        <li id="section-56">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-55">&#182;</a>
+                <a class="pilcrow" href="#section-56">&#182;</a>
               </div>
               <p>Convert a boolean</p>
 
@@ -1084,11 +1099,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-56">
+        <li id="section-57">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-56">&#182;</a>
+                <a class="pilcrow" href="#section-57">&#182;</a>
               </div>
               <p>Convert an integer or double</p>
 
@@ -1108,11 +1123,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-57">
+        <li id="section-58">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-57">&#182;</a>
+                <a class="pilcrow" href="#section-58">&#182;</a>
               </div>
               <p>Create a datatyped literal</p>
 
@@ -1126,11 +1141,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-58">
+        <li id="section-59">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-58">&#182;</a>
+                <a class="pilcrow" href="#section-59">&#182;</a>
               </div>
               <h3 id="creates-a-variable">Creates a variable</h3>
 
@@ -1143,11 +1158,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-59">
+        <li id="section-60">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-59">&#182;</a>
+                <a class="pilcrow" href="#section-60">&#182;</a>
               </div>
               <h3 id="returns-the-default-graph">Returns the default graph</h3>
 
@@ -1160,11 +1175,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-60">
+        <li id="section-61">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-60">&#182;</a>
+                <a class="pilcrow" href="#section-61">&#182;</a>
               </div>
               <h3 id="creates-a-quad">Creates a quad</h3>
 

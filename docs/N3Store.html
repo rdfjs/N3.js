@@ -254,7 +254,7 @@ saving memory by using only numbers as keys in <code>_graphs</code></p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> size = <span class="hljs-built_in">this</span>._size;
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">let</span> size = <span class="hljs-built_in">this</span>._size;
     <span class="hljs-keyword">if</span> (size !== <span class="hljs-literal">null</span>)
       <span class="hljs-keyword">return</span> size;</pre></div></div>
             
@@ -272,10 +272,11 @@ saving memory by using only numbers as keys in <code>_graphs</code></p>
             </div>
             
             <div class="content"><div class='highlight'><pre>    size = <span class="hljs-number">0</span>;
-    <span class="hljs-keyword">var</span> graphs = <span class="hljs-built_in">this</span>._graphs, subjects, subject;
-    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> graphKey <span class="hljs-keyword">in</span> graphs)
-      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> subjectKey <span class="hljs-keyword">in</span> (subjects = graphs[graphKey].subjects))
-        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> predicateKey <span class="hljs-keyword">in</span> (subject = subjects[subjectKey]))
+    <span class="hljs-keyword">const</span> graphs = <span class="hljs-built_in">this</span>._graphs;
+    <span class="hljs-keyword">let</span> subjects, subject;
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> graphKey <span class="hljs-keyword">in</span> graphs)
+      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> subjectKey <span class="hljs-keyword">in</span> (subjects = graphs[graphKey].subjects))
+        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> predicateKey <span class="hljs-keyword">in</span> (subject = subjects[subjectKey]))
           size += <span class="hljs-built_in">Object</span>.keys(subject[predicateKey]).length;
     <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._size = size;
   }</pre></div></div>
@@ -322,8 +323,8 @@ saving memory by using only numbers as keys in <code>_graphs</code></p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> index1 = index0[key0] || (index0[key0] = {});
-    <span class="hljs-keyword">var</span> index2 = index1[key1] || (index1[key1] = {});</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">const</span> index1 = index0[key0] || (index0[key0] = {});
+    <span class="hljs-keyword">const</span> index2 = index1[key1] || (index1[key1] = {});</pre></div></div>
             
         </li>
         
@@ -338,7 +339,7 @@ saving memory by using only numbers as keys in <code>_graphs</code></p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> existed = key2 <span class="hljs-keyword">in</span> index2;
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">const</span> existed = key2 <span class="hljs-keyword">in</span> index2;
     <span class="hljs-keyword">if</span> (!existed)
       index2[key2] = <span class="hljs-literal">null</span>;
     <span class="hljs-keyword">return</span> !existed;
@@ -372,7 +373,7 @@ saving memory by using only numbers as keys in <code>_graphs</code></p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> index1 = index0[key0], index2 = index1[key1], key;
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">const</span> index1 = index0[key0], index2 = index1[key1];
     <span class="hljs-keyword">delete</span> index2[key2];</pre></div></div>
             
         </li>
@@ -388,9 +389,9 @@ saving memory by using only numbers as keys in <code>_graphs</code></p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">for</span> (key <span class="hljs-keyword">in</span> index2) <span class="hljs-keyword">return</span>;
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> key <span class="hljs-keyword">in</span> index2) <span class="hljs-keyword">return</span>;
     <span class="hljs-keyword">delete</span> index1[key1];
-    <span class="hljs-keyword">for</span> (key <span class="hljs-keyword">in</span> index1) <span class="hljs-keyword">return</span>;
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> key <span class="hljs-keyword">in</span> index1) <span class="hljs-keyword">return</span>;
     <span class="hljs-keyword">delete</span> index0[key0];
   }</pre></div></div>
             
@@ -417,7 +418,7 @@ If instead <code>array</code> is given, each result is added to the array.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>  _findInIndex(index0, key0, key1, key2, name0, name1, name2, graph, callback, array) {
-    <span class="hljs-keyword">var</span> tmp, index1, index2, varCount = !key0 + !key1 + !key2,</pre></div></div>
+    <span class="hljs-keyword">let</span> tmp, index1, index2;</pre></div></div>
             
         </li>
         
@@ -428,11 +429,12 @@ If instead <code>array</code> is given, each result is added to the array.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-21">&#182;</a>
               </div>
-              <p>depending on the number of variables, keys or reverse index are faster</p>
+              <p>Depending on the number of variables, keys or reverse index are faster</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        entityKeys = varCount &gt; <span class="hljs-number">1</span> ? <span class="hljs-built_in">Object</span>.keys(<span class="hljs-built_in">this</span>._ids) : <span class="hljs-built_in">this</span>._entities;</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">const</span> varCount = !key0 + !key1 + !key2,
+        entityKeys = varCount &gt; <span class="hljs-number">1</span> ? <span class="hljs-built_in">Object</span>.keys(<span class="hljs-built_in">this</span>._ids) : <span class="hljs-built_in">this</span>._entities;</pre></div></div>
             
         </li>
         
@@ -448,8 +450,8 @@ If instead <code>array</code> is given, each result is added to the array.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
-    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> value0 <span class="hljs-keyword">in</span> index0) {
-      <span class="hljs-keyword">var</span> entity0 = entityKeys[value0];
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> value0 <span class="hljs-keyword">in</span> index0) {
+      <span class="hljs-keyword">const</span> entity0 = entityKeys[value0];
 
       <span class="hljs-keyword">if</span> (index1 = index0[value0]) {</pre></div></div>
             
@@ -467,8 +469,8 @@ If instead <code>array</code> is given, each result is added to the array.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
-        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> value1 <span class="hljs-keyword">in</span> index1) {
-          <span class="hljs-keyword">var</span> entity1 = entityKeys[value1];
+        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> value1 <span class="hljs-keyword">in</span> index1) {
+          <span class="hljs-keyword">const</span> entity1 = entityKeys[value1];
 
           <span class="hljs-keyword">if</span> (index2 = index1[value1]) {</pre></div></div>
             
@@ -485,7 +487,7 @@ If instead <code>array</code> is given, each result is added to the array.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">var</span> values = key2 ? (key2 <span class="hljs-keyword">in</span> index2 ? [key2] : []) : <span class="hljs-built_in">Object</span>.keys(index2);</pre></div></div>
+            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">const</span> values = key2 ? (key2 <span class="hljs-keyword">in</span> index2 ? [key2] : []) : <span class="hljs-built_in">Object</span>.keys(index2);</pre></div></div>
             
         </li>
         
@@ -500,12 +502,12 @@ If instead <code>array</code> is given, each result is added to the array.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> l = <span class="hljs-number">0</span>; l &lt; values.length; l++) {
-              <span class="hljs-keyword">var</span> parts = { <span class="hljs-attr">subject</span>: <span class="hljs-literal">null</span>, <span class="hljs-attr">predicate</span>: <span class="hljs-literal">null</span>, <span class="hljs-attr">object</span>: <span class="hljs-literal">null</span> };
+            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> l = <span class="hljs-number">0</span>; l &lt; values.length; l++) {
+              <span class="hljs-keyword">const</span> parts = { <span class="hljs-attr">subject</span>: <span class="hljs-literal">null</span>, <span class="hljs-attr">predicate</span>: <span class="hljs-literal">null</span>, <span class="hljs-attr">object</span>: <span class="hljs-literal">null</span> };
               parts[name0] = termFromId(entity0, <span class="hljs-built_in">this</span>._factory);
               parts[name1] = termFromId(entity1, <span class="hljs-built_in">this</span>._factory);
               parts[name2] = termFromId(entityKeys[values[l]], <span class="hljs-built_in">this</span>._factory);
-              <span class="hljs-keyword">var</span> quad = <span class="hljs-built_in">this</span>._factory.quad(
+              <span class="hljs-keyword">const</span> quad = <span class="hljs-built_in">this</span>._factory.quad(
                 parts.subject, parts.predicate, parts.object, termFromId(graph, <span class="hljs-built_in">this</span>._factory));
               <span class="hljs-keyword">if</span> (array)
                 array.push(quad);
@@ -533,7 +535,7 @@ If instead <code>array</code> is given, each result is added to the array.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>  _loop(index0, callback) {
-    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> key0 <span class="hljs-keyword">in</span> index0)
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> key0 <span class="hljs-keyword">in</span> index0)
       callback(key0);
   }</pre></div></div>
             
@@ -551,7 +553,7 @@ If instead <code>array</code> is given, each result is added to the array.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>  _loopByKey0(index0, key0, callback) {
-    <span class="hljs-keyword">var</span> index1, key1;
+    <span class="hljs-keyword">let</span> index1, key1;
     <span class="hljs-keyword">if</span> (index1 = index0[key0]) {
       <span class="hljs-keyword">for</span> (key1 <span class="hljs-keyword">in</span> index1)
         callback(key1);
@@ -572,7 +574,7 @@ If instead <code>array</code> is given, each result is added to the array.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>  _loopByKey1(index0, key1, callback) {
-    <span class="hljs-keyword">var</span> key0, index1;
+    <span class="hljs-keyword">let</span> key0, index1;
     <span class="hljs-keyword">for</span> (key0 <span class="hljs-keyword">in</span> index0) {
       index1 = index0[key0];
       <span class="hljs-keyword">if</span> (index1[key1])
@@ -594,7 +596,7 @@ If instead <code>array</code> is given, each result is added to the array.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>  _loopBy2Keys(index0, key0, key1, callback) {
-    <span class="hljs-keyword">var</span> index1, index2, key2;
+    <span class="hljs-keyword">let</span> index1, index2, key2;
     <span class="hljs-keyword">if</span> ((index1 = index0[key0]) &amp;&amp; (index2 = index1[key1])) {
       <span class="hljs-keyword">for</span> (key2 <span class="hljs-keyword">in</span> index2)
         callback(key2);
@@ -617,7 +619,7 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>  _countInIndex(index0, key0, key1, key2) {
-    <span class="hljs-keyword">var</span> count = <span class="hljs-number">0</span>, tmp, index1, index2;</pre></div></div>
+    <span class="hljs-keyword">let</span> count = <span class="hljs-number">0</span>, tmp, index1, index2;</pre></div></div>
             
         </li>
         
@@ -633,7 +635,7 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
-    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> value0 <span class="hljs-keyword">in</span> index0) {
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> value0 <span class="hljs-keyword">in</span> index0) {
       <span class="hljs-keyword">if</span> (index1 = index0[value0]) {</pre></div></div>
             
         </li>
@@ -650,7 +652,7 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
-        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> value1 <span class="hljs-keyword">in</span> index1) {
+        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> value1 <span class="hljs-keyword">in</span> index1) {
           <span class="hljs-keyword">if</span> (index2 = index1[value1]) {</pre></div></div>
             
         </li>
@@ -706,7 +708,7 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
             <div class="content"><div class='highlight'><pre>  _getGraphs(graph) {
     <span class="hljs-keyword">if</span> (!isString(graph))
       <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._graphs;
-    <span class="hljs-keyword">var</span> graphs = {};
+    <span class="hljs-keyword">const</span> graphs = {};
     graphs[graph] = <span class="hljs-built_in">this</span>._graphs[graph];
     <span class="hljs-keyword">return</span> graphs;
   }</pre></div></div>
@@ -726,7 +728,7 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>  _uniqueEntities(callback) {
-    <span class="hljs-keyword">var</span> uniqueIds = <span class="hljs-built_in">Object</span>.create(<span class="hljs-literal">null</span>);
+    <span class="hljs-keyword">const</span> uniqueIds = <span class="hljs-built_in">Object</span>.create(<span class="hljs-literal">null</span>);
     <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-params">id</span> =&gt;</span> {
       <span class="hljs-keyword">if</span> (!(id <span class="hljs-keyword">in</span> uniqueIds)) {
         uniqueIds[id] = <span class="hljs-literal">true</span>;
@@ -812,7 +814,7 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> graphItem = <span class="hljs-built_in">this</span>._graphs[graph];</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">let</span> graphItem = <span class="hljs-built_in">this</span>._graphs[graph];</pre></div></div>
             
         </li>
         
@@ -862,13 +864,13 @@ which are then used as keys in the other indexes.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> ids = <span class="hljs-built_in">this</span>._ids;
-    <span class="hljs-keyword">var</span> entities = <span class="hljs-built_in">this</span>._entities;
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">const</span> ids = <span class="hljs-built_in">this</span>._ids;
+    <span class="hljs-keyword">const</span> entities = <span class="hljs-built_in">this</span>._entities;
     subject   = ids[subject]   || (ids[entities[++<span class="hljs-built_in">this</span>._id] = subject]   = <span class="hljs-built_in">this</span>._id);
     predicate = ids[predicate] || (ids[entities[++<span class="hljs-built_in">this</span>._id] = predicate] = <span class="hljs-built_in">this</span>._id);
     object    = ids[object]    || (ids[entities[++<span class="hljs-built_in">this</span>._id] = object]    = <span class="hljs-built_in">this</span>._id);
 
-    <span class="hljs-keyword">var</span> changed = <span class="hljs-built_in">this</span>._addToIndex(graphItem.subjects,   subject,   predicate, object);
+    <span class="hljs-keyword">const</span> changed = <span class="hljs-built_in">this</span>._addToIndex(graphItem.subjects,   subject,   predicate, object);
     <span class="hljs-built_in">this</span>._addToIndex(graphItem.predicates, predicate, object,    subject);
     <span class="hljs-built_in">this</span>._addToIndex(graphItem.objects,    object,    subject,   predicate);</pre></div></div>
             
@@ -903,7 +905,7 @@ which are then used as keys in the other indexes.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>  addQuads(quads) {
-    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> i = <span class="hljs-number">0</span>; i &lt; quads.length; i++)
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i = <span class="hljs-number">0</span>; i &lt; quads.length; i++)
       <span class="hljs-built_in">this</span>.addQuad(quads[i]);
   }</pre></div></div>
             
@@ -989,7 +991,8 @@ and verify the quad exists.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> graphItem, ids = <span class="hljs-built_in">this</span>._ids, graphs = <span class="hljs-built_in">this</span>._graphs, subjects, predicates;
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">const</span> ids = <span class="hljs-built_in">this</span>._ids, graphs = <span class="hljs-built_in">this</span>._graphs;
+    <span class="hljs-keyword">let</span> graphItem, subjects, predicates;
     <span class="hljs-keyword">if</span> (!(subject    = ids[subject]) || !(predicate = ids[predicate]) ||
         !(object     = ids[object])  || !(graphItem = graphs[graph])  ||
         !(subjects   = graphItem.subjects[subject]) ||
@@ -1047,7 +1050,7 @@ and verify the quad exists.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>  removeQuads(quads) {
-    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> i = <span class="hljs-number">0</span>; i &lt; quads.length; i++)
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i = <span class="hljs-number">0</span>; i &lt; quads.length; i++)
       <span class="hljs-built_in">this</span>.removeQuad(quads[i]);
   }</pre></div></div>
             
@@ -1138,8 +1141,8 @@ and verify the quad exists.</p>
     object = object &amp;&amp; termToId(object);
     graph = graph &amp;&amp; termToId(graph);
 
-    <span class="hljs-keyword">var</span> quads = [], graphs = <span class="hljs-built_in">this</span>._getGraphs(graph), content,
-        ids = <span class="hljs-built_in">this</span>._ids, subjectId, predicateId, objectId;</pre></div></div>
+    <span class="hljs-keyword">const</span> quads = [], graphs = <span class="hljs-built_in">this</span>._getGraphs(graph), ids = <span class="hljs-built_in">this</span>._ids;
+    <span class="hljs-keyword">let</span> content, subjectId, predicateId, objectId;</pre></div></div>
             
         </li>
         
@@ -1159,7 +1162,7 @@ and verify the quad exists.</p>
         isString(object)    &amp;&amp; !(objectId    = ids[object]))
       <span class="hljs-keyword">return</span> quads;
 
-    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> graphId <span class="hljs-keyword">in</span> graphs) {</pre></div></div>
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> graphId <span class="hljs-keyword">in</span> graphs) {</pre></div></div>
             
         </li>
         
@@ -1296,7 +1299,7 @@ and verify the quad exists.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>  match(subject, predicate, object, graph) {
-    <span class="hljs-keyword">var</span> stream = <span class="hljs-keyword">new</span> Readable({ <span class="hljs-attr">objectMode</span>: <span class="hljs-literal">true</span> });</pre></div></div>
+    <span class="hljs-keyword">const</span> stream = <span class="hljs-keyword">new</span> Readable({ <span class="hljs-attr">objectMode</span>: <span class="hljs-literal">true</span> });</pre></div></div>
             
         </li>
         
@@ -1312,7 +1315,7 @@ and verify the quad exists.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>    stream._read = <span class="hljs-function">() =&gt;</span> {
-      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> quad <span class="hljs-keyword">of</span> <span class="hljs-built_in">this</span>.getQuads(subject, predicate, object, graph))
+      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> quad <span class="hljs-keyword">of</span> <span class="hljs-built_in">this</span>.getQuads(subject, predicate, object, graph))
         stream.push(quad);
       stream.push(<span class="hljs-literal">null</span>);
     };
@@ -1354,8 +1357,8 @@ and verify the quad exists.</p>
     object = object &amp;&amp; termToId(object);
     graph = graph &amp;&amp; termToId(graph);
 
-    <span class="hljs-keyword">var</span> count = <span class="hljs-number">0</span>, graphs = <span class="hljs-built_in">this</span>._getGraphs(graph), content,
-        ids = <span class="hljs-built_in">this</span>._ids, subjectId, predicateId, objectId;</pre></div></div>
+    <span class="hljs-keyword">const</span> graphs = <span class="hljs-built_in">this</span>._getGraphs(graph), ids = <span class="hljs-built_in">this</span>._ids;
+    <span class="hljs-keyword">let</span> count = <span class="hljs-number">0</span>, content, subjectId, predicateId, objectId;</pre></div></div>
             
         </li>
         
@@ -1375,7 +1378,7 @@ and verify the quad exists.</p>
         isString(object)    &amp;&amp; !(objectId    = ids[object]))
       <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
 
-    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> graphId <span class="hljs-keyword">in</span> graphs) {</pre></div></div>
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> graphId <span class="hljs-keyword">in</span> graphs) {</pre></div></div>
             
         </li>
         
@@ -1515,8 +1518,8 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
             </div>
             
             <div class="content"><div class='highlight'><pre>  every(callback, subject, predicate, object, graph) {
-    <span class="hljs-keyword">var</span> some = <span class="hljs-literal">false</span>;
-    <span class="hljs-keyword">var</span> every = !<span class="hljs-built_in">this</span>.some(<span class="hljs-function"><span class="hljs-params">quad</span> =&gt;</span> {
+    <span class="hljs-keyword">let</span> some = <span class="hljs-literal">false</span>;
+    <span class="hljs-keyword">const</span> every = !<span class="hljs-built_in">this</span>.some(<span class="hljs-function"><span class="hljs-params">quad</span> =&gt;</span> {
       some = <span class="hljs-literal">true</span>;
       <span class="hljs-keyword">return</span> !callback(quad);
     }, subject, predicate, object, graph);
@@ -1558,8 +1561,8 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
     object = object &amp;&amp; termToId(object);
     graph = graph &amp;&amp; termToId(graph);
 
-    <span class="hljs-keyword">var</span> graphs = <span class="hljs-built_in">this</span>._getGraphs(graph), content,
-        ids = <span class="hljs-built_in">this</span>._ids, subjectId, predicateId, objectId;</pre></div></div>
+    <span class="hljs-keyword">const</span> graphs = <span class="hljs-built_in">this</span>._getGraphs(graph), ids = <span class="hljs-built_in">this</span>._ids;
+    <span class="hljs-keyword">let</span> content, subjectId, predicateId, objectId;</pre></div></div>
             
         </li>
         
@@ -1579,7 +1582,7 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         isString(object)    &amp;&amp; !(objectId    = ids[object]))
       <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
 
-    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> graphId <span class="hljs-keyword">in</span> graphs) {</pre></div></div>
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> graphId <span class="hljs-keyword">in</span> graphs) {</pre></div></div>
             
         </li>
         
@@ -1727,7 +1730,7 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
             </div>
             
             <div class="content"><div class='highlight'><pre>  getSubjects(predicate, object, graph) {
-    <span class="hljs-keyword">var</span> results = [];
+    <span class="hljs-keyword">const</span> results = [];
     <span class="hljs-built_in">this</span>.forSubjects(<span class="hljs-function"><span class="hljs-params">s</span> =&gt;</span> { results.push(s); }, predicate, object, graph);
     <span class="hljs-keyword">return</span> results;
   }</pre></div></div>
@@ -1765,7 +1768,8 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
     object = object &amp;&amp; termToId(object);
     graph = graph &amp;&amp; termToId(graph);
 
-    <span class="hljs-keyword">var</span> ids = <span class="hljs-built_in">this</span>._ids, graphs = <span class="hljs-built_in">this</span>._getGraphs(graph), content, predicateId, objectId;
+    <span class="hljs-keyword">const</span> ids = <span class="hljs-built_in">this</span>._ids, graphs = <span class="hljs-built_in">this</span>._getGraphs(graph);
+    <span class="hljs-keyword">let</span> content, predicateId, objectId;
     callback = <span class="hljs-built_in">this</span>._uniqueEntities(callback);</pre></div></div>
             
         </li>
@@ -1900,7 +1904,7 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
             </div>
             
             <div class="content"><div class='highlight'><pre>  getPredicates(subject, object, graph) {
-    <span class="hljs-keyword">var</span> results = [];
+    <span class="hljs-keyword">const</span> results = [];
     <span class="hljs-built_in">this</span>.forPredicates(<span class="hljs-function"><span class="hljs-params">p</span> =&gt;</span> { results.push(p); }, subject, object, graph);
     <span class="hljs-keyword">return</span> results;
   }</pre></div></div>
@@ -1938,7 +1942,8 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
     object = object &amp;&amp; termToId(object);
     graph = graph &amp;&amp; termToId(graph);
 
-    <span class="hljs-keyword">var</span> ids = <span class="hljs-built_in">this</span>._ids, graphs = <span class="hljs-built_in">this</span>._getGraphs(graph), content, subjectId, objectId;
+    <span class="hljs-keyword">const</span> ids = <span class="hljs-built_in">this</span>._ids, graphs = <span class="hljs-built_in">this</span>._getGraphs(graph);
+    <span class="hljs-keyword">let</span> content, subjectId, objectId;
     callback = <span class="hljs-built_in">this</span>._uniqueEntities(callback);</pre></div></div>
             
         </li>
@@ -2073,7 +2078,7 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
             </div>
             
             <div class="content"><div class='highlight'><pre>  getObjects(subject, predicate, graph) {
-    <span class="hljs-keyword">var</span> results = [];
+    <span class="hljs-keyword">const</span> results = [];
     <span class="hljs-built_in">this</span>.forObjects(<span class="hljs-function"><span class="hljs-params">o</span> =&gt;</span> { results.push(o); }, subject, predicate, graph);
     <span class="hljs-keyword">return</span> results;
   }</pre></div></div>
@@ -2111,7 +2116,8 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
     predicate = predicate &amp;&amp; termToId(predicate);
     graph = graph &amp;&amp; termToId(graph);
 
-    <span class="hljs-keyword">var</span> ids = <span class="hljs-built_in">this</span>._ids, graphs = <span class="hljs-built_in">this</span>._getGraphs(graph), content, subjectId, predicateId;
+    <span class="hljs-keyword">const</span> ids = <span class="hljs-built_in">this</span>._ids, graphs = <span class="hljs-built_in">this</span>._getGraphs(graph);
+    <span class="hljs-keyword">let</span> content, subjectId, predicateId;
     callback = <span class="hljs-built_in">this</span>._uniqueEntities(callback);</pre></div></div>
             
         </li>
@@ -2246,7 +2252,7 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
             </div>
             
             <div class="content"><div class='highlight'><pre>  getGraphs(subject, predicate, object) {
-    <span class="hljs-keyword">var</span> results = [];
+    <span class="hljs-keyword">const</span> results = [];
     <span class="hljs-built_in">this</span>.forGraphs(<span class="hljs-function"><span class="hljs-params">g</span> =&gt;</span> { results.push(g); }, subject, predicate, object);
     <span class="hljs-keyword">return</span> results;
   }</pre></div></div>
@@ -2266,7 +2272,7 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
             </div>
             
             <div class="content"><div class='highlight'><pre>  forGraphs(callback, subject, predicate, object) {
-    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> graph <span class="hljs-keyword">in</span> <span class="hljs-built_in">this</span>._graphs) {
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> graph <span class="hljs-keyword">in</span> <span class="hljs-built_in">this</span>._graphs) {
       <span class="hljs-built_in">this</span>.some(<span class="hljs-function"><span class="hljs-params">quad</span> =&gt;</span> {
         callback(quad.graph);
         <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>; <span class="hljs-comment">// Halt iteration of some()</span>
@@ -2288,7 +2294,7 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
             </div>
             
             <div class="content"><div class='highlight'><pre>  createBlankNode(suggestedName) {
-    <span class="hljs-keyword">var</span> name, index;</pre></div></div>
+    <span class="hljs-keyword">let</span> name, index;</pre></div></div>
             
         </li>
         
@@ -2360,8 +2366,8 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
             </div>
             
             <div class="content"><div class='highlight'><pre>  extractLists({ remove = <span class="hljs-literal">false</span>, ignoreErrors = <span class="hljs-literal">false</span> } = {}) {
-    <span class="hljs-keyword">var</span> lists = {}; <span class="hljs-comment">// has scalar keys so could be a simple Object</span>
-    <span class="hljs-keyword">var</span> onError = ignoreErrors ? (<span class="hljs-function">() =&gt;</span> <span class="hljs-literal">true</span>) :
+    <span class="hljs-keyword">const</span> lists = {}; <span class="hljs-comment">// has scalar keys so could be a simple Object</span>
+    <span class="hljs-keyword">const</span> onError = ignoreErrors ? (<span class="hljs-function">() =&gt;</span> <span class="hljs-literal">true</span>) :
                   (<span class="hljs-function">(<span class="hljs-params">node, message</span>) =&gt;</span> { <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">`<span class="hljs-subst">${node.value}</span> <span class="hljs-subst">${message}</span>`</span>); });</pre></div></div>
             
         </li>
@@ -2377,14 +2383,14 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> tails = <span class="hljs-built_in">this</span>.getQuads(<span class="hljs-literal">null</span>, namespaces.rdf.rest, namespaces.rdf.nil, <span class="hljs-literal">null</span>);
-    <span class="hljs-keyword">var</span> toRemove = remove ? [...tails] : [];
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">const</span> tails = <span class="hljs-built_in">this</span>.getQuads(<span class="hljs-literal">null</span>, namespaces.rdf.rest, namespaces.rdf.nil, <span class="hljs-literal">null</span>);
+    <span class="hljs-keyword">const</span> toRemove = remove ? [...tails] : [];
     tails.forEach(<span class="hljs-function"><span class="hljs-params">tailQuad</span> =&gt;</span> {
-      <span class="hljs-keyword">var</span> items = [];             <span class="hljs-comment">// the members found as objects of rdf:first quads</span>
-      <span class="hljs-keyword">var</span> malformed = <span class="hljs-literal">false</span>;      <span class="hljs-comment">// signals whether the current list is malformed</span>
-      <span class="hljs-keyword">var</span> head;                   <span class="hljs-comment">// the head of the list (_:b1 in above example)</span>
-      <span class="hljs-keyword">var</span> headPos;                <span class="hljs-comment">// set to subject or object when head is set</span>
-      <span class="hljs-keyword">var</span> graph = tailQuad.graph; <span class="hljs-comment">// make sure list is in exactly one graph</span></pre></div></div>
+      <span class="hljs-keyword">const</span> items = [];             <span class="hljs-comment">// the members found as objects of rdf:first quads</span>
+      <span class="hljs-keyword">let</span> malformed = <span class="hljs-literal">false</span>;      <span class="hljs-comment">// signals whether the current list is malformed</span>
+      <span class="hljs-keyword">let</span> head;                   <span class="hljs-comment">// the head of the list (_:b1 in above example)</span>
+      <span class="hljs-keyword">let</span> headPos;                <span class="hljs-comment">// set to subject or object when head is set</span>
+      <span class="hljs-keyword">const</span> graph = tailQuad.graph; <span class="hljs-comment">// make sure list is in exactly one graph</span></pre></div></div>
             
         </li>
         
@@ -2399,11 +2405,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">var</span> current = tailQuad.subject;
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">let</span> current = tailQuad.subject;
       <span class="hljs-keyword">while</span> (current &amp;&amp; !malformed) {
-        <span class="hljs-keyword">var</span> objectQuads = <span class="hljs-built_in">this</span>.getQuads(<span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>, current, <span class="hljs-literal">null</span>);
-        <span class="hljs-keyword">var</span> subjectQuads = <span class="hljs-built_in">this</span>.getQuads(current, <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>);
-        <span class="hljs-keyword">var</span> i, quad, first = <span class="hljs-literal">null</span>, rest = <span class="hljs-literal">null</span>, parent = <span class="hljs-literal">null</span>;</pre></div></div>
+        <span class="hljs-keyword">const</span> objectQuads = <span class="hljs-built_in">this</span>.getQuads(<span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>, current, <span class="hljs-literal">null</span>);
+        <span class="hljs-keyword">const</span> subjectQuads = <span class="hljs-built_in">this</span>.getQuads(current, <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>);
+        <span class="hljs-keyword">let</span> quad, first = <span class="hljs-literal">null</span>, rest = <span class="hljs-literal">null</span>, parent = <span class="hljs-literal">null</span>;</pre></div></div>
             
         </li>
         
@@ -2418,7 +2424,7 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">for</span> (i = <span class="hljs-number">0</span>; i &lt; subjectQuads.length &amp;&amp; !malformed; i++) {
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i = <span class="hljs-number">0</span>; i &lt; subjectQuads.length &amp;&amp; !malformed; i++) {
           quad = subjectQuads[i];
           <span class="hljs-keyword">if</span> (!quad.graph.equals(graph))
             malformed = onError(current, <span class="hljs-string">&#x27;not confined to single graph&#x27;</span>);
@@ -2500,7 +2506,7 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">for</span> (i = <span class="hljs-number">0</span>; i &lt; objectQuads.length &amp;&amp; !malformed; ++i) {
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i = <span class="hljs-number">0</span>; i &lt; objectQuads.length &amp;&amp; !malformed; ++i) {
           quad = objectQuads[i];
           <span class="hljs-keyword">if</span> (head)
             malformed = onError(current, <span class="hljs-string">&#x27;can\&#x27;t have coreferences&#x27;</span>);</pre></div></div>

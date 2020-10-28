@@ -128,7 +128,7 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> writer = <span class="hljs-built_in">this</span>._writer = <span class="hljs-keyword">new</span> N3Writer({
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">const</span> writer = <span class="hljs-built_in">this</span>._writer = <span class="hljs-keyword">new</span> N3Writer({
       <span class="hljs-attr">write</span>: <span class="hljs-function">(<span class="hljs-params">quad, encoding, callback</span>) =&gt;</span> { <span class="hljs-built_in">this</span>.push(quad); callback &amp;&amp; callback(); },
       <span class="hljs-attr">end</span>: <span class="hljs-function"><span class="hljs-params">callback</span> =&gt;</span> { <span class="hljs-built_in">this</span>.push(<span class="hljs-literal">null</span>); callback &amp;&amp; callback(); },
     }, options);</pre></div></div>
