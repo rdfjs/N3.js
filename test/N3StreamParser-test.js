@@ -1,18 +1,18 @@
 import { StreamParser, NamedNode } from '../src/';
 import { Readable, Writable } from 'readable-stream';
 
-describe('StreamParser', function () {
-  describe('The StreamParser export', function () {
-    it('should be a function', function () {
+describe('StreamParser', () => {
+  describe('The StreamParser export', () => {
+    it('should be a function', () => {
       StreamParser.should.be.a('function');
     });
 
-    it('should be a StreamParser constructor', function () {
+    it('should be a StreamParser constructor', () => {
       new StreamParser().should.be.an.instanceof(StreamParser);
     });
   });
 
-  describe('A StreamParser instance', function () {
+  describe('A StreamParser instance', () => {
     it('parses the empty stream', shouldParse([], 0));
 
     it('parses the zero-length stream', shouldParse([''], 0));
@@ -24,10 +24,10 @@ describe('StreamParser', function () {
     it('should parse decimals that are split across chunks in the stream',
       shouldParse('<sub> <pred> 11.2 .'.match(/.{1,2}/g), 1));
 
-    it('should parse non-breaking spaces that are split across chunks in the stream correctly', function (done) {
+    it('should parse non-breaking spaces that are split across chunks in the stream correctly', done => {
       var buffer = Buffer.from('<sub> <pred> " " .'),
           chunks = [buffer, buffer.slice(0, 15), buffer.slice(15, buffer.length)];
-      shouldParse(chunks, 2, function (triples) {
+      shouldParse(chunks, 2, triples => {
         triples[0].should.deep.equal(triples[1]);
       })(done);
     });
@@ -39,12 +39,12 @@ describe('StreamParser', function () {
       shouldEmitPrefixes(['@prefix a: <http://a.org/#>. a:a a:b a:c. @prefix b: <http://b.org/#>.'],
                          { a: new NamedNode('http://a.org/#'), b: new NamedNode('http://b.org/#') }));
 
-    it('passes an error', function () {
+    it('passes an error', () => {
       var input = new Readable(),
           parser = new StreamParser(),
           error = null;
       input._read = function () {};
-      parser.on('error', function (e) { error = e; });
+      parser.on('error', e => { error = e; });
       parser.import(input);
       input.emit('error', new Error());
       expect(error).to.be.an.instanceof(Error);
@@ -62,7 +62,7 @@ function shouldParse(chunks, expectedLength, validateTriples) {
     parser.import(inputStream).should.equal(parser);
     parser.pipe(outputStream);
     parser.on('error', done);
-    parser.on('end', function () {
+    parser.on('end', () => {
       triples.should.have.length(expectedLength);
       if (validateTriples) validateTriples(triples);
       done();
@@ -77,7 +77,7 @@ function shouldNotParse(chunks, expectedMessage, expectedContext) {
         outputStream = new ArrayWriter([]);
     inputStream.pipe(parser);
     parser.pipe(outputStream);
-    parser.on('error', function (error) {
+    parser.on('error', error => {
       error.should.be.an.instanceof(Error);
       error.message.should.equal(expectedMessage);
       if (expectedContext) error.context.should.deep.equal(expectedContext);
@@ -92,10 +92,10 @@ function shouldEmitPrefixes(chunks, expectedPrefixes) {
         parser = new StreamParser(),
         inputStream = new ArrayReader(chunks);
     inputStream.pipe(parser);
-    parser.on('data', function () {});
-    parser.on('prefix', function (prefix, iri) { prefixes[prefix] = iri; });
+    parser.on('data', () => {});
+    parser.on('prefix', (prefix, iri) => { prefixes[prefix] = iri; });
     parser.on('error', done);
-    parser.on('end', function (error) {
+    parser.on('end', error => {
       prefixes.should.deep.equal(expectedPrefixes);
       done(error);
     });

@@ -14,7 +14,7 @@ var TEST = '- Lexing file ' + filename;
 console.time(TEST);
 
 var count = 0;
-new N3.Lexer().tokenize(fs.createReadStream(filename), function (error, token) {
+new N3.Lexer().tokenize(fs.createReadStream(filename), (error, token) => {
   assert(!error, error);
   count++;
   if (token.type === 'eof') {

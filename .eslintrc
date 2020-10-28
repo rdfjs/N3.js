@@ -121,6 +121,7 @@
 
     // Stylistic Issues
     array-bracket-spacing: 2,
+    arrow-parens: [2, "as-needed"],
     block-spacing: 2,
     brace-style: [2, "stroustrup", { allowSingleLine: true }],
     camelcase: 2,
@@ -161,6 +162,7 @@
     operator-assignment: 2,
     operator-linebreak: [2, "after", { overrides: { ":": "ignore" } }],
     padded-blocks: [2, "never"],
+    prefer-arrow-callback: 2,
     quote-props: [2, "consistent-as-needed"],
     quotes: [2, "single", "avoid-escape"],
     semi-spacing: 2,

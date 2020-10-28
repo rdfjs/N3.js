@@ -10,18 +10,18 @@ beforeEach(() => {
 });
 Parser.prototype._blankNode = name => new BlankNode(name || `b${blankId++}`);
 
-describe('Parser', function () {
-  describe('The Parser export', function () {
-    it('should be a function', function () {
+describe('Parser', () => {
+  describe('The Parser export', () => {
+    it('should be a function', () => {
       Parser.should.be.a('function');
     });
 
-    it('should be a Parser constructor', function () {
+    it('should be a Parser constructor', () => {
       new Parser().should.be.an.instanceof(Parser);
     });
   });
 
-  describe('A Parser instance', function () {
+  describe('A Parser instance', () => {
     it('should parse the empty string',
       shouldParse(''
                   /* no triples */));
@@ -819,11 +819,11 @@ describe('Parser', function () {
                        line: 1,
                      });
 
-    it('should not error if there is no triple callback', function () {
+    it('should not error if there is no triple callback', () => {
       new Parser().parse('');
     });
 
-    it('should return prefixes through a callback', function (done) {
+    it('should return prefixes through a callback', done => {
       var prefixes = {};
       new Parser().parse('@prefix a: <http://a.org/#>. a:a a:b a:c. @prefix b: <http://b.org/#>.',
                            tripleCallback, prefixCallback);
@@ -847,7 +847,7 @@ describe('Parser', function () {
       }
     });
 
-    it('should return prefixes through a callback without triple callback', function (done) {
+    it('should return prefixes through a callback without triple callback', done => {
       var prefixes = {};
       new Parser().parse('@prefix a: <IRIa>. a:a a:b a:c. @prefix b: <IRIb>.',
                            null, prefixCallback);
@@ -861,7 +861,7 @@ describe('Parser', function () {
       }
     });
 
-    it('should return prefixes at the last triple callback', function (done) {
+    it('should return prefixes at the last triple callback', done => {
       new Parser({ baseIRI: BASE_IRI })
         .parse('@prefix a: <IRIa>. a:a a:b a:c. @prefix b: <IRIb>.', tripleCallback);
 
@@ -879,7 +879,7 @@ describe('Parser', function () {
       }
     });
 
-    it('should parse a string synchronously if no callback is given', function () {
+    it('should parse a string synchronously if no callback is given', () => {
       var triples = new Parser().parse('@prefix a: <urn:a:>. a:a a:b a:c.');
       triples.should.deep.equal([
         new Quad(termFromId('urn:a:a'), termFromId('urn:a:b'),
@@ -887,17 +887,17 @@ describe('Parser', function () {
       ]);
     });
 
-    it('should throw on syntax errors if no callback is given', function () {
+    it('should throw on syntax errors if no callback is given', () => {
       (function () { new Parser().parse('<a> bar <c>'); })
       .should.throw('Unexpected "bar" on line 1.').with.property('context').with.property('line', 1);
     });
 
-    it('should throw on grammar errors if no callback is given', function () {
+    it('should throw on grammar errors if no callback is given', () => {
       (function () { new Parser().parse('<a> <b> <c>'); })
       .should.throw('Expected entity but got eof on line 1');
     });
 
-    it('should parse an RDF* triple with a triple with iris as subject correctly', function () {
+    it('should parse an RDF* triple with a triple with iris as subject correctly', () => {
       shouldParse('<<<a> <b> <c>>> <b> <c>.',
         [['a', 'b', 'c'], 'b', 'c']);
     });
@@ -1008,7 +1008,7 @@ describe('Parser', function () {
           [['a', 'b', 'c'], 'd', 'e']));
   });
 
-  describe('An Parser instance without document IRI', function () {
+  describe('An Parser instance without document IRI', () => {
     function parser() { return new Parser(); }
 
     it('should keep relative IRIs',
@@ -1028,7 +1028,7 @@ describe('Parser', function () {
         [new NamedNode(''), new NamedNode(''), new NamedNode(''), new NamedNode('')]));
   });
 
-  describe('An Parser instance with a document IRI', function () {
+  describe('An Parser instance with a document IRI', () => {
     function parser() { return new Parser({ baseIRI: 'http://ex.org/x/yy/zzz/f.ttl' }); }
 
     it('should resolve IRIs against the document IRI',
@@ -1107,7 +1107,7 @@ describe('Parser', function () {
                   ['http://ex.org/e/k', 'http://ex.org/e/l', 'http://ex.org/e/m']));
   });
 
-  describe('A Parser instance with a blank node prefix', function () {
+  describe('A Parser instance with a blank node prefix', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, blankNodePrefix: '_:blank' }); }
 
     it('should use the given prefix for blank nodes',
@@ -1116,7 +1116,7 @@ describe('Parser', function () {
                   ['_:blanka', 'b', '_:blankc']));
   });
 
-  describe('A Parser instance with an empty blank node prefix', function () {
+  describe('A Parser instance with an empty blank node prefix', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, blankNodePrefix: '' }); }
 
     it('should not use a prefix for blank nodes',
@@ -1125,7 +1125,7 @@ describe('Parser', function () {
                   ['_:a', 'b', '_:c']));
   });
 
-  describe('A Parser instance with a non-string format', function () {
+  describe('A Parser instance with a non-string format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 1 }); }
 
     it('should parse a single triple',
@@ -1135,7 +1135,7 @@ describe('Parser', function () {
       shouldParse(parser, '{<a> <b> <c>}', ['a', 'b', 'c']));
   });
 
-  describe('A Parser instance for the Turtle format', function () {
+  describe('A Parser instance for the Turtle format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'Turtle' }); }
 
     it('should parse a single triple',
@@ -1191,7 +1191,7 @@ describe('Parser', function () {
         'Unexpected RDF* syntax on line 1.'));
   });
 
-  describe('A Parser instance for the TurtleStar format', function () {
+  describe('A Parser instance for the TurtleStar format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'TurtleStar' }); }
 
     it('should parse RDF*',
@@ -1204,7 +1204,7 @@ describe('Parser', function () {
         'Expected >> to follow "_:b0_b" on line 1.'));
   });
 
-  describe('A Parser instance for the TriG format', function () {
+  describe('A Parser instance for the TriG format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'TriG' }); }
 
     it('should parse a single triple',
@@ -1252,7 +1252,7 @@ describe('Parser', function () {
         'Unexpected RDF* syntax on line 1.'));
   });
 
-  describe('A Parser instance for the TriGStar format', function () {
+  describe('A Parser instance for the TriGStar format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'TriGStar' }); }
 
     it('should parse RDF*',
@@ -1264,7 +1264,7 @@ describe('Parser', function () {
         'Expected >> to follow "_:b0_b" on line 1.'));
   });
 
-  describe('A Parser instance for the N-Triples format', function () {
+  describe('A Parser instance for the N-Triples format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N-Triples' }); }
 
     it('should parse a single triple',
@@ -1323,7 +1323,7 @@ describe('Parser', function () {
         'Unexpected RDF* syntax on line 1.'));
   });
 
-  describe('A Parser instance for the N-TriplesStar format', function () {
+  describe('A Parser instance for the N-TriplesStar format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N-TriplesStar' }); }
 
     it('should parse RDF*',
@@ -1335,7 +1335,7 @@ describe('Parser', function () {
         'Expected >> to follow "_:b0_b" on line 1.'));
   });
 
-  describe('A Parser instance for the N-Quads format', function () {
+  describe('A Parser instance for the N-Quads format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N-Quads' }); }
 
     it('should parse a single triple',
@@ -1382,7 +1382,7 @@ describe('Parser', function () {
         'Unexpected RDF* syntax on line 1.'));
   });
 
-  describe('A Parser instance for the N-QuadsStar format', function () {
+  describe('A Parser instance for the N-QuadsStar format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N-QuadsStar' }); }
 
     it('should parse RDF*',
@@ -1390,7 +1390,7 @@ describe('Parser', function () {
         [['_:b0_a', 'b', '_:b0_c'], 'a', '_:b0_c']));
   });
 
-  describe('A Parser instance for the N3 format', function () {
+  describe('A Parser instance for the N3 format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3' }); }
 
     it('should parse a single triple',
@@ -1729,7 +1729,7 @@ describe('Parser', function () {
         'Unexpected RDF* syntax on line 1.'));
   });
 
-  describe('A Parser instance for the N3Star format', function () {
+  describe('A Parser instance for the N3Star format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3Star' }); }
 
     it('should parse RDF*',
@@ -1741,7 +1741,7 @@ describe('Parser', function () {
         'Expected >> to follow "_:.b" on line 1.'));
   });
 
-  describe('A Parser instance for the N3 format with the explicitQuantifiers option', function () {
+  describe('A Parser instance for the N3 format with the explicitQuantifiers option', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3', explicitQuantifiers: true }); }
 
     it('should parse a @forSome statement',
@@ -1805,17 +1805,17 @@ describe('Parser', function () {
                   ['x', 'x', 'x']));
   });
 
-  describe('A Parser instance with a custom DataFactory', function () {
+  describe('A Parser instance with a custom DataFactory', () => {
     var parser, factory = {};
-    before(function () {
+    before(() => {
       factory.quad = function (s, p, o, g) { return { s: s, p: p, o: o, g: g }; };
-      ['namedNode', 'blankNode', 'literal', 'variable', 'defaultGraph'].forEach(function (f) {
+      ['namedNode', 'blankNode', 'literal', 'variable', 'defaultGraph'].forEach(f => {
         factory[f] = function (n) { return n ? f[0] + '-' + n : f; };
       });
       parser = new Parser({ baseIRI: BASE_IRI, format: 'n3', factory: factory });
     });
 
-    it('should use the custom factory', function () {
+    it('should use the custom factory', () => {
       parser.parse('<a> ?b 1, _:d.').should.deep.equal([
         { s: 'n-http://example.org/a', p: 'v-b', o: 'l-1',    g: 'defaultGraph' },
         { s: 'n-http://example.org/a', p: 'v-b', o: 'b-b0_d', g: 'defaultGraph' },
@@ -1823,8 +1823,8 @@ describe('Parser', function () {
     });
   });
 
-  describe('IRI resolution', function () {
-    describe('RFC3986 normal examples', function () {
+  describe('IRI resolution', () => {
+    describe('RFC3986 normal examples', () => {
       itShouldResolve('http://a/bb/ccc/d;p?q', 'g:h',     'g:h');
       itShouldResolve('http://a/bb/ccc/d;p?q', 'g',       'http://a/bb/ccc/g');
       itShouldResolve('http://a/bb/ccc/d;p?q', './g',     'http://a/bb/ccc/g');
@@ -1850,7 +1850,7 @@ describe('Parser', function () {
       itShouldResolve('http://a/bb/ccc/d;p?q', '../../g', 'http://a/g');
     });
 
-    describe('RFC3986 abnormal examples', function () {
+    describe('RFC3986 abnormal examples', () => {
       itShouldResolve('http://a/bb/ccc/d;p?q', '../../../g',    'http://a/g');
       itShouldResolve('http://a/bb/ccc/d;p?q', '../../../../g', 'http://a/g');
       itShouldResolve('http://a/bb/ccc/d;p?q', '/./g',          'http://a/g');
@@ -1872,7 +1872,7 @@ describe('Parser', function () {
       itShouldResolve('http://a/bb/ccc/d;p?q', 'http:g',        'http:g');
     });
 
-    describe('RFC3986 normal examples with trailing slash in base IRI', function () {
+    describe('RFC3986 normal examples with trailing slash in base IRI', () => {
       itShouldResolve('http://a/bb/ccc/d/', 'g:h',     'g:h');
       itShouldResolve('http://a/bb/ccc/d/', 'g',       'http://a/bb/ccc/d/g');
       itShouldResolve('http://a/bb/ccc/d/', './g',     'http://a/bb/ccc/d/g');
@@ -1898,7 +1898,7 @@ describe('Parser', function () {
       itShouldResolve('http://a/bb/ccc/d/', '../../g', 'http://a/bb/g');
     });
 
-    describe('RFC3986 abnormal examples with trailing slash in base IRI', function () {
+    describe('RFC3986 abnormal examples with trailing slash in base IRI', () => {
       itShouldResolve('http://a/bb/ccc/d/', '../../../g',    'http://a/g');
       itShouldResolve('http://a/bb/ccc/d/', '../../../../g', 'http://a/g');
       itShouldResolve('http://a/bb/ccc/d/', '/./g',          'http://a/g');
@@ -1920,7 +1920,7 @@ describe('Parser', function () {
       itShouldResolve('http://a/bb/ccc/d/', 'http:g',        'http:g');
     });
 
-    describe('RFC3986 normal examples with /. in the base IRI', function () {
+    describe('RFC3986 normal examples with /. in the base IRI', () => {
       itShouldResolve('http://a/bb/ccc/./d;p?q', 'g:h',     'g:h');
       itShouldResolve('http://a/bb/ccc/./d;p?q', 'g',       'http://a/bb/ccc/g');
       itShouldResolve('http://a/bb/ccc/./d;p?q', './g',     'http://a/bb/ccc/g');
@@ -1946,7 +1946,7 @@ describe('Parser', function () {
       itShouldResolve('http://a/bb/ccc/./d;p?q', '../../g', 'http://a/g');
     });
 
-    describe('RFC3986 abnormal examples with /. in the base IRI', function () {
+    describe('RFC3986 abnormal examples with /. in the base IRI', () => {
       itShouldResolve('http://a/bb/ccc/./d;p?q', '../../../g',    'http://a/g');
       itShouldResolve('http://a/bb/ccc/./d;p?q', '../../../../g', 'http://a/g');
       itShouldResolve('http://a/bb/ccc/./d;p?q', '/./g',          'http://a/g');
@@ -1968,7 +1968,7 @@ describe('Parser', function () {
       itShouldResolve('http://a/bb/ccc/./d;p?q', 'http:g',        'http:g');
     });
 
-    describe('RFC3986 normal examples with /.. in the base IRI', function () {
+    describe('RFC3986 normal examples with /.. in the base IRI', () => {
       itShouldResolve('http://a/bb/ccc/../d;p?q', 'g:h',     'g:h');
       itShouldResolve('http://a/bb/ccc/../d;p?q', 'g',       'http://a/bb/g');
       itShouldResolve('http://a/bb/ccc/../d;p?q', './g',     'http://a/bb/g');
@@ -1994,7 +1994,7 @@ describe('Parser', function () {
       itShouldResolve('http://a/bb/ccc/../d;p?q', '../../g', 'http://a/g');
     });
 
-    describe('RFC3986 abnormal examples with /.. in the base IRI', function () {
+    describe('RFC3986 abnormal examples with /.. in the base IRI', () => {
       itShouldResolve('http://a/bb/ccc/../d;p?q', '../../../g',    'http://a/g');
       itShouldResolve('http://a/bb/ccc/../d;p?q', '../../../../g', 'http://a/g');
       itShouldResolve('http://a/bb/ccc/../d;p?q', '/./g',          'http://a/g');
@@ -2016,7 +2016,7 @@ describe('Parser', function () {
       itShouldResolve('http://a/bb/ccc/../d;p?q', 'http:g',        'http:g');
     });
 
-    describe('RFC3986 normal examples with trailing /. in the base IRI', function () {
+    describe('RFC3986 normal examples with trailing /. in the base IRI', () => {
       itShouldResolve('http://a/bb/ccc/.', 'g:h',     'g:h');
       itShouldResolve('http://a/bb/ccc/.', 'g',       'http://a/bb/ccc/g');
       itShouldResolve('http://a/bb/ccc/.', './g',     'http://a/bb/ccc/g');
@@ -2042,7 +2042,7 @@ describe('Parser', function () {
       itShouldResolve('http://a/bb/ccc/.', '../../g', 'http://a/g');
     });
 
-    describe('RFC3986 abnormal examples with trailing /. in the base IRI', function () {
+    describe('RFC3986 abnormal examples with trailing /. in the base IRI', () => {
       itShouldResolve('http://a/bb/ccc/.', '../../../g',    'http://a/g');
       itShouldResolve('http://a/bb/ccc/.', '../../../../g', 'http://a/g');
       itShouldResolve('http://a/bb/ccc/.', '/./g',          'http://a/g');
@@ -2064,7 +2064,7 @@ describe('Parser', function () {
       itShouldResolve('http://a/bb/ccc/.', 'http:g',        'http:g');
     });
 
-    describe('RFC3986 normal examples with trailing /.. in the base IRI', function () {
+    describe('RFC3986 normal examples with trailing /.. in the base IRI', () => {
       itShouldResolve('http://a/bb/ccc/..', 'g:h',     'g:h');
       itShouldResolve('http://a/bb/ccc/..', 'g',       'http://a/bb/ccc/g');
       itShouldResolve('http://a/bb/ccc/..', './g',     'http://a/bb/ccc/g');
@@ -2090,7 +2090,7 @@ describe('Parser', function () {
       itShouldResolve('http://a/bb/ccc/..', '../../g', 'http://a/g');
     });
 
-    describe('RFC3986 abnormal examples with trailing /.. in the base IRI', function () {
+    describe('RFC3986 abnormal examples with trailing /.. in the base IRI', () => {
       itShouldResolve('http://a/bb/ccc/..', '../../../g',    'http://a/g');
       itShouldResolve('http://a/bb/ccc/..', '../../../../g', 'http://a/g');
       itShouldResolve('http://a/bb/ccc/..', '/./g',          'http://a/g');
@@ -2112,7 +2112,7 @@ describe('Parser', function () {
       itShouldResolve('http://a/bb/ccc/..', 'http:g',        'http:g');
     });
 
-    describe('RFC3986 normal examples with fragment in base IRI', function () {
+    describe('RFC3986 normal examples with fragment in base IRI', () => {
       itShouldResolve('http://a/bb/ccc/d;p?q#f', 'g:h',     'g:h');
       itShouldResolve('http://a/bb/ccc/d;p?q#f', 'g',       'http://a/bb/ccc/g');
       itShouldResolve('http://a/bb/ccc/d;p?q#f', './g',     'http://a/bb/ccc/g');
@@ -2138,7 +2138,7 @@ describe('Parser', function () {
       itShouldResolve('http://a/bb/ccc/d;p?q#f', '../../g', 'http://a/g');
     });
 
-    describe('RFC3986 abnormal examples with fragment in base IRI', function () {
+    describe('RFC3986 abnormal examples with fragment in base IRI', () => {
       itShouldResolve('http://a/bb/ccc/d;p?q#f', '../../../g',    'http://a/g');
       itShouldResolve('http://a/bb/ccc/d;p?q#f', '../../../../g', 'http://a/g');
       itShouldResolve('http://a/bb/ccc/d;p?q#f', '/./g',          'http://a/g');
@@ -2160,7 +2160,7 @@ describe('Parser', function () {
       itShouldResolve('http://a/bb/ccc/d;p?q#f', 'http:g',        'http:g');
     });
 
-    describe('RFC3986 normal examples with file path', function () {
+    describe('RFC3986 normal examples with file path', () => {
       itShouldResolve('file:///a/bb/ccc/d;p?q', 'g:h',     'g:h');
       itShouldResolve('file:///a/bb/ccc/d;p?q', 'g',       'file:///a/bb/ccc/g');
       itShouldResolve('file:///a/bb/ccc/d;p?q', './g',     'file:///a/bb/ccc/g');
@@ -2186,7 +2186,7 @@ describe('Parser', function () {
       itShouldResolve('file:///a/bb/ccc/d;p?q', '../../g', 'file:///a/g');
     });
 
-    describe('RFC3986 abnormal examples with file path', function () {
+    describe('RFC3986 abnormal examples with file path', () => {
       itShouldResolve('file:///a/bb/ccc/d;p?q', '../../../g',    'file:///g');
       itShouldResolve('file:///a/bb/ccc/d;p?q', '../../../../g', 'file:///g');
       itShouldResolve('file:///a/bb/ccc/d;p?q', '/./g',          'file:///g');
@@ -2208,7 +2208,7 @@ describe('Parser', function () {
       itShouldResolve('file:///a/bb/ccc/d;p?q', 'http:g',        'http:g');
     });
 
-    describe('additional cases', function () {
+    describe('additional cases', () => {
       // relative paths ending with '.'
       itShouldResolve('http://abc/',        '.',      'http://abc/');
       itShouldResolve('http://abc/def/ghi', '.',      'http://abc/def/');
@@ -2263,7 +2263,7 @@ function shouldParse(parser, input) {
   return function (done) {
     var results = [];
     var items = expected.map(mapToQuad);
-    new parser({ baseIRI: BASE_IRI }).parse(input, function (error, triple) {
+    new parser({ baseIRI: BASE_IRI }).parse(input, (error, triple) => {
       expect(error).not.to.exist;
       if (triple)
         results.push(triple);
@@ -2274,7 +2274,7 @@ function shouldParse(parser, input) {
 }
 
 function mapToQuad(item) {
-  item = item.map(function (t) {
+  item = item.map(t => {
     // don't touch if it's already an object
     if (typeof t === 'object')
       // recursively map content if it's an array
@@ -2288,7 +2288,7 @@ function mapToQuad(item) {
 }
 
 function toSortedJSON(triples) {
-  triples = triples.map(function (t) {
+  triples = triples.map(t => {
     return JSON.stringify([
       t.subject.toJSON(), t.predicate.toJSON(), t.object.toJSON(), t.graph.toJSON(),
     ]);
@@ -2303,7 +2303,7 @@ function shouldNotParse(parser, input, expectedError, expectedContext) {
     expectedContext = expectedError, expectedError = input, input = parser, parser = Parser;
 
   return function (done) {
-    new parser({ baseIRI: BASE_IRI }).parse(input, function (error, triple) {
+    new parser({ baseIRI: BASE_IRI }).parse(input, (error, triple) => {
       if (error) {
         expect(triple).not.to.exist;
         error.should.be.an.instanceof(Error);
@@ -2319,11 +2319,11 @@ function shouldNotParse(parser, input, expectedError, expectedContext) {
 
 function itShouldResolve(baseIri, relativeIri, expected) {
   var result;
-  describe('resolving <' + relativeIri + '> against <' + baseIri + '>', function () {
-    before(function (done) {
+  describe('resolving <' + relativeIri + '> against <' + baseIri + '>', () => {
+    before(done => {
       try {
         var doc = '<urn:ex:s> <urn:ex:p> <' + relativeIri + '>.';
-        new Parser({ baseIRI: baseIri }).parse(doc, function (error, triple) {
+        new Parser({ baseIRI: baseIri }).parse(doc, (error, triple) => {
           if (done)
             result = triple, done(error);
           done = null;
@@ -2331,7 +2331,7 @@ function itShouldResolve(baseIri, relativeIri, expected) {
       }
       catch (error) { done(error); }
     });
-    it('should result in ' + expected, function () {
+    it('should result in ' + expected, () => {
       expect(result.object.value).to.equal(expected);
     });
   });
