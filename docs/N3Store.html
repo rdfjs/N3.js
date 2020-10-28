@@ -726,11 +726,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>  _uniqueEntities(callback) {
-    <span class="hljs-keyword">var</span> uniqueIds = <span class="hljs-built_in">Object</span>.create(<span class="hljs-literal">null</span>), entities = <span class="hljs-built_in">this</span>._entities;
-    <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">id</span>) </span>{
+    <span class="hljs-keyword">var</span> uniqueIds = <span class="hljs-built_in">Object</span>.create(<span class="hljs-literal">null</span>);
+    <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-params">id</span> =&gt;</span> {
       <span class="hljs-keyword">if</span> (!(id <span class="hljs-keyword">in</span> uniqueIds)) {
         uniqueIds[id] = <span class="hljs-literal">true</span>;
-        callback(termFromId(entities[id]));
+        callback(termFromId(<span class="hljs-built_in">this</span>._entities[id], <span class="hljs-built_in">this</span>._factory));
       }
     };
   }</pre></div></div>
