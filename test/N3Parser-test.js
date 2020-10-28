@@ -1811,7 +1811,7 @@ describe('Parser', () => {
     before(() => {
       factory.quad = function (s, p, o, g) { return { s: s, p: p, o: o, g: g }; };
       ['namedNode', 'blankNode', 'literal', 'variable', 'defaultGraph'].forEach(f => {
-        factory[f] = function (n) { return n ? f[0] + '-' + n : f; };
+        factory[f] = function (n) { return n ? `${f[0]}-${n}` : f; };
       });
       parser = new Parser({ baseIRI: BASE_IRI, format: 'n3', factory: factory });
     });
@@ -2295,7 +2295,7 @@ function toSortedJSON(triples) {
     ]);
   });
   triples.sort();
-  return '[\n  ' + triples.join('\n  ') + '\n]';
+  return `[\n  ${triples.join('\n  ')}\n]`;
 }
 
 function shouldNotParse(parser, input, expectedError, expectedContext) {
@@ -2313,17 +2313,17 @@ function shouldNotParse(parser, input, expectedError, expectedContext) {
         done();
       }
       else if (!triple)
-        done(new Error('Expected error ' + expectedError));
+        done(new Error(`Expected error ${expectedError}`));
     });
   };
 }
 
 function itShouldResolve(baseIri, relativeIri, expected) {
   let result;
-  describe('resolving <' + relativeIri + '> against <' + baseIri + '>', () => {
+  describe(`resolving <${relativeIri}> against <${baseIri}>`, () => {
     before(done => {
       try {
-        const doc = '<urn:ex:s> <urn:ex:p> <' + relativeIri + '>.';
+        const doc = `<urn:ex:s> <urn:ex:p> <${relativeIri}>.`;
         new Parser({ baseIRI: baseIri }).parse(doc, (error, triple) => {
           if (done)
             result = triple, done(error);
@@ -2332,7 +2332,7 @@ function itShouldResolve(baseIri, relativeIri, expected) {
       }
       catch (error) { done(error); }
     });
-    it('should result in ' + expected, () => {
+    it(`should result in ${expected}`, () => {
       expect(result.object.value).to.equal(expected);
     });
   });

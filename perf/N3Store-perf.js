@@ -12,7 +12,7 @@ let dimSquared = dim * dim;
 let dimCubed = dimSquared * dim;
 
 let store = new N3.Store();
-let TEST = '- Adding ' + dimCubed + ' triples to the default graph';
+let TEST = `- Adding ${dimCubed} triples to the default graph`;
 console.time(TEST);
 let i, j, k, l;
 for (i = 0; i < dim; i++)
@@ -21,9 +21,9 @@ for (i = 0; i < dim; i++)
       store.addQuad(prefix + i, prefix + j, prefix + k);
 console.timeEnd(TEST);
 
-console.log('* Memory usage for triples: ' + Math.round(process.memoryUsage().rss / 1024 / 1024) + 'MB');
+console.log(`* Memory usage for triples: ${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB`);
 
-TEST = '- Finding all ' + dimCubed + ' triples in the default graph ' + dimSquared * 1 + ' times (0 variables)';
+TEST = `- Finding all ${dimCubed} triples in the default graph ${dimSquared * 1} times (0 variables)`;
 console.time(TEST);
 for (i = 0; i < dim; i++)
   for (j = 0; j < dim; j++)
@@ -31,7 +31,7 @@ for (i = 0; i < dim; i++)
       assert.equal(store.getQuads(prefix + i, prefix + j, prefix + k, '').length, 1);
 console.timeEnd(TEST);
 
-TEST = '- Finding all ' + dimCubed + ' triples in the default graph ' + dimSquared * 2 + ' times (1 variable)';
+TEST = `- Finding all ${dimCubed} triples in the default graph ${dimSquared * 2} times (1 variable)`;
 console.time(TEST);
 for (i = 0; i < dim; i++)
   for (j = 0; j < dim; j++)
@@ -44,7 +44,7 @@ for (i = 0; i < dim; i++)
     assert.equal(store.getQuads(null, prefix + i, prefix + j, '').length, dim);
 console.timeEnd(TEST);
 
-TEST = '- Finding all ' + dimCubed + ' triples in the default graph ' + dimSquared * 3 + ' times (2 variables)';
+TEST = `- Finding all ${dimCubed} triples in the default graph ${dimSquared * 3} times (2 variables)`;
 console.time(TEST);
 for (i = 0; i < dim; i++)
   assert.equal(store.getQuads(prefix + i, null, null, '').length, dimSquared);
@@ -63,7 +63,7 @@ dimCubed = dimSquared * dim;
 const dimQuads = dimCubed * dim;
 
 store = new N3.Store();
-TEST = '- Adding ' + dimQuads + ' quads';
+TEST = `- Adding ${dimQuads} quads`;
 console.time(TEST);
 for (i = 0; i < dim; i++)
   for (j = 0; j < dim; j++)
@@ -72,9 +72,9 @@ for (i = 0; i < dim; i++)
         store.addQuad(prefix + i, prefix + j, prefix + k, prefix + l);
 console.timeEnd(TEST);
 
-console.log('* Memory usage for quads: ' + Math.round(process.memoryUsage().rss / 1024 / 1024) + 'MB');
+console.log(`* Memory usage for quads: ${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB`);
 
-TEST = '- Finding all ' + dimQuads + ' quads ' + dimCubed * 4 + ' times';
+TEST = `- Finding all ${dimQuads} quads ${dimCubed * 4} times`;
 console.time(TEST);
 for (i = 0; i < dim; i++)
   assert.equal(store.getQuads(prefix + i, null, null, null).length, dimCubed);

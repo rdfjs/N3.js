@@ -197,7 +197,7 @@ describe('Util', () => {
       });
 
       it('should use a custom factory when specified', () => {
-        const factory = { namedNode: function (s) { return 'n-' + s; } };
+        const factory = { namedNode: function (s) { return `n-${s}`; } };
         const rdfs = Util.prefix('http://www.w3.org/2000/01/rdf-schema#', factory);
         expect(rdfs('label')).to.equal('n-http://www.w3.org/2000/01/rdf-schema#label');
       });
@@ -264,7 +264,7 @@ describe('Util', () => {
     });
 
     describe('called with a custom factory', () => {
-      const factory = { namedNode: function (s) { return 'n-' + s; } };
+      const factory = { namedNode: function (s) { return `n-${s}`; } };
       const prefixes = Util.prefixes({ my: 'http://example.org/#' }, factory);
 
       it('should use the custom factory', () => {

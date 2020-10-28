@@ -163,7 +163,7 @@ export default class N3Lexer {
         // we always need a non-dot character before deciding it is a blank node.
         // Therefore, try inserting a space if we're at the end of the input.
         if ((match = this._blank.exec(input)) ||
-            inputFinished && (match = this._blank.exec(input + ' ')))
+            inputFinished && (match = this._blank.exec(`${input} `)))
           type = 'blank', prefix = '_', value = match[1];
         break;
 
@@ -241,7 +241,7 @@ export default class N3Lexer {
         // we always need a non-dot character before deciding it is a number.
         // Therefore, try inserting a space if we're at the end of the input.
         if (match = this._number.exec(input) ||
-            inputFinished && (match = this._number.exec(input + ' '))) {
+            inputFinished && (match = this._number.exec(`${input} `))) {
           type = 'literal', value = match[0];
           prefix = (typeof match[1] === 'string' ? xsd.double :
                     (typeof match[2] === 'string' ? xsd.decimal : xsd.integer));
@@ -320,7 +320,7 @@ export default class N3Lexer {
         // we always need a non-dot character before deciding it is a prefixed name.
         // Therefore, try inserting a space if we're at the end of the input.
         else if ((match = this._prefixed.exec(input)) ||
-                 inputFinished && (match = this._prefixed.exec(input + ' ')))
+                 inputFinished && (match = this._prefixed.exec(`${input} `)))
           type = 'prefixed', prefix = match[1] || '', value = this._unescape(match[2]);
       }
 
@@ -420,7 +420,7 @@ export default class N3Lexer {
   // ### `_syntaxError` creates a syntax error for the given issue
   _syntaxError(issue) {
     this._input = null;
-    const err = new Error('Unexpected "' + issue + '" on line ' + this._line + '.');
+    const err = new Error(`Unexpected "${issue}" on line ${this._line}.`);
     err.context = {
       token: undefined,
       line: this._line,

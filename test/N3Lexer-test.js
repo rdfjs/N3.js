@@ -1269,7 +1269,7 @@ function shouldNotTokenize(lexer, input, expectedError) {
         done();
       }
       else if (token.type === 'eof')
-        throw new Error('Expected error ' + expectedError);
+        throw new Error(`Expected error ${expectedError}`);
     }
   };
 }

@@ -58,7 +58,7 @@ export function prefixes(defaultPrefixes, factory) {
       };
     }
     else if (!(prefix in prefixes)) {
-      throw new Error('Unknown prefix: ' + prefix);
+      throw new Error(`Unknown prefix: ${prefix}`);
     }
     return prefixes[prefix];
   }

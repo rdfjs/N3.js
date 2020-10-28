@@ -128,7 +128,7 @@ export class Literal extends Term {
 // ## BlankNode constructor
 export class BlankNode extends Term {
   constructor(name) {
-    super('_:' + name);
+    super(`_:${name}`);
   }
 
   // ### The term type of this term
@@ -144,7 +144,7 @@ export class BlankNode extends Term {
 
 export class Variable extends Term {
   constructor(name) {
-    super('?' + name);
+    super(`?${name}`);
   }
 
   // ### The term type of this term
@@ -234,12 +234,12 @@ export function termToId(term) {
   // Term instantiated with another library
   switch (term.termType) {
   case 'NamedNode':    return term.value;
-  case 'BlankNode':    return '_:' + term.value;
-  case 'Variable':     return '?' + term.value;
+  case 'BlankNode':    return `_:${term.value}`;
+  case 'Variable':     return `?${term.value}`;
   case 'DefaultGraph': return '';
-  case 'Literal':      return '"' + term.value + '"' +
-    (term.language ? '@' + term.language :
-      (term.datatype && term.datatype.value !== xsd.string ? '^^' + term.datatype.value : ''));
+  case 'Literal':      return `"${term.value}"${
+    term.language ? `@${term.language}` :
+      (term.datatype && term.datatype.value !== xsd.string ? `^^${term.datatype.value}` : '')}`;
   case 'Quad':
     // To identify RDF* quad components, we escape quotes by doubling them.
     // This avoids the overhead of backslash parsing of Turtle-like syntaxes.
@@ -252,7 +252,7 @@ export function termToId(term) {
       }${
         (isDefaultGraph(term.graph)) ? '' : ` ${termToId(term.graph)}`
       }>>`;
-  default: throw new Error('Unexpected termType: ' + term.termType);
+  default: throw new Error(`Unexpected termType: ${term.termType}`);
   }
 }
 
@@ -317,7 +317,7 @@ function blankNode(name) {
 function literal(value, languageOrDataType) {
   // Create a language-tagged string
   if (typeof languageOrDataType === 'string')
-    return new Literal('"' + value + '"@' + languageOrDataType.toLowerCase());
+    return new Literal(`"${value}"@${languageOrDataType.toLowerCase()}`);
 
   // Automatically determine datatype for booleans and numbers
   let datatype = languageOrDataType ? languageOrDataType.value : '';
@@ -339,8 +339,8 @@ function literal(value, languageOrDataType) {
 
   // Create a datatyped literal
   return (datatype === '' || datatype === xsd.string) ?
-    new Literal('"' + value + '"') :
-    new Literal('"' + value + '"^^' + datatype);
+    new Literal(`"${value}"`) :
+    new Literal(`"${value}"^^${datatype}`);
 }
 
 // ### Creates a variable

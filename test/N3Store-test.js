@@ -1140,13 +1140,13 @@ describe('Store', () => {
     describe('when searched with more than one variable', () => {
       it('should return a triple with the blank node as an object',
         shouldIncludeAll(store.getQuads(),
-                         ['s1', 'p1', '_:' + b1.value]));
+                         ['s1', 'p1', `_:${b1.value}`]));
     });
 
     describe('when searched with one variable', () => {
       it('should return a triple with the blank node as an object',
         shouldIncludeAll(store.getQuads('s1', 'p1'),
-                         ['s1', 'p1', '_:' + b1.value]));
+                         ['s1', 'p1', `_:${b1.value}`]));
     });
   });
 
@@ -1156,7 +1156,7 @@ describe('Store', () => {
     before(() => {
       factory.quad = function (s, p, o, g) { return { s: s, p: p, o: o, g: g }; };
       ['namedNode', 'blankNode', 'literal', 'variable', 'defaultGraph'].forEach(f => {
-        factory[f] = function (n) { return n ? f[0] + '-' + n : f; };
+        factory[f] = function (n) { return n ? `${f[0]}-${n}` : f; };
       });
 
       store = new Store({ factory: factory });
@@ -1213,11 +1213,11 @@ describe('Store', () => {
       const lists = store.extractLists();
       it('should not delete triples',
         shouldIncludeAll(store.getQuads(),
-          ['_:' + listElements[0].value, 'p1', 'o1'],
-          ['_:' + listElements[0].value, namespaces.rdf.first, 'element1'],
-          ['_:' + listElements[0].value, namespaces.rdf.rest, '_:' + listElements[1].value],
-          ['_:' + listElements[1].value, namespaces.rdf.first, '"element2"'],
-          ['_:' + listElements[1].value, namespaces.rdf.rest, namespaces.rdf.nil]
+          [`_:${listElements[0].value}`, 'p1', 'o1'],
+          [`_:${listElements[0].value}`, namespaces.rdf.first, 'element1'],
+          [`_:${listElements[0].value}`, namespaces.rdf.rest, `_:${listElements[1].value}`],
+          [`_:${listElements[1].value}`, namespaces.rdf.first, '"element2"'],
+          [`_:${listElements[1].value}`, namespaces.rdf.rest, namespaces.rdf.nil]
         ));
       it('should generate a list of Collections', () => {
         expect(listsToJSON(lists)).to.deep.equal(listItemsJSON);
@@ -1228,7 +1228,7 @@ describe('Store', () => {
       const lists = store.extractLists({ remove: true });
       it('should remove the first/rest triples and return the list members',
         shouldIncludeAll(store.getQuads(),
-                         ['_:' + listElements[0].value, 'p1', 'o1']));
+                         [`_:${listElements[0].value}`, 'p1', 'o1']));
       it('should generate a list of Collections', () => {
         expect(listsToJSON(lists)).to.deep.equal(listItemsJSON);
       });
@@ -1251,11 +1251,11 @@ describe('Store', () => {
       const lists = store.extractLists();
       it('should not delete triples',
         shouldIncludeAll(store.getQuads(),
-          ['s1', 'p1', '_:' + listElements[0].value],
-          ['_:' + listElements[0].value, namespaces.rdf.first, 'element1'],
-          ['_:' + listElements[0].value, namespaces.rdf.rest, '_:' + listElements[1].value],
-          ['_:' + listElements[1].value, namespaces.rdf.first, '"element2"'],
-          ['_:' + listElements[1].value, namespaces.rdf.rest, namespaces.rdf.nil]
+          ['s1', 'p1', `_:${listElements[0].value}`],
+          [`_:${listElements[0].value}`, namespaces.rdf.first, 'element1'],
+          [`_:${listElements[0].value}`, namespaces.rdf.rest, `_:${listElements[1].value}`],
+          [`_:${listElements[1].value}`, namespaces.rdf.first, '"element2"'],
+          [`_:${listElements[1].value}`, namespaces.rdf.rest, namespaces.rdf.nil]
         ));
       it('should generate a list of Collections', () => {
         expect(listsToJSON(lists)).to.deep.equal(listItemsJSON);
@@ -1266,7 +1266,7 @@ describe('Store', () => {
       const lists = store.extractLists({ remove: true });
       it('should remove the first/rest triples and return the list members',
         shouldIncludeAll(store.getQuads(),
-                         ['s1', 'p1', '_:' + listElements[0].value]));
+                         ['s1', 'p1', `_:${listElements[0].value}`]));
       it('should generate a list of Collections', () => {
         expect(listsToJSON(lists)).to.deep.equal(listItemsJSON);
       });
@@ -1283,10 +1283,10 @@ describe('Store', () => {
       it('should not delete triples',
         shouldIncludeAll(store.getQuads(),
           ['s1', 'p1', 'o1'],
-          ['_:' + listElements[0].value, namespaces.rdf.first, 'element1'],
-          ['_:' + listElements[0].value, namespaces.rdf.rest, '_:' + listElements[1].value],
-          ['_:' + listElements[1].value, namespaces.rdf.first, '"element2"'],
-          ['_:' + listElements[1].value, namespaces.rdf.rest, namespaces.rdf.nil]
+          [`_:${listElements[0].value}`, namespaces.rdf.first, 'element1'],
+          [`_:${listElements[0].value}`, namespaces.rdf.rest, `_:${listElements[1].value}`],
+          [`_:${listElements[1].value}`, namespaces.rdf.first, '"element2"'],
+          [`_:${listElements[1].value}`, namespaces.rdf.rest, namespaces.rdf.nil]
         ));
       it('should generate a list of Collections', () => {
         expect(listsToJSON(lists)).to.deep.equal({});
@@ -1420,11 +1420,11 @@ describe('Store', () => {
       const lists = store.extractLists({ ignoreErrors: true });
       it('should not delete triples',
         shouldIncludeAll(store.getQuads(),
-          ['s1', 'p1', '_:' + listElements[0].value],
-          ['_:' + listElements[0].value, namespaces.rdf.first, 'element1'],
-          ['_:' + listElements[0].value, namespaces.rdf.rest, '_:' + listElements[1].value, 'g1'],
-          ['_:' + listElements[1].value, namespaces.rdf.first, '"element2"'],
-          ['_:' + listElements[1].value, namespaces.rdf.rest, namespaces.rdf.nil]
+          ['s1', 'p1', `_:${listElements[0].value}`],
+          [`_:${listElements[0].value}`, namespaces.rdf.first, 'element1'],
+          [`_:${listElements[0].value}`, namespaces.rdf.rest, `_:${listElements[1].value}`, 'g1'],
+          [`_:${listElements[1].value}`, namespaces.rdf.first, '"element2"'],
+          [`_:${listElements[1].value}`, namespaces.rdf.rest, namespaces.rdf.nil]
         ));
       it('should generate an empty list of Collections', () => {
         expect(listsToJSON(lists)).to.deep.equal({});

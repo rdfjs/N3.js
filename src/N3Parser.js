@@ -86,7 +86,7 @@ export default class N3Parser {
       this._inversePredicate = false;
       // In N3, blank nodes are scoped to a formula
       // (using a dot as separator, as a blank node label cannot start with it)
-      this._prefixes._ = (this._graph ? this._graph.id.substr(2) + '.' : '.');
+      this._prefixes._ = (this._graph ? `${this._graph.id.substr(2)}.` : '.');
       // Quantifiers are scoped to a formula
       this._quantified = Object.create(this._quantified);
     }
@@ -160,7 +160,7 @@ export default class N3Parser {
     case 'prefixed':
       const prefix = this._prefixes[token.prefix];
       if (prefix === undefined)
-        return this._error('Undefined prefix "' + token.prefix + ':"', token);
+        return this._error(`Undefined prefix "${token.prefix}:"`, token);
       value = this._namedNode(prefix + token.value);
       break;
     // Read a blank node
@@ -173,7 +173,7 @@ export default class N3Parser {
       break;
     // Everything else is not an entity
     default:
-      return this._error('Expected entity but got ' + token.type, token);
+      return this._error(`Expected entity but got ${token.type}`, token);
     }
     // In N3 mode, replace the entity if it is quantified
     if (!quantifier && this._n3Mode && (value.id in this._quantified))
@@ -265,7 +265,7 @@ export default class N3Parser {
     case '}':
       // Expected predicate didn't come, must have been trailing semicolon
       if (this._predicate === null)
-        return this._error('Unexpected ' + type, token);
+        return this._error(`Unexpected ${type}`, token);
       this._subject = null;
       return type === ']' ? this._readBlankNodeTail(token) : this._readPunctuation(token);
     case ';':
@@ -338,7 +338,7 @@ export default class N3Parser {
   // ### `_readGraph` reads a graph
   _readGraph(token) {
     if (token.type !== '{')
-      return this._error('Expected graph but got ' + token.type, token);
+      return this._error(`Expected graph but got ${token.type}`, token);
     // The "subject" we read is actually the GRAPH's label
     this._graph = this._subject, this._subject = null;
     return this._readSubject;
@@ -604,7 +604,7 @@ export default class N3Parser {
         next = this._readQuadPunctuation;
         break;
       }
-      return this._error('Expected punctuation to follow "' + this._object.id + '"', token);
+      return this._error(`Expected punctuation to follow "${this._object.id}"`, token);
     }
     // A quad has been completed now, so return it
     if (subject !== null) {
@@ -630,7 +630,7 @@ export default class N3Parser {
       next = this._readObject;
       break;
     default:
-      return this._error('Expected punctuation to follow "' + this._object.id + '"', token);
+      return this._error(`Expected punctuation to follow "${this._object.id}"`, token);
     }
     // A quad has been completed now, so return it
     this._emit(this._subject, this._predicate, this._object, this._graph);
@@ -655,7 +655,7 @@ export default class N3Parser {
   // ### `_readPrefixIRI` reads the IRI of a prefix declaration
   _readPrefixIRI(token) {
     if (token.type !== 'IRI')
-      return this._error('Expected IRI to follow prefix "' + this._prefix + ':"', token);
+      return this._error(`Expected IRI to follow prefix "${this._prefix}:"`, token);
     const prefixNode = this._readEntity(token);
     this._prefixes[this._prefix] = prefixNode.value;
     this._prefixCallback(this._prefix, prefixNode);
@@ -715,7 +715,7 @@ export default class N3Parser {
       if ((entity = this._readEntity(token, true)) !== undefined)
         break;
     default:
-      return this._error('Unexpected ' + token.type, token);
+      return this._error(`Unexpected ${token.type}`, token);
     }
     // Without explicit quantifiers, map entities to a quantified entity
     if (!this._explicitQuantifiers)
@@ -825,7 +825,7 @@ export default class N3Parser {
       // An entity means this is a quad (only allowed if not already inside a graph)
       if (this._supportsQuads && this._graph === null && (this._graph = this._readEntity(token)) !== undefined)
         return this._readRDFStarTail;
-      return this._error('Expected >> to follow "' + this._object.id + '"', token);
+      return this._error(`Expected >> to follow "${this._object.id}"`, token);
     }
     return this._readRDFStarTail(token);
   }
@@ -875,7 +875,7 @@ export default class N3Parser {
 
   // ### `_error` emits an error message through the callback
   _error(message, token) {
-    const err = new Error(message + ' on line ' + token.line + '.');
+    const err = new Error(`${message} on line ${token.line}.`);
     err.context = {
       token: token,
       line: token.line,
@@ -965,7 +965,7 @@ export default class N3Parser {
                 result = result.substr(0, segmentStart);
               // Remove a trailing '/..' segment
               if (next !== '/')
-                return result + '/' + iri.substr(i + 1);
+                return `${result}/${iri.substr(i + 1)}`;
               segmentStart = i + 1;
             }
           }
@@ -986,7 +986,7 @@ export default class N3Parser {
     this._sparqlStyle = false;
     this._prefixes = Object.create(null);
     this._prefixes._ = this._blankNodePrefix ? this._blankNodePrefix.substr(2)
-                                             : 'b' + blankNodePrefix++ + '_';
+                                             : `b${blankNodePrefix++}_`;
     this._prefixCallback = prefixCallback || noop;
     this._inversePredicate = false;
     this._quantified = Object.create(null);

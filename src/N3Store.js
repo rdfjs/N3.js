@@ -678,13 +678,13 @@ export default class N3Store {
     let name, index;
     // Generate a name based on the suggested name
     if (suggestedName) {
-      name = suggestedName = '_:' + suggestedName, index = 1;
+      name = suggestedName = `_:${suggestedName}`, index = 1;
       while (this._ids[name])
         name = suggestedName + index++;
     }
     // Generate a generic blank node name
     else {
-      do { name = '_:b' + this._blankNodeIndex++; }
+      do { name = `_:b${this._blankNodeIndex++}`; }
       while (this._ids[name]);
     }
     // Add the blank node to the entities, avoiding the generation of duplicates

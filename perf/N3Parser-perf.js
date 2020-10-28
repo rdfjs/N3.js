@@ -10,9 +10,9 @@ if (process.argv.length !== 3) {
 }
 
 const filename = path.resolve(process.cwd(), process.argv[2]),
-    base = 'file://' + filename;
+    base = `file://${filename}`;
 
-const TEST = '- Parsing file ' + filename;
+const TEST = `- Parsing file ${filename}`;
 console.time(TEST);
 
 let count = 0;
@@ -22,7 +22,7 @@ new N3.Parser({ baseIRI: base }).parse(fs.createReadStream(filename), (error, qu
     count++;
   else {
     console.timeEnd(TEST);
-    console.log('* Quads parsed: ' + count);
-    console.log('* Memory usage: ' + Math.round(process.memoryUsage().rss / 1024 / 1024) + 'MB');
+    console.log(`* Quads parsed: ${count}`);
+    console.log(`* Memory usage: ${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB`);
   }
 });
