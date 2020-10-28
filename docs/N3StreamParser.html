@@ -128,9 +128,9 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> self = <span class="hljs-built_in">this</span>, parser = <span class="hljs-keyword">new</span> N3Parser(options), onData, onEnd;
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> parser = <span class="hljs-keyword">new</span> N3Parser(options), onData, onEnd;
     parser.parse({
-      <span class="hljs-attr">on</span>: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">event, callback</span>) </span>{
+      <span class="hljs-attr">on</span>: <span class="hljs-function">(<span class="hljs-params">event, callback</span>) =&gt;</span> {
         <span class="hljs-keyword">switch</span> (event) {
         <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;data&#x27;</span>: onData = callback; <span class="hljs-keyword">break</span>;
         <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;end&#x27;</span>:   onEnd = callback; <span class="hljs-keyword">break</span>;
@@ -151,7 +151,7 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">error, quad</span>) </span>{ error &amp;&amp; self.emit(<span class="hljs-string">&#x27;error&#x27;</span>, error) || quad &amp;&amp; self.push(quad); },</pre></div></div>
+            <div class="content"><div class='highlight'><pre>      (error, quad) =&gt; { error &amp;&amp; <span class="hljs-built_in">this</span>.emit(<span class="hljs-string">&#x27;error&#x27;</span>, error) || quad &amp;&amp; <span class="hljs-built_in">this</span>.push(quad); },</pre></div></div>
             
         </li>
         
@@ -166,7 +166,7 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">prefix, uri</span>) </span>{ self.emit(<span class="hljs-string">&#x27;prefix&#x27;</span>, prefix, uri); }
+            <div class="content"><div class='highlight'><pre>      (prefix, uri) =&gt; { <span class="hljs-built_in">this</span>.emit(<span class="hljs-string">&#x27;prefix&#x27;</span>, prefix, uri); }
     );</pre></div></div>
             
         </li>
@@ -182,8 +182,8 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-built_in">this</span>._transform = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">chunk, encoding, done</span>) </span>{ onData(chunk); done(); };
-    <span class="hljs-built_in">this</span>._flush = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">done</span>) </span>{ onEnd(); done(); };
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-built_in">this</span>._transform = <span class="hljs-function">(<span class="hljs-params">chunk, encoding, done</span>) =&gt;</span> { onData(chunk); done(); };
+    <span class="hljs-built_in">this</span>._flush = <span class="hljs-function"><span class="hljs-params">done</span> =&gt;</span> { onEnd(); done(); };
   }</pre></div></div>
             
         </li>
@@ -200,10 +200,9 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">import</span>(stream) {
-    <span class="hljs-keyword">var</span> self = <span class="hljs-built_in">this</span>;
-    stream.on(<span class="hljs-string">&#x27;data&#x27;</span>,  <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">chunk</span>) </span>{ self.write(chunk); });
-    stream.on(<span class="hljs-string">&#x27;end&#x27;</span>,   <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>)      </span>{ self.end(); });
-    stream.on(<span class="hljs-string">&#x27;error&#x27;</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">error</span>) </span>{ self.emit(<span class="hljs-string">&#x27;error&#x27;</span>, error); });
+    stream.on(<span class="hljs-string">&#x27;data&#x27;</span>,  <span class="hljs-function"><span class="hljs-params">chunk</span> =&gt;</span> { <span class="hljs-built_in">this</span>.write(chunk); });
+    stream.on(<span class="hljs-string">&#x27;end&#x27;</span>,   <span class="hljs-function">()      =&gt;</span> { <span class="hljs-built_in">this</span>.end(); });
+    stream.on(<span class="hljs-string">&#x27;error&#x27;</span>, <span class="hljs-function"><span class="hljs-params">error</span> =&gt;</span> { <span class="hljs-built_in">this</span>.emit(<span class="hljs-string">&#x27;error&#x27;</span>, error); });
     <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>;
   }
 }</pre></div></div>

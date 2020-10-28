@@ -1390,7 +1390,6 @@ means these are actual, non-escaped closing quotes</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>  tokenize(input, callback) {
-    <span class="hljs-keyword">var</span> self = <span class="hljs-built_in">this</span>;
     <span class="hljs-built_in">this</span>._line = <span class="hljs-number">1</span>;</pre></div></div>
             
         </li>
@@ -1423,7 +1422,7 @@ means these are actual, non-escaped closing quotes</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> callback === <span class="hljs-string">&#x27;function&#x27;</span>)
-        queueMicrotask(<span class="hljs-function">() =&gt;</span> self._tokenizeToEnd(callback, <span class="hljs-literal">true</span>));</pre></div></div>
+        queueMicrotask(<span class="hljs-function">() =&gt;</span> <span class="hljs-built_in">this</span>._tokenizeToEnd(callback, <span class="hljs-literal">true</span>));</pre></div></div>
             
         </li>
         
@@ -1440,7 +1439,7 @@ means these are actual, non-escaped closing quotes</p>
             
             <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">else</span> {
         <span class="hljs-keyword">var</span> tokens = [], error;
-        <span class="hljs-built_in">this</span>._tokenizeToEnd(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">e, t</span>) </span>{ e ? (error = e) : tokens.push(t); }, <span class="hljs-literal">true</span>);
+        <span class="hljs-built_in">this</span>._tokenizeToEnd(<span class="hljs-function">(<span class="hljs-params">e, t</span>) =&gt;</span> { e ? (error = e) : tokens.push(t); }, <span class="hljs-literal">true</span>);
         <span class="hljs-keyword">if</span> (error) <span class="hljs-keyword">throw</span> error;
         <span class="hljs-keyword">return</span> tokens;
       }
@@ -1478,8 +1477,8 @@ means these are actual, non-escaped closing quotes</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      input.on(<span class="hljs-string">&#x27;data&#x27;</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">data</span>) </span>{
-        <span class="hljs-keyword">if</span> (self._input !== <span class="hljs-literal">null</span> &amp;&amp; data.length !== <span class="hljs-number">0</span>) {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>      input.on(<span class="hljs-string">&#x27;data&#x27;</span>, <span class="hljs-function"><span class="hljs-params">data</span> =&gt;</span> {
+        <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._input !== <span class="hljs-literal">null</span> &amp;&amp; data.length !== <span class="hljs-number">0</span>) {</pre></div></div>
             
         </li>
         
@@ -1494,9 +1493,9 @@ means these are actual, non-escaped closing quotes</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">if</span> (self._pendingBuffer) {
-            data = Buffer.concat([self._pendingBuffer, data]);
-            self._pendingBuffer = <span class="hljs-literal">null</span>;
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._pendingBuffer) {
+            data = Buffer.concat([<span class="hljs-built_in">this</span>._pendingBuffer, data]);
+            <span class="hljs-built_in">this</span>._pendingBuffer = <span class="hljs-literal">null</span>;
           }</pre></div></div>
             
         </li>
@@ -1513,7 +1512,7 @@ means these are actual, non-escaped closing quotes</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">if</span> (data[data.length - <span class="hljs-number">1</span>] &amp; <span class="hljs-number">0x80</span>) {
-            self._pendingBuffer = data;
+            <span class="hljs-built_in">this</span>._pendingBuffer = data;
           }</pre></div></div>
             
         </li>
@@ -1530,8 +1529,8 @@ means these are actual, non-escaped closing quotes</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">else</span> {
-            self._input += data;
-            self._tokenizeToEnd(callback, <span class="hljs-literal">false</span>);
+            <span class="hljs-built_in">this</span>._input += data;
+            <span class="hljs-built_in">this</span>._tokenizeToEnd(callback, <span class="hljs-literal">false</span>);
           }
         }
       });</pre></div></div>
@@ -1549,9 +1548,9 @@ means these are actual, non-escaped closing quotes</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      input.on(<span class="hljs-string">&#x27;end&#x27;</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
-        <span class="hljs-keyword">if</span> (self._input !== <span class="hljs-literal">null</span>)
-          self._tokenizeToEnd(callback, <span class="hljs-literal">true</span>);
+            <div class="content"><div class='highlight'><pre>      input.on(<span class="hljs-string">&#x27;end&#x27;</span>, <span class="hljs-function">() =&gt;</span> {
+        <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._input !== <span class="hljs-literal">null</span>)
+          <span class="hljs-built_in">this</span>._tokenizeToEnd(callback, <span class="hljs-literal">true</span>);
       });
       input.on(<span class="hljs-string">&#x27;error&#x27;</span>, callback);
     }

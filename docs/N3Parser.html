@@ -201,7 +201,7 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (isLineMode)
-      <span class="hljs-built_in">this</span>._resolveRelativeIRI = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">iri</span>) </span>{ <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>; };
+      <span class="hljs-built_in">this</span>._resolveRelativeIRI = <span class="hljs-function"><span class="hljs-params">iri</span> =&gt;</span> { <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>; };
     <span class="hljs-built_in">this</span>._blankNodePrefix = <span class="hljs-keyword">typeof</span> options.blankNodePrefix !== <span class="hljs-string">&#x27;string&#x27;</span> ? <span class="hljs-string">&#x27;&#x27;</span> :
                               options.blankNodePrefix.replace(<span class="hljs-regexp">/^(?!_:)/</span>, <span class="hljs-string">&#x27;_:&#x27;</span>);
     <span class="hljs-built_in">this</span>._lexer = options.lexer || <span class="hljs-keyword">new</span> N3Lexer({ <span class="hljs-attr">lineMode</span>: isLineMode, <span class="hljs-attr">n3</span>: isN3 });</pre></div></div>
@@ -3425,8 +3425,7 @@ If the formula was the object, read punctuation.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  parse(input, quadCallback, prefixCallback) {
-    <span class="hljs-keyword">var</span> self = <span class="hljs-built_in">this</span>;</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  parse(input, quadCallback, prefixCallback) {</pre></div></div>
             
         </li>
         
@@ -3466,9 +3465,9 @@ We start reading in the top context.</p>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (!quadCallback) {
       <span class="hljs-keyword">var</span> quads = [], error;
-      <span class="hljs-built_in">this</span>._callback = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">e, t</span>) </span>{ e ? (error = e) : t &amp;&amp; quads.push(t); };
-      <span class="hljs-built_in">this</span>._lexer.tokenize(input).every(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">token</span>) </span>{
-        <span class="hljs-keyword">return</span> self._readCallback = self._readCallback(token);
+      <span class="hljs-built_in">this</span>._callback = <span class="hljs-function">(<span class="hljs-params">e, t</span>) =&gt;</span> { e ? (error = e) : t &amp;&amp; quads.push(t); };
+      <span class="hljs-built_in">this</span>._lexer.tokenize(input).every(<span class="hljs-function"><span class="hljs-params">token</span> =&gt;</span> {
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readCallback = <span class="hljs-built_in">this</span>._readCallback(token);
       });
       <span class="hljs-keyword">if</span> (error) <span class="hljs-keyword">throw</span> error;
       <span class="hljs-keyword">return</span> quads;
@@ -3488,11 +3487,11 @@ We start reading in the top context.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-built_in">this</span>._callback = quadCallback;
-    <span class="hljs-built_in">this</span>._lexer.tokenize(input, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">error, token</span>) </span>{
+    <span class="hljs-built_in">this</span>._lexer.tokenize(input, <span class="hljs-function">(<span class="hljs-params">error, token</span>) =&gt;</span> {
       <span class="hljs-keyword">if</span> (error !== <span class="hljs-literal">null</span>)
-        self._callback(error), self._callback = noop;
-      <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (self._readCallback)
-        self._readCallback = self._readCallback(token);
+        <span class="hljs-built_in">this</span>._callback(error), <span class="hljs-built_in">this</span>._callback = noop;
+      <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._readCallback)
+        <span class="hljs-built_in">this</span>._readCallback = <span class="hljs-built_in">this</span>._readCallback(token);
     });
   }
 }</pre></div></div>

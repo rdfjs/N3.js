@@ -921,8 +921,7 @@ which are then used as keys in the other indexes.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">import</span>(stream) {
-    <span class="hljs-keyword">var</span> self = <span class="hljs-built_in">this</span>;
-    stream.on(<span class="hljs-string">&#x27;data&#x27;</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">quad</span>) </span>{ self.addQuad(quad); });
+    stream.on(<span class="hljs-string">&#x27;data&#x27;</span>, <span class="hljs-function"><span class="hljs-params">quad</span> =&gt;</span> { <span class="hljs-built_in">this</span>.addQuad(quad); });
     <span class="hljs-keyword">return</span> stream;
   }</pre></div></div>
             
@@ -1066,8 +1065,7 @@ and verify the quad exists.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>  remove(stream) {
-    <span class="hljs-keyword">var</span> self = <span class="hljs-built_in">this</span>;
-    stream.on(<span class="hljs-string">&#x27;data&#x27;</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">quad</span>) </span>{ self.removeQuad(quad); });
+    stream.on(<span class="hljs-string">&#x27;data&#x27;</span>, <span class="hljs-function"><span class="hljs-params">quad</span> =&gt;</span> { <span class="hljs-built_in">this</span>.removeQuad(quad); });
     <span class="hljs-keyword">return</span> stream;
   }</pre></div></div>
             
@@ -1495,7 +1493,7 @@ and verify the quad exists.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>  forEach(callback, subject, predicate, object, graph) {
-    <span class="hljs-built_in">this</span>.some(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">quad</span>) </span>{
+    <span class="hljs-built_in">this</span>.some(<span class="hljs-function"><span class="hljs-params">quad</span> =&gt;</span> {
       callback(quad);
       <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
     }, subject, predicate, object, graph);
@@ -1518,7 +1516,7 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
             
             <div class="content"><div class='highlight'><pre>  every(callback, subject, predicate, object, graph) {
     <span class="hljs-keyword">var</span> some = <span class="hljs-literal">false</span>;
-    <span class="hljs-keyword">var</span> every = !<span class="hljs-built_in">this</span>.some(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">quad</span>) </span>{
+    <span class="hljs-keyword">var</span> every = !<span class="hljs-built_in">this</span>.some(<span class="hljs-function"><span class="hljs-params">quad</span> =&gt;</span> {
       some = <span class="hljs-literal">true</span>;
       <span class="hljs-keyword">return</span> !callback(quad);
     }, subject, predicate, object, graph);
@@ -1730,7 +1728,7 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
             
             <div class="content"><div class='highlight'><pre>  getSubjects(predicate, object, graph) {
     <span class="hljs-keyword">var</span> results = [];
-    <span class="hljs-built_in">this</span>.forSubjects(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">s</span>) </span>{ results.push(s); }, predicate, object, graph);
+    <span class="hljs-built_in">this</span>.forSubjects(<span class="hljs-function"><span class="hljs-params">s</span> =&gt;</span> { results.push(s); }, predicate, object, graph);
     <span class="hljs-keyword">return</span> results;
   }</pre></div></div>
             
@@ -1903,7 +1901,7 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
             
             <div class="content"><div class='highlight'><pre>  getPredicates(subject, object, graph) {
     <span class="hljs-keyword">var</span> results = [];
-    <span class="hljs-built_in">this</span>.forPredicates(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">p</span>) </span>{ results.push(p); }, subject, object, graph);
+    <span class="hljs-built_in">this</span>.forPredicates(<span class="hljs-function"><span class="hljs-params">p</span> =&gt;</span> { results.push(p); }, subject, object, graph);
     <span class="hljs-keyword">return</span> results;
   }</pre></div></div>
             
@@ -2076,7 +2074,7 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
             
             <div class="content"><div class='highlight'><pre>  getObjects(subject, predicate, graph) {
     <span class="hljs-keyword">var</span> results = [];
-    <span class="hljs-built_in">this</span>.forObjects(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">o</span>) </span>{ results.push(o); }, subject, predicate, graph);
+    <span class="hljs-built_in">this</span>.forObjects(<span class="hljs-function"><span class="hljs-params">o</span> =&gt;</span> { results.push(o); }, subject, predicate, graph);
     <span class="hljs-keyword">return</span> results;
   }</pre></div></div>
             
@@ -2249,7 +2247,7 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
             
             <div class="content"><div class='highlight'><pre>  getGraphs(subject, predicate, object) {
     <span class="hljs-keyword">var</span> results = [];
-    <span class="hljs-built_in">this</span>.forGraphs(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">g</span>) </span>{ results.push(g); }, subject, predicate, object);
+    <span class="hljs-built_in">this</span>.forGraphs(<span class="hljs-function"><span class="hljs-params">g</span> =&gt;</span> { results.push(g); }, subject, predicate, object);
     <span class="hljs-keyword">return</span> results;
   }</pre></div></div>
             
@@ -2269,7 +2267,7 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
             
             <div class="content"><div class='highlight'><pre>  forGraphs(callback, subject, predicate, object) {
     <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> graph <span class="hljs-keyword">in</span> <span class="hljs-built_in">this</span>._graphs) {
-      <span class="hljs-built_in">this</span>.some(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">quad</span>) </span>{
+      <span class="hljs-built_in">this</span>.some(<span class="hljs-function"><span class="hljs-params">quad</span> =&gt;</span> {
         callback(quad.graph);
         <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>; <span class="hljs-comment">// Halt iteration of some()</span>
       }, subject, predicate, object, graph);

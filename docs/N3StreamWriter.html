@@ -128,10 +128,9 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> self = <span class="hljs-built_in">this</span>;
-    <span class="hljs-keyword">var</span> writer = <span class="hljs-built_in">this</span>._writer = <span class="hljs-keyword">new</span> N3Writer({
-      <span class="hljs-attr">write</span>: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">quad, encoding, callback</span>) </span>{ self.push(quad); callback &amp;&amp; callback(); },
-      <span class="hljs-attr">end</span>: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">callback</span>) </span>{ self.push(<span class="hljs-literal">null</span>); callback &amp;&amp; callback(); },
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> writer = <span class="hljs-built_in">this</span>._writer = <span class="hljs-keyword">new</span> N3Writer({
+      <span class="hljs-attr">write</span>: <span class="hljs-function">(<span class="hljs-params">quad, encoding, callback</span>) =&gt;</span> { <span class="hljs-built_in">this</span>.push(quad); callback &amp;&amp; callback(); },
+      <span class="hljs-attr">end</span>: <span class="hljs-function"><span class="hljs-params">callback</span> =&gt;</span> { <span class="hljs-built_in">this</span>.push(<span class="hljs-literal">null</span>); callback &amp;&amp; callback(); },
     }, options);</pre></div></div>
             
         </li>
@@ -147,8 +146,8 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-built_in">this</span>._transform = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">quad, encoding, done</span>) </span>{ writer.addQuad(quad, done); };
-    <span class="hljs-built_in">this</span>._flush = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">done</span>) </span>{ writer.end(done); };
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-built_in">this</span>._transform = <span class="hljs-function">(<span class="hljs-params">quad, encoding, done</span>) =&gt;</span> { writer.addQuad(quad, done); };
+    <span class="hljs-built_in">this</span>._flush = <span class="hljs-function"><span class="hljs-params">done</span> =&gt;</span> { writer.end(done); };
   }</pre></div></div>
             
         </li>
@@ -165,11 +164,10 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">import</span>(stream) {
-    <span class="hljs-keyword">var</span> self = <span class="hljs-built_in">this</span>;
-    stream.on(<span class="hljs-string">&#x27;data&#x27;</span>,   <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">quad</span>)  </span>{ self.write(quad); });
-    stream.on(<span class="hljs-string">&#x27;end&#x27;</span>,    <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>)      </span>{ self.end(); });
-    stream.on(<span class="hljs-string">&#x27;error&#x27;</span>,  <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">error</span>) </span>{ self.emit(<span class="hljs-string">&#x27;error&#x27;</span>, error); });
-    stream.on(<span class="hljs-string">&#x27;prefix&#x27;</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">prefix, iri</span>) </span>{ self._writer.addPrefix(prefix, iri); });
+    stream.on(<span class="hljs-string">&#x27;data&#x27;</span>,   <span class="hljs-function"><span class="hljs-params">quad</span> =&gt;</span> { <span class="hljs-built_in">this</span>.write(quad); });
+    stream.on(<span class="hljs-string">&#x27;end&#x27;</span>,    <span class="hljs-function">() =&gt;</span> { <span class="hljs-built_in">this</span>.end(); });
+    stream.on(<span class="hljs-string">&#x27;error&#x27;</span>,  <span class="hljs-function"><span class="hljs-params">error</span> =&gt;</span> { <span class="hljs-built_in">this</span>.emit(<span class="hljs-string">&#x27;error&#x27;</span>, error); });
+    stream.on(<span class="hljs-string">&#x27;prefix&#x27;</span>, <span class="hljs-function">(<span class="hljs-params">prefix, iri</span>) =&gt;</span> { <span class="hljs-built_in">this</span>._writer.addPrefix(prefix, iri); });
     <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>;
   }
 }</pre></div></div>
