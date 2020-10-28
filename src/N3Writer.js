@@ -41,7 +41,7 @@ export default class N3Writer {
       var output = '';
       this._outputStream = {
         write(chunk, encoding, done) { output += chunk; done && done(); },
-        end:   function (done) { done && done(null, output); },
+        end: done => { done && done(null, output); },
       };
       this._endStream = true;
     }
@@ -123,9 +123,9 @@ export default class N3Writer {
 
   // ### `quadsToString` serializes an array of quads as a string
   quadsToString(quads) {
-    return quads.map(function (t) {
+    return quads.map(t => {
       return this.quadToString(t.subject, t.predicate, t.object, t.graph);
-    }, this).join('');
+    }).join('');
   }
 
   // ### `_encodeSubject` represents a subject
@@ -320,7 +320,7 @@ export default class N3Writer {
     this._write = this._blockedWrite;
 
     // Try to end the underlying stream, ensuring done is called exactly one time
-    var singleDone = done && function (error, result) { singleDone = null, done(error, result); };
+    var singleDone = done && ((error, result) => { singleDone = null, done(error, result); });
     if (this._endStream) {
       try { return this._outputStream.end(singleDone); }
       catch (error) { /* error closing stream */ }
