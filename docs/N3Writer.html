@@ -347,7 +347,7 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="hljs-built_in">this</span>._write((<span class="hljs-built_in">this</span>._subject === <span class="hljs-literal">null</span> ? <span class="hljs-string">&#x27;&#x27;</span> : (<span class="hljs-built_in">this</span>._inDefaultGraph ? <span class="hljs-string">&#x27;.\n&#x27;</span> : <span class="hljs-string">&#x27;\n}\n&#x27;</span>)) +
-                    (DEFAULTGRAPH.equals(graph) ? <span class="hljs-string">&#x27;&#x27;</span> : <span class="hljs-built_in">this</span>._encodeIriOrBlank(graph) + <span class="hljs-string">&#x27; {\n&#x27;</span>));
+                    (DEFAULTGRAPH.equals(graph) ? <span class="hljs-string">&#x27;&#x27;</span> : <span class="hljs-string">`<span class="hljs-subst">${<span class="hljs-built_in">this</span>._encodeIriOrBlank(graph)}</span> {\n`</span>));
         <span class="hljs-built_in">this</span>._graph = graph;
         <span class="hljs-built_in">this</span>._subject = <span class="hljs-literal">null</span>;
       }</pre></div></div>
@@ -381,7 +381,7 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (predicate.equals(<span class="hljs-built_in">this</span>._predicate))
-          <span class="hljs-built_in">this</span>._write(<span class="hljs-string">&#x27;, &#x27;</span> + <span class="hljs-built_in">this</span>._encodeObject(object), done);</pre></div></div>
+          <span class="hljs-built_in">this</span>._write(<span class="hljs-string">`, <span class="hljs-subst">${<span class="hljs-built_in">this</span>._encodeObject(object)}</span>`</span>, done);</pre></div></div>
             
         </li>
         
@@ -397,9 +397,9 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">else</span>
-          <span class="hljs-built_in">this</span>._write(<span class="hljs-string">&#x27;;\n    &#x27;</span> +
-                      <span class="hljs-built_in">this</span>._encodePredicate(<span class="hljs-built_in">this</span>._predicate = predicate) + <span class="hljs-string">&#x27; &#x27;</span> +
-                      <span class="hljs-built_in">this</span>._encodeObject(object), done);
+          <span class="hljs-built_in">this</span>._write(<span class="hljs-string">`;\n    <span class="hljs-subst">${
+                      <span class="hljs-built_in">this</span>._encodePredicate(<span class="hljs-built_in">this</span>._predicate = predicate)}</span> <span class="hljs-subst">${
+                      <span class="hljs-built_in">this</span>._encodeObject(object)}</span>`</span>, done);
       }</pre></div></div>
             
         </li>
@@ -416,10 +416,10 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">else</span>
-        <span class="hljs-built_in">this</span>._write((<span class="hljs-built_in">this</span>._subject === <span class="hljs-literal">null</span> ? <span class="hljs-string">&#x27;&#x27;</span> : <span class="hljs-string">&#x27;.\n&#x27;</span>) +
-                    <span class="hljs-built_in">this</span>._encodeSubject(<span class="hljs-built_in">this</span>._subject = subject) + <span class="hljs-string">&#x27; &#x27;</span> +
-                    <span class="hljs-built_in">this</span>._encodePredicate(<span class="hljs-built_in">this</span>._predicate = predicate) + <span class="hljs-string">&#x27; &#x27;</span> +
-                    <span class="hljs-built_in">this</span>._encodeObject(object), done);
+        <span class="hljs-built_in">this</span>._write(<span class="hljs-string">`<span class="hljs-subst">${(<span class="hljs-built_in">this</span>._subject === <span class="hljs-literal">null</span> ? <span class="hljs-string">&#x27;&#x27;</span> : <span class="hljs-string">&#x27;.\n&#x27;</span>) +
+                    <span class="hljs-built_in">this</span>._encodeSubject(<span class="hljs-built_in">this</span>._subject = subject)}</span> <span class="hljs-subst">${
+                    <span class="hljs-built_in">this</span>._encodePredicate(<span class="hljs-built_in">this</span>._predicate = predicate)}</span> <span class="hljs-subst">${
+                    <span class="hljs-built_in">this</span>._encodeObject(object)}</span>`</span>, done);
     }
     <span class="hljs-keyword">catch</span> (error) { done &amp;&amp; done(error); }
   }</pre></div></div>
@@ -470,10 +470,10 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>  quadToString(subject, predicate, object, graph) {
-    <span class="hljs-keyword">return</span>  <span class="hljs-built_in">this</span>._encodeSubject(subject)   + <span class="hljs-string">&#x27; &#x27;</span> +
-            <span class="hljs-built_in">this</span>._encodeIriOrBlank(predicate) + <span class="hljs-string">&#x27; &#x27;</span> +
-            <span class="hljs-built_in">this</span>._encodeObject(object) +
-            (graph &amp;&amp; graph.value ? <span class="hljs-string">&#x27; &#x27;</span> + <span class="hljs-built_in">this</span>._encodeIriOrBlank(graph) + <span class="hljs-string">&#x27; .\n&#x27;</span> : <span class="hljs-string">&#x27; .\n&#x27;</span>);
+    <span class="hljs-keyword">return</span>  <span class="hljs-string">`<span class="hljs-subst">${<span class="hljs-built_in">this</span>._encodeSubject(subject)}</span> <span class="hljs-subst">${
+            <span class="hljs-built_in">this</span>._encodeIriOrBlank(predicate)}</span> <span class="hljs-subst">${
+            <span class="hljs-built_in">this</span>._encodeObject(object)
+            }</span><span class="hljs-subst">${graph &amp;&amp; graph.value ? <span class="hljs-string">` <span class="hljs-subst">${<span class="hljs-built_in">this</span>._encodeIriOrBlank(graph)}</span> .\n`</span> : <span class="hljs-string">&#x27; .\n&#x27;</span>}</span>`</span>;
   }</pre></div></div>
             
         </li>
@@ -558,7 +558,7 @@
             
             <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._lists &amp;&amp; (entity.value <span class="hljs-keyword">in</span> <span class="hljs-built_in">this</span>._lists))
         entity = <span class="hljs-built_in">this</span>.list(<span class="hljs-built_in">this</span>._lists[entity.value]);
-      <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;id&#x27;</span> <span class="hljs-keyword">in</span> entity ? entity.id : <span class="hljs-string">&#x27;_:&#x27;</span> + entity.value;
+      <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;id&#x27;</span> <span class="hljs-keyword">in</span> entity ? entity.id : <span class="hljs-string">`_:<span class="hljs-subst">${entity.value}</span>`</span>;
     }</pre></div></div>
             
         </li>
@@ -592,7 +592,7 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">const</span> prefixMatch = <span class="hljs-built_in">this</span>._prefixRegex.exec(iri);
-    <span class="hljs-keyword">return</span> !prefixMatch ? <span class="hljs-string">&#x27;&lt;&#x27;</span> + iri + <span class="hljs-string">&#x27;&gt;&#x27;</span> :
+    <span class="hljs-keyword">return</span> !prefixMatch ? <span class="hljs-string">`&lt;<span class="hljs-subst">${iri}</span>&gt;`</span> :
            (!prefixMatch[<span class="hljs-number">1</span>] ? iri : <span class="hljs-built_in">this</span>._prefixIRIs[prefixMatch[<span class="hljs-number">1</span>]] + prefixMatch[<span class="hljs-number">2</span>]);
   }</pre></div></div>
             
@@ -642,11 +642,11 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (literal.language)
-      <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;&quot;&#x27;</span> + value + <span class="hljs-string">&#x27;&quot;@&#x27;</span> + literal.language;
+      <span class="hljs-keyword">return</span> <span class="hljs-string">`&quot;<span class="hljs-subst">${value}</span>&quot;@<span class="hljs-subst">${literal.language}</span>`</span>;
     <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (literal.datatype.value !== xsd.string)
-      <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;&quot;&#x27;</span> + value + <span class="hljs-string">&#x27;&quot;^^&#x27;</span> + <span class="hljs-built_in">this</span>._encodeIriOrBlank(literal.datatype);
+      <span class="hljs-keyword">return</span> <span class="hljs-string">`&quot;<span class="hljs-subst">${value}</span>&quot;^^<span class="hljs-subst">${<span class="hljs-built_in">this</span>._encodeIriOrBlank(literal.datatype)}</span>`</span>;
     <span class="hljs-keyword">else</span>
-      <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;&quot;&#x27;</span> + value + <span class="hljs-string">&#x27;&quot;&#x27;</span>;
+      <span class="hljs-keyword">return</span> <span class="hljs-string">`&quot;<span class="hljs-subst">${value}</span>&quot;`</span>;
   }</pre></div></div>
             
         </li>
@@ -882,7 +882,7 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>      <span class="hljs-built_in">this</span>._prefixIRIs[iri] = (prefix += <span class="hljs-string">&#x27;:&#x27;</span>);
-      <span class="hljs-built_in">this</span>._write(<span class="hljs-string">&#x27;@prefix &#x27;</span> + prefix + <span class="hljs-string">&#x27; &lt;&#x27;</span> + iri + <span class="hljs-string">&#x27;&gt;.\n&#x27;</span>);
+      <span class="hljs-built_in">this</span>._write(<span class="hljs-string">`@prefix <span class="hljs-subst">${prefix}</span> &lt;<span class="hljs-subst">${iri}</span>&gt;.\n`</span>);
     }</pre></div></div>
             
         </li>
@@ -901,12 +901,12 @@
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (hasPrefixes) {
       <span class="hljs-keyword">let</span> IRIlist = <span class="hljs-string">&#x27;&#x27;</span>, prefixList = <span class="hljs-string">&#x27;&#x27;</span>;
       <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> prefixIRI <span class="hljs-keyword">in</span> <span class="hljs-built_in">this</span>._prefixIRIs) {
-        IRIlist += IRIlist ? <span class="hljs-string">&#x27;|&#x27;</span> + prefixIRI : prefixIRI;
+        IRIlist += IRIlist ? <span class="hljs-string">`|<span class="hljs-subst">${prefixIRI}</span>`</span> : prefixIRI;
         prefixList += (prefixList ? <span class="hljs-string">&#x27;|&#x27;</span> : <span class="hljs-string">&#x27;&#x27;</span>) + <span class="hljs-built_in">this</span>._prefixIRIs[prefixIRI];
       }
       IRIlist = IRIlist.replace(<span class="hljs-regexp">/[\]\/\(\)\*\+\?\.\\\$]/g</span>, <span class="hljs-string">&#x27;\\$&amp;&#x27;</span>);
-      <span class="hljs-built_in">this</span>._prefixRegex = <span class="hljs-keyword">new</span> <span class="hljs-built_in">RegExp</span>(<span class="hljs-string">&#x27;^(?:&#x27;</span> + prefixList + <span class="hljs-string">&#x27;)[^\/]*$|&#x27;</span> +
-                                     <span class="hljs-string">&#x27;^(&#x27;</span> + IRIlist + <span class="hljs-string">&#x27;)([a-zA-Z][\\-_a-zA-Z0-9]*)$&#x27;</span>);
+      <span class="hljs-built_in">this</span>._prefixRegex = <span class="hljs-keyword">new</span> <span class="hljs-built_in">RegExp</span>(<span class="hljs-string">`^(?:<span class="hljs-subst">${prefixList}</span>)[^\/]*$|`</span> +
+                                     <span class="hljs-string">`^(<span class="hljs-subst">${IRIlist}</span>)([a-zA-Z][\\-_a-zA-Z0-9]*)$`</span>);
     }</pre></div></div>
             
         </li>
@@ -1023,8 +1023,8 @@
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-number">1</span>:
       child = children[<span class="hljs-number">0</span>];
       <span class="hljs-keyword">if</span> (!(child.object <span class="hljs-keyword">instanceof</span> SerializedTerm))
-        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> SerializedTerm(<span class="hljs-string">&#x27;[ &#x27;</span> + <span class="hljs-built_in">this</span>._encodePredicate(child.predicate) + <span class="hljs-string">&#x27; &#x27;</span> +
-                                  <span class="hljs-built_in">this</span>._encodeObject(child.object) + <span class="hljs-string">&#x27; ]&#x27;</span>);</pre></div></div>
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> SerializedTerm(<span class="hljs-string">`[ <span class="hljs-subst">${<span class="hljs-built_in">this</span>._encodePredicate(child.predicate)}</span> <span class="hljs-subst">${
+                                  <span class="hljs-built_in">this</span>._encodeObject(child.object)}</span> ]`</span>);</pre></div></div>
             
         </li>
         
@@ -1072,7 +1072,7 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (child.predicate.equals(predicate))
-          contents += <span class="hljs-string">&#x27;, &#x27;</span> + <span class="hljs-built_in">this</span>._encodeObject(child.object);</pre></div></div>
+          contents += <span class="hljs-string">`, <span class="hljs-subst">${<span class="hljs-built_in">this</span>._encodeObject(child.object)}</span>`</span>;</pre></div></div>
             
         </li>
         
@@ -1088,13 +1088,13 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">else</span> {
-          contents += (i ? <span class="hljs-string">&#x27;;\n  &#x27;</span> : <span class="hljs-string">&#x27;\n  &#x27;</span>) +
-                      <span class="hljs-built_in">this</span>._encodePredicate(child.predicate) + <span class="hljs-string">&#x27; &#x27;</span> +
-                      <span class="hljs-built_in">this</span>._encodeObject(child.object);
+          contents += <span class="hljs-string">`<span class="hljs-subst">${(i ? <span class="hljs-string">&#x27;;\n  &#x27;</span> : <span class="hljs-string">&#x27;\n  &#x27;</span>) +
+                      <span class="hljs-built_in">this</span>._encodePredicate(child.predicate)}</span> <span class="hljs-subst">${
+                      <span class="hljs-built_in">this</span>._encodeObject(child.object)}</span>`</span>;
           predicate = child.predicate;
         }
       }
-      <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> SerializedTerm(contents + <span class="hljs-string">&#x27;\n]&#x27;</span>);
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> SerializedTerm(<span class="hljs-string">`<span class="hljs-subst">${contents}</span>\n]`</span>);
     }
   }</pre></div></div>
             
@@ -1115,7 +1115,7 @@
     <span class="hljs-keyword">const</span> length = elements &amp;&amp; elements.length || <span class="hljs-number">0</span>, contents = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Array</span>(length);
     <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i = <span class="hljs-number">0</span>; i &lt; length; i++)
       contents[i] = <span class="hljs-built_in">this</span>._encodeObject(elements[i]);
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> SerializedTerm(<span class="hljs-string">&#x27;(&#x27;</span> + contents.join(<span class="hljs-string">&#x27; &#x27;</span>) + <span class="hljs-string">&#x27;)&#x27;</span>);
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> SerializedTerm(<span class="hljs-string">`(<span class="hljs-subst">${contents.join(<span class="hljs-string">&#x27; &#x27;</span>)}</span>)`</span>);
   }</pre></div></div>
             
         </li>

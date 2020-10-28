@@ -99,28 +99,28 @@
 
 <span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> {
   <span class="hljs-attr">xsd</span>: {
-    <span class="hljs-attr">decimal</span>: XSD + <span class="hljs-string">&#x27;decimal&#x27;</span>,
-    <span class="hljs-attr">boolean</span>: XSD + <span class="hljs-string">&#x27;boolean&#x27;</span>,
-    <span class="hljs-attr">double</span>:  XSD + <span class="hljs-string">&#x27;double&#x27;</span>,
-    <span class="hljs-attr">integer</span>: XSD + <span class="hljs-string">&#x27;integer&#x27;</span>,
-    <span class="hljs-attr">string</span>:  XSD + <span class="hljs-string">&#x27;string&#x27;</span>,
+    <span class="hljs-attr">decimal</span>: <span class="hljs-string">`<span class="hljs-subst">${XSD}</span>decimal`</span>,
+    <span class="hljs-attr">boolean</span>: <span class="hljs-string">`<span class="hljs-subst">${XSD}</span>boolean`</span>,
+    <span class="hljs-attr">double</span>:  <span class="hljs-string">`<span class="hljs-subst">${XSD}</span>double`</span>,
+    <span class="hljs-attr">integer</span>: <span class="hljs-string">`<span class="hljs-subst">${XSD}</span>integer`</span>,
+    <span class="hljs-attr">string</span>:  <span class="hljs-string">`<span class="hljs-subst">${XSD}</span>string`</span>,
   },
   <span class="hljs-attr">rdf</span>: {
-    <span class="hljs-attr">type</span>:       RDF + <span class="hljs-string">&#x27;type&#x27;</span>,
-    <span class="hljs-attr">nil</span>:        RDF + <span class="hljs-string">&#x27;nil&#x27;</span>,
-    <span class="hljs-attr">first</span>:      RDF + <span class="hljs-string">&#x27;first&#x27;</span>,
-    <span class="hljs-attr">rest</span>:       RDF + <span class="hljs-string">&#x27;rest&#x27;</span>,
-    <span class="hljs-attr">langString</span>: RDF + <span class="hljs-string">&#x27;langString&#x27;</span>,
+    <span class="hljs-attr">type</span>:       <span class="hljs-string">`<span class="hljs-subst">${RDF}</span>type`</span>,
+    <span class="hljs-attr">nil</span>:        <span class="hljs-string">`<span class="hljs-subst">${RDF}</span>nil`</span>,
+    <span class="hljs-attr">first</span>:      <span class="hljs-string">`<span class="hljs-subst">${RDF}</span>first`</span>,
+    <span class="hljs-attr">rest</span>:       <span class="hljs-string">`<span class="hljs-subst">${RDF}</span>rest`</span>,
+    <span class="hljs-attr">langString</span>: <span class="hljs-string">`<span class="hljs-subst">${RDF}</span>langString`</span>,
   },
   <span class="hljs-attr">owl</span>: {
     <span class="hljs-attr">sameAs</span>: <span class="hljs-string">&#x27;http://www.w3.org/2002/07/owl#sameAs&#x27;</span>,
   },
   <span class="hljs-attr">r</span>: {
-    <span class="hljs-attr">forSome</span>: SWAP + <span class="hljs-string">&#x27;reify#forSome&#x27;</span>,
-    <span class="hljs-attr">forAll</span>:  SWAP + <span class="hljs-string">&#x27;reify#forAll&#x27;</span>,
+    <span class="hljs-attr">forSome</span>: <span class="hljs-string">`<span class="hljs-subst">${SWAP}</span>reify#forSome`</span>,
+    <span class="hljs-attr">forAll</span>:  <span class="hljs-string">`<span class="hljs-subst">${SWAP}</span>reify#forAll`</span>,
   },
   <span class="hljs-attr">log</span>: {
-    <span class="hljs-attr">implies</span>: SWAP + <span class="hljs-string">&#x27;log#implies&#x27;</span>,
+    <span class="hljs-attr">implies</span>: <span class="hljs-string">`<span class="hljs-subst">${SWAP}</span>log#implies`</span>,
   },
 };</pre></div></div>
             

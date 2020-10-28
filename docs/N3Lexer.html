@@ -627,7 +627,7 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> ((match = <span class="hljs-built_in">this</span>._blank.exec(input)) ||
-            inputFinished &amp;&amp; (match = <span class="hljs-built_in">this</span>._blank.exec(input + <span class="hljs-string">&#x27; &#x27;</span>)))
+            inputFinished &amp;&amp; (match = <span class="hljs-built_in">this</span>._blank.exec(<span class="hljs-string">`<span class="hljs-subst">${input}</span> `</span>)))
           type = <span class="hljs-string">&#x27;blank&#x27;</span>, prefix = <span class="hljs-string">&#x27;_&#x27;</span>, value = match[<span class="hljs-number">1</span>];
         <span class="hljs-keyword">break</span>;
 
@@ -835,7 +835,7 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (match = <span class="hljs-built_in">this</span>._number.exec(input) ||
-            inputFinished &amp;&amp; (match = <span class="hljs-built_in">this</span>._number.exec(input + <span class="hljs-string">&#x27; &#x27;</span>))) {
+            inputFinished &amp;&amp; (match = <span class="hljs-built_in">this</span>._number.exec(<span class="hljs-string">`<span class="hljs-subst">${input}</span> `</span>))) {
           type = <span class="hljs-string">&#x27;literal&#x27;</span>, value = match[<span class="hljs-number">0</span>];
           prefix = (<span class="hljs-keyword">typeof</span> match[<span class="hljs-number">1</span>] === <span class="hljs-string">&#x27;string&#x27;</span> ? xsd.double :
                     (<span class="hljs-keyword">typeof</span> match[<span class="hljs-number">2</span>] === <span class="hljs-string">&#x27;string&#x27;</span> ? xsd.decimal : xsd.integer));
@@ -1004,7 +1004,7 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> ((match = <span class="hljs-built_in">this</span>._prefixed.exec(input)) ||
-                 inputFinished &amp;&amp; (match = <span class="hljs-built_in">this</span>._prefixed.exec(input + <span class="hljs-string">&#x27; &#x27;</span>)))
+                 inputFinished &amp;&amp; (match = <span class="hljs-built_in">this</span>._prefixed.exec(<span class="hljs-string">`<span class="hljs-subst">${input}</span> `</span>)))
           type = <span class="hljs-string">&#x27;prefixed&#x27;</span>, prefix = match[<span class="hljs-number">1</span>] || <span class="hljs-string">&#x27;&#x27;</span>, value = <span class="hljs-built_in">this</span>._unescape(match[<span class="hljs-number">2</span>]);
       }</pre></div></div>
             
@@ -1355,7 +1355,7 @@ means these are actual, non-escaped closing quotes</p>
             
             <div class="content"><div class='highlight'><pre>  _syntaxError(issue) {
     <span class="hljs-built_in">this</span>._input = <span class="hljs-literal">null</span>;
-    <span class="hljs-keyword">const</span> err = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&#x27;Unexpected &quot;&#x27;</span> + issue + <span class="hljs-string">&#x27;&quot; on line &#x27;</span> + <span class="hljs-built_in">this</span>._line + <span class="hljs-string">&#x27;.&#x27;</span>);
+    <span class="hljs-keyword">const</span> err = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">`Unexpected &quot;<span class="hljs-subst">${issue}</span>&quot; on line <span class="hljs-subst">${<span class="hljs-built_in">this</span>._line}</span>.`</span>);
     err.context = {
       <span class="hljs-attr">token</span>: <span class="hljs-literal">undefined</span>,
       <span class="hljs-attr">line</span>: <span class="hljs-built_in">this</span>._line,

@@ -533,7 +533,7 @@ equality can be computed through ids</p>
             
             <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BlankNode</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Term</span> </span>{
   <span class="hljs-keyword">constructor</span>(name) {
-    <span class="hljs-built_in">super</span>(<span class="hljs-string">&#x27;_:&#x27;</span> + name);
+    <span class="hljs-built_in">super</span>(<span class="hljs-string">`_:<span class="hljs-subst">${name}</span>`</span>);
   }</pre></div></div>
             
         </li>
@@ -573,7 +573,7 @@ equality can be computed through ids</p>
 
 <span class="hljs-keyword">export</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Variable</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Term</span> </span>{
   <span class="hljs-keyword">constructor</span>(name) {
-    <span class="hljs-built_in">super</span>(<span class="hljs-string">&#x27;?&#x27;</span> + name);
+    <span class="hljs-built_in">super</span>(<span class="hljs-string">`?<span class="hljs-subst">${name}</span>`</span>);
   }</pre></div></div>
             
         </li>
@@ -846,12 +846,12 @@ otherwise, compare term types.</p>
             
             <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">switch</span> (term.termType) {
   <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;NamedNode&#x27;</span>:    <span class="hljs-keyword">return</span> term.value;
-  <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;BlankNode&#x27;</span>:    <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;_:&#x27;</span> + term.value;
-  <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;Variable&#x27;</span>:     <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;?&#x27;</span> + term.value;
+  <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;BlankNode&#x27;</span>:    <span class="hljs-keyword">return</span> <span class="hljs-string">`_:<span class="hljs-subst">${term.value}</span>`</span>;
+  <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;Variable&#x27;</span>:     <span class="hljs-keyword">return</span> <span class="hljs-string">`?<span class="hljs-subst">${term.value}</span>`</span>;
   <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;DefaultGraph&#x27;</span>: <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;&#x27;</span>;
-  <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;Literal&#x27;</span>:      <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;&quot;&#x27;</span> + term.value + <span class="hljs-string">&#x27;&quot;&#x27;</span> +
-    (term.language ? <span class="hljs-string">&#x27;@&#x27;</span> + term.language :
-      (term.datatype &amp;&amp; term.datatype.value !== xsd.string ? <span class="hljs-string">&#x27;^^&#x27;</span> + term.datatype.value : <span class="hljs-string">&#x27;&#x27;</span>));
+  <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;Literal&#x27;</span>:      <span class="hljs-keyword">return</span> <span class="hljs-string">`&quot;<span class="hljs-subst">${term.value}</span>&quot;<span class="hljs-subst">${
+    term.language ? <span class="hljs-string">`@<span class="hljs-subst">${term.language}</span>`</span> :
+      (term.datatype &amp;&amp; term.datatype.value !== xsd.string ? <span class="hljs-string">`^^<span class="hljs-subst">${term.datatype.value}</span>`</span> : <span class="hljs-string">&#x27;&#x27;</span>)}</span>`</span>;
   <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;Quad&#x27;</span>:</pre></div></div>
             
         </li>
@@ -877,7 +877,7 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
       }</span><span class="hljs-subst">${
         (isDefaultGraph(term.graph)) ? <span class="hljs-string">&#x27;&#x27;</span> : <span class="hljs-string">` <span class="hljs-subst">${termToId(term.graph)}</span>`</span>
       }</span>&gt;&gt;`</span>;
-  <span class="hljs-keyword">default</span>: <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&#x27;Unexpected termType: &#x27;</span> + term.termType);
+  <span class="hljs-keyword">default</span>: <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">`Unexpected termType: <span class="hljs-subst">${term.termType}</span>`</span>);
   }
 }</pre></div></div>
             
@@ -1062,7 +1062,7 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> languageOrDataType === <span class="hljs-string">&#x27;string&#x27;</span>)
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> Literal(<span class="hljs-string">&#x27;&quot;&#x27;</span> + value + <span class="hljs-string">&#x27;&quot;@&#x27;</span> + languageOrDataType.toLowerCase());</pre></div></div>
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> Literal(<span class="hljs-string">`&quot;<span class="hljs-subst">${value}</span>&quot;@<span class="hljs-subst">${languageOrDataType.toLowerCase()}</span>`</span>);</pre></div></div>
             
         </li>
         
@@ -1134,8 +1134,8 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">return</span> (datatype === <span class="hljs-string">&#x27;&#x27;</span> || datatype === xsd.string) ?
-    <span class="hljs-keyword">new</span> Literal(<span class="hljs-string">&#x27;&quot;&#x27;</span> + value + <span class="hljs-string">&#x27;&quot;&#x27;</span>) :
-    <span class="hljs-keyword">new</span> Literal(<span class="hljs-string">&#x27;&quot;&#x27;</span> + value + <span class="hljs-string">&#x27;&quot;^^&#x27;</span> + datatype);
+    <span class="hljs-keyword">new</span> Literal(<span class="hljs-string">`&quot;<span class="hljs-subst">${value}</span>&quot;`</span>) :
+    <span class="hljs-keyword">new</span> Literal(<span class="hljs-string">`&quot;<span class="hljs-subst">${value}</span>&quot;^^<span class="hljs-subst">${datatype}</span>`</span>);
 }</pre></div></div>
             
         </li>

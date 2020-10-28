@@ -313,7 +313,7 @@ or retrieves a function that expands an existing prefix (if no IRI was specified
       };
     }
     <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (!(prefix <span class="hljs-keyword">in</span> prefixes)) {
-      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&#x27;Unknown prefix: &#x27;</span> + prefix);
+      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">`Unknown prefix: <span class="hljs-subst">${prefix}</span>`</span>);
     }
     <span class="hljs-keyword">return</span> prefixes[prefix];
   }

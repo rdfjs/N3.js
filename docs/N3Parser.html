@@ -392,7 +392,7 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-built_in">this</span>._prefixes._ = (<span class="hljs-built_in">this</span>._graph ? <span class="hljs-built_in">this</span>._graph.id.substr(<span class="hljs-number">2</span>) + <span class="hljs-string">&#x27;.&#x27;</span> : <span class="hljs-string">&#x27;.&#x27;</span>);</pre></div></div>
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-built_in">this</span>._prefixes._ = (<span class="hljs-built_in">this</span>._graph ? <span class="hljs-string">`<span class="hljs-subst">${<span class="hljs-built_in">this</span>._graph.id.substr(<span class="hljs-number">2</span>)}</span>.`</span> : <span class="hljs-string">&#x27;.&#x27;</span>);</pre></div></div>
             
         </li>
         
@@ -619,7 +619,7 @@
     <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;prefixed&#x27;</span>:
       <span class="hljs-keyword">const</span> prefix = <span class="hljs-built_in">this</span>._prefixes[token.prefix];
       <span class="hljs-keyword">if</span> (prefix === <span class="hljs-literal">undefined</span>)
-        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Undefined prefix &quot;&#x27;</span> + token.prefix + <span class="hljs-string">&#x27;:&quot;&#x27;</span>, token);
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">`Undefined prefix &quot;<span class="hljs-subst">${token.prefix}</span>:&quot;`</span>, token);
       value = <span class="hljs-built_in">this</span>._namedNode(prefix + token.value);
       <span class="hljs-keyword">break</span>;</pre></div></div>
             
@@ -671,7 +671,7 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">default</span>:
-      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Expected entity but got &#x27;</span> + token.type, token);
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">`Expected entity but got <span class="hljs-subst">${token.type}</span>`</span>, token);
     }</pre></div></div>
             
         </li>
@@ -903,7 +903,7 @@ or, if the subject was actually a graph IRI, a named graph</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._predicate === <span class="hljs-literal">null</span>)
-        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Unexpected &#x27;</span> + type, token);
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">`Unexpected <span class="hljs-subst">${type}</span>`</span>, token);
       <span class="hljs-built_in">this</span>._subject = <span class="hljs-literal">null</span>;
       <span class="hljs-keyword">return</span> type === <span class="hljs-string">&#x27;]&#x27;</span> ? <span class="hljs-built_in">this</span>._readBlankNodeTail(token) : <span class="hljs-built_in">this</span>._readPunctuation(token);
     <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;;&#x27;</span>:</pre></div></div>
@@ -1129,7 +1129,7 @@ or, if the subject was actually a graph IRI, a named graph</p>
             
             <div class="content"><div class='highlight'><pre>  _readGraph(token) {
     <span class="hljs-keyword">if</span> (token.type !== <span class="hljs-string">&#x27;{&#x27;</span>)
-      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Expected graph but got &#x27;</span> + token.type, token);</pre></div></div>
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">`Expected graph but got <span class="hljs-subst">${token.type}</span>`</span>, token);</pre></div></div>
             
         </li>
         
@@ -2078,7 +2078,7 @@ If the formula was the object, read punctuation.</p>
         next = <span class="hljs-built_in">this</span>._readQuadPunctuation;
         <span class="hljs-keyword">break</span>;
       }
-      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Expected punctuation to follow &quot;&#x27;</span> + <span class="hljs-built_in">this</span>._object.id + <span class="hljs-string">&#x27;&quot;&#x27;</span>, token);
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">`Expected punctuation to follow &quot;<span class="hljs-subst">${<span class="hljs-built_in">this</span>._object.id}</span>&quot;`</span>, token);
     }</pre></div></div>
             
         </li>
@@ -2155,7 +2155,7 @@ If the formula was the object, read punctuation.</p>
       next = <span class="hljs-built_in">this</span>._readObject;
       <span class="hljs-keyword">break</span>;
     <span class="hljs-keyword">default</span>:
-      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Expected punctuation to follow &quot;&#x27;</span> + <span class="hljs-built_in">this</span>._object.id + <span class="hljs-string">&#x27;&quot;&#x27;</span>, token);
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">`Expected punctuation to follow &quot;<span class="hljs-subst">${<span class="hljs-built_in">this</span>._object.id}</span>&quot;`</span>, token);
     }</pre></div></div>
             
         </li>
@@ -2229,7 +2229,7 @@ If the formula was the object, read punctuation.</p>
             
             <div class="content"><div class='highlight'><pre>  _readPrefixIRI(token) {
     <span class="hljs-keyword">if</span> (token.type !== <span class="hljs-string">&#x27;IRI&#x27;</span>)
-      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Expected IRI to follow prefix &quot;&#x27;</span> + <span class="hljs-built_in">this</span>._prefix + <span class="hljs-string">&#x27;:&quot;&#x27;</span>, token);
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">`Expected IRI to follow prefix &quot;<span class="hljs-subst">${<span class="hljs-built_in">this</span>._prefix}</span>:&quot;`</span>, token);
     <span class="hljs-keyword">const</span> prefixNode = <span class="hljs-built_in">this</span>._readEntity(token);
     <span class="hljs-built_in">this</span>._prefixes[<span class="hljs-built_in">this</span>._prefix] = prefixNode.value;
     <span class="hljs-built_in">this</span>._prefixCallback(<span class="hljs-built_in">this</span>._prefix, prefixNode);
@@ -2362,7 +2362,7 @@ If the formula was the object, read punctuation.</p>
       <span class="hljs-keyword">if</span> ((entity = <span class="hljs-built_in">this</span>._readEntity(token, <span class="hljs-literal">true</span>)) !== <span class="hljs-literal">undefined</span>)
         <span class="hljs-keyword">break</span>;
     <span class="hljs-keyword">default</span>:
-      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Unexpected &#x27;</span> + token.type, token);
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">`Unexpected <span class="hljs-subst">${token.type}</span>`</span>, token);
     }</pre></div></div>
             
         </li>
@@ -2869,7 +2869,7 @@ If the formula was the object, read punctuation.</p>
             
             <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._supportsQuads &amp;&amp; <span class="hljs-built_in">this</span>._graph === <span class="hljs-literal">null</span> &amp;&amp; (<span class="hljs-built_in">this</span>._graph = <span class="hljs-built_in">this</span>._readEntity(token)) !== <span class="hljs-literal">undefined</span>)
         <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readRDFStarTail;
-      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">&#x27;Expected &gt;&gt; to follow &quot;&#x27;</span> + <span class="hljs-built_in">this</span>._object.id + <span class="hljs-string">&#x27;&quot;&#x27;</span>, token);
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._error(<span class="hljs-string">`Expected &gt;&gt; to follow &quot;<span class="hljs-subst">${<span class="hljs-built_in">this</span>._object.id}</span>&quot;`</span>, token);
     }
     <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._readRDFStarTail(token);
   }</pre></div></div>
@@ -3006,7 +3006,7 @@ If the formula was the object, read punctuation.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>  _error(message, token) {
-    <span class="hljs-keyword">const</span> err = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(message + <span class="hljs-string">&#x27; on line &#x27;</span> + token.line + <span class="hljs-string">&#x27;.&#x27;</span>);
+    <span class="hljs-keyword">const</span> err = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">`<span class="hljs-subst">${message}</span> on line <span class="hljs-subst">${token.line}</span>.`</span>);
     err.context = {
       <span class="hljs-attr">token</span>: token,
       <span class="hljs-attr">line</span>: token.line,
@@ -3391,7 +3391,7 @@ If the formula was the object, read punctuation.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>              <span class="hljs-keyword">if</span> (next !== <span class="hljs-string">&#x27;/&#x27;</span>)
-                <span class="hljs-keyword">return</span> result + <span class="hljs-string">&#x27;/&#x27;</span> + iri.substr(i + <span class="hljs-number">1</span>);
+                <span class="hljs-keyword">return</span> <span class="hljs-string">`<span class="hljs-subst">${result}</span>/<span class="hljs-subst">${iri.substr(i + <span class="hljs-number">1</span>)}</span>`</span>;
               segmentStart = i + <span class="hljs-number">1</span>;
             }
           }
@@ -3448,7 +3448,7 @@ We start reading in the top context.</p>
     <span class="hljs-built_in">this</span>._sparqlStyle = <span class="hljs-literal">false</span>;
     <span class="hljs-built_in">this</span>._prefixes = <span class="hljs-built_in">Object</span>.create(<span class="hljs-literal">null</span>);
     <span class="hljs-built_in">this</span>._prefixes._ = <span class="hljs-built_in">this</span>._blankNodePrefix ? <span class="hljs-built_in">this</span>._blankNodePrefix.substr(<span class="hljs-number">2</span>)
-                                             : <span class="hljs-string">&#x27;b&#x27;</span> + blankNodePrefix++ + <span class="hljs-string">&#x27;_&#x27;</span>;
+                                             : <span class="hljs-string">`b<span class="hljs-subst">${blankNodePrefix++}</span>_`</span>;
     <span class="hljs-built_in">this</span>._prefixCallback = prefixCallback || noop;
     <span class="hljs-built_in">this</span>._inversePredicate = <span class="hljs-literal">false</span>;
     <span class="hljs-built_in">this</span>._quantified = <span class="hljs-built_in">Object</span>.create(<span class="hljs-literal">null</span>);</pre></div></div>

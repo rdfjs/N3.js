@@ -2310,7 +2310,7 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (suggestedName) {
-      name = suggestedName = <span class="hljs-string">&#x27;_:&#x27;</span> + suggestedName, index = <span class="hljs-number">1</span>;
+      name = suggestedName = <span class="hljs-string">`_:<span class="hljs-subst">${suggestedName}</span>`</span>, index = <span class="hljs-number">1</span>;
       <span class="hljs-keyword">while</span> (<span class="hljs-built_in">this</span>._ids[name])
         name = suggestedName + index++;
     }</pre></div></div>
@@ -2329,7 +2329,7 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">else</span> {
-      <span class="hljs-keyword">do</span> { name = <span class="hljs-string">&#x27;_:b&#x27;</span> + <span class="hljs-built_in">this</span>._blankNodeIndex++; }
+      <span class="hljs-keyword">do</span> { name = <span class="hljs-string">`_:b<span class="hljs-subst">${<span class="hljs-built_in">this</span>._blankNodeIndex++}</span>`</span>; }
       <span class="hljs-keyword">while</span> (<span class="hljs-built_in">this</span>._ids[name]);
     }</pre></div></div>
             
