@@ -227,6 +227,11 @@ export default class N3Writer {
 
   // ### `addPrefixes` adds the prefixes to the output stream
   addPrefixes(prefixes, done) {
+    // Ignore prefixes if not supported by the serialization
+    if (!this._prefixIRIs)
+      return done && done();
+
+    // Write all new prefixes
     let hasPrefixes = false;
     for (let prefix in prefixes) {
       let iri = prefixes[prefix];

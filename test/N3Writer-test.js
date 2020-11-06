@@ -259,6 +259,20 @@ describe('Writer', () => {
       });
     });
 
+    it('should not write prefixes in N-Triples mode', done => {
+      const writer = new Writer({ format: 'N-Triples', prefixes: { a: 'b#' } });
+      let called = false;
+      function callback() { called = true; }
+      writer.addPrefix('c', 'd#');
+      writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'));
+      writer.addPrefix('e', 'f#', callback);
+      writer.end((error, output) => {
+        called.should.be.true;
+        output.should.equal('<a> <b> <c> .\n');
+        done(error);
+      });
+    });
+
     it('should accept triples with separated components', done => {
       const writer = new Writer();
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'));
