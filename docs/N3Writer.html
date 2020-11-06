@@ -842,13 +842,7 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  addPrefixes(prefixes, done) {
-    <span class="hljs-keyword">let</span> hasPrefixes = <span class="hljs-literal">false</span>;
-    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> prefix <span class="hljs-keyword">in</span> prefixes) {
-      <span class="hljs-keyword">let</span> iri = prefixes[prefix];
-      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> iri !== <span class="hljs-string">&#x27;string&#x27;</span>)
-        iri = iri.value;
-      hasPrefixes = <span class="hljs-literal">true</span>;</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  addPrefixes(prefixes, done) {</pre></div></div>
             
         </li>
         
@@ -858,6 +852,42 @@
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-44">&#182;</a>
+              </div>
+              <p>Ignore prefixes if not supported by the serialization</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (!<span class="hljs-built_in">this</span>._prefixIRIs)
+      <span class="hljs-keyword">return</span> done &amp;&amp; done();</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-45">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-45">&#182;</a>
+              </div>
+              <p>Write all new prefixes</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">let</span> hasPrefixes = <span class="hljs-literal">false</span>;
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> prefix <span class="hljs-keyword">in</span> prefixes) {
+      <span class="hljs-keyword">let</span> iri = prefixes[prefix];
+      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> iri !== <span class="hljs-string">&#x27;string&#x27;</span>)
+        iri = iri.value;
+      hasPrefixes = <span class="hljs-literal">true</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-46">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-46">&#182;</a>
               </div>
               <p>Finish a possible pending quad</p>
 
@@ -871,11 +901,11 @@
         </li>
         
         
-        <li id="section-45">
+        <li id="section-47">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-45">&#182;</a>
+                <a class="pilcrow" href="#section-47">&#182;</a>
               </div>
               <p>Store and write the prefix</p>
 
@@ -888,11 +918,11 @@
         </li>
         
         
-        <li id="section-46">
+        <li id="section-48">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-46">&#182;</a>
+                <a class="pilcrow" href="#section-48">&#182;</a>
               </div>
               <p>Recreate the prefix matcher</p>
 
@@ -912,11 +942,11 @@
         </li>
         
         
-        <li id="section-47">
+        <li id="section-49">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-47">&#182;</a>
+                <a class="pilcrow" href="#section-49">&#182;</a>
               </div>
               <p>End a prefix block with a newline</p>
 
@@ -928,11 +958,11 @@
         </li>
         
         
-        <li id="section-48">
+        <li id="section-50">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-48">&#182;</a>
+                <a class="pilcrow" href="#section-50">&#182;</a>
               </div>
               <h3 id="blank-creates-a-blank-node-with-the-given-content"><code>blank</code> creates a blank node with the given content</h3>
 
@@ -944,11 +974,11 @@
         </li>
         
         
-        <li id="section-49">
+        <li id="section-51">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-49">&#182;</a>
+                <a class="pilcrow" href="#section-51">&#182;</a>
               </div>
               <p>Empty blank node</p>
 
@@ -960,11 +990,11 @@
         </li>
         
         
-        <li id="section-50">
+        <li id="section-52">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-50">&#182;</a>
+                <a class="pilcrow" href="#section-52">&#182;</a>
               </div>
               <p>Blank node passed as blank(Term(“predicate”), Term(“object”))</p>
 
@@ -976,11 +1006,11 @@
         </li>
         
         
-        <li id="section-51">
+        <li id="section-53">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-51">&#182;</a>
+                <a class="pilcrow" href="#section-53">&#182;</a>
               </div>
               <p>Blank node passed as blank({ predicate: predicate, object: object })</p>
 
@@ -994,11 +1024,11 @@
         </li>
         
         
-        <li id="section-52">
+        <li id="section-54">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-52">&#182;</a>
+                <a class="pilcrow" href="#section-54">&#182;</a>
               </div>
               <p>Generate an empty blank node</p>
 
@@ -1010,11 +1040,11 @@
         </li>
         
         
-        <li id="section-53">
+        <li id="section-55">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-53">&#182;</a>
+                <a class="pilcrow" href="#section-55">&#182;</a>
               </div>
               <p>Generate a non-nested one-triple blank node</p>
 
@@ -1029,11 +1059,11 @@
         </li>
         
         
-        <li id="section-54">
+        <li id="section-56">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-54">&#182;</a>
+                <a class="pilcrow" href="#section-56">&#182;</a>
               </div>
               <p>Generate a multi-triple or nested blank node</p>
 
@@ -1045,11 +1075,11 @@
         </li>
         
         
-        <li id="section-55">
+        <li id="section-57">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-55">&#182;</a>
+                <a class="pilcrow" href="#section-57">&#182;</a>
               </div>
               <p>Write all triples in order</p>
 
@@ -1061,11 +1091,11 @@
         </li>
         
         
-        <li id="section-56">
+        <li id="section-58">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-56">&#182;</a>
+                <a class="pilcrow" href="#section-58">&#182;</a>
               </div>
               <p>Write only the object is the predicate is the same as the previous</p>
 
@@ -1077,11 +1107,11 @@
         </li>
         
         
-        <li id="section-57">
+        <li id="section-59">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-57">&#182;</a>
+                <a class="pilcrow" href="#section-59">&#182;</a>
               </div>
               <p>Otherwise, write the predicate and the object</p>
 
@@ -1101,11 +1131,11 @@
         </li>
         
         
-        <li id="section-58">
+        <li id="section-60">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-58">&#182;</a>
+                <a class="pilcrow" href="#section-60">&#182;</a>
               </div>
               <h3 id="list-creates-a-list-node-with-the-given-content"><code>list</code> creates a list node with the given content</h3>
 
@@ -1121,11 +1151,11 @@
         </li>
         
         
-        <li id="section-59">
+        <li id="section-61">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-59">&#182;</a>
+                <a class="pilcrow" href="#section-61">&#182;</a>
               </div>
               <h3 id="end-signals-the-end-of-the-output-stream"><code>end</code> signals the end of the output stream</h3>
 
@@ -1136,11 +1166,11 @@
         </li>
         
         
-        <li id="section-60">
+        <li id="section-62">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-60">&#182;</a>
+                <a class="pilcrow" href="#section-62">&#182;</a>
               </div>
               <p>Finish a possible pending quad</p>
 
@@ -1154,11 +1184,11 @@
         </li>
         
         
-        <li id="section-61">
+        <li id="section-63">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-61">&#182;</a>
+                <a class="pilcrow" href="#section-63">&#182;</a>
               </div>
               <p>Disallow further writing</p>
 
@@ -1169,11 +1199,11 @@
         </li>
         
         
-        <li id="section-62">
+        <li id="section-64">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-62">&#182;</a>
+                <a class="pilcrow" href="#section-64">&#182;</a>
               </div>
               <p>Try to end the underlying stream, ensuring done is called exactly one time</p>
 
@@ -1191,11 +1221,11 @@
         </li>
         
         
-        <li id="section-63">
+        <li id="section-65">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-63">&#182;</a>
+                <a class="pilcrow" href="#section-65">&#182;</a>
               </div>
               <p>Replaces a character by its escaped version</p>
 
@@ -1206,11 +1236,11 @@
         </li>
         
         
-        <li id="section-64">
+        <li id="section-66">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-64">&#182;</a>
+                <a class="pilcrow" href="#section-66">&#182;</a>
               </div>
               <p>Replace a single character by its escaped version</p>
 
@@ -1222,11 +1252,11 @@
         </li>
         
         
-        <li id="section-65">
+        <li id="section-67">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-65">&#182;</a>
+                <a class="pilcrow" href="#section-67">&#182;</a>
               </div>
               <p>Replace a single character with its 4-bit unicode escape sequence</p>
 
@@ -1240,11 +1270,11 @@
         </li>
         
         
-        <li id="section-66">
+        <li id="section-68">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-66">&#182;</a>
+                <a class="pilcrow" href="#section-68">&#182;</a>
               </div>
               <p>Replace a surrogate pair with its 8-bit unicode escape sequence</p>
 
