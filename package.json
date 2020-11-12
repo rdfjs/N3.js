@@ -13,6 +13,10 @@
   "license": "MIT",
   "main": "./lib/index.js",
   "module": "./src/index.js",
+  "exports": {
+    "require": "./lib/index.js",
+    "import": "./lib/index.js"
+  },
   "sideEffects": false,
   "engines": {
     "node": ">=8.0"
