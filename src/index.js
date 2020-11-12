@@ -22,7 +22,33 @@ import {
   termToId,
 } from './N3DataFactory';
 
+// Named exports
 export {
+  Lexer,
+  Parser,
+  Writer,
+  Store,
+  StreamParser,
+  StreamWriter,
+  Util,
+
+  DataFactory,
+
+  Term,
+  NamedNode,
+  Literal,
+  BlankNode,
+  Variable,
+  DefaultGraph,
+  Quad,
+  Triple,
+
+  termFromId,
+  termToId,
+};
+
+// Export all named exports as a default object for backward compatibility
+export default {
   Lexer,
   Parser,
   Writer,
