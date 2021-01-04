@@ -1,5 +1,5 @@
 # Lightning fast, asynchronous, streaming RDF for JavaScript
-[![Build Status](https://api.travis-ci.com/rdfjs/N3.js.svg?branch=master)](https://api.travis-ci.com/rdfjs/N3.js.svg?branch=master)
+[![Build Status](https://github.com/rdfjs/N3.js/workflows/CI/badge.svg)](https://github.com/rdfjs/N3.js/actions)
 [![Coverage Status](https://coveralls.io/repos/github/rdfjs/N3.js/badge.svg)](https://coveralls.io/github/rdfjs/N3.js)
 [![npm version](https://badge.fury.io/js/n3.svg)](https://www.npmjs.com/package/n3)
 [![DOI](https://zenodo.org/badge/3058202.svg)](https://zenodo.org/badge/latestdoi/3058202)
