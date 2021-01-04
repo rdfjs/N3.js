@@ -236,6 +236,15 @@ describe('Lexer', () => {
                      { type: 'IRI', value: '#bla', line: 5 },
                      { type: 'eof', line: 5 }));
 
+    it('should tokenize comments after abbreviations and local names',
+      shouldTokenize('[a#\na:a#\n].',
+                     { type: '[', line: 1 },
+                     { type: 'abbreviation', value: 'a', line: 1 },
+                     { type: 'prefixed', prefix: 'a', value: 'a', line: 2 },
+                     { type: ']', line: 3 },
+                     { type: '.', line: 3 },
+                     { type: 'eof', line: 3 }));
+
     it('should tokenize a quoted string literal',
       shouldTokenize('"string" ',
                      { type: 'literal', value: 'string', line: 1 },
