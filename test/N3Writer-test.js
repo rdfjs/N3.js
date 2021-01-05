@@ -6,6 +6,9 @@ import {
   Quad,
   termFromId,
 } from '../src/';
+import namespaces from '../src/IRIs';
+
+const { xsd } = namespaces;
 
 describe('Writer', () => {
   describe('The Writer export', () => {
@@ -118,6 +121,66 @@ describe('Writer', () => {
     it('should serialize a literal containing special unicode characters',
       shouldSerialize(['a', 'b', '"c\u0000\u0001"'],
                       '<a> <b> "c\\u0000\\u0001".\n'));
+
+    it('should serialize a true boolean literal',
+      shouldSerialize(['a', 'b', `"true"^^${xsd.boolean}`],
+                      '<a> <b> true.\n'));
+
+    it('should serialize a false boolean literal',
+      shouldSerialize(['a', 'b', `"false"^^${xsd.boolean}`],
+                      '<a> <b> false.\n'));
+
+    it('should serialize an invalid boolean literal',
+      shouldSerialize(['a', 'b', `"invalid"^^${xsd.boolean}`],
+                      `<a> <b> "invalid"^^<${xsd.boolean}>.\n`));
+
+    it('should serialize an integer literal',
+      shouldSerialize(['a', 'b', `"123"^^${xsd.integer}`],
+                      '<a> <b> 123.\n'));
+
+    it('should serialize a positive integer literal',
+      shouldSerialize(['a', 'b', `"+123"^^${xsd.integer}`],
+                      '<a> <b> +123.\n'));
+
+    it('should serialize a negative integer literal',
+      shouldSerialize(['a', 'b', `"-123"^^${xsd.integer}`],
+                      '<a> <b> -123.\n'));
+
+    it('should serialize an invalid integer literal',
+      shouldSerialize(['a', 'b', `"invalid"^^${xsd.integer}`],
+                      `<a> <b> "invalid"^^<${xsd.integer}>.\n`));
+
+    it('should serialize a decimal literal',
+      shouldSerialize(['a', 'b', `"123.456"^^${xsd.decimal}`],
+                      '<a> <b> 123.456.\n'));
+
+    it('should serialize a positive decimal literal',
+      shouldSerialize(['a', 'b', `"+123.456"^^${xsd.decimal}`],
+                      '<a> <b> +123.456.\n'));
+
+    it('should serialize a negative decimal literal',
+      shouldSerialize(['a', 'b', `"-123.456"^^${xsd.decimal}`],
+                      '<a> <b> -123.456.\n'));
+
+    it('should serialize an invalid decimal literal',
+      shouldSerialize(['a', 'b', `"invalid"^^${xsd.decimal}`],
+                      `<a> <b> "invalid"^^<${xsd.decimal}>.\n`));
+
+    it('should serialize a double literal',
+      shouldSerialize(['a', 'b', `"123.456E10"^^${xsd.double}`],
+                      '<a> <b> 123.456E10.\n'));
+
+    it('should serialize a positive double literal',
+      shouldSerialize(['a', 'b', `"+123.456E10"^^${xsd.double}`],
+                      '<a> <b> +123.456E10.\n'));
+
+    it('should serialize a negative double literal',
+      shouldSerialize(['a', 'b', `"-123.456E10"^^${xsd.double}`],
+                      '<a> <b> -123.456E10.\n'));
+
+    it('should serialize an invalid double literal',
+      shouldSerialize(['a', 'b', `"invalid"^^${xsd.double}`],
+                      `<a> <b> "invalid"^^<${xsd.double}>.\n`));
 
     it('should serialize blank nodes',
       shouldSerialize(['_:a', 'b', { termType: 'BlankNode', value: 'c' }],
@@ -264,11 +327,12 @@ describe('Writer', () => {
       let called = false;
       function callback() { called = true; }
       writer.addPrefix('c', 'd#');
-      writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'));
+      writer.addQuad(new NamedNode('a'), new NamedNode('b'), new Literal('"c"'));
+      writer.addQuad(new NamedNode('a'), new NamedNode('b'), new Literal(`"1"^^${xsd.integer}`));
       writer.addPrefix('e', 'f#', callback);
       writer.end((error, output) => {
         called.should.be.true;
-        output.should.equal('<a> <b> <c> .\n');
+        output.should.equal(`<a> <b> "c" .\n<a> <b> "1"^^<${xsd.integer}> .\n`);
         done(error);
       });
     });

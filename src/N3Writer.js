@@ -53,11 +53,13 @@ export default class N3Writer {
     // Initialize writer, depending on the format
     this._subject = null;
     if (!(/triple|quad/i).test(options.format)) {
+      this._lineMode = false;
       this._graph = DEFAULTGRAPH;
       this._prefixIRIs = Object.create(null);
       options.prefixes && this.addPrefixes(options.prefixes);
     }
     else {
+      this._lineMode = true;
       this._writeQuad = this._writeQuadLine;
     }
   }
@@ -159,13 +161,43 @@ export default class N3Writer {
     let value = literal.value;
     if (escape.test(value))
       value = value.replace(escapeAll, characterReplacer);
-    // Write the literal, possibly with type or language
+
+    // Write a language-tagged literal
     if (literal.language)
       return `"${value}"@${literal.language}`;
-    else if (literal.datatype.value !== xsd.string)
-      return `"${value}"^^${this._encodeIriOrBlank(literal.datatype)}`;
-    else
-      return `"${value}"`;
+
+    // Write dedicated literals per data type
+    if (this._lineMode) {
+      // Only abbreviate strings in N-Triples or N-Quads
+      if (literal.datatype.value === xsd.string)
+        return `"${value}"`;
+    }
+    else {
+      // Use common datatype abbreviations in Turtle or TriG
+      switch (literal.datatype.value) {
+      case xsd.string:
+        return `"${value}"`;
+      case xsd.boolean:
+        if (value === 'true' || value === 'false')
+          return value;
+        break;
+      case xsd.integer:
+        if (/^[+-]?\d+$/.test(value))
+          return value;
+        break;
+      case xsd.decimal:
+        if (/^[+-]?\d*\.\d+$/.test(value))
+          return value;
+        break;
+      case xsd.double:
+        if (/^[+-]?(?:\d+\.\d*|\.?\d+)[eE][+-]?\d+$/.test(value))
+          return value;
+        break;
+      }
+    }
+
+    // Write a regular datatyped literal
+    return `"${value}"^^${this._encodeIriOrBlank(literal.datatype)}`;
   }
 
   // ### `_encodePredicate` represents a predicate
