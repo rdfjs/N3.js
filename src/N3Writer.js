@@ -55,6 +55,7 @@ export default class N3Writer {
     if (!(/triple|quad/i).test(options.format)) {
       this._lineMode = false;
       this._graph = DEFAULTGRAPH;
+      this._baseIRI = options.baseIRI;
       this._prefixIRIs = Object.create(null);
       options.prefixes && this.addPrefixes(options.prefixes);
     }
@@ -145,8 +146,11 @@ export default class N3Writer {
         entity = this.list(this._lists[entity.value]);
       return 'id' in entity ? entity.id : `_:${entity.value}`;
     }
-    // Escape special characters
     let iri = entity.value;
+    // Use relative IRIs if requested and possible
+    if (this._baseIRI && iri.startsWith(this._baseIRI))
+      iri = iri.substr(this._baseIRI.length);
+    // Escape special characters
     if (escape.test(iri))
       iri = iri.replace(escapeAll, characterReplacer);
     // Try to represent the IRI as prefixed name

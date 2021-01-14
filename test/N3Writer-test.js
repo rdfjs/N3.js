@@ -337,6 +337,18 @@ describe('Writer', () => {
       });
     });
 
+    it('uses a base IRI when given', done => {
+      const writer = new Writer({ baseIRI: 'http://example.org/foo/' });
+      writer.addQuad(new Quad(
+        new NamedNode('http://example.org/foo/'),
+        new NamedNode('http://example.org/foo/#b'),
+        new NamedNode('http://example.org/foo/cdeFgh/ijk')));
+      writer.end((error, output) => {
+        output.should.equal('<> <#b> <cdeFgh/ijk>.\n');
+        done(error);
+      });
+    });
+
     it('should accept triples with separated components', done => {
       const writer = new Writer();
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'));
