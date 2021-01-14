@@ -2318,13 +2318,13 @@ function shouldNotParse(parser, input, expectedError, expectedContext) {
   };
 }
 
-function itShouldResolve(baseIri, relativeIri, expected) {
+function itShouldResolve(baseIRI, relativeIri, expected) {
   let result;
-  describe(`resolving <${relativeIri}> against <${baseIri}>`, () => {
+  describe(`resolving <${relativeIri}> against <${baseIRI}>`, () => {
     before(done => {
       try {
         const doc = `<urn:ex:s> <urn:ex:p> <${relativeIri}>.`;
-        new Parser({ baseIRI: baseIri }).parse(doc, (error, triple) => {
+        new Parser({ baseIRI }).parse(doc, (error, triple) => {
           if (done)
             result = triple, done(error);
           done = null;
