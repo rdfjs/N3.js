@@ -211,6 +211,14 @@ export default class N3Store {
 
   // ## Public methods
 
+  // ### `add` adds the specified quad to the dataset.
+  // Returns the dataset instance it was called on.
+  // Existing quads, as defined in Quad.equals, will be ignored.
+  add(quad) {
+    this.addQuad(quad);
+    return this;
+  }
+
   // ### `addQuad` adds a new quad to the store.
   // Returns if the quad index has changed, if the quad did not already exist.
   addQuad(subject, predicate, object, graph) {
@@ -257,6 +265,20 @@ export default class N3Store {
   addQuads(quads) {
     for (let i = 0; i < quads.length; i++)
       this.addQuad(quads[i]);
+  }
+
+  // ### `delete` removes the specified quad from the dataset.
+  // Returns the dataset instance it was called on.
+  delete(quad) {
+    this.removeQuad(quad);
+    return this;
+  }
+
+  // ### `has` determines whether a dataset includes a certain quad.
+  // Returns true or false as appropriate.
+  has(quad) {
+    const quads = this.getQuads(quad.subject, quad.predicate, quad.object, quad.graph);
+    return quads.length !== 0;
   }
 
   // ### `import` adds a stream of quads to the store
@@ -316,7 +338,15 @@ export default class N3Store {
   // ### `removeMatches` removes all matching quads from the store
   // Setting any field to `undefined` or `null` indicates a wildcard.
   removeMatches(subject, predicate, object, graph) {
-    return this.remove(this.match(subject, predicate, object, graph));
+    const stream = new Readable({ objectMode: true });
+
+    stream._read = () => {
+      for (const quad of this.getQuads(subject, predicate, object, graph))
+        stream.push(quad);
+      stream.push(null);
+    };
+
+    return this.remove(stream);
   }
 
   // ### `deleteGraph` removes all triples with the given graph from the store
@@ -373,19 +403,14 @@ export default class N3Store {
     return quads;
   }
 
-  // ### `match` returns a stream of quads matching a pattern.
+  // ### `match` returns a new dataset that is comprised of all quads in the current instance matching the given arguments.
+  // The logic described in Quad Matching is applied for each quad in this dataset to check if it should be included in the output dataset.
+  // Note: This method always returns a new DatasetCore, even if that dataset contains no quads.
+  // Note: Since a DatasetCore is an unordered set, the order of the quads within the returned sequence is arbitrary.
   // Setting any field to `undefined` or `null` indicates a wildcard.
+  // For backwards compatibility, the object return also implements the Readable stream interface.
   match(subject, predicate, object, graph) {
-    const stream = new Readable({ objectMode: true });
-
-    // Initialize stream once it is being read
-    stream._read = () => {
-      for (const quad of this.getQuads(subject, predicate, object, graph))
-        stream.push(quad);
-      stream.push(null);
-    };
-
-    return stream;
+    return new DatasetCoreAndReadableStream(this, subject, predicate, object, graph);
   }
 
   // ### `countQuads` returns the number of quads matching a pattern.
@@ -790,9 +815,61 @@ export default class N3Store {
       this.removeQuads(toRemove);
     return lists;
   }
+
+  // ### Store is an iterable.
+  // Can be used where iterables are expected: for...of loops, array spread operator,
+  // `yield*`, and destructuring assignment (order is not guaranteed).
+  *[Symbol.iterator]() {
+    yield* this.getQuads();
+  }
 }
 
 // Determines whether the argument is a string
 function isString(s) {
   return typeof s === 'string' || s instanceof String;
+}
+
+/**
+ * A class that implements both DatasetCore and Readable.
+ */
+class DatasetCoreAndReadableStream extends Readable {
+  constructor(n3Store, subject, predicate, object, graph) {
+    super({ objectMode: true });
+    Object.assign(this, { n3Store, subject, predicate, object, graph });
+  }
+
+  get filtered() {
+    if (!this._filtered) {
+      const { n3Store, graph, object, predicate, subject } = this;
+      const quads = n3Store.getQuads(subject, predicate, object, graph);
+      this._filtered = new N3Store(quads, { factory: n3Store._factory });
+    }
+    return this._filtered;
+  }
+
+  _read() {
+    for (const quad of this.filtered.getQuads())
+      this.push(quad);
+    this.push(null);
+  }
+
+  add(quad) {
+    return this.filtered.add(quad);
+  }
+
+  delete(quad) {
+    return this.filtered.delete(quad);
+  }
+
+  has(quad) {
+    return this.filtered.has(quad);
+  }
+
+  match(subject, predicate, object, graph) {
+    return new DatasetCoreAndReadableStream(this.filtered, subject, predicate, object, graph);
+  }
+
+  *[Symbol.iterator]() {
+    yield* this.filtered.getQuads();
+  }
 }

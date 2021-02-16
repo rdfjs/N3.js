@@ -107,7 +107,7 @@
     no-undef: 2,
     no-undefined: 0,
     no-unused-vars: [ 2, { args: "none" }],
-    no-use-before-define: [2, { functions: false }],
+    no-use-before-define: [2, { functions: false, classes: false }],
 
     // Node.js
     callback-return: 0,
