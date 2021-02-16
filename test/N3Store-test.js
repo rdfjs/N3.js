@@ -7,8 +7,11 @@ import {
   termFromId, termToId,
 } from '../src/';
 import namespaces from '../src/IRIs';
+import chai from 'chai';
 import { Readable } from 'readable-stream';
 import arrayifyStream from 'arrayify-stream';
+
+const should = chai.should();
 
 describe('Store', () => {
   describe('The Store export', () => {
@@ -186,6 +189,15 @@ describe('Store', () => {
       it('should increase the size', () => {
         store.size.should.eql(7);
       });
+
+      it('should return self', () => {
+        should.equal(store.add(new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2'))), store);
+        store.has(new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')));
+      });
+
+      it('should increase the size', () => {
+        store.size.should.eql(8);
+      });
     });
 
     describe('removing an existing triple', () => {
@@ -194,7 +206,7 @@ describe('Store', () => {
       });
 
       it('should decrease the size', () => {
-        store.size.should.eql(6);
+        store.size.should.eql(7);
       });
 
       it('should return true', () => {
@@ -202,6 +214,14 @@ describe('Store', () => {
       });
 
       it('should decrease the size', () => {
+        store.size.should.eql(6);
+      });
+
+      it('should return self', () => {
+        should.equal(store.delete(new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2'))), store);
+      });
+
+      it('should increase the size', () => {
         store.size.should.eql(5);
       });
     });
@@ -284,8 +304,7 @@ describe('Store', () => {
     });
   });
 
-
-  describe('A Store with 5 elements', () => {
+  describe('A Store with 7 elements', () => {
     const store = new Store();
     store.addQuad('s1', 'p1', 'o1').should.be.true;
     store.addQuad({ subject: 's1', predicate: 'p1', object: 'o2' }).should.be.true;
@@ -295,9 +314,10 @@ describe('Store', () => {
     ]);
     store.addQuad('s1', 'p1', 'o1', 'c4').should.be.true;
     store.addQuad(new Quad('s2', 'p2', 'o2'), 'p1', 'o3');
+    should.equal(store.add(new Quad('s2', 'p2', 'o2')), store);
 
-    it('should have size 6', () => {
-      store.size.should.eql(6);
+    it('should have size 7', () => {
+      store.size.should.eql(7);
     });
 
     describe('when searched without parameters', () => {
@@ -308,7 +328,8 @@ describe('Store', () => {
                          ['s1', 'p2', 'o2'],
                          ['s2', 'p1', 'o1'],
                          ['s1', 'p1', 'o1', 'c4'],
-                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3']));
+                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3'],
+                         ['s2', 'p2', 'o2']));
     });
 
     describe('when searched with an existing subject parameter', () => {
@@ -363,7 +384,7 @@ describe('Store', () => {
     });
 
     describe('when searched with non-existing subject and predicate parameters', () => {
-      itShouldBeEmpty(store.getQuads(new NamedNode('s2'), new NamedNode('p2'), null));
+      itShouldBeEmpty(store.getQuads(new NamedNode('s2'), new NamedNode('p3'), null));
     });
 
     describe('when searched with existing subject and object parameters', () => {
@@ -374,7 +395,7 @@ describe('Store', () => {
     });
 
     describe('when searched with non-existing subject and object parameters', () => {
-      itShouldBeEmpty(store.getQuads(new NamedNode('s2'), new NamedNode('p2'), null));
+      itShouldBeEmpty(store.getQuads(new NamedNode('s2'), null, new NamedNode('o3')));
     });
 
     describe('when searched with existing predicate and object parameters', () => {
@@ -407,7 +428,8 @@ describe('Store', () => {
                          ['s1', 'p1', 'o2'],
                          ['s1', 'p2', 'o2'],
                          ['s2', 'p1', 'o1'],
-                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3']));
+                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3'],
+                         ['s2', 'p2', 'o2']));
     });
 
     describe('when searched with an existing named graph parameter', () => {
@@ -422,6 +444,65 @@ describe('Store', () => {
 
     describe('match', () => {
       describe('without parameters', () => {
+        it('should return an object implementing the DatasetCore interface', () => {
+          const dataset = store.match();
+
+          dataset.add.should.be.a('function');
+          dataset.delete.should.be.a('function');
+          dataset.has.should.be.a('function');
+          dataset.match.should.be.a('function');
+          dataset[Symbol.iterator].should.be.a('function');
+        });
+
+        it('should return an object implementing the Readable stream interface', () => {
+          const stream = store.match();
+
+          stream.addListener.should.be.a('function');
+          stream.emit.should.be.a('function');
+          should.equal(stream.propertyIsEnumerable('destroyed'), false);
+          stream.destroyed.should.equal(false);
+          stream.destroy.should.be.a('function');
+          stream.eventNames.should.be.a('function');
+          stream.getMaxListeners.should.be.a('function');
+          stream.listenerCount.should.be.a('function');
+          stream.listeners.should.be.a('function');
+          stream.isPaused.should.be.a('function');
+          should.equal(stream.isPaused(), false);
+          stream.off.should.be.a('function');
+          stream.on.should.be.a('function');
+          stream.once.should.be.a('function');
+          stream.pause.should.be.a('function');
+          stream.pipe.should.be.a('function');
+          stream.prependListener.should.be.a('function');
+          stream.prependOnceListener.should.be.a('function');
+          stream.rawListeners.should.be.a('function');
+          stream.read.should.be.a('function');
+          stream.readable.should.equal(true);
+          should.equal(stream.propertyIsEnumerable('readableBuffer'), false);
+          should.exist(stream.readableBuffer);
+          // Readable from 'readable-stream' does not implement the `readableEncoding` property.
+          // stream.readableEncoding.should.equal(???);
+          // Readable from 'readable-stream' does not implement the `readableEnded` property.
+          // stream.readableEnded.should.equal(false);
+          should.equal(stream.propertyIsEnumerable('readableFlowing'), false);
+          should.equal(stream.readableFlowing, null);
+          should.equal(stream.propertyIsEnumerable('readableHighWaterMark'), false);
+          stream.readableHighWaterMark.should.equal(16);
+          should.equal(stream.propertyIsEnumerable('readableLength'), false);
+          stream.readableLength.should.equal(0);
+          // Readable from 'readable-stream' does not implement the `readableObjectMode` property.
+          // stream.readableObjectMode.should.equal(true);
+          stream.removeAllListeners.should.be.a('function');
+          stream.removeListener.should.be.a('function');
+          stream.resume.should.be.a('function');
+          stream.setEncoding.should.be.a('function');
+          stream.setMaxListeners.should.be.a('function');
+          stream.unpipe.should.be.a('function');
+          stream.unshift.should.be.a('function');
+          stream.wrap.should.be.a('function');
+          stream[Symbol.asyncIterator].should.be.a('function');
+        });
+
         it('should return all items',
           forResultStream(shouldIncludeAll, store.match(),
             ['s1', 'p1', 'o1'],
@@ -429,7 +510,8 @@ describe('Store', () => {
             ['s1', 'p2', 'o2'],
             ['s2', 'p1', 'o1'],
             ['s1', 'p1', 'o1', 'c4'],
-            [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3']));
+            [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3'],
+            ['s2', 'p2', 'o2']));
       });
 
       describe('with an existing subject parameter', () => {
@@ -439,6 +521,49 @@ describe('Store', () => {
             ['s1', 'p1', 'o2'],
             ['s1', 'p2', 'o2'],
             ['s1', 'p1', 'o1', 'c4']));
+
+        it('should return an object implementing the DatasetCore interface', () => {
+          const subject = new NamedNode('s1');
+          const dataset = store.match(subject, null, null);
+
+          let count = 0;
+          for (const quad of dataset) {
+            count += 1;
+            should.equal(quad.subject.equals(subject), true);
+          }
+
+          should.equal(count, 4);
+
+          should.equal(dataset.has(new Quad('s2', 'p1', 'o1')), false);
+          dataset.add(new Quad('s2', 'p1', 'o1'));
+
+          count = 0;
+          // eslint-disable-next-line no-unused-vars
+          for (const _quad of dataset) {
+            count += 1;
+          }
+          should.equal(count, 5);
+
+          should.equal(dataset.has(new Quad('s2', 'p1', 'o1')), true);
+
+          const nextDataset = dataset.match(new NamedNode('s2'));
+          nextDataset.add(new Quad('s2', 'p2', 'o2'));
+
+          count = 0;
+          // eslint-disable-next-line no-unused-vars
+          for (const _quad of nextDataset) {
+            count += 1;
+          }
+          should.equal(count, 2);
+
+          should.equal(nextDataset.has(new Quad('s2', 'p1', 'o1')), true);
+          should.equal(nextDataset.has(new Quad('s2', 'p2', 'o2')), true);
+
+          nextDataset.delete(new Quad('s2', 'p1', 'o1'));
+          nextDataset.delete(new Quad('s2', 'p2', 'o2'));
+          should.equal(nextDataset.has(new Quad('s2', 'p1', 'o1')), false);
+          should.equal(nextDataset.has(new Quad('s2', 'p2', 'o2')), false);
+        });
       });
 
       describe('with non-existing predicate and object parameters in the default graph', () => {
@@ -455,7 +580,7 @@ describe('Store', () => {
 
       describe('with existing predicate and object parameters', () => {
         it('should return all subjects with this predicate and object', () => {
-          store.getSubjects(new NamedNode('p2'), new NamedNode('o2'), null).should.have.deep.members([new NamedNode('s1')]);
+          store.getSubjects(new NamedNode('p2'), new NamedNode('o2'), null).should.have.deep.members([new NamedNode('s1'), new NamedNode('s2')]);
         });
       });
 
@@ -523,7 +648,7 @@ describe('Store', () => {
 
       describe('with an existing subject parameter', () => {
         it('should return all predicates with this subject', () => {
-          store.getPredicates(new NamedNode('s2'), null, null).should.have.deep.members([new NamedNode('p1')]);
+          store.getPredicates(new NamedNode('s2'), null, null).should.have.deep.members([new NamedNode('p1'), new NamedNode('p2')]);
         });
       });
 
@@ -728,7 +853,8 @@ describe('Store', () => {
       describe('with an existing subject parameter', () => {
         it('should iterate all items with this subject',
           shouldIncludeAll(collect(store, 'forEach', 's2', null, null, null),
-                         ['s2', 'p1', 'o1', '']));
+                         ['s2', 'p1', 'o1', ''],
+                         ['s2', 'p2', 'o2', '']));
       });
 
       describe('with an existing predicate parameter', () => {
@@ -756,6 +882,7 @@ describe('Store', () => {
                            ['s1', 'p1', 'o2'],
                            ['s1', 'p2', 'o2'],
                            ['s2', 'p1', 'o1'],
+                           ['s2', 'p2', 'o2'],
                            [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']));
       });
 
@@ -766,6 +893,7 @@ describe('Store', () => {
                            ['s1', 'p1', 'o2'],
                            ['s1', 'p2', 'o2'],
                            ['s2', 'p1', 'o1'],
+                           ['s2', 'p2', 'o2'],
                            ['s1', 'p1', 'o1', 'c4'],
                            [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']));
       });
@@ -925,9 +1053,67 @@ describe('Store', () => {
       });
     });
 
+    describe('when destructured', () => {
+      it('should destructure all quads',
+        shouldIncludeAll(
+          () => {
+            const [a, b, c, d, e, f, g] = store;
+            return [a, b, c, d, e, f, g];
+          },
+          ['s1', 'p1', 'o1'],
+          ['s1', 'p1', 'o2'],
+          ['s1', 'p2', 'o2'],
+          ['s2', 'p1', 'o1'],
+          ['s2', 'p2', 'o2'],
+          ['s1', 'p1', 'o1', 'c4'],
+          [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3']));
+    });
+
+    describe('when iterated with for...of', () => {
+      it('should iterate over all quads', () => {
+        let count = 0;
+        // eslint-disable-next-line no-unused-vars
+        for (const quad of store) {
+          count += 1;
+        }
+        should.equal(count, 7);
+      });
+    });
+
+    describe('when spread', () => {
+      it('should spread all quads',
+        shouldIncludeAll(
+          [...store],
+          ['s1', 'p1', 'o1'],
+          ['s1', 'p1', 'o2'],
+          ['s1', 'p2', 'o2'],
+          ['s2', 'p1', 'o1'],
+          ['s1', 'p1', 'o1', 'c4'],
+          [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3'],
+          ['s2', 'p2', 'o2']));
+    });
+
+    describe('when yield starred', () => {
+      it('should yield all quads',
+        shouldIncludeAll(
+          () => {
+            function* yieldAll() {
+              yield* store;
+            }
+            return Array.from(yieldAll());
+          },
+          ['s1', 'p1', 'o1'],
+          ['s1', 'p1', 'o2'],
+          ['s1', 'p2', 'o2'],
+          ['s2', 'p1', 'o1'],
+          ['s2', 'p2', 'o2'],
+          ['s1', 'p1', 'o1', 'c4'],
+          [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3']));
+    });
+
     describe('when counted without parameters', () => {
       it('should count all items in all graphs', () => {
-        store.countQuads().should.equal(6);
+        store.countQuads().should.equal(7);
       });
     });
 
@@ -981,7 +1167,7 @@ describe('Store', () => {
 
     describe('when counted with non-existing subject and predicate parameters', () => {
       it('should be empty', () => {
-        store.countQuads('s2', 'p2', null).should.equal(0);
+        store.countQuads('s2', 'p3', null).should.equal(0);
       });
     });
 
@@ -993,7 +1179,7 @@ describe('Store', () => {
 
     describe('when counted with non-existing subject and object parameters', () => {
       it('should be empty', () => {
-        store.countQuads('s2', 'p2', null).should.equal(0);
+        store.countQuads('s2', null, 'o3').should.equal(0);
       });
     });
 
@@ -1023,7 +1209,7 @@ describe('Store', () => {
 
     describe('when counted with the default graph parameter', () => {
       it('should count all items in the default graph', () => {
-        store.countQuads(null, null, null, new DefaultGraph()).should.equal(5);
+        store.countQuads(null, null, null, new DefaultGraph()).should.equal(6);
       });
     });
 
@@ -1041,59 +1227,60 @@ describe('Store', () => {
 
     describe('when trying to remove a triple with a non-existing subject', () => {
       before(() => { store.removeQuad(new NamedNode('s0'), new NamedNode('p1'), new NamedNode('o1')).should.be.false; });
-      it('should still have size 6', () => { store.size.should.eql(6); });
+      it('should still have size 7', () => { store.size.should.eql(7); });
     });
 
     describe('when trying to remove a triple with a non-existing predicate', () => {
       before(() => { store.removeQuad(new NamedNode('s1'), new NamedNode('p0'), new NamedNode('o1')).should.be.false; });
-      it('should still have size 6', () => { store.size.should.eql(6); });
+      it('should still have size 7', () => { store.size.should.eql(7); });
     });
 
     describe('when trying to remove a triple with a non-existing object', () => {
       before(() => { store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o0')).should.be.false; });
-      it('should still have size 6', () => { store.size.should.eql(6); });
+      it('should still have size 7', () => { store.size.should.eql(7); });
     });
 
     describe('when trying to remove a triple for which no subjects exist', () => {
       before(() => { store.removeQuad(new NamedNode('o1'), new NamedNode('p1'), new NamedNode('o1')).should.be.false; });
-      it('should still have size 6', () => { store.size.should.eql(6); });
+      it('should still have size 7', () => { store.size.should.eql(7); });
     });
 
     describe('when trying to remove a triple for which no predicates exist', () => {
       before(() => { store.removeQuad(new NamedNode('s1'), new NamedNode('s1'), new NamedNode('o1')).should.be.false; });
-      it('should still have size 6', () => { store.size.should.eql(6); });
+      it('should still have size 7', () => { store.size.should.eql(7); });
     });
 
     describe('when trying to remove a triple for which no objects exist', () => {
       before(() => { store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('s1')).should.be.false; });
-      it('should still have size 6', () => { store.size.should.eql(6); });
+      it('should still have size 7', () => { store.size.should.eql(7); });
     });
 
     describe('when trying to remove a triple that does not exist', () => {
       before(() => { store.removeQuad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o1')).should.be.false; });
-      it('should still have size 6', () => { store.size.should.eql(6); });
+      it('should still have size 7', () => { store.size.should.eql(7); });
     });
 
     describe('when trying to remove an incomplete triple', () => {
       before(() => { store.removeQuad(new NamedNode('s1'), null, null).should.be.false; });
-      it('should still have size 6', () => { store.size.should.eql(6); });
+      it('should still have size 7', () => { store.size.should.eql(7); });
     });
 
     describe('when trying to remove a triple with a non-existing graph', () => {
       before(() => { store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c0')).should.be.false; });
-      it('should still have size 6', () => { store.size.should.eql(6); });
+      it('should still have size 7', () => { store.size.should.eql(7); });
     });
 
     describe('when removing an existing triple', () => {
       before(() => { store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')).should.be.true; });
 
-      it('should have size 5', () => { store.size.should.eql(5); });
+      it('should have size 6', () => { store.size.should.eql(6); });
 
       it('should not contain that triple anymore',
         shouldIncludeAll(() => { return store.getQuads(); },
                          ['s1', 'p1', 'o2'],
                          ['s1', 'p2', 'o2'],
                          ['s2', 'p1', 'o1'],
+                         ['s2', 'p2', 'o2'],
                          ['s1', 'p1', 'o1', 'c4'],
                          [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']));
     });
@@ -1101,7 +1288,7 @@ describe('Store', () => {
     describe('when removing an existing triple from a named graph', () => {
       before(() => { store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c4')).should.be.true; });
 
-      it('should have size 4', () => { store.size.should.eql(4); });
+      it('should have size 5', () => { store.size.should.eql(5); });
 
       itShouldBeEmpty(() => { return store.getQuads(null, null, null, 'c4'); });
     });
@@ -1114,11 +1301,12 @@ describe('Store', () => {
         ]);
       });
 
-      it('should have size 2', () => { store.size.should.eql(2); });
+      it('should have size 3', () => { store.size.should.eql(3); });
 
       it('should not contain those triples anymore',
         shouldIncludeAll(() => { return store.getQuads(); },
                          ['s1', 'p1', 'o2'],
+                         ['s2', 'p2', 'o2'],
                          [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']));
     });
 
@@ -1128,7 +1316,7 @@ describe('Store', () => {
         store.removeQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')).should.be.true;
       });
 
-      it('should have an unchanged size', () => { store.size.should.eql(2); });
+      it('should have an unchanged size', () => { store.size.should.eql(3); });
     });
   });
 
@@ -1182,6 +1370,14 @@ describe('Store', () => {
 
   describe('A Store', () => {
     const store = new Store();
+
+    it('should implement the DatasetCore interface', () => {
+      store.add.should.be.a('function');
+      store.delete.should.be.a('function');
+      store.has.should.be.a('function');
+      store.match.should.be.a('function');
+      store[Symbol.iterator].should.be.a('function');
+    });
 
     // Test inspired by http://www.devthought.com/2012/01/18/an-object-is-not-a-hash/.
     // The value `__proto__` is not supported however – fixing it introduces too much overhead.
