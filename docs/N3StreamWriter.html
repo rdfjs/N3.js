@@ -112,8 +112,7 @@
             
             <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">N3StreamWriter</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Transform</span> </span>{
   <span class="hljs-keyword">constructor</span>(options) {
-    <span class="hljs-built_in">super</span>({ <span class="hljs-attr">encoding</span>: <span class="hljs-string">&#x27;utf8&#x27;</span> });
-    <span class="hljs-built_in">this</span>._writableState.objectMode = <span class="hljs-literal">true</span>;</pre></div></div>
+    <span class="hljs-built_in">super</span>({ <span class="hljs-attr">encoding</span>: <span class="hljs-string">&#x27;utf8&#x27;</span>, <span class="hljs-attr">writableObjectMode</span>: <span class="hljs-literal">true</span> });</pre></div></div>
             
         </li>
         
