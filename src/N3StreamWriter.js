@@ -5,8 +5,7 @@ import N3Writer from './N3Writer';
 // ## Constructor
 export default class N3StreamWriter extends Transform {
   constructor(options) {
-    super({ encoding: 'utf8' });
-    this._writableState.objectMode = true;
+    super({ encoding: 'utf8', writableObjectMode: true });
 
     // Set up writer with a dummy stream object
     const writer = this._writer = new N3Writer({
