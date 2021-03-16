@@ -261,10 +261,10 @@ export function termToId(term) {
 export class Quad extends Term {
   constructor(subject, predicate, object, graph) {
     super('');
-    this.subject   = subject;
-    this.predicate = predicate;
-    this.object    = object;
-    this.graph     = graph || DEFAULTGRAPH;
+    this._subject   = subject;
+    this._predicate = predicate;
+    this._object    = object;
+    this._graph     = graph || DEFAULTGRAPH;
   }
 
   // ### The term type of this term
@@ -272,23 +272,39 @@ export class Quad extends Term {
     return 'Quad';
   }
 
+  get subject() {
+    return this._subject;
+  }
+
+  get predicate() {
+    return this._predicate;
+  }
+
+  get object() {
+    return this._object;
+  }
+
+  get graph() {
+    return this._graph;
+  }
+
   // ### Returns a plain object representation of this quad
   toJSON() {
     return {
       termType:  this.termType,
-      subject:   this.subject.toJSON(),
-      predicate: this.predicate.toJSON(),
-      object:    this.object.toJSON(),
-      graph:     this.graph.toJSON(),
+      subject:   this._subject.toJSON(),
+      predicate: this._predicate.toJSON(),
+      object:    this._object.toJSON(),
+      graph:     this._graph.toJSON(),
     };
   }
 
   // ### Returns whether this object represents the same quad as the other
   equals(other) {
-    return !!other && this.subject.equals(other.subject)     &&
-                      this.predicate.equals(other.predicate) &&
-                      this.object.equals(other.object)       &&
-                      this.graph.equals(other.graph);
+    return !!other && this._subject.equals(other.subject)     &&
+                      this._predicate.equals(other.predicate) &&
+                      this._object.equals(other.object)       &&
+                      this._graph.equals(other.graph);
   }
 }
 export { Quad as Triple };
