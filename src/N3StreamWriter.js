@@ -23,7 +23,7 @@ export default class N3StreamWriter extends Transform {
     stream.on('data',   quad => { this.write(quad); });
     stream.on('end',    () => { this.end(); });
     stream.on('error',  error => { this.emit('error', error); });
-    stream.on('prefix', (prefix, iri) => { this._writer.addPrefix(prefix, iri); });
+    stream.on('prefix', (prefix, iri) => { this.emit('prefix', prefix, iri); this._writer.addPrefix(prefix, iri); });
     return this;
   }
 }
