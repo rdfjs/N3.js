@@ -533,6 +533,7 @@ describe('Store', () => {
           }
 
           should.equal(count, 4);
+          should.equal(dataset.size, count);
 
           should.equal(dataset.has(new Quad('s2', 'p1', 'o1')), false);
           dataset.add(new Quad('s2', 'p1', 'o1'));
