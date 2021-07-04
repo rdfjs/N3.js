@@ -846,6 +846,9 @@ class DatasetCoreAndReadableStream extends Readable {
     }
     return this._filtered;
   }
+  get size() {
+    return this.filtered.size;
+  }
 
   _read() {
     for (const quad of this.filtered.getQuads())
