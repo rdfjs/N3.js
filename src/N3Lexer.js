@@ -429,6 +429,11 @@ export default class N3Lexer {
     return err;
   }
 
+  // ### Strips off any starting UTF BOM mark.
+  _readStartingBom(input) {
+    return input.startsWith('\ufeff') ? input.substr(1) : input;
+  }
+
   // ## Public methods
 
   // ### `tokenize` starts the transformation of an N3 document into an array of tokens.
@@ -438,7 +443,7 @@ export default class N3Lexer {
 
     // If the input is a string, continuously emit tokens through the callback until the end
     if (typeof input === 'string') {
-      this._input = input;
+      this._input = this._readStartingBom(input);
       // If a callback was passed, asynchronously call it
       if (typeof callback === 'function')
         queueMicrotask(() => this._tokenizeToEnd(callback, true));
@@ -453,7 +458,6 @@ export default class N3Lexer {
     }
     // Otherwise, the input must be a stream
     else {
-      this._input = '';
       this._pendingBuffer = null;
       if (typeof input.setEncoding === 'function')
         input.setEncoding('utf8');
@@ -471,14 +475,18 @@ export default class N3Lexer {
           }
           // Otherwise, tokenize as far as possible
           else {
-            this._input += data;
+            // Only read a BOM at the start
+            if (typeof this._input === 'undefined')
+              this._input = this._readStartingBom(typeof data === 'string' ? data : data.toString());
+            else
+              this._input += data;
             this._tokenizeToEnd(callback, false);
           }
         }
       });
       // Parses until the end
       input.on('end', () => {
-        if (this._input !== null)
+        if (typeof this._input === 'string')
           this._tokenizeToEnd(callback, true);
       });
       input.on('error', callback);

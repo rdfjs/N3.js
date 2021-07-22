@@ -1271,6 +1271,10 @@ describe('Parser', () => {
       shouldParse(parser, '_:a <http://ex.org/b> "c".',
                           ['_:b0_a', 'http://ex.org/b', '"c"']));
 
+    it('should parse a single triple starting with Bom',
+        shouldParse(parser, '\ufeff_:a <http://ex.org/b> "c".',
+            ['_:b0_a', 'http://ex.org/b', '"c"']));
+
     it('should not parse a single quad',
       shouldNotParse(parser, '_:a <http://ex.org/b> "c" <http://ex.org/g>.',
                              'Expected punctuation to follow ""c"" on line 1.'));

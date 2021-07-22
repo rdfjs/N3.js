@@ -19,6 +19,10 @@ describe('Lexer', () => {
       shouldTokenize('',
                      { type: 'eof', line: 1 }));
 
+
+    it('should tokenize byte order mark at beginning as empty string',
+        shouldTokenize('\ufeff', { type: 'eof', line: 1 }));
+
     it('should tokenize a whitespace string',
       shouldTokenize(' \t \n  ',
                      { type: 'eof', line: 2 }));

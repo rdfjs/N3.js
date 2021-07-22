@@ -17,6 +17,10 @@ describe('StreamParser', () => {
 
     it('parses the zero-length stream', shouldParse([''], 0));
 
+    it('parses the Bom starting stream', shouldParse(['\ufeff'], 0));
+
+    it('parses the Bom starting stream when first chunk ""', shouldParse(['', '\ufeff'], 0));
+
     it('parses one triple', shouldParse(['<a> <b> <c>.'], 1));
 
     it('parses two triples', shouldParse(['<a> <b>', ' <c>. <d> <e> ', '<f>.'], 2));
@@ -34,6 +38,9 @@ describe('StreamParser', () => {
 
     it("doesn't parse an invalid stream",
       shouldNotParse(['z.'], 'Unexpected "z." on line 1.'), { token: undefined, line: 1, previousToken: undefined });
+
+    it('Should Not parse Bom in middle stream',
+        shouldNotParse(['<a> <b>', '\ufeff', '<c>.'], 'Unexpected "" on line 1.'));
 
     it('emits "prefix" events',
       shouldEmitPrefixes(['@prefix a: <http://a.org/#>. a:a a:b a:c. @prefix b: <http://b.org/#>.'],
