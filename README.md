@@ -48,6 +48,12 @@ or
 [_Introduction to browserify_](https://writingjavascript.org/posts/introduction-to-browserify).
 You will need to create a "UMD bundle" and supply a name (e.g. with the `-s N3` option in browserify).
 
+You can also use N3.js from a CDN with the following script:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/n3-browserify@latest"></script>
+```
+
 ## Creating triples/quads
 N3.js follows the [RDF.js low-level specification](http://rdf.js.org/).
 
