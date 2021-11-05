@@ -20,7 +20,8 @@
   "files": [
     ".babelrc",
     "src",
-    "lib"
+    "lib",
+    "browser"
   ],
   "dependencies": {
     "queue-microtask": "^1.1.2",
@@ -32,6 +33,7 @@
     "@babel/preset-env": "^7.16.0",
     "@babel/register": "^7.16.0",
     "arrayify-stream": "^1.0.0",
+    "browserify": "^17.0.0",
     "chai": "^4.0.2",
     "chai-things": "^0.2.0",
     "colors": "^1.1.2",
@@ -41,10 +43,13 @@
     "nyc": "^14.1.1",
     "pre-commit": "^1.2.2",
     "rdf-test-suite": "^1.2.0",
-    "streamify-string": "^1.0.1"
+    "streamify-string": "^1.0.1",
+    "uglify-js": "^3.14.3"
   },
   "scripts": {
-    "build": "babel src -d lib",
+    "build": "npm run build:node && npm run build:browser",
+    "build:node": "babel src -d lib",
+    "build:browser": "rm -rf browser && mkdir browser && browserify -s N3 lib/index.js | uglifyjs > browser/n3.min.js",
     "test": "nyc npm run mocha",
     "mocha": "mocha",
     "lint": "eslint src perf test spec",

@@ -48,6 +48,11 @@ or
 [_Introduction to browserify_](https://writingjavascript.org/posts/introduction-to-browserify).
 You will need to create a "UMD bundle" and supply a name (e.g. with the `-s N3` option in browserify).
 
+You can also load it via CDN:
+```html
+<script src="https://unpkg.com/n3/browser/n3.min.js"></script>
+```
+
 ## Creating triples/quads
 N3.js follows the [RDF.js low-level specification](http://rdf.js.org/).
 
@@ -125,7 +130,7 @@ const parser = new N3.Parser({ baseIRI: 'http://example.org/' });
 ```
 
 By default, `N3.Parser` will prefix blank node labels with a `b{digit}_` prefix.
-This is done to prevent collisions of unrelated blank nodes having identical 
+This is done to prevent collisions of unrelated blank nodes having identical
 labels. The `blankNodePrefix` constructor argument can be used to modify the
 prefix or, if set to an empty string, completely disable prefixing:
 ```JavaScript
@@ -336,7 +341,7 @@ The N3.js parser and writer is fully compatible with the following W3C specifica
 
 In addition, the N3.js parser also supports [Notation3 (N3)](https://www.w3.org/TeamSubmission/n3/) (no official specification yet).
 
-The N3.js parser and writer are also fully compatible with the RDF* variants 
+The N3.js parser and writer are also fully compatible with the RDF* variants
 of the W3C specifications.
 
 The default mode is permissive

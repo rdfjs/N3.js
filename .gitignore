@@ -1,6 +1,7 @@
 *.log
 .nyc_output
 .rdf-test-suite-cache
+browser
 docs
 lib
 node_modules
