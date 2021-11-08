@@ -272,6 +272,13 @@ export default class N3Parser {
       // Additional semicolons can be safely ignored
       return this._predicate !== null ? this._readPredicate :
              this._error('Expected predicate but got ;', token);
+    case '[':
+      if (this._n3Mode) {
+        // Start a new quad with a new blank node as subject
+        this._saveContext('blank', this._graph, this._subject,
+                          this._subject = this._blankNode(), null);
+        return this._readBlankNodeHead;
+      }
     case 'blank':
       if (!this._n3Mode)
         return this._error('Disallowed blank node as predicate', token);
@@ -368,13 +375,16 @@ export default class N3Parser {
     // Restore the parent context containing this blank node
     const empty = this._predicate === null;
     this._restoreContext();
+    // If the blank node was the object, restore previous context and read punctuation
+    if (this._object !== null)
+      return this._getContextEndReader();
+    // If the blank node was the predicate, continue reading the object
+    else if (this._predicate !== null)
+      return this._readObject;
     // If the blank node was the subject, continue reading the predicate
-    if (this._object === null)
+    else
       // If the blank node was empty, it could be a named graph label
       return empty ? this._readPredicateOrNamedGraph : this._readPredicateAfterBlank;
-    // If the blank node was the object, restore previous context and read punctuation
-    else
-      return this._getContextEndReader();
   }
 
   // ### `_readPredicateAfterBlank` reads a predicate after an anonymous blank node

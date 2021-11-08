@@ -224,7 +224,25 @@ describe('Parser', () => {
       shouldParse('_:a <b> _:c.',
                   ['_:b0_a', 'b', '_:b0_c']));
 
-    it('should not parse statements with blank predicates',
+    it('should not parse statements with a blank node as predicate',
+      shouldNotParse('PREFIX : <#>\n<a> [] <c>.',
+                     'Disallowed blank node as predicate on line 2.', {
+                       token: {
+                         line: 2,
+                         type: '[',
+                         value: '',
+                         prefix: '',
+                       },
+                       line: 2,
+                       previousToken: {
+                         line: 2,
+                         type: 'IRI',
+                         value: 'a',
+                         prefix: '',
+                       },
+                     }));
+
+    it('should not parse statements with a blank node label as predicate',
       shouldNotParse('PREFIX : <#>\n<a> _:b <c>.',
                      'Disallowed blank node as predicate on line 2.', {
                        token: {
@@ -352,7 +370,7 @@ describe('Parser', () => {
 
     it('should not parse an anonymous node with only an anonymous node inside',
       shouldNotParse('[[<p> <o>]].',
-                     'Expected entity but got [ on line 1.'));
+                     'Disallowed blank node as predicate on line 1.'));
 
     it('should parse statements with an empty list in the subject',
       shouldParse('() <a> <b>.',
@@ -807,8 +825,8 @@ describe('Parser', () => {
                      'Unexpected . on line 1.'));
 
     it('should error if an unexpected token follows a subject',
-      shouldNotParse('<a> [',
-                     'Expected entity but got [ on line 1.'), {
+      shouldNotParse('<a> @',
+                     'Unexpected "@" on line 1.'), {
                        token: {
                          line: 1,
                          type: '@PREFIX',
@@ -1412,8 +1430,16 @@ describe('Parser', () => {
     it('should not parse a quad',
       shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "http://example.org/c" on line 1.'));
 
+    it('allows a blank node in predicate position',
+      shouldParse(parser, '<a> [] <c>.', ['a', '_:b0', 'c']));
+
     it('allows a blank node label in predicate position',
       shouldParse(parser, '<a> _:b <c>.', ['a', '_:b0_b', 'c']));
+
+    it('allows a blank node with properties in predicate position',
+      shouldParse(parser, '<a> [<p> <o>] <c>.',
+                  ['a', '_:b0', 'c'],
+                  ['_:b0', 'p', 'o']));
 
     it('should parse a variable',
       shouldParse(parser, '?a ?b ?c.', ['?a', '?b', '?c']));
