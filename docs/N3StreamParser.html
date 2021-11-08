@@ -87,15 +87,15 @@
         <li id="section-1">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-1">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-1">&#x00a7;</a>
               </div>
               <p><strong>N3StreamParser</strong> parses a text stream into a quad stream.</p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre><span class="hljs-keyword">import</span> N3Parser <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3Parser&#x27;</span>;
-<span class="hljs-keyword">import</span> { Transform } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;readable-stream&#x27;</span>;</pre></div></div>
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">Transform</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;readable-stream&#x27;</span>;</pre></div></div>
             
         </li>
         
@@ -103,17 +103,17 @@
         <li id="section-2">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-2">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-2">&#x00a7;</a>
               </div>
               <h2 id="constructor">Constructor</h2>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">N3StreamParser</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Transform</span> </span>{
-  <span class="hljs-keyword">constructor</span>(options) {
-    <span class="hljs-built_in">super</span>({ <span class="hljs-attr">decodeStrings</span>: <span class="hljs-literal">true</span> });
-    <span class="hljs-built_in">this</span>._readableState.objectMode = <span class="hljs-literal">true</span>;</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">N3StreamParser</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_ inherited__">Transform</span> {
+  <span class="hljs-title function_">constructor</span>(<span class="hljs-params">options</span>) {
+    <span class="hljs-variable language_">super</span>({ <span class="hljs-attr">decodeStrings</span>: <span class="hljs-literal">true</span> });
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_readableState</span>.<span class="hljs-property">objectMode</span> = <span class="hljs-literal">true</span>;</pre></div></div>
             
         </li>
         
@@ -121,16 +121,16 @@
         <li id="section-3">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-3">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-3">&#x00a7;</a>
               </div>
               <p>Set up parser with dummy stream to obtain <code>data</code> and <code>end</code> callbacks</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">const</span> parser = <span class="hljs-keyword">new</span> N3Parser(options);
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">const</span> parser = <span class="hljs-keyword">new</span> <span class="hljs-title function_">N3Parser</span>(options);
     <span class="hljs-keyword">let</span> onData, onEnd;
-    parser.parse({
+    parser.<span class="hljs-title function_">parse</span>({
       <span class="hljs-attr">on</span>: <span class="hljs-function">(<span class="hljs-params">event, callback</span>) =&gt;</span> {
         <span class="hljs-keyword">switch</span> (event) {
         <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;data&#x27;</span>: onData = callback; <span class="hljs-keyword">break</span>;
@@ -145,14 +145,14 @@
         <li id="section-4">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-4">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-4">&#x00a7;</a>
               </div>
               <p>Handle quads by pushing them down the pipeline</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      (error, quad) =&gt; { error &amp;&amp; <span class="hljs-built_in">this</span>.emit(<span class="hljs-string">&#x27;error&#x27;</span>, error) || quad &amp;&amp; <span class="hljs-built_in">this</span>.push(quad); },</pre></div></div>
+            <div class="content"><div class='highlight'><pre>      (error, quad) =&gt; { error &amp;&amp; <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">emit</span>(<span class="hljs-string">&#x27;error&#x27;</span>, error) || quad &amp;&amp; <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">push</span>(quad); },</pre></div></div>
             
         </li>
         
@@ -160,14 +160,14 @@
         <li id="section-5">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-5">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-5">&#x00a7;</a>
               </div>
               <p>Emit prefixes through the <code>prefix</code> event</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      (prefix, uri) =&gt; { <span class="hljs-built_in">this</span>.emit(<span class="hljs-string">&#x27;prefix&#x27;</span>, prefix, uri); }
+            <div class="content"><div class='highlight'><pre>      (prefix, uri) =&gt; { <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">emit</span>(<span class="hljs-string">&#x27;prefix&#x27;</span>, prefix, uri); }
     );</pre></div></div>
             
         </li>
@@ -176,15 +176,15 @@
         <li id="section-6">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-6">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-6">&#x00a7;</a>
               </div>
               <p>Implement Transform methods through parser callbacks</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-built_in">this</span>._transform = <span class="hljs-function">(<span class="hljs-params">chunk, encoding, done</span>) =&gt;</span> { onData(chunk); done(); };
-    <span class="hljs-built_in">this</span>._flush = <span class="hljs-function"><span class="hljs-params">done</span> =&gt;</span> { onEnd(); done(); };
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_transform</span> = <span class="hljs-function">(<span class="hljs-params">chunk, encoding, done</span>) =&gt;</span> { <span class="hljs-title function_">onData</span>(chunk); <span class="hljs-title function_">done</span>(); };
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_flush</span> = <span class="hljs-function"><span class="hljs-params">done</span> =&gt;</span> { <span class="hljs-title function_">onEnd</span>(); <span class="hljs-title function_">done</span>(); };
   }</pre></div></div>
             
         </li>
@@ -193,18 +193,18 @@
         <li id="section-7">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-7">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-7">&#x00a7;</a>
               </div>
               <h3 id="parses-a-stream-of-strings">Parses a stream of strings</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">import</span>(stream) {
-    stream.on(<span class="hljs-string">&#x27;data&#x27;</span>,  <span class="hljs-function"><span class="hljs-params">chunk</span> =&gt;</span> { <span class="hljs-built_in">this</span>.write(chunk); });
-    stream.on(<span class="hljs-string">&#x27;end&#x27;</span>,   <span class="hljs-function">()      =&gt;</span> { <span class="hljs-built_in">this</span>.end(); });
-    stream.on(<span class="hljs-string">&#x27;error&#x27;</span>, <span class="hljs-function"><span class="hljs-params">error</span> =&gt;</span> { <span class="hljs-built_in">this</span>.emit(<span class="hljs-string">&#x27;error&#x27;</span>, error); });
-    <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>;
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">import</span>(<span class="hljs-params">stream</span>) {
+    stream.<span class="hljs-title function_">on</span>(<span class="hljs-string">&#x27;data&#x27;</span>,  <span class="hljs-function"><span class="hljs-params">chunk</span> =&gt;</span> { <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">write</span>(chunk); });
+    stream.<span class="hljs-title function_">on</span>(<span class="hljs-string">&#x27;end&#x27;</span>,   <span class="hljs-function">()      =&gt;</span> { <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">end</span>(); });
+    stream.<span class="hljs-title function_">on</span>(<span class="hljs-string">&#x27;error&#x27;</span>, <span class="hljs-function"><span class="hljs-params">error</span> =&gt;</span> { <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">emit</span>(<span class="hljs-string">&#x27;error&#x27;</span>, error); });
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>;
   }
 }</pre></div></div>
             

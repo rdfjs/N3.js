@@ -87,18 +87,18 @@
         <li id="section-1">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-1">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-1">&#x00a7;</a>
               </div>
               <p><strong>N3Writer</strong> writes N3 documents.</p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre><span class="hljs-keyword">import</span> namespaces <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./IRIs&#x27;</span>;
-<span class="hljs-keyword">import</span> { <span class="hljs-keyword">default</span> <span class="hljs-keyword">as</span> N3DataFactory, Term } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3DataFactory&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-keyword">default</span> <span class="hljs-keyword">as</span> N3DataFactory, <span class="hljs-title class_">Term</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3DataFactory&#x27;</span>;
 <span class="hljs-keyword">import</span> { isDefaultGraph } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3Util&#x27;</span>;
 
-<span class="hljs-keyword">const</span> DEFAULTGRAPH = N3DataFactory.defaultGraph();
+<span class="hljs-keyword">const</span> <span class="hljs-variable constant_">DEFAULTGRAPH</span> = N3DataFactory.<span class="hljs-title function_">defaultGraph</span>();
 
 <span class="hljs-keyword">const</span> { rdf, xsd } = namespaces;</pre></div></div>
             
@@ -108,8 +108,8 @@
         <li id="section-2">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-2">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-2">&#x00a7;</a>
               </div>
               <p>Characters in literals that require escaping</p>
 
@@ -128,14 +128,14 @@
         <li id="section-3">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-3">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-3">&#x00a7;</a>
               </div>
               <h2 id="placeholder-class-to-represent-already-pretty-printed-terms">Placeholder class to represent already pretty-printed terms</h2>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SerializedTerm</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Term</span> </span>{</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">class</span> <span class="hljs-title class_">SerializedTerm</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_ inherited__">Term</span> {</pre></div></div>
             
         </li>
         
@@ -143,15 +143,15 @@
         <li id="section-4">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-4">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-4">&#x00a7;</a>
               </div>
               <p>Pretty-printed nodes are not equal to any other node
 (e.g., [] does not equal [])</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  equals() {
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">equals</span>(<span class="hljs-params"></span>) {
     <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
   }
 }</pre></div></div>
@@ -162,15 +162,15 @@
         <li id="section-5">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-5">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-5">&#x00a7;</a>
               </div>
               <h2 id="constructor">Constructor</h2>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">N3Writer</span> </span>{
-  <span class="hljs-keyword">constructor</span>(outputStream, options) {</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">N3Writer</span> {
+  <span class="hljs-title function_">constructor</span>(<span class="hljs-params">outputStream, options</span>) {</pre></div></div>
             
         </li>
         
@@ -178,14 +178,14 @@
         <li id="section-6">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-6">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-6">&#x00a7;</a>
               </div>
               <h3 id="_prefixregex-matches-a-prefixed-name-or-iri-that-begins-with-one-of-the-added-prefixes"><code>_prefixRegex</code> matches a prefixed name or IRI that begins with one of the added prefixes</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-built_in">this</span>._prefixRegex = <span class="hljs-regexp">/$0^/</span>;</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_prefixRegex</span> = <span class="hljs-regexp">/$0^/</span>;</pre></div></div>
             
         </li>
         
@@ -193,17 +193,17 @@
         <li id="section-7">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-7">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-7">&#x00a7;</a>
               </div>
               <p>Shift arguments if the first argument is not a stream</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (outputStream &amp;&amp; <span class="hljs-keyword">typeof</span> outputStream.write !== <span class="hljs-string">&#x27;function&#x27;</span>)
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (outputStream &amp;&amp; <span class="hljs-keyword">typeof</span> outputStream.<span class="hljs-property">write</span> !== <span class="hljs-string">&#x27;function&#x27;</span>)
       options = outputStream, outputStream = <span class="hljs-literal">null</span>;
     options = options || {};
-    <span class="hljs-built_in">this</span>._lists = options.lists;</pre></div></div>
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_lists</span> = options.<span class="hljs-property">lists</span>;</pre></div></div>
             
         </li>
         
@@ -211,8 +211,8 @@
         <li id="section-8">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-8">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-8">&#x00a7;</a>
               </div>
               <p>If no output stream given, send the output as string through the end callback</p>
 
@@ -220,15 +220,15 @@
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (!outputStream) {
       <span class="hljs-keyword">let</span> output = <span class="hljs-string">&#x27;&#x27;</span>;
-      <span class="hljs-built_in">this</span>._outputStream = {
-        write(chunk, encoding, done) { output += chunk; done &amp;&amp; done(); },
-        <span class="hljs-attr">end</span>: <span class="hljs-function"><span class="hljs-params">done</span> =&gt;</span> { done &amp;&amp; done(<span class="hljs-literal">null</span>, output); },
+      <span class="hljs-variable language_">this</span>.<span class="hljs-property">_outputStream</span> = {
+        <span class="hljs-title function_">write</span>(<span class="hljs-params">chunk, encoding, done</span>) { output += chunk; done &amp;&amp; <span class="hljs-title function_">done</span>(); },
+        <span class="hljs-attr">end</span>: <span class="hljs-function"><span class="hljs-params">done</span> =&gt;</span> { done &amp;&amp; <span class="hljs-title function_">done</span>(<span class="hljs-literal">null</span>, output); },
       };
-      <span class="hljs-built_in">this</span>._endStream = <span class="hljs-literal">true</span>;
+      <span class="hljs-variable language_">this</span>.<span class="hljs-property">_endStream</span> = <span class="hljs-literal">true</span>;
     }
     <span class="hljs-keyword">else</span> {
-      <span class="hljs-built_in">this</span>._outputStream = outputStream;
-      <span class="hljs-built_in">this</span>._endStream = options.end === <span class="hljs-literal">undefined</span> ? <span class="hljs-literal">true</span> : !!options.end;
+      <span class="hljs-variable language_">this</span>.<span class="hljs-property">_outputStream</span> = outputStream;
+      <span class="hljs-variable language_">this</span>.<span class="hljs-property">_endStream</span> = options.<span class="hljs-property">end</span> === <span class="hljs-literal">undefined</span> ? <span class="hljs-literal">true</span> : !!options.<span class="hljs-property">end</span>;
     }</pre></div></div>
             
         </li>
@@ -237,24 +237,24 @@
         <li id="section-9">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-9">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-9">&#x00a7;</a>
               </div>
               <p>Initialize writer, depending on the format</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-built_in">this</span>._subject = <span class="hljs-literal">null</span>;
-    <span class="hljs-keyword">if</span> (!(<span class="hljs-regexp">/triple|quad/i</span>).test(options.format)) {
-      <span class="hljs-built_in">this</span>._lineMode = <span class="hljs-literal">false</span>;
-      <span class="hljs-built_in">this</span>._graph = DEFAULTGRAPH;
-      <span class="hljs-built_in">this</span>._baseIRI = options.baseIRI;
-      <span class="hljs-built_in">this</span>._prefixIRIs = <span class="hljs-built_in">Object</span>.create(<span class="hljs-literal">null</span>);
-      options.prefixes &amp;&amp; <span class="hljs-built_in">this</span>.addPrefixes(options.prefixes);
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_subject</span> = <span class="hljs-literal">null</span>;
+    <span class="hljs-keyword">if</span> (!(<span class="hljs-regexp">/triple|quad/i</span>).<span class="hljs-title function_">test</span>(options.<span class="hljs-property">format</span>)) {
+      <span class="hljs-variable language_">this</span>.<span class="hljs-property">_lineMode</span> = <span class="hljs-literal">false</span>;
+      <span class="hljs-variable language_">this</span>.<span class="hljs-property">_graph</span> = <span class="hljs-variable constant_">DEFAULTGRAPH</span>;
+      <span class="hljs-variable language_">this</span>.<span class="hljs-property">_baseIRI</span> = options.<span class="hljs-property">baseIRI</span>;
+      <span class="hljs-variable language_">this</span>.<span class="hljs-property">_prefixIRIs</span> = <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">create</span>(<span class="hljs-literal">null</span>);
+      options.<span class="hljs-property">prefixes</span> &amp;&amp; <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">addPrefixes</span>(options.<span class="hljs-property">prefixes</span>);
     }
     <span class="hljs-keyword">else</span> {
-      <span class="hljs-built_in">this</span>._lineMode = <span class="hljs-literal">true</span>;
-      <span class="hljs-built_in">this</span>._writeQuad = <span class="hljs-built_in">this</span>._writeQuadLine;
+      <span class="hljs-variable language_">this</span>.<span class="hljs-property">_lineMode</span> = <span class="hljs-literal">true</span>;
+      <span class="hljs-variable language_">this</span>.<span class="hljs-property">_writeQuad</span> = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_writeQuadLine</span>;
     }
   }</pre></div></div>
             
@@ -264,8 +264,8 @@
         <li id="section-10">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-10">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-10">&#x00a7;</a>
               </div>
               <h2 id="private-methods">Private methods</h2>
 
@@ -277,15 +277,15 @@
         <li id="section-11">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-11">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-11">&#x00a7;</a>
               </div>
               <h3 id="whether-the-current-graph-is-the-default-graph">Whether the current graph is the default graph</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">get</span> <span class="hljs-title">_inDefaultGraph</span>() {
-    <span class="hljs-keyword">return</span> DEFAULTGRAPH.equals(<span class="hljs-built_in">this</span>._graph);
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">get</span> <span class="hljs-title function_">_inDefaultGraph</span>() {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable constant_">DEFAULTGRAPH</span>.<span class="hljs-title function_">equals</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">_graph</span>);
   }</pre></div></div>
             
         </li>
@@ -294,15 +294,15 @@
         <li id="section-12">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-12">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-12">&#x00a7;</a>
               </div>
               <h3 id="_write-writes-the-argument-to-the-output-stream"><code>_write</code> writes the argument to the output stream</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  _write(string, callback) {
-    <span class="hljs-built_in">this</span>._outputStream.write(string, <span class="hljs-string">&#x27;utf8&#x27;</span>, callback);
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">_write</span>(<span class="hljs-params">string, callback</span>) {
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_outputStream</span>.<span class="hljs-title function_">write</span>(string, <span class="hljs-string">&#x27;utf8&#x27;</span>, callback);
   }</pre></div></div>
             
         </li>
@@ -311,14 +311,14 @@
         <li id="section-13">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-13">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-13">&#x00a7;</a>
               </div>
               <h3 id="_writequad-writes-the-quad-to-the-output-stream"><code>_writeQuad</code> writes the quad to the output stream</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  _writeQuad(subject, predicate, object, graph, done) {
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">_writeQuad</span>(<span class="hljs-params">subject, predicate, object, graph, done</span>) {
     <span class="hljs-keyword">try</span> {</pre></div></div>
             
         </li>
@@ -327,14 +327,14 @@
         <li id="section-14">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-14">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-14">&#x00a7;</a>
               </div>
               <p>Write the graph’s label if it has changed</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (!graph.equals(<span class="hljs-built_in">this</span>._graph)) {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (!graph.<span class="hljs-title function_">equals</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">_graph</span>)) {</pre></div></div>
             
         </li>
         
@@ -342,17 +342,17 @@
         <li id="section-15">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-15">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-15">&#x00a7;</a>
               </div>
               <p>Close the previous graph and start the new one</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-built_in">this</span>._write((<span class="hljs-built_in">this</span>._subject === <span class="hljs-literal">null</span> ? <span class="hljs-string">&#x27;&#x27;</span> : (<span class="hljs-built_in">this</span>._inDefaultGraph ? <span class="hljs-string">&#x27;.\n&#x27;</span> : <span class="hljs-string">&#x27;\n}\n&#x27;</span>)) +
-                    (DEFAULTGRAPH.equals(graph) ? <span class="hljs-string">&#x27;&#x27;</span> : <span class="hljs-string">`<span class="hljs-subst">${<span class="hljs-built_in">this</span>._encodeIriOrBlank(graph)}</span> {\n`</span>));
-        <span class="hljs-built_in">this</span>._graph = graph;
-        <span class="hljs-built_in">this</span>._subject = <span class="hljs-literal">null</span>;
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_write</span>((<span class="hljs-variable language_">this</span>.<span class="hljs-property">_subject</span> === <span class="hljs-literal">null</span> ? <span class="hljs-string">&#x27;&#x27;</span> : (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_inDefaultGraph</span> ? <span class="hljs-string">&#x27;.\n&#x27;</span> : <span class="hljs-string">&#x27;\n}\n&#x27;</span>)) +
+                    (<span class="hljs-variable constant_">DEFAULTGRAPH</span>.<span class="hljs-title function_">equals</span>(graph) ? <span class="hljs-string">&#x27;&#x27;</span> : <span class="hljs-string">`<span class="hljs-subst">${<span class="hljs-variable language_">this</span>._encodeIriOrBlank(graph)}</span> {\n`</span>));
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">_graph</span> = graph;
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">_subject</span> = <span class="hljs-literal">null</span>;
       }</pre></div></div>
             
         </li>
@@ -361,14 +361,14 @@
         <li id="section-16">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-16">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-16">&#x00a7;</a>
               </div>
               <p>Don’t repeat the subject if it’s the same</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (subject.equals(<span class="hljs-built_in">this</span>._subject)) {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (subject.<span class="hljs-title function_">equals</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">_subject</span>)) {</pre></div></div>
             
         </li>
         
@@ -376,15 +376,15 @@
         <li id="section-17">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-17">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-17">&#x00a7;</a>
               </div>
               <p>Don’t repeat the predicate if it’s the same</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (predicate.equals(<span class="hljs-built_in">this</span>._predicate))
-          <span class="hljs-built_in">this</span>._write(<span class="hljs-string">`, <span class="hljs-subst">${<span class="hljs-built_in">this</span>._encodeObject(object)}</span>`</span>, done);</pre></div></div>
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (predicate.<span class="hljs-title function_">equals</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">_predicate</span>))
+          <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_write</span>(<span class="hljs-string">`, <span class="hljs-subst">${<span class="hljs-variable language_">this</span>._encodeObject(object)}</span>`</span>, done);</pre></div></div>
             
         </li>
         
@@ -392,17 +392,17 @@
         <li id="section-18">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-18">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-18">&#x00a7;</a>
               </div>
               <p>Same subject, different predicate</p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">else</span>
-          <span class="hljs-built_in">this</span>._write(<span class="hljs-string">`;\n    <span class="hljs-subst">${
-                      <span class="hljs-built_in">this</span>._encodePredicate(<span class="hljs-built_in">this</span>._predicate = predicate)}</span> <span class="hljs-subst">${
-                      <span class="hljs-built_in">this</span>._encodeObject(object)}</span>`</span>, done);
+          <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_write</span>(<span class="hljs-string">`;\n    <span class="hljs-subst">${
+                      <span class="hljs-variable language_">this</span>._encodePredicate(<span class="hljs-variable language_">this</span>._predicate = predicate)}</span> <span class="hljs-subst">${
+                      <span class="hljs-variable language_">this</span>._encodeObject(object)}</span>`</span>, done);
       }</pre></div></div>
             
         </li>
@@ -411,20 +411,20 @@
         <li id="section-19">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-19">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-19">&#x00a7;</a>
               </div>
               <p>Different subject; write the whole quad</p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">else</span>
-        <span class="hljs-built_in">this</span>._write(<span class="hljs-string">`<span class="hljs-subst">${(<span class="hljs-built_in">this</span>._subject === <span class="hljs-literal">null</span> ? <span class="hljs-string">&#x27;&#x27;</span> : <span class="hljs-string">&#x27;.\n&#x27;</span>) +
-                    <span class="hljs-built_in">this</span>._encodeSubject(<span class="hljs-built_in">this</span>._subject = subject)}</span> <span class="hljs-subst">${
-                    <span class="hljs-built_in">this</span>._encodePredicate(<span class="hljs-built_in">this</span>._predicate = predicate)}</span> <span class="hljs-subst">${
-                    <span class="hljs-built_in">this</span>._encodeObject(object)}</span>`</span>, done);
+        <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_write</span>(<span class="hljs-string">`<span class="hljs-subst">${(<span class="hljs-variable language_">this</span>._subject === <span class="hljs-literal">null</span> ? <span class="hljs-string">&#x27;&#x27;</span> : <span class="hljs-string">&#x27;.\n&#x27;</span>) +
+                    <span class="hljs-variable language_">this</span>._encodeSubject(<span class="hljs-variable language_">this</span>._subject = subject)}</span> <span class="hljs-subst">${
+                    <span class="hljs-variable language_">this</span>._encodePredicate(<span class="hljs-variable language_">this</span>._predicate = predicate)}</span> <span class="hljs-subst">${
+                    <span class="hljs-variable language_">this</span>._encodeObject(object)}</span>`</span>, done);
     }
-    <span class="hljs-keyword">catch</span> (error) { done &amp;&amp; done(error); }
+    <span class="hljs-keyword">catch</span> (error) { done &amp;&amp; <span class="hljs-title function_">done</span>(error); }
   }</pre></div></div>
             
         </li>
@@ -433,14 +433,14 @@
         <li id="section-20">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-20">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-20">&#x00a7;</a>
               </div>
               <h3 id="_writequadline-writes-the-quad-to-the-output-stream-as-a-single-line"><code>_writeQuadLine</code> writes the quad to the output stream as a single line</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  _writeQuadLine(subject, predicate, object, graph, done) {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">_writeQuadLine</span>(<span class="hljs-params">subject, predicate, object, graph, done</span>) {</pre></div></div>
             
         </li>
         
@@ -448,15 +448,15 @@
         <li id="section-21">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-21">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-21">&#x00a7;</a>
               </div>
               <p>Write the quad without prefixes</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">delete</span> <span class="hljs-built_in">this</span>._prefixMatch;
-    <span class="hljs-built_in">this</span>._write(<span class="hljs-built_in">this</span>.quadToString(subject, predicate, object, graph), done);
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">delete</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">_prefixMatch</span>;
+    <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_write</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-title function_">quadToString</span>(subject, predicate, object, graph), done);
   }</pre></div></div>
             
         </li>
@@ -465,18 +465,18 @@
         <li id="section-22">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-22">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-22">&#x00a7;</a>
               </div>
               <h3 id="quadtostring-serializes-a-quad-as-a-string"><code>quadToString</code> serializes a quad as a string</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  quadToString(subject, predicate, object, graph) {
-    <span class="hljs-keyword">return</span>  <span class="hljs-string">`<span class="hljs-subst">${<span class="hljs-built_in">this</span>._encodeSubject(subject)}</span> <span class="hljs-subst">${
-            <span class="hljs-built_in">this</span>._encodeIriOrBlank(predicate)}</span> <span class="hljs-subst">${
-            <span class="hljs-built_in">this</span>._encodeObject(object)
-            }</span><span class="hljs-subst">${graph &amp;&amp; graph.value ? <span class="hljs-string">` <span class="hljs-subst">${<span class="hljs-built_in">this</span>._encodeIriOrBlank(graph)}</span> .\n`</span> : <span class="hljs-string">&#x27; .\n&#x27;</span>}</span>`</span>;
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">quadToString</span>(<span class="hljs-params">subject, predicate, object, graph</span>) {
+    <span class="hljs-keyword">return</span>  <span class="hljs-string">`<span class="hljs-subst">${<span class="hljs-variable language_">this</span>._encodeSubject(subject)}</span> <span class="hljs-subst">${
+            <span class="hljs-variable language_">this</span>._encodeIriOrBlank(predicate)}</span> <span class="hljs-subst">${
+            <span class="hljs-variable language_">this</span>._encodeObject(object)
+            }</span><span class="hljs-subst">${graph &amp;&amp; graph.value ? <span class="hljs-string">` <span class="hljs-subst">${<span class="hljs-variable language_">this</span>._encodeIriOrBlank(graph)}</span> .\n`</span> : <span class="hljs-string">&#x27; .\n&#x27;</span>}</span>`</span>;
   }</pre></div></div>
             
         </li>
@@ -485,17 +485,17 @@
         <li id="section-23">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-23">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-23">&#x00a7;</a>
               </div>
               <h3 id="quadstostring-serializes-an-array-of-quads-as-a-string"><code>quadsToString</code> serializes an array of quads as a string</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  quadsToString(quads) {
-    <span class="hljs-keyword">return</span> quads.map(<span class="hljs-function"><span class="hljs-params">t</span> =&gt;</span> {
-      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>.quadToString(t.subject, t.predicate, t.object, t.graph);
-    }).join(<span class="hljs-string">&#x27;&#x27;</span>);
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">quadsToString</span>(<span class="hljs-params">quads</span>) {
+    <span class="hljs-keyword">return</span> quads.<span class="hljs-title function_">map</span>(<span class="hljs-function"><span class="hljs-params">t</span> =&gt;</span> {
+      <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">quadToString</span>(t.<span class="hljs-property">subject</span>, t.<span class="hljs-property">predicate</span>, t.<span class="hljs-property">object</span>, t.<span class="hljs-property">graph</span>);
+    }).<span class="hljs-title function_">join</span>(<span class="hljs-string">&#x27;&#x27;</span>);
   }</pre></div></div>
             
         </li>
@@ -504,16 +504,16 @@
         <li id="section-24">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-24">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-24">&#x00a7;</a>
               </div>
               <h3 id="_encodesubject-represents-a-subject"><code>_encodeSubject</code> represents a subject</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  _encodeSubject(entity) {
-    <span class="hljs-keyword">return</span> entity.termType === <span class="hljs-string">&#x27;Quad&#x27;</span> ?
-      <span class="hljs-built_in">this</span>._encodeQuad(entity) : <span class="hljs-built_in">this</span>._encodeIriOrBlank(entity);
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">_encodeSubject</span>(<span class="hljs-params">entity</span>) {
+    <span class="hljs-keyword">return</span> entity.<span class="hljs-property">termType</span> === <span class="hljs-string">&#x27;Quad&#x27;</span> ?
+      <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_encodeQuad</span>(entity) : <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_encodeIriOrBlank</span>(entity);
   }</pre></div></div>
             
         </li>
@@ -522,14 +522,14 @@
         <li id="section-25">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-25">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-25">&#x00a7;</a>
               </div>
               <h3 id="_encodeiriorblank-represents-an-iri-or-blank-node"><code>_encodeIriOrBlank</code> represents an IRI or blank node</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  _encodeIriOrBlank(entity) {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">_encodeIriOrBlank</span>(<span class="hljs-params">entity</span>) {</pre></div></div>
             
         </li>
         
@@ -537,14 +537,14 @@
         <li id="section-26">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-26">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-26">&#x00a7;</a>
               </div>
               <p>A blank node or list is represented as-is</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (entity.termType !== <span class="hljs-string">&#x27;NamedNode&#x27;</span>) {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (entity.<span class="hljs-property">termType</span> !== <span class="hljs-string">&#x27;NamedNode&#x27;</span>) {</pre></div></div>
             
         </li>
         
@@ -552,18 +552,18 @@
         <li id="section-27">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-27">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-27">&#x00a7;</a>
               </div>
               <p>If it is a list head, pretty-print it</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._lists &amp;&amp; (entity.value <span class="hljs-keyword">in</span> <span class="hljs-built_in">this</span>._lists))
-        entity = <span class="hljs-built_in">this</span>.list(<span class="hljs-built_in">this</span>._lists[entity.value]);
-      <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;id&#x27;</span> <span class="hljs-keyword">in</span> entity ? entity.id : <span class="hljs-string">`_:<span class="hljs-subst">${entity.value}</span>`</span>;
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_lists</span> &amp;&amp; (entity.<span class="hljs-property">value</span> <span class="hljs-keyword">in</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">_lists</span>))
+        entity = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">list</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">_lists</span>[entity.<span class="hljs-property">value</span>]);
+      <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;id&#x27;</span> <span class="hljs-keyword">in</span> entity ? entity.<span class="hljs-property">id</span> : <span class="hljs-string">`_:<span class="hljs-subst">${entity.value}</span>`</span>;
     }
-    <span class="hljs-keyword">let</span> iri = entity.value;</pre></div></div>
+    <span class="hljs-keyword">let</span> iri = entity.<span class="hljs-property">value</span>;</pre></div></div>
             
         </li>
         
@@ -571,15 +571,15 @@
         <li id="section-28">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-28">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-28">&#x00a7;</a>
               </div>
               <p>Use relative IRIs if requested and possible</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._baseIRI &amp;&amp; iri.startsWith(<span class="hljs-built_in">this</span>._baseIRI))
-      iri = iri.substr(<span class="hljs-built_in">this</span>._baseIRI.length);</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_baseIRI</span> &amp;&amp; iri.<span class="hljs-title function_">startsWith</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">_baseIRI</span>))
+      iri = iri.<span class="hljs-title function_">substr</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">_baseIRI</span>.<span class="hljs-property">length</span>);</pre></div></div>
             
         </li>
         
@@ -587,15 +587,15 @@
         <li id="section-29">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-29">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-29">&#x00a7;</a>
               </div>
               <p>Escape special characters</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">escape</span>.test(iri))
-      iri = iri.replace(escapeAll, characterReplacer);</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">escape</span>.<span class="hljs-title function_">test</span>(iri))
+      iri = iri.<span class="hljs-title function_">replace</span>(escapeAll, characterReplacer);</pre></div></div>
             
         </li>
         
@@ -603,16 +603,16 @@
         <li id="section-30">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-30">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-30">&#x00a7;</a>
               </div>
               <p>Try to represent the IRI as prefixed name</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">const</span> prefixMatch = <span class="hljs-built_in">this</span>._prefixRegex.exec(iri);
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">const</span> prefixMatch = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_prefixRegex</span>.<span class="hljs-title function_">exec</span>(iri);
     <span class="hljs-keyword">return</span> !prefixMatch ? <span class="hljs-string">`&lt;<span class="hljs-subst">${iri}</span>&gt;`</span> :
-           (!prefixMatch[<span class="hljs-number">1</span>] ? iri : <span class="hljs-built_in">this</span>._prefixIRIs[prefixMatch[<span class="hljs-number">1</span>]] + prefixMatch[<span class="hljs-number">2</span>]);
+           (!prefixMatch[<span class="hljs-number">1</span>] ? iri : <span class="hljs-variable language_">this</span>.<span class="hljs-property">_prefixIRIs</span>[prefixMatch[<span class="hljs-number">1</span>]] + prefixMatch[<span class="hljs-number">2</span>]);
   }</pre></div></div>
             
         </li>
@@ -621,14 +621,14 @@
         <li id="section-31">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-31">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-31">&#x00a7;</a>
               </div>
               <h3 id="_encodeliteral-represents-a-literal"><code>_encodeLiteral</code> represents a literal</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  _encodeLiteral(literal) {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">_encodeLiteral</span>(<span class="hljs-params">literal</span>) {</pre></div></div>
             
         </li>
         
@@ -636,16 +636,16 @@
         <li id="section-32">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-32">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-32">&#x00a7;</a>
               </div>
               <p>Escape special characters</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">let</span> value = literal.value;
-    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">escape</span>.test(value))
-      value = value.replace(escapeAll, characterReplacer);</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">let</span> value = literal.<span class="hljs-property">value</span>;
+    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">escape</span>.<span class="hljs-title function_">test</span>(value))
+      value = value.<span class="hljs-title function_">replace</span>(escapeAll, characterReplacer);</pre></div></div>
             
         </li>
         
@@ -653,14 +653,14 @@
         <li id="section-33">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-33">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-33">&#x00a7;</a>
               </div>
               <p>Write a language-tagged literal</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (literal.language)
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (literal.<span class="hljs-property">language</span>)
       <span class="hljs-keyword">return</span> <span class="hljs-string">`&quot;<span class="hljs-subst">${value}</span>&quot;@<span class="hljs-subst">${literal.language}</span>`</span>;</pre></div></div>
             
         </li>
@@ -669,14 +669,14 @@
         <li id="section-34">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-34">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-34">&#x00a7;</a>
               </div>
               <p>Write dedicated literals per data type</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._lineMode) {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_lineMode</span>) {</pre></div></div>
             
         </li>
         
@@ -684,14 +684,14 @@
         <li id="section-35">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-35">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-35">&#x00a7;</a>
               </div>
               <p>Only abbreviate strings in N-Triples or N-Quads</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (literal.datatype.value === xsd.string)
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (literal.<span class="hljs-property">datatype</span>.<span class="hljs-property">value</span> === xsd.<span class="hljs-property">string</span>)
         <span class="hljs-keyword">return</span> <span class="hljs-string">`&quot;<span class="hljs-subst">${value}</span>&quot;`</span>;
     }
     <span class="hljs-keyword">else</span> {</pre></div></div>
@@ -702,30 +702,30 @@
         <li id="section-36">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-36">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-36">&#x00a7;</a>
               </div>
               <p>Use common datatype abbreviations in Turtle or TriG</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">switch</span> (literal.datatype.value) {
-      <span class="hljs-keyword">case</span> xsd.string:
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">switch</span> (literal.<span class="hljs-property">datatype</span>.<span class="hljs-property">value</span>) {
+      <span class="hljs-keyword">case</span> xsd.<span class="hljs-property">string</span>:
         <span class="hljs-keyword">return</span> <span class="hljs-string">`&quot;<span class="hljs-subst">${value}</span>&quot;`</span>;
-      <span class="hljs-keyword">case</span> xsd.boolean:
+      <span class="hljs-keyword">case</span> xsd.<span class="hljs-property">boolean</span>:
         <span class="hljs-keyword">if</span> (value === <span class="hljs-string">&#x27;true&#x27;</span> || value === <span class="hljs-string">&#x27;false&#x27;</span>)
           <span class="hljs-keyword">return</span> value;
         <span class="hljs-keyword">break</span>;
-      <span class="hljs-keyword">case</span> xsd.integer:
-        <span class="hljs-keyword">if</span> (<span class="hljs-regexp">/^[+-]?\d+$/</span>.test(value))
+      <span class="hljs-keyword">case</span> xsd.<span class="hljs-property">integer</span>:
+        <span class="hljs-keyword">if</span> (<span class="hljs-regexp">/^[+-]?\d+$/</span>.<span class="hljs-title function_">test</span>(value))
           <span class="hljs-keyword">return</span> value;
         <span class="hljs-keyword">break</span>;
-      <span class="hljs-keyword">case</span> xsd.decimal:
-        <span class="hljs-keyword">if</span> (<span class="hljs-regexp">/^[+-]?\d*\.\d+$/</span>.test(value))
+      <span class="hljs-keyword">case</span> xsd.<span class="hljs-property">decimal</span>:
+        <span class="hljs-keyword">if</span> (<span class="hljs-regexp">/^[+-]?\d*\.\d+$/</span>.<span class="hljs-title function_">test</span>(value))
           <span class="hljs-keyword">return</span> value;
         <span class="hljs-keyword">break</span>;
-      <span class="hljs-keyword">case</span> xsd.double:
-        <span class="hljs-keyword">if</span> (<span class="hljs-regexp">/^[+-]?(?:\d+\.\d*|\.?\d+)[eE][+-]?\d+$/</span>.test(value))
+      <span class="hljs-keyword">case</span> xsd.<span class="hljs-property">double</span>:
+        <span class="hljs-keyword">if</span> (<span class="hljs-regexp">/^[+-]?(?:\d+\.\d*|\.?\d+)[eE][+-]?\d+$/</span>.<span class="hljs-title function_">test</span>(value))
           <span class="hljs-keyword">return</span> value;
         <span class="hljs-keyword">break</span>;
       }
@@ -737,14 +737,14 @@
         <li id="section-37">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-37">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-37">&#x00a7;</a>
               </div>
               <p>Write a regular datatyped literal</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">return</span> <span class="hljs-string">`&quot;<span class="hljs-subst">${value}</span>&quot;^^<span class="hljs-subst">${<span class="hljs-built_in">this</span>._encodeIriOrBlank(literal.datatype)}</span>`</span>;
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">return</span> <span class="hljs-string">`&quot;<span class="hljs-subst">${value}</span>&quot;^^<span class="hljs-subst">${<span class="hljs-variable language_">this</span>._encodeIriOrBlank(literal.datatype)}</span>`</span>;
   }</pre></div></div>
             
         </li>
@@ -753,15 +753,15 @@
         <li id="section-38">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-38">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-38">&#x00a7;</a>
               </div>
               <h3 id="_encodepredicate-represents-a-predicate"><code>_encodePredicate</code> represents a predicate</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  _encodePredicate(predicate) {
-    <span class="hljs-keyword">return</span> predicate.value === rdf.type ? <span class="hljs-string">&#x27;a&#x27;</span> : <span class="hljs-built_in">this</span>._encodeIriOrBlank(predicate);
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">_encodePredicate</span>(<span class="hljs-params">predicate</span>) {
+    <span class="hljs-keyword">return</span> predicate.<span class="hljs-property">value</span> === rdf.<span class="hljs-property">type</span> ? <span class="hljs-string">&#x27;a&#x27;</span> : <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_encodeIriOrBlank</span>(predicate);
   }</pre></div></div>
             
         </li>
@@ -770,21 +770,21 @@
         <li id="section-39">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-39">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-39">&#x00a7;</a>
               </div>
               <h3 id="_encodeobject-represents-an-object"><code>_encodeObject</code> represents an object</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  _encodeObject(object) {
-    <span class="hljs-keyword">switch</span> (object.termType) {
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">_encodeObject</span>(<span class="hljs-params">object</span>) {
+    <span class="hljs-keyword">switch</span> (object.<span class="hljs-property">termType</span>) {
     <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;Quad&#x27;</span>:
-      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._encodeQuad(object);
+      <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_encodeQuad</span>(object);
     <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;Literal&#x27;</span>:
-      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._encodeLiteral(object);
-    <span class="hljs-keyword">default</span>:
-      <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._encodeIriOrBlank(object);
+      <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_encodeLiteral</span>(object);
+    <span class="hljs-attr">default</span>:
+      <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_encodeIriOrBlank</span>(object);
     }
   }</pre></div></div>
             
@@ -794,19 +794,19 @@
         <li id="section-40">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-40">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-40">&#x00a7;</a>
               </div>
               <h3 id="_encodequad-encodes-an-rdf-quad"><code>_encodeQuad</code> encodes an RDF* quad</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  _encodeQuad({ subject, predicate, object, graph }) {
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">_encodeQuad</span>(<span class="hljs-params">{ subject, predicate, object, graph }</span>) {
     <span class="hljs-keyword">return</span> <span class="hljs-string">`&lt;&lt;<span class="hljs-subst">${
-      <span class="hljs-built_in">this</span>._encodeSubject(subject)}</span> <span class="hljs-subst">${
-      <span class="hljs-built_in">this</span>._encodePredicate(predicate)}</span> <span class="hljs-subst">${
-      <span class="hljs-built_in">this</span>._encodeObject(object)}</span><span class="hljs-subst">${
-      isDefaultGraph(graph) ? <span class="hljs-string">&#x27;&#x27;</span> : <span class="hljs-string">` <span class="hljs-subst">${<span class="hljs-built_in">this</span>._encodeIriOrBlank(graph)}</span>`</span>}</span>&gt;&gt;`</span>;
+      <span class="hljs-variable language_">this</span>._encodeSubject(subject)}</span> <span class="hljs-subst">${
+      <span class="hljs-variable language_">this</span>._encodePredicate(predicate)}</span> <span class="hljs-subst">${
+      <span class="hljs-variable language_">this</span>._encodeObject(object)}</span><span class="hljs-subst">${
+      isDefaultGraph(graph) ? <span class="hljs-string">&#x27;&#x27;</span> : <span class="hljs-string">` <span class="hljs-subst">${<span class="hljs-variable language_">this</span>._encodeIriOrBlank(graph)}</span>`</span>}</span>&gt;&gt;`</span>;
   }</pre></div></div>
             
         </li>
@@ -815,15 +815,15 @@
         <li id="section-41">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-41">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-41">&#x00a7;</a>
               </div>
               <h3 id="_blockedwrite-replaces-_write-after-the-writer-has-been-closed"><code>_blockedWrite</code> replaces <code>_write</code> after the writer has been closed</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  _blockedWrite() {
-    <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&#x27;Cannot write because the writer has been closed.&#x27;</span>);
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">_blockedWrite</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Error</span>(<span class="hljs-string">&#x27;Cannot write because the writer has been closed.&#x27;</span>);
   }</pre></div></div>
             
         </li>
@@ -832,14 +832,14 @@
         <li id="section-42">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-42">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-42">&#x00a7;</a>
               </div>
               <h3 id="addquad-adds-the-quad-to-the-output-stream"><code>addQuad</code> adds the quad to the output stream</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  addQuad(subject, predicate, object, graph, done) {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">addQuad</span>(<span class="hljs-params">subject, predicate, object, graph, done</span>) {</pre></div></div>
             
         </li>
         
@@ -847,15 +847,15 @@
         <li id="section-43">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-43">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-43">&#x00a7;</a>
               </div>
               <p>The quad was given as an object, so shift parameters</p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (object === <span class="hljs-literal">undefined</span>)
-      <span class="hljs-built_in">this</span>._writeQuad(subject.subject, subject.predicate, subject.object, subject.graph, predicate);</pre></div></div>
+      <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_writeQuad</span>(subject.<span class="hljs-property">subject</span>, subject.<span class="hljs-property">predicate</span>, subject.<span class="hljs-property">object</span>, subject.<span class="hljs-property">graph</span>, predicate);</pre></div></div>
             
         </li>
         
@@ -863,15 +863,15 @@
         <li id="section-44">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-44">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-44">&#x00a7;</a>
               </div>
               <p>The optional <code>graph</code> parameter was not provided</p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> graph === <span class="hljs-string">&#x27;function&#x27;</span>)
-      <span class="hljs-built_in">this</span>._writeQuad(subject, predicate, object, DEFAULTGRAPH, graph);</pre></div></div>
+      <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_writeQuad</span>(subject, predicate, object, <span class="hljs-variable constant_">DEFAULTGRAPH</span>, graph);</pre></div></div>
             
         </li>
         
@@ -879,15 +879,15 @@
         <li id="section-45">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-45">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-45">&#x00a7;</a>
               </div>
               <p>The <code>graph</code> parameter was provided</p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">else</span>
-      <span class="hljs-built_in">this</span>._writeQuad(subject, predicate, object, graph || DEFAULTGRAPH, done);
+      <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_writeQuad</span>(subject, predicate, object, graph || <span class="hljs-variable constant_">DEFAULTGRAPH</span>, done);
   }</pre></div></div>
             
         </li>
@@ -896,16 +896,16 @@
         <li id="section-46">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-46">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-46">&#x00a7;</a>
               </div>
               <h3 id="addquads-adds-the-quads-to-the-output-stream"><code>addQuads</code> adds the quads to the output stream</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  addQuads(quads) {
-    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i = <span class="hljs-number">0</span>; i &lt; quads.length; i++)
-      <span class="hljs-built_in">this</span>.addQuad(quads[i]);
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">addQuads</span>(<span class="hljs-params">quads</span>) {
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i = <span class="hljs-number">0</span>; i &lt; quads.<span class="hljs-property">length</span>; i++)
+      <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">addQuad</span>(quads[i]);
   }</pre></div></div>
             
         </li>
@@ -914,17 +914,17 @@
         <li id="section-47">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-47">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-47">&#x00a7;</a>
               </div>
               <h3 id="addprefix-adds-the-prefix-to-the-output-stream"><code>addPrefix</code> adds the prefix to the output stream</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  addPrefix(prefix, iri, done) {
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">addPrefix</span>(<span class="hljs-params">prefix, iri, done</span>) {
     <span class="hljs-keyword">const</span> prefixes = {};
     prefixes[prefix] = iri;
-    <span class="hljs-built_in">this</span>.addPrefixes(prefixes, done);
+    <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">addPrefixes</span>(prefixes, done);
   }</pre></div></div>
             
         </li>
@@ -933,14 +933,14 @@
         <li id="section-48">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-48">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-48">&#x00a7;</a>
               </div>
               <h3 id="addprefixes-adds-the-prefixes-to-the-output-stream"><code>addPrefixes</code> adds the prefixes to the output stream</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  addPrefixes(prefixes, done) {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">addPrefixes</span>(<span class="hljs-params">prefixes, done</span>) {</pre></div></div>
             
         </li>
         
@@ -948,15 +948,15 @@
         <li id="section-49">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-49">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-49">&#x00a7;</a>
               </div>
               <p>Ignore prefixes if not supported by the serialization</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (!<span class="hljs-built_in">this</span>._prefixIRIs)
-      <span class="hljs-keyword">return</span> done &amp;&amp; done();</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (!<span class="hljs-variable language_">this</span>.<span class="hljs-property">_prefixIRIs</span>)
+      <span class="hljs-keyword">return</span> done &amp;&amp; <span class="hljs-title function_">done</span>();</pre></div></div>
             
         </li>
         
@@ -964,8 +964,8 @@
         <li id="section-50">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-50">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-50">&#x00a7;</a>
               </div>
               <p>Write all new prefixes</p>
 
@@ -975,7 +975,7 @@
     <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> prefix <span class="hljs-keyword">in</span> prefixes) {
       <span class="hljs-keyword">let</span> iri = prefixes[prefix];
       <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> iri !== <span class="hljs-string">&#x27;string&#x27;</span>)
-        iri = iri.value;
+        iri = iri.<span class="hljs-property">value</span>;
       hasPrefixes = <span class="hljs-literal">true</span>;</pre></div></div>
             
         </li>
@@ -984,16 +984,16 @@
         <li id="section-51">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-51">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-51">&#x00a7;</a>
               </div>
               <p>Finish a possible pending quad</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._subject !== <span class="hljs-literal">null</span>) {
-        <span class="hljs-built_in">this</span>._write(<span class="hljs-built_in">this</span>._inDefaultGraph ? <span class="hljs-string">&#x27;.\n&#x27;</span> : <span class="hljs-string">&#x27;\n}\n&#x27;</span>);
-        <span class="hljs-built_in">this</span>._subject = <span class="hljs-literal">null</span>, <span class="hljs-built_in">this</span>._graph = <span class="hljs-string">&#x27;&#x27;</span>;
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_subject</span> !== <span class="hljs-literal">null</span>) {
+        <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_write</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">_inDefaultGraph</span> ? <span class="hljs-string">&#x27;.\n&#x27;</span> : <span class="hljs-string">&#x27;\n}\n&#x27;</span>);
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">_subject</span> = <span class="hljs-literal">null</span>, <span class="hljs-variable language_">this</span>.<span class="hljs-property">_graph</span> = <span class="hljs-string">&#x27;&#x27;</span>;
       }</pre></div></div>
             
         </li>
@@ -1002,15 +1002,15 @@
         <li id="section-52">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-52">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-52">&#x00a7;</a>
               </div>
               <p>Store and write the prefix</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-built_in">this</span>._prefixIRIs[iri] = (prefix += <span class="hljs-string">&#x27;:&#x27;</span>);
-      <span class="hljs-built_in">this</span>._write(<span class="hljs-string">`@prefix <span class="hljs-subst">${prefix}</span> &lt;<span class="hljs-subst">${iri}</span>&gt;.\n`</span>);
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-variable language_">this</span>.<span class="hljs-property">_prefixIRIs</span>[iri] = (prefix += <span class="hljs-string">&#x27;:&#x27;</span>);
+      <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_write</span>(<span class="hljs-string">`@prefix <span class="hljs-subst">${prefix}</span> &lt;<span class="hljs-subst">${iri}</span>&gt;.\n`</span>);
     }</pre></div></div>
             
         </li>
@@ -1019,8 +1019,8 @@
         <li id="section-53">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-53">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-53">&#x00a7;</a>
               </div>
               <p>Recreate the prefix matcher</p>
 
@@ -1028,12 +1028,12 @@
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (hasPrefixes) {
       <span class="hljs-keyword">let</span> IRIlist = <span class="hljs-string">&#x27;&#x27;</span>, prefixList = <span class="hljs-string">&#x27;&#x27;</span>;
-      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> prefixIRI <span class="hljs-keyword">in</span> <span class="hljs-built_in">this</span>._prefixIRIs) {
+      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> prefixIRI <span class="hljs-keyword">in</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">_prefixIRIs</span>) {
         IRIlist += IRIlist ? <span class="hljs-string">`|<span class="hljs-subst">${prefixIRI}</span>`</span> : prefixIRI;
-        prefixList += (prefixList ? <span class="hljs-string">&#x27;|&#x27;</span> : <span class="hljs-string">&#x27;&#x27;</span>) + <span class="hljs-built_in">this</span>._prefixIRIs[prefixIRI];
+        prefixList += (prefixList ? <span class="hljs-string">&#x27;|&#x27;</span> : <span class="hljs-string">&#x27;&#x27;</span>) + <span class="hljs-variable language_">this</span>.<span class="hljs-property">_prefixIRIs</span>[prefixIRI];
       }
-      IRIlist = IRIlist.replace(<span class="hljs-regexp">/[\]\/\(\)\*\+\?\.\\\$]/g</span>, <span class="hljs-string">&#x27;\\$&amp;&#x27;</span>);
-      <span class="hljs-built_in">this</span>._prefixRegex = <span class="hljs-keyword">new</span> <span class="hljs-built_in">RegExp</span>(<span class="hljs-string">`^(?:<span class="hljs-subst">${prefixList}</span>)[^\/]*$|`</span> +
+      IRIlist = IRIlist.<span class="hljs-title function_">replace</span>(<span class="hljs-regexp">/[\]\/\(\)\*\+\?\.\\\$]/g</span>, <span class="hljs-string">&#x27;\\$&amp;&#x27;</span>);
+      <span class="hljs-variable language_">this</span>.<span class="hljs-property">_prefixRegex</span> = <span class="hljs-keyword">new</span> <span class="hljs-title class_">RegExp</span>(<span class="hljs-string">`^(?:<span class="hljs-subst">${prefixList}</span>)[^\/]*$|`</span> +
                                      <span class="hljs-string">`^(<span class="hljs-subst">${IRIlist}</span>)([a-zA-Z][\\-_a-zA-Z0-9]*)$`</span>);
     }</pre></div></div>
             
@@ -1043,14 +1043,14 @@
         <li id="section-54">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-54">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-54">&#x00a7;</a>
               </div>
               <p>End a prefix block with a newline</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-built_in">this</span>._write(hasPrefixes ? <span class="hljs-string">&#x27;\n&#x27;</span> : <span class="hljs-string">&#x27;&#x27;</span>, done);
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_write</span>(hasPrefixes ? <span class="hljs-string">&#x27;\n&#x27;</span> : <span class="hljs-string">&#x27;&#x27;</span>, done);
   }</pre></div></div>
             
         </li>
@@ -1059,14 +1059,14 @@
         <li id="section-55">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-55">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-55">&#x00a7;</a>
               </div>
               <h3 id="blank-creates-a-blank-node-with-the-given-content"><code>blank</code> creates a blank node with the given content</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  blank(predicate, object) {
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">blank</span>(<span class="hljs-params">predicate, object</span>) {
     <span class="hljs-keyword">let</span> children = predicate, child, length;</pre></div></div>
             
         </li>
@@ -1075,8 +1075,8 @@
         <li id="section-56">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-56">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-56">&#x00a7;</a>
               </div>
               <p>Empty blank node</p>
 
@@ -1091,14 +1091,14 @@
         <li id="section-57">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-57">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-57">&#x00a7;</a>
               </div>
               <p>Blank node passed as blank(Term(“predicate”), Term(“object”))</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (predicate.termType)
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (predicate.<span class="hljs-property">termType</span>)
       children = [{ <span class="hljs-attr">predicate</span>: predicate, <span class="hljs-attr">object</span>: object }];</pre></div></div>
             
         </li>
@@ -1107,8 +1107,8 @@
         <li id="section-58">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-58">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-58">&#x00a7;</a>
               </div>
               <p>Blank node passed as blank({ predicate: predicate, object: object })</p>
 
@@ -1117,7 +1117,7 @@
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (!(<span class="hljs-string">&#x27;length&#x27;</span> <span class="hljs-keyword">in</span> predicate))
       children = [predicate];
 
-    <span class="hljs-keyword">switch</span> (length = children.length) {</pre></div></div>
+    <span class="hljs-keyword">switch</span> (length = children.<span class="hljs-property">length</span>) {</pre></div></div>
             
         </li>
         
@@ -1125,15 +1125,15 @@
         <li id="section-59">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-59">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-59">&#x00a7;</a>
               </div>
               <p>Generate an empty blank node</p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-number">0</span>:
-      <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> SerializedTerm(<span class="hljs-string">&#x27;[]&#x27;</span>);</pre></div></div>
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SerializedTerm</span>(<span class="hljs-string">&#x27;[]&#x27;</span>);</pre></div></div>
             
         </li>
         
@@ -1141,8 +1141,8 @@
         <li id="section-60">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-60">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-60">&#x00a7;</a>
               </div>
               <p>Generate a non-nested one-triple blank node</p>
 
@@ -1150,9 +1150,9 @@
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-number">1</span>:
       child = children[<span class="hljs-number">0</span>];
-      <span class="hljs-keyword">if</span> (!(child.object <span class="hljs-keyword">instanceof</span> SerializedTerm))
-        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> SerializedTerm(<span class="hljs-string">`[ <span class="hljs-subst">${<span class="hljs-built_in">this</span>._encodePredicate(child.predicate)}</span> <span class="hljs-subst">${
-                                  <span class="hljs-built_in">this</span>._encodeObject(child.object)}</span> ]`</span>);</pre></div></div>
+      <span class="hljs-keyword">if</span> (!(child.<span class="hljs-property">object</span> <span class="hljs-keyword">instanceof</span> <span class="hljs-title class_">SerializedTerm</span>))
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SerializedTerm</span>(<span class="hljs-string">`[ <span class="hljs-subst">${<span class="hljs-variable language_">this</span>._encodePredicate(child.predicate)}</span> <span class="hljs-subst">${
+                                  <span class="hljs-variable language_">this</span>._encodeObject(child.object)}</span> ]`</span>);</pre></div></div>
             
         </li>
         
@@ -1160,14 +1160,14 @@
         <li id="section-61">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-61">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-61">&#x00a7;</a>
               </div>
               <p>Generate a multi-triple or nested blank node</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">default</span>:
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-attr">default</span>:
       <span class="hljs-keyword">let</span> contents = <span class="hljs-string">&#x27;[&#x27;</span>;</pre></div></div>
             
         </li>
@@ -1176,8 +1176,8 @@
         <li id="section-62">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-62">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-62">&#x00a7;</a>
               </div>
               <p>Write all triples in order</p>
 
@@ -1192,15 +1192,15 @@
         <li id="section-63">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-63">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-63">&#x00a7;</a>
               </div>
               <p>Write only the object is the predicate is the same as the previous</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (child.predicate.equals(predicate))
-          contents += <span class="hljs-string">`, <span class="hljs-subst">${<span class="hljs-built_in">this</span>._encodeObject(child.object)}</span>`</span>;</pre></div></div>
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (child.<span class="hljs-property">predicate</span>.<span class="hljs-title function_">equals</span>(predicate))
+          contents += <span class="hljs-string">`, <span class="hljs-subst">${<span class="hljs-variable language_">this</span>._encodeObject(child.object)}</span>`</span>;</pre></div></div>
             
         </li>
         
@@ -1208,8 +1208,8 @@
         <li id="section-64">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-64">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-64">&#x00a7;</a>
               </div>
               <p>Otherwise, write the predicate and the object</p>
 
@@ -1217,12 +1217,12 @@
             
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">else</span> {
           contents += <span class="hljs-string">`<span class="hljs-subst">${(i ? <span class="hljs-string">&#x27;;\n  &#x27;</span> : <span class="hljs-string">&#x27;\n  &#x27;</span>) +
-                      <span class="hljs-built_in">this</span>._encodePredicate(child.predicate)}</span> <span class="hljs-subst">${
-                      <span class="hljs-built_in">this</span>._encodeObject(child.object)}</span>`</span>;
-          predicate = child.predicate;
+                      <span class="hljs-variable language_">this</span>._encodePredicate(child.predicate)}</span> <span class="hljs-subst">${
+                      <span class="hljs-variable language_">this</span>._encodeObject(child.object)}</span>`</span>;
+          predicate = child.<span class="hljs-property">predicate</span>;
         }
       }
-      <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> SerializedTerm(<span class="hljs-string">`<span class="hljs-subst">${contents}</span>\n]`</span>);
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SerializedTerm</span>(<span class="hljs-string">`<span class="hljs-subst">${contents}</span>\n]`</span>);
     }
   }</pre></div></div>
             
@@ -1232,18 +1232,18 @@
         <li id="section-65">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-65">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-65">&#x00a7;</a>
               </div>
               <h3 id="list-creates-a-list-node-with-the-given-content"><code>list</code> creates a list node with the given content</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  list(elements) {
-    <span class="hljs-keyword">const</span> length = elements &amp;&amp; elements.length || <span class="hljs-number">0</span>, contents = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Array</span>(length);
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">list</span>(<span class="hljs-params">elements</span>) {
+    <span class="hljs-keyword">const</span> length = elements &amp;&amp; elements.<span class="hljs-property">length</span> || <span class="hljs-number">0</span>, contents = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Array</span>(length);
     <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i = <span class="hljs-number">0</span>; i &lt; length; i++)
-      contents[i] = <span class="hljs-built_in">this</span>._encodeObject(elements[i]);
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> SerializedTerm(<span class="hljs-string">`(<span class="hljs-subst">${contents.join(<span class="hljs-string">&#x27; &#x27;</span>)}</span>)`</span>);
+      contents[i] = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_encodeObject</span>(elements[i]);
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SerializedTerm</span>(<span class="hljs-string">`(<span class="hljs-subst">${contents.join(<span class="hljs-string">&#x27; &#x27;</span>)}</span>)`</span>);
   }</pre></div></div>
             
         </li>
@@ -1252,14 +1252,14 @@
         <li id="section-66">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-66">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-66">&#x00a7;</a>
               </div>
               <h3 id="end-signals-the-end-of-the-output-stream"><code>end</code> signals the end of the output stream</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  end(done) {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">end</span>(<span class="hljs-params">done</span>) {</pre></div></div>
             
         </li>
         
@@ -1267,16 +1267,16 @@
         <li id="section-67">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-67">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-67">&#x00a7;</a>
               </div>
               <p>Finish a possible pending quad</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._subject !== <span class="hljs-literal">null</span>) {
-      <span class="hljs-built_in">this</span>._write(<span class="hljs-built_in">this</span>._inDefaultGraph ? <span class="hljs-string">&#x27;.\n&#x27;</span> : <span class="hljs-string">&#x27;\n}\n&#x27;</span>);
-      <span class="hljs-built_in">this</span>._subject = <span class="hljs-literal">null</span>;
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_subject</span> !== <span class="hljs-literal">null</span>) {
+      <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_write</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">_inDefaultGraph</span> ? <span class="hljs-string">&#x27;.\n&#x27;</span> : <span class="hljs-string">&#x27;\n}\n&#x27;</span>);
+      <span class="hljs-variable language_">this</span>.<span class="hljs-property">_subject</span> = <span class="hljs-literal">null</span>;
     }</pre></div></div>
             
         </li>
@@ -1285,14 +1285,14 @@
         <li id="section-68">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-68">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-68">&#x00a7;</a>
               </div>
               <p>Disallow further writing</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-built_in">this</span>._write = <span class="hljs-built_in">this</span>._blockedWrite;</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_write</span> = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_blockedWrite</span>;</pre></div></div>
             
         </li>
         
@@ -1300,19 +1300,19 @@
         <li id="section-69">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-69">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-69">&#x00a7;</a>
               </div>
               <p>Try to end the underlying stream, ensuring done is called exactly one time</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">let</span> singleDone = done &amp;&amp; (<span class="hljs-function">(<span class="hljs-params">error, result</span>) =&gt;</span> { singleDone = <span class="hljs-literal">null</span>, done(error, result); });
-    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._endStream) {
-      <span class="hljs-keyword">try</span> { <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._outputStream.end(singleDone); }
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">let</span> singleDone = done &amp;&amp; (<span class="hljs-function">(<span class="hljs-params">error, result</span>) =&gt;</span> { singleDone = <span class="hljs-literal">null</span>, <span class="hljs-title function_">done</span>(error, result); });
+    <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_endStream</span>) {
+      <span class="hljs-keyword">try</span> { <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">_outputStream</span>.<span class="hljs-title function_">end</span>(singleDone); }
       <span class="hljs-keyword">catch</span> (error) { <span class="hljs-comment">/* error closing stream */</span> }
     }
-    singleDone &amp;&amp; singleDone();
+    singleDone &amp;&amp; <span class="hljs-title function_">singleDone</span>();
   }
 }</pre></div></div>
             
@@ -1322,14 +1322,14 @@
         <li id="section-70">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-70">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-70">&#x00a7;</a>
               </div>
               <p>Replaces a character by its escaped version</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">characterReplacer</span>(<span class="hljs-params">character</span>) </span>{</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">function</span> <span class="hljs-title function_">characterReplacer</span>(<span class="hljs-params">character</span>) {</pre></div></div>
             
         </li>
         
@@ -1337,8 +1337,8 @@
         <li id="section-71">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-71">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-71">&#x00a7;</a>
               </div>
               <p>Replace a single character by its escaped version</p>
 
@@ -1353,16 +1353,16 @@
         <li id="section-72">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-72">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-72">&#x00a7;</a>
               </div>
               <p>Replace a single character with its 4-bit unicode escape sequence</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (character.length === <span class="hljs-number">1</span>) {
-      result = character.charCodeAt(<span class="hljs-number">0</span>).toString(<span class="hljs-number">16</span>);
-      result = <span class="hljs-string">&#x27;\\u0000&#x27;</span>.substr(<span class="hljs-number">0</span>, <span class="hljs-number">6</span> - result.length) + result;
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (character.<span class="hljs-property">length</span> === <span class="hljs-number">1</span>) {
+      result = character.<span class="hljs-title function_">charCodeAt</span>(<span class="hljs-number">0</span>).<span class="hljs-title function_">toString</span>(<span class="hljs-number">16</span>);
+      result = <span class="hljs-string">&#x27;\\u0000&#x27;</span>.<span class="hljs-title function_">substr</span>(<span class="hljs-number">0</span>, <span class="hljs-number">6</span> - result.<span class="hljs-property">length</span>) + result;
     }</pre></div></div>
             
         </li>
@@ -1371,17 +1371,17 @@
         <li id="section-73">
             <div class="annotation">
               
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-73">&#182;</a>
+              <div class="sswrap ">
+                <a class="ss" href="#section-73">&#x00a7;</a>
               </div>
               <p>Replace a surrogate pair with its 8-bit unicode escape sequence</p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">else</span> {
-      result = ((character.charCodeAt(<span class="hljs-number">0</span>) - <span class="hljs-number">0xD800</span>) * <span class="hljs-number">0x400</span> +
-                 character.charCodeAt(<span class="hljs-number">1</span>) + <span class="hljs-number">0x2400</span>).toString(<span class="hljs-number">16</span>);
-      result = <span class="hljs-string">&#x27;\\U00000000&#x27;</span>.substr(<span class="hljs-number">0</span>, <span class="hljs-number">10</span> - result.length) + result;
+      result = ((character.<span class="hljs-title function_">charCodeAt</span>(<span class="hljs-number">0</span>) - <span class="hljs-number">0xD800</span>) * <span class="hljs-number">0x400</span> +
+                 character.<span class="hljs-title function_">charCodeAt</span>(<span class="hljs-number">1</span>) + <span class="hljs-number">0x2400</span>).<span class="hljs-title function_">toString</span>(<span class="hljs-number">16</span>);
+      result = <span class="hljs-string">&#x27;\\U00000000&#x27;</span>.<span class="hljs-title function_">substr</span>(<span class="hljs-number">0</span>, <span class="hljs-number">10</span> - result.<span class="hljs-property">length</span>) + result;
     }
   }
   <span class="hljs-keyword">return</span> result;
