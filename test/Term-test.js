@@ -26,6 +26,12 @@ describe('Term', () => {
     });
   });
 
+  describe('A Term instance', () => {
+    it('has an integer hashCode', () => {
+      new Term().should.have.property('hashCode', 0);
+    });
+  });
+
   describe('termFromId', () => {
     it('should create a DefaultGraph from a falsy value', () => {
       termFromId(null).toJSON().should.deep.equal({
