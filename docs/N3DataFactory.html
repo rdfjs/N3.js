@@ -187,11 +187,14 @@ See <a href="https://github.com/rdfjs/representation-task-force/blob/master/inte
               <div class="sswrap ">
                 <a class="ss" href="#section-6">&#x00a7;</a>
               </div>
-              <h3 id="returns-whether-this-object-represents-the-same-term-as-the-other">Returns whether this object represents the same term as the other</h3>
+              <h3 id="implement-hashcode-for-immutablejs-since-we-implement-equals">Implement hashCode for Immutable.js, since we implement <code>equals</code></h3>
+<p><a href="https://immutable-js.com/docs/v4.0.0/ValueObject/#hashCode()">https://immutable-js.com/docs/v4.0.0/ValueObject/#hashCode()</a></p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">equals</span>(<span class="hljs-params">other</span>) {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">get</span> <span class="hljs-title function_">hashCode</span>() {
+    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
+  }</pre></div></div>
             
         </li>
         
@@ -201,6 +204,21 @@ See <a href="https://github.com/rdfjs/representation-task-force/blob/master/inte
               
               <div class="sswrap ">
                 <a class="ss" href="#section-7">&#x00a7;</a>
+              </div>
+              <h3 id="returns-whether-this-object-represents-the-same-term-as-the-other">Returns whether this object represents the same term as the other</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">equals</span>(<span class="hljs-params">other</span>) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-8">&#x00a7;</a>
               </div>
               <p>If both terms were created by this library,
 equality can be computed through ids</p>
@@ -213,11 +231,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-8">
+        <li id="section-9">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-8">&#x00a7;</a>
+                <a class="ss" href="#section-9">&#x00a7;</a>
               </div>
               <p>Otherwise, compare term type and value</p>
 
@@ -230,11 +248,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-9">
+        <li id="section-10">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-9">&#x00a7;</a>
+                <a class="ss" href="#section-10">&#x00a7;</a>
               </div>
               <h3 id="returns-a-plain-object-representation-of-this-term">Returns a plain object representation of this term</h3>
 
@@ -251,11 +269,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-10">
+        <li id="section-11">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-10">&#x00a7;</a>
+                <a class="ss" href="#section-11">&#x00a7;</a>
               </div>
               <h2 id="namednode-constructor">NamedNode constructor</h2>
 
@@ -266,11 +284,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-11">
+        <li id="section-12">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-11">&#x00a7;</a>
+                <a class="ss" href="#section-12">&#x00a7;</a>
               </div>
               <h3 id="the-term-type-of-this-term">The term type of this term</h3>
 
@@ -284,11 +302,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-12">
+        <li id="section-13">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-12">&#x00a7;</a>
+                <a class="ss" href="#section-13">&#x00a7;</a>
               </div>
               <h2 id="literal-constructor">Literal constructor</h2>
 
@@ -299,11 +317,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-13">
+        <li id="section-14">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-13">&#x00a7;</a>
+                <a class="ss" href="#section-14">&#x00a7;</a>
               </div>
               <h3 id="the-term-type-of-this-term">The term type of this term</h3>
 
@@ -316,11 +334,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-14">
+        <li id="section-15">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-14">&#x00a7;</a>
+                <a class="ss" href="#section-15">&#x00a7;</a>
               </div>
               <h3 id="the-text-value-of-this-literal">The text value of this literal</h3>
 
@@ -333,11 +351,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-15">
+        <li id="section-16">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-15">&#x00a7;</a>
+                <a class="ss" href="#section-16">&#x00a7;</a>
               </div>
               <h3 id="the-language-of-this-literal">The language of this literal</h3>
 
@@ -348,11 +366,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-16">
+        <li id="section-17">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-16">&#x00a7;</a>
+                <a class="ss" href="#section-17">&#x00a7;</a>
               </div>
               <p>Find the last quotation mark (e.g., ‘“abc”@en-us’)</p>
 
@@ -364,11 +382,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-17">
+        <li id="section-18">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-17">&#x00a7;</a>
+                <a class="ss" href="#section-18">&#x00a7;</a>
               </div>
               <p>If “@” it follows, return the remaining substring; empty otherwise</p>
 
@@ -380,11 +398,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-18">
+        <li id="section-19">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-18">&#x00a7;</a>
+                <a class="ss" href="#section-19">&#x00a7;</a>
               </div>
               <h3 id="the-datatype-iri-of-this-literal">The datatype IRI of this literal</h3>
 
@@ -397,11 +415,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-19">
+        <li id="section-20">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-19">&#x00a7;</a>
+                <a class="ss" href="#section-20">&#x00a7;</a>
               </div>
               <h3 id="the-datatype-string-of-this-literal">The datatype string of this literal</h3>
 
@@ -412,11 +430,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-20">
+        <li id="section-21">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-20">&#x00a7;</a>
+                <a class="ss" href="#section-21">&#x00a7;</a>
               </div>
               <p>Find the last quotation mark (e.g., ‘“abc”^^<a href="http://ex.org/types#t&#39;">http://ex.org/types#t&#39;</a>)</p>
 
@@ -428,11 +446,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-21">
+        <li id="section-22">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-21">&#x00a7;</a>
+                <a class="ss" href="#section-22">&#x00a7;</a>
               </div>
               <p>If “^” it follows, return the remaining substring</p>
 
@@ -443,11 +461,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-22">
+        <li id="section-23">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-22">&#x00a7;</a>
+                <a class="ss" href="#section-23">&#x00a7;</a>
               </div>
               <p>If “@” follows, return rdf:langString; xsd:string otherwise</p>
 
@@ -459,11 +477,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-23">
+        <li id="section-24">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-23">&#x00a7;</a>
+                <a class="ss" href="#section-24">&#x00a7;</a>
               </div>
               <h3 id="returns-whether-this-object-represents-the-same-term-as-the-other">Returns whether this object represents the same term as the other</h3>
 
@@ -474,11 +492,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-24">
+        <li id="section-25">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-24">&#x00a7;</a>
+                <a class="ss" href="#section-25">&#x00a7;</a>
               </div>
               <p>If both literals were created by this library,
 equality can be computed through ids</p>
@@ -491,11 +509,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-25">
+        <li id="section-26">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-25">&#x00a7;</a>
+                <a class="ss" href="#section-26">&#x00a7;</a>
               </div>
               <p>Otherwise, compare term type, value, language, and datatype</p>
 
@@ -521,11 +539,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-26">
+        <li id="section-27">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-26">&#x00a7;</a>
+                <a class="ss" href="#section-27">&#x00a7;</a>
               </div>
               <h2 id="blanknode-constructor">BlankNode constructor</h2>
 
@@ -539,11 +557,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-27">
+        <li id="section-28">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-27">&#x00a7;</a>
+                <a class="ss" href="#section-28">&#x00a7;</a>
               </div>
               <h3 id="the-term-type-of-this-term">The term type of this term</h3>
 
@@ -556,11 +574,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-28">
+        <li id="section-29">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-28">&#x00a7;</a>
+                <a class="ss" href="#section-29">&#x00a7;</a>
               </div>
               <h3 id="the-name-of-this-blank-node">The name of this blank node</h3>
 
@@ -579,11 +597,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-29">
+        <li id="section-30">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-29">&#x00a7;</a>
+                <a class="ss" href="#section-30">&#x00a7;</a>
               </div>
               <h3 id="the-term-type-of-this-term">The term type of this term</h3>
 
@@ -596,11 +614,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-30">
+        <li id="section-31">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-30">&#x00a7;</a>
+                <a class="ss" href="#section-31">&#x00a7;</a>
               </div>
               <h3 id="the-name-of-this-variable">The name of this variable</h3>
 
@@ -614,11 +632,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-31">
+        <li id="section-32">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-31">&#x00a7;</a>
+                <a class="ss" href="#section-32">&#x00a7;</a>
               </div>
               <h2 id="defaultgraph-constructor">DefaultGraph constructor</h2>
 
@@ -633,11 +651,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-32">
+        <li id="section-33">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-32">&#x00a7;</a>
+                <a class="ss" href="#section-33">&#x00a7;</a>
               </div>
               <h3 id="the-term-type-of-this-term">The term type of this term</h3>
 
@@ -650,11 +668,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-33">
+        <li id="section-34">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-33">&#x00a7;</a>
+                <a class="ss" href="#section-34">&#x00a7;</a>
               </div>
               <h3 id="returns-whether-this-object-represents-the-same-term-as-the-other">Returns whether this object represents the same term as the other</h3>
 
@@ -665,11 +683,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-34">
+        <li id="section-35">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-34">&#x00a7;</a>
+                <a class="ss" href="#section-35">&#x00a7;</a>
               </div>
               <p>If both terms were created by this library,
 equality can be computed through strict equality;
@@ -684,11 +702,11 @@ otherwise, compare term types.</p>
         </li>
         
         
-        <li id="section-35">
+        <li id="section-36">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-35">&#x00a7;</a>
+                <a class="ss" href="#section-36">&#x00a7;</a>
               </div>
               <h2 id="defaultgraph-singleton">DefaultGraph singleton</h2>
 
@@ -699,11 +717,11 @@ otherwise, compare term types.</p>
         </li>
         
         
-        <li id="section-36">
+        <li id="section-37">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-36">&#x00a7;</a>
+                <a class="ss" href="#section-37">&#x00a7;</a>
               </div>
               <h3 id="constructs-a-term-from-the-given-internal-string-id">Constructs a term from the given internal string ID</h3>
 
@@ -715,11 +733,11 @@ otherwise, compare term types.</p>
         </li>
         
         
-        <li id="section-37">
+        <li id="section-38">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-37">&#x00a7;</a>
+                <a class="ss" href="#section-38">&#x00a7;</a>
               </div>
               <p>Falsy value or empty string indicate the default graph</p>
 
@@ -731,11 +749,11 @@ otherwise, compare term types.</p>
         </li>
         
         
-        <li id="section-38">
+        <li id="section-39">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-38">&#x00a7;</a>
+                <a class="ss" href="#section-39">&#x00a7;</a>
               </div>
               <p>Identify the term type based on the first character</p>
 
@@ -751,11 +769,11 @@ otherwise, compare term types.</p>
         </li>
         
         
-        <li id="section-39">
+        <li id="section-40">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-39">&#x00a7;</a>
+                <a class="ss" href="#section-40">&#x00a7;</a>
               </div>
               <p>Shortcut for internal literals</p>
 
@@ -767,11 +785,11 @@ otherwise, compare term types.</p>
         </li>
         
         
-        <li id="section-40">
+        <li id="section-41">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-40">&#x00a7;</a>
+                <a class="ss" href="#section-41">&#x00a7;</a>
               </div>
               <p>Literal without datatype or language</p>
 
@@ -783,11 +801,11 @@ otherwise, compare term types.</p>
         </li>
         
         
-        <li id="section-41">
+        <li id="section-42">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-41">&#x00a7;</a>
+                <a class="ss" href="#section-42">&#x00a7;</a>
               </div>
               <p>Literal with datatype or language</p>
 
@@ -813,11 +831,11 @@ otherwise, compare term types.</p>
         </li>
         
         
-        <li id="section-42">
+        <li id="section-43">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-42">&#x00a7;</a>
+                <a class="ss" href="#section-43">&#x00a7;</a>
               </div>
               <h3 id="constructs-an-internal-string-id-from-the-given-term-or-id-string">Constructs an internal string ID from the given term or ID string</h3>
 
@@ -834,11 +852,11 @@ otherwise, compare term types.</p>
         </li>
         
         
-        <li id="section-43">
+        <li id="section-44">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-43">&#x00a7;</a>
+                <a class="ss" href="#section-44">&#x00a7;</a>
               </div>
               <p>Term instantiated with another library</p>
 
@@ -857,11 +875,11 @@ otherwise, compare term types.</p>
         </li>
         
         
-        <li id="section-44">
+        <li id="section-45">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-44">&#x00a7;</a>
+                <a class="ss" href="#section-45">&#x00a7;</a>
               </div>
               <p>To identify RDF* quad components, we escape quotes by doubling them.
 This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
@@ -884,11 +902,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-45">
+        <li id="section-46">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-45">&#x00a7;</a>
+                <a class="ss" href="#section-46">&#x00a7;</a>
               </div>
               <h2 id="quad-constructor">Quad constructor</h2>
 
@@ -906,11 +924,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-46">
+        <li id="section-47">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-46">&#x00a7;</a>
+                <a class="ss" href="#section-47">&#x00a7;</a>
               </div>
               <h3 id="the-term-type-of-this-term">The term type of this term</h3>
 
@@ -939,11 +957,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-47">
+        <li id="section-48">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-47">&#x00a7;</a>
+                <a class="ss" href="#section-48">&#x00a7;</a>
               </div>
               <h3 id="returns-a-plain-object-representation-of-this-quad">Returns a plain object representation of this quad</h3>
 
@@ -962,11 +980,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-48">
+        <li id="section-49">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-48">&#x00a7;</a>
+                <a class="ss" href="#section-49">&#x00a7;</a>
               </div>
               <h3 id="returns-whether-this-object-represents-the-same-quad-as-the-other">Returns whether this object represents the same quad as the other</h3>
 
@@ -984,11 +1002,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-49">
+        <li id="section-50">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-49">&#x00a7;</a>
+                <a class="ss" href="#section-50">&#x00a7;</a>
               </div>
               <h3 id="escapes-the-quotes-within-the-given-literal">Escapes the quotes within the given literal</h3>
 
@@ -1001,11 +1019,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-50">
+        <li id="section-51">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-50">&#x00a7;</a>
+                <a class="ss" href="#section-51">&#x00a7;</a>
               </div>
               <h3 id="unescapes-the-quotes-within-the-given-literal">Unescapes the quotes within the given literal</h3>
 
@@ -1018,11 +1036,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-51">
+        <li id="section-52">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-51">&#x00a7;</a>
+                <a class="ss" href="#section-52">&#x00a7;</a>
               </div>
               <h3 id="creates-an-iri">Creates an IRI</h3>
 
@@ -1035,11 +1053,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-52">
+        <li id="section-53">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-52">&#x00a7;</a>
+                <a class="ss" href="#section-53">&#x00a7;</a>
               </div>
               <h3 id="creates-a-blank-node">Creates a blank node</h3>
 
@@ -1052,11 +1070,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-53">
+        <li id="section-54">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-53">&#x00a7;</a>
+                <a class="ss" href="#section-54">&#x00a7;</a>
               </div>
               <h3 id="creates-a-literal">Creates a literal</h3>
 
@@ -1067,11 +1085,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-54">
+        <li id="section-55">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-54">&#x00a7;</a>
+                <a class="ss" href="#section-55">&#x00a7;</a>
               </div>
               <p>Create a language-tagged string</p>
 
@@ -1083,11 +1101,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-55">
+        <li id="section-56">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-55">&#x00a7;</a>
+                <a class="ss" href="#section-56">&#x00a7;</a>
               </div>
               <p>Automatically determine datatype for booleans and numbers</p>
 
@@ -1099,11 +1117,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-56">
+        <li id="section-57">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-56">&#x00a7;</a>
+                <a class="ss" href="#section-57">&#x00a7;</a>
               </div>
               <p>Convert a boolean</p>
 
@@ -1115,11 +1133,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-57">
+        <li id="section-58">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-57">&#x00a7;</a>
+                <a class="ss" href="#section-58">&#x00a7;</a>
               </div>
               <p>Convert an integer or double</p>
 
@@ -1139,11 +1157,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-58">
+        <li id="section-59">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-58">&#x00a7;</a>
+                <a class="ss" href="#section-59">&#x00a7;</a>
               </div>
               <p>Create a datatyped literal</p>
 
@@ -1157,11 +1175,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-59">
+        <li id="section-60">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-59">&#x00a7;</a>
+                <a class="ss" href="#section-60">&#x00a7;</a>
               </div>
               <h3 id="creates-a-variable">Creates a variable</h3>
 
@@ -1174,11 +1192,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-60">
+        <li id="section-61">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-60">&#x00a7;</a>
+                <a class="ss" href="#section-61">&#x00a7;</a>
               </div>
               <h3 id="returns-the-default-graph">Returns the default graph</h3>
 
@@ -1191,11 +1209,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-61">
+        <li id="section-62">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-61">&#x00a7;</a>
+                <a class="ss" href="#section-62">&#x00a7;</a>
               </div>
               <h3 id="creates-a-quad">Creates a quad</h3>
 
