@@ -55,9 +55,13 @@ export default class N3Writer {
     if (!(/triple|quad/i).test(options.format)) {
       this._lineMode = false;
       this._graph = DEFAULTGRAPH;
-      this._baseIRI = options.baseIRI;
       this._prefixIRIs = Object.create(null);
       options.prefixes && this.addPrefixes(options.prefixes);
+      if (options.baseIRI) {
+        this._baseMatcher = new RegExp(`^${escapeRegex(options.baseIRI)
+            }${options.baseIRI.endsWith('/') ? '' : '[#?]'}`);
+        this._baseLength = options.baseIRI.length;
+      }
     }
     else {
       this._lineMode = true;
@@ -148,8 +152,8 @@ export default class N3Writer {
     }
     let iri = entity.value;
     // Use relative IRIs if requested and possible
-    if (this._baseIRI && iri.startsWith(this._baseIRI))
-      iri = iri.substr(this._baseIRI.length);
+    if (this._baseMatcher && this._baseMatcher.test(iri))
+      iri = iri.substr(this._baseLength);
     // Escape special characters
     if (escape.test(iri))
       iri = iri.replace(escapeAll, characterReplacer);
@@ -290,7 +294,7 @@ export default class N3Writer {
         IRIlist += IRIlist ? `|${prefixIRI}` : prefixIRI;
         prefixList += (prefixList ? '|' : '') + this._prefixIRIs[prefixIRI];
       }
-      IRIlist = IRIlist.replace(/[\]\/\(\)\*\+\?\.\\\$]/g, '\\$&');
+      IRIlist = escapeRegex(IRIlist, /[\]\/\(\)\*\+\?\.\\\$]/g, '\\$&');
       this._prefixRegex = new RegExp(`^(?:${prefixList})[^\/]*$|` +
                                      `^(${IRIlist})([a-zA-Z][\\-_a-zA-Z0-9]*)$`);
     }
@@ -388,4 +392,8 @@ function characterReplacer(character) {
     }
   }
   return result;
+}
+
+function escapeRegex(regex) {
+  return regex.replace(/[\]\/\(\)\*\+\?\.\\\$]/g, '\\$&');
 }

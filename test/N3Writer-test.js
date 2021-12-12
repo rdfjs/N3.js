@@ -349,6 +349,18 @@ describe('Writer', () => {
       });
     });
 
+    it('does not use partially match base IRIs', done => {
+      const writer = new Writer({ baseIRI: 'https://pod.example/profile/card' });
+      writer.addQuad(new Quad(
+        new NamedNode('https://pod.example/profile/card#me'),
+        new NamedNode('http://www.w3.org/2002/07/owl#sameAs'),
+        new NamedNode('https://pod.example/profile/card-1234.ttl')));
+      writer.end((error, output) => {
+        output.should.equal('<#me> <http://www.w3.org/2002/07/owl#sameAs> <https://pod.example/profile/card-1234.ttl>.\n');
+        done(error);
+      });
+    });
+
     it('should accept triples with separated components', done => {
       const writer = new Writer();
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'));
