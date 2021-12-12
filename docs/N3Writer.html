@@ -248,9 +248,13 @@
     <span class="hljs-keyword">if</span> (!(<span class="hljs-regexp">/triple|quad/i</span>).<span class="hljs-title function_">test</span>(options.<span class="hljs-property">format</span>)) {
       <span class="hljs-variable language_">this</span>.<span class="hljs-property">_lineMode</span> = <span class="hljs-literal">false</span>;
       <span class="hljs-variable language_">this</span>.<span class="hljs-property">_graph</span> = <span class="hljs-variable constant_">DEFAULTGRAPH</span>;
-      <span class="hljs-variable language_">this</span>.<span class="hljs-property">_baseIRI</span> = options.<span class="hljs-property">baseIRI</span>;
       <span class="hljs-variable language_">this</span>.<span class="hljs-property">_prefixIRIs</span> = <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">create</span>(<span class="hljs-literal">null</span>);
       options.<span class="hljs-property">prefixes</span> &amp;&amp; <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">addPrefixes</span>(options.<span class="hljs-property">prefixes</span>);
+      <span class="hljs-keyword">if</span> (options.<span class="hljs-property">baseIRI</span>) {
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">_baseMatcher</span> = <span class="hljs-keyword">new</span> <span class="hljs-title class_">RegExp</span>(<span class="hljs-string">`^<span class="hljs-subst">${escapeRegex(options.baseIRI)
+            }</span><span class="hljs-subst">${options.baseIRI.endsWith(<span class="hljs-string">&#x27;/&#x27;</span>) ? <span class="hljs-string">&#x27;&#x27;</span> : <span class="hljs-string">&#x27;[#?]&#x27;</span>}</span>`</span>);
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">_baseLength</span> = options.<span class="hljs-property">baseIRI</span>.<span class="hljs-property">length</span>;
+      }
     }
     <span class="hljs-keyword">else</span> {
       <span class="hljs-variable language_">this</span>.<span class="hljs-property">_lineMode</span> = <span class="hljs-literal">true</span>;
@@ -578,8 +582,8 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_baseIRI</span> &amp;&amp; iri.<span class="hljs-title function_">startsWith</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">_baseIRI</span>))
-      iri = iri.<span class="hljs-title function_">substr</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">_baseIRI</span>.<span class="hljs-property">length</span>);</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_baseMatcher</span> &amp;&amp; <span class="hljs-variable language_">this</span>.<span class="hljs-property">_baseMatcher</span>.<span class="hljs-title function_">test</span>(iri))
+      iri = iri.<span class="hljs-title function_">substr</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">_baseLength</span>);</pre></div></div>
             
         </li>
         
@@ -1032,7 +1036,7 @@
         IRIlist += IRIlist ? <span class="hljs-string">`|<span class="hljs-subst">${prefixIRI}</span>`</span> : prefixIRI;
         prefixList += (prefixList ? <span class="hljs-string">&#x27;|&#x27;</span> : <span class="hljs-string">&#x27;&#x27;</span>) + <span class="hljs-variable language_">this</span>.<span class="hljs-property">_prefixIRIs</span>[prefixIRI];
       }
-      IRIlist = IRIlist.<span class="hljs-title function_">replace</span>(<span class="hljs-regexp">/[\]\/\(\)\*\+\?\.\\\$]/g</span>, <span class="hljs-string">&#x27;\\$&amp;&#x27;</span>);
+      IRIlist = escapeRegex(IRIlist, <span class="hljs-regexp">/[\]\/\(\)\*\+\?\.\\\$]/g</span>, <span class="hljs-string">&#x27;\\$&amp;&#x27;</span>);
       <span class="hljs-variable language_">this</span>.<span class="hljs-property">_prefixRegex</span> = <span class="hljs-keyword">new</span> <span class="hljs-title class_">RegExp</span>(<span class="hljs-string">`^(?:<span class="hljs-subst">${prefixList}</span>)[^\/]*$|`</span> +
                                      <span class="hljs-string">`^(<span class="hljs-subst">${IRIlist}</span>)([a-zA-Z][\\-_a-zA-Z0-9]*)$`</span>);
     }</pre></div></div>
@@ -1385,6 +1389,10 @@
     }
   }
   <span class="hljs-keyword">return</span> result;
+}
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">escapeRegex</span>(<span class="hljs-params">regex</span>) {
+  <span class="hljs-keyword">return</span> regex.<span class="hljs-title function_">replace</span>(<span class="hljs-regexp">/[\]\/\(\)\*\+\?\.\\\$]/g</span>, <span class="hljs-string">&#x27;\\$&amp;&#x27;</span>);
 }</pre></div></div>
             
         </li>
