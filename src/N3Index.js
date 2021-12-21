@@ -496,25 +496,27 @@ export default class N3Index {
     // If a key is specified, use only that part of index 0.
     if (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
     for (const value0 in index0) {
-      // TODO: Move entity0 into the next if.
-      const entity0 = entityKeys[value0];
-
       if (index1 = index0[value0]) {
         // If a key is specified, use only that part of index 1.
         if (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
         for (const value1 in index1) {
-          // TODO: Move entity1 into the next if.
-          const entity1 = entityKeys[value1];
-
           if (index2 = index1[value1]) {
             // If a key is specified, use only that part of index 2, if it exists.
             const values = key2 ? (key2 in index2 ? [key2] : []) : Object.keys(index2);
+
+            // Only convert to terms if needed in for loop.
+            let entity0Term;
+            let entity1Term;
+            if (values.length > 0) {
+              entity0Term = termFromId(entityKeys[value0], this._factory);
+              entity1Term = termFromId(entityKeys[value1], this._factory);
+            }
+
             // Create quads for all items found in index 2.
             for (let l = 0; l < values.length; l++) {
               const parts = { subject: null, predicate: null, object: null };
-              // TODO: Only call termFromId once for each term if it can be done efficiently.
-              parts[name0] = termFromId(entity0, this._factory);
-              parts[name1] = termFromId(entity1, this._factory);
+              parts[name0] = entity0Term;
+              parts[name1] = entity1Term;
               parts[name2] = termFromId(entityKeys[values[l]], this._factory);
 
               // TODO: Convert this to a generator function and yield each quad, but yield
