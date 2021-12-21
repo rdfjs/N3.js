@@ -490,7 +490,8 @@ export default class N3Index {
     // perf improvement of Map#size compared to Object.keys(obj)#length?
     // Depending on the number of variables, keys or reverse index are faster
     const varCount = !key0 + !key1 + !key2,
-        entityKeys = varCount > 1 ? Object.keys(this._ids) : this._entities;
+        entityKeys = varCount > 1 ? Object.keys(this._ids) : this._entities,
+        graphTerm = termFromId(graph, this._factory);
 
     // If a key is specified, use only that part of index 0.
     if (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
@@ -519,8 +520,7 @@ export default class N3Index {
               // TODO: Convert this to a generator function and yield each quad, but yield
               // quad tuples if that is more efficient.
               const quad = this._factory.quad(
-                // TODO: Only call termFromId once for each graph.
-                parts.subject, parts.predicate, parts.object, termFromId(graph, this._factory));
+                parts.subject, parts.predicate, parts.object, graphTerm);
               if (array)
                 array.push(quad);
               else if (callback(quad))
