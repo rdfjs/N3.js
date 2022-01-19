@@ -1,6 +1,6 @@
 // **N3Util** provides N3 utility functions.
 
-import N3DataFactory from './N3DataFactory';
+import N3DataFactory from './N3DataFactory.js';
 
 // Tests whether the given term represents an IRI
 export function isNamedNode(term) {

@@ -5,8 +5,8 @@ import {
   DefaultGraph,
   Quad,
   termFromId, termToId,
-} from '../src/';
-import namespaces from '../src/IRIs';
+} from '../src/index.js';
+import namespaces from '../src/IRIs.js';
 import chai from 'chai';
 import { Readable } from 'readable-stream';
 import arrayifyStream from 'arrayify-stream';

@@ -1,4 +1,4 @@
-import { Lexer } from '../src/';
+import { Lexer } from '../src/index.js';
 import queueMicrotask from 'queue-microtask';
 
 import { EventEmitter } from 'events';

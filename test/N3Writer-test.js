@@ -5,8 +5,8 @@ import {
   Literal,
   Quad,
   termFromId,
-} from '../src/';
-import namespaces from '../src/IRIs';
+} from '../src/index.js';
+import namespaces from '../src/IRIs.js';
 
 const { xsd } = namespaces;
 

@@ -1,7 +1,7 @@
 // **N3Parser** parses N3 documents.
-import N3Lexer from './N3Lexer';
-import N3DataFactory from './N3DataFactory';
-import namespaces from './IRIs';
+import N3Lexer from './N3Lexer.js';
+import N3DataFactory from './N3DataFactory.js';
+import namespaces from './IRIs.js';
 
 let blankNodePrefix = 0;
 
@@ -791,6 +791,7 @@ export default class N3Parser {
       }
       return this._afterPath(token);
     }
+    // padding for c8 coverage bug
   }
 
   // ### `_readForwardPath` reads a '!' path

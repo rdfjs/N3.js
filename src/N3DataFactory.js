@@ -1,8 +1,8 @@
 // N3.js implementations of the RDF/JS core data types
 // See https://github.com/rdfjs/representation-task-force/blob/master/interface-spec.md
 
-import namespaces from './IRIs';
-import { isDefaultGraph } from './N3Util';
+import namespaces from './IRIs.js';
+import { isDefaultGraph } from './N3Util.js';
 const { rdf, xsd } = namespaces;
 
 // eslint-disable-next-line prefer-const
@@ -168,6 +168,7 @@ export class Variable extends Term {
 export class DefaultGraph extends Term {
   constructor() {
     super('');
+
     return DEFAULTGRAPH || this;
   }
 

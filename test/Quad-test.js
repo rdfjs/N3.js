@@ -1,4 +1,4 @@
-import { Quad, Triple, DefaultGraph, termFromId, Term } from '../src/';
+import { Quad, Triple, DefaultGraph, termFromId, Term } from '../src/index.js';
 
 describe('Quad', () => {
   describe('The Quad module', () => {

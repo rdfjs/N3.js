@@ -1,4 +1,4 @@
-import { DefaultGraph, Term } from '../src/';
+import { DefaultGraph, Term } from '../src/index.js';
 
 describe('DefaultGraph', () => {
   describe('The DefaultGraph module', () => {

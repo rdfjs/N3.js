@@ -1,6 +1,6 @@
 // **N3StreamWriter** serializes a quad stream into a text stream.
 import { Transform } from 'readable-stream';
-import N3Writer from './N3Writer';
+import N3Writer from './N3Writer.js';
 
 // ## Constructor
 export default class N3StreamWriter extends Transform {

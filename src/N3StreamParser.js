@@ -1,5 +1,5 @@
 // **N3StreamParser** parses a text stream into a quad stream.
-import N3Parser from './N3Parser';
+import N3Parser from './N3Parser.js';
 import { Transform } from 'readable-stream';
 
 // ## Constructor

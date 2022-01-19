@@ -1,7 +1,7 @@
 // **N3Store** objects store N3 quads by graph in memory.
-import { default as N3DataFactory, termToId, termFromId } from './N3DataFactory';
+import { default as N3DataFactory, termToId, termFromId } from './N3DataFactory.js';
 import { Readable } from 'readable-stream';
-import namespaces from './IRIs';
+import namespaces from './IRIs.js';
 
 // ## Constructor
 export default class N3Store {

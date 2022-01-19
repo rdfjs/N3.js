@@ -1,4 +1,4 @@
-import { StreamWriter, Quad, NamedNode, termFromId } from '../src/';
+import { StreamWriter, Quad, NamedNode, termFromId } from '../src/index.js';
 import { Readable, Writable } from 'readable-stream';
 
 describe('StreamWriter', () => {

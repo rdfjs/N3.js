@@ -1,4 +1,4 @@
-import { NamedNode, Term } from '../src/';
+import { NamedNode, Term } from '../src/index.js';
 
 describe('NamedNode', () => {
   describe('The NamedNode module', () => {

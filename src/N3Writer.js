@@ -1,7 +1,7 @@
 // **N3Writer** writes N3 documents.
-import namespaces from './IRIs';
-import { default as N3DataFactory, Term } from './N3DataFactory';
-import { isDefaultGraph } from './N3Util';
+import namespaces from './IRIs.js';
+import { default as N3DataFactory, Term } from './N3DataFactory.js';
+import { isDefaultGraph } from './N3Util.js';
 
 const DEFAULTGRAPH = N3DataFactory.defaultGraph();
 
@@ -343,6 +343,7 @@ export default class N3Writer {
         }
       }
       return new SerializedTerm(`${contents}\n]`);
+      // padding for c8 coverage bug
     }
   }
 

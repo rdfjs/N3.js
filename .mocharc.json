@@ -1,7 +1,6 @@
 {
   "require": [
-    "@babel/register",
-    "test/test-setup"
+    "test/test-setup.js"
   ],
   "timeout": 100,
   "slow": 50

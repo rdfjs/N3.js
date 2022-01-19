@@ -1,4 +1,4 @@
-import { Parser, NamedNode, BlankNode, Quad, termFromId } from '../src/';
+import { Parser, NamedNode, BlankNode, Quad, termFromId } from '../src/index.js';
 
 const BASE_IRI = 'http://example.org/';
 

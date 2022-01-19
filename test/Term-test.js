@@ -8,12 +8,12 @@ import {
   Quad,
   termToId,
   termFromId,
-} from '../src/';
+} from '../src/index.js';
 
 import {
   escapeQuotes,
   unescapeQuotes,
-} from '../src/N3DataFactory';
+} from '../src/N3DataFactory.js';
 
 describe('Term', () => {
   describe('The Term module', () => {

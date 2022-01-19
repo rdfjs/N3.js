@@ -1,4 +1,4 @@
-import { StreamParser, NamedNode } from '../src/';
+import { StreamParser, NamedNode } from '../src/index.js';
 import { Readable, Writable } from 'readable-stream';
 
 describe('StreamParser', () => {
