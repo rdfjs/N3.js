@@ -115,9 +115,59 @@
 
   termFromId,
   termToId,
-} <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3DataFactory&#x27;</span>;
+} <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3DataFactory&#x27;</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-2">&#x00a7;</a>
+              </div>
+              <p>Named exports</p>
 
-<span class="hljs-keyword">export</span> {
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> {
+  <span class="hljs-title class_">Lexer</span>,
+  <span class="hljs-title class_">Parser</span>,
+  <span class="hljs-title class_">Writer</span>,
+  <span class="hljs-title class_">Store</span>,
+  <span class="hljs-title class_">StreamParser</span>,
+  <span class="hljs-title class_">StreamWriter</span>,
+  <span class="hljs-title class_">Util</span>,
+
+  <span class="hljs-title class_">DataFactory</span>,
+
+  <span class="hljs-title class_">Term</span>,
+  <span class="hljs-title class_">NamedNode</span>,
+  <span class="hljs-title class_">Literal</span>,
+  <span class="hljs-title class_">BlankNode</span>,
+  <span class="hljs-title class_">Variable</span>,
+  <span class="hljs-title class_">DefaultGraph</span>,
+  <span class="hljs-title class_">Quad</span>,
+  <span class="hljs-title class_">Triple</span>,
+
+  termFromId,
+  termToId,
+};</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-3">&#x00a7;</a>
+              </div>
+              <p>Export all named exports as a default object for backward compatibility</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> {
   <span class="hljs-title class_">Lexer</span>,
   <span class="hljs-title class_">Parser</span>,
   <span class="hljs-title class_">Writer</span>,
