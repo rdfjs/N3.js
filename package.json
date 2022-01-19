@@ -39,7 +39,7 @@
     "colors": "^1.1.2",
     "docco": "^0.8.0",
     "eslint": "^5.14.1",
-    "mocha": "^7.1.2",
+    "mocha": "^8.0.0",
     "nyc": "^14.1.1",
     "pre-commit": "^1.2.2",
     "rdf-test-suite": "^1.2.0",
