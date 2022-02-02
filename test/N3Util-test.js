@@ -196,6 +196,21 @@ describe('Util', () => {
         expect(rdfs('label')).to.deep.equal(new NamedNode('http://www.w3.org/2000/01/rdf-schema#label'));
       });
 
+      it('should expand a NamedNode prefix', () => {
+        const rdfs = Util.prefix(new NamedNode('http://www.w3.org/2000/01/rdf-schema#'));
+        expect(rdfs('label')).to.deep.equal(new NamedNode('http://www.w3.org/2000/01/rdf-schema#label'));
+      });
+
+      it('should expand a Literal prefix', () => {
+        const rdfs = Util.prefix(new Literal('http://www.w3.org/2000/01/rdf-schema#'));
+        expect(rdfs('label')).to.deep.equal(new Literal('http://www.w3.org/2000/01/rdf-schema#label'));
+      });
+
+      it('should expand an empty literal prefix', () => {
+        const empty = Util.prefix(new Literal(''));
+        expect(empty('label')).to.deep.equal(new Literal('label'));
+      });
+
       it('should use a custom factory when specified', () => {
         const factory = { namedNode: function (s) { return `n-${s}`; } };
         const rdfs = Util.prefix('http://www.w3.org/2000/01/rdf-schema#', factory);
