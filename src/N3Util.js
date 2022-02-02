@@ -34,7 +34,7 @@ export function inDefaultGraph(quad) {
 
 // Creates a function that prepends the given IRI to a local name
 export function prefix(iri, factory) {
-  return prefixes({ '': iri }, factory)('');
+  return prefixes({ '': iri.value || iri }, factory)('');
 }
 
 // Creates a function that allows registering and expanding prefixes
