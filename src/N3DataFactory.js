@@ -35,12 +35,6 @@ export class Term {
     return this.id;
   }
 
-  // ### Implement hashCode for Immutable.js, since we implement `equals`
-  // https://immutable-js.com/docs/v4.0.0/ValueObject/#hashCode()
-  get hashCode() {
-    return 0;
-  }
-
   // ### Returns whether this object represents the same term as the other
   equals(other) {
     // If both terms were created by this library,
@@ -50,6 +44,12 @@ export class Term {
     // Otherwise, compare term type and value
     return !!other && this.termType === other.termType &&
                       this.value    === other.value;
+  }
+
+  // ### Implement hashCode for Immutable.js, since we implement `equals`
+  // https://immutable-js.com/docs/v4.0.0/ValueObject/#hashCode()
+  hashCode() {
+    return 0;
   }
 
   // ### Returns a plain object representation of this term

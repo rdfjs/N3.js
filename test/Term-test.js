@@ -28,7 +28,7 @@ describe('Term', () => {
 
   describe('A Term instance', () => {
     it('has an integer hashCode', () => {
-      new Term().should.have.property('hashCode', 0);
+      new Term().hashCode().should.equal(0);
     });
   });
 
