@@ -187,24 +187,6 @@ See <a href="https://github.com/rdfjs/representation-task-force/blob/master/inte
               <div class="sswrap ">
                 <a class="ss" href="#section-6">&#x00a7;</a>
               </div>
-              <h3 id="implement-hashcode-for-immutablejs-since-we-implement-equals">Implement hashCode for Immutable.js, since we implement <code>equals</code></h3>
-<p><a href="https://immutable-js.com/docs/v4.0.0/ValueObject/#hashCode()">https://immutable-js.com/docs/v4.0.0/ValueObject/#hashCode()</a></p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">get</span> <span class="hljs-title function_">hashCode</span>() {
-    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
-  }</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-7">
-            <div class="annotation">
-              
-              <div class="sswrap ">
-                <a class="ss" href="#section-7">&#x00a7;</a>
-              </div>
               <h3 id="returns-whether-this-object-represents-the-same-term-as-the-other">Returns whether this object represents the same term as the other</h3>
 
             </div>
@@ -214,11 +196,11 @@ See <a href="https://github.com/rdfjs/representation-task-force/blob/master/inte
         </li>
         
         
-        <li id="section-8">
+        <li id="section-7">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-8">&#x00a7;</a>
+                <a class="ss" href="#section-7">&#x00a7;</a>
               </div>
               <p>If both terms were created by this library,
 equality can be computed through ids</p>
@@ -231,11 +213,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-9">
+        <li id="section-8">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-9">&#x00a7;</a>
+                <a class="ss" href="#section-8">&#x00a7;</a>
               </div>
               <p>Otherwise, compare term type and value</p>
 
@@ -243,6 +225,24 @@ equality can be computed through ids</p>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">return</span> !!other &amp;&amp; <span class="hljs-variable language_">this</span>.<span class="hljs-property">termType</span> === other.<span class="hljs-property">termType</span> &amp;&amp;
                       <span class="hljs-variable language_">this</span>.<span class="hljs-property">value</span>    === other.<span class="hljs-property">value</span>;
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-9">&#x00a7;</a>
+              </div>
+              <h3 id="implement-hashcode-for-immutablejs-since-we-implement-equals">Implement hashCode for Immutable.js, since we implement <code>equals</code></h3>
+<p><a href="https://immutable-js.com/docs/v4.0.0/ValueObject/#hashCode()">https://immutable-js.com/docs/v4.0.0/ValueObject/#hashCode()</a></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">hashCode</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
   }</pre></div></div>
             
         </li>
