@@ -1171,11 +1171,55 @@ describe('Lexer', () => {
 
       it('returns all tokens synchronously', () => {
         tokens.should.deep.equal([
-          { line: 1, type: 'IRI', value: 'a', prefix: '' },
-          { line: 1, type: 'IRI', value: 'b', prefix: '' },
-          { line: 1, type: 'IRI', value: 'c', prefix: '' },
-          { line: 1, type: '.',   value: '',  prefix: '' },
+          { line: 1, type: 'IRI', value: 'a', prefix: '', start: 0, end: 4 },
+          { line: 1, type: 'IRI', value: 'b', prefix: '', start: 4, end: 8 },
+          { line: 1, type: 'IRI', value: 'c', prefix: '', start: 8, end: 11 },
+          { line: 1, type: '.',   value: '',  prefix: '', start: 11, end: 12 },
           { line: 1, type: 'eof', value: '',  prefix: '' },
+        ]);
+      });
+    });
+
+    describe('called without a callback for start and end index verification', () => {
+      const lexer = new Lexer();
+      it('return start and end index for every token', () => {
+        const tokens = lexer.tokenize('<a:a> <b:c> "lit"@EN.');
+
+        tokens.should.deep.equal([
+          { line: 1, prefix: '', type: 'IRI', value: 'a:a', start: 0, end: 6 },
+          { line: 1, prefix: '', type: 'IRI', value: 'b:c', start: 6, end: 12 },
+          { line: 1, prefix: '', type: 'literal', value: 'lit', start: 12, end: 17 },
+          { line: 1, prefix: '', type: 'langcode', value: 'EN', start: 17, end: 20 },
+          { line: 1, prefix: '', type: '.', value: '', start: 20, end: 21 },
+          { line: 1, prefix: '', type: 'eof', value: '' },
+        ]);
+      });
+
+      it('return start and end index relative to line', () => {
+        const tokens = lexer.tokenize('<a:a> <b:c> "lit"@EN ; \n <b:d> <d:e> .');
+
+        tokens.should.deep.equal([
+          { line: 1, prefix: '', type: 'IRI', value: 'a:a', start: 0, end: 6 },
+          { line: 1, prefix: '', type: 'IRI', value: 'b:c', start: 6, end: 12 },
+          { line: 1, prefix: '', type: 'literal', value: 'lit', start: 12, end: 17 },
+          { line: 1, prefix: '', type: 'langcode', value: 'EN', start: 17, end: 20 },
+          { line: 1, prefix: '', type: ';', value: '', start: 21, end: 22 },
+          { line: 2, prefix: '', type: 'IRI', value: 'b:d', start: 0, end: 6 },
+          { line: 2, prefix: '', type: 'IRI', value: 'd:e', start: 6, end: 12 },
+          { line: 2, prefix: '', type: '.', value: '', start: 12, end: 13 },
+          { line: 2, prefix: '', type: 'eof', value: '' },
+        ]);
+      });
+
+      it('return index including whitespaces', () => {
+        const tokens = lexer.tokenize('<a:a>   <b:c>    <d:e>  .');
+
+        tokens.should.deep.equal([
+          { line: 1, prefix: '', type: 'IRI', value: 'a:a', start: 0, end: 8 },
+          { line: 1, prefix: '', type: 'IRI', value: 'b:c', start: 8, end: 17 },
+          { line: 1, prefix: '', type: 'IRI', value: 'd:e', start: 17, end: 24 },
+          { line: 1, prefix: '', type: '.', value: '', start: 24, end: 25 },
+          { line: 1, prefix: '', type: 'eof', value: '' },
         ]);
       });
     });
@@ -1240,6 +1284,9 @@ describe('A Lexer instance with the comment option set to true', () => {
 
 function shouldTokenize(lexer, input) {
   const expected = Array.prototype.slice.call(arguments, 1);
+  // ignore start and end index by default
+  const ignoredAttributes = ['start', 'end'];
+
   // Shift parameters as necessary
   if (lexer instanceof Lexer)
     expected.shift();
@@ -1256,7 +1303,7 @@ function shouldTokenize(lexer, input) {
       const expectedItem = expected[result.length];
       if (expectedItem)
         for (const attribute in token)
-          if (token[attribute] === '' && expectedItem[attribute] !== '')
+          if ((token[attribute] === '' && expectedItem[attribute] !== '') || (ignoredAttributes.indexOf(attribute) >= 0 && expectedItem[attribute] === undefined))
             delete token[attribute];
       result.push(token);
       if (token.type === 'eof') {
