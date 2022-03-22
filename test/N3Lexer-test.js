@@ -1171,9 +1171,9 @@ describe('Lexer', () => {
 
       it('returns all tokens synchronously', () => {
         tokens.should.deep.equal([
-          { line: 1, type: 'IRI', value: 'a', prefix: '', start: 0, end: 4 },
-          { line: 1, type: 'IRI', value: 'b', prefix: '', start: 4, end: 8 },
-          { line: 1, type: 'IRI', value: 'c', prefix: '', start: 8, end: 11 },
+          { line: 1, type: 'IRI', value: 'a', prefix: '', start: 0,  end:  4 },
+          { line: 1, type: 'IRI', value: 'b', prefix: '', start: 4,  end:  8 },
+          { line: 1, type: 'IRI', value: 'c', prefix: '', start: 8,  end: 11 },
           { line: 1, type: '.',   value: '',  prefix: '', start: 11, end: 12 },
           { line: 1, type: 'eof', value: '',  prefix: '' },
         ]);
