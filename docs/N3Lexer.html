@@ -310,7 +310,7 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">let</span> input = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_input</span>;
-    <span class="hljs-keyword">const</span> outputComments = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_comments</span>;
+    <span class="hljs-keyword">let</span> currentLineLength = input.<span class="hljs-property">length</span>;
     <span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>) {</pre></div></div>
             
         </li>
@@ -342,8 +342,8 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (outputComments &amp;&amp; (comment = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_comment</span>.<span class="hljs-title function_">exec</span>(whiteSpaceMatch[<span class="hljs-number">0</span>])))
-          <span class="hljs-title function_">callback</span>(<span class="hljs-literal">null</span>, { <span class="hljs-attr">line</span>: <span class="hljs-variable language_">this</span>.<span class="hljs-property">_line</span>, <span class="hljs-attr">type</span>: <span class="hljs-string">&#x27;comment&#x27;</span>, <span class="hljs-attr">value</span>: comment[<span class="hljs-number">1</span>], <span class="hljs-attr">prefix</span>: <span class="hljs-string">&#x27;&#x27;</span> });</pre></div></div>
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_comments</span> &amp;&amp; (comment = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_comment</span>.<span class="hljs-title function_">exec</span>(whiteSpaceMatch[<span class="hljs-number">0</span>])))
+          <span class="hljs-title function_">emitToken</span>(<span class="hljs-string">&#x27;comment&#x27;</span>, comment[<span class="hljs-number">1</span>], <span class="hljs-string">&#x27;&#x27;</span>, <span class="hljs-variable language_">this</span>.<span class="hljs-property">_line</span>, whiteSpaceMatch[<span class="hljs-number">0</span>].<span class="hljs-property">length</span>);</pre></div></div>
             
         </li>
         
@@ -359,6 +359,7 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>        input = input.<span class="hljs-title function_">substr</span>(whiteSpaceMatch[<span class="hljs-number">0</span>].<span class="hljs-property">length</span>, input.<span class="hljs-property">length</span>);
+        currentLineLength = input.<span class="hljs-property">length</span>;
         <span class="hljs-variable language_">this</span>.<span class="hljs-property">_line</span>++;
       }</pre></div></div>
             
@@ -421,9 +422,10 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">if</span> (outputComments &amp;&amp; (comment = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_comment</span>.<span class="hljs-title function_">exec</span>(input)))
-            <span class="hljs-title function_">callback</span>(<span class="hljs-literal">null</span>, { <span class="hljs-attr">line</span>: <span class="hljs-variable language_">this</span>.<span class="hljs-property">_line</span>, <span class="hljs-attr">type</span>: <span class="hljs-string">&#x27;comment&#x27;</span>, <span class="hljs-attr">value</span>: comment[<span class="hljs-number">1</span>], <span class="hljs-attr">prefix</span>: <span class="hljs-string">&#x27;&#x27;</span> });
-          <span class="hljs-title function_">callback</span>(input = <span class="hljs-literal">null</span>, { <span class="hljs-attr">line</span>: <span class="hljs-variable language_">this</span>.<span class="hljs-property">_line</span>, <span class="hljs-attr">type</span>: <span class="hljs-string">&#x27;eof&#x27;</span>, <span class="hljs-attr">value</span>: <span class="hljs-string">&#x27;&#x27;</span>, <span class="hljs-attr">prefix</span>: <span class="hljs-string">&#x27;&#x27;</span> });
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_comments</span> &amp;&amp; (comment = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_comment</span>.<span class="hljs-title function_">exec</span>(input)))
+            <span class="hljs-title function_">emitToken</span>(<span class="hljs-string">&#x27;comment&#x27;</span>, comment[<span class="hljs-number">1</span>], <span class="hljs-string">&#x27;&#x27;</span>, <span class="hljs-variable language_">this</span>.<span class="hljs-property">_line</span>, input.<span class="hljs-property">length</span>);
+          input = <span class="hljs-literal">null</span>;
+          <span class="hljs-title function_">emitToken</span>(<span class="hljs-string">&#x27;eof&#x27;</span>, <span class="hljs-string">&#x27;&#x27;</span>, <span class="hljs-string">&#x27;&#x27;</span>, <span class="hljs-variable language_">this</span>.<span class="hljs-property">_line</span>, <span class="hljs-number">0</span>);
         }
         <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">_input</span> = input;
       }</pre></div></div>
@@ -1078,8 +1080,8 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">const</span> token = { <span class="hljs-attr">line</span>: line, <span class="hljs-attr">type</span>: type, <span class="hljs-attr">value</span>: value, <span class="hljs-attr">prefix</span>: prefix };
-      <span class="hljs-title function_">callback</span>(<span class="hljs-literal">null</span>, token);
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">const</span> length = matchLength || match[<span class="hljs-number">0</span>].<span class="hljs-property">length</span>;
+      <span class="hljs-keyword">const</span> token = <span class="hljs-title function_">emitToken</span>(type, value, prefix, line, length);
       <span class="hljs-variable language_">this</span>.<span class="hljs-property">previousToken</span> = token;
       <span class="hljs-variable language_">this</span>.<span class="hljs-property">_previousMarker</span> = type;</pre></div></div>
             
@@ -1096,7 +1098,7 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      input = input.<span class="hljs-title function_">substr</span>(matchLength || match[<span class="hljs-number">0</span>].<span class="hljs-property">length</span>, input.<span class="hljs-property">length</span>);
+            <div class="content"><div class='highlight'><pre>      input = input.<span class="hljs-title function_">substr</span>(length, input.<span class="hljs-property">length</span>);
     }</pre></div></div>
             
         </li>
@@ -1108,6 +1110,27 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
               <div class="sswrap ">
                 <a class="ss" href="#section-53">&#x00a7;</a>
               </div>
+              <p>Emits the token through the callback</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">function</span> <span class="hljs-title function_">emitToken</span>(<span class="hljs-params">type, value, prefix, line, length</span>) {
+      <span class="hljs-keyword">const</span> start = input ? currentLineLength - input.<span class="hljs-property">length</span> : currentLineLength;
+      <span class="hljs-keyword">const</span> end = start + length;
+      <span class="hljs-keyword">const</span> token = { type, value, prefix, line, start, end };
+      <span class="hljs-title function_">callback</span>(<span class="hljs-literal">null</span>, token);
+      <span class="hljs-keyword">return</span> token;
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-54">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-54">&#x00a7;</a>
+              </div>
               <p>Signals the syntax error through the callback</p>
 
             </div>
@@ -1118,11 +1141,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-54">
+        <li id="section-55">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-54">&#x00a7;</a>
+                <a class="ss" href="#section-55">&#x00a7;</a>
               </div>
               <h3 id="_unescape-replaces-n3-escape-codes-by-their-corresponding-characters"><code>_unescape</code> replaces N3 escape codes by their corresponding characters</h3>
 
@@ -1135,11 +1158,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-55">
+        <li id="section-56">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-55">&#x00a7;</a>
+                <a class="ss" href="#section-56">&#x00a7;</a>
               </div>
               <p>4-digit unicode character</p>
 
@@ -1151,11 +1174,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-56">
+        <li id="section-57">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-56">&#x00a7;</a>
+                <a class="ss" href="#section-57">&#x00a7;</a>
               </div>
               <p>8-digit unicode character</p>
 
@@ -1170,11 +1193,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-57">
+        <li id="section-58">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-57">&#x00a7;</a>
+                <a class="ss" href="#section-58">&#x00a7;</a>
               </div>
               <p>fixed escape sequence</p>
 
@@ -1186,11 +1209,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-58">
+        <li id="section-59">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-58">&#x00a7;</a>
+                <a class="ss" href="#section-59">&#x00a7;</a>
               </div>
               <p>invalid escape sequence</p>
 
@@ -1205,11 +1228,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-59">
+        <li id="section-60">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-59">&#x00a7;</a>
+                <a class="ss" href="#section-60">&#x00a7;</a>
               </div>
               <h3 id="_parseliteral-parses-a-literal-into-an-unescaped-value"><code>_parseLiteral</code> parses a literal into an unescaped value</h3>
 
@@ -1220,11 +1243,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-60">
+        <li id="section-61">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-60">&#x00a7;</a>
+                <a class="ss" href="#section-61">&#x00a7;</a>
               </div>
               <p>Ensure we have enough lookahead to identify triple-quoted strings</p>
 
@@ -1235,11 +1258,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-61">
+        <li id="section-62">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-61">&#x00a7;</a>
+                <a class="ss" href="#section-62">&#x00a7;</a>
               </div>
               <p>Identify the opening quote(s)</p>
 
@@ -1251,11 +1274,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-62">
+        <li id="section-63">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-62">&#x00a7;</a>
+                <a class="ss" href="#section-63">&#x00a7;</a>
               </div>
               <p>Find the next candidate closing quotes</p>
 
@@ -1267,11 +1290,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-63">
+        <li id="section-64">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-63">&#x00a7;</a>
+                <a class="ss" href="#section-64">&#x00a7;</a>
               </div>
               <p>Count backslashes right before the closing quotes</p>
 
@@ -1284,11 +1307,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-64">
+        <li id="section-65">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-64">&#x00a7;</a>
+                <a class="ss" href="#section-65">&#x00a7;</a>
               </div>
               <p>An even number of backslashes (in particular 0)
 means these are actual, non-escaped closing quotes</p>
@@ -1300,11 +1323,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-65">
+        <li id="section-66">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-65">&#x00a7;</a>
+                <a class="ss" href="#section-66">&#x00a7;</a>
               </div>
               <p>Extract and unescape the value</p>
 
@@ -1317,11 +1340,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-66">
+        <li id="section-67">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-66">&#x00a7;</a>
+                <a class="ss" href="#section-67">&#x00a7;</a>
               </div>
               <p>Only triple-quoted strings can be multi-line</p>
 
@@ -1343,11 +1366,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-67">
+        <li id="section-68">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-67">&#x00a7;</a>
+                <a class="ss" href="#section-68">&#x00a7;</a>
               </div>
               <h3 id="_syntaxerror-creates-a-syntax-error-for-the-given-issue"><code>_syntaxError</code> creates a syntax error for the given issue</h3>
 
@@ -1367,11 +1390,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-68">
+        <li id="section-69">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-68">&#x00a7;</a>
+                <a class="ss" href="#section-69">&#x00a7;</a>
               </div>
               <h3 id="strips-off-any-starting-utf-bom-mark">Strips off any starting UTF BOM mark.</h3>
 
@@ -1384,11 +1407,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-69">
+        <li id="section-70">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-69">&#x00a7;</a>
+                <a class="ss" href="#section-70">&#x00a7;</a>
               </div>
               <h2 id="public-methods">Public methods</h2>
 
@@ -1397,11 +1420,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-70">
+        <li id="section-71">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-70">&#x00a7;</a>
+                <a class="ss" href="#section-71">&#x00a7;</a>
               </div>
               <h3 id="tokenize-starts-the-transformation-of-an-n3-document-into-an-array-of-tokens"><code>tokenize</code> starts the transformation of an N3 document into an array of tokens.</h3>
 <p>The input can be a string or a stream.</p>
@@ -1414,11 +1437,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-71">
+        <li id="section-72">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-71">&#x00a7;</a>
+                <a class="ss" href="#section-72">&#x00a7;</a>
               </div>
               <p>If the input is a string, continuously emit tokens through the callback until the end</p>
 
@@ -1430,11 +1453,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-72">
+        <li id="section-73">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-72">&#x00a7;</a>
+                <a class="ss" href="#section-73">&#x00a7;</a>
               </div>
               <p>If a callback was passed, asynchronously call it</p>
 
@@ -1446,11 +1469,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-73">
+        <li id="section-74">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-73">&#x00a7;</a>
+                <a class="ss" href="#section-74">&#x00a7;</a>
               </div>
               <p>If no callback was passed, tokenize synchronously and return</p>
 
@@ -1468,11 +1491,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-74">
+        <li id="section-75">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-74">&#x00a7;</a>
+                <a class="ss" href="#section-75">&#x00a7;</a>
               </div>
               <p>Otherwise, the input must be a stream</p>
 
@@ -1486,11 +1509,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-75">
+        <li id="section-76">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-75">&#x00a7;</a>
+                <a class="ss" href="#section-76">&#x00a7;</a>
               </div>
               <p>Adds the data chunk to the buffer and parses as far as possible</p>
 
@@ -1502,11 +1525,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-76">
+        <li id="section-77">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-76">&#x00a7;</a>
+                <a class="ss" href="#section-77">&#x00a7;</a>
               </div>
               <p>Prepend any previous pending writes</p>
 
@@ -1520,11 +1543,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-77">
+        <li id="section-78">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-77">&#x00a7;</a>
+                <a class="ss" href="#section-78">&#x00a7;</a>
               </div>
               <p>Hold if the buffer ends in an incomplete unicode sequence</p>
 
@@ -1537,11 +1560,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-78">
+        <li id="section-79">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-78">&#x00a7;</a>
+                <a class="ss" href="#section-79">&#x00a7;</a>
               </div>
               <p>Otherwise, tokenize as far as possible</p>
 
@@ -1552,11 +1575,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-79">
+        <li id="section-80">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-79">&#x00a7;</a>
+                <a class="ss" href="#section-80">&#x00a7;</a>
               </div>
               <p>Only read a BOM at the start</p>
 
@@ -1574,11 +1597,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-80">
+        <li id="section-81">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-80">&#x00a7;</a>
+                <a class="ss" href="#section-81">&#x00a7;</a>
               </div>
               <p>Parses until the end</p>
 
