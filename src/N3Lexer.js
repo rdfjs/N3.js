@@ -85,7 +85,7 @@ export default class N3Lexer {
       while (whiteSpaceMatch = this._newline.exec(input)) {
         // Try to find a comment
         if (this._comments && (comment = this._comment.exec(whiteSpaceMatch[0])))
-          callback(null, this._createToken(this._line, 'comment', comment[1], '', currentLineLength - input.length, currentLineLength - input.length + whiteSpaceMatch[0].length));
+          emitToken('comment', comment[1], '', this._line, whiteSpaceMatch[0].length);
         // Advance the input
         input = input.substr(whiteSpaceMatch[0].length, input.length);
         currentLineLength = input.length;
@@ -101,8 +101,9 @@ export default class N3Lexer {
         if (inputFinished) {
           // Try to find a final comment
           if (this._comments && (comment = this._comment.exec(input)))
-            callback(null, this._createToken(this._line, 'comment', comment[1], '', currentLineLength - input.length, currentLineLength));
-          callback(input = null, this._createToken(this._line, 'eof', '', '', currentLineLength, currentLineLength));
+            emitToken('comment', comment[1], '', this._line, input.length);
+          input = null;
+          emitToken('eof', '', '', this._line, 0);
         }
         return this._input = input;
       }
@@ -346,11 +347,8 @@ export default class N3Lexer {
       }
 
       // Emit the parsed token
-      const start = currentLineLength - input.length;
       const length = matchLength || match[0].length;
-      const end = start + length;
-      const token = this._createToken(line, type, value, prefix, start, end);
-      callback(null, token);
+      const token = emitToken(type, value, prefix, line, length);
       this.previousToken = token;
       this._previousMarker = type;
 
@@ -358,6 +356,14 @@ export default class N3Lexer {
       input = input.substr(length, input.length);
     }
 
+    // Emits the token through the callback
+    function emitToken(type, value, prefix, line, length) {
+      const start = input ? currentLineLength - input.length : currentLineLength;
+      const end = start + length;
+      const token = { type, value, prefix, line, start, end };
+      callback(null, token);
+      return token;
+    }
     // Signals the syntax error through the callback
     function reportSyntaxError(self) { callback(self._syntaxError(/^\S*/.exec(input)[0])); }
   }
@@ -432,11 +438,6 @@ export default class N3Lexer {
       previousToken: this.previousToken,
     };
     return err;
-  }
-
-  // ### Utility method to create a token
-  _createToken(line, type, value, prefix, start, end) {
-    return { line: line, type: type, value: value, prefix: prefix, start: start, end: end };
   }
 
   // ### Strips off any starting UTF BOM mark.
