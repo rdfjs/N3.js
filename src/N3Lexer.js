@@ -85,7 +85,7 @@ export default class N3Lexer {
       while (whiteSpaceMatch = this._newline.exec(input)) {
         // Try to find a comment
         if (this._comments && (comment = this._comment.exec(whiteSpaceMatch[0])))
-          callback(null, { line: this._line, type: 'comment', value: comment[1], prefix: '' });
+          callback(null, this._createToken(this._line, 'comment', comment[1], '', currentLineLength - input.length, currentLineLength - input.length + whiteSpaceMatch[0].length));
         // Advance the input
         input = input.substr(whiteSpaceMatch[0].length, input.length);
         currentLineLength = input.length;
@@ -101,8 +101,8 @@ export default class N3Lexer {
         if (inputFinished) {
           // Try to find a final comment
           if (this._comments && (comment = this._comment.exec(input)))
-            callback(null, { line: this._line, type: 'comment', value: comment[1], prefix: '' });
-          callback(input = null, { line: this._line, type: 'eof', value: '', prefix: '' });
+            callback(null, this._createToken(this._line, 'comment', comment[1], '', currentLineLength - input.length, currentLineLength));
+          callback(input = null, this._createToken(this._line, 'eof', '', '', currentLineLength, currentLineLength));
         }
         return this._input = input;
       }
@@ -349,7 +349,7 @@ export default class N3Lexer {
       const start = currentLineLength - input.length;
       const length = matchLength || match[0].length;
       const end = start + length;
-      const token = { line, type, value, prefix, start, end };
+      const token = this._createToken(line, type, value, prefix, start, end);
       callback(null, token);
       this.previousToken = token;
       this._previousMarker = type;
@@ -432,6 +432,11 @@ export default class N3Lexer {
       previousToken: this.previousToken,
     };
     return err;
+  }
+
+  // ### Utility method to create a token
+  _createToken(line, type, value, prefix, start, end) {
+    return { line: line, type: type, value: value, prefix: prefix, start: start, end: end };
   }
 
   // ### Strips off any starting UTF BOM mark.
