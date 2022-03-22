@@ -78,16 +78,17 @@ export default class N3Lexer {
   _tokenizeToEnd(callback, inputFinished) {
     // Continue parsing as far as possible; the loop will return eventually
     let input = this._input;
-    const outputComments = this._comments;
+    let currentLineLength = input.length;
     while (true) {
       // Count and skip whitespace lines
       let whiteSpaceMatch, comment;
       while (whiteSpaceMatch = this._newline.exec(input)) {
         // Try to find a comment
-        if (outputComments && (comment = this._comment.exec(whiteSpaceMatch[0])))
-          callback(null, { line: this._line, type: 'comment', value: comment[1], prefix: '' });
+        if (this._comments && (comment = this._comment.exec(whiteSpaceMatch[0])))
+          emitToken('comment', comment[1], '', this._line, whiteSpaceMatch[0].length);
         // Advance the input
         input = input.substr(whiteSpaceMatch[0].length, input.length);
+        currentLineLength = input.length;
         this._line++;
       }
       // Skip whitespace on current line
@@ -99,9 +100,10 @@ export default class N3Lexer {
         // If the input is finished, emit EOF
         if (inputFinished) {
           // Try to find a final comment
-          if (outputComments && (comment = this._comment.exec(input)))
-            callback(null, { line: this._line, type: 'comment', value: comment[1], prefix: '' });
-          callback(input = null, { line: this._line, type: 'eof', value: '', prefix: '' });
+          if (this._comments && (comment = this._comment.exec(input)))
+            emitToken('comment', comment[1], '', this._line, input.length);
+          input = null;
+          emitToken('eof', '', '', this._line, 0);
         }
         return this._input = input;
       }
@@ -345,14 +347,23 @@ export default class N3Lexer {
       }
 
       // Emit the parsed token
-      const token = { line: line, type: type, value: value, prefix: prefix };
-      callback(null, token);
+      const length = matchLength || match[0].length;
+      const token = emitToken(type, value, prefix, line, length);
       this.previousToken = token;
       this._previousMarker = type;
+
       // Advance to next part to tokenize
-      input = input.substr(matchLength || match[0].length, input.length);
+      input = input.substr(length, input.length);
     }
 
+    // Emits the token through the callback
+    function emitToken(type, value, prefix, line, length) {
+      const start = input ? currentLineLength - input.length : currentLineLength;
+      const end = start + length;
+      const token = { type, value, prefix, line, start, end };
+      callback(null, token);
+      return token;
+    }
     // Signals the syntax error through the callback
     function reportSyntaxError(self) { callback(self._syntaxError(/^\S*/.exec(input)[0])); }
   }

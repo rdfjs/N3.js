@@ -89,6 +89,8 @@ describe('Parser', () => {
                          type: 'type',
                          value: 'z',
                          prefix: 'x',
+                         start: 18,
+                         end: 21,
                        },
                        line: 1,
                        previousToken: {
@@ -96,6 +98,8 @@ describe('Parser', () => {
                          type: 'literal',
                          value: 'string',
                          prefix: '',
+                         start: 8,
+                         end: 16,
                        },
                      }));
 
@@ -132,6 +136,8 @@ describe('Parser', () => {
                          type: '@PREFIX',
                          value: '',
                          prefix: '',
+                         start: 0,
+                         end: 7,
                        },
                        previousToken: undefined,
                        line: 1,
@@ -232,6 +238,8 @@ describe('Parser', () => {
                          type: '[',
                          value: '',
                          prefix: '',
+                         start: 4,
+                         end: 5,
                        },
                        line: 2,
                        previousToken: {
@@ -239,6 +247,8 @@ describe('Parser', () => {
                          type: 'IRI',
                          value: 'a',
                          prefix: '',
+                         start: 0,
+                         end: 4,
                        },
                      }));
 
@@ -250,6 +260,8 @@ describe('Parser', () => {
                          type: 'blank',
                          value: 'b',
                          prefix: '_',
+                         start: 4,
+                         end: 8,
                        },
                        line: 2,
                        previousToken: {
@@ -257,6 +269,8 @@ describe('Parser', () => {
                          type: 'IRI',
                          value: 'a',
                          prefix: '',
+                         start: 0,
+                         end: 4,
                        },
                      }));
 
