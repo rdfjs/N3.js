@@ -175,7 +175,16 @@ describe('Store', () => {
 
     describe('adding a triple that did not exist yet', () => {
       it('should return true', () => {
+        store.has(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4'))).should.be.false;
+        store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4')).should.be.false;
+        store.has(null, null, new NamedNode('o4')).should.be.false;
+
         store.addQuad('s1', 'p1', 'o4').should.be.true;
+
+        store.has(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4'))).should.be.true;
+        store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4')).should.be.true;
+        store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4'), new DefaultGraph()).should.be.true;
+        store.has(null, null, new NamedNode('o4')).should.be.true;
       });
 
       it('should increase the size', () => {
@@ -192,7 +201,6 @@ describe('Store', () => {
 
       it('should return self', () => {
         should.equal(store.add(new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2'))), store);
-        store.has(new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')));
       });
 
       it('should increase the size', () => {

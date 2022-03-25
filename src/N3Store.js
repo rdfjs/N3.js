@@ -84,15 +84,13 @@ export default class N3Store {
   // `name0`, `name1`, and `name2` are the names of the keys at each level,
   // used when reconstructing the resulting quad
   // (for instance: _subject_, _predicate_, and _object_).
-  // Finally, `graph` will be the graph of the created quads.
-  // If `callback` is given, each result is passed through it
-  // and iteration halts when it returns truthy for any quad.
-  // If instead `array` is given, each result is added to the array.
-  _findInIndex(index0, key0, key1, key2, name0, name1, name2, graph, callback, array) {
+  // Finally, `graphId` will be the graph of the created quads.
+  *_findInIndex(index0, key0, key1, key2, name0, name1, name2, graphId) {
     let tmp, index1, index2;
     // Depending on the number of variables, keys or reverse index are faster
     const varCount = !key0 + !key1 + !key2,
         entityKeys = varCount > 1 ? Object.keys(this._ids) : this._entities;
+    const graph = termFromId(graphId, this._factory);
 
     // If a key is specified, use only that part of index 0.
     if (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
@@ -114,18 +112,12 @@ export default class N3Store {
               parts[name0] = termFromId(entity0, this._factory);
               parts[name1] = termFromId(entity1, this._factory);
               parts[name2] = termFromId(entityKeys[values[l]], this._factory);
-              const quad = this._factory.quad(
-                parts.subject, parts.predicate, parts.object, termFromId(graph, this._factory));
-              if (array)
-                array.push(quad);
-              else if (callback(quad))
-                return true;
+              yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
             }
           }
         }
       }
     }
-    return array;
   }
 
   // ### `_loop` executes the callback on all keys of index 0
@@ -274,11 +266,11 @@ export default class N3Store {
     return this;
   }
 
-  // ### `has` determines whether a dataset includes a certain quad.
-  // Returns true or false as appropriate.
-  has(quad) {
-    const quads = this.getQuads(quad.subject, quad.predicate, quad.object, quad.graph);
-    return quads.length !== 0;
+  // ### `has` determines whether a dataset includes a certain quad or quad pattern.
+  has(subjectOrQuad, predicate, object, graph) {
+    if (subjectOrQuad && subjectOrQuad.subject)
+      ({ subject: subjectOrQuad, predicate, object, graph } = subjectOrQuad);
+    return !this.readQuads(subjectOrQuad, predicate, object, graph).next().done;
   }
 
   // ### `import` adds a stream of quads to the store
@@ -341,7 +333,7 @@ export default class N3Store {
     const stream = new Readable({ objectMode: true });
 
     stream._read = () => {
-      for (const quad of this.getQuads(subject, predicate, object, graph))
+      for (const quad of this.readQuads(subject, predicate, object, graph))
         stream.push(quad);
       stream.push(null);
     };
@@ -357,20 +349,26 @@ export default class N3Store {
   // ### `getQuads` returns an array of quads matching a pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   getQuads(subject, predicate, object, graph) {
+    return [...this.readQuads(subject, predicate, object, graph)];
+  }
+
+  // ### `readQuads` returns an generator of quads matching a pattern.
+  // Setting any field to `undefined` or `null` indicates a wildcard.
+  *readQuads(subject, predicate, object, graph) {
     // Convert terms to internal string representation
     subject = subject && termToId(subject);
     predicate = predicate && termToId(predicate);
     object = object && termToId(object);
     graph = graph && termToId(graph);
 
-    const quads = [], graphs = this._getGraphs(graph), ids = this._ids;
+    const graphs = this._getGraphs(graph), ids = this._ids;
     let content, subjectId, predicateId, objectId;
 
     // Translate IRIs to internal index keys.
     if (isString(subject)   && !(subjectId   = ids[subject])   ||
         isString(predicate) && !(predicateId = ids[predicate]) ||
         isString(object)    && !(objectId    = ids[object]))
-      return quads;
+      return;
 
     for (const graphId in graphs) {
       // Only if the specified graph contains triples, there can be results
@@ -379,28 +377,27 @@ export default class N3Store {
         if (subjectId) {
           if (objectId)
             // If subject and object are given, the object index will be the fastest
-            this._findInIndex(content.objects, objectId, subjectId, predicateId,
-                              'object', 'subject', 'predicate', graphId, null, quads);
+            yield* this._findInIndex(content.objects, objectId, subjectId, predicateId,
+                              'object', 'subject', 'predicate', graphId, null, true);
           else
             // If only subject and possibly predicate are given, the subject index will be the fastest
-            this._findInIndex(content.subjects, subjectId, predicateId, null,
-                              'subject', 'predicate', 'object', graphId, null, quads);
+            yield* this._findInIndex(content.subjects, subjectId, predicateId, null,
+                              'subject', 'predicate', 'object', graphId, null, true);
         }
         else if (predicateId)
           // If only predicate and possibly object are given, the predicate index will be the fastest
-          this._findInIndex(content.predicates, predicateId, objectId, null,
-                            'predicate', 'object', 'subject', graphId, null, quads);
+          yield* this._findInIndex(content.predicates, predicateId, objectId, null,
+                            'predicate', 'object', 'subject', graphId, null, true);
         else if (objectId)
           // If only object is given, the object index will be the fastest
-          this._findInIndex(content.objects, objectId, null, null,
-                            'object', 'subject', 'predicate', graphId, null, quads);
+          yield* this._findInIndex(content.objects, objectId, null, null,
+                            'object', 'subject', 'predicate', graphId, null, true);
         else
           // If nothing is given, iterate subjects and predicates first
-          this._findInIndex(content.subjects, null, null, null,
-                            'subject', 'predicate', 'object', graphId, null, quads);
+          yield* this._findInIndex(content.subjects, null, null, null,
+                            'subject', 'predicate', 'object', graphId, null, true);
       }
     }
-    return quads;
   }
 
   // ### `match` returns a new dataset that is comprised of all quads in the current instance matching the given arguments.
@@ -481,60 +478,9 @@ export default class N3Store {
   // and returns `true` if it returns truthy for any of them.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   some(callback, subject, predicate, object, graph) {
-    // Convert terms to internal string representation
-    subject = subject && termToId(subject);
-    predicate = predicate && termToId(predicate);
-    object = object && termToId(object);
-    graph = graph && termToId(graph);
-
-    const graphs = this._getGraphs(graph), ids = this._ids;
-    let content, subjectId, predicateId, objectId;
-
-    // Translate IRIs to internal index keys.
-    if (isString(subject)   && !(subjectId   = ids[subject])   ||
-        isString(predicate) && !(predicateId = ids[predicate]) ||
-        isString(object)    && !(objectId    = ids[object]))
-      return false;
-
-    for (const graphId in graphs) {
-      // Only if the specified graph contains triples, there can be results
-      if (content = graphs[graphId]) {
-        // Choose the optimal index, based on what fields are present
-        if (subjectId) {
-          if (objectId) {
-          // If subject and object are given, the object index will be the fastest
-            if (this._findInIndex(content.objects, objectId, subjectId, predicateId,
-                                  'object', 'subject', 'predicate', graphId, callback, null))
-              return true;
-          }
-          else
-            // If only subject and possibly predicate are given, the subject index will be the fastest
-            if (this._findInIndex(content.subjects, subjectId, predicateId, null,
-                                  'subject', 'predicate', 'object', graphId, callback, null))
-              return true;
-        }
-        else if (predicateId) {
-          // If only predicate and possibly object are given, the predicate index will be the fastest
-          if (this._findInIndex(content.predicates, predicateId, objectId, null,
-                                'predicate', 'object', 'subject', graphId, callback, null)) {
-            return true;
-          }
-        }
-        else if (objectId) {
-          // If only object is given, the object index will be the fastest
-          if (this._findInIndex(content.objects, objectId, null, null,
-                                'object', 'subject', 'predicate', graphId, callback, null)) {
-            return true;
-          }
-        }
-        else
-        // If nothing is given, iterate subjects and predicates first
-        if (this._findInIndex(content.subjects, null, null, null,
-                              'subject', 'predicate', 'object', graphId, callback, null)) {
-          return true;
-        }
-      }
-    }
+    for (const quad of this.readQuads(subject, predicate, object, graph))
+      if (callback(quad))
+        return true;
     return false;
   }
 
@@ -820,7 +766,7 @@ export default class N3Store {
   // Can be used where iterables are expected: for...of loops, array spread operator,
   // `yield*`, and destructuring assignment (order is not guaranteed).
   *[Symbol.iterator]() {
-    yield* this.getQuads();
+    yield* this.readQuads();
   }
 }
 
@@ -851,7 +797,7 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   _read() {
-    for (const quad of this.filtered.getQuads())
+    for (const quad of this)
       this.push(quad);
     this.push(null);
   }
@@ -873,6 +819,6 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   *[Symbol.iterator]() {
-    yield* this.filtered.getQuads();
+    yield* this._filtered || this.n3Store.readQuads(this.subject, this.predicate, this.object, this.graph);
   }
 }
