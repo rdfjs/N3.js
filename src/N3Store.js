@@ -125,7 +125,6 @@ export default class N3Store {
         }
       }
     }
-    return yieldResult;
   }
 
   // ### `_loop` executes the callback on all keys of index 0
