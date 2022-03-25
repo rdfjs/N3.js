@@ -273,10 +273,11 @@ export default class N3Store {
     return this;
   }
 
-  // ### `has` determines whether a dataset includes a certain quad.
-  // Returns true or false as appropriate.
-  has(quad) {
-    return !this._yieldQuads(quad.subject, quad.predicate, quad.object, quad.graph).next().done;
+  // ### `has` determines whether a dataset includes a certain quad or quad pattern.
+  has(subjectOrQuad, predicate, object, graph) {
+    if (subjectOrQuad && subjectOrQuad.subject)
+      ({ subject: subjectOrQuad, predicate, object, graph } = subjectOrQuad);
+    return !this._yieldQuads(subjectOrQuad, predicate, object, graph).next().done;
   }
 
   // ### `import` adds a stream of quads to the store
