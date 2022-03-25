@@ -87,8 +87,8 @@ export default class N3Store {
   // Finally, `graph` will be the graph of the created quads.
   // If `callback` is given, each result is passed through it
   // and iteration halts when it returns truthy for any quad.
-  // If instead `array` is given, each result is added to the array.
-  *_findInIndex(index0, key0, key1, key2, name0, name1, name2, graph, callback, array) {
+  // If instead `yield_result` is given, each result is yielded by the generator.
+  *_findInIndex(index0, key0, key1, key2, name0, name1, name2, graph, callback, yieldResult) {
     let tmp, index1, index2;
     // Depending on the number of variables, keys or reverse index are faster
     const varCount = !key0 + !key1 + !key2,
@@ -116,7 +116,7 @@ export default class N3Store {
               parts[name2] = termFromId(entityKeys[values[l]], this._factory);
               const quad = this._factory.quad(
                 parts.subject, parts.predicate, parts.object, termFromId(graph, this._factory));
-              if (array)
+              if (yieldResult)
                 yield quad;
               else if (callback(quad))
                 return true;
@@ -125,7 +125,7 @@ export default class N3Store {
         }
       }
     }
-    return array;
+    return yieldResult;
   }
 
   // ### `_loop` executes the callback on all keys of index 0
@@ -357,9 +357,11 @@ export default class N3Store {
   // ### `getQuads` returns an array of quads matching a pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   getQuads(subject, predicate, object, graph) {
-    return [...this._yieldQuads(subject, predicate, object, graph)]
+    return [...this._yieldQuads(subject, predicate, object, graph)];
   }
 
+  // ### `_yieldQuads` returns an generator of quads matching a pattern.
+  // Setting any field to `undefined` or `null` indicates a wildcard.
   *_yieldQuads(subject, predicate, object, graph) {
     // Convert terms to internal string representation
     subject = subject && termToId(subject);
