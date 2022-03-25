@@ -84,15 +84,13 @@ export default class N3Store {
   // `name0`, `name1`, and `name2` are the names of the keys at each level,
   // used when reconstructing the resulting quad
   // (for instance: _subject_, _predicate_, and _object_).
-  // Finally, `graph` will be the graph of the created quads.
-  // If `callback` is given, each result is passed through it
-  // and iteration halts when it returns truthy for any quad.
-  // If instead `yieldResult` is given, each result is yielded by the generator.
-  *_findInIndex(index0, key0, key1, key2, name0, name1, name2, graph, callback, yieldResult) {
+  // Finally, `graphId` will be the graph of the created quads.
+  *_findInIndex(index0, key0, key1, key2, name0, name1, name2, graphId) {
     let tmp, index1, index2;
     // Depending on the number of variables, keys or reverse index are faster
     const varCount = !key0 + !key1 + !key2,
         entityKeys = varCount > 1 ? Object.keys(this._ids) : this._entities;
+    const graph = termFromId(graphId, this._factory);
 
     // If a key is specified, use only that part of index 0.
     if (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
@@ -114,12 +112,7 @@ export default class N3Store {
               parts[name0] = termFromId(entity0, this._factory);
               parts[name1] = termFromId(entity1, this._factory);
               parts[name2] = termFromId(entityKeys[values[l]], this._factory);
-              const quad = this._factory.quad(
-                parts.subject, parts.predicate, parts.object, termFromId(graph, this._factory));
-              if (yieldResult)
-                yield quad;
-              else if (callback(quad))
-                return true;
+              yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
             }
           }
         }
@@ -485,60 +478,9 @@ export default class N3Store {
   // and returns `true` if it returns truthy for any of them.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   some(callback, subject, predicate, object, graph) {
-    // Convert terms to internal string representation
-    subject = subject && termToId(subject);
-    predicate = predicate && termToId(predicate);
-    object = object && termToId(object);
-    graph = graph && termToId(graph);
-
-    const graphs = this._getGraphs(graph), ids = this._ids;
-    let content, subjectId, predicateId, objectId;
-
-    // Translate IRIs to internal index keys.
-    if (isString(subject)   && !(subjectId   = ids[subject])   ||
-        isString(predicate) && !(predicateId = ids[predicate]) ||
-        isString(object)    && !(objectId    = ids[object]))
-      return false;
-
-    for (const graphId in graphs) {
-      // Only if the specified graph contains triples, there can be results
-      if (content = graphs[graphId]) {
-        // Choose the optimal index, based on what fields are present
-        if (subjectId) {
-          if (objectId) {
-          // If subject and object are given, the object index will be the fastest
-            if (this._findInIndex(content.objects, objectId, subjectId, predicateId,
-                                  'object', 'subject', 'predicate', graphId, callback, null).next().value)
-              return true;
-          }
-          else
-            // If only subject and possibly predicate are given, the subject index will be the fastest
-            if (this._findInIndex(content.subjects, subjectId, predicateId, null,
-                                  'subject', 'predicate', 'object', graphId, callback, null).next().value)
-              return true;
-        }
-        else if (predicateId) {
-          // If only predicate and possibly object are given, the predicate index will be the fastest
-          if (this._findInIndex(content.predicates, predicateId, objectId, null,
-                                'predicate', 'object', 'subject', graphId, callback, null).next().value) {
-            return true;
-          }
-        }
-        else if (objectId) {
-          // If only object is given, the object index will be the fastest
-          if (this._findInIndex(content.objects, objectId, null, null,
-                                'object', 'subject', 'predicate', graphId, callback, null).next().value) {
-            return true;
-          }
-        }
-        else
-        // If nothing is given, iterate subjects and predicates first
-        if (this._findInIndex(content.subjects, null, null, null,
-                              'subject', 'predicate', 'object', graphId, callback, null).next().value) {
-          return true;
-        }
-      }
-    }
+    for (const quad of this._yieldQuads(subject, predicate, object, graph))
+      if (callback(quad))
+        return true;
     return false;
   }
 
