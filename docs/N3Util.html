@@ -213,7 +213,7 @@
             </div>
             
             <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">prefix</span>(<span class="hljs-params">iri, factory</span>) {
-  <span class="hljs-keyword">return</span> <span class="hljs-title function_">prefixes</span>({ <span class="hljs-string">&#x27;&#x27;</span>: iri }, factory)(<span class="hljs-string">&#x27;&#x27;</span>);
+  <span class="hljs-keyword">return</span> <span class="hljs-title function_">prefixes</span>({ <span class="hljs-string">&#x27;&#x27;</span>: iri.<span class="hljs-property">value</span> || iri }, factory)(<span class="hljs-string">&#x27;&#x27;</span>);
 }</pre></div></div>
             
         </li>
