@@ -293,8 +293,12 @@ store.addQuad(
   namedNode('http://ex.org/Mouse')
 );
 
-const mickey = store.getQuads(namedNode('http://ex.org/Mickey'), null, null)[0];
-console.log(mickey);
+// Retrieve all quads
+for (const quad of store)
+  console.log(quad);
+// Retrieve Mickey's quads
+for (const quad of store.readQuads(namedNode('http://ex.org/Mickey'), null, null))
+  console.log(quad);
 ```
 
 ### Addition and deletion of quads
@@ -312,6 +316,7 @@ The store provides the following manipulation methods
 ### Searching quads or entities
 The store provides the following search methods
 ([documentation](http://rdfjs.github.io/N3.js/docs/N3Store.html)):
+- `readQuads` returns a generator of quads matching the given pattern
 - `getQuads` returns an array of quads matching the given pattern
 - `match` returns a stream of quads matching the given pattern
 - `countQuads` counts the number of quads matching the given pattern

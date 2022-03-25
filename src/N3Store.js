@@ -270,7 +270,7 @@ export default class N3Store {
   has(subjectOrQuad, predicate, object, graph) {
     if (subjectOrQuad && subjectOrQuad.subject)
       ({ subject: subjectOrQuad, predicate, object, graph } = subjectOrQuad);
-    return !this._yieldQuads(subjectOrQuad, predicate, object, graph).next().done;
+    return !this.readQuads(subjectOrQuad, predicate, object, graph).next().done;
   }
 
   // ### `import` adds a stream of quads to the store
@@ -333,7 +333,7 @@ export default class N3Store {
     const stream = new Readable({ objectMode: true });
 
     stream._read = () => {
-      for (const quad of this._yieldQuads(subject, predicate, object, graph))
+      for (const quad of this.readQuads(subject, predicate, object, graph))
         stream.push(quad);
       stream.push(null);
     };
@@ -349,12 +349,12 @@ export default class N3Store {
   // ### `getQuads` returns an array of quads matching a pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   getQuads(subject, predicate, object, graph) {
-    return [...this._yieldQuads(subject, predicate, object, graph)];
+    return [...this.readQuads(subject, predicate, object, graph)];
   }
 
-  // ### `_yieldQuads` returns an generator of quads matching a pattern.
+  // ### `readQuads` returns an generator of quads matching a pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
-  *_yieldQuads(subject, predicate, object, graph) {
+  *readQuads(subject, predicate, object, graph) {
     // Convert terms to internal string representation
     subject = subject && termToId(subject);
     predicate = predicate && termToId(predicate);
@@ -478,7 +478,7 @@ export default class N3Store {
   // and returns `true` if it returns truthy for any of them.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   some(callback, subject, predicate, object, graph) {
-    for (const quad of this._yieldQuads(subject, predicate, object, graph))
+    for (const quad of this.readQuads(subject, predicate, object, graph))
       if (callback(quad))
         return true;
     return false;
@@ -766,7 +766,7 @@ export default class N3Store {
   // Can be used where iterables are expected: for...of loops, array spread operator,
   // `yield*`, and destructuring assignment (order is not guaranteed).
   *[Symbol.iterator]() {
-    yield* this._yieldQuads();
+    yield* this.readQuads();
   }
 }
 
@@ -819,8 +819,6 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   *[Symbol.iterator]() {
-    yield* this._filtered ?
-      this.filtered._yieldQuads() :
-      this.n3Store._yieldQuads(this.subject, this.predicate, this.object, this.graph);
+    yield* this._filtered || this.n3Store.readQuads(this.subject, this.predicate, this.object, this.graph);
   }
 }
