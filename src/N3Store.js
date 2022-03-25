@@ -87,7 +87,7 @@ export default class N3Store {
   // Finally, `graph` will be the graph of the created quads.
   // If `callback` is given, each result is passed through it
   // and iteration halts when it returns truthy for any quad.
-  // If instead `yield_result` is given, each result is yielded by the generator.
+  // If instead `yieldResult` is given, each result is yielded by the generator.
   *_findInIndex(index0, key0, key1, key2, name0, name1, name2, graph, callback, yieldResult) {
     let tmp, index1, index2;
     // Depending on the number of variables, keys or reverse index are faster
