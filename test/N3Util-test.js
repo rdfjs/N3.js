@@ -1,33 +1,27 @@
-import {
-  Util,
-  NamedNode,
-  Literal,
-  BlankNode,
-  Variable,
-  DefaultGraph,
-  Quad,
-} from '../src/';
+import { Util, DataFactory } from '../src/';
+
+const { namedNode, blankNode, literal, variable, defaultGraph, quad } = DataFactory;
 
 describe('Util', () => {
   describe('isNamedNode', () => {
     it('matches an IRI', () => {
-      Util.isNamedNode(new NamedNode('http://example.org/')).should.be.true;
+      Util.isNamedNode(namedNode('http://example.org/')).should.be.true;
     });
 
     it('matches an empty IRI', () => {
-      Util.isNamedNode(new NamedNode('')).should.be.true;
+      Util.isNamedNode(namedNode('')).should.be.true;
     });
 
     it('does not match a literal', () => {
-      Util.isNamedNode(new Literal('"http://example.org/"')).should.be.false;
+      Util.isNamedNode(literal('http://example.org/')).should.be.false;
     });
 
     it('does not match a blank node', () => {
-      Util.isNamedNode(new BlankNode('x')).should.be.false;
+      Util.isNamedNode(blankNode('x')).should.be.false;
     });
 
     it('does not match a variable', () => {
-      Util.isNamedNode(new Variable('x')).should.be.false;
+      Util.isNamedNode(variable('x')).should.be.false;
     });
 
     it('does not match null', () => {
@@ -41,39 +35,39 @@ describe('Util', () => {
 
   describe('isLiteral', () => {
     it('matches a literal', () => {
-      Util.isLiteral(new Literal('"http://example.org/"')).should.be.true;
+      Util.isLiteral(literal('http://example.org/')).should.be.true;
     });
 
     it('matches a literal with a language', () => {
-      Util.isLiteral(new Literal('"English"@en')).should.be.true;
+      Util.isLiteral(literal('English', 'en')).should.be.true;
     });
 
     it('matches a literal with a language that contains a number', () => {
-      Util.isLiteral(new Literal('"English"@es-419')).should.be.true;
+      Util.isLiteral(literal('English', '@es-419')).should.be.true;
     });
 
     it('matches a literal with a type', () => {
-      Util.isLiteral(new Literal('"3"^^http://www.w3.org/2001/XMLSchema#integer')).should.be.true;
+      Util.isLiteral(literal('3', 'http://www.w3.org/2001/XMLSchema#integer')).should.be.true;
     });
 
     it('matches a literal with a newline', () => {
-      Util.isLiteral(new Literal('"a\nb"')).should.be.true;
+      Util.isLiteral(literal('a\nb')).should.be.true;
     });
 
     it('matches a literal with a cariage return', () => {
-      Util.isLiteral(new Literal('"a\rb"')).should.be.true;
+      Util.isLiteral(literal('a\rb')).should.be.true;
     });
 
     it('does not match an IRI', () => {
-      Util.isLiteral(new NamedNode('http://example.org/')).should.be.false;
+      Util.isLiteral(namedNode('http://example.org/')).should.be.false;
     });
 
     it('does not match a blank node', () => {
-      Util.isLiteral(new BlankNode('_:x')).should.be.false;
+      Util.isLiteral(blankNode('_:x')).should.be.false;
     });
 
     it('does not match a variable', () => {
-      Util.isLiteral(new Variable('x')).should.be.false;
+      Util.isLiteral(variable('x')).should.be.false;
     });
 
     it('does not match null', () => {
@@ -87,19 +81,19 @@ describe('Util', () => {
 
   describe('isBlankNode', () => {
     it('matches a blank node', () => {
-      Util.isBlankNode(new BlankNode('x')).should.be.true;
+      Util.isBlankNode(blankNode('x')).should.be.true;
     });
 
     it('does not match an IRI', () => {
-      Util.isBlankNode(new NamedNode('http://example.org/')).should.be.false;
+      Util.isBlankNode(namedNode('http://example.org/')).should.be.false;
     });
 
     it('does not match a literal', () => {
-      Util.isBlankNode(new Literal('"http://example.org/"')).should.be.false;
+      Util.isBlankNode(literal('http://example.org/')).should.be.false;
     });
 
     it('does not match a variable', () => {
-      Util.isBlankNode(new Variable('x')).should.be.false;
+      Util.isBlankNode(variable('x')).should.be.false;
     });
 
     it('does not match null', () => {
@@ -113,19 +107,19 @@ describe('Util', () => {
 
   describe('isVariable', () => {
     it('matches a variable', () => {
-      Util.isVariable(new Variable('x')).should.be.true;
+      Util.isVariable(variable('x')).should.be.true;
     });
 
     it('does not match an IRI', () => {
-      Util.isVariable(new NamedNode('http://example.org/')).should.be.false;
+      Util.isVariable(namedNode('http://example.org/')).should.be.false;
     });
 
     it('does not match a literal', () => {
-      Util.isVariable(new Literal('"http://example.org/"')).should.be.false;
+      Util.isVariable(literal('http://example.org/')).should.be.false;
     });
 
     it('does not match a blank node', () => {
-      Util.isNamedNode(new BlankNode('x')).should.be.false;
+      Util.isNamedNode(blankNode('x')).should.be.false;
     });
 
     it('does not match null', () => {
@@ -139,15 +133,15 @@ describe('Util', () => {
 
   describe('isDefaultGraph', () => {
     it('does not match a blank node', () => {
-      Util.isDefaultGraph(new BlankNode('x')).should.be.false;
+      Util.isDefaultGraph(blankNode('x')).should.be.false;
     });
 
     it('does not match an IRI', () => {
-      Util.isDefaultGraph(new NamedNode('http://example.org/')).should.be.false;
+      Util.isDefaultGraph(namedNode('http://example.org/')).should.be.false;
     });
 
     it('does not match a literal', () => {
-      Util.isDefaultGraph(new Literal('"http://example.org/"')).should.be.false;
+      Util.isDefaultGraph(literal('http://example.org/')).should.be.false;
     });
 
     it('does not match null', () => {
@@ -161,27 +155,27 @@ describe('Util', () => {
 
   describe('inDefaultGraph', () => {
     it('does not match a blank node', () => {
-      Util.inDefaultGraph(new Quad(null, null, null, new BlankNode('x'))).should.be.false;
+      Util.inDefaultGraph(quad(null, null, null, blankNode('x'))).should.be.false;
     });
 
     it('does not match an IRI', () => {
-      Util.inDefaultGraph(new Quad(null, null, null, new NamedNode('http://example.org/'))).should.be.false;
+      Util.inDefaultGraph(quad(null, null, null, namedNode('http://example.org/'))).should.be.false;
     });
 
     it('does not match a literal', () => {
-      Util.inDefaultGraph(new Quad(null, null, null, new Literal('"http://example.org/"'))).should.be.false;
+      Util.inDefaultGraph(quad(null, null, null, literal('http://example.org/'))).should.be.false;
     });
 
     it('matches null', () => {
-      Util.inDefaultGraph(new Quad(null, null, null, null)).should.be.true;
+      Util.inDefaultGraph(quad(null, null, null, null)).should.be.true;
     });
 
     it('matches undefined', () => {
-      Util.inDefaultGraph(new Quad(null, null, null, undefined)).should.be.true;
+      Util.inDefaultGraph(quad(null, null, null, undefined)).should.be.true;
     });
 
     it('matches the default graph', () => {
-      Util.inDefaultGraph(new Quad(null, null, null, new DefaultGraph())).should.be.true;
+      Util.inDefaultGraph(quad(null, null, null, defaultGraph())).should.be.true;
     });
   });
 
@@ -193,7 +187,7 @@ describe('Util', () => {
 
     describe('the function', () => {
       it('should expand the prefix', () => {
-        expect(rdfs('label')).to.deep.equal(new NamedNode('http://www.w3.org/2000/01/rdf-schema#label'));
+        expect(rdfs('label')).to.deep.equal(namedNode('http://www.w3.org/2000/01/rdf-schema#label'));
       });
 
       it('should use a custom factory when specified', () => {
@@ -225,7 +219,7 @@ describe('Util', () => {
 
         it('should expand the newly registered prefix', () => {
           const rdfs = prefixes('rdfs');
-          expect(rdfs('label')).to.deep.equal(new NamedNode('http://www.w3.org/2000/01/rdf-schema#label'));
+          expect(rdfs('label')).to.deep.equal(namedNode('http://www.w3.org/2000/01/rdf-schema#label'));
         });
       });
     });
@@ -241,8 +235,8 @@ describe('Util', () => {
 
       describe('the function', () => {
         it('should expand registered prefixes', () => {
-          expect(prefixes('rdfs')('label')).to.deep.equal(new NamedNode('http://www.w3.org/2000/01/rdf-schema#label'));
-          expect(prefixes('owl')('sameAs')).to.deep.equal(new NamedNode('http://www.w3.org/2002/07/owl#sameAs'));
+          expect(prefixes('rdfs')('label')).to.deep.equal(namedNode('http://www.w3.org/2000/01/rdf-schema#label'));
+          expect(prefixes('owl')('sameAs')).to.deep.equal(namedNode('http://www.w3.org/2002/07/owl#sameAs'));
         });
 
         it('should not expand non-registered prefixes', () => {
@@ -258,7 +252,7 @@ describe('Util', () => {
 
         it('should expand the newly registered prefix', () => {
           const my = prefixes('my');
-          expect(my('me')).to.deep.equal(new NamedNode('http://example.org/#me'));
+          expect(my('me')).to.deep.equal(namedNode('http://example.org/#me'));
         });
       });
     });
