@@ -277,8 +277,7 @@ export default class N3Store {
   // ### `has` determines whether a dataset includes a certain quad.
   // Returns true or false as appropriate.
   has(quad) {
-    const quads = this.getQuads(quad.subject, quad.predicate, quad.object, quad.graph);
-    return quads.length !== 0;
+    return !this._yieldQuads(quad.subject, quad.predicate, quad.object, quad.graph).next().done;
   }
 
   // ### `import` adds a stream of quads to the store
@@ -341,7 +340,7 @@ export default class N3Store {
     const stream = new Readable({ objectMode: true });
 
     stream._read = () => {
-      for (const quad of this.getQuads(subject, predicate, object, graph))
+      for (const quad of this._yieldQuads(subject, predicate, object, graph))
         stream.push(quad);
       stream.push(null);
     };
@@ -825,7 +824,7 @@ export default class N3Store {
   // Can be used where iterables are expected: for...of loops, array spread operator,
   // `yield*`, and destructuring assignment (order is not guaranteed).
   *[Symbol.iterator]() {
-    yield* this.getQuads();
+    yield* this._yieldQuads();
   }
 }
 
