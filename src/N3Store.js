@@ -108,7 +108,7 @@ export default class N3Store {
             // If a key is specified, use only that part of index 2, if it exists.
             const values = key2 ? (key2 in index2 ? [key2] : []) : Object.keys(index2);
             // Create quads for all items found in index 2.
-            for (let l = 0; l < values.length; l++) {      
+            for (let l = 0; l < values.length; l++) {
               parts[name2] = termFromId(entityKeys[values[l]], this._factory);
               yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
             }
