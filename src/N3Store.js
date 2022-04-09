@@ -91,26 +91,24 @@ export default class N3Store {
     const varCount = !key0 + !key1 + !key2,
         entityKeys = varCount > 1 ? Object.keys(this._ids) : this._entities;
     const graph = termFromId(graphId, this._factory);
+    const parts = { subject: null, predicate: null, object: null };
 
     // If a key is specified, use only that part of index 0.
     if (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
     for (const value0 in index0) {
-      const entity0 = entityKeys[value0];
+      parts[name0] = termFromId(entityKeys[value0], this._factory);
 
       if (index1 = index0[value0]) {
         // If a key is specified, use only that part of index 1.
         if (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
         for (const value1 in index1) {
-          const entity1 = entityKeys[value1];
+          parts[name1] = termFromId(entityKeys[value1], this._factory);
 
           if (index2 = index1[value1]) {
             // If a key is specified, use only that part of index 2, if it exists.
             const values = key2 ? (key2 in index2 ? [key2] : []) : Object.keys(index2);
             // Create quads for all items found in index 2.
-            for (let l = 0; l < values.length; l++) {
-              const parts = { subject: null, predicate: null, object: null };
-              parts[name0] = termFromId(entity0, this._factory);
-              parts[name1] = termFromId(entity1, this._factory);
+            for (let l = 0; l < values.length; l++) {      
               parts[name2] = termFromId(entityKeys[values[l]], this._factory);
               yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
             }
