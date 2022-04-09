@@ -7,7 +7,7 @@ console.log('N3Store performance test');
 const prefix = 'http://example.org/#';
 
 /* Test triples */
-let dim = Number.parseInt(process.argv[2], 10) || 256;
+let dim = Number.parseInt(process.argv[2], 10) || 128;
 let dimSquared = dim * dim;
 let dimCubed = dimSquared * dim;
 
@@ -61,7 +61,7 @@ dim /= 4;
 dimSquared = dim * dim;
 dimCubed = dimSquared * dim;
 const dimQuads = dimCubed * dim;
-
+store;
 store = new N3.Store();
 TEST = `- Adding ${dimQuads} quads`;
 console.time(TEST);
@@ -84,4 +84,71 @@ for (k = 0; k < dim; k++)
   assert.equal(store.getQuads(null, null, prefix + k, null).length, dimCubed);
 for (l = 0; l < dim; l++)
   assert.equal(store.getQuads(null, null, null, prefix + l).length, dimCubed);
+console.timeEnd(TEST);
+
+console.log();
+
+store = new N3.Store();
+TEST = `- Adding ${dimQuads} with all different IRIs`;
+console.time(TEST);
+for (let i = 0; i < dimQuads; i++) {
+  store.addQuad(
+    prefix + i,
+    prefix + i,
+    prefix + i
+  );
+}
+console.timeEnd(TEST);
+
+
+TEST = `* Retrieving all ${dimQuads} quads`;
+console.time(TEST);
+for (const quad of store.match(undefined, undefined, undefined)) {
+}
+console.timeEnd(TEST);
+
+TEST = '* Retrieving single by subject';
+console.time(TEST);
+for (const quad of store.match(prefix + 1, undefined, undefined)) {
+}
+console.timeEnd(TEST);
+
+
+TEST = '* Retrieving single by predicate';
+console.time(TEST);
+for (const quad of store.match(undefined, prefix + 1, undefined)) {
+}
+console.timeEnd(TEST);
+
+TEST = '* Retrieving single by object';
+console.time(TEST);
+for (const quad of store.match(undefined, undefined, prefix + 1)) {
+}
+console.timeEnd(TEST);
+
+
+TEST = '* Retrieving single by subject-predicate';
+console.time(TEST);
+for (const quad of store.match(prefix + 1, prefix + 1, undefined)) {
+}
+console.timeEnd(TEST);
+
+
+TEST = '* Retrieving single by subject-object';
+console.time(TEST);
+for (const quad of store.match(prefix + 1, undefined, prefix + 1)) {
+}
+console.timeEnd(TEST);
+
+TEST = '* Retrieving single by predicate-object';
+console.time(TEST);
+for (const quad of store.match(undefined, prefix + 1, prefix + 1)) {
+}
+console.timeEnd(TEST);
+
+
+TEST = '* Retrieving single by subject-predicate-object';
+console.time(TEST);
+for (const quad of store.match(prefix + 1, prefix + 1, prefix + 1)) {
+}
 console.timeEnd(TEST);
