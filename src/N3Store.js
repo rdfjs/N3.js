@@ -96,13 +96,11 @@ export default class N3Store {
     // If a key is specified, use only that part of index 0.
     if (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
     for (const value0 in index0) {
-
       if (index1 = index0[value0]) {
         parts[name0] = termFromId(entityKeys[value0], this._factory);
         // If a key is specified, use only that part of index 1.
         if (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
         for (const value1 in index1) {
-
           if (index2 = index1[value1]) {
             parts[name1] = termFromId(entityKeys[value1], this._factory);
             // If a key is specified, use only that part of index 2, if it exists.
