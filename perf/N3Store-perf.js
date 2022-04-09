@@ -7,7 +7,7 @@ console.log('N3Store performance test');
 const prefix = 'http://example.org/#';
 
 /* Test triples */
-let dim = Number.parseInt(process.argv[2], 10) || 128;
+let dim = Number.parseInt(process.argv[2], 10) || 256;
 let dimSquared = dim * dim;
 let dimCubed = dimSquared * dim;
 
@@ -61,7 +61,7 @@ dim /= 4;
 dimSquared = dim * dim;
 dimCubed = dimSquared * dim;
 const dimQuads = dimCubed * dim;
-store;
+
 store = new N3.Store();
 TEST = `- Adding ${dimQuads} quads`;
 console.time(TEST);
