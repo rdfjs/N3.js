@@ -787,11 +787,13 @@ class DatasetCoreAndReadableStream extends Readable {
   get filtered() {
     if (!this._filtered) {
       const { n3Store, graph, object, predicate, subject } = this;
-      const quads = n3Store.getQuads(subject, predicate, object, graph);
-      this._filtered = new N3Store(quads, { factory: n3Store._factory });
+      const newStore = this._filtered = new N3Store({ factory: n3Store._factory });
+      for (const quad of n3Store.readQuads(subject, predicate, object, graph))
+        newStore.addQuad(quad);
     }
     return this._filtered;
   }
+
   get size() {
     return this.filtered.size;
   }
