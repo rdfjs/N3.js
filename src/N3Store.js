@@ -378,24 +378,24 @@ export default class N3Store {
           if (objectId)
             // If subject and object are given, the object index will be the fastest
             yield* this._findInIndex(content.objects, objectId, subjectId, predicateId,
-                              'object', 'subject', 'predicate', graphId, null, true);
+                              'object', 'subject', 'predicate', graphId);
           else
             // If only subject and possibly predicate are given, the subject index will be the fastest
             yield* this._findInIndex(content.subjects, subjectId, predicateId, null,
-                              'subject', 'predicate', 'object', graphId, null, true);
+                              'subject', 'predicate', 'object', graphId);
         }
         else if (predicateId)
           // If only predicate and possibly object are given, the predicate index will be the fastest
           yield* this._findInIndex(content.predicates, predicateId, objectId, null,
-                            'predicate', 'object', 'subject', graphId, null, true);
+                            'predicate', 'object', 'subject', graphId);
         else if (objectId)
           // If only object is given, the object index will be the fastest
           yield* this._findInIndex(content.objects, objectId, null, null,
-                            'object', 'subject', 'predicate', graphId, null, true);
+                            'object', 'subject', 'predicate', graphId);
         else
           // If nothing is given, iterate subjects and predicates first
           yield* this._findInIndex(content.subjects, null, null, null,
-                            'subject', 'predicate', 'object', graphId, null, true);
+                            'subject', 'predicate', 'object', graphId);
       }
     }
   }
