@@ -74,8 +74,8 @@ export default class N3Parser {
   _saveContext(type, graph, subject, predicate, object) {
     const n3Mode = this._n3Mode;
     this._contextStack.push({
-      subject: subject, predicate: predicate, object: object,
-      graph: graph, type: type,
+      type,
+      subject, predicate, object, graph,
       inverse: n3Mode ? this._inversePredicate : false,
       blankPrefix: n3Mode ? this._prefixes._ : '',
       quantified: n3Mode ? this._quantified : null,
@@ -94,14 +94,20 @@ export default class N3Parser {
 
   // ### `_restoreContext` restores the parent context
   // when leaving a scope (list, blank node, formula)
-  _restoreContext() {
-    const context = this._contextStack.pop(), n3Mode = this._n3Mode;
+  _restoreContext(type, token) {
+    // Obtain the previous context
+    const context = this._contextStack.pop();
+    if (!context || context.type !== type)
+      return this._error(`Unexpected ${token.type}`, token);
+
+    // Restore the quad of the previous context
     this._subject   = context.subject;
     this._predicate = context.predicate;
     this._object    = context.object;
     this._graph     = context.graph;
-    // The settings below only apply to N3 streams
-    if (n3Mode) {
+
+    // Restore N3 context settings
+    if (this._n3Mode) {
       this._inversePredicate = context.inverse;
       this._prefixes._ = context.blankPrefix;
       this._quantified = context.quantified;
@@ -374,7 +380,7 @@ export default class N3Parser {
 
     // Restore the parent context containing this blank node
     const empty = this._predicate === null;
-    this._restoreContext();
+    this._restoreContext('blank', token);
     // If the blank node was the object, restore previous context and read punctuation
     if (this._object !== null)
       return this._getContextEndReader();
@@ -425,7 +431,7 @@ export default class N3Parser {
       break;
     case ')':
       // Closing the list; restore the parent context
-      this._restoreContext();
+      this._restoreContext('list', token);
       // If this list is contained within a parent list, return the membership quad here.
       // This will be `<parent list element> rdf:first <this list>.`.
       if (stack.length !== 0 && stack[stack.length - 1].type === 'list')
@@ -576,7 +582,7 @@ export default class N3Parser {
       this._emit(this._subject, this._predicate, this._object, this._graph);
 
     // Restore the parent context containing this formula
-    this._restoreContext();
+    this._restoreContext('formula', token);
     // If the formula was the subject, continue reading the predicate.
     // If the formula was the object, read punctuation.
     return this._object === null ? this._readPredicate : this._getContextEndReader();
@@ -785,7 +791,7 @@ export default class N3Parser {
         // The list item is the remaining subejct after reading the path
         const item = this._subject;
         // Switch back to the context of the list
-        this._restoreContext();
+        this._restoreContext('item', token);
         // Output the list item
         this._emit(this._subject, this.RDF_FIRST, item, this._graph);
       }
@@ -847,7 +853,7 @@ export default class N3Parser {
     // Read the quad and restore the previous context
     const quad = this._quad(this._subject, this._predicate, this._object,
       this._graph || this.DEFAULTGRAPH);
-    this._restoreContext();
+    this._restoreContext('<<', token);
     // If the triple was the subject, continue by reading the predicate.
     if (this._subject === null) {
       this._subject = quad;

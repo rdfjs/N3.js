@@ -301,6 +301,10 @@ describe('Parser', () => {
       shouldNotParse('<a> <b> [;].',
                      'Expected predicate but got ; on line 1.'));
 
+    it('should not parse a dangling blank node closing brace',
+      shouldNotParse('<a:a> <b:b> <c:c> ; ]',
+                     'Unexpected ] on line 1.'));
+
     it('should parse a blank node with a trailing semicolon',
       shouldParse('<a> <b> [ <u> <v>; ].',
                   ['a', 'b', '_:b0'],
