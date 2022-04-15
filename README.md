@@ -282,12 +282,12 @@ Then, we find triples with `:Mickey` as subject.
 
 ```JavaScript
 const store = new N3.Store();
-store.addQuad(
+store.add(
   namedNode('http://ex.org/Pluto'),
   namedNode('http://ex.org/type'),
   namedNode('http://ex.org/Dog')
 );
-store.addQuad(
+store.add(
   namedNode('http://ex.org/Mickey'),
   namedNode('http://ex.org/type'),
   namedNode('http://ex.org/Mouse')
@@ -297,12 +297,25 @@ store.addQuad(
 for (const quad of store)
   console.log(quad);
 // Retrieve Mickey's quads
-for (const quad of store.readQuads(namedNode('http://ex.org/Mickey'), null, null))
+for (const quad of store.match(namedNode('http://ex.org/Mickey'), null, null))
   console.log(quad);
 ```
 
+### [`DatasetCore` Interface](https://rdf.js.org/dataset-spec/#datasetcore-interface)
+This store adheres to the `DatasetCore` interface which exposes the following properties
+
+Attributes:
+ - `size` — A non-negative integer that specifies the number of quads in the set.
+
+Methods:
+ - `add` — Adds the specified quad to the dataset. Existing quads, as defined in `Quad.equals`, will be ignored.
+ - `delete` — Removes the specified quad from the dataset.
+ - `has` — Determines whether a dataset includes a certain quad.
+ - `match` — Returns a new dataset that is comprised of all quads in the current instance matching the given arguments.
+ - `[Symbol.iterator]` — Implements the iterator protocol to allow iteration over all `quads` in the dataset as in the example above.
+
 ### Addition and deletion of quads
-The store provides the following manipulation methods
+The store provides the following manipulation methods in addition to implementing the standard [`DatasetCore` Interface](https://rdf.js.org/dataset-spec/#datasetcore-interface)
 ([documentation](http://rdfjs.github.io/N3.js/docs/N3Store.html)):
 - `addQuad` to insert one quad
 - `addQuads` to insert an array of quads
@@ -386,6 +399,7 @@ The N3.js submodules are compatible with the following [RDF.js](http://rdf.js.or
   [`Store`](http://rdf.js.org/stream-spec/#store-interface)
   [`Source`](http://rdf.js.org/stream-spec/#source-interface)
   [`Sink`](http://rdf.js.org/stream-spec/#sink-interface)
+  [`DatasetCore`](https://rdf.js.org/dataset-spec/#datasetcore-interface)
 
 ## License and contributions
 The N3.js library is copyrighted by [Ruben Verborgh](https://ruben.verborgh.org/)
