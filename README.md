@@ -305,7 +305,7 @@ for (const quad of store.match(namedNode('http://ex.org/Mickey'), null, null))
 This store adheres to the `DatasetCore` interface which exposes the following properties
 
 Attributes:
- - `size` A non-negative integer that specifies the number of quads in the set.
+ - `size` — A non-negative integer that specifies the number of quads in the set.
 
 Methods:
  - `add` — Adds the specified quad to the dataset. Existing quads, as defined in `Quad.equals`, will be ignored.
