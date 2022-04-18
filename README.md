@@ -308,11 +308,11 @@ Attributes:
  - `size` A non-negative integer that specifies the number of quads in the set.
 
 Methods:
- - `add` Adds the specified quad to the dataset. Existing quads, as defined in `Quad.equals`, will be ignored.
- - `delete` Removes the specified quad from the dataset.
- - `has` Determines whether a dataset includes a certain quad.
- - `match` Returns a new dataset that is comprised of all quads in the current instance matching the given arguments.
- - `[Symbol.iterator]` Implements the iterator protocol to allow iteration over all `quads` in the dataset as in the example above.
+ - `add` — Adds the specified quad to the dataset. Existing quads, as defined in `Quad.equals`, will be ignored.
+ - `delete` — Removes the specified quad from the dataset.
+ - `has` — Determines whether a dataset includes a certain quad.
+ - `match` — Returns a new dataset that is comprised of all quads in the current instance matching the given arguments.
+ - `[Symbol.iterator]` — Implements the iterator protocol to allow iteration over all `quads` in the dataset as in the example above.
 
 ### Addition and deletion of quads
 The store provides the following manipulation methods in addition to implementing the standard [`DatasetCore` Interface](https://rdf.js.org/dataset-spec/#datasetcore-interface)
