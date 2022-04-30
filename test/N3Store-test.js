@@ -7,7 +7,7 @@ import {
   termFromId, termToId,
 } from '../src/';
 import namespaces from '../src/IRIs';
-import chai from 'chai';
+import chai, { expect } from 'chai';
 import { Readable } from 'readable-stream';
 import arrayifyStream from 'arrayify-stream';
 
@@ -1634,6 +1634,34 @@ describe('Store', () => {
       it('should generate an empty list of Collections', () => {
         expect(listsToJSON(lists)).to.deep.equal({});
       });
+    });
+  });
+
+  describe('handles concurrent read/write', () => {
+    let store;
+    beforeEach(() => {
+      store = new Store([
+        new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+        new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o3')),
+      ]);
+    });
+
+    it('should include added elements in match if iteration has not yet started', () => {
+      const m = store.match(null, null, null, null);
+      store.add(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')));
+      [...m].should.have.length(3);
+      [...store.match(null, null, null, null)].should.have.length(3);
+    });
+
+    it('should still include results of original match after iterating while adding new data', () => {
+      const m = store.match(null, null, null, null)[Symbol.iterator]();
+      m.next().value.should.deep.equal(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')));
+      store.add(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o0')));
+      store.add(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')));
+      store.add(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4')));
+      m.next().value.should.deep.equal(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o3')));
+      m.next().done.should.be.true;
+      [...store.match(null, null, null, null)].should.have.length(5);
     });
   });
 });
