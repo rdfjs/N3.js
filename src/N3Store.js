@@ -359,16 +359,176 @@ export default class N3Store {
     subject = subject && termToId(subject);
     predicate = predicate && termToId(predicate);
     object = object && termToId(object);
-    graph = graph && termToId(graph);
 
-    const graphs = this._getGraphs(graph), ids = this._ids;
-    let content, subjectId, predicateId, objectId;
+    let subjectId, predicateId, objectId;
+    const ids = this._ids;
 
     // Translate IRIs to internal index keys.
     if (isString(subject)   && !(subjectId   = ids[subject])   ||
         isString(predicate) && !(predicateId = ids[predicate]) ||
         isString(object)    && !(objectId    = ids[object]))
       return;
+
+    yield* this._readQuads(subjectId, predicateId, objectId, graph && termToId(graph));
+  }
+
+  *_add(subject, predicate, object, graphItem) {
+    const changed = this._addToIndex(graphItem.subjects,   subject,   predicate, object);
+    if (!changed) return;
+    this._addToIndex(graphItem.predicates, predicate, object,    subject);
+    this._addToIndex(graphItem.objects,    object,    subject,   predicate);
+    yield { subject, predicate, object };
+  }
+
+  *_addConclusion(conclusion, graph) {
+    for (const c of conclusion) {
+      yield* this._add(c.subject.value, c.predicate.value, c.object.value, graph);
+    }
+  }
+
+  // ### `_findInIndex` finds a set of quads in a three-layered index.
+  // The index base is `index0` and the keys at each level are `key0`, `key1`, and `key2`.
+  // Any of these keys can be undefined, which is interpreted as a wildcard.
+  // `name0`, `name1`, and `name2` are the names of the keys at each level,
+  // used when reconstructing the resulting quad
+  // (for instance: _subject_, _predicate_, and _object_).
+  // Finally, `graphId` will be the graph of the created quads.
+  *_findInIndex(index0, key0, key1, key2, name0, name1, name2, graphId) {
+    let tmp, index1, index2;
+    // Depending on the number of variables, keys or reverse index are faster
+    const varCount = !key0 + !key1 + !key2,
+        entityKeys = varCount > 1 ? Object.keys(this._ids) : this._entities;
+    const graph = termFromId(graphId, this._factory);
+
+    // If a key is specified, use only that part of index 0.
+    if (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
+    for (const value0 in index0) {
+      const entity0 = entityKeys[value0];
+
+      if (index1 = index0[value0]) {
+        // If a key is specified, use only that part of index 1.
+        if (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
+        for (const value1 in index1) {
+          const entity1 = entityKeys[value1];
+
+          if (index2 = index1[value1]) {
+            // If a key is specified, use only that part of index 2, if it exists.
+            const values = key2 ? (key2 in index2 ? [key2] : []) : Object.keys(index2);
+            // Create quads for all items found in index 2.
+            for (let l = 0; l < values.length; l++) {
+              const parts = { subject: null, predicate: null, object: null };
+              parts[name0] = termFromId(entity0, this._factory);
+              parts[name1] = termFromId(entity1, this._factory);
+              parts[name2] = termFromId(entityKeys[values[l]], this._factory);
+              yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  *_evaluateRule([{ key: key0, value: value0 }, { key: key1, value: value1 }, { key: key2, value: value2 }], conclusion, graph) {
+    let index0 = graph[key0 + 's'];
+    if (value0.value) (tmp = index0, index0 = {})[value0.value] = tmp[value0.value];
+  }
+
+  *_evalRule({ premise, conclusion }, content) {
+    singlePremise = [
+      { key: 'predicate', value: vars[0] },
+      { key: 'object', value: 1 },
+      { key: 'subject', value: vars[1] },
+    ]
+
+
+    const vars = [{}, {}, {}]
+    const rule = {
+      premise: [
+        {
+          subject: vars[0], // If undefined then this is a 'wildcard'
+          predicate: { value: 1 }, // a
+          object: vars[1]
+        },
+        {
+          subject: vars[1],
+          predicate: { value: 2 }, // subsetOf
+          object: vars[2]
+        }
+      ],
+      conclusion: [
+        {
+          subject: vars[0],
+          predicate: { value: 2 }, // a
+          object: vars[2]
+        }
+      ],
+    }
+
+
+    for (const { subject, predicate, object } of rule.premise) {
+
+    }
+
+    // If a key is specified, use only that part of index 0.
+    if (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
+    for (const value0 in index0) {
+      const entity0 = entityKeys[value0];
+
+      if (index1 = index0[value0]) {
+        // If a key is specified, use only that part of index 1.
+        if (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
+        for (const value1 in index1) {
+          const entity1 = entityKeys[value1];
+
+          if (index2 = index1[value1]) {
+            // If a key is specified, use only that part of index 2, if it exists.
+            const values = key2 ? (key2 in index2 ? [key2] : []) : Object.keys(index2);
+            // Create quads for all items found in index 2.
+            for (let l = 0; l < values.length; l++) {
+              const parts = { subject: null, predicate: null, object: null };
+
+              yield this._factory.quad(parts.subject, parts.predicate, parts.object);
+            }
+          }
+        }
+      }
+    }
+
+    // For indexing 
+    // Choose the optimal index, based on what fields are present
+    if (subjectId) {
+      if (objectId)
+        // If subject and object are given, the object index will be the fastest
+        yield* this._findInIndex(content.objects, objectId, subjectId, predicateId,
+                          'object', 'subject', 'predicate', graphId, null, true);
+      else
+        // If only subject and possibly predicate are given, the subject index will be the fastest
+        yield* this._findInIndex(content.subjects, subjectId, predicateId, null,
+                          'subject', 'predicate', 'object', graphId, null, true);
+    }
+    else if (predicateId)
+      // If only predicate and possibly object are given, the predicate index will be the fastest
+      yield* this._findInIndex(content.predicates, predicateId, objectId, null,
+                        'predicate', 'object', 'subject', graphId, null, true);
+    else if (objectId)
+      // If only object is given, the object index will be the fastest
+      yield* this._findInIndex(content.objects, objectId, null, null,
+                        'object', 'subject', 'predicate', graphId, null, true);
+    else
+      // If nothing is given, iterate subjects and predicates first
+      yield* this._findInIndex(content.subjects, null, null, null,
+                        'subject', 'predicate', 'object', graphId, null, true);
+
+    // This is the only code we need for inserting in the index if we nullify the size
+    // at the end of reasoning
+    const changed = this._addToIndex(graphItem.subjects,   subject,   predicate, object);
+    this._addToIndex(graphItem.predicates, predicate, object,    subject);
+    this._addToIndex(graphItem.objects,    object,    subject,   predicate);
+  }
+
+  *_readQuads(subjectId, predicateId, objectId, graph) {
+    const graphs = this._getGraphs(graph);
+    let content;
 
     for (const graphId in graphs) {
       // Only if the specified graph contains triples, there can be results
