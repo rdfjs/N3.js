@@ -482,6 +482,24 @@ export default class N3Store {
     }
   }
 
+  *_evaluateRules(rules, content, graph) {
+    for (const rule of rules) {
+      yield* this._evaluateRule(rule, content, graph);
+    }
+  }
+
+  // A naive reasoning algorithm where rules are just applied by repeatedly applying rules
+  // until no more evaluations are made
+  *_reasonNaive(rules, content, graph) {
+    let add = true;
+    while (add) {
+      add = false
+      for (const evaluation of this._evaluateRules(rules, content, graph)) {
+        add = true;
+      }
+    }
+  }
+
   *_evalRule({ premise, conclusion }, content) {
     singlePremise = {
       content: 'subject',
