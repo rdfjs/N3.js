@@ -777,6 +777,7 @@ export default class N3Store {
   }
 
   *_evaluatePremise(index0, [val0, val1, val2]) {
+    // console.log('evaluating premise')
     let index1, index2, tmp;
     let v0 = true, v1 = true, v2 = true;
     if (val0.value) {
@@ -804,26 +805,33 @@ export default class N3Store {
             for (let l = 0; l < values.length; l++) {
               if (v2) val2.value = values[l];
               // TODO: probably implement a cb since yielding is slow
-              yield; // At this point we have substituted all the premises
+              // console.log([val0, val1, val2], this._entities[val0.value], this._entities[val1.value], this._entities[val2.value]);
+              yield true; // At this point we have substituted all the premises
             }
+
+            if (v2) delete val2.value;
           }
         }
+        if (v1) delete val1.value;
       }
     }
+    if (v0) delete val0.value;
   }
 
   *_evaluatePremises(premises, content, i) {
+    // console.log(premises)
     for (const _ of this._evaluatePremise(content[premises[i].content], premises[i].value)) {
       if (i < premises.length - 1) {
         yield* this._evaluatePremises(premises, content, i + 1);
       } else {
-        yield;
+        yield true;
       }
     }
   }
 
   *_evaluateRule({ premise, conclusion, variables }, content) {
     for (const _ of this._evaluatePremises(premise, content, 0)) {
+      // console.log(premise, conclusion, variables);
       yield* this._addConclusion(conclusion, content);
     }
     // Reset the variables
@@ -841,6 +849,7 @@ export default class N3Store {
   // A naive reasoning algorithm where rules are just applied by repeatedly applying rules
   // until no more evaluations are made
   _reasonGraphNaive(rules, content) {
+    // console.log('reasoning', rules)
     let add = true;
     while (add) {
       add = false;
@@ -903,6 +912,7 @@ export default class N3Store {
   }
 
   reason(rules) {
+    // console.log('reason called')
     rules = rules.map(rule => this._createRule(rule));
     const graphs = this._getGraphs();
     let content;

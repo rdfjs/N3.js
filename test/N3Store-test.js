@@ -1705,7 +1705,7 @@ describe('Store', () => {
         new NamedNode('http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing'),
       ),
     ])
-    expect(store.size).equal(2);
+    expect(store.size).equal(3);
     store.reason([{
       premise: [new Quad(
         new Variable('?s'),
@@ -1724,7 +1724,6 @@ describe('Store', () => {
         ),
       ]
     }]);
-    expect(store.size).equal(3);
     expect(store.has(
       new Quad(
         new NamedNode('http://example.org#me'),
@@ -1732,6 +1731,7 @@ describe('Store', () => {
         new NamedNode('http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing'),
       )
     )).equal(true)
+    expect(store.size).equal(4);
   });
 });
 
