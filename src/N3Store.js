@@ -490,14 +490,47 @@ export default class N3Store {
 
   // A naive reasoning algorithm where rules are just applied by repeatedly applying rules
   // until no more evaluations are made
-  *_reasonNaive(rules, content, graph) {
+  *_reasonGraphNaive(rules, content, graph) {
     let add = true;
     while (add) {
-      add = false
+      add = false;
       for (const evaluation of this._evaluateRules(rules, content, graph)) {
         add = true;
       }
     }
+  }
+
+  _createRule({ premise, conclusion }) {
+    let varMapping = {};
+    return {
+      premise: premise.map(p => this._createPremise(p, varMapping)),
+      conclusion: conclusion.map(p => this._createPremise(p, varMapping)),
+      variables: Object.values(varMapping)
+    }
+  }
+
+  _createPremise(premise, varMapping) {
+    const ids = this._ids;
+    const entities = this._entities;
+
+    function _termToId(value) {
+      if (value.termType === 'Variable') {
+        return varMapping[value.value] ||= {};
+      }
+      value = termToId(value);
+      value = ids[value] || (ids[entities[++this._id] = value] = this._id);
+      return { value };
+    }
+    subject = _termToId(premise.subject);
+    predicate = _termToId(premise.predicate);
+    object = _termToId(premise.object);
+
+    if (predicate.value && !subject.value)
+      return { content: 'predicate', value: [predicate, object, subject] }
+    else if (object.value)
+      return { content: 'object', value: [object, subject, predicate] }
+    else
+      return { content: 'subject', value: [subject, predicate, object] };
   }
 
   *_evalRule({ premise, conclusion }, content) {
