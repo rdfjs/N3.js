@@ -831,16 +831,15 @@ export default class N3Store {
 
   *_evaluateRule({ premise, conclusion, variables }, content) {
     for (const _ of this._evaluatePremises(premise, content, 0)) {
-      // console.log(premise, conclusion, variables);
       yield* this._addConclusion(conclusion, content);
     }
     // Reset the variables
-    for (const v of variables) {
-      delete v.value;
-    }
+    // for (const v of variables) {
+    //   delete v.value;
+    // }
   }
 
-  *_evaluateRules(rules, content, graph) {
+  *_evaluateRules(rules, content) {
     for (const rule of rules) {
       yield* this._evaluateRule(rule, content);
     }
@@ -853,7 +852,6 @@ export default class N3Store {
     let add = true;
     while (add) {
       add = false;
-      console.log('iterating')
       for (const _ of this._evaluateRules(rules, content)) {
         add = true;
       }
