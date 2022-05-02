@@ -762,21 +762,24 @@ export default class N3Store {
     return lists;
   }
 
-  *_add(subject, predicate, object, graphItem) {
+  _add(subject, predicate, object, graphItem, cb) {
     const changed = this._addToIndex(graphItem.subjects,   subject,   predicate, object);
     if (!changed) return;
     this._addToIndex(graphItem.predicates, predicate, object,    subject);
     this._addToIndex(graphItem.objects,    object,    subject,   predicate);
-    yield { subject, predicate, object };
+    // console.log(subject, predicate, object)
+    cb({ subject, predicate, object });
   }
 
-  *_addConclusion(conclusion, graph) {
-    for (const c of conclusion) {
-      yield* this._add(c.subject.value, c.predicate.value, c.object.value, graph);
+  _addConclusion(conclusion, graph, cb) {
+    let c;
+    for (let i = 0; i < conclusion.length; i++) {
+      c = conclusion[i];
+      this._add(c.subject.value, c.predicate.value, c.object.value, graph, cb);
     }
   }
 
-  *_evaluatePremise(index0, [val0, val1, val2]) {
+  _evaluatePremise(index0, [val0, val1, val2], cb) {
     // console.log('evaluating premise')
     let index1, index2, tmp;
     let v0 = true, v1 = true, v2 = true;
@@ -806,7 +809,7 @@ export default class N3Store {
               if (v2) val2.value = values[l];
               // TODO: probably implement a cb since yielding is slow
               // console.log([val0, val1, val2], this._entities[val0.value], this._entities[val1.value], this._entities[val2.value]);
-              yield true; // At this point we have substituted all the premises
+              cb(); // At this point we have substituted all the premises
             }
 
             if (v2) delete val2.value;
@@ -818,30 +821,29 @@ export default class N3Store {
     if (v0) delete val0.value;
   }
 
-  *_evaluatePremises(premises, content, i) {
+  _evaluatePremises(premises, content, i, cb) {
     // console.log(premises)
-    for (const _ of this._evaluatePremise(content[premises[i].content], premises[i].value)) {
-      if (i < premises.length - 1) {
-        yield* this._evaluatePremises(premises, content, i + 1);
-      } else {
-        yield true;
-      }
-    }
-  }
+    const _cb = (i < premises.length - 1) ? () => this._evaluatePremises(premises, content, i + 1, cb) : cb;
+    this._evaluatePremise(content[premises[i].content], premises[i].value, _cb);
 
-  *_evaluateRule({ premise, conclusion, variables }, content) {
-    for (const _ of this._evaluatePremises(premise, content, 0)) {
-      yield* this._addConclusion(conclusion, content);
-    }
-    // Reset the variables
-    // for (const v of variables) {
-    //   delete v.value;
+    // for (const _ of this._evaluatePremise(content[premises[i].content], premises[i].value)) {
+    //   if (i < premises.length - 1) {
+    //     yield* this._evaluatePremises(premises, content, i + 1);
+    //   } else {
+    //     yield true;
+    //   }
     // }
   }
 
-  *_evaluateRules(rules, content) {
-    for (const rule of rules) {
-      yield* this._evaluateRule(rule, content);
+  _evaluateRule({ premise, conclusion, variables }, content, cb) {
+    this._evaluatePremises(premise, content, 0, () => {
+      this._addConclusion(conclusion, content, cb)
+    });
+  }
+
+  _evaluateRules(rules, content, cb) {
+    for (let i = 0; i < rules.length; i++) {
+      this._evaluateRule(rules[i], content, cb);
     }
   }
 
@@ -851,10 +853,9 @@ export default class N3Store {
     // console.log('reasoning', rules)
     let add = true;
     while (add) {
-      add = false;
-      for (const _ of this._evaluateRules(rules, content)) {
-        add = true;
-      }
+      add = false
+      // console.log('reasoning')
+      this._evaluateRules(rules, content, () => { add = true })
     }
   }
 
