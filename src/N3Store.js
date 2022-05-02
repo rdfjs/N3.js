@@ -476,9 +476,13 @@ export default class N3Store {
     }
   }
 
-  *_evaluateRule({ premise, conclusion }, content, graph) {
+  *_evaluateRule({ premise, conclusion, variables }, content, graph) {
     for (const _ of this._evaluatePremises(premise, content, 0)) {
       yield* this._addConclusion(conclusion, graph);
+    }
+    // Reset the variables
+    for (const v of variables) {
+      delete v.value;
     }
   }
 
@@ -494,8 +498,8 @@ export default class N3Store {
     let add = true;
     while (add) {
       add = false;
-      for (const evaluation of this._evaluateRules(rules, content, graph)) {
-        add = true;
+      for (const _ of this._evaluateRules(rules, content, graph)) {
+        add ||= true;
       }
     }
   }
@@ -531,6 +535,19 @@ export default class N3Store {
       return { content: 'object', value: [object, subject, predicate] }
     else
       return { content: 'subject', value: [subject, predicate, object] };
+  }
+
+  reason(rules) {
+    rules = rules.map(rule => this._createRule(rule));
+    const graphs = this._getGraphs();
+    let content;
+
+    for (const graphId in graphs) {
+      // Only if the specified graph contains triples, there can be results
+      if (content = graphs[graphId]) {
+        this._reasonGraphNaive(rules, content, graphId);
+      }
+    }
   }
 
   *_evalRule({ premise, conclusion }, content) {
