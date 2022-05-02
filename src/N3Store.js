@@ -763,12 +763,13 @@ export default class N3Store {
   }
 
   _add(subject, predicate, object, graphItem, cb) {
+    // return;
     const changed = this._addToIndex(graphItem.subjects,   subject,   predicate, object);
     if (!changed) return;
     this._addToIndex(graphItem.predicates, predicate, object,    subject);
     this._addToIndex(graphItem.objects,    object,    subject,   predicate);
     // console.log(subject, predicate, object)
-    cb({ subject, predicate, object });
+    cb();
   }
 
   _addConclusion(conclusion, graph, cb) {
@@ -805,20 +806,26 @@ export default class N3Store {
             const values = val2.value ? (val2.value in index2 ? [val2.value] : []) : Object.keys(index2);
             if (v2.value) v2 = false;
             // Create quads for all items found in index 2.
-            for (let l = 0; l < values.length; l++) {
-              if (v2) val2.value = values[l];
-              // TODO: probably implement a cb since yielding is slow
-              // console.log([val0, val1, val2], this._entities[val0.value], this._entities[val1.value], this._entities[val2.value]);
-              cb(); // At this point we have substituted all the premises
-            }
+            values.forEach(value => {
+              if (v2) val2.value = value;
+              cb();
+            })
+            
+            
+            // for (let l = 0; l < values.length; l++) {
+            //   if (v2) val2.value = values[l];
+            //   // TODO: probably implement a cb since yielding is slow
+            //   // console.log([val0, val1, val2], this._entities[val0.value], this._entities[val1.value], this._entities[val2.value]);
+            //   cb(); // At this point we have substituted all the premises
+            // }
 
-            if (v2) delete val2.value;
+            if (v2) val2.value = null;
           }
         }
-        if (v1) delete val1.value;
+        if (v1) val1.value = null;
       }
     }
-    if (v0) delete val0.value;
+    if (v0) val0.value = null;
   }
 
   _evaluatePremises(premises, content, i, cb) {
@@ -851,12 +858,10 @@ export default class N3Store {
   // until no more evaluations are made
   _reasonGraphNaive(rules, content) {
     // console.log('reasoning', rules)
-    console.time('reasoning')
     let add = true;
     while (add) {
       add = false
       this._evaluateRules(rules, content, () => { add = true })
-      console.timeLog('reasoning')
     }
   }
 
@@ -881,16 +886,52 @@ export default class N3Store {
       value = ids[value] || (ids[entities[++this._id] = value] = this._id);
       return { value };
     }
+
+    let s = premise.subject.termType !== 'Variable'   || premise.subject.value in varMapping;
+    let p = premise.predicate.termType !== 'Variable' || premise.predicate.value in varMapping;
+    let o = premise.object.termType !== 'Variable'    || premise.object.value in varMapping;
+
     let subject = _termToId(premise.subject);
     let predicate = _termToId(premise.predicate);
     let object = _termToId(premise.object);
 
-    if (predicate.value && !subject.value)
-      return { content: 'predicates', value: [predicate, object, subject] }
-    else if (object.value)
-      return { content: 'objects', value: [object, subject, predicate] }
-    else
-      return { content: 'subjects', value: [subject, predicate, object] };
+    // if (p && !s)
+    //   return { content: 'predicates', value: [predicate, object, subject] }
+    // else if (o)
+    //   return { content: 'objects', value: [object, subject, predicate] }
+    // else
+    //   return { content: 'subjects', value: [subject, predicate, object] };
+
+    if (s) {
+      if (o) return { content: 'objects', value: [object, subject, predicate] }
+      else return { content: 'subjects', value: [subject, predicate, object] };
+    } else if (p) return { content: 'predicates', value: [predicate, object, subject] }
+    else if (o) return { content: 'objects', value: [object, subject, predicate] }
+    else return { content: 'subjects', value: [subject, predicate, object] };
+
+
+      // if (subjectId) {
+      //   if (objectId)
+      //     // If subject and object are given, the object index will be the fastest
+      //     yield* this._findInIndex(content.objects, objectId, subjectId, predicateId,
+      //                       'object', 'subject', 'predicate', graphId, null, true);
+      //   else
+      //     // If only subject and possibly predicate are given, the subject index will be the fastest
+      //     yield* this._findInIndex(content.subjects, subjectId, predicateId, null,
+      //                       'subject', 'predicate', 'object', graphId, null, true);
+      // }
+      // else if (predicateId)
+      //   // If only predicate and possibly object are given, the predicate index will be the fastest
+      //   yield* this._findInIndex(content.predicates, predicateId, objectId, null,
+      //                     'predicate', 'object', 'subject', graphId, null, true);
+      // else if (objectId)
+      //   // If only object is given, the object index will be the fastest
+      //   yield* this._findInIndex(content.objects, objectId, null, null,
+      //                     'object', 'subject', 'predicate', graphId, null, true);
+      // else
+      //   // If nothing is given, iterate subjects and predicates first
+      //   yield* this._findInIndex(content.subjects, null, null, null,
+      //                     'subject', 'predicate', 'object', graphId, null, true);
   }
 
   _createConclusion(premise, varMapping) {
