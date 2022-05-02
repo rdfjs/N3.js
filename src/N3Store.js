@@ -853,6 +853,7 @@ export default class N3Store {
     let add = true;
     while (add) {
       add = false;
+      console.log('iterating')
       for (const _ of this._evaluateRules(rules, content)) {
         add = true;
       }
