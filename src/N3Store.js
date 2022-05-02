@@ -851,11 +851,12 @@ export default class N3Store {
   // until no more evaluations are made
   _reasonGraphNaive(rules, content) {
     // console.log('reasoning', rules)
+    console.time('reasoning')
     let add = true;
     while (add) {
       add = false
-      // console.log('reasoning')
       this._evaluateRules(rules, content, () => { add = true })
+      console.timeLog('reasoning')
     }
   }
 
