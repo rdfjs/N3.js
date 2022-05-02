@@ -762,6 +762,162 @@ export default class N3Store {
     return lists;
   }
 
+  *_add(subject, predicate, object, graphItem) {
+    const changed = this._addToIndex(graphItem.subjects,   subject,   predicate, object);
+    if (!changed) return;
+    this._addToIndex(graphItem.predicates, predicate, object,    subject);
+    this._addToIndex(graphItem.objects,    object,    subject,   predicate);
+    yield { subject, predicate, object };
+  }
+
+  *_addConclusion(conclusion, graph) {
+    for (const c of conclusion) {
+      yield* this._add(c.subject.value, c.predicate.value, c.object.value, graph);
+    }
+  }
+
+  *_evaluatePremise(index0, [val0, val1, val2]) {
+    let index1, index2, tmp;
+    let v0 = true, v1 = true, v2 = true;
+    if (val0.value) {
+      (tmp = index0, index0 = {})[val0.value] = tmp[val0.value];
+      v0 = false;
+    }
+    for (const value0 in index0) {
+
+      if (index1 = index0[value0]) {
+        if (v0) val0.value = value0;
+        // If a key is specified, use only that part of index 1.
+        // if (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
+        if (val1.value) {
+          (tmp = index1, index1 = {})[val1.value] = tmp[val1.value];
+          v1 = false;
+        }
+        for (const value1 in index1) {
+
+          if (index2 = index1[value1]) {
+            if (v1) val1.value = value1;
+            // If a key is specified, use only that part of index 2, if it exists.
+            const values = val2.value ? (val2.value in index2 ? [val2.value] : []) : Object.keys(index2);
+            if (v2.value) v2 = false;
+            // Create quads for all items found in index 2.
+            for (let l = 0; l < values.length; l++) {
+              if (v2) val2.value = values[l];
+              // TODO: probably implement a cb since yielding is slow
+              yield; // At this point we have substituted all the premises
+            }
+          }
+        }
+      }
+    }
+  }
+
+  *_evaluatePremises(premises, content, i) {
+    for (const _ of this._evaluatePremise(content[premises[i].content], premises[i].value)) {
+      if (i < premises.length - 1) {
+        yield* this._evaluatePremises(premises, content, i + 1);
+      } else {
+        yield;
+      }
+    }
+  }
+
+  *_evaluateRule({ premise, conclusion, variables }, content) {
+    for (const _ of this._evaluatePremises(premise, content, 0)) {
+      yield* this._addConclusion(conclusion, content);
+    }
+    // Reset the variables
+    for (const v of variables) {
+      delete v.value;
+    }
+  }
+
+  *_evaluateRules(rules, content, graph) {
+    for (const rule of rules) {
+      yield* this._evaluateRule(rule, content);
+    }
+  }
+
+  // A naive reasoning algorithm where rules are just applied by repeatedly applying rules
+  // until no more evaluations are made
+  _reasonGraphNaive(rules, content) {
+    let add = true;
+    while (add) {
+      add = false;
+      for (const _ of this._evaluateRules(rules, content)) {
+        add = true;
+      }
+    }
+  }
+
+  _createRule({ premise, conclusion }) {
+    let varMapping = {};
+    return {
+      premise: premise.map(p => this._createPremise(p, varMapping)),
+      conclusion: conclusion.map(p => this._createConclusion(p, varMapping)),
+      variables: Object.values(varMapping)
+    }
+  }
+
+  _createPremise(premise, varMapping) {
+    const ids = this._ids;
+    const entities = this._entities;
+
+    const _termToId = (value) => {
+      if (value.termType === 'Variable') {
+        return varMapping[value.value] ||= {};
+      }
+      value = termToId(value);
+      value = ids[value] || (ids[entities[++this._id] = value] = this._id);
+      return { value };
+    }
+    let subject = _termToId(premise.subject);
+    let predicate = _termToId(premise.predicate);
+    let object = _termToId(premise.object);
+
+    if (predicate.value && !subject.value)
+      return { content: 'predicates', value: [predicate, object, subject] }
+    else if (object.value)
+      return { content: 'objects', value: [object, subject, predicate] }
+    else
+      return { content: 'subjects', value: [subject, predicate, object] };
+  }
+
+  _createConclusion(premise, varMapping) {
+    const ids = this._ids;
+    const entities = this._entities;
+
+    const _termToId = (value) => {
+      if (value.termType === 'Variable') {
+        return varMapping[value.value] ||= {};
+      }
+      value = termToId(value);
+      value = ids[value] || (ids[entities[++this._id] = value] = this._id);
+      return { value };
+    }
+    let subject = _termToId(premise.subject);
+    let predicate = _termToId(premise.predicate);
+    let object = _termToId(premise.object);
+
+    return { subject, predicate, object };
+  }
+
+  reason(rules) {
+    rules = rules.map(rule => this._createRule(rule));
+    const graphs = this._getGraphs();
+    let content;
+
+
+    for (const graphId in graphs) {
+      // Only if the specified graph contains triples, there can be results
+      if (content = graphs[graphId]) {
+        this._reasonGraphNaive(rules, content);
+      }
+    }
+
+    this._size = null;
+  }
+
   // ### Store is an iterable.
   // Can be used where iterables are expected: for...of loops, array spread operator,
   // `yield*`, and destructuring assignment (order is not guaranteed).

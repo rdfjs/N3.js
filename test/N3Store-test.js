@@ -5,9 +5,10 @@ import {
   DefaultGraph,
   Quad,
   termFromId, termToId,
+  Variable
 } from '../src/';
 import namespaces from '../src/IRIs';
-import chai from 'chai';
+import chai, { expect } from 'chai';
 import { Readable } from 'readable-stream';
 import arrayifyStream from 'arrayify-stream';
 
@@ -1635,6 +1636,102 @@ describe('Store', () => {
         expect(listsToJSON(lists)).to.deep.equal({});
       });
     });
+  });
+
+  describe('Testing Reasoning', () => {
+    let store;
+    beforeEach(() => {
+      store = new Store([
+        new Quad(
+          new NamedNode('http://example.org/s'),
+          new NamedNode('a'),
+          new NamedNode('http://example.org/o'),
+        ),
+        new Quad(
+          new NamedNode('http://example.org/o'),
+          new NamedNode('subClassOf'),
+          new NamedNode('http://example.org/o2'),
+        )
+      ]);
+    });
+
+    it('Should apply rules', () => {
+      expect(store.size).equal(2);
+      store.reason([{
+        premise: [new Quad(
+          new Variable('?s'),
+          new NamedNode('a'),
+          new Variable('?o'),
+        ),new Quad(
+          new Variable('?o'),
+          new NamedNode('subClassOf'),
+          new Variable('?o2'),
+        )],
+        conclusion: [
+          new Quad(
+            new Variable('?s'),
+            new NamedNode('a'),
+            new Variable('?o2'),
+          ),
+        ]
+      }]);
+      expect(store.size).equal(3);
+      expect(store.has(
+        new Quad(
+          new NamedNode('http://example.org/s'),
+          new NamedNode('a'),
+          new NamedNode('http://example.org/o2'),
+        )
+      )).equal(true)
+    });
+  });
+
+
+  it('Should apply to URLS', () => {
+    const store = new Store([
+      new Quad(
+        new NamedNode('http://example.org#me'),
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#other'),
+        new NamedNode('http://xmlns.com/foaf/0.1/Person'),
+      ),
+      new Quad(
+        new NamedNode('http://example.org#me'),
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        new NamedNode('http://xmlns.com/foaf/0.1/Person'),
+      ),
+      new Quad(
+        new NamedNode('http://xmlns.com/foaf/0.1/Person'),
+        new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
+        new NamedNode('http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing'),
+      ),
+    ])
+    expect(store.size).equal(2);
+    store.reason([{
+      premise: [new Quad(
+        new Variable('?s'),
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        new Variable('?o'),
+      ),new Quad(
+        new Variable('?o'),
+        new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
+        new Variable('?o2'),
+      )],
+      conclusion: [
+        new Quad(
+          new Variable('?s'),
+          new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+          new Variable('?o2'),
+        ),
+      ]
+    }]);
+    expect(store.size).equal(3);
+    expect(store.has(
+      new Quad(
+        new NamedNode('http://example.org#me'),
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        new NamedNode('http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing'),
+      )
+    )).equal(true)
   });
 });
 
