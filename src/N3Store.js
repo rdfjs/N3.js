@@ -428,17 +428,83 @@ export default class N3Store {
     }
   }
 
-  *_evaluateRule([{ key: key0, value: value0 }, { key: key1, value: value1 }, { key: key2, value: value2 }], conclusion, graph) {
-    let index0 = graph[key0 + 's'];
-    if (value0.value) (tmp = index0, index0 = {})[value0.value] = tmp[value0.value];
+  // { premise: [val0, val1, val2], content }
+
+  *_evaluatePremise(index0, [val0, val1, val2]) {
+    let index1, index2;
+    let v0 = false, v1 = false, v2 = false;
+    if (val0.value) {
+      (tmp = index0, index0 = {})[val0.value] = tmp[val0.value];
+      v0 = true;
+    }
+    for (const value0 in index0) {
+
+      if (index1 = index0[value0]) {
+        if (v0) val0.value = value0;
+        // If a key is specified, use only that part of index 1.
+        // if (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
+        if (val1.value) {
+          (tmp = index1, index1 = {})[val1.value] = tmp[val1.value];
+          v1 = true;
+        }
+        for (const value1 in index1) {
+
+          if (index2 = index1[value1]) {
+            if (v1) val1.value = value1;
+            // If a key is specified, use only that part of index 2, if it exists.
+            const values = val2.value ? (val2.value in index2 ? [val2.value] : []) : Object.keys(index2);
+            if (v2.value) v2 = true;
+            // Create quads for all items found in index 2.
+            for (let l = 0; l < values.length; l++) {
+              if (v2) val2.value = values[l];
+              // TODO: probably implement a cb since yielding is slow
+              yield; // At this point we have substituted all the premises
+            }
+          }
+        }
+      }
+    }
+  }
+
+  *_evaluatePremises(premises, content, i) {
+    for (const _ of this._evaluatePremise(content[premises[i].content], premises[i].value)) {
+      if (i < premises.length - 1) {
+        yield* this._evaluatePremises(premises, content, i + 1);
+      } else {
+        yield;
+      }
+    }
+  }
+
+  *_evaluateRule({ premise, conclusion }, content, graph) {
+    for (const _ of this._evaluatePremises(premise, content, 0)) {
+      yield* this._addConclusion(conclusion, graph);
+    }
   }
 
   *_evalRule({ premise, conclusion }, content) {
-    singlePremise = [
-      { key: 'predicate', value: vars[0] },
-      { key: 'object', value: 1 },
-      { key: 'subject', value: vars[1] },
-    ]
+    singlePremise = {
+      content: 'subject',
+      value: [
+        vars[0],
+        { value: 1 },
+        vars[1],
+      ]
+    }
+
+    // TODO: a nested iteration over all premises and then emit conclusions
+
+
+
+    // singlePremise = [
+    //   {
+    //     content
+    //   }
+      
+    //   // { key: 'predicate', value: vars[0] },
+    //   // { key: 'object', value: 1 },
+    //   // { key: 'subject', value: vars[1] },
+    // ]
 
 
     const vars = [{}, {}, {}]
