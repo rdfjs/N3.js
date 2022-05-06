@@ -847,7 +847,7 @@ export default class N3Store {
   _createRule({ premise, conclusion }) {
     let varMapping = {};
     return {
-      premise: premise.map(p => this._createPremise(p, varMapping)),
+      premise: premise.map(p => this._createConclusion(p, varMapping)),
       conclusion: conclusion.map(p => this._createConclusion(p, varMapping)),
       variables: Object.values(varMapping)
     }
@@ -935,6 +935,35 @@ export default class N3Store {
   reason(rules) {
     // console.log('reason called')
     rules = rules.map(rule => this._createRule(rule));
+
+    function eq(t1, t2) {
+      if (t1.value === undefined) {
+        t1.value = t2.value;
+      }
+
+      return t1.value === t2.value;
+    }
+
+    for (const r1 of rules) {
+      for (const r2 of rules) {
+        for (let i = 0; i < r1.premise.length; i++) {
+          for (const c of r1.conclusion) {
+            if (
+              eq(p.subject, c.subject) &&
+              eq(p.predicate, c.predicate) &&
+              eq(p.object, c.object)
+            ) {
+              // r2.variables.forEach(v => { v.value = undefined })
+              // TODO: Create new rule, with new indexing
+              (c.next ||= []).push({ i, rule: r1 })
+            }//else {
+              r2.variables.forEach(v => { v.value = undefined })
+            //}
+          }
+        }
+      }
+    }
+
     const graphs = this._getGraphs();
     let content;
 
