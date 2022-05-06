@@ -780,45 +780,36 @@ export default class N3Store {
     }
   }
 
-  _evaluatePremise(index0, [val0, val1, val2], cb) {
-    // console.log('evaluating premise')
-    let index1, index2, tmp;
-    let v0 = true, v1 = true, v2 = true;
-    if (val0.value) {
-      (tmp = index0, index0 = {})[val0.value] = tmp[val0.value];
-      v0 = false;
-    }
-    for (const value0 in index0) {
+  // TODO [FUTURE]: Improve performance by 'pre-computing' the index lookup
+  // e.g. if a rule only has one variable - then we can just give it a pointer
+  // to the index that it should do lookups from
+  // Similarly with insertions
 
-      if (index1 = index0[value0]) {
-        if (v0) val0.value = value0;
-        // If a key is specified, use only that part of index 1.
-        // if (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
-        if (val1.value) {
-          (tmp = index1, index1 = {})[val1.value] = tmp[val1.value];
-          v1 = false;
-        }
-        for (const value1 in index1) {
-
-          if (index2 = index1[value1]) {
-            if (v1) val1.value = value1;
-            // If a key is specified, use only that part of index 2, if it exists.
-            const values = val2.value ? (val2.value in index2 ? [val2.value] : []) : Object.keys(index2);
-            if (v2.value) v2 = false;
-            // Create quads for all items found in index 2.
-            values.forEach(value => {
+  _evaluatePremise(rule, content, cb, i = 0) {
+    let v0, v1, v2, value, [val0, val1, val2] = rule.premise[i].value, index = content[rule.premise[i].content];
+    v0 = !(value = val0.value);
+    for (value in v0 ? index : { [value]: index[value] }) {
+      if (index = index[value]) {
+        if (v0) val0.value = value;
+        v1 = !(value = val1.value);
+        for (value in v1 ? index : { [value]: index[value] }) {
+          if (index = index[value]) {
+            if (v1) val1.value = value;
+            v2 = !(value = val2.value);
+            for (value in v2 ? index : { [value]: index[value] }) {
               if (v2) val2.value = value;
-              cb();
-            })
-            
-            
-            // for (let l = 0; l < values.length; l++) {
-            //   if (v2) val2.value = values[l];
-            //   // TODO: probably implement a cb since yielding is slow
-            //   // console.log([val0, val1, val2], this._entities[val0.value], this._entities[val1.value], this._entities[val2.value]);
-            //   cb(); // At this point we have substituted all the premises
-            // }
 
+              if (i === rule.premise.length - 1)
+                rule.conclusion.forEach(c => { 
+                  const changed = this._addToIndex(content.subjects,   c.subject.value,   c.predicate.value, c.object.value);
+                  if (!changed) return;
+                  this._addToIndex(content.predicates, c.predicate.value, c.object.value,    c.subject.value);
+                  this._addToIndex(content.objects,    c.object.value,    c.subject.value,   c.predicate.value);
+                  cb([c.subject.value,   c.predicate.value, c.object.value, c.next]);
+                });
+              else
+                this._evaluatePremise(rule, content, cb, i + 1)
+            }
             if (v2) val2.value = null;
           }
         }
@@ -828,29 +819,9 @@ export default class N3Store {
     if (v0) val0.value = null;
   }
 
-  _evaluatePremises(premises, content, i, cb) {
-    // console.log(premises)
-    const _cb = (i < premises.length - 1) ? () => this._evaluatePremises(premises, content, i + 1, cb) : cb;
-    this._evaluatePremise(content[premises[i].content], premises[i].value, _cb);
-
-    // for (const _ of this._evaluatePremise(content[premises[i].content], premises[i].value)) {
-    //   if (i < premises.length - 1) {
-    //     yield* this._evaluatePremises(premises, content, i + 1);
-    //   } else {
-    //     yield true;
-    //   }
-    // }
-  }
-
-  _evaluateRule({ premise, conclusion, variables }, content, cb) {
-    this._evaluatePremises(premise, content, 0, () => {
-      this._addConclusion(conclusion, content, cb)
-    });
-  }
-
   _evaluateRules(rules, content, cb) {
     for (let i = 0; i < rules.length; i++) {
-      this._evaluateRule(rules[i], content, cb);
+      this._evaluatePremise(rules[i], content, cb);
     }
   }
 
@@ -858,10 +829,18 @@ export default class N3Store {
   // until no more evaluations are made
   _reasonGraphNaive(rules, content) {
     // console.log('reasoning', rules)
-    let add = true;
-    while (add) {
-      add = false
-      this._evaluateRules(rules, content, () => { add = true })
+    let add = [1];
+    while (add.length > 0) {
+      add = []
+      this._evaluateRules(rules, content, d => { add.push(d) });
+      // for (let i = 0; i < arr.length; i++) {
+      //   let [subject, predicate, object] = arr[i];
+      //   const changed = this._addToIndex(content.subjects,   subject,   predicate, object);
+      //   if (!changed) return;
+      //   this._addToIndex(content.predicates, predicate, object,    subject);
+      //   this._addToIndex(content.objects,    object,    subject,   predicate);
+      //   add = true
+      // }
     }
   }
 
