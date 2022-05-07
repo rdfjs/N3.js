@@ -1734,6 +1734,69 @@ describe('Store', () => {
     console.log(store.getQuads())
     expect(store.size).equal(4);
   });
+
+  it('Should apply the range property correctly', () => {
+    const store = new Store(
+      [
+        new Quad(
+        new NamedNode('j'),
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        new NamedNode('o'),
+      ),
+      new Quad(
+        new NamedNode('o'),
+        new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
+        new NamedNode('o2'),
+      ),
+      new Quad(
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        new NamedNode('http://www.w3.org/2000/01/rdf-schema#range'),
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#Class'),
+      )]
+    );
+
+    store.reason([
+      {
+        premise: [
+          new Quad(
+          new Variable('?s'),
+          new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+          new Variable('?o'),
+        ),new Quad(
+          new Variable('?o'),
+          new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
+          new Variable('?o2'),
+        )],
+        conclusion: [
+          new Quad(
+            new Variable('?s'),
+            new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+            new Variable('?o2'),
+          ),
+        ]
+      },
+      {
+        premise: [new Quad(
+          new Variable('?a'),
+          new NamedNode('http://www.w3.org/2000/01/rdf-schema#range'),
+          new Variable('?x'),
+        ),new Quad(
+          new Variable('?u'), // With rules like this we *do not* need to iterate over the subject index so we should avoid doing so
+          new Variable('?a'),
+          new Variable('?v'), 
+        )],
+        conclusion: [
+          new Quad(
+            new Variable('?v'),
+            new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+            new Variable('?x'),
+          ),
+        ]
+      },
+    ]);
+
+    expect(store.size).equal(7)
+  })
 });
 
 function alwaysTrue()  { return true;  }

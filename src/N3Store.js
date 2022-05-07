@@ -832,14 +832,14 @@ export default class N3Store {
     // console.log('reasoning', rules)
     
     let add = true
-    while (add) {
-      add = false
-      this._evaluateRules(rules, content, d => { 
-        add = true;
-      });
-    }
+    // while (add) {
+    //   add = false
+    //   this._evaluateRules(rules, content, d => { 
+    //     add = true;
+    //   });
+    // }
     
-    return;
+    // return;
     
     let newRules = [];
     this._evaluateRules(rules, content, d => { 
@@ -875,7 +875,10 @@ export default class N3Store {
         });
       } else {
         // console.log(rule, rule.conclusion[0], rule.premise[0], subject, predicate, object, v1, v2, v3)
-        this._evaluatePremise(rule, content, (data) => { console.log(data) });
+        this._evaluatePremise(rule, content, (c) => { 
+          if (c.next)
+            c.next.forEach(r => { newRules.push({ subject: c.subject.value, predicate: c.predicate.value, object: c.object.value, rule: r }) })
+         });
       }
 
       if (!v1) rule.basePremise.subject.value = null;
@@ -1018,6 +1021,11 @@ export default class N3Store {
               const set = new Set();
 
               let premise = []
+
+              // Since these *will* be substited when we apply the rule, we need to this so that we index correctly in the subsequent section
+              p.subject.value ||= 1;
+              p.object.value ||= 1;
+              p.predicate.value ||= 1;
 
               for (let j = 0; j < r2.premise.length; j++) {
                 if (j !== i) {
