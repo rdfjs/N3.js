@@ -5,9 +5,10 @@ import {
   DefaultGraph,
   Quad,
   termFromId, termToId,
+  Variable
 } from '../src/';
 import namespaces from '../src/IRIs';
-import chai from 'chai';
+import chai, { expect } from 'chai';
 import { Readable } from 'readable-stream';
 import arrayifyStream from 'arrayify-stream';
 
@@ -1636,6 +1637,166 @@ describe('Store', () => {
       });
     });
   });
+
+  describe('Testing Reasoning', () => {
+    let store;
+    beforeEach(() => {
+      store = new Store([
+        new Quad(
+          new NamedNode('http://example.org/s'),
+          new NamedNode('a'),
+          new NamedNode('http://example.org/o'),
+        ),
+        new Quad(
+          new NamedNode('http://example.org/o'),
+          new NamedNode('subClassOf'),
+          new NamedNode('http://example.org/o2'),
+        )
+      ]);
+    });
+
+    it('Should apply rules', () => {
+      expect(store.size).equal(2);
+      store.reason([{
+        premise: [new Quad(
+          new Variable('?s'),
+          new NamedNode('a'),
+          new Variable('?o'),
+        ),new Quad(
+          new Variable('?o'),
+          new NamedNode('subClassOf'),
+          new Variable('?o2'),
+        )],
+        conclusion: [
+          new Quad(
+            new Variable('?s'),
+            new NamedNode('a'),
+            new Variable('?o2'),
+          ),
+        ]
+      }]);
+      expect(store.size).equal(3);
+      expect(store.has(
+        new Quad(
+          new NamedNode('http://example.org/s'),
+          new NamedNode('a'),
+          new NamedNode('http://example.org/o2'),
+        )
+      )).equal(true)
+    });
+  });
+
+
+  it('Should apply to URLS', () => {
+    const store = new Store([
+      new Quad(
+        new NamedNode('http://example.org#me'),
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#other'),
+        new NamedNode('http://xmlns.com/foaf/0.1/Person'),
+      ),
+      new Quad(
+        new NamedNode('http://example.org#me'),
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        new NamedNode('http://xmlns.com/foaf/0.1/Person'),
+      ),
+      new Quad(
+        new NamedNode('http://xmlns.com/foaf/0.1/Person'),
+        new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
+        new NamedNode('http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing'),
+      ),
+    ])
+    expect(store.size).equal(3);
+    store.reason([{
+      premise: [new Quad(
+        new Variable('?s'),
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        new Variable('?o'),
+      ),new Quad(
+        new Variable('?o'),
+        new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
+        new Variable('?o2'),
+      )],
+      conclusion: [
+        new Quad(
+          new Variable('?s'),
+          new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+          new Variable('?o2'),
+        ),
+      ]
+    }]);
+    expect(store.has(
+      new Quad(
+        new NamedNode('http://example.org#me'),
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        new NamedNode('http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing'),
+      )
+    )).equal(true)
+    console.log(store.getQuads())
+    expect(store.size).equal(4);
+  });
+
+  it('Should apply the range property correctly', () => {
+    const store = new Store(
+      [
+        new Quad(
+        new NamedNode('j'),
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        new NamedNode('o'),
+      ),
+      new Quad(
+        new NamedNode('o'),
+        new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
+        new NamedNode('o2'),
+      ),
+      new Quad(
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        new NamedNode('http://www.w3.org/2000/01/rdf-schema#range'),
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#Class'),
+      )]
+    );
+
+    store.reason([
+      {
+        premise: [
+          new Quad(
+          new Variable('?s'),
+          new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+          new Variable('?o'),
+        ),new Quad(
+          new Variable('?o'),
+          new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
+          new Variable('?o2'),
+        )],
+        conclusion: [
+          new Quad(
+            new Variable('?s'),
+            new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+            new Variable('?o2'),
+          ),
+        ]
+      },
+      {
+        premise: [new Quad(
+          new Variable('?a'),
+          new NamedNode('http://www.w3.org/2000/01/rdf-schema#range'),
+          new Variable('?x'),
+        ),new Quad(
+          new Variable('?u'), // With rules like this we *do not* need to iterate over the subject index so we should avoid doing so
+          new Variable('?a'),
+          new Variable('?v'), 
+        )],
+        conclusion: [
+          new Quad(
+            new Variable('?v'),
+            new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+            new Variable('?x'),
+          ),
+        ]
+      },
+    ]);
+
+    expect(store.size).equal(7)
+  })
 });
 
 function alwaysTrue()  { return true;  }

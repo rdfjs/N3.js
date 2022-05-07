@@ -762,6 +762,338 @@ export default class N3Store {
     return lists;
   }
 
+  _add(subject, predicate, object, graphItem, cb) {
+    // return;
+    const changed = this._addToIndex(graphItem.subjects,   subject,   predicate, object);
+    if (!changed) return;
+    this._addToIndex(graphItem.predicates, predicate, object,    subject);
+    this._addToIndex(graphItem.objects,    object,    subject,   predicate);
+    // console.log(subject, predicate, object)
+    cb();
+  }
+
+  _addConclusion(conclusion, graph, cb) {
+    let c;
+    for (let i = 0; i < conclusion.length; i++) {
+      c = conclusion[i];
+      this._add(c.subject.value, c.predicate.value, c.object.value, graph, cb);
+    }
+  }
+
+  // TODO [FUTURE]: Improve performance by 'pre-computing' the index lookup
+  // e.g. if a rule only has one variable - then we can just give it a pointer
+  // to the index that it should do lookups from
+  // Similarly with insertions
+
+  _evaluatePremise(rule, content, cb, i = 0) {
+    let v0, v1, v2, value, [val0, val1, val2] = rule.premise[i].value, index = content[rule.premise[i].content], index1, index2;
+    v0 = !(value = val0.value);
+    for (value in v0 ? index : { [value]: index[value] }) {
+      if (index1 = index[value]) {
+        if (v0) val0.value = Number(value);
+        v1 = !(value = val1.value);
+        for (value in v1 ? index1 : { [value]: index1[value] }) {
+          if (index2 = index1[value]) {
+            if (v1) val1.value = Number(value);
+            v2 = !(value = val2.value);
+            for (value in v2 ? index2 : { [value]: index2[value] }) {
+              // TODO: Probably revert this
+              if (v2) val2.value = Number(value);
+
+              if (i === rule.premise.length - 1)
+                rule.conclusion.forEach(c => { 
+                  const changed = this._addToIndex(content.subjects,   c.subject.value,   c.predicate.value, c.object.value);
+                  if (!changed) return;
+                  this._addToIndex(content.predicates, c.predicate.value, c.object.value,    c.subject.value);
+                  this._addToIndex(content.objects,    c.object.value,    c.subject.value,   c.predicate.value);
+                  cb(c);
+                });
+              else
+                this._evaluatePremise(rule, content, cb, i + 1)
+            }
+            if (v2) val2.value = null;
+          }
+        }
+        if (v1) val1.value = null;
+      }
+    }
+    if (v0) val0.value = null;
+  }
+
+  _evaluateRules(rules, content, cb) {
+    for (let i = 0; i < rules.length; i++) {
+      this._evaluatePremise(rules[i], content, cb);
+    }
+  }
+
+  // A naive reasoning algorithm where rules are just applied by repeatedly applying rules
+  // until no more evaluations are made
+  _reasonGraphNaive(rules, content) {
+    // console.log('reasoning', rules)
+    
+    let add = true
+    // while (add) {
+    //   add = false
+    //   this._evaluateRules(rules, content, d => { 
+    //     add = true;
+    //   });
+    // }
+    
+    // return;
+    
+    let newRules = [];
+    this._evaluateRules(rules, content, d => { 
+      if (d.next) {
+        d.next.forEach(c => { newRules.push({ subject: d.subject.value, predicate: d.predicate.value, object: d.object.value, rule: c }) })
+      }
+    });
+
+    // console.log(newRules)
+
+    while (newRules.length > 0) {
+      const { subject, predicate, object, rule } = newRules.pop()
+      // console.log(subject, predicate, object, rule)
+      let v1 = rule.basePremise.subject.value;
+      if (!v1) rule.basePremise.subject.value = subject;
+      let v2 = rule.basePremise.predicate.value;
+      if (!v2) rule.basePremise.predicate.value = predicate;
+      let v3 = rule.basePremise.object.value;
+      if (!v3) rule.basePremise.object.value = object;
+      // console.log(subject, predicate, object, rule.premise, rule.conclusion)
+      // console.log('----')
+
+      if (rule.premise.length === 0) {
+        rule.conclusion.forEach(c => {
+          // console.log(c.subject.value, c.predicate.value, c.object.value)
+          const changed = this._addToIndex(content.subjects,   c.subject.value,   c.predicate.value, c.object.value);
+          if (!changed) return;
+          this._addToIndex(content.predicates, c.predicate.value, c.object.value,    c.subject.value);
+          this._addToIndex(content.objects,    c.object.value,    c.subject.value,   c.predicate.value);
+          // console.log(c)
+          if (c.next)
+            c.next.forEach(r => { newRules.push({ subject: c.subject.value, predicate: c.predicate.value, object: c.object.value, rule: r }) })
+        });
+      } else {
+        // console.log(rule, rule.conclusion[0], rule.premise[0], subject, predicate, object, v1, v2, v3)
+        this._evaluatePremise(rule, content, (c) => { 
+          if (c.next)
+            c.next.forEach(r => { newRules.push({ subject: c.subject.value, predicate: c.predicate.value, object: c.object.value, rule: r }) })
+         });
+      }
+
+      if (!v1) rule.basePremise.subject.value = null;
+      if (!v2) rule.basePremise.predicate.value = null;
+      if (!v3) rule.basePremise.object.value = null;
+      // console.log(v1)
+    }
+
+    // while (add.length > 0) {
+    //   add = []
+    //   this._evaluateRules(rules, content, d => { 
+    //     if (d.next) {
+    //       d.next.forEach(c => { add.push({ subject: d.subject.value, predicate: d.predicate.value, object: d.object.value, rule: c }) })
+    //     }
+    //   });
+    //   console.log(add)
+    //   // for (let i = 0; i < arr.length; i++) {
+    //   //   let [subject, predicate, object] = arr[i];
+    //   //   const changed = this._addToIndex(content.subjects,   subject,   predicate, object);
+    //   //   if (!changed) return;
+    //   //   this._addToIndex(content.predicates, predicate, object,    subject);
+    //   //   this._addToIndex(content.objects,    object,    subject,   predicate);
+    //   //   add = true
+    //   // }
+    // }
+  }
+
+  _createRule({ premise, conclusion }) {
+    let varMapping = {};
+    return {
+      premise: premise.map(p => this._createConclusion(p, varMapping)),
+      conclusion: conclusion.map(p => this._createConclusion(p, varMapping)),
+      variables: Object.values(varMapping)
+    }
+  }
+
+  _createPremise(premise, varMapping) {
+    const ids = this._ids;
+    const entities = this._entities;
+
+    const _termToId = (value) => {
+      if (value.termType === 'Variable') {
+        return varMapping[value.value] ||= {};
+      }
+      value = termToId(value);
+      value = ids[value] || (ids[entities[++this._id] = value] = this._id);
+      return { value };
+    }
+
+    let s = premise.subject.termType !== 'Variable'   || premise.subject.value in varMapping;
+    let p = premise.predicate.termType !== 'Variable' || premise.predicate.value in varMapping;
+    let o = premise.object.termType !== 'Variable'    || premise.object.value in varMapping;
+
+    let subject = _termToId(premise.subject);
+    let predicate = _termToId(premise.predicate);
+    let object = _termToId(premise.object);
+
+    // if (p && !s)
+    //   return { content: 'predicates', value: [predicate, object, subject] }
+    // else if (o)
+    //   return { content: 'objects', value: [object, subject, predicate] }
+    // else
+    //   return { content: 'subjects', value: [subject, predicate, object] };
+
+    if (s) {
+      if (o) return { content: 'objects', value: [object, subject, predicate] }
+      else return { content: 'subjects', value: [subject, predicate, object] };
+    } else if (p) return { content: 'predicates', value: [predicate, object, subject] }
+    else if (o) return { content: 'objects', value: [object, subject, predicate] }
+    else return { content: 'subjects', value: [subject, predicate, object] };
+
+
+      // if (subjectId) {
+      //   if (objectId)
+      //     // If subject and object are given, the object index will be the fastest
+      //     yield* this._findInIndex(content.objects, objectId, subjectId, predicateId,
+      //                       'object', 'subject', 'predicate', graphId, null, true);
+      //   else
+      //     // If only subject and possibly predicate are given, the subject index will be the fastest
+      //     yield* this._findInIndex(content.subjects, subjectId, predicateId, null,
+      //                       'subject', 'predicate', 'object', graphId, null, true);
+      // }
+      // else if (predicateId)
+      //   // If only predicate and possibly object are given, the predicate index will be the fastest
+      //   yield* this._findInIndex(content.predicates, predicateId, objectId, null,
+      //                     'predicate', 'object', 'subject', graphId, null, true);
+      // else if (objectId)
+      //   // If only object is given, the object index will be the fastest
+      //   yield* this._findInIndex(content.objects, objectId, null, null,
+      //                     'object', 'subject', 'predicate', graphId, null, true);
+      // else
+      //   // If nothing is given, iterate subjects and predicates first
+      //   yield* this._findInIndex(content.subjects, null, null, null,
+      //                     'subject', 'predicate', 'object', graphId, null, true);
+  }
+
+  _createConclusion(premise, varMapping) {
+    const ids = this._ids;
+    const entities = this._entities;
+
+    const _termToId = (value) => {
+      if (value.termType === 'Variable') {
+        return varMapping[value.value] ||= {};
+      }
+      value = termToId(value);
+      value = ids[value] || (ids[entities[++this._id] = value] = this._id);
+      return { value };
+    }
+    let subject = _termToId(premise.subject);
+    let predicate = _termToId(premise.predicate);
+    let object = _termToId(premise.object);
+
+    return { subject, predicate, object };
+  }
+
+  reason(rules) {
+    // console.log('reason called')
+    rules = rules.map(rule => this._createRule(rule));
+
+    function eq(t1, t2) {
+      if (!t1.value) {
+        t1.value = t2.value;
+      }
+
+      return t1.value === t2.value;
+    }
+
+    // let s, p, o;
+
+    for (const r1 of rules) {
+      for (const r2 of rules) {
+        for (let i = 0; i < r2.premise.length; i++) {
+          const p = r2.premise[i];
+          for (const c of r1.conclusion) {
+            if (
+              eq(p.subject, c.subject) &&
+              eq(p.predicate, c.predicate) &&
+              eq(p.object, c.object)
+            ) {
+              const set = new Set();
+
+              let premise = []
+
+              // Since these *will* be substited when we apply the rule, we need to this so that we index correctly in the subsequent section
+              p.subject.value ||= 1;
+              p.object.value ||= 1;
+              p.predicate.value ||= 1;
+
+              for (let j = 0; j < r2.premise.length; j++) {
+                if (j !== i) {
+                  let prem;
+
+                  const { subject, predicate, object } = r2.premise[j];
+                  const s = subject.value || (set.has(subject) ? true : (set.add(subject), false));
+                  const p = predicate.value || (set.has(predicate) ? true : (set.add(predicate), false));
+                  const o = object.value || (set.has(object) ? true : (set.add(object), false));
+
+              if (s) {
+                if (o) prem = { content: 'objects', value: [object, subject, predicate] }
+                else prem = { content: 'subjects', value: [subject, predicate, object] };
+              } else if (p) prem = { content: 'predicates', value: [predicate, object, subject] }
+              else if (o) prem = { content: 'objects', value: [object, subject, predicate] }
+              else prem = { content: 'subjects', value: [subject, predicate, object] };
+
+              premise.push(prem)
+                }
+              }
+
+              // r2.variables.forEach(v => { v.value = undefined })
+              // TODO: Create new rule, with new indexing
+              // TODO: Future, 'collapse' the next statements when the share a premise/base-premise
+              (c.next ||= []).push({
+                premise,
+                conclusion: r2.conclusion,
+                basePremise: p // This is a single premise of the form { subject, predicate, object } which we can use to instantiate the rule using the new data that was emitted
+              })
+            }//else {
+            r2.variables.forEach(v => { v.value = undefined })
+            //}
+          }
+        }
+      }
+    }
+
+    for (const rule of rules) {
+      const set = new Set();
+
+      rule.premise = rule.premise.map(({ subject, predicate, object }) => {
+        const s = subject.value || (set.has(subject) ? true : (set.add(subject), false));
+        const p = predicate.value || (set.has(predicate) ? true : (set.add(predicate), false));
+        const o = object.value || (set.has(object) ? true : (set.add(object), false));
+
+    if (s) {
+      if (o) return { content: 'objects', value: [object, subject, predicate] }
+      else return { content: 'subjects', value: [subject, predicate, object] };
+    } else if (p) return { content: 'predicates', value: [predicate, object, subject] }
+    else if (o) return { content: 'objects', value: [object, subject, predicate] }
+    else return { content: 'subjects', value: [subject, predicate, object] };
+      })
+    }
+
+    const graphs = this._getGraphs();
+    let content;
+
+
+    for (const graphId in graphs) {
+      // Only if the specified graph contains triples, there can be results
+      if (content = graphs[graphId]) {
+        this._reasonGraphNaive(rules, content);
+      }
+    }
+
+    this._size = null;
+  }
+
   // ### Store is an iterable.
   // Can be used where iterables are expected: for...of loops, array spread operator,
   // `yield*`, and destructuring assignment (order is not guaranteed).
