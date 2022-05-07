@@ -790,14 +790,15 @@ export default class N3Store {
     v0 = !(value = val0.value);
     for (value in v0 ? index : { [value]: index[value] }) {
       if (index1 = index[value]) {
-        if (v0) val0.value = value;
+        if (v0) val0.value = Number(value);
         v1 = !(value = val1.value);
         for (value in v1 ? index1 : { [value]: index1[value] }) {
           if (index2 = index1[value]) {
-            if (v1) val1.value = value;
+            if (v1) val1.value = Number(value);
             v2 = !(value = val2.value);
             for (value in v2 ? index2 : { [value]: index2[value] }) {
-              if (v2) val2.value = value;
+              // TODO: Probably revert this
+              if (v2) val2.value = Number(value);
 
               if (i === rule.premise.length - 1)
                 rule.conclusion.forEach(c => { 
@@ -829,12 +830,25 @@ export default class N3Store {
   // until no more evaluations are made
   _reasonGraphNaive(rules, content) {
     // console.log('reasoning', rules)
+    
+    let add = true
+    while (add) {
+      add = false
+      this._evaluateRules(rules, content, d => { 
+        add = true;
+      });
+    }
+    
+    return;
+    
     let newRules = [];
     this._evaluateRules(rules, content, d => { 
       if (d.next) {
         d.next.forEach(c => { newRules.push({ subject: d.subject.value, predicate: d.predicate.value, object: d.object.value, rule: c }) })
       }
     });
+
+    // console.log(newRules)
 
     while (newRules.length > 0) {
       const { subject, predicate, object, rule } = newRules.pop()
@@ -845,19 +859,23 @@ export default class N3Store {
       if (!v2) rule.basePremise.predicate.value = predicate;
       let v3 = rule.basePremise.object.value;
       if (!v3) rule.basePremise.object.value = object;
+      // console.log(subject, predicate, object, rule.premise, rule.conclusion)
+      // console.log('----')
 
       if (rule.premise.length === 0) {
-        rule.conclusion.forEach(c => { 
+        rule.conclusion.forEach(c => {
+          // console.log(c.subject.value, c.predicate.value, c.object.value)
           const changed = this._addToIndex(content.subjects,   c.subject.value,   c.predicate.value, c.object.value);
           if (!changed) return;
           this._addToIndex(content.predicates, c.predicate.value, c.object.value,    c.subject.value);
           this._addToIndex(content.objects,    c.object.value,    c.subject.value,   c.predicate.value);
+          // console.log(c)
           if (c.next)
             c.next.forEach(r => { newRules.push({ subject: c.subject.value, predicate: c.predicate.value, object: c.object.value, rule: r }) })
         });
       } else {
-        // console.log(rule)
-        this._evaluatePremise(rule, content, () => { });
+        // console.log(rule, rule.conclusion[0], rule.premise[0], subject, predicate, object, v1, v2, v3)
+        this._evaluatePremise(rule, content, (data) => { console.log(data) });
       }
 
       if (!v1) rule.basePremise.subject.value = null;
@@ -1023,6 +1041,7 @@ export default class N3Store {
 
               // r2.variables.forEach(v => { v.value = undefined })
               // TODO: Create new rule, with new indexing
+              // TODO: Future, 'collapse' the next statements when the share a premise/base-premise
               (c.next ||= []).push({
                 premise,
                 conclusion: r2.conclusion,
