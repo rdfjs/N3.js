@@ -73,7 +73,7 @@ async function run() {
   await load('./data/timbl.ttl', store);
   console.timeEnd('loading tim berners lee profile card');
 
-  console.log(store.size)
+  // console.log(store.size)
 
   console.time('apply reasoning');
   store.reason([{
@@ -286,32 +286,36 @@ async function run() {
 
   console.timeEnd('apply reasoning');
 
-  console.log(store.has(
-    new Quad(
-      new NamedNode('http://example.org#me'),
-      new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-      new NamedNode('http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing'),
-    ),
-  ))
+  // console.log(store.has(
+  //   new Quad(
+  //     new NamedNode('http://example.org#me'),
+  //     new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+  //     new NamedNode('http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing'),
+  //   ),
+  // ))
 
-  console.log(store.has(
-    new Quad(
-      new NamedNode('http://example.org#me'),
-      new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-      new NamedNode('http://xmlns.com/foaf/0.1/Person'),
-    ),
-  ))
-  console.log(store.has(
-    new Quad(
-      new NamedNode('http://xmlns.com/foaf/0.1/Person'),
-      new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
-      new NamedNode('http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing'),
-    ),
-  ))
+  // console.log(store.has(
+  //   new Quad(
+  //     new NamedNode('http://example.org#me'),
+  //     new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+  //     new NamedNode('http://xmlns.com/foaf/0.1/Person'),
+  //   ),
+  // ))
+  // console.log(store.has(
+  //   new Quad(
+  //     new NamedNode('http://xmlns.com/foaf/0.1/Person'),
+  //     new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
+  //     new NamedNode('http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing'),
+  //   ),
+  // ))
 
-  console.log(store.size)
+  // console.log(store.size)
 }
 
-// run()
+(async () => {
+  console.log('Reasoning over TimBL profile and FOAF')
+  await run();
 
-deepTaxonomy();
+  console.log('\n\nRunning Deep Taxonomy Benchmark\n')
+  await deepTaxonomy();
+})();
