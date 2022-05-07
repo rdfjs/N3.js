@@ -21,7 +21,7 @@ function load(filename, store) {
 }
 
 async function deepTaxonomy() {
-  for (let i = 1; i <= 5; i++) {
+  for (let i = 1; i <= 6; i++) {
     const store = new N3.Store();
     const TITLE = `test-dl-${10 ** i}.n3`;
     
