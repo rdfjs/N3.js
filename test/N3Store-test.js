@@ -1731,6 +1731,7 @@ describe('Store', () => {
         new NamedNode('http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing'),
       )
     )).equal(true)
+    console.log(store.getQuads())
     expect(store.size).equal(4);
   });
 });

@@ -786,17 +786,17 @@ export default class N3Store {
   // Similarly with insertions
 
   _evaluatePremise(rule, content, cb, i = 0) {
-    let v0, v1, v2, value, [val0, val1, val2] = rule.premise[i].value, index = content[rule.premise[i].content];
+    let v0, v1, v2, value, [val0, val1, val2] = rule.premise[i].value, index = content[rule.premise[i].content], index1, index2;
     v0 = !(value = val0.value);
     for (value in v0 ? index : { [value]: index[value] }) {
-      if (index = index[value]) {
+      if (index1 = index[value]) {
         if (v0) val0.value = value;
         v1 = !(value = val1.value);
-        for (value in v1 ? index : { [value]: index[value] }) {
-          if (index = index[value]) {
+        for (value in v1 ? index1 : { [value]: index1[value] }) {
+          if (index2 = index1[value]) {
             if (v1) val1.value = value;
             v2 = !(value = val2.value);
-            for (value in v2 ? index : { [value]: index[value] }) {
+            for (value in v2 ? index2 : { [value]: index2[value] }) {
               if (v2) val2.value = value;
 
               if (i === rule.premise.length - 1)
@@ -805,7 +805,7 @@ export default class N3Store {
                   if (!changed) return;
                   this._addToIndex(content.predicates, c.predicate.value, c.object.value,    c.subject.value);
                   this._addToIndex(content.objects,    c.object.value,    c.subject.value,   c.predicate.value);
-                  cb([c.subject.value,   c.predicate.value, c.object.value, c.next]);
+                  cb(c);
                 });
               else
                 this._evaluatePremise(rule, content, cb, i + 1)
@@ -829,19 +829,60 @@ export default class N3Store {
   // until no more evaluations are made
   _reasonGraphNaive(rules, content) {
     // console.log('reasoning', rules)
-    let add = [1];
-    while (add.length > 0) {
-      add = []
-      this._evaluateRules(rules, content, d => { add.push(d) });
-      // for (let i = 0; i < arr.length; i++) {
-      //   let [subject, predicate, object] = arr[i];
-      //   const changed = this._addToIndex(content.subjects,   subject,   predicate, object);
-      //   if (!changed) return;
-      //   this._addToIndex(content.predicates, predicate, object,    subject);
-      //   this._addToIndex(content.objects,    object,    subject,   predicate);
-      //   add = true
-      // }
+    let newRules = [];
+    this._evaluateRules(rules, content, d => { 
+      if (d.next) {
+        d.next.forEach(c => { newRules.push({ subject: d.subject.value, predicate: d.predicate.value, object: d.object.value, rule: c }) })
+      }
+    });
+
+    while (newRules.length > 0) {
+      const { subject, predicate, object, rule } = newRules.pop()
+      // console.log(subject, predicate, object, rule)
+      let v1 = rule.basePremise.subject.value;
+      if (!v1) rule.basePremise.subject.value = subject;
+      let v2 = rule.basePremise.predicate.value;
+      if (!v2) rule.basePremise.predicate.value = predicate;
+      let v3 = rule.basePremise.object.value;
+      if (!v3) rule.basePremise.object.value = object;
+
+      if (rule.premise.length === 0) {
+        rule.conclusion.forEach(c => { 
+          const changed = this._addToIndex(content.subjects,   c.subject.value,   c.predicate.value, c.object.value);
+          if (!changed) return;
+          this._addToIndex(content.predicates, c.predicate.value, c.object.value,    c.subject.value);
+          this._addToIndex(content.objects,    c.object.value,    c.subject.value,   c.predicate.value);
+          if (c.next)
+            c.next.forEach(r => { newRules.push({ subject: c.subject.value, predicate: c.predicate.value, object: c.object.value, rule: r }) })
+        });
+      } else {
+        // console.log(rule)
+        this._evaluatePremise(rule, content, () => { });
+      }
+
+      if (!v1) rule.basePremise.subject.value = null;
+      if (!v2) rule.basePremise.predicate.value = null;
+      if (!v3) rule.basePremise.object.value = null;
+      // console.log(v1)
     }
+
+    // while (add.length > 0) {
+    //   add = []
+    //   this._evaluateRules(rules, content, d => { 
+    //     if (d.next) {
+    //       d.next.forEach(c => { add.push({ subject: d.subject.value, predicate: d.predicate.value, object: d.object.value, rule: c }) })
+    //     }
+    //   });
+    //   console.log(add)
+    //   // for (let i = 0; i < arr.length; i++) {
+    //   //   let [subject, predicate, object] = arr[i];
+    //   //   const changed = this._addToIndex(content.subjects,   subject,   predicate, object);
+    //   //   if (!changed) return;
+    //   //   this._addToIndex(content.predicates, predicate, object,    subject);
+    //   //   this._addToIndex(content.objects,    object,    subject,   predicate);
+    //   //   add = true
+    //   // }
+    // }
   }
 
   _createRule({ premise, conclusion }) {
@@ -937,31 +978,79 @@ export default class N3Store {
     rules = rules.map(rule => this._createRule(rule));
 
     function eq(t1, t2) {
-      if (t1.value === undefined) {
+      if (!t1.value) {
         t1.value = t2.value;
       }
 
       return t1.value === t2.value;
     }
 
+    // let s, p, o;
+
     for (const r1 of rules) {
       for (const r2 of rules) {
-        for (let i = 0; i < r1.premise.length; i++) {
+        for (let i = 0; i < r2.premise.length; i++) {
+          const p = r2.premise[i];
           for (const c of r1.conclusion) {
             if (
               eq(p.subject, c.subject) &&
               eq(p.predicate, c.predicate) &&
               eq(p.object, c.object)
             ) {
+              const set = new Set();
+
+              let premise = []
+
+              for (let j = 0; j < r2.premise.length; j++) {
+                if (j !== i) {
+                  let prem;
+
+                  const { subject, predicate, object } = r2.premise[j];
+                  const s = subject.value || (set.has(subject) ? true : (set.add(subject), false));
+                  const p = predicate.value || (set.has(predicate) ? true : (set.add(predicate), false));
+                  const o = object.value || (set.has(object) ? true : (set.add(object), false));
+
+              if (s) {
+                if (o) prem = { content: 'objects', value: [object, subject, predicate] }
+                else prem = { content: 'subjects', value: [subject, predicate, object] };
+              } else if (p) prem = { content: 'predicates', value: [predicate, object, subject] }
+              else if (o) prem = { content: 'objects', value: [object, subject, predicate] }
+              else prem = { content: 'subjects', value: [subject, predicate, object] };
+
+              premise.push(prem)
+                }
+              }
+
               // r2.variables.forEach(v => { v.value = undefined })
               // TODO: Create new rule, with new indexing
-              (c.next ||= []).push({ i, rule: r1 })
+              (c.next ||= []).push({
+                premise,
+                conclusion: r2.conclusion,
+                basePremise: p // This is a single premise of the form { subject, predicate, object } which we can use to instantiate the rule using the new data that was emitted
+              })
             }//else {
-              r2.variables.forEach(v => { v.value = undefined })
+            r2.variables.forEach(v => { v.value = undefined })
             //}
           }
         }
       }
+    }
+
+    for (const rule of rules) {
+      const set = new Set();
+
+      rule.premise = rule.premise.map(({ subject, predicate, object }) => {
+        const s = subject.value || (set.has(subject) ? true : (set.add(subject), false));
+        const p = predicate.value || (set.has(predicate) ? true : (set.add(predicate), false));
+        const o = object.value || (set.has(object) ? true : (set.add(object), false));
+
+    if (s) {
+      if (o) return { content: 'objects', value: [object, subject, predicate] }
+      else return { content: 'subjects', value: [subject, predicate, object] };
+    } else if (p) return { content: 'predicates', value: [predicate, object, subject] }
+    else if (o) return { content: 'objects', value: [object, subject, predicate] }
+    else return { content: 'subjects', value: [subject, predicate, object] };
+      })
     }
 
     const graphs = this._getGraphs();
