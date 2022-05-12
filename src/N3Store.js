@@ -829,11 +829,8 @@ export default class N3Store {
   // A naive reasoning algorithm where rules are just applied by repeatedly applying rules
   // until no more evaluations are made
   _reasonGraphNaive(rules, content) {
-    // console.log('reasoning', rules)
-    
     let add = true
 
-    
     let newRules = [];
     this._evaluateRules(rules, content, d => { 
       if (d.next) {
@@ -841,33 +838,25 @@ export default class N3Store {
       }
     });
 
-    // console.log(newRules)
-
     while (newRules.length > 0) {
       const { subject, predicate, object, rule } = newRules.pop()
-      // console.log(subject, predicate, object, rule)
       let v1 = rule.basePremise.subject.value;
       if (!v1) rule.basePremise.subject.value = subject;
       let v2 = rule.basePremise.predicate.value;
       if (!v2) rule.basePremise.predicate.value = predicate;
       let v3 = rule.basePremise.object.value;
       if (!v3) rule.basePremise.object.value = object;
-      // console.log(subject, predicate, object, rule.premise, rule.conclusion)
-      // console.log('----')
 
       if (rule.premise.length === 0) {
         rule.conclusion.forEach(c => {
-          // console.log(c.subject.value, c.predicate.value, c.object.value)
           const changed = this._addToIndex(content.subjects,   c.subject.value,   c.predicate.value, c.object.value);
           if (!changed) return;
           this._addToIndex(content.predicates, c.predicate.value, c.object.value,    c.subject.value);
           this._addToIndex(content.objects,    c.object.value,    c.subject.value,   c.predicate.value);
-          // console.log(c)
           if (c.next)
             c.next.forEach(r => { newRules.push({ subject: c.subject.value, predicate: c.predicate.value, object: c.object.value, rule: r }) })
         });
       } else {
-        // console.log(rule, rule.conclusion[0], rule.premise[0], subject, predicate, object, v1, v2, v3)
         this._evaluatePremise(rule, content, (c) => { 
           if (c.next)
             c.next.forEach(r => { newRules.push({ subject: c.subject.value, predicate: c.predicate.value, object: c.object.value, rule: r }) })
@@ -883,16 +872,8 @@ export default class N3Store {
   }
 
   _createRule({ premise, conclusion }) {
-    let varMapping = {};
-    return {
-      premise: premise.map(p => this._createConclusion(p, varMapping)),
-      conclusion: conclusion.map(p => this._createConclusion(p, varMapping)),
-      variables: Object.values(varMapping)
-    }
-  }
-
-  _createConclusion(premise, varMapping) {
     const ids = this._ids, entities = this._entities;
+    let varMapping = {};
 
     const toId = (value) => value.termType === 'Variable' ?
       // If the term is a variable then create an empty object that values can be placed into
@@ -900,7 +881,13 @@ export default class N3Store {
       // If the term is not a variable then set the ID value
       { value: ids[value = termToId(value)] || (ids[entities[++this._id] = value] = this._id) };
 
-    return { subject: toId(premise.subject), predicate: toId(premise.predicate), object: toId(premise.object) };
+    const t = term => ({ subject: toId(term.subject), predicate: toId(term.predicate), object: toId(term.object) });
+
+    return {
+      premise: premise.map(p => t(p)),
+      conclusion: conclusion.map(p => t(p)),
+      variables: Object.values(varMapping),
+    }
   }
 
   reason(rules) {
@@ -927,7 +914,6 @@ export default class N3Store {
                 }
               }
 
-              // r2.variables.forEach(v => { v.value = undefined })
               // TODO: Create new rule, with new indexing
               // TODO: Future, 'collapse' the next statements when the share a premise/base-premise
               (c.next ||= []).push({
@@ -935,9 +921,8 @@ export default class N3Store {
                 conclusion: r2.conclusion,
                 basePremise: p // This is a single premise of the form { subject, predicate, object } which we can use to instantiate the rule using the new data that was emitted
               })
-            }//else {
-            r2.variables.forEach(v => { v.value = undefined })
-            //}
+            }
+            r2.variables.forEach(v => { v.value = null })
           }
         }
       }
