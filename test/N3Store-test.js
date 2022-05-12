@@ -5,12 +5,15 @@ import {
   DefaultGraph,
   Quad,
   termFromId, termToId,
-  Variable
+  Variable,
+  Parser
 } from '../src/';
 import namespaces from '../src/IRIs';
 import chai, { expect } from 'chai';
 import { Readable } from 'readable-stream';
 import arrayifyStream from 'arrayify-stream';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const should = chai.should();
 
@@ -1796,8 +1799,258 @@ describe('Store', () => {
     ]);
 
     expect(store.size).equal(7)
-  })
+  });
+
+  it('Should correctly apply the deep taxonomy benchmark', async () => {
+    const store = new Store();
+    await load(`../perf/data/deep-taxonomy/test-dl-100.n3`, store);
+
+    store.reason([{
+      premise: [new Quad(
+        new Variable('?s'),
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        new Variable('?o'),
+      ),new Quad(
+        new Variable('?o'),
+        new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
+        new Variable('?o2'),
+      )],
+      conclusion: [
+        new Quad(
+          new Variable('?s'),
+          new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+          new Variable('?o2'),
+        ),
+      ]
+    }])
+
+    return expect(store.has(
+      new Quad(
+        new NamedNode('http://eulersharp.sourceforge.net/2009/12dtb/test#ind'),
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        new NamedNode('http://eulersharp.sourceforge.net/2009/12dtb/test#A2'),
+      ),
+    )).equal(true)
+  });
+
+  it('Should correctly apply RDFS to TimBL profile and FOAF', async () => {
+
+  const store = new Store();
+  await load('../perf/data/foaf.ttl', store);
+  await load('../perf/data/timbl.ttl', store);
+
+  store.reason([{
+    premise: [new Quad(
+      new Variable('?s'),
+      new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+      new Variable('?o'),
+    ),new Quad(
+      new Variable('?o'),
+      new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
+      new Variable('?o2'),
+    )],
+    conclusion: [
+      new Quad(
+        new Variable('?s'),
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        new Variable('?o2'),
+      ),
+    ]
+  },
+  {
+    premise: [new Quad(
+      new Variable('?s'),
+      new Variable('?p'),
+      new Variable('?o'),
+    )],
+    conclusion: [
+      new Quad(
+        new Variable('?p'),
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#Property'),
+      ),
+    ]
+  },
+  {
+    premise: [new Quad(
+      new Variable('?a'),
+      new NamedNode('http://www.w3.org/2000/01/rdf-schema#domain'),
+      new Variable('?x'),
+    ),new Quad(
+      new Variable('?u'),
+      new Variable('?a'),
+      new Variable('?y'),
+    )],
+    conclusion: [
+      new Quad(
+        new Variable('?u'),
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        new Variable('?x'),
+      ),
+    ]
+  },
+  {
+    premise: [new Quad(
+      new Variable('?a'),
+      new NamedNode('http://www.w3.org/2000/01/rdf-schema#range'),
+      new Variable('?x'),
+    ),new Quad(
+      new Variable('?u'), // With rules like this we *do not* need to iterate over the subject index so we should avoid doing so
+      new Variable('?a'),
+      new Variable('?v'),
+    )],
+    conclusion: [
+      new Quad(
+        new Variable('?v'),
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        new Variable('?x'),
+      ),
+    ]
+  },
+  {
+    premise: [new Quad(
+      new Variable('?u'),
+      new Variable('?a'),
+      new Variable('?x'),
+    )],
+    conclusion: [
+      new Quad(
+        new Variable('?u'),
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        new NamedNode('http://www.w3.org/2000/01/rdf-schema#Resource'),
+      ),
+      new Quad(
+        new Variable('?x'),
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        new NamedNode('http://www.w3.org/2000/01/rdf-schema#Resource'),
+      ),
+    ]
+  },
+  {
+    premise: [new Quad(
+      new Variable('?u'),
+      new NamedNode('http://www.w3.org/2000/01/rdf-schema#subPropertyOf'),
+      new Variable('?v'),
+    ),new Quad(
+      new Variable('?v'),
+      new NamedNode('http://www.w3.org/2000/01/rdf-schema#subPropertyOf'),
+      new Variable('?x'),
+    )],
+    conclusion: [
+      new Quad(
+        new Variable('?u'),
+        new NamedNode('http://www.w3.org/2000/01/rdf-schema#subPropertyOf'),
+        new Variable('?x'),
+      )
+    ]
+  },
+  {
+    premise: [new Quad(
+      new Variable('?u'),
+      new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+      new NamedNode('http://www.w3.org/2000/01/rdf-schema#Class'),
+    )],
+    conclusion: [
+      new Quad(
+        new Variable('?u'),
+        new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
+        new NamedNode('http://www.w3.org/2000/01/rdf-schema#Resource'),
+      )
+    ]
+  },
+  {
+    premise: [new Quad(
+      new Variable('?u'),
+      new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
+      new Variable('?x'),
+    ), new Quad(
+      new Variable('?v'),
+      new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+      new Variable('?u'),
+    )],
+    conclusion: [
+      new Quad(
+        new Variable('?v'),
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        new Variable('?x'),
+      )
+    ]
+  },{
+    premise: [new Quad(
+      new Variable('?u'),
+      new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+      new NamedNode('http://www.w3.org/2000/01/rdf-schema#Class'),
+    )],
+    conclusion: [
+      new Quad(
+        new Variable('?u'),
+        new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
+        new Variable('?u'),
+      )
+    ]
+  },
+  {
+    premise: [new Quad(
+      new Variable('?u'),
+      new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
+      new Variable('?v'),
+    ),new Quad(
+      new Variable('?v'),
+      new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
+      new Variable('?x'),
+    )],
+    conclusion: [
+      new Quad(
+        new Variable('?u'),
+        new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
+        new Variable('?x'),
+      )
+    ]
+  },{
+    premise: [new Quad(
+      new Variable('?u'),
+      new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+      new NamedNode('http://www.w3.org/2000/01/rdf-schema#ContainerMembershipProperty'),
+    )],
+    conclusion: [
+      new Quad(
+        new Variable('?u'),
+        new NamedNode('http://www.w3.org/2000/01/rdf-schema#subPropertyOf'),
+        new NamedNode('http://www.w3.org/2000/01/rdf-schema#member'),
+      )
+    ]
+  },
+  {
+    premise: [new Quad(
+      new Variable('?u'),
+      new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+      new NamedNode('http://www.w3.org/2000/01/rdf-schema#Datatype'),
+    )],
+    conclusion: [
+      new Quad(
+        new Variable('?u'),
+        new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
+        new NamedNode('http://www.w3.org/2000/01/rdf-schema#Literal'),
+      )
+    ]
+  },
+  ]);
+  expect(store.size).equal(1712)
+})
 });
+
+function load(filename, store) {
+  return new Promise((res) => {
+    new Parser({ baseIRI: 'http://example.org' }).parse(fs.createReadStream(path.join(__dirname, filename)), (error, quad) => {
+      if (quad)
+        store.add(quad);
+      else {
+        res();
+      }
+    });
+    
+  })
+}
 
 function alwaysTrue()  { return true;  }
 function alwaysFalse() { return false; }
