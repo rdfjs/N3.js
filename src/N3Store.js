@@ -770,13 +770,15 @@ export default class N3Store {
     cb();
   }
 
+  // eslint-disable-next-line no-warning-comments
   // TODO [FUTURE]: Improve performance by 'pre-computing' the index lookup
   // e.g. if a rule only has one variable - then we can just give it a pointer
   // to the index that it should do lookups from
   // Similarly with insertions
   _evaluatePremise(rule, content, cb, i = 0) {
-    let v0, v1, v2, value, [val0, val1, val2] = rule.premise[i].value, index = content[rule.premise[i].content], index1, index2;
-    v0 = !(value = val0.value);
+    let v1, v2, value, index1, index2;
+    const [val0, val1, val2] = rule.premise[i].value, index = content[rule.premise[i].content];
+    const v0 = !(value = val0.value);
     for (value in v0 ? index : { [value]: index[value] }) {
       if (index1 = index[value]) {
         if (v0) val0.value = Number(value);
@@ -790,10 +792,11 @@ export default class N3Store {
 
               if (i === rule.premise.length - 1)
                 rule.conclusion.forEach(c => {
-                  this._add(c.subject.value, c.predicate.value, c.object.value, content, () => { cb(c) })
+                  // eslint-disable-next-line max-nested-callbacks
+                  this._add(c.subject.value, c.predicate.value, c.object.value, content, () => { cb(c); });
                 });
               else
-                this._evaluatePremise(rule, content, cb, i + 1)
+                this._evaluatePremise(rule, content, cb, i + 1);
             }
             if (v2) val2.value = null;
           }
@@ -813,35 +816,39 @@ export default class N3Store {
   // A naive reasoning algorithm where rules are just applied by repeatedly applying rules
   // until no more evaluations are made
   _reasonGraphNaive(rules, content) {
-    let newRules = [];
+    const newRules = [];
 
     function addRule(conclusion) {
       if (conclusion.next)
         conclusion.next.forEach(rule => {
-          newRules.push([conclusion.subject.value, conclusion.predicate.value, conclusion.object.value, rule])
-        })
+          newRules.push([conclusion.subject.value, conclusion.predicate.value, conclusion.object.value, rule]);
+        });
     }
 
-    const addConclusions = (conclusion) => {
+    // eslint-disable-next-line func-style
+    const addConclusions = conclusion => {
       conclusion.forEach(c => {
-        this._add(c.subject.value, c.predicate.value, c.object.value, content, () => { addRule(c) })
+        // eslint-disable-next-line max-nested-callbacks
+        this._add(c.subject.value, c.predicate.value, c.object.value, content, () => { addRule(c); });
       });
-    }
+    };
 
     this._evaluateRules(rules, content, addRule);
 
-    while (newRules.length > 0) {
-      const [ subject, predicate, object, rule ] = newRules.pop()
-      let v1 = rule.basePremise.subject.value;
+    let r;
+    while ((r = newRules.pop()) !== undefined) {
+      const [subject, predicate, object, rule] = r;
+      const v1 = rule.basePremise.subject.value;
       if (!v1) rule.basePremise.subject.value = subject;
-      let v2 = rule.basePremise.predicate.value;
+      const v2 = rule.basePremise.predicate.value;
       if (!v2) rule.basePremise.predicate.value = predicate;
-      let v3 = rule.basePremise.object.value;
+      const v3 = rule.basePremise.object.value;
       if (!v3) rule.basePremise.object.value = object;
 
       if (rule.premise.length === 0) {
-        addConclusions(rule.conclusion)
-      } else {
+        addConclusions(rule.conclusion);
+      }
+      else {
         this._evaluatePremise(rule, content, addRule);
       }
 
@@ -849,25 +856,25 @@ export default class N3Store {
       if (!v2) rule.basePremise.predicate.value = null;
       if (!v3) rule.basePremise.object.value = null;
     }
-
   }
 
   _createRule({ premise, conclusion }) {
     const ids = this._ids, entities = this._entities, varMapping = {};
 
-    const toId = (value) => value.termType === 'Variable' ?
+    const toId = value => value.termType === 'Variable' ?
       // If the term is a variable then create an empty object that values can be placed into
       (varMapping[value.value] = varMapping[value.value] || {}) :
       // If the term is not a variable then set the ID value
       { value: ids[value = termToId(value)] || (ids[entities[++this._id] = value] = this._id) };
 
+    // eslint-disable-next-line func-style
     const t = term => ({ subject: toId(term.subject), predicate: toId(term.predicate), object: toId(term.object) });
 
     return {
       premise: premise.map(p => t(p)),
       conclusion: conclusion.map(p => t(p)),
       variables: Object.values(varMapping),
-    }
+    };
   }
 
   reason(rules) {
@@ -881,31 +888,32 @@ export default class N3Store {
             if (termEq(p.subject, c.subject) && termEq(p.predicate, c.predicate) && termEq(p.object, c.object)) {
               const set = new Set();
 
-              let premise = []
+              const premise = [];
 
               // Since these *will* be substited when we apply the rule,
               // we need to this so that we index correctly in the subsequent section
-              p.subject.value ||= 1;
-              p.object.value ||= 1;
-              p.predicate.value ||= 1;
+              p.subject.value = p.subject.value || 1;
+              p.object.value = p.object.value || 1;
+              p.predicate.value = p.predicate.value || 1;
 
               for (let j = 0; j < r2.premise.length; j++) {
                 if (j !== i) {
-                  premise.push(getIndex(r2.premise[j], set))
+                  premise.push(getIndex(r2.premise[j], set));
                 }
               }
 
+              // eslint-disable-next-line no-warning-comments
               // TODO: Create new rule, with new indexing
-              // TODO: Future, 'collapse' the next statements when the share a premise/base-premise
-              (c.next ||= []).push({
+              //       Future, 'collapse' the next statements when the share a premise/base-premise
+              (c.next = c.next || []).push({
                 premise,
                 conclusion: r2.conclusion,
-                // This is a single premise of the form { subject, predicate, object } 
+                // This is a single premise of the form { subject, predicate, object }
                 // which we can use to instantiate the rule using the new data that was emitted
-                basePremise: p
-              })
+                basePremise: p,
+              });
             }
-            r2.variables.forEach(v => { v.value = null })
+            r2.variables.forEach(v => { v.value = null; });
           }
         }
       }
@@ -913,14 +921,14 @@ export default class N3Store {
 
     for (const rule of rules) {
       const set = new Set();
-      rule.premise = rule.premise.map(p => getIndex(p, set))
+      rule.premise = rule.premise.map(p => getIndex(p, set));
     }
 
     let content;
     const graphs = this._getGraphs();
 
     for (const graphId in graphs) {
-      // Only if the specified graph contains triples, there can be results
+      // Only if the specified graph contains triples, then we need to reason
       if (content = graphs[graphId]) {
         this._reasonGraphNaive(rules, content);
       }
@@ -995,7 +1003,7 @@ function getIndex({ subject, predicate, object }, set) {
   const p = predicate.value || set.has(predicate) || (set.add(predicate), false);
   const o = object.value    || set.has(object)    || (set.add(object), false);
 
-  return !s && p ? { content: 'predicates', value: [predicate, object, subject] } :
+  return (!s && p) ? { content: 'predicates', value: [predicate, object, subject] } :
     o ? { content: 'objects', value: [object, subject, predicate] } :
         { content: 'subjects', value: [subject, predicate, object] };
 }

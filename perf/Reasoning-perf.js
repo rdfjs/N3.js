@@ -7,25 +7,25 @@ const fs = require('fs'),
 const { Quad, NamedNode, Variable } = N3;
 
 function load(filename, store) {
-  return new Promise((res) => {
-    new N3.Parser({ baseIRI: 'http://example.org' }).parse(fs.createReadStream(path.join(__dirname, filename)), (error, quad) => {
-      assert(!error, error);
-      if (quad)
-        store.add(quad);
-      else {
-        res();
-      }
-    });
-    
-  })
+  return new Promise((res => {
+    new N3.Parser({ baseIRI: 'http://example.org' }).parse(
+      fs.createReadStream(path.join(__dirname, filename)), (error, quad) => {
+        assert(!error, error);
+        if (quad)
+          store.add(quad);
+        else {
+          res();
+        }
+      });
+  }));
 }
 
 async function deepTaxonomy() {
   for (let i = 1; i <= 6; i++) {
     const store = new N3.Store();
     const TITLE = `test-dl-${10 ** i}.n3`;
-    
-    console.time(`Load ${TITLE}`);  
+
+    console.time(`Load ${TITLE}`);
     await load(`data/deep-taxonomy/${TITLE}`, store);
     console.timeEnd(`Load ${TITLE}`);
 
@@ -35,7 +35,7 @@ async function deepTaxonomy() {
         new Variable('?s'),
         new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
         new Variable('?o'),
-      ),new Quad(
+      ), new Quad(
         new Variable('?o'),
         new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
         new Variable('?o2'),
@@ -46,9 +46,9 @@ async function deepTaxonomy() {
           new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
           new Variable('?o2'),
         ),
-      ]
-    }])
-    console.timeEnd(`Reasoning: ${TITLE}`)
+      ],
+    }]);
+    console.timeEnd(`Reasoning: ${TITLE}`);
 
     console.log(store.has(
       new Quad(
@@ -56,9 +56,9 @@ async function deepTaxonomy() {
         new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
         new NamedNode('http://eulersharp.sourceforge.net/2009/12dtb/test#A2'),
       ),
-    ))
-  
-    console.log()
+    ));
+
+    console.log();
   }
 }
 
@@ -80,7 +80,7 @@ async function run() {
       new Variable('?s'),
       new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
       new Variable('?o'),
-    ),new Quad(
+    ), new Quad(
       new Variable('?o'),
       new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
       new Variable('?o2'),
@@ -91,7 +91,7 @@ async function run() {
         new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
         new Variable('?o2'),
       ),
-    ]
+    ],
   },
   {
     premise: [new Quad(
@@ -105,14 +105,14 @@ async function run() {
         new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
         new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#Property'),
       ),
-    ]
+    ],
   },
   {
     premise: [new Quad(
       new Variable('?a'),
       new NamedNode('http://www.w3.org/2000/01/rdf-schema#domain'),
       new Variable('?x'),
-    ),new Quad(
+    ), new Quad(
       new Variable('?u'),
       new Variable('?a'),
       new Variable('?y'),
@@ -123,14 +123,14 @@ async function run() {
         new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
         new Variable('?x'),
       ),
-    ]
+    ],
   },
   {
     premise: [new Quad(
       new Variable('?a'),
       new NamedNode('http://www.w3.org/2000/01/rdf-schema#range'),
       new Variable('?x'),
-    ),new Quad(
+    ), new Quad(
       new Variable('?u'), // With rules like this we *do not* need to iterate over the subject index so we should avoid doing so
       new Variable('?a'),
       new Variable('?v'),
@@ -141,7 +141,7 @@ async function run() {
         new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
         new Variable('?x'),
       ),
-    ]
+    ],
   },
   {
     premise: [new Quad(
@@ -160,14 +160,14 @@ async function run() {
         new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
         new NamedNode('http://www.w3.org/2000/01/rdf-schema#Resource'),
       ),
-    ]
+    ],
   },
   {
     premise: [new Quad(
       new Variable('?u'),
       new NamedNode('http://www.w3.org/2000/01/rdf-schema#subPropertyOf'),
       new Variable('?v'),
-    ),new Quad(
+    ), new Quad(
       new Variable('?v'),
       new NamedNode('http://www.w3.org/2000/01/rdf-schema#subPropertyOf'),
       new Variable('?x'),
@@ -177,8 +177,8 @@ async function run() {
         new Variable('?u'),
         new NamedNode('http://www.w3.org/2000/01/rdf-schema#subPropertyOf'),
         new Variable('?x'),
-      )
-    ]
+      ),
+    ],
   },
   {
     premise: [new Quad(
@@ -191,8 +191,8 @@ async function run() {
         new Variable('?u'),
         new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
         new NamedNode('http://www.w3.org/2000/01/rdf-schema#Resource'),
-      )
-    ]
+      ),
+    ],
   },
   {
     premise: [new Quad(
@@ -209,9 +209,9 @@ async function run() {
         new Variable('?v'),
         new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
         new Variable('?x'),
-      )
-    ]
-  },{
+      ),
+    ],
+  }, {
     premise: [new Quad(
       new Variable('?u'),
       new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
@@ -222,15 +222,15 @@ async function run() {
         new Variable('?u'),
         new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
         new Variable('?u'),
-      )
-    ]
+      ),
+    ],
   },
   {
     premise: [new Quad(
       new Variable('?u'),
       new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
       new Variable('?v'),
-    ),new Quad(
+    ), new Quad(
       new Variable('?v'),
       new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
       new Variable('?x'),
@@ -240,9 +240,9 @@ async function run() {
         new Variable('?u'),
         new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
         new Variable('?x'),
-      )
-    ]
-  },{
+      ),
+    ],
+  }, {
     premise: [new Quad(
       new Variable('?u'),
       new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
@@ -253,8 +253,8 @@ async function run() {
         new Variable('?u'),
         new NamedNode('http://www.w3.org/2000/01/rdf-schema#subPropertyOf'),
         new NamedNode('http://www.w3.org/2000/01/rdf-schema#member'),
-      )
-    ]
+      ),
+    ],
   },
   {
     premise: [new Quad(
@@ -267,54 +267,18 @@ async function run() {
         new Variable('?u'),
         new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
         new NamedNode('http://www.w3.org/2000/01/rdf-schema#Literal'),
-      )
-    ]
+      ),
+    ],
   },
   ]);
 
-  // for (const elem of store.match(null, new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), null)) {
-  //   const r = [...store.match(elem.object, new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'), null)];
-  //   if (r.length > 0) {
-  //     // console.log([...store.match(null, new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), null)])
-  //     console.log(elem.subject.value, r);
-  //   }
-  //   // console.log([...store.match(elem.object, new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'), null)])
-  // }
-  // console.log([...store.match(null, new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), null)])
-  // console.log([...store.match(null, new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'), null)])
-
   console.timeEnd('apply reasoning');
-
-  // console.log(store.has(
-  //   new Quad(
-  //     new NamedNode('http://example.org#me'),
-  //     new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-  //     new NamedNode('http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing'),
-  //   ),
-  // ))
-
-  // console.log(store.has(
-  //   new Quad(
-  //     new NamedNode('http://example.org#me'),
-  //     new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-  //     new NamedNode('http://xmlns.com/foaf/0.1/Person'),
-  //   ),
-  // ))
-  // console.log(store.has(
-  //   new Quad(
-  //     new NamedNode('http://xmlns.com/foaf/0.1/Person'),
-  //     new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
-  //     new NamedNode('http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing'),
-  //   ),
-  // ))
-
-  // console.log(store.size)
 }
 
 (async () => {
-  console.log('Reasoning over TimBL profile and FOAF')
+  console.log('Reasoning over TimBL profile and FOAF');
   await run();
 
-  console.log('\n\nRunning Deep Taxonomy Benchmark\n')
+  console.log('\n\nRunning Deep Taxonomy Benchmark\n');
   await deepTaxonomy();
 })();
