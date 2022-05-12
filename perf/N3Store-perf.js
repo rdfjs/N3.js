@@ -86,7 +86,7 @@ for (l = 0; l < dim; l++)
   assert.equal(store.getQuads(null, null, null, prefix + l).length, dimCubed);
 console.timeEnd(TEST);
 
-console.log();
+console.log('N3 Store tests for sparsely connected entities');
 
 store = new N3.Store();
 TEST = `- Adding ${dimQuads} with all different IRIs`;
