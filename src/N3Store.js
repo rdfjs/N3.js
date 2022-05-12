@@ -829,17 +829,24 @@ export default class N3Store {
   // A naive reasoning algorithm where rules are just applied by repeatedly applying rules
   // until no more evaluations are made
   _reasonGraphNaive(rules, content) {
-    let add = true
-
     let newRules = [];
-    this._evaluateRules(rules, content, d => { 
-      if (d.next) {
-        d.next.forEach(c => { newRules.push({ subject: d.subject.value, predicate: d.predicate.value, object: d.object.value, rule: c }) })
-      }
-    });
+
+    function addRule(conclusion) {
+      conclusion.next?.forEach(rule => {
+        newRules.push([conclusion.subject.value, conclusion.predicate.value, conclusion.object.value, rule])
+      })
+    }
+
+    function addConclusions(conclusion) {
+      conclusion.forEach(c => {
+        this._add(c.subject.value, c.predicate.value, c.object.value, content, () => { addRule(c) })
+      });
+    }
+
+    this._evaluateRules(rules, content, addRule);
 
     while (newRules.length > 0) {
-      const { subject, predicate, object, rule } = newRules.pop()
+      const [ subject, predicate, object, rule ] = newRules.pop()
       let v1 = rule.basePremise.subject.value;
       if (!v1) rule.basePremise.subject.value = subject;
       let v2 = rule.basePremise.predicate.value;
@@ -849,18 +856,10 @@ export default class N3Store {
 
       if (rule.premise.length === 0) {
         rule.conclusion.forEach(c => {
-          const changed = this._addToIndex(content.subjects,   c.subject.value,   c.predicate.value, c.object.value);
-          if (!changed) return;
-          this._addToIndex(content.predicates, c.predicate.value, c.object.value,    c.subject.value);
-          this._addToIndex(content.objects,    c.object.value,    c.subject.value,   c.predicate.value);
-          if (c.next)
-            c.next.forEach(r => { newRules.push({ subject: c.subject.value, predicate: c.predicate.value, object: c.object.value, rule: r }) })
+          this._add(c.subject.value, c.predicate.value, c.object.value, content, () => { addRule(c) })
         });
       } else {
-        this._evaluatePremise(rule, content, (c) => { 
-          if (c.next)
-            c.next.forEach(r => { newRules.push({ subject: c.subject.value, predicate: c.predicate.value, object: c.object.value, rule: r }) })
-         });
+        this._evaluatePremise(rule, content, addRule);
       }
 
       if (!v1) rule.basePremise.subject.value = null;
