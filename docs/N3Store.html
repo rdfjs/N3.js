@@ -415,7 +415,10 @@ Finally, <code>graphId</code> will be the graph of the created quads.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>  *<span class="hljs-title function_">_findInIndex</span>(<span class="hljs-params">index0, key0, key1, key2, name0, name1, name2, graphId</span>) {
-    <span class="hljs-keyword">let</span> tmp, index1, index2;</pre></div></div>
+    <span class="hljs-keyword">let</span> tmp, index1, index2;
+    <span class="hljs-keyword">const</span> entityKeys = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entities</span>;
+    <span class="hljs-keyword">const</span> graph = <span class="hljs-title function_">termFromId</span>(graphId, <span class="hljs-variable language_">this</span>.<span class="hljs-property">_factory</span>);
+    <span class="hljs-keyword">const</span> parts = { <span class="hljs-attr">subject</span>: <span class="hljs-literal">null</span>, <span class="hljs-attr">predicate</span>: <span class="hljs-literal">null</span>, <span class="hljs-attr">object</span>: <span class="hljs-literal">null</span> };</pre></div></div>
             
         </li>
         
@@ -426,13 +429,14 @@ Finally, <code>graphId</code> will be the graph of the created quads.</p>
               <div class="sswrap ">
                 <a class="ss" href="#section-21">&#x00a7;</a>
               </div>
-              <p>Depending on the number of variables, keys or reverse index are faster</p>
+              <p>If a key is specified, use only that part of index 0.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">const</span> varCount = !key0 + !key1 + !key2,
-        entityKeys = varCount &gt; <span class="hljs-number">1</span> ? <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">keys</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">_ids</span>) : <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entities</span>;
-    <span class="hljs-keyword">const</span> graph = <span class="hljs-title function_">termFromId</span>(graphId, <span class="hljs-variable language_">this</span>.<span class="hljs-property">_factory</span>);</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> value0 <span class="hljs-keyword">in</span> index0) {
+      <span class="hljs-keyword">if</span> (index1 = index0[value0]) {
+        parts[name0] = <span class="hljs-title function_">termFromId</span>(entityKeys[value0], <span class="hljs-variable language_">this</span>.<span class="hljs-property">_factory</span>);</pre></div></div>
             
         </li>
         
@@ -443,15 +447,14 @@ Finally, <code>graphId</code> will be the graph of the created quads.</p>
               <div class="sswrap ">
                 <a class="ss" href="#section-22">&#x00a7;</a>
               </div>
-              <p>If a key is specified, use only that part of index 0.</p>
+              <p>If a key is specified, use only that part of index 1.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
-    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> value0 <span class="hljs-keyword">in</span> index0) {
-      <span class="hljs-keyword">const</span> entity0 = entityKeys[value0];
-
-      <span class="hljs-keyword">if</span> (index1 = index0[value0]) {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
+        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> value1 <span class="hljs-keyword">in</span> index1) {
+          <span class="hljs-keyword">if</span> (index2 = index1[value1]) {
+            parts[name1] = <span class="hljs-title function_">termFromId</span>(entityKeys[value1], <span class="hljs-variable language_">this</span>.<span class="hljs-property">_factory</span>);</pre></div></div>
             
         </li>
         
@@ -462,15 +465,11 @@ Finally, <code>graphId</code> will be the graph of the created quads.</p>
               <div class="sswrap ">
                 <a class="ss" href="#section-23">&#x00a7;</a>
               </div>
-              <p>If a key is specified, use only that part of index 1.</p>
+              <p>If a key is specified, use only that part of index 2, if it exists.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
-        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> value1 <span class="hljs-keyword">in</span> index1) {
-          <span class="hljs-keyword">const</span> entity1 = entityKeys[value1];
-
-          <span class="hljs-keyword">if</span> (index2 = index1[value1]) {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">const</span> values = key2 ? (key2 <span class="hljs-keyword">in</span> index2 ? [key2] : []) : <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">keys</span>(index2);</pre></div></div>
             
         </li>
         
@@ -481,29 +480,11 @@ Finally, <code>graphId</code> will be the graph of the created quads.</p>
               <div class="sswrap ">
                 <a class="ss" href="#section-24">&#x00a7;</a>
               </div>
-              <p>If a key is specified, use only that part of index 2, if it exists.</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">const</span> values = key2 ? (key2 <span class="hljs-keyword">in</span> index2 ? [key2] : []) : <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">keys</span>(index2);</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-25">
-            <div class="annotation">
-              
-              <div class="sswrap ">
-                <a class="ss" href="#section-25">&#x00a7;</a>
-              </div>
               <p>Create quads for all items found in index 2.</p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> l = <span class="hljs-number">0</span>; l &lt; values.<span class="hljs-property">length</span>; l++) {
-              <span class="hljs-keyword">const</span> parts = { <span class="hljs-attr">subject</span>: <span class="hljs-literal">null</span>, <span class="hljs-attr">predicate</span>: <span class="hljs-literal">null</span>, <span class="hljs-attr">object</span>: <span class="hljs-literal">null</span> };
-              parts[name0] = <span class="hljs-title function_">termFromId</span>(entity0, <span class="hljs-variable language_">this</span>.<span class="hljs-property">_factory</span>);
-              parts[name1] = <span class="hljs-title function_">termFromId</span>(entity1, <span class="hljs-variable language_">this</span>.<span class="hljs-property">_factory</span>);
               parts[name2] = <span class="hljs-title function_">termFromId</span>(entityKeys[values[l]], <span class="hljs-variable language_">this</span>.<span class="hljs-property">_factory</span>);
               <span class="hljs-keyword">yield</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">_factory</span>.<span class="hljs-title function_">quad</span>(parts.<span class="hljs-property">subject</span>, parts.<span class="hljs-property">predicate</span>, parts.<span class="hljs-property">object</span>, graph);
             }
@@ -516,11 +497,11 @@ Finally, <code>graphId</code> will be the graph of the created quads.</p>
         </li>
         
         
-        <li id="section-26">
+        <li id="section-25">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-26">&#x00a7;</a>
+                <a class="ss" href="#section-25">&#x00a7;</a>
               </div>
               <h3 id="_loop-executes-the-callback-on-all-keys-of-index-0"><code>_loop</code> executes the callback on all keys of index 0</h3>
 
@@ -534,11 +515,11 @@ Finally, <code>graphId</code> will be the graph of the created quads.</p>
         </li>
         
         
-        <li id="section-27">
+        <li id="section-26">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-27">&#x00a7;</a>
+                <a class="ss" href="#section-26">&#x00a7;</a>
               </div>
               <h3 id="_loopbykey0-executes-the-callback-on-all-keys-of-a-certain-entry-in-index-0"><code>_loopByKey0</code> executes the callback on all keys of a certain entry in index 0</h3>
 
@@ -555,11 +536,11 @@ Finally, <code>graphId</code> will be the graph of the created quads.</p>
         </li>
         
         
-        <li id="section-28">
+        <li id="section-27">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-28">&#x00a7;</a>
+                <a class="ss" href="#section-27">&#x00a7;</a>
               </div>
               <h3 id="_loopbykey1-executes-the-callback-on-given-keys-of-all-entries-in-index-0"><code>_loopByKey1</code> executes the callback on given keys of all entries in index 0</h3>
 
@@ -577,11 +558,11 @@ Finally, <code>graphId</code> will be the graph of the created quads.</p>
         </li>
         
         
-        <li id="section-29">
+        <li id="section-28">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-29">&#x00a7;</a>
+                <a class="ss" href="#section-28">&#x00a7;</a>
               </div>
               <h3 id="_loopby2keys-executes-the-callback-on-given-keys-of-certain-entries-in-index-2"><code>_loopBy2Keys</code> executes the callback on given keys of certain entries in index 2</h3>
 
@@ -598,11 +579,11 @@ Finally, <code>graphId</code> will be the graph of the created quads.</p>
         </li>
         
         
-        <li id="section-30">
+        <li id="section-29">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-30">&#x00a7;</a>
+                <a class="ss" href="#section-29">&#x00a7;</a>
               </div>
               <h3 id="_countinindex-counts-matching-quads-in-a-three-layered-index"><code>_countInIndex</code> counts matching quads in a three-layered index.</h3>
 <p>The index base is <code>index0</code> and the keys at each level are <code>key0</code>, <code>key1</code>, and <code>key2</code>.
@@ -616,11 +597,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-31">
+        <li id="section-30">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-31">&#x00a7;</a>
+                <a class="ss" href="#section-30">&#x00a7;</a>
               </div>
               <p>If a key is specified, count only that part of index 0</p>
 
@@ -633,11 +614,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-32">
+        <li id="section-31">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-32">&#x00a7;</a>
+                <a class="ss" href="#section-31">&#x00a7;</a>
               </div>
               <p>If a key is specified, count only that part of index 1</p>
 
@@ -650,11 +631,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-33">
+        <li id="section-32">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-33">&#x00a7;</a>
+                <a class="ss" href="#section-32">&#x00a7;</a>
               </div>
               <p>If a key is specified, count the quad if it exists</p>
 
@@ -665,11 +646,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-34">
+        <li id="section-33">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-34">&#x00a7;</a>
+                <a class="ss" href="#section-33">&#x00a7;</a>
               </div>
               <p>Otherwise, count all quads</p>
 
@@ -686,11 +667,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-35">
+        <li id="section-34">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-35">&#x00a7;</a>
+                <a class="ss" href="#section-34">&#x00a7;</a>
               </div>
               <h3 id="_getgraphs-returns-an-array-with-the-given-graph"><code>_getGraphs</code> returns an array with the given graph,</h3>
 <p>or all graphs if the argument is null or undefined.</p>
@@ -708,11 +689,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-36">
+        <li id="section-35">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-36">&#x00a7;</a>
+                <a class="ss" href="#section-35">&#x00a7;</a>
               </div>
               <h3 id="_uniqueentities-returns-a-function-that-accepts-an-entity-id"><code>_uniqueEntities</code> returns a function that accepts an entity ID</h3>
 <p>and passes the corresponding entity to callback if it hasn’t occurred before.</p>
@@ -732,11 +713,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-37">
+        <li id="section-36">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-37">&#x00a7;</a>
+                <a class="ss" href="#section-36">&#x00a7;</a>
               </div>
               <h2 id="public-methods">Public methods</h2>
 
@@ -745,11 +726,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-38">
+        <li id="section-37">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-38">&#x00a7;</a>
+                <a class="ss" href="#section-37">&#x00a7;</a>
               </div>
               <h3 id="add-adds-the-specified-quad-to-the-dataset"><code>add</code> adds the specified quad to the dataset.</h3>
 <p>Returns the dataset instance it was called on.
@@ -765,11 +746,11 @@ Existing quads, as defined in Quad.equals, will be ignored.</p>
         </li>
         
         
-        <li id="section-39">
+        <li id="section-38">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-39">&#x00a7;</a>
+                <a class="ss" href="#section-38">&#x00a7;</a>
               </div>
               <h3 id="addquad-adds-a-new-quad-to-the-store"><code>addQuad</code> adds a new quad to the store.</h3>
 <p>Returns if the quad index has changed, if the quad did not already exist.</p>
@@ -781,11 +762,11 @@ Existing quads, as defined in Quad.equals, will be ignored.</p>
         </li>
         
         
-        <li id="section-40">
+        <li id="section-39">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-40">&#x00a7;</a>
+                <a class="ss" href="#section-39">&#x00a7;</a>
               </div>
               <p>Shift arguments if a quad object is given instead of components</p>
 
@@ -798,11 +779,11 @@ Existing quads, as defined in Quad.equals, will be ignored.</p>
         </li>
         
         
-        <li id="section-41">
+        <li id="section-40">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-41">&#x00a7;</a>
+                <a class="ss" href="#section-40">&#x00a7;</a>
               </div>
               <p>Convert terms to internal string representation</p>
 
@@ -816,11 +797,11 @@ Existing quads, as defined in Quad.equals, will be ignored.</p>
         </li>
         
         
-        <li id="section-42">
+        <li id="section-41">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-42">&#x00a7;</a>
+                <a class="ss" href="#section-41">&#x00a7;</a>
               </div>
               <p>Find the graph that will contain the triple</p>
 
@@ -831,11 +812,11 @@ Existing quads, as defined in Quad.equals, will be ignored.</p>
         </li>
         
         
-        <li id="section-43">
+        <li id="section-42">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-43">&#x00a7;</a>
+                <a class="ss" href="#section-42">&#x00a7;</a>
               </div>
               <p>Create the graph if it doesn’t exist yet</p>
 
@@ -847,11 +828,11 @@ Existing quads, as defined in Quad.equals, will be ignored.</p>
         </li>
         
         
-        <li id="section-44">
+        <li id="section-43">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-44">&#x00a7;</a>
+                <a class="ss" href="#section-43">&#x00a7;</a>
               </div>
               <p>Freezing a graph helps subsequent <code>add</code> performance,
 and properties will never be modified anyway</p>
@@ -864,11 +845,11 @@ and properties will never be modified anyway</p>
         </li>
         
         
-        <li id="section-45">
+        <li id="section-44">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-45">&#x00a7;</a>
+                <a class="ss" href="#section-44">&#x00a7;</a>
               </div>
               <p>Since entities can often be long IRIs, we avoid storing them in every index.
 Instead, we have a separate index that maps entities to numbers,
@@ -889,11 +870,11 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-46">
+        <li id="section-45">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-46">&#x00a7;</a>
+                <a class="ss" href="#section-45">&#x00a7;</a>
               </div>
               <p>The cached quad count is now invalid</p>
 
@@ -906,11 +887,11 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-47">
+        <li id="section-46">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-47">&#x00a7;</a>
+                <a class="ss" href="#section-46">&#x00a7;</a>
               </div>
               <h3 id="addquads-adds-multiple-quads-to-the-store"><code>addQuads</code> adds multiple quads to the store</h3>
 
@@ -924,11 +905,11 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-48">
+        <li id="section-47">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-48">&#x00a7;</a>
+                <a class="ss" href="#section-47">&#x00a7;</a>
               </div>
               <h3 id="delete-removes-the-specified-quad-from-the-dataset"><code>delete</code> removes the specified quad from the dataset.</h3>
 <p>Returns the dataset instance it was called on.</p>
@@ -943,11 +924,11 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-49">
+        <li id="section-48">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-49">&#x00a7;</a>
+                <a class="ss" href="#section-48">&#x00a7;</a>
               </div>
               <h3 id="has-determines-whether-a-dataset-includes-a-certain-quad-or-quad-pattern"><code>has</code> determines whether a dataset includes a certain quad or quad pattern.</h3>
 
@@ -962,11 +943,11 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-50">
+        <li id="section-49">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-50">&#x00a7;</a>
+                <a class="ss" href="#section-49">&#x00a7;</a>
               </div>
               <h3 id="import-adds-a-stream-of-quads-to-the-store"><code>import</code> adds a stream of quads to the store</h3>
 
@@ -980,11 +961,11 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-51">
+        <li id="section-50">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-51">&#x00a7;</a>
+                <a class="ss" href="#section-50">&#x00a7;</a>
               </div>
               <h3 id="removequad-removes-a-quad-from-the-store-if-it-exists"><code>removeQuad</code> removes a quad from the store if it exists</h3>
 
@@ -995,11 +976,11 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-52">
+        <li id="section-51">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-52">&#x00a7;</a>
+                <a class="ss" href="#section-51">&#x00a7;</a>
               </div>
               <p>Shift arguments if a quad object is given instead of components</p>
 
@@ -1012,11 +993,11 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-53">
+        <li id="section-52">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-53">&#x00a7;</a>
+                <a class="ss" href="#section-52">&#x00a7;</a>
               </div>
               <p>Convert terms to internal string representation</p>
 
@@ -1030,11 +1011,11 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-54">
+        <li id="section-53">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-54">&#x00a7;</a>
+                <a class="ss" href="#section-53">&#x00a7;</a>
               </div>
               <p>Find internal identifiers for all components
 and verify the quad exists.</p>
@@ -1053,11 +1034,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-55">
+        <li id="section-54">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-55">&#x00a7;</a>
+                <a class="ss" href="#section-54">&#x00a7;</a>
               </div>
               <p>Remove it from all indexes</p>
 
@@ -1071,11 +1052,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-56">
+        <li id="section-55">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-56">&#x00a7;</a>
+                <a class="ss" href="#section-55">&#x00a7;</a>
               </div>
               <p>Remove the graph if it is empty</p>
 
@@ -1089,11 +1070,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-57">
+        <li id="section-56">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-57">&#x00a7;</a>
+                <a class="ss" href="#section-56">&#x00a7;</a>
               </div>
               <h3 id="removequads-removes-multiple-quads-from-the-store"><code>removeQuads</code> removes multiple quads from the store</h3>
 
@@ -1107,11 +1088,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-58">
+        <li id="section-57">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-58">&#x00a7;</a>
+                <a class="ss" href="#section-57">&#x00a7;</a>
               </div>
               <h3 id="remove-removes-a-stream-of-quads-from-the-store"><code>remove</code> removes a stream of quads from the store</h3>
 
@@ -1125,11 +1106,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-59">
+        <li id="section-58">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-59">&#x00a7;</a>
+                <a class="ss" href="#section-58">&#x00a7;</a>
               </div>
               <h3 id="removematches-removes-all-matching-quads-from-the-store"><code>removeMatches</code> removes all matching quads from the store</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
@@ -1151,11 +1132,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-60">
+        <li id="section-59">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-60">&#x00a7;</a>
+                <a class="ss" href="#section-59">&#x00a7;</a>
               </div>
               <h3 id="deletegraph-removes-all-triples-with-the-given-graph-from-the-store"><code>deleteGraph</code> removes all triples with the given graph from the store</h3>
 
@@ -1168,11 +1149,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-61">
+        <li id="section-60">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-61">&#x00a7;</a>
+                <a class="ss" href="#section-60">&#x00a7;</a>
               </div>
               <h3 id="getquads-returns-an-array-of-quads-matching-a-pattern"><code>getQuads</code> returns an array of quads matching a pattern.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
@@ -1186,11 +1167,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-62">
+        <li id="section-61">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-62">&#x00a7;</a>
+                <a class="ss" href="#section-61">&#x00a7;</a>
               </div>
               <h3 id="readquads-returns-an-generator-of-quads-matching-a-pattern"><code>readQuads</code> returns an generator of quads matching a pattern.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
@@ -1202,11 +1183,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-63">
+        <li id="section-62">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-63">&#x00a7;</a>
+                <a class="ss" href="#section-62">&#x00a7;</a>
               </div>
               <p>Convert terms to internal string representation</p>
 
@@ -1223,11 +1204,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-64">
+        <li id="section-63">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-64">&#x00a7;</a>
+                <a class="ss" href="#section-63">&#x00a7;</a>
               </div>
               <p>Translate IRIs to internal index keys.</p>
 
@@ -1243,11 +1224,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-65">
+        <li id="section-64">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-65">&#x00a7;</a>
+                <a class="ss" href="#section-64">&#x00a7;</a>
               </div>
               <p>Only if the specified graph contains triples, there can be results</p>
 
@@ -1258,11 +1239,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-66">
+        <li id="section-65">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-66">&#x00a7;</a>
+                <a class="ss" href="#section-65">&#x00a7;</a>
               </div>
               <p>Choose the optimal index, based on what fields are present</p>
 
@@ -1274,19 +1255,37 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-67">
+        <li id="section-66">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-67">&#x00a7;</a>
+                <a class="ss" href="#section-66">&#x00a7;</a>
               </div>
               <p>If subject and object are given, the object index will be the fastest</p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">yield</span>* <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_findInIndex</span>(content.<span class="hljs-property">objects</span>, objectId, subjectId, predicateId,
-                              <span class="hljs-string">&#x27;object&#x27;</span>, <span class="hljs-string">&#x27;subject&#x27;</span>, <span class="hljs-string">&#x27;predicate&#x27;</span>, graphId, <span class="hljs-literal">null</span>, <span class="hljs-literal">true</span>);
+                              <span class="hljs-string">&#x27;object&#x27;</span>, <span class="hljs-string">&#x27;subject&#x27;</span>, <span class="hljs-string">&#x27;predicate&#x27;</span>, graphId);
           <span class="hljs-keyword">else</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-67">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-67">&#x00a7;</a>
+              </div>
+              <p>If only subject and possibly predicate are given, the subject index will be the fastest</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">yield</span>* <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_findInIndex</span>(content.<span class="hljs-property">subjects</span>, subjectId, predicateId, <span class="hljs-literal">null</span>,
+                              <span class="hljs-string">&#x27;subject&#x27;</span>, <span class="hljs-string">&#x27;predicate&#x27;</span>, <span class="hljs-string">&#x27;object&#x27;</span>, graphId);
+        }
+        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (predicateId)</pre></div></div>
             
         </li>
         
@@ -1297,14 +1296,13 @@ and verify the quad exists.</p>
               <div class="sswrap ">
                 <a class="ss" href="#section-68">&#x00a7;</a>
               </div>
-              <p>If only subject and possibly predicate are given, the subject index will be the fastest</p>
+              <p>If only predicate and possibly object are given, the predicate index will be the fastest</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">yield</span>* <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_findInIndex</span>(content.<span class="hljs-property">subjects</span>, subjectId, predicateId, <span class="hljs-literal">null</span>,
-                              <span class="hljs-string">&#x27;subject&#x27;</span>, <span class="hljs-string">&#x27;predicate&#x27;</span>, <span class="hljs-string">&#x27;object&#x27;</span>, graphId, <span class="hljs-literal">null</span>, <span class="hljs-literal">true</span>);
-        }
-        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (predicateId)</pre></div></div>
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">yield</span>* <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_findInIndex</span>(content.<span class="hljs-property">predicates</span>, predicateId, objectId, <span class="hljs-literal">null</span>,
+                            <span class="hljs-string">&#x27;predicate&#x27;</span>, <span class="hljs-string">&#x27;object&#x27;</span>, <span class="hljs-string">&#x27;subject&#x27;</span>, graphId);
+        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (objectId)</pre></div></div>
             
         </li>
         
@@ -1315,13 +1313,13 @@ and verify the quad exists.</p>
               <div class="sswrap ">
                 <a class="ss" href="#section-69">&#x00a7;</a>
               </div>
-              <p>If only predicate and possibly object are given, the predicate index will be the fastest</p>
+              <p>If only object is given, the object index will be the fastest</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">yield</span>* <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_findInIndex</span>(content.<span class="hljs-property">predicates</span>, predicateId, objectId, <span class="hljs-literal">null</span>,
-                            <span class="hljs-string">&#x27;predicate&#x27;</span>, <span class="hljs-string">&#x27;object&#x27;</span>, <span class="hljs-string">&#x27;subject&#x27;</span>, graphId, <span class="hljs-literal">null</span>, <span class="hljs-literal">true</span>);
-        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (objectId)</pre></div></div>
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">yield</span>* <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_findInIndex</span>(content.<span class="hljs-property">objects</span>, objectId, <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>,
+                            <span class="hljs-string">&#x27;object&#x27;</span>, <span class="hljs-string">&#x27;subject&#x27;</span>, <span class="hljs-string">&#x27;predicate&#x27;</span>, graphId);
+        <span class="hljs-keyword">else</span></pre></div></div>
             
         </li>
         
@@ -1332,13 +1330,15 @@ and verify the quad exists.</p>
               <div class="sswrap ">
                 <a class="ss" href="#section-70">&#x00a7;</a>
               </div>
-              <p>If only object is given, the object index will be the fastest</p>
+              <p>If nothing is given, iterate subjects and predicates first</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">yield</span>* <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_findInIndex</span>(content.<span class="hljs-property">objects</span>, objectId, <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>,
-                            <span class="hljs-string">&#x27;object&#x27;</span>, <span class="hljs-string">&#x27;subject&#x27;</span>, <span class="hljs-string">&#x27;predicate&#x27;</span>, graphId, <span class="hljs-literal">null</span>, <span class="hljs-literal">true</span>);
-        <span class="hljs-keyword">else</span></pre></div></div>
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">yield</span>* <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_findInIndex</span>(content.<span class="hljs-property">subjects</span>, <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>,
+                            <span class="hljs-string">&#x27;subject&#x27;</span>, <span class="hljs-string">&#x27;predicate&#x27;</span>, <span class="hljs-string">&#x27;object&#x27;</span>, graphId);
+      }
+    }
+  }</pre></div></div>
             
         </li>
         
@@ -1348,25 +1348,6 @@ and verify the quad exists.</p>
               
               <div class="sswrap ">
                 <a class="ss" href="#section-71">&#x00a7;</a>
-              </div>
-              <p>If nothing is given, iterate subjects and predicates first</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">yield</span>* <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_findInIndex</span>(content.<span class="hljs-property">subjects</span>, <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>,
-                            <span class="hljs-string">&#x27;subject&#x27;</span>, <span class="hljs-string">&#x27;predicate&#x27;</span>, <span class="hljs-string">&#x27;object&#x27;</span>, graphId, <span class="hljs-literal">null</span>, <span class="hljs-literal">true</span>);
-      }
-    }
-  }</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-72">
-            <div class="annotation">
-              
-              <div class="sswrap ">
-                <a class="ss" href="#section-72">&#x00a7;</a>
               </div>
               <h3 id="match-returns-a-new-dataset-that-is-comprised-of-all-quads-in-the-current-instance-matching-the-given-arguments"><code>match</code> returns a new dataset that is comprised of all quads in the current instance matching the given arguments.</h3>
 <p>The logic described in Quad Matching is applied for each quad in this dataset to check if it should be included in the output dataset.
@@ -1384,11 +1365,11 @@ For backwards compatibility, the object return also implements the Readable stre
         </li>
         
         
-        <li id="section-73">
+        <li id="section-72">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-73">&#x00a7;</a>
+                <a class="ss" href="#section-72">&#x00a7;</a>
               </div>
               <h3 id="countquads-returns-the-number-of-quads-matching-a-pattern"><code>countQuads</code> returns the number of quads matching a pattern.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
@@ -1400,11 +1381,11 @@ For backwards compatibility, the object return also implements the Readable stre
         </li>
         
         
-        <li id="section-74">
+        <li id="section-73">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-74">&#x00a7;</a>
+                <a class="ss" href="#section-73">&#x00a7;</a>
               </div>
               <p>Convert terms to internal string representation</p>
 
@@ -1421,11 +1402,11 @@ For backwards compatibility, the object return also implements the Readable stre
         </li>
         
         
-        <li id="section-75">
+        <li id="section-74">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-75">&#x00a7;</a>
+                <a class="ss" href="#section-74">&#x00a7;</a>
               </div>
               <p>Translate IRIs to internal index keys.</p>
 
@@ -1441,11 +1422,11 @@ For backwards compatibility, the object return also implements the Readable stre
         </li>
         
         
-        <li id="section-76">
+        <li id="section-75">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-76">&#x00a7;</a>
+                <a class="ss" href="#section-75">&#x00a7;</a>
               </div>
               <p>Only if the specified graph contains triples, there can be results</p>
 
@@ -1456,11 +1437,11 @@ For backwards compatibility, the object return also implements the Readable stre
         </li>
         
         
-        <li id="section-77">
+        <li id="section-76">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-77">&#x00a7;</a>
+                <a class="ss" href="#section-76">&#x00a7;</a>
               </div>
               <p>Choose the optimal index, based on what fields are present</p>
 
@@ -1472,11 +1453,11 @@ For backwards compatibility, the object return also implements the Readable stre
         </li>
         
         
-        <li id="section-78">
+        <li id="section-77">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-78">&#x00a7;</a>
+                <a class="ss" href="#section-77">&#x00a7;</a>
               </div>
               <p>If subject and object are given, the object index will be the fastest</p>
 
@@ -1488,11 +1469,11 @@ For backwards compatibility, the object return also implements the Readable stre
         </li>
         
         
-        <li id="section-79">
+        <li id="section-78">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-79">&#x00a7;</a>
+                <a class="ss" href="#section-78">&#x00a7;</a>
               </div>
               <p>If only subject and possibly predicate are given, the subject index will be the fastest</p>
 
@@ -1505,11 +1486,11 @@ For backwards compatibility, the object return also implements the Readable stre
         </li>
         
         
-        <li id="section-80">
+        <li id="section-79">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-80">&#x00a7;</a>
+                <a class="ss" href="#section-79">&#x00a7;</a>
               </div>
               <p>If only predicate and possibly object are given, the predicate index will be the fastest</p>
 
@@ -1522,11 +1503,11 @@ For backwards compatibility, the object return also implements the Readable stre
         </li>
         
         
-        <li id="section-81">
+        <li id="section-80">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-81">&#x00a7;</a>
+                <a class="ss" href="#section-80">&#x00a7;</a>
               </div>
               <p>If only object is possibly given, the object index will be the fastest</p>
 
@@ -1542,11 +1523,11 @@ For backwards compatibility, the object return also implements the Readable stre
         </li>
         
         
-        <li id="section-82">
+        <li id="section-81">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-82">&#x00a7;</a>
+                <a class="ss" href="#section-81">&#x00a7;</a>
               </div>
               <h3 id="foreach-executes-the-callback-on-all-quads"><code>forEach</code> executes the callback on all quads.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
@@ -1563,11 +1544,11 @@ For backwards compatibility, the object return also implements the Readable stre
         </li>
         
         
-        <li id="section-83">
+        <li id="section-82">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-83">&#x00a7;</a>
+                <a class="ss" href="#section-82">&#x00a7;</a>
               </div>
               <h3 id="every-executes-the-callback-on-all-quads"><code>every</code> executes the callback on all quads,</h3>
 <p>and returns <code>true</code> if it returns truthy for all them.
@@ -1587,11 +1568,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-84">
+        <li id="section-83">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-84">&#x00a7;</a>
+                <a class="ss" href="#section-83">&#x00a7;</a>
               </div>
               <h3 id="some-executes-the-callback-on-all-quads"><code>some</code> executes the callback on all quads,</h3>
 <p>and returns <code>true</code> if it returns truthy for any of them.
@@ -1609,11 +1590,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-85">
+        <li id="section-84">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-85">&#x00a7;</a>
+                <a class="ss" href="#section-84">&#x00a7;</a>
               </div>
               <h3 id="getsubjects-returns-all-subjects-that-match-the-pattern"><code>getSubjects</code> returns all subjects that match the pattern.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
@@ -1629,11 +1610,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-86">
+        <li id="section-85">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-86">&#x00a7;</a>
+                <a class="ss" href="#section-85">&#x00a7;</a>
               </div>
               <h3 id="forsubjects-executes-the-callback-on-all-subjects-that-match-the-pattern"><code>forSubjects</code> executes the callback on all subjects that match the pattern.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
@@ -1645,11 +1626,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-87">
+        <li id="section-86">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-87">&#x00a7;</a>
+                <a class="ss" href="#section-86">&#x00a7;</a>
               </div>
               <p>Convert terms to internal string representation</p>
 
@@ -1666,11 +1647,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-88">
+        <li id="section-87">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-88">&#x00a7;</a>
+                <a class="ss" href="#section-87">&#x00a7;</a>
               </div>
               <p>Translate IRIs to internal index keys.</p>
 
@@ -1685,11 +1666,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-89">
+        <li id="section-88">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-89">&#x00a7;</a>
+                <a class="ss" href="#section-88">&#x00a7;</a>
               </div>
               <p>Only if the specified graph contains triples, there can be results</p>
 
@@ -1700,11 +1681,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-90">
+        <li id="section-89">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-90">&#x00a7;</a>
+                <a class="ss" href="#section-89">&#x00a7;</a>
               </div>
               <p>Choose optimal index based on which fields are wildcards</p>
 
@@ -1716,11 +1697,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-91">
+        <li id="section-90">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-91">&#x00a7;</a>
+                <a class="ss" href="#section-90">&#x00a7;</a>
               </div>
               <p>If predicate and object are given, the POS index is best.</p>
 
@@ -1732,11 +1713,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-92">
+        <li id="section-91">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-92">&#x00a7;</a>
+                <a class="ss" href="#section-91">&#x00a7;</a>
               </div>
               <p>If only predicate is given, the SPO index is best.</p>
 
@@ -1749,11 +1730,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-93">
+        <li id="section-92">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-93">&#x00a7;</a>
+                <a class="ss" href="#section-92">&#x00a7;</a>
               </div>
               <p>If only object is given, the OSP index is best.</p>
 
@@ -1765,11 +1746,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-94">
+        <li id="section-93">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-94">&#x00a7;</a>
+                <a class="ss" href="#section-93">&#x00a7;</a>
               </div>
               <p>If no params given, iterate all the subjects</p>
 
@@ -1783,11 +1764,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-95">
+        <li id="section-94">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-95">&#x00a7;</a>
+                <a class="ss" href="#section-94">&#x00a7;</a>
               </div>
               <h3 id="getpredicates-returns-all-predicates-that-match-the-pattern"><code>getPredicates</code> returns all predicates that match the pattern.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
@@ -1803,11 +1784,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-96">
+        <li id="section-95">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-96">&#x00a7;</a>
+                <a class="ss" href="#section-95">&#x00a7;</a>
               </div>
               <h3 id="forpredicates-executes-the-callback-on-all-predicates-that-match-the-pattern"><code>forPredicates</code> executes the callback on all predicates that match the pattern.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
@@ -1819,11 +1800,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-97">
+        <li id="section-96">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-97">&#x00a7;</a>
+                <a class="ss" href="#section-96">&#x00a7;</a>
               </div>
               <p>Convert terms to internal string representation</p>
 
@@ -1840,11 +1821,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-98">
+        <li id="section-97">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-98">&#x00a7;</a>
+                <a class="ss" href="#section-97">&#x00a7;</a>
               </div>
               <p>Translate IRIs to internal index keys.</p>
 
@@ -1859,11 +1840,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-99">
+        <li id="section-98">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-99">&#x00a7;</a>
+                <a class="ss" href="#section-98">&#x00a7;</a>
               </div>
               <p>Only if the specified graph contains triples, there can be results</p>
 
@@ -1874,11 +1855,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-100">
+        <li id="section-99">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-100">&#x00a7;</a>
+                <a class="ss" href="#section-99">&#x00a7;</a>
               </div>
               <p>Choose optimal index based on which fields are wildcards</p>
 
@@ -1890,11 +1871,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-101">
+        <li id="section-100">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-101">&#x00a7;</a>
+                <a class="ss" href="#section-100">&#x00a7;</a>
               </div>
               <p>If subject and object are given, the OSP index is best.</p>
 
@@ -1906,11 +1887,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-102">
+        <li id="section-101">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-102">&#x00a7;</a>
+                <a class="ss" href="#section-101">&#x00a7;</a>
               </div>
               <p>If only subject is given, the SPO index is best.</p>
 
@@ -1923,11 +1904,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-103">
+        <li id="section-102">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-103">&#x00a7;</a>
+                <a class="ss" href="#section-102">&#x00a7;</a>
               </div>
               <p>If only object is given, the POS index is best.</p>
 
@@ -1939,11 +1920,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-104">
+        <li id="section-103">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-104">&#x00a7;</a>
+                <a class="ss" href="#section-103">&#x00a7;</a>
               </div>
               <p>If no params given, iterate all the predicates.</p>
 
@@ -1957,11 +1938,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-105">
+        <li id="section-104">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-105">&#x00a7;</a>
+                <a class="ss" href="#section-104">&#x00a7;</a>
               </div>
               <h3 id="getobjects-returns-all-objects-that-match-the-pattern"><code>getObjects</code> returns all objects that match the pattern.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
@@ -1977,11 +1958,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-106">
+        <li id="section-105">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-106">&#x00a7;</a>
+                <a class="ss" href="#section-105">&#x00a7;</a>
               </div>
               <h3 id="forobjects-executes-the-callback-on-all-objects-that-match-the-pattern"><code>forObjects</code> executes the callback on all objects that match the pattern.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
@@ -1993,11 +1974,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-107">
+        <li id="section-106">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-107">&#x00a7;</a>
+                <a class="ss" href="#section-106">&#x00a7;</a>
               </div>
               <p>Convert terms to internal string representation</p>
 
@@ -2014,11 +1995,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-108">
+        <li id="section-107">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-108">&#x00a7;</a>
+                <a class="ss" href="#section-107">&#x00a7;</a>
               </div>
               <p>Translate IRIs to internal index keys.</p>
 
@@ -2033,11 +2014,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-109">
+        <li id="section-108">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-109">&#x00a7;</a>
+                <a class="ss" href="#section-108">&#x00a7;</a>
               </div>
               <p>Only if the specified graph contains triples, there can be results</p>
 
@@ -2048,11 +2029,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-110">
+        <li id="section-109">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-110">&#x00a7;</a>
+                <a class="ss" href="#section-109">&#x00a7;</a>
               </div>
               <p>Choose optimal index based on which fields are wildcards</p>
 
@@ -2064,11 +2045,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-111">
+        <li id="section-110">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-111">&#x00a7;</a>
+                <a class="ss" href="#section-110">&#x00a7;</a>
               </div>
               <p>If subject and predicate are given, the SPO index is best.</p>
 
@@ -2080,11 +2061,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-112">
+        <li id="section-111">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-112">&#x00a7;</a>
+                <a class="ss" href="#section-111">&#x00a7;</a>
               </div>
               <p>If only subject is given, the OSP index is best.</p>
 
@@ -2097,11 +2078,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-113">
+        <li id="section-112">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-113">&#x00a7;</a>
+                <a class="ss" href="#section-112">&#x00a7;</a>
               </div>
               <p>If only predicate is given, the POS index is best.</p>
 
@@ -2113,11 +2094,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-114">
+        <li id="section-113">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-114">&#x00a7;</a>
+                <a class="ss" href="#section-113">&#x00a7;</a>
               </div>
               <p>If no params given, iterate all the objects.</p>
 
@@ -2131,11 +2112,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-115">
+        <li id="section-114">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-115">&#x00a7;</a>
+                <a class="ss" href="#section-114">&#x00a7;</a>
               </div>
               <h3 id="getgraphs-returns-all-graphs-that-match-the-pattern"><code>getGraphs</code> returns all graphs that match the pattern.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
@@ -2151,11 +2132,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-116">
+        <li id="section-115">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-116">&#x00a7;</a>
+                <a class="ss" href="#section-115">&#x00a7;</a>
               </div>
               <h3 id="forgraphs-executes-the-callback-on-all-graphs-that-match-the-pattern"><code>forGraphs</code> executes the callback on all graphs that match the pattern.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
@@ -2174,11 +2155,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-117">
+        <li id="section-116">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-117">&#x00a7;</a>
+                <a class="ss" href="#section-116">&#x00a7;</a>
               </div>
               <h3 id="createblanknode-creates-a-new-blank-node-returning-its-name"><code>createBlankNode</code> creates a new blank node, returning its name</h3>
 
@@ -2190,11 +2171,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-118">
+        <li id="section-117">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-118">&#x00a7;</a>
+                <a class="ss" href="#section-117">&#x00a7;</a>
               </div>
               <p>Generate a name based on the suggested name</p>
 
@@ -2209,11 +2190,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-119">
+        <li id="section-118">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-119">&#x00a7;</a>
+                <a class="ss" href="#section-118">&#x00a7;</a>
               </div>
               <p>Generate a generic blank node name</p>
 
@@ -2227,11 +2208,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-120">
+        <li id="section-119">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-120">&#x00a7;</a>
+                <a class="ss" href="#section-119">&#x00a7;</a>
               </div>
               <p>Add the blank node to the entities, avoiding the generation of duplicates</p>
 
@@ -2245,11 +2226,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-121">
+        <li id="section-120">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-121">&#x00a7;</a>
+                <a class="ss" href="#section-120">&#x00a7;</a>
               </div>
               <h3 id="extractlists-finds-and-removes-all-list-triples"><code>extractLists</code> finds and removes all list triples</h3>
 <p>and returns the items per list.</p>
@@ -2264,11 +2245,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-122">
+        <li id="section-121">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-122">&#x00a7;</a>
+                <a class="ss" href="#section-121">&#x00a7;</a>
               </div>
               <p>Traverse each list from its tail</p>
 
@@ -2286,11 +2267,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-123">
+        <li id="section-122">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-123">&#x00a7;</a>
+                <a class="ss" href="#section-122">&#x00a7;</a>
               </div>
               <p>Traverse the list from tail to end</p>
 
@@ -2305,11 +2286,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-124">
+        <li id="section-123">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-124">&#x00a7;</a>
+                <a class="ss" href="#section-123">&#x00a7;</a>
               </div>
               <p>Find the first and rest of this list node</p>
 
@@ -2325,11 +2306,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-125">
+        <li id="section-124">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-125">&#x00a7;</a>
+                <a class="ss" href="#section-124">&#x00a7;</a>
               </div>
               <p>one rdf:first</p>
 
@@ -2345,11 +2326,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-126">
+        <li id="section-125">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-126">&#x00a7;</a>
+                <a class="ss" href="#section-125">&#x00a7;</a>
               </div>
               <p>one rdf:rest</p>
 
@@ -2365,11 +2346,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-127">
+        <li id="section-126">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-127">&#x00a7;</a>
+                <a class="ss" href="#section-126">&#x00a7;</a>
               </div>
               <p>alien triple</p>
 
@@ -2386,11 +2367,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-128">
+        <li id="section-127">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-128">&#x00a7;</a>
+                <a class="ss" href="#section-127">&#x00a7;</a>
               </div>
               <p>{ :s :p (1 2) } arrives here with no head
 { (1 2) :p :o } arrives here with head set to the list.</p>
@@ -2405,11 +2386,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-129">
+        <li id="section-128">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-129">&#x00a7;</a>
+                <a class="ss" href="#section-128">&#x00a7;</a>
               </div>
               <p>one rdf:rest</p>
 
@@ -2430,11 +2411,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-130">
+        <li id="section-129">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-130">&#x00a7;</a>
+                <a class="ss" href="#section-129">&#x00a7;</a>
               </div>
               <p>Store the list item and continue with parent</p>
 
@@ -2450,11 +2431,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-131">
+        <li id="section-130">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-131">&#x00a7;</a>
+                <a class="ss" href="#section-130">&#x00a7;</a>
               </div>
               <p>Don’t remove any quads if the list is malformed</p>
 
@@ -2466,11 +2447,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-132">
+        <li id="section-131">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-132">&#x00a7;</a>
+                <a class="ss" href="#section-131">&#x00a7;</a>
               </div>
               <p>Store the list under the value of its head</p>
 
@@ -2483,11 +2464,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-133">
+        <li id="section-132">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-133">&#x00a7;</a>
+                <a class="ss" href="#section-132">&#x00a7;</a>
               </div>
               <p>Remove list quads if requested</p>
 
@@ -2501,11 +2482,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-134">
+        <li id="section-133">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-134">&#x00a7;</a>
+                <a class="ss" href="#section-133">&#x00a7;</a>
               </div>
               <h3 id="store-is-an-iterable">Store is an iterable.</h3>
 <p>Can be used where iterables are expected: for…of loops, array spread operator,
@@ -2521,11 +2502,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-135">
+        <li id="section-134">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-135">&#x00a7;</a>
+                <a class="ss" href="#section-134">&#x00a7;</a>
               </div>
               <p>Determines whether the argument is a string</p>
 
@@ -2547,11 +2528,13 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
   <span class="hljs-keyword">get</span> <span class="hljs-title function_">filtered</span>() {
     <span class="hljs-keyword">if</span> (!<span class="hljs-variable language_">this</span>.<span class="hljs-property">_filtered</span>) {
       <span class="hljs-keyword">const</span> { n3Store, graph, object, predicate, subject } = <span class="hljs-variable language_">this</span>;
-      <span class="hljs-keyword">const</span> quads = n3Store.<span class="hljs-title function_">getQuads</span>(subject, predicate, object, graph);
-      <span class="hljs-variable language_">this</span>.<span class="hljs-property">_filtered</span> = <span class="hljs-keyword">new</span> <span class="hljs-title function_">N3Store</span>(quads, { <span class="hljs-attr">factory</span>: n3Store.<span class="hljs-property">_factory</span> });
+      <span class="hljs-keyword">const</span> newStore = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_filtered</span> = <span class="hljs-keyword">new</span> <span class="hljs-title function_">N3Store</span>({ <span class="hljs-attr">factory</span>: n3Store.<span class="hljs-property">_factory</span> });
+      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> quad <span class="hljs-keyword">of</span> n3Store.<span class="hljs-title function_">readQuads</span>(subject, predicate, object, graph))
+        newStore.<span class="hljs-title function_">addQuad</span>(quad);
     }
     <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">_filtered</span>;
   }
+
   <span class="hljs-keyword">get</span> <span class="hljs-title function_">size</span>() {
     <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">filtered</span>.<span class="hljs-property">size</span>;
   }
