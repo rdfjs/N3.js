@@ -110,53 +110,67 @@ console.timeEnd(TEST);
 
 TEST = '* Retrieving single by subject';
 console.time(TEST);
-for (const quad of store.match(prefix + 1, undefined, undefined)) {
-  assert(quad);
+for (let i = 0; i < 1000000; i++) {
+  for (const quad of store.match(prefix + 1, undefined, undefined)) {
+    assert(quad);
+  }
 }
 console.timeEnd(TEST);
 
 
 TEST = '* Retrieving single by predicate';
 console.time(TEST);
-for (const quad of store.match(undefined, prefix + 1, undefined)) {
-  assert(quad);
+for (let i = 0; i < 1000000; i++) {
+  for (const quad of store.match(undefined, prefix + 1, undefined)) {
+    assert(quad);
+  }
 }
 console.timeEnd(TEST);
 
 TEST = '* Retrieving single by object';
 console.time(TEST);
-for (const quad of store.match(undefined, undefined, prefix + 1)) {
-  assert(quad);
+for (let i = 0; i < 1000000; i++) {
+  for (const quad of store.match(undefined, undefined, prefix + 1)) {
+    assert(quad);
+  }
 }
 console.timeEnd(TEST);
 
 
 TEST = '* Retrieving single by subject-predicate';
 console.time(TEST);
-for (const quad of store.match(prefix + 1, prefix + 1, undefined)) {
-  assert(quad);
+for (let i = 0; i < 1000000; i++) {
+  for (const quad of store.match(prefix + 1, prefix + 1, undefined)) {
+    assert(quad);
+  }
 }
 console.timeEnd(TEST);
 
 
 TEST = '* Retrieving single by subject-object';
 console.time(TEST);
-for (const quad of store.match(prefix + 1, undefined, prefix + 1)) {
-  assert(quad);
+for (let i = 0; i < 1000000; i++) {
+  for (const quad of store.match(prefix + 1, undefined, prefix + 1)) {
+    assert(quad);
+  }
 }
 console.timeEnd(TEST);
 
 TEST = '* Retrieving single by predicate-object';
 console.time(TEST);
-for (const quad of store.match(undefined, prefix + 1, prefix + 1)) {
-  assert(quad);
+for (let i = 0; i < 1000000; i++) {
+  for (const quad of store.match(undefined, prefix + 1, prefix + 1)) {
+    assert(quad);
+  }
 }
 console.timeEnd(TEST);
 
 
 TEST = '* Retrieving single by subject-predicate-object';
 console.time(TEST);
-for (const quad of store.match(prefix + 1, prefix + 1, prefix + 1)) {
-  assert(quad);
+for (let i = 0; i < 1000000; i++) {
+  for (const quad of store.match(prefix + 1, prefix + 1, prefix + 1)) {
+    assert(quad);
+  }
 }
 console.timeEnd(TEST);
