@@ -87,8 +87,7 @@ export default class N3Store {
   // Finally, `graphId` will be the graph of the created quads.
   *_findInIndex(index0, key0, key1, key2, name0, name1, name2, graphId) {
     let tmp, index1, index2;
-    // Depending on the number of variables, keys or reverse index are faster
-    const entityKeys = !(key0 || key1 || key2) ? Object.keys(this._ids) : this._entities;
+    const entityKeys = this._entities;
     const graph = termFromId(graphId, this._factory);
 
     // If a key is specified, use only that part of index 0.
