@@ -832,14 +832,7 @@ export default class N3Store {
     // console.log('reasoning', rules)
     
     let add = true
-    // while (add) {
-    //   add = false
-    //   this._evaluateRules(rules, content, d => { 
-    //     add = true;
-    //   });
-    // }
-    
-    // return;
+
     
     let newRules = [];
     this._evaluateRules(rules, content, d => { 
@@ -887,23 +880,6 @@ export default class N3Store {
       // console.log(v1)
     }
 
-    // while (add.length > 0) {
-    //   add = []
-    //   this._evaluateRules(rules, content, d => { 
-    //     if (d.next) {
-    //       d.next.forEach(c => { add.push({ subject: d.subject.value, predicate: d.predicate.value, object: d.object.value, rule: c }) })
-    //     }
-    //   });
-    //   console.log(add)
-    //   // for (let i = 0; i < arr.length; i++) {
-    //   //   let [subject, predicate, object] = arr[i];
-    //   //   const changed = this._addToIndex(content.subjects,   subject,   predicate, object);
-    //   //   if (!changed) return;
-    //   //   this._addToIndex(content.predicates, predicate, object,    subject);
-    //   //   this._addToIndex(content.objects,    object,    subject,   predicate);
-    //   //   add = true
-    //   // }
-    // }
   }
 
   _createRule({ premise, conclusion }) {
@@ -915,109 +891,27 @@ export default class N3Store {
     }
   }
 
-  _createPremise(premise, varMapping) {
-    const ids = this._ids;
-    const entities = this._entities;
-
-    const _termToId = (value) => {
-      if (value.termType === 'Variable') {
-        return varMapping[value.value] ||= {};
-      }
-      value = termToId(value);
-      value = ids[value] || (ids[entities[++this._id] = value] = this._id);
-      return { value };
-    }
-
-    let s = premise.subject.termType !== 'Variable'   || premise.subject.value in varMapping;
-    let p = premise.predicate.termType !== 'Variable' || premise.predicate.value in varMapping;
-    let o = premise.object.termType !== 'Variable'    || premise.object.value in varMapping;
-
-    let subject = _termToId(premise.subject);
-    let predicate = _termToId(premise.predicate);
-    let object = _termToId(premise.object);
-
-    // if (p && !s)
-    //   return { content: 'predicates', value: [predicate, object, subject] }
-    // else if (o)
-    //   return { content: 'objects', value: [object, subject, predicate] }
-    // else
-    //   return { content: 'subjects', value: [subject, predicate, object] };
-
-    if (s) {
-      if (o) return { content: 'objects', value: [object, subject, predicate] }
-      else return { content: 'subjects', value: [subject, predicate, object] };
-    } else if (p) return { content: 'predicates', value: [predicate, object, subject] }
-    else if (o) return { content: 'objects', value: [object, subject, predicate] }
-    else return { content: 'subjects', value: [subject, predicate, object] };
-
-
-      // if (subjectId) {
-      //   if (objectId)
-      //     // If subject and object are given, the object index will be the fastest
-      //     yield* this._findInIndex(content.objects, objectId, subjectId, predicateId,
-      //                       'object', 'subject', 'predicate', graphId, null, true);
-      //   else
-      //     // If only subject and possibly predicate are given, the subject index will be the fastest
-      //     yield* this._findInIndex(content.subjects, subjectId, predicateId, null,
-      //                       'subject', 'predicate', 'object', graphId, null, true);
-      // }
-      // else if (predicateId)
-      //   // If only predicate and possibly object are given, the predicate index will be the fastest
-      //   yield* this._findInIndex(content.predicates, predicateId, objectId, null,
-      //                     'predicate', 'object', 'subject', graphId, null, true);
-      // else if (objectId)
-      //   // If only object is given, the object index will be the fastest
-      //   yield* this._findInIndex(content.objects, objectId, null, null,
-      //                     'object', 'subject', 'predicate', graphId, null, true);
-      // else
-      //   // If nothing is given, iterate subjects and predicates first
-      //   yield* this._findInIndex(content.subjects, null, null, null,
-      //                     'subject', 'predicate', 'object', graphId, null, true);
-  }
-
   _createConclusion(premise, varMapping) {
-    const ids = this._ids;
-    const entities = this._entities;
+    const ids = this._ids, entities = this._entities;
 
-    const _termToId = (value) => {
-      if (value.termType === 'Variable') {
-        return varMapping[value.value] ||= {};
-      }
-      value = termToId(value);
-      value = ids[value] || (ids[entities[++this._id] = value] = this._id);
-      return { value };
-    }
-    let subject = _termToId(premise.subject);
-    let predicate = _termToId(premise.predicate);
-    let object = _termToId(premise.object);
+    const toId = (value) => value.termType === 'Variable' ?
+      // If the term is a variable then create an empty object that values can be placed into
+      varMapping[value.value] ||= {} :
+      // If the term is not a variable then set the ID value
+      { value: ids[value = termToId(value)] || (ids[entities[++this._id] = value] = this._id) };
 
-    return { subject, predicate, object };
+    return { subject: toId(premise.subject), predicate: toId(premise.predicate), object: toId(premise.object) };
   }
 
   reason(rules) {
-    // console.log('reason called')
     rules = rules.map(rule => this._createRule(rule));
-
-    function eq(t1, t2) {
-      if (!t1.value) {
-        t1.value = t2.value;
-      }
-
-      return t1.value === t2.value;
-    }
-
-    // let s, p, o;
 
     for (const r1 of rules) {
       for (const r2 of rules) {
         for (let i = 0; i < r2.premise.length; i++) {
           const p = r2.premise[i];
           for (const c of r1.conclusion) {
-            if (
-              eq(p.subject, c.subject) &&
-              eq(p.predicate, c.predicate) &&
-              eq(p.object, c.object)
-            ) {
+            if (termEq(p.subject, c.subject) && termEq(p.predicate, c.predicate) && termEq(p.object, c.object)) {
               const set = new Set();
 
               let premise = []
@@ -1029,21 +923,7 @@ export default class N3Store {
 
               for (let j = 0; j < r2.premise.length; j++) {
                 if (j !== i) {
-                  let prem;
-
-                  const { subject, predicate, object } = r2.premise[j];
-                  const s = subject.value || (set.has(subject) ? true : (set.add(subject), false));
-                  const p = predicate.value || (set.has(predicate) ? true : (set.add(predicate), false));
-                  const o = object.value || (set.has(object) ? true : (set.add(object), false));
-
-              if (s) {
-                if (o) prem = { content: 'objects', value: [object, subject, predicate] }
-                else prem = { content: 'subjects', value: [subject, predicate, object] };
-              } else if (p) prem = { content: 'predicates', value: [predicate, object, subject] }
-              else if (o) prem = { content: 'objects', value: [object, subject, predicate] }
-              else prem = { content: 'subjects', value: [subject, predicate, object] };
-
-              premise.push(prem)
+                  premise.push(getIndex(r2.premise[j], set))
                 }
               }
 
@@ -1065,19 +945,7 @@ export default class N3Store {
 
     for (const rule of rules) {
       const set = new Set();
-
-      rule.premise = rule.premise.map(({ subject, predicate, object }) => {
-        const s = subject.value || (set.has(subject) ? true : (set.add(subject), false));
-        const p = predicate.value || (set.has(predicate) ? true : (set.add(predicate), false));
-        const o = object.value || (set.has(object) ? true : (set.add(object), false));
-
-    if (s) {
-      if (o) return { content: 'objects', value: [object, subject, predicate] }
-      else return { content: 'subjects', value: [subject, predicate, object] };
-    } else if (p) return { content: 'predicates', value: [predicate, object, subject] }
-    else if (o) return { content: 'objects', value: [object, subject, predicate] }
-    else return { content: 'subjects', value: [subject, predicate, object] };
-      })
+      rule.premise = rule.premise.map(p => getIndex(p, set))
     }
 
     const graphs = this._getGraphs();
@@ -1153,4 +1021,21 @@ class DatasetCoreAndReadableStream extends Readable {
   *[Symbol.iterator]() {
     yield* this._filtered || this.n3Store.readQuads(this.subject, this.predicate, this.object, this.graph);
   }
+}
+
+function getIndex({ subject, predicate, object }, set) {
+  const s = subject.value   || set.has(subject)   || (set.add(subject), false);
+  const p = predicate.value || set.has(predicate) || (set.add(predicate), false);
+  const o = object.value    || set.has(object)    || (set.add(object), false);
+
+  return !s && p ? { content: 'predicates', value: [predicate, object, subject] } :
+    o ? { content: 'objects', value: [object, subject, predicate] } :
+        { content: 'subjects', value: [subject, predicate, object] };
+}
+
+function termEq(t1, t2) {
+  if (!t1.value) {
+    t1.value = t2.value;
+  }
+  return t1.value === t2.value;
 }
