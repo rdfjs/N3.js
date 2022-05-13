@@ -168,7 +168,7 @@ export default class N3Reasoner {
     }
 
     const graphs = this._store._getGraphs();
-    for (const graphId in this._store._getGraphs()) {
+    for (const graphId in graphs) {
       this._reasonGraphNaive(rules, graphs[graphId]);
     }
 
@@ -187,7 +187,7 @@ function getIndex({ subject, predicate, object }, set) {
 }
 
 function termEq(t1, t2) {
-  if (!t1.value) {
+  if (t1.value === null) {
     t1.value = t2.value;
   }
   return t1.value === t2.value;
