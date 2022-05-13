@@ -313,7 +313,7 @@ describe('Reasoner', () => {
 
   it('Should correctly apply RDFS to TimBL profile and FOAF', async function () {
     // eslint-disable-next-line no-invalid-this
-    this.timeout(200);
+    this.timeout(500);
 
     const store = new Store();
     await load(path.join(__dirname, '../perf/data/foaf.ttl'), store);
