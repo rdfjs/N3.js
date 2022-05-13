@@ -1,4 +1,4 @@
-const N3 = require('../src/');
+const N3 = require('..');
 const fs = require('fs');
 const { Quad, NamedNode, Variable, Parser } = N3;
 
