@@ -3,10 +3,10 @@ const N3 = require('..');
 const path = require('path');
 const { load, SUBCLASS_RULE, RDFS_RULE, generateDeepTaxonomy } = require('../test/util');
 
-async function deepTaxonomy() {
+async function deepTaxonomy(extended = false) {
   for (let i = 1; i <= 6; i++) {
     const TITLE = `test-dl-${10 ** i}.n3`;
-    const store = generateDeepTaxonomy(10 ** i);
+    const store = generateDeepTaxonomy(10 ** i, extended);
 
     console.time(`Reasoning: ${TITLE}`);
     new N3.Reasoner(store).reason(SUBCLASS_RULE);
@@ -35,4 +35,7 @@ async function run() {
 
   console.log('\nRunning Deep Taxonomy Benchmark');
   await deepTaxonomy();
+
+  console.log('\nRunning Extended Deep Taxonomy Benchmark');
+  await deepTaxonomy(true);
 })();

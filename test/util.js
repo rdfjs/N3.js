@@ -230,16 +230,29 @@ function load(filename, store) {
   });
 }
 
-function generateDeepTaxonomy(size) {
+function generateDeepTaxonomy(size, extended = false) {
   const store = new N3.Store();
 
-  store.addQuads([
-    new Quad(
-      new NamedNode('http://eulersharp.sourceforge.net/2009/12dtb/test#ind'),
-      new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-      new NamedNode('http://eulersharp.sourceforge.net/2009/12dtb/test#N0'),
-    ),
-  ]);
+  if (extended) {
+    for (let i = 0; i < size; i++) {
+      store.addQuads([
+        new Quad(
+          new NamedNode(`http://eulersharp.sourceforge.net/2009/12dtb/test#ind${i}`),
+          new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+          new NamedNode('http://eulersharp.sourceforge.net/2009/12dtb/test#N0'),
+        ),
+      ]);
+    }
+  }
+  else {
+    store.addQuads([
+      new Quad(
+        new NamedNode('http://eulersharp.sourceforge.net/2009/12dtb/test#ind'),
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        new NamedNode('http://eulersharp.sourceforge.net/2009/12dtb/test#N0'),
+      ),
+    ]);
+  }
 
   store.addQuads([
     new Quad(
