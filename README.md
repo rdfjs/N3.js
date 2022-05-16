@@ -23,10 +23,9 @@ It offers:
 - [**Storage**](#storing) of triples/quads in memory
 
 Parsing and writing is:
-- **asynchronous** – triples arrive as soon as possible
-- **streaming** – streams are parsed as data comes in, so you can parse files larger than memory
-- **fast** – once the [fastest spec-compatible parser in JavaScript](https://github.com/rdfjs/N3.js/tree/master/perf)
-  (but then [graphy.js](https://github.com/blake-regalia/graphy.js) came along)
+- 🎛 **asynchronous** – triples arrive as soon as possible
+- 🚰 **streaming** – streams are parsed as data comes in, so you can parse files larger than memory
+- ⚡️ **fast** – triples are flying out at high speeds
 
 ## Installation
 For Node.js, N3.js comes as an [npm package](https://npmjs.org/package/n3).
