@@ -134,7 +134,7 @@ export default class N3Reasoner {
               const premise = [];
 
               // Since these *will* be substited when we apply the rule,
-              // we need to this so that we index correctly in the subsequent section
+              // we need to do this so that we index correctly in the subsequent section
               p.subject.value = p.subject.value || 1;
               p.object.value = p.object.value || 1;
               p.predicate.value = p.predicate.value || 1;
