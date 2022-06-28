@@ -147,7 +147,7 @@ export default class N3Reasoner {
 
               // eslint-disable-next-line no-warning-comments
               // TODO: Create new rule, with new indexing
-              //       Future, 'collapse' the next statements when the share a premise/base-premise
+              //       Future, 'collapse' the next statements when they share a premise/base-premise
               (c.next = c.next || []).push({
                 premise,
                 conclusion: r2.conclusion,
