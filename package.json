@@ -25,7 +25,7 @@
   ],
   "dependencies": {
     "queue-microtask": "^1.1.2",
-    "readable-stream": "^3.6.0"
+    "readable-stream": "^3.6.0|^4.0.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.16.0",
