@@ -15,6 +15,55 @@ import {
   unescapeQuotes,
 } from '../src/N3DataFactory';
 
+const DEEP_TRIPLE = new Quad(
+  new Quad(
+    new Quad(
+      new Quad(
+        new BlankNode('n3-000'),
+        new Variable('var-b'),
+        new Literal('"abc"@en-us'),
+        new NamedNode('http://ex.org/d')
+      ),
+      new Variable('var-b'),
+      new Quad(
+        new BlankNode('n3-000'),
+        new Variable('var-b'),
+        new Literal('"abc"@en-us'),
+        new NamedNode('http://ex.org/d')
+      ),
+      new NamedNode('http://ex.org/d')
+    ),
+    new Variable('var-b'),
+    new Quad(
+      new BlankNode('n3-000'),
+      new Variable('var-b'),
+      new Literal('"abc"@en-us'),
+      new NamedNode('http://ex.org/d')
+    ),
+    new NamedNode('http://ex.org/d')
+  ),
+  new NamedNode('http://ex.org/b'),
+  new Quad(
+    new Quad(
+      new BlankNode('n3-000'),
+      new Variable('var-b'),
+      new Literal('"abc"@en-us'),
+      new NamedNode('http://ex.org/d')
+    ),
+    new Variable('var-b'),
+    new Quad(
+      new BlankNode('n3-000'),
+      new Variable('var-b'),
+      new Literal('"abc"@en-us'),
+      new NamedNode('http://ex.org/d')
+    ),
+    new NamedNode('http://ex.org/d')
+  ),
+  new NamedNode('http://ex.org/d')
+)
+
+const DEEP_TRIPLE_STRING = '<<<<<<<<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> ?var-b <<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/d>> ?var-b <<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/d>> http://ex.org/b <<<<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> ?var-b <<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/d>> http://ex.org/d>>'
+
 describe('Term', () => {
   describe('The Term module', () => {
     it('should be a function', () => {
@@ -157,6 +206,10 @@ describe('Term', () => {
         new NamedNode('http://ex.org/c'),
         new DefaultGraph()
       ));
+    });
+
+    it('should correctly handle deeply nested quads', () => {
+      termFromId(DEEP_TRIPLE_STRING).should.equal(DEEP_TRIPLE);
     });
 
     describe('with a custom factory', () => {
@@ -429,52 +482,7 @@ describe('Term', () => {
     });
 
     it('should correctly handle deeply nested quads', () => {
-      termToId(new Quad(
-        new Quad(
-          new Quad(
-            new Quad(
-              new BlankNode('n3-000'),
-              new Variable('var-b'),
-              new Literal('"abc"@en-us'),
-              new NamedNode('http://ex.org/d')
-            ),
-            new Variable('var-b'),
-            new Quad(
-              new BlankNode('n3-000'),
-              new Variable('var-b'),
-              new Literal('"abc"@en-us'),
-              new NamedNode('http://ex.org/d')
-            ),
-            new NamedNode('http://ex.org/d')
-          ),
-          new Variable('var-b'),
-          new Quad(
-            new BlankNode('n3-000'),
-            new Variable('var-b'),
-            new Literal('"abc"@en-us'),
-            new NamedNode('http://ex.org/d')
-          ),
-          new NamedNode('http://ex.org/d')
-        ),
-        new NamedNode('http://ex.org/b'),
-        new Quad(
-          new Quad(
-            new BlankNode('n3-000'),
-            new Variable('var-b'),
-            new Literal('"abc"@en-us'),
-            new NamedNode('http://ex.org/d')
-          ),
-          new Variable('var-b'),
-          new Quad(
-            new BlankNode('n3-000'),
-            new Variable('var-b'),
-            new Literal('"abc"@en-us'),
-            new NamedNode('http://ex.org/d')
-          ),
-          new NamedNode('http://ex.org/d')
-        ),
-        new NamedNode('http://ex.org/d')
-      )).should.equal('<<<<<<<<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> ?var-b <<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/d>> ?var-b <<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/d>> http://ex.org/b <<<<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> ?var-b <<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/d>> http://ex.org/d>>');
+      termToId(DEEP_TRIPLE).should.equal(DEEP_TRIPLE_STRING);
     });
 
     it('should throw on an unknown type', () => {

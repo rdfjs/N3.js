@@ -1646,9 +1646,35 @@ describe('Store', () => {
       ]);
     });
 
-    it('should include added elements in match if iteration has not yet started', () => {
+    it('should include added elements in match if iteration has not yet started (with deeply nested quads)', () => {
       const m = store.match(null, null, null, null);
       store.add(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')));
+      [...m].should.have.length(3);
+      [...store.match(null, null, null, null)].should.have.length(3);
+    });
+
+    it('should include added elements in match if iteration has not yet started', () => {
+      const m = store.match(null, null, null, null);
+      store.add(new Quad(
+        new NamedNode('s1'),
+        new NamedNode('p1'),
+        new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o3'))
+        )
+      );
+      store.add(new Quad(
+        new NamedNode('s1'),
+        new NamedNode('p1'),
+        new Quad(
+          new NamedNode('s1'),
+          new NamedNode('p1'),
+          new Quad(
+            new NamedNode('s1'),
+            new NamedNode('p1'),
+            new NamedNode('o3')
+            )
+          )
+        )
+      );
       [...m].should.have.length(3);
       [...store.match(null, null, null, null)].should.have.length(3);
     });
