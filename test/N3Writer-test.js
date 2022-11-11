@@ -307,6 +307,16 @@ describe('Writer', () => {
       });
     });
 
+    it('should serialize triples of graph with prefix for local names that begin with underscore', done => {
+      const writer = new Writer();
+      writer.addPrefix('a', 'b#');
+      writer.addQuad(new Quad(new NamedNode('b#_a'), new NamedNode('b#b'), new NamedNode('b#c'), new NamedNode('b#g')));
+      writer.end((error, output) => {
+        output.should.equal('@prefix a: <b#>.\n\na:g {\na:_a a:b a:c\n}\n');
+        done(error);
+      });
+    });
+
     it('serializes triples of a graph with a prefix declaration in between', done => {
       const writer = new Writer();
       writer.addQuad(new Quad(new NamedNode('b#a'), new NamedNode('b#b'), new NamedNode('b#c')));
