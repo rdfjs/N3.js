@@ -896,9 +896,6 @@ export default class N3Parser {
 
     // ### `_readRDFStarTail` reads the end of a nested RDF* triple
   _readAnnotatedTail(token) {
-      // if (this._subject && this._predicate && this._object) {
-    //   this._emit(this._subject, this._predicate, this._object, this._graph);
-    // }
     if (token.type === '{|') {
       this._saveContext('{|', this._graph, this._subject, this._predicate, this._object);
 
