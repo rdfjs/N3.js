@@ -302,12 +302,20 @@ export default class N3Lexer {
       case ')':
       case '{':
       case '}':
+        if (input.length > 1 && input[1] === '|') {
+          type = '{|', matchLength = 2;
+          break;
+        }
         if (!this._lineMode) {
           matchLength = 1;
           type = firstChar;
         }
         break;
-
+      case '|':
+        if (input.length > 1 && input[1] === '}') {
+          type = '|}', matchLength = 2;
+          break;
+        }
       default:
         inconclusive = true;
       }

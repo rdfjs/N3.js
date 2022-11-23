@@ -624,6 +624,19 @@ export default class N3Parser {
     case ',':
       next = this._readObject;
       break;
+    case '{|':
+      if (!this._supportsRDFStar)
+        return this._error('Unexpected RDF* syntax', token);
+
+      // TODO: Have error handling behavior here
+      // TODO: See if we can just emit and then save null context
+      this._saveContext('{|', this._graph, this._subject, this._predicate, this._object);
+
+      // Note - we always use the default graph for the quoted triple component
+      this._subject = this._quad(this._subject, this._predicate, this._object, this.DEFAULTGRAPH);
+      this._predicate = null;
+      this._object = null;
+      return this._readPredicate;
     default:
       // An entity means this is a quad (only allowed if not already inside a graph)
       if (this._supportsQuads && this._graph === null && (graph = this._readEntity(token)) !== undefined) {
@@ -872,6 +885,18 @@ export default class N3Parser {
     }
   }
 
+    // ### `_readRDFStarTail` reads the end of a nested RDF* triple
+  _readAnnotatedTail(token) {
+    this._emit(this._subject, this._predicate, this._object, this._graph);
+      // if (this._subject && this._predicate && this._object) {
+    //   this._emit(this._subject, this._predicate, this._object, this._graph);
+    // }
+    if (token.type !== '|}')
+      return this._readPredicate;
+    this._restoreContext('{|', token);
+    return this._getContextEndReader();
+  }
+
   // ### `_getContextEndReader` gets the next reader function at the end of a context
   _getContextEndReader() {
     const contextStack = this._contextStack;
@@ -887,6 +912,8 @@ export default class N3Parser {
       return this._readFormulaTail;
     case '<<':
       return this._readRDFStarTail;
+    case '{|':
+      return this._readAnnotatedTail;
     }
   }
 

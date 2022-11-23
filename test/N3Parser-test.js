@@ -1189,6 +1189,65 @@ describe('Parser', () => {
       shouldParse('<a> <b> <c> <g>.\n<<<a> <b> <c>>> <d> <e>.',
           ['a', 'b', 'c', 'g'],
           [['a', 'b', 'c'], 'd', 'e']));
+
+    it('should parse an explicit triple with reified annotation',
+      shouldParse('<a> <b> <c> {| <d> <e> |} .',
+          ['a', 'b', 'c'],
+          [['a', 'b', 'c'], 'd', 'e']));
+
+    const q = ['http://example.com/ns#s', 'http://example.com/ns#p',
+      ['http://example.com/ns#a', 'http://example.com/ns#b', 'http://example.com/ns#c']];
+
+    it('should parse an explicit triple with reified annotation containing prefixed iris',
+      shouldParse('PREFIX : <http://example.com/ns#> \n :s :p <<:a :b :c>> {| :q :z |} .',
+        q, [q, 'http://example.com/ns#q', 'http://example.com/ns#z']));
+
+    it('should parse an explicit triple with 2 reified annotations',
+      shouldParse('<a> <b> <c> {| <d> <e>; <f> <g> |} .',
+          ['a', 'b', 'c'],
+          [['a', 'b', 'c'], 'd', 'e'],
+          [['a', 'b', 'c'], 'f', 'g']));
+
+    // TODO: See if this is required by the spec tests
+    // it('should parse an explicit triple with reified annotation containing punctuation',
+    //   shouldParse('<a> <b> <c> {| <d> <e> . |} .',
+    //       ['a', 'b', 'c'],
+    //       [['a', 'b', 'c'], 'd', 'e']));
+
+    it('should parse an explicit triple with reified annotation in a named graph',
+      shouldParse('<G> { <a> <b> <c> {| <d> <e> |} . }',
+          ['a', 'b', 'c', 'G'],
+          [['a', 'b', 'c'], 'd', 'e', 'G']));
+
+    it('should parse an explicit triple with 2 reified annotations in a named graph',
+      shouldParse('<G> { <a> <b> <c> {| <d> <e>; <f> <g> |} . }',
+          ['a', 'b', 'c', 'G'],
+          [['a', 'b', 'c'], 'd', 'e', 'G'],
+          [['a', 'b', 'c'], 'f', 'g', 'G']));
+
+    it('should not parse an annotated object in list',
+      shouldNotParse('<a> <b> ( <c> {| <d> <e> |} )',
+          'Expected entity but got {| on line 1.'));
+
+    it('should not parse an annotated statement in list',
+        shouldNotParse('<a> <b> ( <c> <d> <e> {| <d> <e> |} )',
+          'Expected entity but got {| on line 1.'));
+
+    it('should not parse fourth term in quoted triple',
+        shouldNotParse('<< <a> <b> <c> <g> >> <p> <q>',
+          'Expected >> to follow "http://example.org/c" but got IRI on line 1.'));
+
+    it('should not parse fourth term in quoted triple object',
+      shouldNotParse('<p> <q> << <a> <b> <c> <g> >>',
+          'Expected >> to follow "http://example.org/c" but got IRI on line 1.'));
+
+    it('should not parse quoted triple as predicate',
+      shouldNotParse('<p> << <a> <b> <c> >> <q>',
+          'Expected entity but got << on line 1.'));
+
+    it('should not parse quoted quad as predicate',
+      shouldNotParse('<p> << <a> <b> <c> <d> >> <q>',
+          'Expected entity but got << on line 1.'));
   });
 
   describe('An Parser instance without document IRI', () => {
@@ -1367,6 +1426,10 @@ describe('Parser', () => {
 
     it('should not parse RDF* in the subject position',
       shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
+        'Unexpected RDF* syntax on line 1.'));
+
+    it('should not parse annotated statement',
+      shouldNotParse(parser, '<a> <b> <c> {| <a> <b> |} .',
         'Unexpected RDF* syntax on line 1.'));
 
     it('should not parse RDF* in the object position',
@@ -2494,7 +2557,7 @@ function mapToQuad(item) {
 function toSortedJSON(triples) {
   triples = triples.map(t => {
     return JSON.stringify([
-      t.subject.toJSON(), t.predicate.toJSON(), t.object.toJSON(), t.graph.toJSON(),
+      t.subject && t.subject.toJSON(), t.predicate && t.predicate.toJSON(), t.object && t.object.toJSON(), t.graph && t.graph.toJSON(),
     ]);
   });
   triples.sort();

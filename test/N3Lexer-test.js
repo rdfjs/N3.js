@@ -869,6 +869,52 @@ describe('Lexer', () => {
       shouldNotTokenize('<<<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo>> .',
         'Unexpected ">" on line 3.'));
 
+    it('should tokenize an RDF-star annotated statement',
+      shouldTokenize('<a> <b> <c> {| <d> <e> |}',
+        { type: 'IRI', value: 'a', line: 1 },
+        { type: 'IRI', value: 'b', line: 1 },
+        { type: 'IRI', value: 'c', line: 1 },
+        { type: '{|', line: 1 },
+        { type: 'IRI', value: 'd', line: 1 },
+        { type: 'IRI', value: 'e', line: 1 },
+        { type: '|}', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should tokenize an RDF-star annotated statement with multiple annotations',
+      shouldTokenize('<a> <b> <c> {| <d> <e>; <f> <g> |}',
+        { type: 'IRI', value: 'a', line: 1 },
+        { type: 'IRI', value: 'b', line: 1 },
+        { type: 'IRI', value: 'c', line: 1 },
+        { type: '{|', line: 1 },
+        { type: 'IRI', value: 'd', line: 1 },
+        { type: 'IRI', value: 'e', line: 1 },
+        { type: ';', line: 1 },
+        { type: 'IRI', value: 'f', line: 1 },
+        { type: 'IRI', value: 'g', line: 1 },
+        { type: '|}', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should tokenize an RDF-star annotated statement with multiple annotations, one containing a blank node',
+      shouldTokenize('<a> <b> <c> {| <d> [ <e> "f" ]; <f> <g> |}',
+        { type: 'IRI', value: 'a', line: 1 },
+        { type: 'IRI', value: 'b', line: 1 },
+        { type: 'IRI', value: 'c', line: 1 },
+        { type: '{|', line: 1 },
+        { type: 'IRI', value: 'd', line: 1 },
+        { type: '[',   value: '', line: 1 },
+        { type: 'IRI', value: 'e', line: 1 },
+        { type: 'literal', value: 'f', line: 1 },
+        { type: ']',   value: '', line: 1 },
+        { type: ';', line: 1 },
+        { type: 'IRI', value: 'f', line: 1 },
+        { type: 'IRI', value: 'g', line: 1 },
+        { type: '|}', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should not tokenize an annotated statement that is not closed',
+      shouldNotTokenize('<a> <b> <c> {| <d> [ <e> "f" ]; <f> <g> |',
+        'Unexpected "|" on line 1.'));
+
     it('should tokenize a split RDF* statement with IRIs',
       shouldTokenize(streamOf('<', '<<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo>>> .'),
         { type: '<<', line: 1 },
