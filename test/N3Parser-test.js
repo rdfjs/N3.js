@@ -1126,6 +1126,36 @@ describe('Parser', () => {
       shouldParse('<d> <e> <<<<<a> <b> <c>>> <f> <g>>>.',
         ['d', 'e', [['a', 'b', 'c'], 'f', 'g']]));
 
+    it('should not parse empty list inside quoted triple subject',
+      shouldNotParse('<< () <a> <b> >> <c> <d>.',
+        'Unexpected list inside quoted triple on line 1.'
+      ));
+  
+    it('should not parse non-empty list inside quoted triple subject',
+      shouldNotParse('<< ( <f> ) <a> <b> >> <c> <d>.',
+        'Unexpected list inside quoted triple on line 1.'
+      ));
+
+    it('should not parse empty list inside quoted triple predicate',
+      shouldNotParse('<< <a> () <b> >> <c> <d>.',
+        'Expected entity but got ( on line 1.'
+      ));
+  
+    it('should not parse non-empty list inside quoted triple predicate',
+      shouldNotParse('<< <a> ( <f> ) <b> >> <c> <d>.',
+        'Expected entity but got ( on line 1.'
+    ));
+
+    it('should not parse empty list inside quoted triple object',
+      shouldNotParse('<< <a> <b> () >> <c> <d>.',
+        'Unexpected list inside quoted triple on line 1.'
+    ));
+  
+    it('should not parse non-empty list inside quoted triple object',
+      shouldNotParse('<< <a> <b> ( <f> ) >> <c> <d>.',
+        'Unexpected list inside quoted triple on line 1.'
+    ));
+
     it('should not parse nested RDF* statements that are partially closed',
       shouldNotParse('<d> <e> <<<<<a> <b> <c>>> <f> <g>.',
         'Expected >> to follow "http://example.org/g" but got . on line 1.'

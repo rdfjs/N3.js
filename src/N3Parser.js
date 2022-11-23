@@ -197,6 +197,10 @@ export default class N3Parser {
                         this._subject = this._blankNode(), null, null);
       return this._readBlankNodeHead;
     case '(':
+      // Lists are not allowed inside quoted triples
+      if (this._contextStack.length > 0 && this._contextStack[this._contextStack.length - 1].type === '<<') {
+        return this._error(`Unexpected list inside quoted triple`, token);
+      }
       // Start a new list
       this._saveContext('list', this._graph, this.RDF_NIL, null, null);
       this._subject = null;
@@ -315,6 +319,10 @@ export default class N3Parser {
                         this._subject = this._blankNode());
       return this._readBlankNodeHead;
     case '(':
+      // Lists are not allowed inside quoted triples
+      if (this._contextStack.length > 0 && this._contextStack[this._contextStack.length - 1].type === '<<') {
+        return this._error(`Unexpected list inside quoted triple`, token);
+      }
       // Start a new list
       this._saveContext('list', this._graph, this._subject, this._predicate, this.RDF_NIL);
       this._subject = null;
@@ -362,8 +370,9 @@ export default class N3Parser {
     if (token.type === ']') {
       this._subject = null;
       return this._readBlankNodeTail(token);
-    }
-    else {
+    } else if (this._contextStack.length > 1 && this._contextStack[this._contextStack.length - 2].type === '<<') {
+      return this._error('Compound blank node expressions not permitted within quoted triples', token)
+    } else {
       this._predicate = null;
       return this._readPredicate(token);
     }
