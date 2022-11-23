@@ -372,7 +372,7 @@ export default class N3Parser {
       return this._readBlankNodeTail(token);
     }
     else if (this._contextStack.length > 1 && this._contextStack[this._contextStack.length - 2].type === '<<') {
-      return this._error('Compound blank node expressions not permitted within quoted triples', token);
+      return this._error('Compound blank node expressions not permitted within quoted triple', token);
     }
     else {
       this._predicate = null;
@@ -639,8 +639,6 @@ export default class N3Parser {
       if (!this._supportsRDFStar)
         return this._error('Unexpected RDF* syntax', token);
 
-      // TODO: Have error handling behavior here
-      // TODO: See if we can just emit and then save null context
       this._saveContext('{|', this._graph, this._subject, this._predicate, this._object);
 
       // Note - we always use the default graph for the quoted triple component
@@ -909,7 +907,8 @@ export default class N3Parser {
       this._predicate = null;
       this._object = null;
       return this._readPredicate;
-    } else {
+    }
+    else {
       this._emit(this._subject, this._predicate, this._object, this._graph);
     }
 

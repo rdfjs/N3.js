@@ -1126,6 +1126,21 @@ describe('Parser', () => {
       shouldParse('<d> <e> <<<<<a> <b> <c>>> <f> <g>>>.',
         ['d', 'e', [['a', 'b', 'c'], 'f', 'g']]));
 
+    it('should not parse compound blank node inside quoted triple subject',
+      shouldNotParse('<< [ <x> <y> ] <a> <b> >> <c> <d>.',
+        'Compound blank node expressions not permitted within quoted triple on line 1.'
+    ));
+
+    it('should not parse compound blank node inside quoted triple predicate',
+      shouldNotParse('<< <a> [ <x> <y> ] <b> >> <c> <d>.',
+        'Disallowed blank node as predicate on line 1.'
+    ));
+
+    it('should not parse compound blank node inside quoted triple object',
+      shouldNotParse('<< <a> <b> [ <x> <y> ] >> <c> <d>.',
+        'Compound blank node expressions not permitted within quoted triple on line 1.'
+    ));
+
     it('should not parse empty list inside quoted triple subject',
       shouldNotParse('<< () <a> <b> >> <c> <d>.',
         'Unexpected list inside quoted triple on line 1.'
@@ -1243,12 +1258,6 @@ describe('Parser', () => {
           ['a', 'b', 'c'],
           [['a', 'b', 'c'], 'd', 'e'],
           [['a', 'b', 'c'], 'f', 'g']));
-
-    // TODO: See if this is required by the spec tests
-    // it('should parse an explicit triple with reified annotation containing punctuation',
-    //   shouldParse('<a> <b> <c> {| <d> <e> . |} .',
-    //       ['a', 'b', 'c'],
-    //       [['a', 'b', 'c'], 'd', 'e']));
 
     it('should parse an explicit triple with reified annotation in a named graph',
       shouldParse('<G> { <a> <b> <c> {| <d> <e> |} . }',
