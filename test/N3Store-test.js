@@ -275,7 +275,7 @@ describe('Store', () => {
     });
   });
 
-  describe('removing matching quads for RDF*', () => {
+  describe('removing matching quads for RDF-star', () => {
     let store;
     beforeEach(() => {
       store = new Store([
@@ -295,7 +295,7 @@ describe('Store', () => {
       store.size.should.eql(5);
     });
 
-    it('should match RDF* and normal quads at the same time', done => {
+    it('should match RDF-star and normal quads at the same time', done => {
       const stream = store.removeMatches(null, 'p1', 'o2');
       stream.on('end', () => {
         store.size.should.eql(3);

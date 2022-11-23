@@ -12,14 +12,14 @@ It offers:
   [TriG](https://www.w3.org/TR/trig/),
   [N-Triples](https://www.w3.org/TR/n-triples/),
   [N-Quads](https://www.w3.org/TR/n-quads/),
-  [RDF*](https://blog.liu.se/olafhartig/2019/01/10/position-statement-rdf-star-and-sparql-star/)
+  [RDF-star](https://blog.liu.se/olafhartig/2019/01/10/position-statement-rdf-star-and-sparql-star/)
   and [Notation3 (N3)](https://www.w3.org/TeamSubmission/n3/)
 - [**Writing**](#writing) triples/quads to
   [Turtle](https://www.w3.org/TR/turtle/),
   [TriG](https://www.w3.org/TR/trig/),
   [N-Triples](https://www.w3.org/TR/n-triples/),
   [N-Quads](https://www.w3.org/TR/n-quads/)
-  and [RDF*](https://blog.liu.se/olafhartig/2019/01/10/position-statement-rdf-star-and-sparql-star/)
+  and [RDF-star](https://blog.liu.se/olafhartig/2019/01/10/position-statement-rdf-star-and-sparql-star/)
 - [**Storage**](#storing) of triples/quads in memory
 
 Parsing and writing is:
@@ -358,16 +358,16 @@ The N3.js parser and writer is fully compatible with the following W3C specifica
 
 In addition, the N3.js parser also supports [Notation3 (N3)](https://www.w3.org/TeamSubmission/n3/) (no official specification yet).
 
-The N3.js parser and writer are also fully compatible with the RDF* variants
+The N3.js parser and writer are also fully compatible with the RDF-star variants
 of the W3C specifications.
 
 The default mode is permissive
-and allows a mixture of different syntaxes, including RDF*.
+and allows a mixture of different syntaxes, including RDF-star.
 Pass a `format` option to the constructor with the name or MIME type of a format
 for strict, fault-intolerant behavior.
 If a format string contains `star` or `*`
 (e.g., `turtlestar` or `TriG*`),
-RDF* support for that format will be enabled.
+RDF-star support for that format will be enabled.
 
 ### Interface specifications
 The N3.js submodules are compatible with the following [RDF.js](http://rdf.js.org) interfaces:

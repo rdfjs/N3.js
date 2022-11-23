@@ -247,7 +247,7 @@ export function termToId(term) {
     term.language ? `@${term.language}` :
       (term.datatype && term.datatype.value !== xsd.string ? `^^${term.datatype.value}` : '')}`;
   case 'Quad':
-    // To identify RDF* quad components, we escape quotes by doubling them.
+    // To identify RDF-star quad components, we escape quotes by doubling them.
     // This avoids the overhead of backslash parsing of Turtle-like syntaxes.
     return `<<${
         escapeQuotes(termToId(term.subject))

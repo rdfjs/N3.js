@@ -1084,32 +1084,32 @@ describe('Parser', () => {
       .should.throw('Expected entity but got eof on line 1');
     });
 
-    it('should parse an RDF* triple with a triple with iris as subject correctly', () => {
+    it('should parse an RDF-star triple with a triple with iris as subject correctly', () => {
       shouldParse('<<<a> <b> <c>>> <b> <c>.',
         [['a', 'b', 'c'], 'b', 'c']);
     });
 
-    it('should not parse an RDF* triple with a triple as predicate',
+    it('should not parse an RDF-star triple with a triple as predicate',
       shouldNotParse('<a> <<<b> <c> <d>>> <e>',
         'Expected entity but got << on line 1.'));
 
-    it('should parse an RDF* triple with a triple with blanknodes as subject correctly',
+    it('should parse an RDF-star triple with a triple with blanknodes as subject correctly',
       shouldParse('<<_:a <b> _:c>> <b> <c>.',
         [['_:b0_a', 'b', '_:b0_c'], 'b', 'c']));
 
-    it('should parse an RDF* triple with a triple with blanknodes and literals as subject correctly',
+    it('should parse an RDF-star triple with a triple with blanknodes and literals as subject correctly',
       shouldParse('<<_:a <b> "c"^^<d>>> <b> <c>.',
         [['_:b0_a', 'b', '"c"^^http://example.org/d'], 'b', 'c']));
 
-    it('should parse an RDF* triple with a triple as object correctly',
+    it('should parse an RDF-star triple with a triple as object correctly',
       shouldParse('<a> <b> <<<a> <b> <c>>>.',
         ['a', 'b', ['a', 'b', 'c']]));
 
-    it('should parse an RDF* triple with a triple as object correctly',
+    it('should parse an RDF-star triple with a triple as object correctly',
       shouldParse('<a> <b> <<_:a <b> _:c>>.',
         ['a', 'b', ['_:b0_a', 'b', '_:b0_c']]));
 
-    it('should parse an RDF* triple with a triple as object correctly',
+    it('should parse an RDF-star triple with a triple as object correctly',
       shouldParse('<a> <b> <<_:a <b> "c"^^<d>>>.',
         ['a', 'b', ['_:b0_a', 'b', '"c"^^http://example.org/d']]));
 
@@ -1171,42 +1171,42 @@ describe('Parser', () => {
         'Unexpected list inside quoted triple on line 1.'
     ));
 
-    it('should not parse nested RDF* statements that are partially closed',
+    it('should not parse nested RDF-star statements that are partially closed',
       shouldNotParse('<d> <e> <<<<<a> <b> <c>>> <f> <g>.',
         'Expected >> to follow "http://example.org/g" but got . on line 1.'
       ));
 
-    it('should not parse partially closed nested RDF* statements',
+    it('should not parse partially closed nested RDF-star statements',
       shouldNotParse('<d> <e> <<<<<a> <b> <c> <f> <g>>>.',
         'Expected >> to follow "http://example.org/c" but got IRI on line 1.'
       ));
 
-    it('should not parse nested RDF* statements with too many closing tags',
+    it('should not parse nested RDF-star statements with too many closing tags',
       shouldNotParse('<d> <e> <<<<<a> <b> <c>>>>> <f> <g>>>.',
         'Expected entity but got >> on line 1.'
       ));
 
-    it('should not parse nested RDF* statements with too many closing tags',
+    it('should not parse nested RDF-star statements with too many closing tags',
       shouldNotParse('<d> <e> <<<<<a> <b> <c>>> <f> <g>>>>>.',
         'Expected entity but got >> on line 1.'
       ));
 
-    it('should not parse RDF* statements with too many closing tags',
+    it('should not parse RDF-star statements with too many closing tags',
       shouldNotParse('<a> <b> <c>>>.',
         'Expected entity but got >> on line 1.'
       ));
 
-    it('should not parse incomplete RDF* statements',
+    it('should not parse incomplete RDF-star statements',
       shouldNotParse('<d> <e> <<<a> <b>>>.',
         'Expected entity but got >> on line 1.'
       ));
 
-    it('should not parse incomplete RDF* statements',
+    it('should not parse incomplete RDF-star statements',
       shouldNotParse('<<<a> <b>>> <d> <e>.',
         'Expected entity but got >> on line 1.'
       ));
 
-    it('should not parse incorrectly nested RDF* statements',
+    it('should not parse incorrectly nested RDF-star statements',
       shouldNotParse('>> <<',
         'Expected entity but got >> on line 1.'
       ));
@@ -1216,16 +1216,16 @@ describe('Parser', () => {
         'Unexpected . on line 1.'
       ));
 
-    it('should not parse a malformed RDF* quad',
+    it('should not parse a malformed RDF-star quad',
       shouldNotParse('<<<a> <b> <c> <d> <e>>> <a> <b> .',
         'Expected >> to follow "http://example.org/c" but got IRI on line 1.'));
 
-    it('should parse statements with a shared RDF* subject',
+    it('should parse statements with a shared RDF-star subject',
       shouldParse('<<<a> <b> <c>>> <b> <c>;\n<d> <c>.',
         [['a', 'b', 'c'], 'b', 'c'],
         [['a', 'b', 'c'], 'd', 'c']));
 
-    it('should parse statements with a shared RDF* subject',
+    it('should parse statements with a shared RDF-star subject',
       shouldParse('<<<a> <b> <c>>> <b> <c>;\n<d> <<<a> <b> <c>>>.',
         [['a', 'b', 'c'], 'b', 'c'],
         [['a', 'b', 'c'], 'd', ['a', 'b', 'c']]));
@@ -1469,31 +1469,31 @@ describe('Parser', () => {
       shouldNotParse(parser, '1 <a> <b>.',
         'Unexpected literal on line 1.'));
 
-    it('should not parse RDF* in the subject position',
+    it('should not parse RDF-star in the subject position',
       shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
-        'Unexpected RDF* syntax on line 1.'));
+        'Unexpected RDF-star syntax on line 1.'));
 
     it('should not parse annotated statement',
       shouldNotParse(parser, '<a> <b> <c> {| <a> <b> |} .',
-        'Unexpected RDF* syntax on line 1.'));
+        'Unexpected RDF-star syntax on line 1.'));
 
-    it('should not parse RDF* in the object position',
+    it('should not parse RDF-star in the object position',
       shouldNotParse(parser, '<a> <b> <<a> <b> <c>>>.',
-        'Unexpected RDF* syntax on line 1.'));
+        'Unexpected RDF-star syntax on line 1.'));
 
-    it('should not parse RDF* in the object list',
+    it('should not parse RDF-star in the object list',
       shouldNotParse(parser, '<a> <b> ( <<a> <b> <c>>> ).',
-        'Unexpected RDF* syntax on line 1.'));
+        'Unexpected RDF-star syntax on line 1.'));
 
-    it('should not parse RDF* in the subject list',
+    it('should not parse RDF-star in the subject list',
       shouldNotParse(parser, '( <<a> <b> <c>>> ) <a> <b>.',
-        'Unexpected RDF* syntax on line 1.'));
+        'Unexpected RDF-star syntax on line 1.'));
   });
 
   describe('A Parser instance for the TurtleStar format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'TurtleStar' }); }
 
-    it('should parse RDF*',
+    it('should parse RDF-star',
       shouldParse(parser,
         '<<<a> <b> <c>>> <b> <c> .',
         [['a', 'b', 'c'], 'b', 'c']));
@@ -1542,19 +1542,19 @@ describe('Parser', () => {
     it('should not parse @forAll',
       shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'));
 
-    it('should not parse RDF* in the subject position',
+    it('should not parse RDF-star in the subject position',
       shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
-        'Unexpected RDF* syntax on line 1.'));
+        'Unexpected RDF-star syntax on line 1.'));
 
-    it('should not parse RDF* in the object position',
+    it('should not parse RDF-star in the object position',
       shouldNotParse(parser, '<a> <b> <<<a> <b> <c>>>.',
-        'Unexpected RDF* syntax on line 1.'));
+        'Unexpected RDF-star syntax on line 1.'));
   });
 
   describe('A Parser instance for the TriGStar format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'TriGStar' }); }
 
-    it('should parse RDF*',
+    it('should parse RDF-star',
       shouldParse(parser, '<<<a> <b> <c>>> <a> <b> .',
         [['a', 'b', 'c'], 'a', 'b']));
 
@@ -1617,19 +1617,19 @@ describe('Parser', () => {
     it('should not parse @forAll',
       shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'));
 
-    it('should not parse RDF* in the subject position',
+    it('should not parse RDF-star in the subject position',
       shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
-        'Unexpected RDF* syntax on line 1.'));
+        'Unexpected RDF-star syntax on line 1.'));
 
-    it('should not parse RDF* in the object position',
+    it('should not parse RDF-star in the object position',
       shouldNotParse(parser, '<http://ex.org/a> <http://ex.org/b> <<<a> <b> <c>>>.',
-        'Unexpected RDF* syntax on line 1.'));
+        'Unexpected RDF-star syntax on line 1.'));
   });
 
   describe('A Parser instance for the N-TriplesStar format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N-TriplesStar' }); }
 
-    it('should parse RDF*',
+    it('should parse RDF-star',
       shouldParse(parser, '<<_:a <http://example.org/b> _:c>> <http://example.org/a> _:b .',
         [['_:b0_a', 'b', '_:b0_c'], 'a', '_:b0_b']));
 
@@ -1676,19 +1676,19 @@ describe('Parser', () => {
     it('should not parse @forAll',
       shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'));
 
-    it('should not parse RDF* in the subject position',
+    it('should not parse RDF-star in the subject position',
       shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
-        'Unexpected RDF* syntax on line 1.'));
+        'Unexpected RDF-star syntax on line 1.'));
 
-    it('should not parse RDF* in the object position',
+    it('should not parse RDF-star in the object position',
       shouldNotParse(parser, '_:a <http://ex.org/b> <<<a> <b> <c>>>.',
-        'Unexpected RDF* syntax on line 1.'));
+        'Unexpected RDF-star syntax on line 1.'));
   });
 
   describe('A Parser instance for the N-QuadsStar format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N-QuadsStar' }); }
 
-    it('should parse RDF*',
+    it('should parse RDF-star',
       shouldParse(parser, '<<_:a <http://example.org/b> _:c>> <http://example.org/a> _:c .',
         [['_:b0_a', 'b', '_:b0_c'], 'a', '_:b0_c']));
   });
@@ -2031,19 +2031,19 @@ describe('Parser', () => {
             ['"bonjour"@fr', 'sameAs', '"hello"@en', '_:b0']
         ));
 
-    it('should not parse RDF* in the subject position',
+    it('should not parse RDF-star in the subject position',
       shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
-        'Unexpected RDF* syntax on line 1.'));
+        'Unexpected RDF-star syntax on line 1.'));
 
-    it('should not parse RDF* in the object position',
+    it('should not parse RDF-star in the object position',
       shouldNotParse(parser, '<a> <b> <<<a> <b> <c>>>.',
-        'Unexpected RDF* syntax on line 1.'));
+        'Unexpected RDF-star syntax on line 1.'));
   });
 
   describe('A Parser instance for the N3Star format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3Star' }); }
 
-    it('should parse RDF*',
+    it('should parse RDF-star',
       shouldParse(parser, '<<<a> <b> <c>>> <a> <b> .',
         [['a', 'b', 'c'], 'a', 'b']));
 

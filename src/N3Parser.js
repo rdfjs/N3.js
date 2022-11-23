@@ -243,7 +243,7 @@ export default class N3Parser {
       break;
     case '<<':
       if (!this._supportsRDFStar)
-        return this._error('Unexpected RDF* syntax', token);
+        return this._error('Unexpected RDF-star syntax', token);
       this._saveContext('<<', this._graph, null, null, null);
       this._graph = null;
       return this._readSubject;
@@ -336,7 +336,7 @@ export default class N3Parser {
       return this._readSubject;
     case '<<':
       if (!this._supportsRDFStar)
-        return this._error('Unexpected RDF* syntax', token);
+        return this._error('Unexpected RDF-star syntax', token);
       this._saveContext('<<', this._graph, this._subject, this._predicate, null);
       this._graph = null;
       return this._readSubject;
@@ -486,7 +486,7 @@ export default class N3Parser {
       return this._readSubject;
     case '<<':
       if (!this._supportsRDFStar)
-        return this._error('Unexpected RDF* syntax', token);
+        return this._error('Unexpected RDF-star syntax', token);
 
       this._saveContext('<<', this._graph, this._subject, null, null);
       return this._readSubject;
@@ -637,7 +637,7 @@ export default class N3Parser {
       break;
     case '{|':
       if (!this._supportsRDFStar)
-        return this._error('Unexpected RDF* syntax', token);
+        return this._error('Unexpected RDF-star syntax', token);
 
       this._saveContext('{|', this._graph, this._subject, this._predicate, this._object);
 
@@ -867,7 +867,7 @@ export default class N3Parser {
     return this._readPath;
   }
 
-  // ### `_readRDFStarTail` reads the end of a nested RDF* triple
+  // ### `_readRDFStarTail` reads the end of a nested RDF-star triple
   _readRDFStarTail(token) {
     if (token.type !== '>>')
       return this._error(`Expected >> to follow "${this._object.id}" but got ${token.type}`, token);
@@ -894,7 +894,7 @@ export default class N3Parser {
     }
   }
 
-    // ### `_readRDFStarTail` reads the end of a nested RDF* triple
+    // ### `_readRDFStarTail` reads the end of a nested RDF-star triple
   _readAnnotatedTail(token) {
     if (token.type === '{|') {
       this._saveContext('{|', this._graph, this._subject, this._predicate, this._object);
