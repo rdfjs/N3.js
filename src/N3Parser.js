@@ -199,7 +199,7 @@ export default class N3Parser {
     case '(':
       // Lists are not allowed inside quoted triples
       if (this._contextStack.length > 0 && this._contextStack[this._contextStack.length - 1].type === '<<') {
-        return this._error(`Unexpected list inside quoted triple`, token);
+        return this._error('Unexpected list inside quoted triple', token);
       }
       // Start a new list
       this._saveContext('list', this._graph, this.RDF_NIL, null, null);
@@ -321,7 +321,7 @@ export default class N3Parser {
     case '(':
       // Lists are not allowed inside quoted triples
       if (this._contextStack.length > 0 && this._contextStack[this._contextStack.length - 1].type === '<<') {
-        return this._error(`Unexpected list inside quoted triple`, token);
+        return this._error('Unexpected list inside quoted triple', token);
       }
       // Start a new list
       this._saveContext('list', this._graph, this._subject, this._predicate, this.RDF_NIL);
@@ -370,9 +370,11 @@ export default class N3Parser {
     if (token.type === ']') {
       this._subject = null;
       return this._readBlankNodeTail(token);
-    } else if (this._contextStack.length > 1 && this._contextStack[this._contextStack.length - 2].type === '<<') {
-      return this._error('Compound blank node expressions not permitted within quoted triples', token)
-    } else {
+    }
+    else if (this._contextStack.length > 1 && this._contextStack[this._contextStack.length - 2].type === '<<') {
+      return this._error('Compound blank node expressions not permitted within quoted triples', token);
+    }
+    else {
       this._predicate = null;
       return this._readPredicate(token);
     }
@@ -896,10 +898,21 @@ export default class N3Parser {
 
     // ### `_readRDFStarTail` reads the end of a nested RDF* triple
   _readAnnotatedTail(token) {
-    this._emit(this._subject, this._predicate, this._object, this._graph);
       // if (this._subject && this._predicate && this._object) {
     //   this._emit(this._subject, this._predicate, this._object, this._graph);
     // }
+    if (token.type === '{|') {
+      this._saveContext('{|', this._graph, this._subject, this._predicate, this._object);
+
+      // Note - we always use the default graph for the quoted triple component
+      this._subject = this._quad(this._subject, this._predicate, this._object, this.DEFAULTGRAPH);
+      this._predicate = null;
+      this._object = null;
+      return this._readPredicate;
+    } else {
+      this._emit(this._subject, this._predicate, this._object, this._graph);
+    }
+
     if (token.type !== '|}')
       return this._readPredicate;
     this._restoreContext('{|', token);

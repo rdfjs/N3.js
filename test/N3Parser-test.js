@@ -1130,7 +1130,7 @@ describe('Parser', () => {
       shouldNotParse('<< () <a> <b> >> <c> <d>.',
         'Unexpected list inside quoted triple on line 1.'
       ));
-  
+
     it('should not parse non-empty list inside quoted triple subject',
       shouldNotParse('<< ( <f> ) <a> <b> >> <c> <d>.',
         'Unexpected list inside quoted triple on line 1.'
@@ -1140,7 +1140,7 @@ describe('Parser', () => {
       shouldNotParse('<< <a> () <b> >> <c> <d>.',
         'Expected entity but got ( on line 1.'
       ));
-  
+
     it('should not parse non-empty list inside quoted triple predicate',
       shouldNotParse('<< <a> ( <f> ) <b> >> <c> <d>.',
         'Expected entity but got ( on line 1.'
@@ -1150,7 +1150,7 @@ describe('Parser', () => {
       shouldNotParse('<< <a> <b> () >> <c> <d>.',
         'Unexpected list inside quoted triple on line 1.'
     ));
-  
+
     it('should not parse non-empty list inside quoted triple object',
       shouldNotParse('<< <a> <b> ( <f> ) >> <c> <d>.',
         'Unexpected list inside quoted triple on line 1.'
@@ -1224,6 +1224,12 @@ describe('Parser', () => {
       shouldParse('<a> <b> <c> {| <d> <e> |} .',
           ['a', 'b', 'c'],
           [['a', 'b', 'c'], 'd', 'e']));
+
+    it('should parse an explicit triple with nested reified annotation',
+      shouldParse('<a> <b> <c> {| <d> <e> {| <f> <g> |} |} .',
+          ['a', 'b', 'c'],
+          [['a', 'b', 'c'], 'd', 'e'],
+          [[['a', 'b', 'c'], 'd', 'e'], 'f', 'g']));
 
     const q = ['http://example.com/ns#s', 'http://example.com/ns#p',
       ['http://example.com/ns#a', 'http://example.com/ns#b', 'http://example.com/ns#c']];
