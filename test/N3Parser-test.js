@@ -476,6 +476,16 @@ describe('Parser', () => {
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b0_y'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
+    it('should parse a nested list',
+    shouldParse('<a> <b> ( ( <c> ) ).',
+                ['a', 'b', '_:b0'],
+                ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+                ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'c'],
+                ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']
+                ));
+
+
     it('should parse statements with a nested empty list',
       shouldParse('<a> <b> (<x> ()).',
                   ['a', 'b', '_:b0'],
