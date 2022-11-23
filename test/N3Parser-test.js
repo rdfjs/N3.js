@@ -478,13 +478,11 @@ describe('Parser', () => {
 
     it('should parse a nested list',
     shouldParse('<a> <b> ( ( <c> ) ).',
-                ['a', 'b', '_:b0'],
-                ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
-                ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'c'],
-                ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']
-                ));
-
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'c'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
     it('should parse statements with a nested empty list',
       shouldParse('<a> <b> (<x> ()).',
@@ -504,13 +502,152 @@ describe('Parser', () => {
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
-    it('should parse statements with a list containing a blank node',
+    it('should parse statements with a list containing a quoted triple',
+      shouldParse('<a> <b> ( << <c> <d> <e> >> ) .',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['c', 'd', 'e']],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
+    it('should parse statements with a list containing a quoted triple and iri after',
+      shouldParse('<a> <b> ( << <c> <d> <e> >> <f> ) .',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['c', 'd', 'e']],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'f'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
+    it('should parse statements with a list containing a quoted triple and iri before',
+      shouldParse('<a> <b> ( <f> << <c> <d> <e> >> ) .',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'f'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['c', 'd', 'e']],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
+    it('should parse statements with a list containing a 2 quoted triples',
+      shouldParse('<a> <b> ( << <c> <d> <e> >> << <c1> <d1> <e1> >> ) .',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['c', 'd', 'e']],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['c1', 'd1', 'e1']],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
+
+    it('should parse statements with a list containing a 3 quoted triples',
+      shouldParse('<a> <b> ( << <c> <d> <e> >> << <c1> <d1> <e1> >> << <c2> <d2> <e2> >> ) .',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['c', 'd', 'e']],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['c1', 'd1', 'e1']],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b2'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['c2', 'd2', 'e2']],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
+    it('should parse statements with a list containing a 1 quoted triple and 2 iris',
+      shouldParse('<a> <b> ( << <c> <d> <e> >> <h> <i> ) .',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['c', 'd', 'e']],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'h'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b2'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'i'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
+    it('should parse statements with a list containing a 1 quoted triple between 2 iris',
+      shouldParse('<a> <b> ( <h> << <c> <d> <e> >> <i> ) .',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'h'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['c', 'd', 'e']],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b2'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'i'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
+
+    it('should parse a nested list containing 1 quoted triple',
+      shouldParse('<a> <b> ( ( << <c> <d> <e> >> ) ).',
+                  ['a', 'b', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['c', 'd', 'e']],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
+    it('should parse statements with a list containing a quoted triple with list as subject',
+      shouldParse('( << <c> <d> <e> >> ) <a> <b> .',
+                  ['_:b0', 'a', 'b'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['c', 'd', 'e']],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
+    it('should parse statements with a list containing a quoted triple and iri after with list as subject',
+      shouldParse('( << <c> <d> <e> >> <f> ) <a> <b> .',
+                  ['_:b0', 'a', 'b'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['c', 'd', 'e']],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'f'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
+    it('should parse statements with a list containing a quoted triple and iri before with list as subject',
+      shouldParse('( <f> << <c> <d> <e> >> ) <a> <b> .',
+                  ['_:b0', 'a', 'b'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'f'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['c', 'd', 'e']],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
+    it('should parse statements with a list containing a 2 quoted triples with list as subject',
+      shouldParse('( << <c> <d> <e> >> << <c1> <d1> <e1> >> ) <a> <b> .',
+                  ['_:b0', 'a', 'b'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['c', 'd', 'e']],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['c1', 'd1', 'e1']],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
+
+    it('should parse statements with a list containing a 3 quoted triples with list as subject',
+      shouldParse('( << <c> <d> <e> >> << <c1> <d1> <e1> >> << <c2> <d2> <e2> >> ) <a> <b> .',
+                  ['_:b0', 'a', 'b'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['c', 'd', 'e']],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['c1', 'd1', 'e1']],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b2'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['c2', 'd2', 'e2']],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
+    it('should parse statements with a list containing a 1 quoted triple and 2 iris with list as subject',
+      shouldParse('( << <c> <d> <e> >> <h> <i> ) <a> <b> .',
+                  ['_:b0', 'a', 'b'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['c', 'd', 'e']],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'h'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b2'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'i'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
+    it('should parse statements with a list containing a 1 quoted triple between 2 iris with list as subject',
+      shouldParse('( <h> << <c> <d> <e> >> <i> ) <a> <b> .',
+                  ['_:b0', 'a', 'b'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'h'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['c', 'd', 'e']],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b2'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'i'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
+    it('should parse a nested list containing 1 quoted triple with list as subject',
+      shouldParse('( ( << <c> <d> <e> >> ) ) <a> <b> .',
+                  ['_:b0', 'a', 'b'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['c', 'd', 'e']],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
+    it('should parse statements with a list containing a blank node with list as subject',
       shouldParse('([]) <a> <b>.',
                   ['_:b0', 'a', 'b'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
-    it('should parse statements with a list containing multiple blank nodes',
+    it('should parse statements with a list containing multiple blank nodes with list as subject',
       shouldParse('([] [<x> <y>]) <a> <b>.',
                   ['_:b0', 'a', 'b'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
@@ -519,7 +656,7 @@ describe('Parser', () => {
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
                   ['_:b3', 'x', 'y']));
 
-    it('should parse statements with a blank node containing a list',
+    it('should parse statements with a blank node containing a list with list as subject',
       shouldParse('[<a> (<b>)] <c> <d>.',
                   ['_:b0', 'c', 'd'],
                   ['_:b0', 'a', '_:b1'],
@@ -1234,6 +1371,14 @@ describe('Parser', () => {
 
     it('should not parse RDF* in the object position',
       shouldNotParse(parser, '<a> <b> <<a> <b> <c>>>.',
+        'Unexpected RDF* syntax on line 1.'));
+
+    it('should not parse RDF* in the object list',
+      shouldNotParse(parser, '<a> <b> ( <<a> <b> <c>>> ).',
+        'Unexpected RDF* syntax on line 1.'));
+
+    it('should not parse RDF* in the subject list',
+      shouldNotParse(parser, '( <<a> <b> <c>>> ) <a> <b>.',
         'Unexpected RDF* syntax on line 1.'));
   });
 

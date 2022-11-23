@@ -473,6 +473,16 @@ export default class N3Parser {
       this._saveContext('formula', this._graph, this._subject, this._predicate,
                         this._graph = this._blankNode());
       return this._readSubject;
+    case '<<':
+      if (!this._supportsRDFStar)
+        return this._error('Unexpected RDF* syntax', token);
+
+      this._saveContext('<<', this._graph, this._subject, null, null);
+      return this._readSubject;
+    case '>>':
+      item = this._graph;
+      this._graph = null;
+      break;
     default:
       if ((item = this._readEntity(token)) === undefined)
         return;
@@ -854,6 +864,13 @@ export default class N3Parser {
     const quad = this._quad(this._subject, this._predicate, this._object,
       this._graph || this.DEFAULTGRAPH);
     this._restoreContext('<<', token);
+
+    // If the triple is in a list then return to reading the remaining elements
+    if (this._contextStack.length > 0 && this._contextStack[this._contextStack.length - 1].type === 'list') {
+      this._graph = quad;
+      return this._readListItem(token);
+    }
+
     // If the triple was the subject, continue by reading the predicate.
     if (this._subject === null) {
       this._subject = quad;
