@@ -845,21 +845,10 @@ export default class N3Parser {
     return this._readPath;
   }
 
-  // ### `_readRDFStarTailOrGraph` reads the graph of a nested RDF* quad or the end of a nested RDF* triple
-  _readRDFStarTailOrGraph(token) {
-    if (token.type !== '>>') {
-      // An entity means this is a quad (only allowed if not already inside a graph)
-      if (this._supportsQuads && this._graph === null && (this._graph = this._readEntity(token)) !== undefined)
-        return this._readRDFStarTail;
-      return this._error(`Expected >> to follow "${this._object.id}"`, token);
-    }
-    return this._readRDFStarTail(token);
-  }
-
   // ### `_readRDFStarTail` reads the end of a nested RDF* triple
   _readRDFStarTail(token) {
     if (token.type !== '>>')
-      return this._error(`Expected >> but got ${token.type}`, token);
+      return this._error(`Expected >> to follow "${this._object.id}" but got ${token.type}`, token);
     // Read the quad and restore the previous context
     const quad = this._quad(this._subject, this._predicate, this._object,
       this._graph || this.DEFAULTGRAPH);
@@ -897,7 +886,7 @@ export default class N3Parser {
     case 'formula':
       return this._readFormulaTail;
     case '<<':
-      return this._readRDFStarTailOrGraph;
+      return this._readRDFStarTail;
     }
   }
 

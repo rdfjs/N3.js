@@ -933,6 +933,10 @@ describe('Parser', () => {
       shouldParse('<a> <b> <c> <g>.',
                   ['a', 'b', 'c', 'g']));
 
+    it('should not parse a quad in a quoted triple',
+      shouldNotParse('<< <a> <b> <c> <g> >> <c> <d> .',
+                     'Expected >> to follow "http://example.org/c" but got IRI on line 1.'));
+
     it('should parse a quad with 4 prefixed names',
       shouldParse('@prefix p: <p#>.\np:a p:b p:c p:g.',
                   ['p#a', 'p#b', 'p#c', 'p#g']));
@@ -1124,12 +1128,12 @@ describe('Parser', () => {
 
     it('should not parse nested RDF* statements that are partially closed',
       shouldNotParse('<d> <e> <<<<<a> <b> <c>>> <f> <g>.',
-        'Expected entity but got . on line 1.'
+        'Expected >> to follow "http://example.org/g" but got . on line 1.'
       ));
 
     it('should not parse partially closed nested RDF* statements',
       shouldNotParse('<d> <e> <<<<<a> <b> <c> <f> <g>>>.',
-        'Expected >> but got IRI on line 1.'
+        'Expected >> to follow "http://example.org/c" but got IRI on line 1.'
       ));
 
     it('should not parse nested RDF* statements with too many closing tags',
@@ -1167,13 +1171,9 @@ describe('Parser', () => {
         'Unexpected . on line 1.'
       ));
 
-    it('should parse an RDF* quad',
-      shouldParse('<<<a> <b> <c> <d>>> <a> <b> .',
-        [['a', 'b', 'c', 'd'], 'a', 'b']));
-
     it('should not parse a malformed RDF* quad',
       shouldNotParse('<<<a> <b> <c> <d> <e>>> <a> <b> .',
-        'Expected >> but got IRI on line 1.'));
+        'Expected >> to follow "http://example.org/c" but got IRI on line 1.'));
 
     it('should parse statements with a shared RDF* subject',
       shouldParse('<<<a> <b> <c>>> <b> <c>;\n<d> <c>.',
@@ -1392,7 +1392,7 @@ describe('Parser', () => {
 
     it('should not parse nested quads',
       shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
-        'Expected >> to follow "_:b0_b" on line 1.'));
+        'Expected >> to follow "_:b0_b" but got IRI on line 1.'));
   });
 
   describe('A Parser instance for the TriG format', () => {
@@ -1452,7 +1452,7 @@ describe('Parser', () => {
 
     it('should not parse nested quads',
       shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
-        'Expected >> to follow "_:b0_b" on line 1.'));
+        'Expected >> to follow "_:b0_b" but got IRI on line 1.'));
   });
 
   describe('A Parser instance for the N-Triples format', () => {
@@ -1527,7 +1527,7 @@ describe('Parser', () => {
 
     it('should not parse nested quads',
       shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
-        'Expected >> to follow "_:b0_b" on line 1.'));
+        'Expected >> to follow "_:b0_b" but got IRI on line 1.'));
   });
 
   describe('A Parser instance for the N-Quads format', () => {
@@ -1941,7 +1941,7 @@ describe('Parser', () => {
 
     it('should not parse nested quads',
       shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
-        'Expected >> to follow "_:.b" on line 1.'));
+        'Expected >> to follow "_:.b" but got IRI on line 1.'));
   });
 
   describe('A Parser instance for the N3 format with the explicitQuantifiers option', () => {
