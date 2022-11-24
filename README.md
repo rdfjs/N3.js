@@ -12,14 +12,14 @@ It offers:
   [TriG](https://www.w3.org/TR/trig/),
   [N-Triples](https://www.w3.org/TR/n-triples/),
   [N-Quads](https://www.w3.org/TR/n-quads/),
-  [RDF-star](https://blog.liu.se/olafhartig/2019/01/10/position-statement-rdf-star-and-sparql-star/)
+  [RDF-star](https://www.w3.org/2021/12/rdf-star.html)
   and [Notation3 (N3)](https://www.w3.org/TeamSubmission/n3/)
 - [**Writing**](#writing) triples/quads to
   [Turtle](https://www.w3.org/TR/turtle/),
   [TriG](https://www.w3.org/TR/trig/),
   [N-Triples](https://www.w3.org/TR/n-triples/),
   [N-Quads](https://www.w3.org/TR/n-quads/)
-  and [RDF-star](https://blog.liu.se/olafhartig/2019/01/10/position-statement-rdf-star-and-sparql-star/)
+  and [RDF-star](https://www.w3.org/2021/12/rdf-star.html)
 - [**Storage**](#storing) of triples/quads in memory
 
 Parsing and writing is:
