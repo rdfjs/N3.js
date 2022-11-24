@@ -81,16 +81,17 @@ describe('Term', () => {
     });
 
     it('should create a Quad with the default graph if the id doesnt specify the graph', () => {
-      termFromId('<<http://ex.org/a http://ex.org/b "abc"@en-us>>').should.deep.equal(new Quad(
+      const q = new Quad(
         new NamedNode('http://ex.org/a'),
         new NamedNode('http://ex.org/b'),
         new Literal('"abc"@en-us'),
         new DefaultGraph()
-      ));
+      );
+      expect(q.equals(termFromId(termToId(q)))).equals(true);
     });
 
     it('should create a Quad with the correct graph if the id specifies a graph', () => {
-      const id = '<<http://ex.org/a http://ex.org/b "abc"@en-us http://ex.org/d>>';
+      const id = '["http://ex.org/a", "http://ex.org/b", "\\"abc\\"@en-us", "http://ex.org/d"]';
       termFromId(id).should.deep.equal(new Quad(
         new NamedNode('http://ex.org/a'),
         new NamedNode('http://ex.org/b'),
@@ -100,7 +101,7 @@ describe('Term', () => {
     });
 
     it('should create a Quad correctly', () => {
-      const id = '<<http://ex.org/a http://ex.org/b http://ex.org/c>>';
+      const id = '["http://ex.org/a", "http://ex.org/b", "http://ex.org/c"]';
       termFromId(id).should.deep.equal(new Quad(
         new NamedNode('http://ex.org/a'),
         new NamedNode('http://ex.org/b'),
@@ -110,7 +111,7 @@ describe('Term', () => {
     });
 
     it('should create a Quad correctly', () => {
-      const id = '<<_:n3-123 ?var-a ?var-b _:n3-000>>';
+      const id = '["_:n3-123", "?var-a", "?var-b", "_:n3-000"]';
       termFromId(id).should.deep.equal(new Quad(
         new BlankNode('n3-123'),
         new Variable('var-a'),
@@ -120,7 +121,7 @@ describe('Term', () => {
     });
 
     it('should create a Quad correctly', () => {
-      const id = '<<?var-a ?var-b "abc"@en-us ?var-d>>';
+      const id = '["?var-a", "?var-b", "\\"abc\\"@en-us", "?var-d"]';
       termFromId(id).should.deep.equal(new Quad(
         new Variable('var-a'),
         new Variable('var-b'),
@@ -130,7 +131,7 @@ describe('Term', () => {
     });
 
     it('should create a Quad correctly', () => {
-      const id = '<<_:n3-000 ?var-b _:n3-123 http://ex.org/d>>';
+      const id = '["_:n3-000", "?var-b", "_:n3-123", "http://ex.org/d"]';
       termFromId(id).should.deep.equal(new Quad(
         new BlankNode('n3-000'),
         new Variable('var-b'),
@@ -140,7 +141,7 @@ describe('Term', () => {
     });
 
     it('should create a Quad correctly from literal containing escaped quotes', () => {
-      const id = '<<_:n3-000 ?var-b "Hello ""W""orl""d!"@en-us http://ex.org/d>>';
+      const id = '["_:n3-000", "?var-b", "\\"Hello \\"W\\"orl\\"d!\\"@en-us", "http://ex.org/d"]';
       termFromId(id).should.deep.equal(new Quad(
         new BlankNode('n3-000'),
         new Variable('var-b'),
@@ -150,13 +151,14 @@ describe('Term', () => {
     });
 
     it('should create a Quad correctly from literal containing escaped quotes', () => {
-      const id = '<<"Hello ""W""orl""d!"@en-us http://ex.org/b http://ex.org/c>>';
-      termFromId(id).should.deep.equal(new Quad(
+      const q = new Quad(
         new Literal('"Hello "W"orl"d!"@en-us'),
         new NamedNode('http://ex.org/b'),
         new NamedNode('http://ex.org/c'),
         new DefaultGraph()
-      ));
+      );
+
+      termFromId(termToId(q)).should.deep.equal(q);
     });
 
     describe('with a custom factory', () => {
@@ -283,7 +285,7 @@ describe('Term', () => {
         new NamedNode('http://ex.org/b'),
         new Literal('"abc"@en-us'),
         new DefaultGraph()
-      )).should.equal('<<http://ex.org/a http://ex.org/b "abc"@en-us>>');
+      )).should.equal('["http://ex.org/a","http://ex.org/b","\\"abc\\"@en-us"]');
     });
 
     it('should create an id from a Quad', () => {
@@ -292,7 +294,7 @@ describe('Term', () => {
         new NamedNode('http://ex.org/b'),
         new Literal('"abc"@en-us'),
         new NamedNode('http://ex.org/d')
-      )).should.equal('<<http://ex.org/a http://ex.org/b "abc"@en-us http://ex.org/d>>');
+      )).should.equal('["http://ex.org/a","http://ex.org/b","\\"abc\\"@en-us","http://ex.org/d"]');
     });
 
     it('should create an id from a manually created Quad', () => {
@@ -303,7 +305,7 @@ describe('Term', () => {
         graph: new NamedNode('http://ex.org/d'),
         termType: 'Quad',
         value: '',
-      }).should.equal('<<http://ex.org/a http://ex.org/b "abc"@en-us http://ex.org/d>>');
+      }).should.equal('["http://ex.org/a","http://ex.org/b","\\"abc\\"@en-us","http://ex.org/d"]');
     });
 
     it('should create an id with escaped literals from a Quad', () => {
@@ -312,7 +314,7 @@ describe('Term', () => {
         new Variable('var-b'),
         new Literal('"Hello "W"orl"d!"@en-us'),
         new NamedNode('http://ex.org/d')
-      )).should.equal('<<_:n3-000 ?var-b "Hello ""W""orl""d!"@en-us http://ex.org/d>>');
+      )).should.equal('["_:n3-000","?var-b","\\"Hello \\"W\\"orl\\"d!\\"@en-us","http://ex.org/d"]');
     });
 
     it('should create an id without graph from a Quad with default graph and Quad as subject', () => {
@@ -326,7 +328,7 @@ describe('Term', () => {
         new NamedNode('http://ex.org/b'),
         new Literal('"abc"@en-us'),
         new DefaultGraph()
-      )).should.equal('<<<<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/b "abc"@en-us>>');
+      )).should.equal('[["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/b","\\"abc\\"@en-us"]');
     });
 
     it('should create an id without graph from a Quad with default graph and Quad as object', () => {
@@ -340,7 +342,7 @@ describe('Term', () => {
           new NamedNode('http://ex.org/d')
         ),
         new DefaultGraph()
-      )).should.equal('<<"abc"@en-us http://ex.org/b <<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>>>>');
+      )).should.equal('["\\"abc\\"@en-us","http://ex.org/b",["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"]]');
     });
 
     it('should create an id without graph from a Quad with default graph and Quad as subject and object', () => {
@@ -359,7 +361,7 @@ describe('Term', () => {
           new NamedNode('http://ex.org/d')
         ),
         new DefaultGraph()
-      )).should.equal('<<<<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/b <<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>>>>');
+      )).should.equal('[["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/b",["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"]]');
     });
 
     it('should create an id without graph from a Quad with Quad as subject', () => {
@@ -373,7 +375,7 @@ describe('Term', () => {
         new NamedNode('http://ex.org/b'),
         new Literal('"abc"@en-us'),
         new NamedNode('http://ex.org/d')
-      )).should.equal('<<<<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/b "abc"@en-us http://ex.org/d>>');
+      )).should.equal('[["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/b","\\"abc\\"@en-us","http://ex.org/d"]');
     });
 
     it('should create an id without graph from a Quad with Quad as object', () => {
@@ -387,7 +389,7 @@ describe('Term', () => {
           new NamedNode('http://ex.org/d')
         ),
         new NamedNode('http://ex.org/d')
-      )).should.equal('<<"abc"@en-us http://ex.org/b <<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/d>>');
+      )).should.equal('["\\"abc\\"@en-us","http://ex.org/b",["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/d"]');
     });
 
     it('should create an id from a Quad with Quad as subject and object', () => {
@@ -406,7 +408,7 @@ describe('Term', () => {
           new NamedNode('http://ex.org/d')
         ),
         new NamedNode('http://ex.org/d')
-      )).should.equal('<<<<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/b <<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/d>>');
+      )).should.equal('[["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/b",["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/d"]');
     });
 
     it('should escape literals in nested Quads', () => {
@@ -425,11 +427,46 @@ describe('Term', () => {
           new NamedNode('http://ex.org/d')
         ),
         new DefaultGraph()
-      )).should.equal('<<<<_:n3-000 ?var-b "Hello ""W""orl""d!"@en-us http://ex.org/d>> http://ex.org/b <<_:n3-000 ?var-b "Hello ""W""orl""d!"@en-us http://ex.org/d>>>>');
+      )).should.equal('[["_:n3-000","?var-b","\\"Hello \\"W\\"orl\\"d!\\"@en-us","http://ex.org/d"],"http://ex.org/b",["_:n3-000","?var-b","\\"Hello \\"W\\"orl\\"d!\\"@en-us","http://ex.org/d"]]');
+    });
+
+
+    it('should termToId <-> termFromId should roundtrip on deeply nested quad', () => {
+      const q = new Quad(
+        new Quad(
+          new NamedNode('http://example.org/s1'),
+          new NamedNode('http://example.org/p1'),
+          new NamedNode('http://example.org/o1')
+        ),
+        new NamedNode('http://example.org/p1'),
+        new Quad(
+          new Quad(
+            new Literal('"s1"'),
+            new NamedNode('http://example.org/p1'),
+            new BlankNode('o1')
+          ),
+          new NamedNode('p2'),
+          new Quad(
+            new Quad(
+              new Literal('"s1"'),
+              new NamedNode('http://example.org/p1'),
+              new BlankNode('o1')
+            ),
+            new NamedNode('http://example.org/p1'),
+            new NamedNode('http://example.org/o1')
+          )
+        )
+      );
+
+      expect(q).deep.equals(termFromId(termToId(q)));
+      expect(termFromId(termToId(q))).deep.equals(q);
+      expect(q.equals(termFromId(termToId(q)))).equal(true);
+      expect(termFromId(termToId(q)).equals(q)).equal(true);
+      expect(termFromId(termToId(q)).equals(termFromId(termToId(q)))).equal(true);
     });
 
     it('should correctly handle deeply nested quads', () => {
-      termToId(new Quad(
+      const q = new Quad(
         new Quad(
           new Quad(
             new Quad(
@@ -474,7 +511,9 @@ describe('Term', () => {
           new NamedNode('http://ex.org/d')
         ),
         new NamedNode('http://ex.org/d')
-      )).should.equal('<<<<<<<<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> ?var-b <<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/d>> ?var-b <<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/d>> http://ex.org/b <<<<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> ?var-b <<_:n3-000 ?var-b "abc"@en-us http://ex.org/d>> http://ex.org/d>> http://ex.org/d>>');
+      );
+
+      expect(q.equals(termFromId(termToId(q)))).equal(true);
     });
 
     it('should throw on an unknown type', () => {
