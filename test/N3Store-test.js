@@ -1653,6 +1653,32 @@ describe('Store', () => {
       [...store.match(null, null, null, null)].should.have.length(3);
     });
 
+    it('should include added elements in match if iteration has not yet started (deeply nested)', () => {
+      const m = store.match(null, null, null, null);
+      store.add(new Quad(
+        new NamedNode('s1'),
+        new NamedNode('p1'),
+        new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o3'))
+        )
+      );
+      store.add(new Quad(
+        new NamedNode('s1'),
+        new NamedNode('p1'),
+        new Quad(
+          new NamedNode('s1'),
+          new NamedNode('p1'),
+          new Quad(
+            new NamedNode('s1'),
+            new NamedNode('p1'),
+            new NamedNode('o3')
+            )
+          )
+        )
+      );
+      [...m].should.have.length(4);
+      [...store.match(null, null, null, null)].should.have.length(4);
+    });
+
     it('should still include results of original match after iterating while adding new data', () => {
       const m = store.match(null, null, null, null)[Symbol.iterator]();
       m.next().value.should.deep.equal(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')));

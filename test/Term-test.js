@@ -15,6 +15,54 @@ import {
   unescapeQuotes,
 } from '../src/N3DataFactory';
 
+
+const DEEP_TRIPLE = new Quad(
+  new Quad(
+    new Quad(
+      new Quad(
+        new BlankNode('n3-000'),
+        new Variable('var-b'),
+        new Literal('"abc"@en-us'),
+        new NamedNode('http://ex.org/d')
+      ),
+      new Variable('var-b'),
+      new Quad(
+        new BlankNode('n3-000'),
+        new Variable('var-b'),
+        new Literal('"abc"@en-us'),
+        new NamedNode('http://ex.org/d')
+      ),
+      new NamedNode('http://ex.org/d')
+    ),
+    new Variable('var-b'),
+    new Quad(
+      new BlankNode('n3-000'),
+      new Variable('var-b'),
+      new Literal('"abc"@en-us'),
+      new NamedNode('http://ex.org/d')
+    ),
+    new NamedNode('http://ex.org/d')
+  ),
+  new NamedNode('http://ex.org/b'),
+  new Quad(
+    new Quad(
+      new BlankNode('n3-000'),
+      new Variable('var-b'),
+      new Literal('"abc"@en-us'),
+      new NamedNode('http://ex.org/d')
+    ),
+    new Variable('var-b'),
+    new Quad(
+      new BlankNode('n3-000'),
+      new Variable('var-b'),
+      new Literal('"abc"@en-us'),
+      new NamedNode('http://ex.org/d')
+    ),
+    new NamedNode('http://ex.org/d')
+  ),
+  new NamedNode('http://ex.org/d')
+);
+
 describe('Term', () => {
   describe('The Term module', () => {
     it('should be a function', () => {
@@ -159,6 +207,11 @@ describe('Term', () => {
       );
 
       termFromId(termToId(q)).should.deep.equal(q);
+    });
+
+    it('should correctly handle deeply nested quads', () => {
+      DEEP_TRIPLE.equals(termFromId(termToId(DEEP_TRIPLE))).should.equal(true);
+      termFromId(termToId(DEEP_TRIPLE)).equals(DEEP_TRIPLE).should.equal(true);
     });
 
     describe('with a custom factory', () => {
