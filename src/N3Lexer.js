@@ -294,18 +294,19 @@ export default class N3Lexer {
       case '!':
         if (!this._n3Mode)
           break;
+      case '{':
+        // Note the input[0] === '{' is required as this could be a fall-through from the above case
+        if (input.length > 1 && input[0] === '{' && input[1] === '|') {
+          type = '{|', matchLength = 2;
+          break;
+        }
       case ',':
       case ';':
       case '[':
       case ']':
       case '(':
       case ')':
-      case '{':
       case '}':
-        if (input.length > 1 && input[1] === '|') {
-          type = '{|', matchLength = 2;
-          break;
-        }
         if (
           !this._lineMode &&
           // The token might actually be {| and we just have not encountered the pipe yet

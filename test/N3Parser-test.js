@@ -1253,6 +1253,12 @@ describe('Parser', () => {
           ['a', 'b', 'c'],
           [['a', 'b', 'c'], 'd', 'e']));
 
+    it('should not parse }|',
+        shouldNotParse('<a> <b> <c> }| <d> <e> |} .', 'Unexpected graph closing on line 1.'));
+
+    it('should not parse |{',
+        shouldNotParse('<a> <b> <c> {| <d> <e> |{ .', 'Unexpected "|{" on line 1.'));
+
     it('should parse an explicit triple with reified annotation that is chunked at the pipe',
       shouldParseChunks(['<a> <b> <c> {| <d> <e> |', '} .'],
           ['a', 'b', 'c'],
