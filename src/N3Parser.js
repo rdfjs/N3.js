@@ -909,6 +909,7 @@ export default class N3Parser {
       this._emit(this._subject, this._predicate, this._object, this._graph);
     }
 
+    // If the quoted triple is not finished, the next token must be a predicate
     if (token.type !== '|}')
       return this._readPredicate;
     this._restoreContext('{|', token);
