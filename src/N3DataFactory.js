@@ -248,8 +248,6 @@ export function termToId(term, nested) {
     term.language ? `@${term.language}` :
       (term.datatype && term.datatype.value !== xsd.string ? `^^${term.datatype.value}` : '')}`;
   case 'Quad':
-    // To identify RDF-star quad components, we escape quotes by doubling them.
-    // This avoids the overhead of backslash parsing of Turtle-like syntaxes.
     const res = [
       termToId(term.subject, true),
       termToId(term.predicate, true),
