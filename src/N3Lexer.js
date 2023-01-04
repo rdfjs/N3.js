@@ -306,7 +306,11 @@ export default class N3Lexer {
           type = '{|', matchLength = 2;
           break;
         }
-        if (!this._lineMode) {
+        if (
+          !this._lineMode &&
+          // The token might actually be {| and we just have not encountered the pipe yet
+          (input !== '{' || input.length > 1)
+          ) {
           matchLength = 1;
           type = firstChar;
         }
