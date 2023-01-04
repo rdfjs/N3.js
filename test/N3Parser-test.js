@@ -64,7 +64,7 @@ describe('Parser', () => {
       shouldParse('<a> <b> "string"@en.',
                   ['a', 'b', '"string"@en']));
 
-    it('should normalize language codes to lowercase',
+    describe('should normalize language codes to lowercase',
       shouldParse('<a> <b> "string"@EN.',
                   ['a', 'b', '"string"@en']));
 
@@ -76,7 +76,7 @@ describe('Parser', () => {
       shouldParse('@prefix x: <urn:x:y#>. <a> <b> "string"^^x:z.',
                   ['a', 'b', '"string"^^urn:x:y#z']));
 
-    it('should differentiate between IRI and prefixed name types',
+    describe('should differentiate between IRI and prefixed name types',
       shouldParse('@prefix : <noturn:>. :a :b "x"^^<urn:foo>. :a :b "x"^^:urn:foo.',
                   ['noturn:a', 'noturn:b', '"x"^^urn:foo'],
                   ['noturn:a', 'noturn:b', '"x"^^noturn:urn:foo']));
@@ -369,7 +369,7 @@ describe('Parser', () => {
                   ['_:b0', 'c', '_:b1'],
                   ['_:b1', 'd', 'e']));
 
-    it('should reuse identifiers of blank nodes within and outside of graphs',
+    describe('should reuse identifiers of blank nodes within and outside of graphs',
       shouldParse('_:a <b> _:c. <g> { _:a <b> _:c }',
                   ['_:b0_a', 'b', '_:b0_c'],
                   ['_:b0_a', 'b', '_:b0_c', 'g']));
@@ -477,7 +477,7 @@ describe('Parser', () => {
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
     describe('should parse a nested list',
-    shouldParse('<a> <b> ( ( <c> ) ).',
+      shouldParse('<a> <b> ( ( <c> ) ).',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
@@ -667,7 +667,7 @@ describe('Parser', () => {
       shouldNotParse('<a> <b> (]).',
                      'Expected entity but got ] on line 1.'));
 
-    it('should resolve IRIs against @base',
+    describe('should resolve IRIs against @base',
       shouldParse('@base <http://ex.org/>.\n' +
                   '<a> <b> <c>.\n' +
                   '@base <d/>.\n' +
@@ -679,7 +679,7 @@ describe('Parser', () => {
       shouldNotParse('@BASE <http://ex.org/>.',
                      'Expected entity but got @BASE on line 1.'));
 
-    it('should resolve IRIs against SPARQL base',
+    describe('should resolve IRIs against SPARQL base',
       shouldParse('BASE <http://ex.org/>\n' +
                   '<a> <b> <c>. ' +
                   'BASE <d/> ' +
@@ -687,7 +687,7 @@ describe('Parser', () => {
                   ['http://ex.org/a', 'http://ex.org/b', 'http://ex.org/c'],
                   ['http://ex.org/d/e', 'http://ex.org/d/f', 'http://ex.org/d/g']));
 
-    it('should resolve IRIs against a @base with query string',
+    describe('should resolve IRIs against a @base with query string',
       shouldParse('@base <http://ex.org/?foo>.\n' +
                   '<> <b> <c>.\n' +
                   '@base <d/?bar>.\n' +
@@ -695,7 +695,7 @@ describe('Parser', () => {
                   ['http://ex.org/?foo', 'http://ex.org/b', 'http://ex.org/c'],
                   ['http://ex.org/d/?bar', 'http://ex.org/d/f', 'http://ex.org/d/g']));
 
-    it('should resolve IRIs with query string against @base',
+    describe('should resolve IRIs with query string against @base',
       shouldParse('@base <http://ex.org/>.\n' +
                   '<?> <?a> <?a=b>.\n' +
                   '@base <d>.\n' +
@@ -706,7 +706,7 @@ describe('Parser', () => {
                   ['http://ex.org/d?', 'http://ex.org/d?a', 'http://ex.org/d?a=b'],
                   ['http://ex.org/d?e', 'http://ex.org/d?a', 'http://ex.org/d?a=b']));
 
-    it('should not resolve IRIs with colons',
+    describe('should not resolve IRIs with colons',
       shouldParse('@base <http://ex.org/>.\n' +
                   '<a>   <b>   <c>.\n' +
                   '<A:>  <b:>  <c:>.\n' +
@@ -723,7 +723,7 @@ describe('Parser', () => {
       shouldNotParse('@base <entity.beeldbank_leiden_person:A.E._Stuur.> .',
                      'Expected valid IRI to follow base declaration on line 1.'));
 
-    it('should resolve datatype IRIs against @base',
+    describe('should resolve datatype IRIs against @base',
       shouldParse('@base <http://ex.org/>.\n' +
                   '<a> <b> "c"^^<d>.\n' +
                   '@base <d/>.\n' +
@@ -731,17 +731,17 @@ describe('Parser', () => {
                   ['http://ex.org/a', 'http://ex.org/b', '"c"^^http://ex.org/d'],
                   ['http://ex.org/d/e', 'http://ex.org/d/f', '"g"^^http://ex.org/d/h']));
 
-    it('should resolve IRIs against a base with a fragment',
+    describe('should resolve IRIs against a base with a fragment',
       shouldParse('@base <http://ex.org/foo#bar>.\n' +
                   '<a> <b> <#c>.\n',
                   ['http://ex.org/a', 'http://ex.org/b', 'http://ex.org/foo#c']));
 
-    it('should resolve IRIs with an empty fragment',
+    describe('should resolve IRIs with an empty fragment',
       shouldParse('@base <http://ex.org/foo>.\n' +
                   '<#> <b#> <#c>.\n',
                   ['http://ex.org/foo#', 'http://ex.org/b#', 'http://ex.org/foo#c']));
 
-    it('should not resolve prefixed names',
+    describe('should not resolve prefixed names',
       shouldParse('PREFIX ex: <http://ex.org/a/bb/ccc/../>\n' +
                   'ex:a ex:b ex:c .',
                   ['http://ex.org/a/bb/ccc/../a', 'http://ex.org/a/bb/ccc/../b', 'http://ex.org/a/bb/ccc/../c']));
@@ -1243,7 +1243,7 @@ describe('Parser', () => {
         [['a', 'b', 'c'], 'b', 'c'],
         [['a', 'b', 'c'], 'd', ['a', 'b', 'c']]));
 
-    it('should put nested triples in the default graph',
+    describe('should put nested triples in the default graph',
       shouldParse('<a> <b> <c> <g>.\n<<<a> <b> <c>>> <d> <e>.',
           ['a', 'b', 'c', 'g'],
           [['a', 'b', 'c'], 'd', 'e']));
@@ -1339,7 +1339,7 @@ describe('Parser', () => {
   describe('An Parser instance without document IRI', () => {
     function parser() { return new Parser(); }
 
-    it('should keep relative IRIs',
+    describe('should keep relative IRIs',
       shouldParse(parser,
         '@prefix : <#>.\n' +
         '<a> <b> <c> <g>.\n' +
@@ -1347,7 +1347,7 @@ describe('Parser', () => {
         [termFromId('a'), termFromId('b'), termFromId('c'), termFromId('g')],
         [termFromId('#d'), termFromId('#e'), termFromId('#f'), termFromId('#g')]));
 
-    it('should keep empty IRIs',
+    describe('should keep empty IRIs',
       shouldParse(parser,
         '@prefix : <>.\n' +
         '<> <> <> <>.\n' +
@@ -1359,7 +1359,7 @@ describe('Parser', () => {
   describe('An Parser instance with a document IRI', () => {
     function parser() { return new Parser({ baseIRI: 'http://ex.org/x/yy/zzz/f.ttl' }); }
 
-    it('should resolve IRIs against the document IRI',
+    describe('should resolve IRIs against the document IRI',
       shouldParse(parser,
                   '@prefix : <#>.\n' +
                   '<a> <b> <c> <g>.\n' +
@@ -1367,47 +1367,47 @@ describe('Parser', () => {
                   ['http://ex.org/x/yy/zzz/a', 'http://ex.org/x/yy/zzz/b', 'http://ex.org/x/yy/zzz/c', 'http://ex.org/x/yy/zzz/g'],
                   ['http://ex.org/x/yy/zzz/f.ttl#d', 'http://ex.org/x/yy/zzz/f.ttl#e', 'http://ex.org/x/yy/zzz/f.ttl#f', 'http://ex.org/x/yy/zzz/f.ttl#g']));
 
-    it('should resolve IRIs with a trailing slash against the document IRI',
+    describe('should resolve IRIs with a trailing slash against the document IRI',
       shouldParse(parser,
                   '</a> </a/b> </a/b/c>.\n',
                   ['http://ex.org/a', 'http://ex.org/a/b', 'http://ex.org/a/b/c']));
 
-    it('should resolve IRIs starting with ./ against the document IRI',
+    describe('should resolve IRIs starting with ./ against the document IRI',
       shouldParse(parser,
                   '<./a> <./a/b> <./a/b/c>.\n',
                   ['http://ex.org/x/yy/zzz/a', 'http://ex.org/x/yy/zzz/a/b', 'http://ex.org/x/yy/zzz/a/b/c']));
 
-    it('should resolve IRIs starting with multiple ./ sequences against the document IRI',
+    describe('should resolve IRIs starting with multiple ./ sequences against the document IRI',
       shouldParse(parser,
                   '<./././a> <./././././a/b> <././././././a/b/c>.\n',
                   ['http://ex.org/x/yy/zzz/a', 'http://ex.org/x/yy/zzz/a/b', 'http://ex.org/x/yy/zzz/a/b/c']));
 
-    it('should resolve IRIs starting with ../ against the document IRI',
+    describe('should resolve IRIs starting with ../ against the document IRI',
       shouldParse(parser,
                   '<../a> <../a/b> <../a/b/c>.\n',
                   ['http://ex.org/x/yy/a', 'http://ex.org/x/yy/a/b', 'http://ex.org/x/yy/a/b/c']));
 
-    it('should resolve IRIs starting multiple ../ sequences against the document IRI',
+    describe('should resolve IRIs starting multiple ../ sequences against the document IRI',
       shouldParse(parser,
                   '<../../a> <../../../a/b> <../../../../../../../../a/b/c>.\n',
                   ['http://ex.org/x/a', 'http://ex.org/a/b', 'http://ex.org/a/b/c']));
 
-    it('should resolve IRIs starting with mixes of ./ and ../ sequences against the document IRI',
+    describe('should resolve IRIs starting with mixes of ./ and ../ sequences against the document IRI',
       shouldParse(parser,
                   '<.././a> <./.././a/b> <./.././.././a/b/c>.\n',
                   ['http://ex.org/x/yy/a', 'http://ex.org/x/yy/a/b', 'http://ex.org/x/a/b/c']));
 
-    it('should resolve IRIs starting with .x, ..x, or .../ against the document IRI',
+    describe('should resolve IRIs starting with .x, ..x, or .../ against the document IRI',
       shouldParse(parser,
                   '<.x/a> <..x/a/b> <.../a/b/c>.\n',
                   ['http://ex.org/x/yy/zzz/.x/a', 'http://ex.org/x/yy/zzz/..x/a/b', 'http://ex.org/x/yy/zzz/.../a/b/c']));
 
-    it('should resolve datatype IRIs against the document IRI',
+    describe('should resolve datatype IRIs against the document IRI',
       shouldParse(parser,
                   '<a> <b> "c"^^<d>.',
                   ['http://ex.org/x/yy/zzz/a', 'http://ex.org/x/yy/zzz/b', '"c"^^http://ex.org/x/yy/zzz/d']));
 
-    it('should resolve IRIs in lists against the document IRI',
+    describe('should resolve IRIs in lists against the document IRI',
       shouldParse(parser,
           '(<a> <b>) <p> (<c> <d>).',
           ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://ex.org/x/yy/zzz/a'],
@@ -1420,7 +1420,7 @@ describe('Parser', () => {
           ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://ex.org/x/yy/zzz/d'],
           ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
 
-    it('should respect @base statements',
+    describe('should respect @base statements',
       shouldParse(parser,
                   '<a> <b> <c>.\n' +
                   '@base <http://ex.org/x/>.\n' +
@@ -1553,7 +1553,7 @@ describe('Parser', () => {
     it('should parse a single triple chunked after an opening bracket',
       shouldParseChunks(parser, ['<a> <', 'b> <c>.'], ['a', 'b', 'c']));
 
-    it('should parse a single triple',
+    describe('should parse a single triple',
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
 
     describe('should parse a default graph',
@@ -1758,13 +1758,13 @@ describe('Parser', () => {
     it('should not parse a quad',
       shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "http://example.org/c" on line 1.'));
 
-    it('allows a blank node in predicate position',
+    describe('allows a blank node in predicate position',
       shouldParse(parser, '<a> [] <c>.', ['a', '_:b0', 'c']));
 
-    it('allows a blank node label in predicate position',
+    describe('allows a blank node label in predicate position',
       shouldParse(parser, '<a> _:b <c>.', ['a', '_:b0_b', 'c']));
 
-    it('allows a blank node with properties in predicate position',
+    describe('allows a blank node with properties in predicate position',
       shouldParse(parser, '<a> [<p> <o>] <c>.',
                   ['a', '_:b0', 'c'],
                   ['_:b0', 'p', 'o']));
@@ -1795,7 +1795,6 @@ describe('Parser', () => {
                   ['_:b0', 'http://www.w3.org/2000/10/swap/log#implies', '_:b1'],
                   ['?a', '?b', 'c',  '_:b0'],
                   ['d',  'e',  '?a', '_:b1']));
-
 
     describe('should parse a right implication between two-triple graphs',
       shouldParse(parser, '{ ?a ?b <c>. <d> <e> <f>. } => { <d> <e> ?a, <f> }.',
@@ -1872,7 +1871,7 @@ describe('Parser', () => {
       shouldNotParse(parser, '@forSome ?a.',
                      'Unexpected var on line 1.'));
 
-    it('should correctly scope @forSome statements',
+    describe('should correctly scope @forSome statements',
       shouldParse(parser, '@forSome <x>. <x> <x> { @forSome <x>. <x> <x> <x>. }. <x> <x> <x>.',
                   ['_:b0', '_:b0', '_:b1'],
                   ['_:b2', '_:b2', '_:b2', '_:b1'],
@@ -1898,7 +1897,7 @@ describe('Parser', () => {
       shouldNotParse(parser, '@forAll ?a.',
                      'Unexpected var on line 1.'));
 
-    it('should correctly scope @forAll statements',
+    describe('should correctly scope @forAll statements',
       shouldParse(parser, '@forAll <x>. <x> <x> { @forAll <x>. <x> <x> <x>. }. <x> <x> <x>.',
                   ['?b0', '?b0', '_:b1'],
                   ['?b2', '?b2', '?b2', '_:b1'],
@@ -2127,7 +2126,7 @@ describe('Parser', () => {
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'urn:n3:quantifiers'],
                   ['a:x', 'b:y', 'a:z']));
 
-    it('should correctly scope @forSome statements',
+    describe('should correctly scope @forSome statements',
       shouldParse(parser, '@forSome <x>. <x> <x> { @forSome <x>. <x> <x> <x>. }. <x> <x> <x>.',
                   ['', 'http://www.w3.org/2000/10/swap/reify#forSome', '_:b0',      'urn:n3:quantifiers'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x', 'urn:n3:quantifiers'],
