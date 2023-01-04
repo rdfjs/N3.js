@@ -188,6 +188,10 @@ export class DefaultGraph extends Term {
 DEFAULTGRAPH = new DefaultGraph();
 
 // ### Constructs a term from the given internal string ID
+// The third 'nested' parameter of this function is to aid
+// with recursion over nested terms. It should not be used
+// by consumers of this library.
+// See https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725
 export function termFromId(id, factory, nested) {
   factory = factory || DataFactory;
 
@@ -230,6 +234,10 @@ export function termFromId(id, factory, nested) {
 }
 
 // ### Constructs an internal string ID from the given term or ID string
+// The third 'nested' parameter of this function is to aid
+// with recursion over nested terms. It should not be used
+// by consumers of this library.
+// See https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725
 export function termToId(term, nested) {
   if (typeof term === 'string')
     return term;
