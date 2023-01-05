@@ -283,7 +283,7 @@ describe('Store', () => {
       new Quad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), new NamedNode('p2'), new NamedNode('o2')),
       new Quad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), new NamedNode('p1'), new NamedNode('o2')),
       new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
-    ]
+    ];
     before(() => {
       store = new Store(allQuads);
     });
@@ -292,17 +292,16 @@ describe('Store', () => {
       store.size.should.eql(5);
     });
 
-    it('should return the removed quads', async () => {
-      const quads = await arrayifyStream(store.removeMatches(null, 'p2', 'o2'));
+    it('should return the removed quads', () => arrayifyStream(store.removeMatches(null, 'p2', 'o2')).then(quads => {
       quads.length.should.equal(1);
       quads[0].equals(
         new Quad(
-          new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), 
-          new NamedNode('p2'), 
+          new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+          new NamedNode('p2'),
           new NamedNode('o2')
           )
         ).should.equal(true);
-    })
+    }));
 
     it('should decrease the size', () => {
       store.size.should.eql(4);
@@ -330,8 +329,8 @@ describe('Store', () => {
         new Quad(
           new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
           new NamedNode('p1'),
-          new NamedNode('o2'))
-        ]);
+          new NamedNode('o2')),
+      ]);
 
       const stream = s2.removeMatches(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')));
       stream.on('end', () => {
