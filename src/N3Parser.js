@@ -900,7 +900,7 @@ export default class N3Parser {
     if (token.type === '{|') {
       this._saveContext('{|', this._graph, this._subject, this._predicate, this._object);
 
-      // As a convention we use set the graph term as the Default Graph in quads representing quoted triples
+      // As a convention, we set the graph term as the Default Graph in quads representing quoted triples
       // see https://github.com/rdfjs/N3.js/pull/311#discussion_r1061039556 for details
       this._subject = this._quad(this._subject, this._predicate, this._object, this.DEFAULTGRAPH);
       this._predicate = null;
