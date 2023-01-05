@@ -37,6 +37,7 @@ export default class N3Store {
         this._termFromId(entities[terms[1]]),
         this._termFromId(entities[terms[2]]),
         this._termFromId(entities[terms[3]])
+        // terms[4] && this._termFromId(entities[terms[4]])
       );
       return q;
     }
@@ -45,6 +46,7 @@ export default class N3Store {
 
   _termToId(term) {
     if (term && term.termType === 'Quad') {
+      // const g = this._termToNewNumericId(term.graph)
       const res = `.${
         this._termToNewNumericId(term.subject)
       }.${
@@ -330,8 +332,8 @@ export default class N3Store {
     // and verify the quad exists.
     const graphs = this._graphs;
     let graphItem, subjects, predicates;
-    if (!(subject    = this._termToNewNumericId(subject)) || !(predicate = this._termToNewNumericId(predicate)) ||
-        !(object     = this._termToNewNumericId(object))  || !(graphItem = graphs[graph])  ||
+    if (!(subject    = subject && this._termToNumericId(subject)) || !(predicate = predicate && this._termToNumericId(predicate)) ||
+        !(object     = object && this._termToNumericId(object))  || !(graphItem = graphs[graph])  ||
         !(subjects   = graphItem.subjects[subject]) ||
         !(predicates = subjects[predicate]) ||
         !(object in predicates))
@@ -396,9 +398,9 @@ export default class N3Store {
     let content, subjectId, predicateId, objectId;
 
     // Translate IRIs to internal index keys.
-    if (subject   && !(subjectId   = this._termToNewNumericId(subject))   ||
-        predicate && !(predicateId = this._termToNewNumericId(predicate)) ||
-        object    && !(objectId    = this._termToNewNumericId(object)))
+    if (subject   && !(subjectId   = this._termToNumericId(subject))   ||
+        predicate && !(predicateId = this._termToNumericId(predicate)) ||
+        object    && !(objectId    = this._termToNumericId(object)))
       return;
 
     for (const graphId in graphs) {
@@ -451,9 +453,9 @@ export default class N3Store {
     let count = 0, content, subjectId, predicateId, objectId;
 
     // Translate IRIs to internal index keys.
-    if (subject   && !(subjectId   = this._termToNewNumericId(subject))   ||
-        predicate && !(predicateId = this._termToNewNumericId(predicate)) ||
-        object    && !(objectId    = this._termToNewNumericId(object)))
+    if (subject   && !(subjectId   = this._termToNumericId(subject))   ||
+        predicate && !(predicateId = this._termToNumericId(predicate)) ||
+        object    && !(objectId    = this._termToNumericId(object)))
       return 0;
 
     for (const graphId in graphs) {
@@ -531,8 +533,8 @@ export default class N3Store {
     callback = this._uniqueEntities(callback);
 
     // Translate IRIs to internal index keys.
-    if (predicate && !(predicateId = this._termToNewNumericId(predicate)) ||
-        object    && !(objectId    = this._termToNewNumericId(object)))
+    if (predicate && !(predicateId = this._termToNumericId(predicate)) ||
+        object    && !(objectId    = this._termToNumericId(object)))
       return;
 
     for (graph in graphs) {
@@ -576,8 +578,8 @@ export default class N3Store {
     callback = this._uniqueEntities(callback);
 
     // Translate IRIs to internal index keys.
-    if (subject   && !(subjectId   = this._termToNewNumericId(subject))   ||
-        object    && !(objectId    = this._termToNewNumericId(object)))
+    if (subject   && !(subjectId   = this._termToNumericId(subject))   ||
+        object    && !(objectId    = this._termToNumericId(object)))
       return;
 
     for (graph in graphs) {
@@ -621,8 +623,8 @@ export default class N3Store {
     callback = this._uniqueEntities(callback);
 
     // Translate IRIs to internal index keys.
-    if (subject   && !(subjectId   = this._termToNewNumericId(subject))   ||
-        predicate && !(predicateId = this._termToNewNumericId(predicate)))
+    if (subject   && !(subjectId   = this._termToNumericId(subject))   ||
+        predicate && !(predicateId = this._termToNumericId(predicate)))
       return;
 
     for (graph in graphs) {
