@@ -2641,8 +2641,8 @@ function splitAllWays(result, left, right, chunkSize) {
   return result;
 }
 
-// Return a large number of combinations for splitting the string to test chunking - any thing with 5 characters
-// or less will test every permutation of splits possible on the string
+// Return a large number of combinations for splitting the string to test chunking - anything with 5 or fewer
+// characters will test every permutation of splits possible on the string
 function getSplits(str) {
   return splitAllWays([], [], str, Math.max(Math.floor(str.length / 6), 1));
 }
