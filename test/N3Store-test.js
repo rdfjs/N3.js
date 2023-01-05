@@ -277,28 +277,41 @@ describe('Store', () => {
 
   describe('removing matching quads for RDF-star', () => {
     let store;
-    beforeEach(() => {
-      store = new Store([
-        new Quad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), new NamedNode('p2'), new NamedNode('o1')),
-        new Quad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), new NamedNode('p1'), new NamedNode('o1')),
-        new Quad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), new NamedNode('p2'), new NamedNode('o2')),
-        new Quad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), new NamedNode('p1'), new NamedNode('o2')),
-        new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
-      ]);
+    const allQuads = [
+      new Quad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), new NamedNode('p2'), new NamedNode('o1')),
+      new Quad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), new NamedNode('p1'), new NamedNode('o1')),
+      new Quad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), new NamedNode('p2'), new NamedNode('o2')),
+      new Quad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), new NamedNode('p1'), new NamedNode('o2')),
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
+    ]
+    before(() => {
+      store = new Store(allQuads);
     });
 
-    it('should return the removed quads',
-      forResultStream(shouldIncludeAll, () => { return store.removeMatches(null, 'p2', 'o2'); },
-        [termToId(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'))), 'p2', 'o2']));
+    it('should start with the correct size', () => {
+      store.size.should.eql(5);
+    });
+
+    it('should return the removed quads', async () => {
+      const quads = await arrayifyStream(store.removeMatches(null, 'p2', 'o2'));
+      quads.length.should.equal(1);
+      quads[0].equals(
+        new Quad(
+          new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), 
+          new NamedNode('p2'), 
+          new NamedNode('o2')
+          )
+        ).should.equal(true);
+    })
 
     it('should decrease the size', () => {
-      store.size.should.eql(5);
+      store.size.should.eql(4);
     });
 
     it('should match RDF-star and normal quads at the same time', done => {
       const stream = store.removeMatches(null, 'p1', 'o2');
       stream.on('end', () => {
-        store.size.should.eql(3);
+        store.size.should.eql(2);
         done();
       });
     });
@@ -306,7 +319,23 @@ describe('Store', () => {
     it('should allow matching using a quad', done => {
       const stream = store.removeMatches(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')));
       stream.on('end', () => {
-        store.size.should.eql(1);
+        store.size.should.eql(0);
+        done();
+      });
+    });
+
+    it('should allow matching using a quad and only match against relevant quads', done => {
+      const s2 = new Store([
+        ...allQuads,
+        new Quad(
+          new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
+          new NamedNode('p1'),
+          new NamedNode('o2'))
+        ]);
+
+      const stream = s2.removeMatches(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')));
+      stream.on('end', () => {
+        s2.size.should.eql(2);
         done();
       });
     });
