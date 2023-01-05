@@ -32,36 +32,36 @@ export default class N3Store {
   }
 
   _termFromId(id, factory) {
-    if (id[0] === '_') {
+    if (id[0] === '.') {
       const entities = this._entities;
-      const terms = id.split('_');
+      const terms = id.split('.');
       const q = this._factory.quad(
         this._termFromId(entities[terms[1]]),
         this._termFromId(entities[terms[2]]),
         this._termFromId(entities[terms[3]]),
-        terms[4] && this._termFromId(entities[terms[4]]),
-      )
+        terms[4] && this._termFromId(entities[terms[4]])
+      );
       return q;
     }
     return termFromId(id, factory);
   }
 
   _termToId(term) {
-    if (term.termType === 'Quad') {
+    if (term && (term.termType === 'Quad')) {
       const subject = this._termToId(term.subject),
-        predicate = this._termToId(term.predicate),
-        object = this._termToId(term.object),
-        graph = isDefaultGraph(term.graph) && this._termToId(term.graph),
-        ids = this._ids,
-        entities = this._entities;
+          predicate = this._termToId(term.predicate),
+          object = this._termToId(term.object),
+          graph = !isDefaultGraph(term.graph) && this._termToId(term.graph),
+          ids = this._ids,
+          entities = this._entities;
 
-      const res = `_${
-        ids[subject] || (ids[entities[++this._id] = subject]  = this._id)
-      }_${
-        ids[predicate] || (ids[entities[++this._id] = predicate]  = this._id)
-      }_${
-        ids[object] || (ids[entities[++this._id] = object]  = this._id)
-      }${graph ? ('_' + (ids[graph] || (ids[entities[++this._id] = graph]  = this._id))) : ''}`;
+      const res = `.${
+        ids[subject]   || (ids[entities[++this._id] = subject]   = this._id)
+      }.${
+        ids[predicate] || (ids[entities[++this._id] = predicate] = this._id)
+      }.${
+        ids[object]    || (ids[entities[++this._id] = object]    = this._id)
+      }${graph ? (`.${ids[graph] || (ids[entities[++this._id] = graph] = this._id)}`) : ''}`;
       return res;
     }
     return termToId(term);

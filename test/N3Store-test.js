@@ -304,7 +304,7 @@ describe('Store', () => {
     });
 
     it('should allow matching using a quad', done => {
-      const stream = store.removeMatches(termToId(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'))));
+      const stream = store.removeMatches(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')));
       stream.on('end', () => {
         store.size.should.eql(1);
         done();
