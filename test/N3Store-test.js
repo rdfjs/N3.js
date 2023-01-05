@@ -340,6 +340,50 @@ describe('Store', () => {
     });
   });
 
+  // These tests should probably be broken in the future; they are here to serve to use that we should to a mver bump
+  // at such a time
+  describe('A store with quoted quads', () => {
+    let store;
+    beforeEach(() => {
+      store = new Store([
+        new Quad(
+          new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
+          new NamedNode('p1'),
+          new NamedNode('o2')),
+        new Quad(
+        new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2'), new NamedNode('g')),
+        new NamedNode('p1'),
+        new NamedNode('o2')),
+      ]);
+    });
+
+    it('should have the correct size', () => {
+      store.size.should.equal(2);
+    });
+
+    it('should get all quads with shared predicate', () => {
+      store.getQuads(null, new NamedNode('p1'), null).length.should.equal(2);
+    });
+
+    it('should get all quads with shared predicate 2', () => {
+      store.getQuads(
+        new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
+        new NamedNode('p1'),
+        null
+        ).length.should.equal(1);
+      store.getQuads(
+        new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2'), new NamedNode('g')),
+        new NamedNode('p1'),
+        null
+        ).length.should.equal(1);
+      store.getQuads(
+        new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2'), new NamedNode('g2')),
+        new NamedNode('p1'),
+        null
+        ).length.should.equal(0);
+    });
+  });
+
   describe('A Store with 7 elements', () => {
     const store = new Store();
     store.addQuad('s1', 'p1', 'o1').should.be.true;
