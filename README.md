@@ -199,6 +199,12 @@ To write N-Triples (or N-Quads) instead, pass a `format` argument upon creation
 const writer1 = new N3.Writer({ format: 'N-Triples' });
 const writer2 = new N3.Writer({ format: 'application/trig' });
 ```
+To exclude the graph name from the serialization, pass a `graphs` argument upon creation:
+```JavaScript
+const writer3 = new N3.Writer({ graphs: 'keep' }); // Keeps the graph names (default)
+const writer4 = new N3.Writer({ graphs: 'ignore' }); // Ignores the graph name
+const writer5 = new N3.Writer({ graphs: 'error' }); // Throws an error when writing a graph name
+```
 
 ### From quads to an RDF stream
 

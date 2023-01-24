@@ -31,6 +31,17 @@ describe('Writer', () => {
       const writer = new Writer();
       writer.quadToString(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')).should.equal('<a> <b> <c> <g> .\n');
     });
+    it('should throw error when it\'s forbidden to pass graphname', done => {
+      const writer = new Writer({ graphs: 'error' });
+      try {
+        writer.quadToString(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')).should.equal('<a> <b> <c> <g> .\n');
+      }
+      catch (error) {
+        error.should.be.an.instanceof(Error);
+        error.should.have.property('message', 'Encountered graph name, this is forbidden.');
+        done();
+      }
+    });
 
     it('should serialize an array of triples', () => {
       const writer = new Writer();
@@ -653,6 +664,57 @@ describe('Writer', () => {
         called.should.be.true;
         output.should.equal('<a> <b> <c> .\n<a> <b> <d> <g> .\n');
         done(error);
+      });
+    });
+
+    it('ignores the graph name when needed in N-Quads mode', done => {
+      const writer = new Writer({ graphs: 'ignore', format: 'n-quads' });
+      writer.addQuad(new Quad(
+        new NamedNode('a:a'),
+        new NamedNode('b:b'),
+        new NamedNode('c:c'),
+        new NamedNode('g:g')));
+      writer.end((error, output) => {
+        output.should.equal('<a:a> <b:b> <c:c> .\n');
+        done(error);
+      });
+    });
+
+    it('throws an graph-found error needed in N-Quads mode', done => {
+      const writer = new Writer({ graphs: 'error', format: 'n-quads' });
+      writer.addQuad(new Quad(
+        new NamedNode('a:a'),
+        new NamedNode('b:b'),
+        new NamedNode('c:c'),
+        new NamedNode('g:g')), error => {
+        error.should.be.an.instanceof(Error);
+        error.should.have.property('message', 'Encountered graph name, this is forbidden.');
+        done();
+      });
+    });
+    it('ignores the graph name when needed', done => {
+      const writer = new Writer({ graphs: 'ignore' });
+      writer.addQuad(new Quad(
+        new NamedNode('a:a'),
+        new NamedNode('b:b'),
+        new NamedNode('c:c'),
+        new NamedNode('g:g')));
+      writer.end((error, output) => {
+        output.should.equal('<a:a> <b:b> <c:c>.\n');
+        done(error);
+      });
+    });
+
+    it('throws an graph-found error needed', done => {
+      const writer = new Writer({ graphs: 'error' });
+      writer.addQuad(new Quad(
+        new NamedNode('a:a'),
+        new NamedNode('b:b'),
+        new NamedNode('c:c'),
+        new NamedNode('g:g')), error => {
+        error.should.be.an.instanceof(Error);
+        error.should.have.property('message', 'Encountered graph name, this is forbidden.');
+        done();
       });
     });
 
