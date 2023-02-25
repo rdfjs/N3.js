@@ -1470,7 +1470,7 @@ describe('Parser', () => {
   });
 
   describe('A Parser instance for the Turtle format', () => {
-    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'Turtle' }); }
+    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'Turtle', rdfStar: false }); }
 
     describe('should parse a single triple',
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
@@ -1550,8 +1550,8 @@ describe('Parser', () => {
         'Expected >> to follow "_:b0_b" but got IRI on line 1.'));
   });
 
-  describe('A Parser instance for the TriG format', () => {
-    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'TriG' }); }
+  describe('A Parser instance for the TriG format with rdfStar support disabled', () => {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'TriG', rdfStar: false }); }
 
     it('should parse a single triple chunked before a closing bracket',
       shouldParseChunks(parser, ['<a> <b', '> <c>.'], ['a', 'b', 'c']));
@@ -1604,8 +1604,8 @@ describe('Parser', () => {
         'Unexpected RDF-star syntax on line 1.'));
   });
 
-  describe('A Parser instance for the TriGStar format', () => {
-    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'TriGStar' }); }
+  describe('A Parser instance for the TriGS format testing rdfStar support', () => {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'TriG' }); }
 
     describe('should parse RDF-star',
       shouldParse(parser, '<<<a> <b> <c>>> <a> <b> .',
@@ -1616,8 +1616,8 @@ describe('Parser', () => {
         'Expected >> to follow "_:b0_b" but got IRI on line 1.'));
   });
 
-  describe('A Parser instance for the N-Triples format', () => {
-    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N-Triples' }); }
+  describe('A Parser instance for the N-Triples format with rdfStar support disabled', () => {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N-Triples', rdfStar: false }); }
 
     describe('should parse a single triple',
       shouldParse(parser, '_:a <http://ex.org/b> "c".',
@@ -1679,8 +1679,8 @@ describe('Parser', () => {
         'Unexpected RDF-star syntax on line 1.'));
   });
 
-  describe('A Parser instance for the N-TriplesStar format', () => {
-    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N-TriplesStar' }); }
+  describe('A Parser instance for the N-Triples format to test rdfStar support', () => {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N-Triples' }); }
 
     describe('should parse RDF-star',
       shouldParse(parser, '<<_:a <http://example.org/b> _:c>> <http://example.org/a> _:b .',
@@ -1691,8 +1691,8 @@ describe('Parser', () => {
         'Expected >> to follow "_:b0_b" but got IRI on line 1.'));
   });
 
-  describe('A Parser instance for the N-Quads format', () => {
-    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N-Quads' }); }
+  describe('A Parser instance for the N-Quads format with rdfStar support disabled', () => {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N-Quads', rdfStar: false }); }
 
     describe('should parse a single triple',
       shouldParse(parser, '_:a <http://ex.org/b> "c".',
@@ -1746,8 +1746,8 @@ describe('Parser', () => {
         [['_:b0_a', 'b', '_:b0_c'], 'a', '_:b0_c']));
   });
 
-  describe('A Parser instance for the N3 format', () => {
-    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3' }); }
+  describe('A Parser instance for the N3 format with rdfStar support disabled', () => {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3', rdfStar: false }); }
 
     describe('should parse a single triple',
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
@@ -2099,8 +2099,8 @@ describe('Parser', () => {
         'Unexpected RDF-star syntax on line 1.'));
   });
 
-  describe('A Parser instance for the N3Star format', () => {
-    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3Star' }); }
+  describe('A Parser instance for the N3 format testing rdfStar support', () => {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3' }); }
 
     describe('should parse RDF-star',
       shouldParse(parser, '<<<a> <b> <c>>> <a> <b> .',

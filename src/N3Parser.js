@@ -28,7 +28,7 @@ export default class N3Parser {
     // Support triples in other graphs
     this._supportsQuads = !(isTurtle || isTriG || isNTriples || isN3);
     // Support nesting of triples
-    this._supportsRDFStar = format === '' || /star|\*$/.test(format);
+    this._supportsRDFStar = options.rdfStar !== false;
     // Disable relative IRIs in N-Triples or N-Quads mode
     if (isLineMode)
       this._resolveRelativeIRI = iri => { return null; };
