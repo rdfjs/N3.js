@@ -206,16 +206,28 @@ const writer2 = new N3.Writer({ format: 'application/trig' });
 
 ```JavaScript
 const writer = new N3.Writer(process.stdout, { end: false, prefixes: { c: 'http://example.org/cartoons#' } });
-writer.addQuad(
+writer.add(quad(
   namedNode('http://example.org/cartoons#Tom'),
   namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
   namedNode('http://example.org/cartoons#Cat')
-);
-writer.addQuad(quad(
+));
+writer.add(quad(
   namedNode('http://example.org/cartoons#Tom'),
   namedNode('http://example.org/cartoons#name'),
   literal('Tom')
 ));
+
+// Writing a quoted rdf-star triple
+writer.add(quad(
+  quad(
+    namedNode('http://example.org/animals#Elephants'),
+    namedNode('http://example.org/skinAttribute#colour'),
+    namedNode('http://example.org/colours#blue'),
+  ),
+  namedNode('http://example.org/saidBy'),
+  namedNode('http://example.org/Jesse')
+));
+
 writer.end();
 ```
 
