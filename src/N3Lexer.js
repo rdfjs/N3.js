@@ -53,6 +53,8 @@ export default class N3Lexer {
     this._endOfFile = /^(?:#[^\n\r]*)?$/;
     options = options || {};
 
+    this._supportsRDFStar = options.rdfStar;
+
     // In line mode (N-Triples or N-Quads), only simple features may be parsed
     if (this._lineMode = !!options.lineMode) {
       this._n3Mode = false;
@@ -290,16 +292,22 @@ export default class N3Lexer {
             matchLength = 2, value = '>';
         }
         break;
-
+      case '{':
+        // We can properly evaluate this case if we are
+        // not in rdfStar mode or we can look ahead to
+        // see if there is a pipe following the {
+        if (input.length > 1 || !this._supportsRDFStar) {
+          if (input[1] === '|') {
+            type = '{|', matchLength = 2;
+          }
+          else if (!this._lineMode) {
+            matchLength = 1, type = firstChar;
+          }
+        }
+        break;
       case '!':
         if (!this._n3Mode)
           break;
-      case '{':
-        // Note the input[0] === '{' is required as this could be a fall-through from the above case
-        if (input.length > 1 && input[0] === '{' && input[1] === '|') {
-          type = '{|', matchLength = 2;
-          break;
-        }
       case ',':
       case ';':
       case '[':
@@ -307,14 +315,8 @@ export default class N3Lexer {
       case '(':
       case ')':
       case '}':
-        if (
-          !this._lineMode &&
-          // The token might actually be {| and we just have not encountered the pipe yet
-          (input !== '{' || input.length > 1)
-          ) {
-          matchLength = 1;
-          type = firstChar;
-        }
+        matchLength = 1;
+        type = firstChar;
         break;
       case '|':
         if (input.length > 1 && input[1] === '}') {
