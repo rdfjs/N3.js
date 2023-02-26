@@ -296,14 +296,11 @@ export default class N3Lexer {
         // We can properly evaluate this case if we are
         // not in rdfStar mode or we can look ahead to
         // see if there is a pipe following the {
-        if (input.length > 1 || !this._supportsRDFStar) {
-          if (input[1] === '|') {
-            type = '{|', matchLength = 2;
-          }
-          else if (!this._lineMode) {
-            matchLength = 1, type = firstChar;
-          }
-        }
+        const long = input.length !== 1;
+        if (long && input[1] === '|')
+          matchLength = 2, type = '{|';
+        else if (!this._lineMode && (long || !this._supportsRDFStar))
+          matchLength = 1, type = firstChar;
         break;
       case '!':
         if (!this._n3Mode)
