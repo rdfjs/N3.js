@@ -315,8 +315,10 @@ export default class N3Lexer {
       case '(':
       case ')':
       case '}':
-        matchLength = 1;
-        type = firstChar;
+        if (!this._lineMode) {
+          matchLength = 1;
+          type = firstChar;
+        }
         break;
       case '|':
         if (input.length > 1 && input[1] === '}') {

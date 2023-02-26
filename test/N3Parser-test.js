@@ -1670,6 +1670,9 @@ describe('Parser', () => {
     it('should not parse @forAll',
       shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'));
 
+    it('should not parse an object list',
+      shouldNotParse(parser, '<a> <b> <c>, <d> .', 'Invalid IRI on line 1.'));
+
     it('should not parse RDF-star in the subject position',
       shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
         'Unexpected RDF-star syntax on line 1.'));
