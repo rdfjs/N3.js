@@ -2105,6 +2105,14 @@ describe('Parser', () => {
   describe('A Parser instance for the N3 format testing rdfStar support', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3' }); }
 
+    describe('should parse RDF-star path',
+      shouldParse(parser, '<<<a> <b> <c>>>!<p1> <p2> <o> .',
+        [['a', 'b', 'c'], 'p1', '_:b0'], ['_:b0', 'p2', 'o']));
+
+    describe('should parse RDF-star path',
+      shouldParse(parser, '<<<a> <b> <c>>>!<p1>^<p2> <p3> <o> .',
+        [['a', 'b', 'c'], 'p1', '_:b0'], ['_:b1', 'p2', '_:b0'], ['_:b1', 'p3', 'o']));
+
     describe('should parse RDF-star',
       shouldParse(parser, '<<<a> <b> <c>>> <a> <b> .',
         [['a', 'b', 'c'], 'a', 'b']));

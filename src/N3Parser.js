@@ -886,7 +886,11 @@ export default class N3Parser {
     // If the triple was the subject, continue by reading the predicate.
     if (this._subject === null) {
       this._subject = quad;
-      return this._readPredicate;
+      // In N3 mode, the subject might be a path
+      if (this._n3Mode)
+        return this._getPathReader(this._readPredicateOrNamedGraph);
+      else
+        return this._readPredicate;
     }
     // If the triple was the object, read context end.
     else {
