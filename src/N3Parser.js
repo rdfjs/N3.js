@@ -439,7 +439,7 @@ export default class N3Parser {
       // Was this list the parent's subject?
       if (this._predicate === null) {
         // The next token is the predicate
-        next = this._readPredicate;
+        next = this._n3Mode ? this._getPathReader(this._readPredicateOrNamedGraph) : this._readPredicate;
         // No list tail if this was an empty list
         if (this._subject === this.RDF_NIL)
           return next;
@@ -473,6 +473,10 @@ export default class N3Parser {
       this._saveContext('formula', this._graph, this._subject, this._predicate,
                         this._graph = this._blankNode());
       return this._readSubject;
+    case '!':
+      if (this._n3Mode) {
+        return this._getPathReader(this._readPredicateOrNamedGraph);
+      }
     default:
       if ((item = this._readEntity(token)) === undefined)
         return;
@@ -497,7 +501,7 @@ export default class N3Parser {
     // If an item was read, add it to the list
     if (item !== null) {
       // In N3 mode, the item might be a path
-      if (this._n3Mode && (token.type === 'IRI' || token.type === 'prefixed')) {
+      if (this._n3Mode) {
         // Create a new context to add the item's path
         this._saveContext('item', this._graph, list, this.RDF_FIRST, item);
         this._subject = item, this._predicate = null;
