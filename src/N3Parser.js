@@ -34,7 +34,7 @@ export default class N3Parser {
       this._resolveRelativeIRI = iri => { return null; };
     this._blankNodePrefix = typeof options.blankNodePrefix !== 'string' ? '' :
                               options.blankNodePrefix.replace(/^(?!_:)/, '_:');
-    this._lexer = options.lexer || new N3Lexer({ lineMode: isLineMode, n3: isN3 });
+    this._lexer = options.lexer || new N3Lexer({ lineMode: isLineMode, n3: isN3, isImpliedBy: options.isImpliedBy });
     // Disable explicit quantifiers by default
     this._explicitQuantifiers = !!options.explicitQuantifiers;
   }
@@ -1054,6 +1054,7 @@ function initDataFactory(parser, factory) {
     'a': namedNode(namespaces.rdf.type),
     '=': namedNode(namespaces.owl.sameAs),
     '>': namedNode(namespaces.log.implies),
+    '<': namedNode(namespaces.log.isImpliedBy),
   };
   parser.QUANTIFIERS_GRAPH = namedNode('urn:n3:quantifiers');
 }
