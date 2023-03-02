@@ -742,6 +742,12 @@ describe('Writer', () => {
       const writer = new Writer();
       writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g'))).should.equal('<a> <b> <<<a> <b> <c> <g>>> .\n');
     });
+
+    it('should serialize a triple with a literal as subject',
+      shouldSerialize([`"123"^^${xsd.boolean}`, 'b', 'c'], `"123"^^<${xsd.boolean}> <b> <c>.\n`));
+
+    it('should serialize a triple with a literal as predicate',
+      shouldSerialize(['a', `"123"^^${xsd.boolean}`, 'c'], `<a> "123"^^<${xsd.boolean}> <c>.\n`));
   });
 });
 
