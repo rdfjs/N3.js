@@ -282,13 +282,25 @@ export default class N3Lexer {
           inconclusive = true;
         break;
 
+      // is or id
       case 'i':
-        // Try to find an implication arrow or equals sign
         if (this._n3Mode && input.length > 1) {
           if (input[1] === 'd')
             matchLength = 2, type = 'id';
+          else if (input[1] === 's')
+            matchLength = 2, type = 'is';
           else
             return reportSyntaxError(this);
+        }
+        break;
+
+      // has
+      case 'h':
+        if (this._n3Mode && input.length > 2) {
+          if (input[1] === 'a' && input[2] === 's')
+            matchLength = 3, type = 'has';
+          else
+              return reportSyntaxError(this);
         }
         break;
 
