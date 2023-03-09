@@ -1433,6 +1433,10 @@ describe('Parser', () => {
   describe('A Parser instance for the N3 format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3' }); }
 
+    it('should ignore empty statements', shouldParse(parser, `:a .
+    {:b} .
+    [:c :d] .`, ['_:b1', 'http://example.org/#c', 'http://example.org/#d']));
+
     it('should parse a single triple',
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
 

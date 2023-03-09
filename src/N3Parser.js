@@ -270,7 +270,7 @@ export default class N3Parser {
     case ']':
     case '}':
       // Expected predicate didn't come, must have been trailing semicolon
-      if (this._predicate === null)
+      if (this._predicate === null && !this._n3Mode)
         return this._error(`Unexpected ${type}`, token);
       this._subject = null;
       return type === ']' ? this._readBlankNodeTail(token) : this._readPunctuation(token);
