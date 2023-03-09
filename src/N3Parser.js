@@ -288,6 +288,10 @@ export default class N3Parser {
     case 'blank':
       if (!this._n3Mode)
         return this._error('Disallowed blank node as predicate', token);
+    case '<-': {
+      this._inversePredicate = true;
+      return this._readPredicate;
+    }
     default:
       if ((this._predicate = this._readEntity(token)) === undefined)
         return;
@@ -363,10 +367,21 @@ export default class N3Parser {
       this._subject = null;
       return this._readBlankNodeTail(token);
     }
+    else if (token.type === 'id') {
+      return this._readId;
+    }
     else {
       this._predicate = null;
       return this._readPredicate(token);
     }
+  }
+
+  _readId(token) {
+    this._subject = this._readEntity(token);
+    if (this._subject.termType !== 'NamedNode') {
+      this._error(`id must be an IRI, received ${this._subject.termType}`, token);
+    }
+    return this._readBlankNodeHead;
   }
 
   // ### `_readBlankNodeTail` reads the end of a blank node
