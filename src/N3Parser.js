@@ -1003,6 +1003,10 @@ export default class N3Parser {
     this._prefixes = Object.create(null);
     this._prefixes._ = this._blankNodePrefix ? this._blankNodePrefix.substr(2)
                                              : `b${blankNodePrefix++}_`;
+    if (this._n3Mode && this._base) {
+      // In N3 ':' scopes to the baseIRI by default
+      this._prefixes[''] = `${this._base}#`;
+    }
     this._prefixCallback = prefixCallback || noop;
     this._inversePredicate = false;
     this._quantified = Object.create(null);

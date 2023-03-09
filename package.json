@@ -42,7 +42,7 @@
     "mocha": "^8.0.0",
     "nyc": "^14.1.1",
     "pre-commit": "^1.2.2",
-    "rdf-test-suite": "^1.19.2",
+    "rdf-test-suite": "file:../rdf-test-suite.js",
     "streamify-string": "^1.0.1",
     "uglify-js": "^3.14.3"
   },
@@ -56,6 +56,8 @@
     "prepare": "npm run build",
     "spec": "npm run spec-turtle && npm run spec-ntriples && npm run spec-nquads && npm run spec-trig",
     "spec-earl": "npm run spec-earl-turtle && npm run spec-earl-ntriples && npm run spec-earl-nquads && npm run spec-earl-trig",
+    "spec-n3": "rdf-test-suite spec/parser.js http://w3c.github.io/N3/tests/N3Tests/manifest-parser.ttl -i '{ \"format\": \"n3\" }' -c .rdf-test-suite-cache/",
+    "spec-n3-extended": "rdf-test-suite spec/parser.js https://w3c.github.io/N3/tests/N3Tests/manifest-extended.ttl -i '{ \"format\": \"n3\" }' -c .rdf-test-suite-cache/",
     "spec-ntriples": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/ntriples/manifest.ttl -i '{ \"format\": \"n-triples\" }' -c .rdf-test-suite-cache/",
     "spec-nquads": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/nquads/manifest.ttl -i '{ \"format\": \"n-quads\" }' -c .rdf-test-suite-cache/",
     "spec-turtle": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/turtle/manifest.ttl -i '{ \"format\": \"turtle\" }' -c .rdf-test-suite-cache/",
