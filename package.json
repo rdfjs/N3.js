@@ -42,7 +42,7 @@
     "mocha": "^8.0.0",
     "nyc": "^14.1.1",
     "pre-commit": "^1.2.2",
-    "rdf-test-suite": "file:../rdf-test-suite.js",
+    "rdf-test-suite": "github:rubensworks/rdf-test-suite.js#50ff798484ce9283b24f89946a7284d6d8db411a",
     "streamify-string": "^1.0.1",
     "uglify-js": "^3.14.3"
   },
