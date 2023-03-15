@@ -32,6 +32,7 @@
     "@babel/core": "^7.16.0",
     "@babel/preset-env": "^7.16.0",
     "@babel/register": "^7.16.0",
+    "@rdfjs/data-model": "^1",
     "arrayify-stream": "^1.0.0",
     "browserify": "^17.0.0",
     "chai": "^4.0.2",
