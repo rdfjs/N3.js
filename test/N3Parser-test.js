@@ -1,3 +1,4 @@
+import rdfDataModel from '@rdfjs/data-model';
 import { Parser, NamedNode, BlankNode, Quad, termFromId } from '../src/';
 
 const BASE_IRI = 'http://example.org/';
@@ -2482,6 +2483,22 @@ describe('Parser', () => {
         { s: 'n-http://example.org/a', p: 'v-b', o: 'l-1',    g: 'defaultGraph' },
         { s: 'n-http://example.org/a', p: 'v-b', o: 'b-b0_d', g: 'defaultGraph' },
       ]);
+    });
+  });
+
+  describe('A parser instance with external data factory', () => {
+    it('should parse', () => {
+      const parser = new Parser({
+        baseIRI: BASE_IRI,
+        format: 'n3',
+        factory: rdfDataModel,
+      });
+      const quads = parser.parse(`
+        @prefix : <http://example.com/> .
+        { :weather a :Raining } => { :weather a :Cloudy } .
+      `);
+
+      quads.length.should.be.gt(0);
     });
   });
 
