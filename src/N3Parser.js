@@ -270,7 +270,7 @@ export default class N3Parser {
     case ']':
     case '}':
       // Expected predicate didn't come, must have been trailing semicolon
-      if (this._predicate === null)
+      if (this._predicate === null && !this._n3Mode)
         return this._error(`Unexpected ${type}`, token);
       this._subject = null;
       return type === ']' ? this._readBlankNodeTail(token) : this._readPunctuation(token);
@@ -288,6 +288,17 @@ export default class N3Parser {
     case 'blank':
       if (!this._n3Mode)
         return this._error('Disallowed blank node as predicate', token);
+    case '<-': {
+      this._inversePredicate = true;
+      return this._readPredicate;
+    }
+    case '{':
+      // Start a new formula
+      if (!this._n3Mode)
+        return this._error('Unexpected graph', token);
+      this._saveContext('formula', this._graph, this._subject, this._predicate,
+                        this._graph = this._blankNode());
+      return this._readSubject;
     default:
       if ((this._predicate = this._readEntity(token)) === undefined)
         return;
@@ -363,10 +374,21 @@ export default class N3Parser {
       this._subject = null;
       return this._readBlankNodeTail(token);
     }
+    else if (token.type === 'id') {
+      return this._readId;
+    }
     else {
       this._predicate = null;
       return this._readPredicate(token);
     }
+  }
+
+  _readId(token) {
+    this._subject = this._readEntity(token);
+    if (this._subject.termType !== 'NamedNode') {
+      this._error(`id must be an IRI, received ${this._subject.termType}`, token);
+    }
+    return this._readBlankNodeHead;
   }
 
   // ### `_readBlankNodeTail` reads the end of a blank node
@@ -1003,6 +1025,10 @@ export default class N3Parser {
     this._prefixes = Object.create(null);
     this._prefixes._ = this._blankNodePrefix ? this._blankNodePrefix.substr(2)
                                              : `b${blankNodePrefix++}_`;
+    if (this._n3Mode && this._base) {
+      // In N3 ':' scopes to the baseIRI by default
+      this._prefixes[''] = `${this._base}#`;
+    }
     this._prefixCallback = prefixCallback || noop;
     this._inversePredicate = false;
     this._quantified = Object.create(null);

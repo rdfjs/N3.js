@@ -150,6 +150,8 @@ export default class N3Lexer {
         // Try to find a nested triple
         else if (input.length > 1 && input[1] === '<')
           type = '<<', matchLength = 2;
+        else if (input.length > 1 && input[1] === '-')
+          type = '<-', matchLength = 2;
         // Try to find a backwards implication arrow
         else if (this._n3Mode && input.length > 1 && input[1] === '=')
           type = 'inverse', matchLength = 2, value = '>';
@@ -278,6 +280,28 @@ export default class N3Lexer {
           type = 'abbreviation', value = 'a';
         else
           inconclusive = true;
+        break;
+
+      // is or id
+      case 'i':
+        if (this._n3Mode && input.length > 1) {
+          if (input[1] === 'd')
+            matchLength = 2, type = 'id';
+          else if (input[1] === 's')
+            matchLength = 2, type = 'is';
+          else
+            return reportSyntaxError(this);
+        }
+        break;
+
+      // has
+      case 'h':
+        if (this._n3Mode && input.length > 2) {
+          if (input[1] === 'a' && input[2] === 's')
+            matchLength = 3, type = 'has';
+          else
+              return reportSyntaxError(this);
+        }
         break;
 
       case '=':
