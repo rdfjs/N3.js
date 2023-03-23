@@ -1,4 +1,4 @@
-import { NamedNode, Term } from '../src/';
+import { NamedNode, Term } from '../src/N3DataFactory';
 
 describe('NamedNode', () => {
   describe('The NamedNode module', () => {

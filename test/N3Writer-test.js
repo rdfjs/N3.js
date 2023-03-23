@@ -1,11 +1,11 @@
 import {
   Writer,
-  NamedNode,
-  BlankNode,
-  Literal,
-  Quad,
   termFromId,
 } from '../src/';
+import { NamedNode,
+  BlankNode,
+  Literal,
+  Quad } from '../src/N3DataFactory';
 import namespaces from '../src/IRIs';
 
 const { xsd } = namespaces;
