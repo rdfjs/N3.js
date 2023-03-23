@@ -266,6 +266,18 @@ export default class N3Parser {
     case 'abbreviation':
       this._predicate = this.ABBREVIATIONS[token.value];
       break;
+    case 'literal':
+      if (!this._n3Mode)
+        return this._error('Unexpected literal', token);
+
+      if (token.prefix.length === 0) {
+        this._literalValue = token.value;
+        return this._completePredicateLiteral;
+      }
+      else
+        this._subject = this._literal(token.value, this._namedNode(token.prefix));
+
+      break;
     case '.':
     case ']':
     case '}':
@@ -556,6 +568,20 @@ export default class N3Parser {
     // Otherwise, consume the token now
     else {
       return this._readPredicateOrNamedGraph(completed.token);
+    }
+  }
+
+  // Completes a literal in subject position
+  _completePredicateLiteral(token) {
+    const completed = this._completeLiteral(token);
+
+    this._predicate = completed.literal;
+    // If the token was consumed, continue with the rest of the input
+    if (completed.token === null)
+      return this._readObject;
+    // Otherwise, consume the token now
+    else {
+      return this._readObject(completed.token);
     }
   }
 
