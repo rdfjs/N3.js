@@ -1794,6 +1794,16 @@ describe('Parser', () => {
             ['greaterThan', '"a"', '"b"']
         ));
 
+    it('should parse subject predicate and object as integer',
+        shouldParse(parser, '1 1 1.',
+            ['"1"^^http://www.w3.org/2001/XMLSchema#integer', '"1"^^http://www.w3.org/2001/XMLSchema#integer', '"1"^^http://www.w3.org/2001/XMLSchema#integer']
+        ));
+
+    it('should parse literals with integer as predicate',
+        shouldParse(parser, '<greaterThan> 1 "b".',
+            ['greaterThan', '"1"^^http://www.w3.org/2001/XMLSchema#integer', '"b"']
+        ));
+
     it('should parse literals with datatype as predicate in graph',
         shouldParse(parser, '<x> <y> {<greaterThan> "a"^^<c> "b"^^<c>}.',
             ['x', 'y', '_:b0'],

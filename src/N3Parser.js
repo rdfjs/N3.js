@@ -275,7 +275,7 @@ export default class N3Parser {
         return this._completePredicateLiteral;
       }
       else
-        this._subject = this._literal(token.value, this._namedNode(token.prefix));
+        this._predicate = this._literal(token.value, this._namedNode(token.prefix));
 
       break;
     case '.':
