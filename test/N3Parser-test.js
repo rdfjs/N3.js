@@ -1794,7 +1794,7 @@ describe('Parser', () => {
             ['greaterThan', '"a"', '"b"']
         ));
 
-    it('should parse subject predicate and object as integer',
+    it('should parse subject, predicate, and object as integer',
         shouldParse(parser, '1 1 1.',
             ['"1"^^http://www.w3.org/2001/XMLSchema#integer', '"1"^^http://www.w3.org/2001/XMLSchema#integer', '"1"^^http://www.w3.org/2001/XMLSchema#integer']
         ));
