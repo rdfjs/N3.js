@@ -81,6 +81,12 @@ describe('Parser', () => {
                   ['noturn:a', 'noturn:b', '"x"^^urn:foo'],
                   ['noturn:a', 'noturn:b', '"x"^^noturn:urn:foo']));
 
+    it('should not parse literals with datatype as predicate',
+      shouldNotParse('<greaterThan> "a"^^<c> "b"^^<c>.', 'Unexpected literal on line 1.'));
+
+    it('should not parse literals without datatype as predicate',
+        shouldNotParse('<greaterThan> "a" "b".', 'Unexpected literal on line 1.'));
+
     it('should not parse a triple with a literal and a prefixed name type with an inexistent prefix',
       shouldNotParse('<a> <b> "string"^^x:z.',
                      'Undefined prefix "x:" on line 1.', {
@@ -1786,6 +1792,18 @@ describe('Parser', () => {
     it('should parse literals without datatype as predicate',
         shouldParse(parser, '<greaterThan> "a" "b".',
             ['greaterThan', '"a"', '"b"']
+        ));
+
+    it('should parse literals with datatype as predicate in graph',
+        shouldParse(parser, '<x> <y> {<greaterThan> "a"^^<c> "b"^^<c>}.',
+            ['x', 'y', '_:b0'],
+            ['greaterThan', '"a"^^http://example.org/c', '"b"^^http://example.org/c', '_:b0']
+        ));
+
+    it('should parse literals without datatype as predicate in graph',
+        shouldParse(parser, '<x> <y> {<greaterThan> "a" "b"}.',
+            ['x', 'y', '_:b0'],
+            ['greaterThan', '"a"', '"b"', '_:b0']
         ));
 
     it('should parse literals with datatype as subject in graph',
