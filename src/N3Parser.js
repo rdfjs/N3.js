@@ -547,8 +547,16 @@ export default class N3Parser {
 
   // Completes a literal in subject position
   _completeSubjectLiteral(token) {
-    this._subject = this._completeLiteral(token).literal;
-    return this._readPredicateOrNamedGraph;
+    const completed = this._completeLiteral(token);
+
+    this._subject = completed.literal;
+    // If the token was consumed, continue with the rest of the input
+    if (completed.token === null)
+      return this._readPredicateOrNamedGraph;
+    // Otherwise, consume the token now
+    else {
+      return this._readPredicateOrNamedGraph(completed.token);
+    }
   }
 
   // Completes a literal in object position
