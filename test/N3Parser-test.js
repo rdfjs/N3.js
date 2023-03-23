@@ -1756,10 +1756,48 @@ describe('Parser', () => {
             ['"1"^^http://www.w3.org/2001/XMLSchema#integer', 'greaterThan', '"0"^^http://www.w3.org/2001/XMLSchema#integer', '_:b0']
         ));
 
+
     it('should parse literals with datatype as subject',
+        shouldParse(parser, '"a"^^<c> <greaterThan> <d>.',
+            ['"a"^^http://example.org/c', 'greaterThan', 'd']
+        ));
+
+
+    it('should parse literals with datatype as subject and object',
+        shouldParse(parser, '"a"^^<c> <greaterThan> "b"^^<c>.',
+            ['"a"^^http://example.org/c', 'greaterThan', '"b"^^http://example.org/c']
+        ));
+
+    it('should parse literals without datatype as subject and object',
+        shouldParse(parser, '"a" <greaterThan> "b".',
+            ['"a"', 'greaterThan', '"b"']
+        ));
+
+    it('should parse literals without datatype as subject',
+        shouldParse(parser, '"a" <greaterThan> <b>.',
+            ['"a"', 'greaterThan', 'b']
+        ));
+
+    it('should parse literals with datatype as predicate',
+        shouldParse(parser, '<greaterThan> "a"^^<c> "b"^^<c>.',
+            ['greaterThan', '"a"^^http://example.org/c', '"b"^^http://example.org/c']
+        ));
+
+    it('should parse literals without datatype as predicate',
+        shouldParse(parser, '<greaterThan> "a" "b".',
+            ['greaterThan', '"a"', '"b"']
+        ));
+
+    it('should parse literals with datatype as subject in graph',
         shouldParse(parser, '<a> <b> {"a"^^<c> <greaterThan> "b"^^<c>}.',
             ['a', 'b', '_:b0'],
             ['"a"^^http://example.org/c', 'greaterThan', '"b"^^http://example.org/c', '_:b0']
+        ));
+
+    it('should parse literals without datatype as subject in graph',
+        shouldParse(parser, '<a> <b> {"a" <greaterThan> "b"}.',
+            ['a', 'b', '_:b0'],
+            ['"a"', 'greaterThan', '"b"', '_:b0']
         ));
 
     it('should parse literals with language as subject',
