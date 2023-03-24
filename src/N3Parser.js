@@ -187,6 +187,17 @@ export default class N3Parser {
     return value;
   }
 
+  _readList(token) {
+    // Lists are not allowed inside quoted triples
+    if (this._contextStack.length > 0 && this._contextStack[this._contextStack.length - 1].type === '<<') {
+      return this._error('Unexpected list inside quoted triple', token);
+    }
+    // Start a new list
+    this._saveContext('list', this._graph, this.RDF_NIL, null, null);
+    this._subject = null;
+    return this._readListItem;
+  }
+
   // ### `_readSubject` reads a quad's subject
   _readSubject(token) {
     this._predicate = null;
@@ -197,6 +208,8 @@ export default class N3Parser {
                         this._subject = this._blankNode(), null, null);
       return this._readBlankNodeHead;
     case '(':
+      if (!this._n3Mode)
+        return this._error('Unexpected list', token);
       // Lists are not allowed inside quoted triples
       if (this._contextStack.length > 0 && this._contextStack[this._contextStack.length - 1].type === '<<') {
         return this._error('Unexpected list inside quoted triple', token);
@@ -292,6 +305,19 @@ export default class N3Parser {
     case 'blank':
       if (!this._n3Mode)
         return this._error('Disallowed blank node as predicate', token);
+    case '(':
+      if (!this._n3Mode)
+        return this._error('Unexpected list', token);
+      // Lists are not allowed inside quoted triples
+      if (this._contextStack.length > 0 && this._contextStack[this._contextStack.length - 1].type === '<<') {
+        return this._error('Unexpected list inside quoted triple', token);
+      }
+      // Start a new list
+      console.log('before saving context', this._subject, this._predicate, this._object, this._graph);
+      this._saveContext('list', this._graph, this._subject, this._predicate, this.RDF_NIL);
+      console.log('after saving context', this._subject, this._predicate, this._object, this._graph);
+      this._subject = null;
+      return this._readListItem;
     default:
       if ((this._predicate = this._readEntity(token)) === undefined)
         return;
@@ -325,7 +351,7 @@ export default class N3Parser {
       }
       // Start a new list
       this._saveContext('list', this._graph, this._subject, this._predicate, this.RDF_NIL);
-      this._subject = null;
+      // this._subject = null;
       return this._readListItem;
     case '{':
       // Start a new formula
@@ -441,7 +467,9 @@ export default class N3Parser {
       break;
     case ')':
       // Closing the list; restore the parent context
+      console.log('before restoring list context', this._subject, this._predicate, this._object, this._graph);
       this._restoreContext('list', token);
+      console.log('after restoring list context', this._subject, this._predicate, this._object, this._graph);
       if (stack.length !== 0 && stack[stack.length - 1].type === 'list') {
         if (this._n3Mode) {
           const { _subject, _predicate, _graph } = this;
@@ -462,12 +490,20 @@ export default class N3Parser {
         }
       }
       // Was this list the parent's subject?
+      // TODO: Make sure this change doesn't cause issues with list
+      // empty lists in the predicate or object given the checks there
       if (this._predicate === null) {
         // The next token is the predicate
         next = this._n3Mode ? this._getPathReader(this._readPredicateOrNamedGraph) : this._readPredicate;
         // No list tail if this was an empty list
         if (this._subject === this.RDF_NIL)
           return next;
+      // Was this list the parent's predicate?
+      }
+      else if (this._predicate === null) {
+        // console.log(this._subject, this._predicate, this._object)
+        throw new Error('boo');
+        next = this._readObject;
       }
       // The list was in the parent context's object
       else {
@@ -476,6 +512,10 @@ export default class N3Parser {
         if (this._object === this.RDF_NIL)
           return next;
       }
+      // This list was in the parent contexts predicate
+      // else {
+      //   throw new Error('get predicate')
+      // }
       // Close the list by making the head nil
       list = this.RDF_NIL;
       break;
@@ -966,6 +1006,10 @@ export default class N3Parser {
 
   // ### `_emit` sends a quad through the callback
   _emit(subject, predicate, object, graph) {
+    if (predicate === null) {
+      throw new Error(`Nulllish predicate ${subject && subject.value} ${predicate} ${object && object.value}`);
+    }
+    console.log(subject, predicate, object, graph);
     this._callback(null, this._quad(subject, predicate, object, graph || this.DEFAULTGRAPH));
   }
 
