@@ -1874,297 +1874,51 @@ describe('Parser', () => {
         'Expected >> to follow "_:.b" on line 1.'));
 
     for (const [elem, value] of [['()', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'], [':joe', 'ex:joe'], ['<<:joe a :Person>>', '<<:joe a :Person>>']]) {
-      it(`should parse a ^ path in a list as subject with path as subject - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `(${elem}^fam:son <x> <y>) a :List.`,
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',  'ex:List'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b2'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b3'],
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          ['_:b1', 'f:son', value]));
+      for (const pathType of ['!', '^']) {
+        // eslint-disable-next-line no-inner-declarations
+        function son(bnode) {
+          return pathType === '!' ? [value, 'f:son', `_:b${bnode}`] : [`_:b${bnode}`, 'f:son', value];
+        }
 
-      it(`should parse a ^ path in a list as object with path as subject - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `<l> <is> (${elem}^fam:son <x>  <y>).`,
-                          ['l', 'is', '_:b0'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b2'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b3'],
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          ['_:b1', 'f:son', value]));
+        const prefixes = '@prefix : <ex:>. @prefix fam: <f:>.';
+        for (const [f, triple, listPos] of [
+          [x => `${prefixes}(${x}) a :List .`, ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',  'ex:List'], 'subject'],
+          [x => `${prefixes}<l> <is> (${x}) .`, ['l', 'is', '_:b0'], 'object'],
+        ]) {
+          it(`should parse a ${pathType} path in a list as ${listPos} with path as subject - starting with ${elem}`,
+            shouldParse(parser, f(`${elem}${pathType}fam:son <x> <y>`),
+              triple, ...list(['_:b0', '_:b1'], ['_:b2', 'x'], ['_:b3', 'y']), son('1')));
 
-      it(`should parse a ^ path in a single element list as subject with path as subject - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `(${elem}^fam:son) a :List.`,
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',  'ex:List'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          ['_:b1', 'f:son', value]));
+          it(`should parse a ${pathType} path in a single element list as ${listPos} with path as subject - starting with ${elem}`,
+            shouldParse(parser, f(`${elem}${pathType}fam:son <x> <y>`),
+              triple, ...list(['_:b0', '_:b1']), son('1')));
 
-      it(`should parse a ^ path in a single element list as object with path as subject - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `<l> <is> (${elem}^fam:son).`,
-                          ['l', 'is', '_:b0'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          ['_:b1', 'f:son', value]));
+          it(`should parse a ${pathType} path in a list as ${listPos} with path as object - starting with ${elem}`,
+            shouldParse(parser, f(`${elem}${pathType}fam:son <x> <y>`),
+              triple, ...list(['_:b0', 'x'], ['_:b1', 'y'], ['_:b2', '_:b3']), son('3')));
 
-      it(`should parse a ^ path in a list as subject with path as object - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `(<x> <y> ${elem}^fam:son) a :List.`,
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',  'ex:List'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b2'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          ['_:b3', 'f:son', value]));
+          it(`should parse a ${pathType} path in a list as ${listPos} with path as subject - starting with ${elem}`,
+            shouldParse(parser, f(`${elem}${pathType}fam:son <x> <y>`),
+              triple,
+              ...list(['_:b0', '_:b1'], ['_:b3', 'x'], ['_:b4', 'y']),
+              ...list(['_:b1', '_:b2']),
+              son('2')));
 
-      it(`should parse a ^ path in a list as object with path as object - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `<l> <is> (<x>  <y> ${elem}^fam:son).`,
-                          ['l', 'is', '_:b0'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b2'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          ['_:b3', 'f:son', value]));
+          it(`should parse a ${pathType} path in a single element list as ${listPos} with path as subject - starting with ${elem}`,
+            shouldParse(parser, f(`${elem}${pathType}fam:son <x> <y>`),
+              triple,
+              ...list(['_:b0', '_:b1']),
+              ...list(['_:b1', '_:b2']),
+              son('2')));
 
-      it(`should parse a ! path in a list as subject with path as subject - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `(${elem}!fam:son <x> <y>) a :List.`,
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',  'ex:List'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b2'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b3'],
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          [value, 'f:son', '_:b1']));
-
-      it(`should parse a ! path in a list as object with path as subject - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `<l> <is> (${elem}!fam:son <x>  <y>).`,
-                          ['l', 'is', '_:b0'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b2'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b3'],
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          [value, 'f:son', '_:b1']));
-
-      it(`should parse a ! path in a list as subject with path as subject - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `(${elem}!fam:son) a :List.`,
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',  'ex:List'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          [value, 'f:son', '_:b1']));
-
-      it(`should parse a ! path in a list as object with path as subject - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `<l> <is> (${elem}!fam:son).`,
-                          ['l', 'is', '_:b0'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          [value, 'f:son', '_:b1']));
-
-      it(`should parse a ! path in a list as subject with path as object - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `(<x> <y> ${elem}!fam:son) a :List.`,
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',  'ex:List'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b2'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          [value, 'f:son', '_:b3']));
-
-      it(`should parse a ! path in a list as object with path as object - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `<l> <is> (<x>  <y> ${elem}!fam:son).`,
-                          ['l', 'is', '_:b0'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b2'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          [value, 'f:son', '_:b3']));
-
-      it(`should parse a ^ path in a list as subject with path as subject - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `((${elem}^fam:son) <x> <y>) a :List.`,
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',  'ex:List'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b3'],
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b4'],
-                          ['_:b4', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                          ['_:b4', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          ['_:b2', 'f:son', value]));
-
-      it(`should parse a ^ path in a list as object with path as subject - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `<l> <is> ((${elem}^fam:son) <x>  <y>).`,
-                          ['l', 'is', '_:b0'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b3'],
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b4'],
-                          ['_:b4', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                          ['_:b4', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          ['_:b2', 'f:son', value]));
-
-      it(`should parse a ^ path in a single element list as subject with path as subject - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `((${elem}^fam:son)) a :List.`,
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',  'ex:List'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          ['_:b2', 'f:son', value]));
-
-      it(`should parse a ^ path in a single element list as object with path as subject - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `<l> <is> ((${elem}^fam:son)).`,
-                          ['l', 'is', '_:b0'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          ['_:b2', 'f:son', value]));
-
-      it(`should parse a ^ path in a list as subject with path as object - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `(<x> <y> (${elem}^fam:son)) a :List.`,
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',  'ex:List'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b2'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b4'],
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-
-                          ['_:b4', 'f:son', value]));
-
-      it(`should parse a ^ path in a list as object with path as object - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `<l> <is> (<x>  <y> (${elem}^fam:son)).`,
-                          ['l', 'is', '_:b0'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b2'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b4'],
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-
-                          ['_:b4', 'f:son', value]));
-
-      it(`should parse a ! path in a list as subject with path as subject - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `((${elem}!fam:son) <x> <y>) a :List.`,
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',  'ex:List'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b3'],
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b4'],
-                          ['_:b4', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                          ['_:b4', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-
-                          [value, 'f:son', '_:b2']));
-
-      it(`should parse a ! path in a list as object with path as subject - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `<l> <is> ((${elem}!fam:son) <x>  <y>).`,
-                          ['l', 'is', '_:b0'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b3'],
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b4'],
-                          ['_:b4', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                          ['_:b4', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-
-                          [value, 'f:son', '_:b2']));
-
-      it(`should parse a ! path in a list as subject with path as subject - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `((${elem}!fam:son)) a :List.`,
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',  'ex:List'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-
-                          [value, 'f:son', '_:b2']));
-
-      it(`should parse a ! path in a list as object with path as subject - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `<l> <is> ((${elem}!fam:son)).`,
-                          ['l', 'is', '_:b0'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-
-                          [value, 'f:son', '_:b2']));
-
-      it(`should parse a ! path in a list as subject with path as object - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `(<x> <y> (${elem}!fam:son)) a :List.`,
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',  'ex:List'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b2'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b4'],
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          [value, 'f:son', '_:b4']));
-
-      it(`should parse a ! path in a list as object with path as object - starting with ${elem}`,
-              shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                                  `<l> <is> (<x>  <y> (${elem}!fam:son)).`,
-                          ['l', 'is', '_:b0'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
-                          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b2'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3'],
-                          ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b4'],
-                          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                          [value, 'f:son', '_:b4']));
+          it(`should parse a ${pathType} path in a list as ${listPos} with path as object - starting with ${elem}`,
+            shouldParse(parser, f(`${elem}${pathType}fam:son <x> <y>`),
+              triple,
+              ...list(['_:b0', 'x'], ['_:b1', 'y'], ['_:b2', '_:b3']),
+              ...list(['_:b3', '_:b4']),
+              son('4')));
+        }
+      }
     }
   });
 
@@ -2763,4 +2517,16 @@ function itShouldResolve(baseIRI, relativeIri, expected) {
       expect(result.object.value).to.equal(expected);
     });
   });
+}
+
+// creates an RDF list from the input
+function list(...elems) {
+  const arr = [];
+  for (let i = 0; i < elems.length; i++) {
+    arr.push(
+      [elems[i][0], 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', elems[i][1]],
+      [elems[i][0], 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', i + 1 === elems.length ? 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil' : elems[i + 1][0]]
+    );
+  }
+  return arr;
 }
