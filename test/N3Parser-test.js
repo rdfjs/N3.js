@@ -1759,40 +1759,48 @@ describe('Parser', () => {
     it('should parse a ! path of length 2 starting with a non-empty list',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '( :a )!fam:mother a fam:Person.',
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'ex:a'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ...list(['_:b0', 'ex:a']),
                   ['_:b0', 'f:mother', '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']));
 
     it('should parse a ! path of length 2 starting with a non-empty list in another list',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '(( :a )!fam:mother 1) a fam:Person.',
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'ex:a'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                  ['_:b0', 'f:mother', '_:b1'],
-                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']));
+                  ...list(['_:b0', '_:b2'], ['_:b3', '"1"^^http://www.w3.org/2001/XMLSchema#integer']),
+                  ...list(['_:b1', 'ex:a']),
+                  ['_:b1', 'f:mother', '_:b2'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']));
 
     it('should parse a ! path of length 2 starting with an empty list in another list',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '(()!fam:mother 1) a fam:Person.',
-                  ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'f:mother', '_:b0'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']));
-
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person'],
+                  ...list(['_:b0', '_:b1'], ['_:b2', '"1"^^http://www.w3.org/2001/XMLSchema#integer']),
+                  ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'f:mother', '_:b1']
+                  ));
 
     it('should parse a ! path of length 2 starting with an empty list in another list as second element',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '(1 ()!fam:mother) a fam:Person.',
-                  ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'f:mother', '_:b0'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person'],
+                  ...list(['_:b0', '"1"^^http://www.w3.org/2001/XMLSchema#integer'], ['_:b1', '_:b2']),
+                  ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'f:mother', '_:b2']
                   ));
-
 
     it('should parse a ! path of length 2 starting with an empty list in another list of one element',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '(()!fam:mother) a fam:Person.',
-                  ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'f:mother', '_:b0'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']));
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person'],
+                  ...list(['_:b0', '_:b1']),
+                  ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'f:mother', '_:b1']));
 
+    it('should parse a ! path of length 2 as nested subject in a list',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
+                          '((:joe!fam:mother) 1) a fam:Person.',
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person'],
+                  ...list(['_:b0', '_:b1'], ['_:b3', '"1"^^http://www.w3.org/2001/XMLSchema#integer']),
+                  ...list(['_:b1', '_:b2']),
+                  ['ex:joe', 'f:mother', '_:b2']));
 
     it('should parse a birthday rule',
       shouldParse(parser,
@@ -1804,27 +1812,24 @@ describe('Parser', () => {
         '  ?x :trueOnDate ?date.' +
         '} <= {' +
         '  ((?date ?s!foaf:birthday)!math:difference 31622400) math:integerQuotient ?age .' +
-        '} .'));
-
-    it('should parse a ! path of length 2 as nested subject in a list',
-      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
-                          '((:joe!fam:mother) 1) a fam:Person.',
-        ['ex:joe', 'f:mother', '_:b2'],
-        ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
-        ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b3'],
-        ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person'],
-        ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
-        ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-        ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"1"^^http://www.w3.org/2001/XMLSchema#integer'],
-        ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+        '} .',
+          ['?x', 'http://example.org/trueOnDate', '?date', '_:b0'],
+          // eslint-disable-next-line no-warning-comments
+          // FIXME: when merging with https://github.com/rdfjs/N3.js/pull/327
+          ['_:b1', 'http://www.w3.org/2000/10/swap/log#implies', '_:b0'],
+          ...[
+            ...list(['_:b2', '_:b6'], ['_:b7', '"31622400"^^http://www.w3.org/2001/XMLSchema#integer']),
+            ['_:b2', 'http://www.w3.org/2000/10/swap/math#integerQuotient', '?age'],
+            ...list(['_:b3', '?date'], ['_:b4', '_:b5']),
+            ['?s', 'http://xmlns.com/foaf/0.1/birthday', '_:b5'],
+            ['_:b3', 'http://www.w3.org/2000/10/swap/math#difference', '_:b6'],
+          ].map(elem => [...elem, '_:b1'])
+        ));
 
     it('should parse a formula as list item',
         shouldParse(parser, '<a> <findAll> ( <b> { <b> a <type>. <b> <something> <foo> } <o> ).',
         ['a', 'findAll', '_:b0'],
-        ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'b'],
-        ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2'],
-        ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'o'],
-        ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+        ...list(['_:b0', 'b'], ['_:b2', 'o']),
         ['b', 'something', 'foo', '_:b1'],
         ['b', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'type', '_:b1']
     ));

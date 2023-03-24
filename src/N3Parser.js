@@ -436,15 +436,16 @@ export default class N3Parser {
       // This will be `<parent list element> rdf:first <this list>.`.
       if (stack.length !== 0 && stack[stack.length - 1].type === 'list') {
         if (this._n3Mode) {
-          const { _subject, _predicate, _object, _graph } = this;
-          if (_object.termType !== "NamedNode" || _object.value !== this.RDF_NIL.value) {
-            this._emit(_object, this.RDF_REST, this.RDF_NIL, _graph);
+          const { _subject, _predicate, _graph } = this;
+          if (this._object !== this.RDF_NIL) {
+            this._emit(previousList, this.RDF_REST, this.RDF_NIL, _graph);
           }
-          return this._getPathReader(tk => { 
+          return this._getPathReader(tk => {
             this._emit(_subject, _predicate, this._object, _graph);
-            return this._readListItem(tk)
+            return this._readListItem(tk);
           });
-        } else {
+        }
+        else {
           this._emit(this._subject, this._predicate, this._object, this._graph);
         }
       }
@@ -485,14 +486,6 @@ export default class N3Parser {
       this._saveContext('formula', this._graph, this._subject, this._predicate,
                         this._graph = this._blankNode());
       return this._readSubject;
-    case '!':
-    case '^':
-      // Continue path
-      if (!this._n3Mode)
-        return this._error('Unexpected path', token);
-
-      this._saveContext('item', this._graph, list, this.RDF_FIRST, item);
-      return this._getPathReader(this._readListItem);
     default:
       if ((item = this._readEntity(token)) === undefined)
         return;
