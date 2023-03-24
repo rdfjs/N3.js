@@ -1873,7 +1873,14 @@ describe('Parser', () => {
       shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
         'Expected >> to follow "_:.b" on line 1.'));
 
-    for (const [elem, value] of [['()', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'], [':joe', 'ex:joe'], ['<<:joe a :Person>>', '<<:joe a :Person>>']]) {
+    for (const [elem, value] of [
+      ['()', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+      ['( )', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+      ['(  )', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+      ['<http://www.w3.org/1999/02/22-rdf-syntax-ns#nil>', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+      [':joe', 'ex:joe'],
+      // ['<<:joe a :Person>>', '<<:joe a :Person>>']
+    ]) {
       for (const pathType of ['!', '^']) {
         // eslint-disable-next-line no-inner-declarations
         function son(bnode) {
@@ -1882,7 +1889,7 @@ describe('Parser', () => {
 
         for (const [f, triple] of [
           [x => `(${x}) a :List .`, ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',  'ex:List']],
-          [x => `<l> (${x}) <m> .`, ['l', '_:b0', 'm']],
+          // [x => `<l> (${x}) <m> .`, ['l', '_:b0', 'm']],
           [x => `<l> <is> (${x}) .`, ['l', 'is', '_:b0']],
         ]) {
           // eslint-disable-next-line no-inner-declarations

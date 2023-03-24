@@ -434,8 +434,20 @@ export default class N3Parser {
       this._restoreContext('list', token);
       // If this list is contained within a parent list, return the membership quad here.
       // This will be `<parent list element> rdf:first <this list>.`.
-      if (stack.length !== 0 && stack[stack.length - 1].type === 'list')
-        this._emit(this._subject, this._predicate, this._object, this._graph);
+      if (stack.length !== 0 && stack[stack.length - 1].type === 'list') {
+        if (this._n3Mode) {
+          const { _subject, _predicate, _object, _graph } = this;
+          if (_object.termType !== "NamedNode" || _object.value !== this.RDF_NIL.value) {
+            this._emit(_object, this.RDF_REST, this.RDF_NIL, _graph);
+          }
+          return this._getPathReader(tk => { 
+            this._emit(_subject, _predicate, this._object, _graph);
+            return this._readListItem(tk)
+          });
+        } else {
+          this._emit(this._subject, this._predicate, this._object, this._graph);
+        }
+      }
       // Was this list the parent's subject?
       if (this._predicate === null) {
         // The next token is the predicate
@@ -474,9 +486,13 @@ export default class N3Parser {
                         this._graph = this._blankNode());
       return this._readSubject;
     case '!':
-      if (this._n3Mode) {
-        return this._getPathReader(this._readPredicateOrNamedGraph);
-      }
+    case '^':
+      // Continue path
+      if (!this._n3Mode)
+        return this._error('Unexpected path', token);
+
+      this._saveContext('item', this._graph, list, this.RDF_FIRST, item);
+      return this._getPathReader(this._readListItem);
     default:
       if ((item = this._readEntity(token)) === undefined)
         return;
