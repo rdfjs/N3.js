@@ -571,7 +571,7 @@ export default class N3Parser {
     }
   }
 
-  // Completes a literal in subject position
+  // Completes a literal in predicate position
   _completePredicateLiteral(token) {
     const completed = this._completeLiteral(token);
 
