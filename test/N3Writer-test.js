@@ -38,7 +38,7 @@ describe('Writer', () => {
       }
       catch (error) {
         error.should.be.an.instanceof(Error);
-        error.should.have.property('message', 'Encountered graph name, this is forbidden.');
+        error.should.have.property('message', 'The chosen serialization settings do not support triples in a non-default graph.');
         done();
       }
     });
@@ -688,7 +688,7 @@ describe('Writer', () => {
         new NamedNode('c:c'),
         new NamedNode('g:g')), error => {
         error.should.be.an.instanceof(Error);
-        error.should.have.property('message', 'Encountered graph name, this is forbidden.');
+        error.should.have.property('message', 'The chosen serialization settings do not support triples in a non-default graph.');
         done();
       });
     });
@@ -713,7 +713,7 @@ describe('Writer', () => {
         new NamedNode('c:c'),
         new NamedNode('g:g')), error => {
         error.should.be.an.instanceof(Error);
-        error.should.have.property('message', 'Encountered graph name, this is forbidden.');
+        error.should.have.property('message', 'The chosen serialization settings do not support triples in a non-default graph.');
         done();
       });
     });
