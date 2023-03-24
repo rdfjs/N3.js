@@ -1880,43 +1880,37 @@ describe('Parser', () => {
           return pathType === '!' ? [value, 'f:son', `_:b${bnode}`] : [`_:b${bnode}`, 'f:son', value];
         }
 
-        const prefixes = '@prefix : <ex:>. @prefix fam: <f:>.';
-        for (const [f, triple, listPos] of [
-          [x => `${prefixes}(${x}) a :List .`, ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',  'ex:List'], 'subject'],
-          [x => `${prefixes}<l> <is> (${x}) .`, ['l', 'is', '_:b0'], 'object'],
+        for (const [f, triple] of [
+          [x => `(${x}) a :List .`, ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',  'ex:List']],
+          [x => `<l> (${x}) <m> .`, ['l', '_:b0', 'm']],
+          [x => `<l> <is> (${x}) .`, ['l', 'is', '_:b0']],
         ]) {
-          it(`should parse a ${pathType} path in a list as ${listPos} with path as subject - starting with ${elem}`,
-            shouldParse(parser, f(`${elem}${pathType}fam:son <x> <y>`),
-              triple, ...list(['_:b0', '_:b1'], ['_:b2', 'x'], ['_:b3', 'y']), son('1')));
+          // eslint-disable-next-line no-inner-declarations
+          function check(content, ...triples) {
+            it(`should parse [${f(content)}]`,
+              shouldParse(parser, `@prefix : <ex:>. @prefix fam: <f:>.${f(content)}`,
+                triple, ...triples));
+          }
 
-          it(`should parse a ${pathType} path in a single element list as ${listPos} with path as subject - starting with ${elem}`,
-            shouldParse(parser, f(`${elem}${pathType}fam:son <x> <y>`),
-              triple, ...list(['_:b0', '_:b1']), son('1')));
+          check(`${elem}${pathType}fam:son`, ...list(['_:b0', '_:b1']), son('1'));
+          check(`(${elem}${pathType}fam:son)`, ...list(['_:b0', '_:b1']), ...list(['_:b1', '_:b2']), son('2'));
 
-          it(`should parse a ${pathType} path in a list as ${listPos} with path as object - starting with ${elem}`,
-            shouldParse(parser, f(`${elem}${pathType}fam:son <x> <y>`),
-              triple, ...list(['_:b0', 'x'], ['_:b1', 'y'], ['_:b2', '_:b3']), son('3')));
+          check(`${elem}${pathType}fam:son <x> <y>`, ...list(['_:b0', '_:b1'], ['_:b2', 'x'], ['_:b3', 'y']), son('1'));
+          check(`<x> ${elem}${pathType}fam:son <y>`, ...list(['_:b0', 'x'], ['_:b1', '_:b2'], ['_:b3', 'y']), son('2'));
+          check(`<x> <y> ${elem}${pathType}fam:son`, ...list(['_:b0', 'x'], ['_:b1', 'y'], ['_:b2', '_:b3']), son('3'));
 
-          it(`should parse a ${pathType} path in a list as ${listPos} with path as subject - starting with ${elem}`,
-            shouldParse(parser, f(`${elem}${pathType}fam:son <x> <y>`),
-              triple,
-              ...list(['_:b0', '_:b1'], ['_:b3', 'x'], ['_:b4', 'y']),
-              ...list(['_:b1', '_:b2']),
-              son('2')));
-
-          it(`should parse a ${pathType} path in a single element list as ${listPos} with path as subject - starting with ${elem}`,
-            shouldParse(parser, f(`${elem}${pathType}fam:son <x> <y>`),
-              triple,
-              ...list(['_:b0', '_:b1']),
-              ...list(['_:b1', '_:b2']),
-              son('2')));
-
-          it(`should parse a ${pathType} path in a list as ${listPos} with path as object - starting with ${elem}`,
-            shouldParse(parser, f(`${elem}${pathType}fam:son <x> <y>`),
-              triple,
-              ...list(['_:b0', 'x'], ['_:b1', 'y'], ['_:b2', '_:b3']),
-              ...list(['_:b3', '_:b4']),
-              son('4')));
+          check(`(${elem}${pathType}fam:son) <x> <y>`,
+            ...list(['_:b0', '_:b1'], ['_:b3', 'x'], ['_:b4', 'y']),
+            ...list(['_:b1', '_:b2']),
+            son('2'));
+          check(`<x> (${elem}${pathType}fam:son) <y>`,
+            ...list(['_:b0', 'x'], ['_:b1', '_:b2'], ['_:b4', 'y']),
+            ...list(['_:b2', '_:b3']),
+            son('3'));
+          check(`<x> <y> (${elem}${pathType}fam:son)`,
+            ...list(['_:b0', 'x'], ['_:b1', 'y'], ['_:b2', '_:b3']),
+            ...list(['_:b3', '_:b4']),
+            son('4'));
         }
       }
     }
