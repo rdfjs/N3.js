@@ -443,14 +443,29 @@ export default class N3Parser {
     case ')':
       // Closing the list; restore the parent context
       this._restoreContext('list', token);
-      // If this list is contained within a parent list, return the membership quad here.
-      // This will be `<parent list element> rdf:first <this list>.`.
-      if (stack.length !== 0 && stack[stack.length - 1].type === 'list')
-        this._emit(this._subject, this._predicate, this._object, this._graph);
+      if (stack.length !== 0 && stack[stack.length - 1].type === 'list') {
+        if (this._n3Mode) {
+          const { _subject, _predicate, _graph } = this;
+          if (this._object !== this.RDF_NIL) {
+            this._emit(previousList, this.RDF_REST, this.RDF_NIL, _graph);
+          }
+          return this._getPathReader(tk => {
+            // If this list is contained within a parent list, return the membership quad here.
+            // This will be `<parent list element> rdf:first <this list>.`.
+            this._emit(_subject, _predicate, this._object, _graph);
+            return this._readListItem(tk);
+          });
+        }
+        else {
+          // If this list is contained within a parent list, return the membership quad here.
+          // This will be `<parent list element> rdf:first <this list>.`.
+          this._emit(this._subject, this._predicate, this._object, this._graph);
+        }
+      }
       // Was this list the parent's subject?
       if (this._predicate === null) {
         // The next token is the predicate
-        next = this._readPredicate;
+        next = this._n3Mode ? this._getPathReader(this._readPredicateOrNamedGraph) : this._readPredicate;
         // No list tail if this was an empty list
         if (this._subject === this.RDF_NIL)
           return next;
@@ -518,7 +533,7 @@ export default class N3Parser {
     // If an item was read, add it to the list
     if (item !== null) {
       // In N3 mode, the item might be a path
-      if (this._n3Mode && (token.type === 'IRI' || token.type === 'prefixed')) {
+      if (this._n3Mode) {
         // Create a new context to add the item's path
         this._saveContext('item', this._graph, list, this.RDF_FIRST, item);
         this._subject = item, this._predicate = null;
