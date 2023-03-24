@@ -1864,6 +1864,13 @@ describe('Parser', () => {
       shouldParse(parser, '@forSome <x>. <x> <x> <x>.',
                   ['_:b0', '_:b0', '_:b0']));
 
+    describe('should parse a named graph in a list',
+      shouldParse(parser, '<s> <p> ({<a> <b> <c>}) .',
+                  ['s', 'p', '_:b0'],
+                  ...list(['_:b0', '_:b1']),
+                  ['a', 'b', 'c', '_:b1']
+                  ));
+
     describe('should parse a @forSome statement with multiple entities',
       shouldParse(parser, '@prefix a: <a:>. @base <b:>. @forSome a:x, <y>, a:z. a:x <y> a:z.',
                   ['_:b0', '_:b1', '_:b2']));
