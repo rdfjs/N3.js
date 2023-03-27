@@ -2,6 +2,7 @@
 import { default as N3DataFactory, termToId, termFromId } from './N3DataFactory';
 import { Readable } from 'readable-stream';
 import namespaces from './IRIs';
+import { isDefaultGraph } from './N3Util';
 
 // ## Constructor
 export default class N3Store {
@@ -14,7 +15,6 @@ export default class N3Store {
     // saving memory by using only numbers as keys in `_graphs`
     this._id = 0;
     this._ids = Object.create(null);
-    this._ids['><'] = 0; // dummy entry, so the first actual key is non-zero
     this._entities = Object.create(null); // inverse of `_ids`
     // `_blankNodeIndex` is the index of the last automatically named blank node
     this._blankNodeIndex = 0;
@@ -28,6 +28,45 @@ export default class N3Store {
     // Add quads if passed
     if (quads)
       this.addQuads(quads);
+  }
+
+  _termFromId(id, factory) {
+    if (id[0] === '.') {
+      const entities = this._entities;
+      const terms = id.split('.');
+      const q = this._factory.quad(
+        this._termFromId(entities[terms[1]]),
+        this._termFromId(entities[terms[2]]),
+        this._termFromId(entities[terms[3]]),
+        terms[4] && this._termFromId(entities[terms[4]])
+      );
+      return q;
+    }
+    return termFromId(id, factory);
+  }
+
+  _termToNumericId(term) {
+    if (term.termType === 'Quad') {
+      const s = this._termToNumericId(term.subject),
+          p = this._termToNumericId(term.predicate),
+          o = this._termToNumericId(term.object);
+      let g;
+
+      return s && p && o && (isDefaultGraph(term.graph) || (g = this._termToNumericId(term.graph))) &&
+        this._ids[g ? `.${s}.${p}.${o}.${g}` : `.${s}.${p}.${o}`];
+    }
+    return this._ids[termToId(term)];
+  }
+
+  _termToNewNumericId(term) {
+    // This assumes that no graph term is present - we may wish to error if there is one
+    const str = term && term.termType === 'Quad' ?
+      `.${this._termToNewNumericId(term.subject)}.${this._termToNewNumericId(term.predicate)}.${this._termToNewNumericId(term.object)}${
+        isDefaultGraph(term.graph) ? '' : `.${this._termToNewNumericId(term.graph)}`
+      }`
+      : termToId(term);
+
+    return this._ids[str] || (this._ids[this._entities[++this._id] = str] = this._id);
   }
 
   // ## Public properties
@@ -88,24 +127,24 @@ export default class N3Store {
   *_findInIndex(index0, key0, key1, key2, name0, name1, name2, graphId) {
     let tmp, index1, index2;
     const entityKeys = this._entities;
-    const graph = termFromId(graphId, this._factory);
+    const graph = this._termFromId(graphId, this._factory);
     const parts = { subject: null, predicate: null, object: null };
 
     // If a key is specified, use only that part of index 0.
     if (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
     for (const value0 in index0) {
       if (index1 = index0[value0]) {
-        parts[name0] = termFromId(entityKeys[value0], this._factory);
+        parts[name0] = this._termFromId(entityKeys[value0], this._factory);
         // If a key is specified, use only that part of index 1.
         if (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
         for (const value1 in index1) {
           if (index2 = index1[value1]) {
-            parts[name1] = termFromId(entityKeys[value1], this._factory);
+            parts[name1] = this._termFromId(entityKeys[value1], this._factory);
             // If a key is specified, use only that part of index 2, if it exists.
             const values = key2 ? (key2 in index2 ? [key2] : []) : Object.keys(index2);
             // Create quads for all items found in index 2.
             for (let l = 0; l < values.length; l++) {
-              parts[name2] = termFromId(entityKeys[values[l]], this._factory);
+              parts[name2] = this._termFromId(entityKeys[values[l]], this._factory);
               yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
             }
           }
@@ -190,7 +229,7 @@ export default class N3Store {
     return id => {
       if (!(id in uniqueIds)) {
         uniqueIds[id] = true;
-        callback(termFromId(this._entities[id], this._factory));
+        callback(this._termFromId(this._entities[id], this._factory));
       }
     };
   }
@@ -214,9 +253,6 @@ export default class N3Store {
         predicate = subject.predicate, subject = subject.subject;
 
     // Convert terms to internal string representation
-    subject = termToId(subject);
-    predicate = termToId(predicate);
-    object = termToId(object);
     graph = termToId(graph);
 
     // Find the graph that will contain the triple
@@ -232,11 +268,9 @@ export default class N3Store {
     // Since entities can often be long IRIs, we avoid storing them in every index.
     // Instead, we have a separate index that maps entities to numbers,
     // which are then used as keys in the other indexes.
-    const ids = this._ids;
-    const entities = this._entities;
-    subject   = ids[subject]   || (ids[entities[++this._id] = subject]   = this._id);
-    predicate = ids[predicate] || (ids[entities[++this._id] = predicate] = this._id);
-    object    = ids[object]    || (ids[entities[++this._id] = object]    = this._id);
+    subject   = this._termToNewNumericId(subject);
+    predicate = this._termToNewNumericId(predicate);
+    object    = this._termToNewNumericId(object);
 
     const changed = this._addToIndex(graphItem.subjects,   subject,   predicate, object);
     this._addToIndex(graphItem.predicates, predicate, object,    subject);
@@ -281,17 +315,14 @@ export default class N3Store {
         predicate = subject.predicate, subject = subject.subject;
 
     // Convert terms to internal string representation
-    subject = termToId(subject);
-    predicate = termToId(predicate);
-    object = termToId(object);
     graph = termToId(graph);
 
     // Find internal identifiers for all components
     // and verify the quad exists.
-    const ids = this._ids, graphs = this._graphs;
+    const graphs = this._graphs;
     let graphItem, subjects, predicates;
-    if (!(subject    = ids[subject]) || !(predicate = ids[predicate]) ||
-        !(object     = ids[object])  || !(graphItem = graphs[graph])  ||
+    if (!(subject    = subject && this._termToNumericId(subject)) || !(predicate = predicate && this._termToNumericId(predicate)) ||
+        !(object     = object && this._termToNumericId(object))  || !(graphItem = graphs[graph])  ||
         !(subjects   = graphItem.subjects[subject]) ||
         !(predicates = subjects[predicate]) ||
         !(object in predicates))
@@ -350,18 +381,15 @@ export default class N3Store {
   // Setting any field to `undefined` or `null` indicates a wildcard.
   *readQuads(subject, predicate, object, graph) {
     // Convert terms to internal string representation
-    subject = subject && termToId(subject);
-    predicate = predicate && termToId(predicate);
-    object = object && termToId(object);
     graph = graph && termToId(graph);
 
-    const graphs = this._getGraphs(graph), ids = this._ids;
+    const graphs = this._getGraphs(graph);
     let content, subjectId, predicateId, objectId;
 
     // Translate IRIs to internal index keys.
-    if (isString(subject)   && !(subjectId   = ids[subject])   ||
-        isString(predicate) && !(predicateId = ids[predicate]) ||
-        isString(object)    && !(objectId    = ids[object]))
+    if (subject   && !(subjectId   = this._termToNumericId(subject))   ||
+        predicate && !(predicateId = this._termToNumericId(predicate)) ||
+        object    && !(objectId    = this._termToNumericId(object)))
       return;
 
     for (const graphId in graphs) {
@@ -408,18 +436,15 @@ export default class N3Store {
   // Setting any field to `undefined` or `null` indicates a wildcard.
   countQuads(subject, predicate, object, graph) {
     // Convert terms to internal string representation
-    subject = subject && termToId(subject);
-    predicate = predicate && termToId(predicate);
-    object = object && termToId(object);
     graph = graph && termToId(graph);
 
-    const graphs = this._getGraphs(graph), ids = this._ids;
+    const graphs = this._getGraphs(graph);
     let count = 0, content, subjectId, predicateId, objectId;
 
     // Translate IRIs to internal index keys.
-    if (isString(subject)   && !(subjectId   = ids[subject])   ||
-        isString(predicate) && !(predicateId = ids[predicate]) ||
-        isString(object)    && !(objectId    = ids[object]))
+    if (subject   && !(subjectId   = this._termToNumericId(subject))   ||
+        predicate && !(predicateId = this._termToNumericId(predicate)) ||
+        object    && !(objectId    = this._termToNumericId(object)))
       return 0;
 
     for (const graphId in graphs) {
@@ -490,17 +515,15 @@ export default class N3Store {
   // Setting any field to `undefined` or `null` indicates a wildcard.
   forSubjects(callback, predicate, object, graph) {
     // Convert terms to internal string representation
-    predicate = predicate && termToId(predicate);
-    object = object && termToId(object);
     graph = graph && termToId(graph);
 
-    const ids = this._ids, graphs = this._getGraphs(graph);
+    const graphs = this._getGraphs(graph);
     let content, predicateId, objectId;
     callback = this._uniqueEntities(callback);
 
     // Translate IRIs to internal index keys.
-    if (isString(predicate) && !(predicateId = ids[predicate]) ||
-        isString(object)    && !(objectId    = ids[object]))
+    if (predicate && !(predicateId = this._termToNumericId(predicate)) ||
+        object    && !(objectId    = this._termToNumericId(object)))
       return;
 
     for (graph in graphs) {
@@ -537,17 +560,15 @@ export default class N3Store {
   // Setting any field to `undefined` or `null` indicates a wildcard.
   forPredicates(callback, subject, object, graph) {
     // Convert terms to internal string representation
-    subject = subject && termToId(subject);
-    object = object && termToId(object);
     graph = graph && termToId(graph);
 
-    const ids = this._ids, graphs = this._getGraphs(graph);
+    const graphs = this._getGraphs(graph);
     let content, subjectId, objectId;
     callback = this._uniqueEntities(callback);
 
     // Translate IRIs to internal index keys.
-    if (isString(subject) && !(subjectId = ids[subject]) ||
-        isString(object)  && !(objectId  = ids[object]))
+    if (subject   && !(subjectId   = this._termToNumericId(subject))   ||
+        object    && !(objectId    = this._termToNumericId(object)))
       return;
 
     for (graph in graphs) {
@@ -584,17 +605,15 @@ export default class N3Store {
   // Setting any field to `undefined` or `null` indicates a wildcard.
   forObjects(callback, subject, predicate, graph) {
     // Convert terms to internal string representation
-    subject = subject && termToId(subject);
-    predicate = predicate && termToId(predicate);
     graph = graph && termToId(graph);
 
-    const ids = this._ids, graphs = this._getGraphs(graph);
+    const graphs = this._getGraphs(graph);
     let content, subjectId, predicateId;
     callback = this._uniqueEntities(callback);
 
     // Translate IRIs to internal index keys.
-    if (isString(subject)   && !(subjectId   = ids[subject]) ||
-        isString(predicate) && !(predicateId = ids[predicate]))
+    if (subject   && !(subjectId   = this._termToNumericId(subject))   ||
+        predicate && !(predicateId = this._termToNumericId(predicate)))
       return;
 
     for (graph in graphs) {

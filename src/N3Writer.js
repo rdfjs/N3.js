@@ -225,7 +225,7 @@ export default class N3Writer {
     }
   }
 
-  // ### `_encodeQuad` encodes an RDF* quad
+  // ### `_encodeQuad` encodes an RDF-star quad
   _encodeQuad({ subject, predicate, object, graph }) {
     return `<<${
       this._encodeSubject(subject)} ${

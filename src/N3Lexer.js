@@ -53,6 +53,11 @@ export default class N3Lexer {
     this._endOfFile = /^(?:#[^\n\r]*)?$/;
     options = options || {};
 
+    // Whether the log:isImpliedBy predicate is supported
+    this._isImpliedBy = options.isImpliedBy !== false;
+
+    this._supportsRDFStar = options.rdfStar;
+
     // In line mode (N-Triples or N-Quads), only simple features may be parsed
     if (this._lineMode = !!options.lineMode) {
       this._n3Mode = false;
@@ -151,8 +156,11 @@ export default class N3Lexer {
         else if (input.length > 1 && input[1] === '<')
           type = '<<', matchLength = 2;
         // Try to find a backwards implication arrow
-        else if (this._n3Mode && input.length > 1 && input[1] === '=')
-          type = 'inverse', matchLength = 2, value = '>';
+        else if (this._n3Mode && input.length > 1 && input[1] === '=') {
+          matchLength = 2;
+          if (this._isImpliedBy) type = 'abbreviation', value = '<';
+          else type = 'inverse', value = '>';
+        }
         break;
 
       case '>':
@@ -290,7 +298,16 @@ export default class N3Lexer {
             matchLength = 2, value = '>';
         }
         break;
-
+      case '{':
+        // We can properly evaluate this case if we are
+        // not in rdfStar mode or we can look ahead to
+        // see if there is a pipe following the {
+        const long = input.length !== 1;
+        if (long && input[1] === '|')
+          matchLength = 2, type = '{|';
+        else if (!this._lineMode && (long || !this._supportsRDFStar))
+          matchLength = 1, type = firstChar;
+        break;
       case '!':
         if (!this._n3Mode)
           break;
@@ -300,14 +317,17 @@ export default class N3Lexer {
       case ']':
       case '(':
       case ')':
-      case '{':
       case '}':
         if (!this._lineMode) {
           matchLength = 1;
           type = firstChar;
         }
         break;
-
+      case '|':
+        if (input.length > 1 && input[1] === '}') {
+          type = '|}', matchLength = 2;
+          break;
+        }
       default:
         inconclusive = true;
       }

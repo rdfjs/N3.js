@@ -1,4 +1,5 @@
-import { StreamParser, NamedNode } from '../src/';
+import { StreamParser } from '../src/';
+import { NamedNode } from '../src/N3DataFactory';
 import { Readable, Writable } from 'readable-stream';
 
 describe('StreamParser', () => {

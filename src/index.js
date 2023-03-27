@@ -9,15 +9,6 @@ import * as Util from './N3Util';
 import {
   default as DataFactory,
 
-  Term,
-  NamedNode,
-  Literal,
-  BlankNode,
-  Variable,
-  DefaultGraph,
-  Quad,
-  Triple,
-
   termFromId,
   termToId,
 } from './N3DataFactory';
@@ -34,15 +25,6 @@ export {
 
   DataFactory,
 
-  Term,
-  NamedNode,
-  Literal,
-  BlankNode,
-  Variable,
-  DefaultGraph,
-  Quad,
-  Triple,
-
   termFromId,
   termToId,
 };
@@ -58,15 +40,6 @@ export default {
   Util,
 
   DataFactory,
-
-  Term,
-  NamedNode,
-  Literal,
-  BlankNode,
-  Variable,
-  DefaultGraph,
-  Quad,
-  Triple,
 
   termFromId,
   termToId,

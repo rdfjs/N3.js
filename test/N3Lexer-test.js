@@ -802,16 +802,30 @@ describe('Lexer', () => {
     it('should tokenize the left implication',
       shouldTokenize('<a> <= <b> ',
                      { type: 'IRI', value: 'a', line: 1 },
-                     { type: 'inverse', value: '>', line: 1 },
+                     { type: 'abbreviation', value: '<', line: 1 },
                      { type: 'IRI', value: 'b', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should tokenize a split left implication',
       shouldTokenize(streamOf('<a> <', '= <b> '),
-        { type: 'IRI', value: 'a', line: 1 },
-        { type: 'inverse', value: '>', line: 1 },
-        { type: 'IRI', value: 'b', line: 1 },
-        { type: 'eof', line: 1 }));
+                     { type: 'IRI', value: 'a', line: 1 },
+                     { type: 'abbreviation', value: '<', line: 1 },
+                     { type: 'IRI', value: 'b', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize a split left implication as inverse of [=>] when isImpliedBy is disabled',
+      shouldTokenize(new Lexer({ isImpliedBy: false }), streamOf('<a> <', '= <b> '),
+                     { type: 'IRI', value: 'a', line: 1 },
+                     { type: 'inverse', value: '>', line: 1 },
+                     { type: 'IRI', value: 'b', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize a left implication as inverse of [=>] when isImpliedBy is disabled',
+      shouldTokenize(new Lexer({ isImpliedBy: false }), streamOf('<a> <= <b> '),
+                     { type: 'IRI', value: 'a', line: 1 },
+                     { type: 'inverse', value: '>', line: 1 },
+                     { type: 'IRI', value: 'b', line: 1 },
+                     { type: 'eof', line: 1 }));
 
     it('should tokenize paths',
       shouldTokenize(':joe!fam:mother!loc:office!loc:zip :joe!fam:mother^fam:mother',
@@ -855,7 +869,7 @@ describe('Lexer', () => {
         { type: '>>', line: 1 },
         { type: 'eof', line: 1 }));
 
-    it('should tokenize an RDF* statement with IRIs',
+    it('should tokenize an RDF-star statement with IRIs',
       shouldTokenize('<<<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo>>> .',
         { type: '<<', line: 1 },
         { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
@@ -865,11 +879,57 @@ describe('Lexer', () => {
         { type: '.', line: 3 },
         { type: 'eof', line: 3 }));
 
-    it('should not tokenize a wrongly closed RDF* statement with IRIs',
+    it('should not tokenize a wrongly closed RDF-star statement with IRIs',
       shouldNotTokenize('<<<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo>> .',
         'Unexpected ">" on line 3.'));
 
-    it('should tokenize a split RDF* statement with IRIs',
+    it('should tokenize an RDF-star annotated statement',
+      shouldTokenize('<a> <b> <c> {| <d> <e> |}',
+        { type: 'IRI', value: 'a', line: 1 },
+        { type: 'IRI', value: 'b', line: 1 },
+        { type: 'IRI', value: 'c', line: 1 },
+        { type: '{|', line: 1 },
+        { type: 'IRI', value: 'd', line: 1 },
+        { type: 'IRI', value: 'e', line: 1 },
+        { type: '|}', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should tokenize an RDF-star annotated statement with multiple annotations',
+      shouldTokenize('<a> <b> <c> {| <d> <e>; <f> <g> |}',
+        { type: 'IRI', value: 'a', line: 1 },
+        { type: 'IRI', value: 'b', line: 1 },
+        { type: 'IRI', value: 'c', line: 1 },
+        { type: '{|', line: 1 },
+        { type: 'IRI', value: 'd', line: 1 },
+        { type: 'IRI', value: 'e', line: 1 },
+        { type: ';', line: 1 },
+        { type: 'IRI', value: 'f', line: 1 },
+        { type: 'IRI', value: 'g', line: 1 },
+        { type: '|}', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should tokenize an RDF-star annotated statement with multiple annotations, one containing a blank node',
+      shouldTokenize('<a> <b> <c> {| <d> [ <e> "f" ]; <f> <g> |}',
+        { type: 'IRI', value: 'a', line: 1 },
+        { type: 'IRI', value: 'b', line: 1 },
+        { type: 'IRI', value: 'c', line: 1 },
+        { type: '{|', line: 1 },
+        { type: 'IRI', value: 'd', line: 1 },
+        { type: '[',   value: '', line: 1 },
+        { type: 'IRI', value: 'e', line: 1 },
+        { type: 'literal', value: 'f', line: 1 },
+        { type: ']',   value: '', line: 1 },
+        { type: ';', line: 1 },
+        { type: 'IRI', value: 'f', line: 1 },
+        { type: 'IRI', value: 'g', line: 1 },
+        { type: '|}', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should not tokenize an annotated statement that is not closed',
+      shouldNotTokenize('<a> <b> <c> {| <d> [ <e> "f" ]; <f> <g> |',
+        'Unexpected "|" on line 1.'));
+
+    it('should tokenize a split RDF-star statement with IRIs',
       shouldTokenize(streamOf('<', '<<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo>>> .'),
         { type: '<<', line: 1 },
         { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
@@ -879,7 +939,7 @@ describe('Lexer', () => {
         { type: '.', line: 3 },
         { type: 'eof', line: 3 }));
 
-    it('should tokenize an RDF* statement with string literals',
+    it('should tokenize an RDF-star statement with string literals',
       shouldTokenize('<<"string"@en "string"@nl-be "string"@EN>> .',
         { type: '<<', line: 1 },
         { type: 'literal', value: 'string', line: 1 },
@@ -892,7 +952,7 @@ describe('Lexer', () => {
         { type: '.', line: 1 },
         { type: 'eof', line: 1 }));
 
-    it('should tokenize an RDF* statement with integers',
+    it('should tokenize an RDF-star statement with integers',
       shouldTokenize('<<1 2 3>>.',
         { type: '<<', line: 1 },
         { type: 'literal', value: '1', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
@@ -902,7 +962,7 @@ describe('Lexer', () => {
         { type: '.', line: 1 },
         { type: 'eof', line: 1 }));
 
-    it('should tokenize an RDF* statement with decimals',
+    it('should tokenize an RDF-star statement with decimals',
       shouldTokenize('<<1.2 3.4 5.6>>.',
         { type: '<<', line: 1 },
         { type: 'literal', value: '1.2', prefix: 'http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
@@ -912,7 +972,7 @@ describe('Lexer', () => {
         { type: '.', line: 1 },
         { type: 'eof', line: 1 }));
 
-    it('should tokenize an RDF* statement with booleans',
+    it('should tokenize an RDF-star statement with booleans',
       shouldTokenize('<<true false true>>.',
         { type: '<<', line: 1 },
         { type: 'literal', value: 'true',  prefix: 'http://www.w3.org/2001/XMLSchema#boolean', line: 1 },
@@ -929,7 +989,7 @@ describe('Lexer', () => {
         { type: '.', line: 1 },
         { type: 'eof', line: 1 }));
 
-    it('should tokenize an RDF* statement with prefixed names',
+    it('should tokenize an RDF-star statement with prefixed names',
       shouldTokenize('<<a:a b:b c:c>> .',
         { type: '<<', line: 1 },
         { type: 'prefixed', prefix: 'a', value: 'a', line: 1 },
@@ -939,7 +999,7 @@ describe('Lexer', () => {
         { type: '.', line: 1 },
         { type: 'eof', line: 1 }));
 
-    it('should tokenize an RDF* statement with blank nodes',
+    it('should tokenize an RDF-star statement with blank nodes',
       shouldTokenize('<<_:a _:b _:c>> .',
         { type: '<<', line: 1 },
         { type: 'blank', prefix: '_', value: 'a', line: 1 },
@@ -949,7 +1009,7 @@ describe('Lexer', () => {
         { type: '.', line: 1 },
         { type: 'eof', line: 1 }));
 
-    it('should tokenize an RDF* statement with variables',
+    it('should tokenize an RDF-star statement with variables',
       shouldTokenize('<<?a ?b ?c>> .',
         { type: '<<', line: 1 },
         { type: 'var', value: '?a', line: 1 },
@@ -959,7 +1019,7 @@ describe('Lexer', () => {
         { type: '.', line: 1 },
         { type: 'eof', line: 1 }));
 
-    it('should tokenize an RDF* statement with mixed types',
+    it('should tokenize an RDF-star statement with mixed types',
       shouldTokenize('<<<http://ex.org/?bla#foo> "string"@nl-be c:c>> .',
         { type: '<<', line: 1 },
         { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
@@ -970,7 +1030,7 @@ describe('Lexer', () => {
         { type: '.', line: 1 },
         { type: 'eof', line: 1 }));
 
-    it('should tokenize an RDF* statement with mixed types',
+    it('should tokenize an RDF-star statement with mixed types',
       shouldTokenize('<<_:a a:a "string"@EN>> .',
         { type: '<<', line: 1 },
         { type: 'blank', prefix: '_', value: 'a', line: 1 },
@@ -981,7 +1041,7 @@ describe('Lexer', () => {
         { type: '.', line: 1 },
         { type: 'eof', line: 1 }));
 
-    it('should tokenize an RDF* statement with mixed types',
+    it('should tokenize an RDF-star statement with mixed types',
       shouldTokenize('<<"literal"@AU <http://ex.org/?bla#foo> _:a>> .',
         { type: '<<', line: 1 },
         { type: 'literal', value: 'literal', line: 1 },
@@ -992,7 +1052,7 @@ describe('Lexer', () => {
         { type: '.', line: 1 },
         { type: 'eof', line: 1 }));
 
-    it('should tokenize RDF* statements with shared subjects',
+    it('should tokenize RDF-star statements with shared subjects',
       shouldTokenize('<<<a> <b> <c>;\n<d> <e>>>.',
         { type: '<<', line: 1 },
         { type: 'IRI', value: 'a', line: 1 },
@@ -1005,7 +1065,7 @@ describe('Lexer', () => {
         { type: '.', line: 2 },
         { type: 'eof', line: 2 }));
 
-    it('should tokenize RDF* statements with shared subjects and predicates',
+    it('should tokenize RDF-star statements with shared subjects and predicates',
       shouldTokenize('<<<a> <b> <c>,\n<d>>>.',
         { type: '<<', line: 1 },
         { type: 'IRI', value: 'a', line: 1 },
@@ -1017,7 +1077,7 @@ describe('Lexer', () => {
         { type: '.', line: 2 },
         { type: 'eof', line: 2 }));
 
-    it('should tokenize an RDF* statement with shared subjects and predicates and prefixed names',
+    it('should tokenize an RDF-star statement with shared subjects and predicates and prefixed names',
       shouldTokenize('<<a:a b:b c:c;d:d e:e,f:f>> .',
         { type: '<<', line: 1 },
         { type: 'prefixed', prefix: 'a', value: 'a', line: 1 },

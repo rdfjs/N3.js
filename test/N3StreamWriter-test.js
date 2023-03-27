@@ -1,4 +1,5 @@
-import { StreamWriter, Quad, NamedNode, termFromId } from '../src/';
+import { StreamWriter, termFromId } from '../src/';
+import { Quad, NamedNode } from '../src/N3DataFactory';
 import { Readable, Writable } from 'readable-stream';
 
 describe('StreamWriter', () => {
