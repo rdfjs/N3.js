@@ -377,7 +377,7 @@ The default mode is permissive
 and allows a mixture of different syntaxes, including RDF-star.
 Pass a `format` option to the constructor with the name or MIME type of a format
 for strict, fault-intolerant behavior.
-To disable RDF-star support pass `rdfStar` to `false` in the constructor.
+To disable RDF-star support, pass `rdfStar` to `false` in the constructor.
 
 ### Interface specifications
 The N3.js submodules are compatible with the following [RDF.js](http://rdf.js.org) interfaces:
