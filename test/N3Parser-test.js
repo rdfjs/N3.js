@@ -81,6 +81,12 @@ describe('Parser', () => {
                   ['noturn:a', 'noturn:b', '"x"^^urn:foo'],
                   ['noturn:a', 'noturn:b', '"x"^^noturn:urn:foo']));
 
+    it('should not parse literals with datatype as predicate',
+      shouldNotParse('<greaterThan> "a"^^<c> "b"^^<c>.', 'Unexpected literal on line 1.'));
+
+    it('should not parse literals without datatype as predicate',
+        shouldNotParse('<greaterThan> "a" "b".', 'Unexpected literal on line 1.'));
+
     it('should not parse a triple with a literal and a prefixed name type with an inexistent prefix',
       shouldNotParse('<a> <b> "string"^^x:z.',
                      'Undefined prefix "x:" on line 1.', {
@@ -2254,6 +2260,59 @@ describe('Parser', () => {
         ));
 
     describe('should parse literals with datatype as subject',
+        shouldParse(parser, '"a"^^<c> <greaterThan> <d>.',
+            ['"a"^^http://example.org/c', 'greaterThan', 'd']
+        ));
+
+
+    describe('should parse literals with datatype as subject and object',
+        shouldParse(parser, '"a"^^<c> <greaterThan> "b"^^<c>.',
+            ['"a"^^http://example.org/c', 'greaterThan', '"b"^^http://example.org/c']
+        ));
+
+    describe('should parse literals without datatype as subject and object',
+        shouldParse(parser, '"a" <greaterThan> "b".',
+            ['"a"', 'greaterThan', '"b"']
+        ));
+
+    describe('should parse literals without datatype as subject',
+        shouldParse(parser, '"a" <greaterThan> <b>.',
+            ['"a"', 'greaterThan', 'b']
+        ));
+
+    describe('should parse literals with datatype as predicate',
+        shouldParse(parser, '<greaterThan> "a"^^<c> "b"^^<c>.',
+            ['greaterThan', '"a"^^http://example.org/c', '"b"^^http://example.org/c']
+        ));
+
+    describe('should parse literals without datatype as predicate',
+        shouldParse(parser, '<greaterThan> "a" "b".',
+            ['greaterThan', '"a"', '"b"']
+        ));
+
+    describe('should parse subject, predicate, and object as integer',
+        shouldParse(parser, '1 1 1.',
+            ['"1"^^http://www.w3.org/2001/XMLSchema#integer', '"1"^^http://www.w3.org/2001/XMLSchema#integer', '"1"^^http://www.w3.org/2001/XMLSchema#integer']
+        ));
+
+    describe('should parse literals with integer as predicate',
+        shouldParse(parser, '<greaterThan> 1 "b".',
+            ['greaterThan', '"1"^^http://www.w3.org/2001/XMLSchema#integer', '"b"']
+        ));
+
+    describe('should parse literals with datatype as predicate in graph',
+        shouldParse(parser, '<x> <y> {<greaterThan> "a"^^<c> "b"^^<c>}.',
+            ['x', 'y', '_:b0'],
+            ['greaterThan', '"a"^^http://example.org/c', '"b"^^http://example.org/c', '_:b0']
+        ));
+
+    describe('should parse literals without datatype as predicate in graph',
+        shouldParse(parser, '<x> <y> {<greaterThan> "a" "b"}.',
+            ['x', 'y', '_:b0'],
+            ['greaterThan', '"a"', '"b"', '_:b0']
+        ));
+
+    describe('should parse literals with datatype as subject in graph',
         shouldParse(parser, '<a> <b> {"a"^^<c> <greaterThan> "b"^^<c>}.',
             ['a', 'b', '_:b0'],
             ['"a"^^http://example.org/c', 'greaterThan', '"b"^^http://example.org/c', '_:b0']

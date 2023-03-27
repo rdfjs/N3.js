@@ -237,10 +237,12 @@ export default class N3Parser {
       if (!this._n3Mode)
         return this._error('Unexpected literal', token);
 
+      // Regular literal, can still get a datatype or language
       if (token.prefix.length === 0) {
         this._literalValue = token.value;
         return this._completeSubjectLiteral;
       }
+      // Pre-datatyped string literal (prefix stores the datatype)
       else
         this._subject = this._literal(token.value, this._namedNode(token.prefix));
 
@@ -273,6 +275,20 @@ export default class N3Parser {
       this._inversePredicate = true;
     case 'abbreviation':
       this._predicate = this.ABBREVIATIONS[token.value];
+      break;
+    case 'literal':
+      if (!this._n3Mode)
+        return this._error('Unexpected literal', token);
+
+      // Regular literal, can still get a datatype or language
+      if (token.prefix.length === 0) {
+        this._literalValue = token.value;
+        return this._completePredicateLiteral;
+      }
+      // Pre-datatyped string literal (prefix stores the datatype)
+      else
+        this._predicate = this._literal(token.value, this._namedNode(token.prefix));
+
       break;
     case '.':
     case ']':
@@ -593,10 +609,27 @@ export default class N3Parser {
     return { token, literal };
   }
 
-  // Completes a literal in subject position
-  _completeSubjectLiteral(token) {
-    this._subject = this._completeLiteral(token).literal;
-    return this._readPredicateOrNamedGraph;
+  _completeSubjectLiteral(tkn) {
+    const { literal, token } = this._completeLiteral(tkn);
+    this._subject = literal;
+
+    return token === null ?
+      // If the token was consumed, continue with the rest of the input
+      this._readPredicateOrNamedGraph :
+      // Otherwise, consume the token now
+      this._readPredicateOrNamedGraph(token);
+  }
+
+  // Completes a literal in predicate position
+  _completePredicateLiteral(tkn) {
+    const { literal, token } = this._completeLiteral(tkn);
+    this._predicate = literal;
+
+    return token === null ?
+      // If the token was consumed, continue with the rest of the input
+      this._readObject :
+      // Otherwise, consume the token now
+      this._readObject(token);
   }
 
   // Completes a literal in object position
