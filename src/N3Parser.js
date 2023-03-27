@@ -187,6 +187,17 @@ export default class N3Parser {
     return value;
   }
 
+  _readList(token, subject, predicate, object) {
+    // Lists are not allowed inside quoted triples
+    if (this._contextStack.length > 0 && this._contextStack[this._contextStack.length - 1].type === '<<') {
+      return this._error('Unexpected list inside quoted triple', token);
+    }
+    // Start a new list
+    this._saveContext('list', this._graph, subject, predicate, object);
+    this._subject = null;
+    return this._readListItem;
+  }
+
   // ### `_readSubject` reads a quad's subject
   _readSubject(token) {
     this._predicate = null;
@@ -197,14 +208,7 @@ export default class N3Parser {
                         this._subject = this._blankNode(), null, null);
       return this._readBlankNodeHead;
     case '(':
-      // Lists are not allowed inside quoted triples
-      if (this._contextStack.length > 0 && this._contextStack[this._contextStack.length - 1].type === '<<') {
-        return this._error('Unexpected list inside quoted triple', token);
-      }
-      // Start a new list
-      this._saveContext('list', this._graph, this.RDF_NIL, null, null);
-      this._subject = null;
-      return this._readListItem;
+      return this._readList(token, this.RDF_NIL, null, null);
     case '{':
       // Start a new formula
       if (!this._n3Mode)
@@ -282,6 +286,10 @@ export default class N3Parser {
       // Additional semicolons can be safely ignored
       return this._predicate !== null ? this._readPredicate :
              this._error('Expected predicate but got ;', token);
+    case '(':
+      return this._n3Mode ?
+        this._readList(token, this._subject, this.RDF_NIL, null) :
+        this._error(`Expected entity but got ${type}`, token);
     case '[':
       if (this._n3Mode) {
         // Start a new quad with a new blank node as subject
@@ -319,14 +327,7 @@ export default class N3Parser {
                         this._subject = this._blankNode());
       return this._readBlankNodeHead;
     case '(':
-      // Lists are not allowed inside quoted triples
-      if (this._contextStack.length > 0 && this._contextStack[this._contextStack.length - 1].type === '<<') {
-        return this._error('Unexpected list inside quoted triple', token);
-      }
-      // Start a new list
-      this._saveContext('list', this._graph, this._subject, this._predicate, this.RDF_NIL);
-      this._subject = null;
-      return this._readListItem;
+      return this._readList(token, this._subject, this._predicate, this.RDF_NIL);
     case '{':
       // Start a new formula
       if (!this._n3Mode)
@@ -468,6 +469,14 @@ export default class N3Parser {
         // No list tail if this was an empty list
         if (this._subject === this.RDF_NIL)
           return next;
+      // Was this list the parent's predicate?
+      }
+      else if (this._object === null) {
+        next = this._readObject;
+
+        // No list tail if this was an empty list
+        if (this._predicate === this.RDF_NIL)
+          return next;
       }
       // The list was in the parent context's object
       else {
@@ -519,9 +528,13 @@ export default class N3Parser {
 
     // Is this the first element of the list?
     if (previousList === null) {
-      // This list is either the subject or the object of its parent
+      // This list is the subject of the parent
       if (parent.predicate === null)
         parent.subject = list;
+      // The list is the predicate of the parent
+      else if (parent.object === null)
+        parent.predicate = list;
+      // The list is the object of the parent
       else
         parent.object = list;
     }

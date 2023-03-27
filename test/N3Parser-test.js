@@ -2052,6 +2052,46 @@ describe('Parser', () => {
                   ['_:b0', 'f:knows', '_:b1'],
                   ['_:b1', 'f:son', 'ex:joe']));
 
+    describe('should parse an empty list in the subject position',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
+                          '() <p> <o> .',
+                  ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'p',  'o']
+                  ));
+
+    describe('should parse an empty list in the predicate position',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
+                          '<s> () <o> .',
+                  ['s', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil',  'o']
+                  ));
+
+    describe('should parse an empty list in the object position',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
+                          '<s> <p> () .',
+                  ['s', 'p', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']
+                  ));
+
+    describe('should parse a single element list in the subject position',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
+                          '( <s> ) <p> <o> .',
+                  ...list(['_:b0', 's']),
+                  ['_:b0', 'p',  'o']
+                  ));
+
+
+    describe('should parse a single element list in the predicate position',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
+                          '<s> ( <p> ) <o> .',
+                  ...list(['_:b0', 'p']),
+                  ['s', '_:b0',  'o']
+                  ));
+
+    describe('should parse a single element list in the object position',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
+                          '<s> <p> ( <o> ) .',
+                  ...list(['_:b0', 'o']),
+                  ['s', 'p',  '_:b0']
+                  ));
+
     describe('should parse a ! path in a list as subject',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '(<x> :joe!fam:mother <y>) a :List.',
@@ -2269,7 +2309,7 @@ describe('Parser', () => {
 
         for (const [f, triple] of [
           [x => `(${x}) a :List .`, ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',  'ex:List']],
-          // [x => `<l> (${x}) <m> .`, ['l', '_:b0', 'm']],
+          [x => `<l> (${x}) <m> .`, ['l', '_:b0', 'm']],
           [x => `<l> <is> (${x}) .`, ['l', 'is', '_:b0']],
         ]) {
           // eslint-disable-next-line no-inner-declarations
