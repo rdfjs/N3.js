@@ -1,11 +1,13 @@
 import {
   Store,
+  termFromId, termToId,
+} from '../src/';
+import {
   NamedNode,
   Literal,
   DefaultGraph,
   Quad,
-  termFromId, termToId,
-} from '../src/';
+} from '../src/N3DataFactory';
 import namespaces from '../src/IRIs';
 import chai, { expect } from 'chai';
 import { Readable } from 'readable-stream';

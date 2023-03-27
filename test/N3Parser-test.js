@@ -1,5 +1,6 @@
 import rdfDataModel from '@rdfjs/data-model';
-import { Parser, NamedNode, BlankNode, Quad, termFromId } from '../src/';
+import { Parser, termFromId } from '../src/';
+import { NamedNode, BlankNode, Quad } from '../src/N3DataFactory';
 
 const BASE_IRI = 'http://example.org/';
 

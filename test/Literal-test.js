@@ -1,4 +1,4 @@
-import { Literal, NamedNode, Term } from '../src/';
+import { Literal, NamedNode, Term } from '../src/N3DataFactory';
 
 describe('Literal', () => {
   describe('The Literal module', () => {
