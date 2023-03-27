@@ -86,7 +86,7 @@ export default class N3Parser {
       this._inversePredicate = false;
       // In N3, blank nodes are scoped to a formula
       // (using a dot as separator, as a blank node label cannot start with it)
-      this._prefixes._ = (this._graph ? `${this._graph.id.substr(2)}.` : '.');
+      this._prefixes._ = (this._graph ? `${this._graph.value}.` : '.');
       // Quantifiers are scoped to a formula
       this._quantified = Object.create(this._quantified);
     }
