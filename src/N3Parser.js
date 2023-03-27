@@ -29,12 +29,14 @@ export default class N3Parser {
     this._supportsQuads = !(isTurtle || isTriG || isNTriples || isN3);
     // Support nesting of triples
     this._supportsRDFStar = options.rdfStar !== false;
+    // Whether the log:isImpliedBy predicate is supported
+    this._isImpliedBy = options.isImpliedBy !== false;
     // Disable relative IRIs in N-Triples or N-Quads mode
     if (isLineMode)
       this._resolveRelativeIRI = iri => { return null; };
     this._blankNodePrefix = typeof options.blankNodePrefix !== 'string' ? '' :
                               options.blankNodePrefix.replace(/^(?!_:)/, '_:');
-    this._lexer = options.lexer || new N3Lexer({ lineMode: isLineMode, n3: isN3, rdfStar: this._supportsRDFStar });
+    this._lexer = options.lexer || new N3Lexer({ lineMode: isLineMode, n3: isN3, rdfStar: this._supportsRDFStar, isImpliedBy: this._isImpliedBy });
     // Disable explicit quantifiers by default
     this._explicitQuantifiers = !!options.explicitQuantifiers;
   }
@@ -1180,6 +1182,7 @@ function initDataFactory(parser, factory) {
     'a': namedNode(namespaces.rdf.type),
     '=': namedNode(namespaces.owl.sameAs),
     '>': namedNode(namespaces.log.implies),
+    '<': namedNode(namespaces.log.isImpliedBy),
   };
   parser.QUANTIFIERS_GRAPH = namedNode('urn:n3:quantifiers');
 }

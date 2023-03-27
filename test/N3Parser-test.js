@@ -1757,63 +1757,69 @@ describe('Parser', () => {
         [['_:b0_a', 'b', '_:b0_c'], 'a', '_:b0_c']));
   });
 
-  describe('A Parser instance for the N3 format with rdfStar support disabled', () => {
-    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3', rdfStar: false }); }
+  for (const isImpliedBy of [true, false]) {
+    // eslint-disable-next-line no-inner-declarations
+    function implies(from, to) {
+      return isImpliedBy ? [to, 'http://www.w3.org/2000/10/swap/log#isImpliedBy', from] : [from, 'http://www.w3.org/2000/10/swap/log#implies', to];
+    }
 
-    describe('should parse a single triple',
+    describe(`A Parser instance for the N3 format with rdfStar support disabled and with ${isImpliedBy ? 'enabled' : 'disabled'}`, () => {
+      function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3', rdfStar: false, isImpliedBy }); }
+
+      describe('should parse a single triple',
       shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']));
 
-    it('should not parse a default graph',
+      it('should not parse a default graph',
       shouldNotParse(parser, '{}', 'Expected entity but got eof on line 1.'));
 
-    it('should not parse a named graph',
+      it('should not parse a named graph',
       shouldNotParse(parser, '<g> {}', 'Expected entity but got { on line 1.'));
 
-    it('should not parse a named graph with the GRAPH keyword',
+      it('should not parse a named graph with the GRAPH keyword',
       shouldNotParse(parser, 'GRAPH <g> {}', 'Expected entity but got GRAPH on line 1.'));
 
-    it('should not parse a quad',
+      it('should not parse a quad',
       shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "http://example.org/c" on line 1.'));
 
-    describe('allows a blank node in predicate position',
+      describe('allows a blank node in predicate position',
       shouldParse(parser, '<a> [] <c>.', ['a', '_:b0', 'c']));
 
-    describe('allows a blank node label in predicate position',
+      describe('allows a blank node label in predicate position',
       shouldParse(parser, '<a> _:b <c>.', ['a', '_:b0_b', 'c']));
 
-    describe('allows a blank node with properties in predicate position',
+      describe('allows a blank node with properties in predicate position',
       shouldParse(parser, '<a> [<p> <o>] <c>.',
                   ['a', '_:b0', 'c'],
                   ['_:b0', 'p', 'o']));
 
-    describe('should parse a variable',
+      describe('should parse a variable',
       shouldParse(parser, '?a ?b ?c.', ['?a', '?b', '?c']));
 
-    describe('should parse a simple equality',
+      describe('should parse a simple equality',
       shouldParse(parser, '<a> = <b>.',
                   ['a', 'http://www.w3.org/2002/07/owl#sameAs', 'b']));
 
-    describe('should parse a simple right implication',
+      describe('should parse a simple right implication',
       shouldParse(parser, '<a> => <b>.',
                   ['a', 'http://www.w3.org/2000/10/swap/log#implies', 'b']));
 
-    describe('should parse a simple left implication',
+      describe('should parse a simple left implication',
       shouldParse(parser, '<a> <= <b>.',
-                  ['b', 'http://www.w3.org/2000/10/swap/log#implies', 'a']));
+                  implies('b', 'a')));
 
-    describe('should parse a right implication between one-triple graphs',
+      describe('should parse a right implication between one-triple graphs',
       shouldParse(parser, '{ ?a ?b <c>. } => { <d> <e> ?a }.',
                   ['_:b0', 'http://www.w3.org/2000/10/swap/log#implies', '_:b1'],
                   ['?a', '?b', 'c',  '_:b0'],
                   ['d',  'e',  '?a', '_:b1']));
 
-    it('should parse a right implication between one-triple graphs with chunk at first bracket',
+      it('should parse a right implication between one-triple graphs with chunk at first bracket',
       shouldParseChunks(parser, ['{', ' ?a ?b <c>. } => { <d> <e> ?a }.'],
                   ['_:b0', 'http://www.w3.org/2000/10/swap/log#implies', '_:b1'],
                   ['?a', '?b', 'c',  '_:b0'],
                   ['d',  'e',  '?a', '_:b1']));
 
-    describe('should parse a right implication between two-triple graphs',
+      describe('should parse a right implication between two-triple graphs',
       shouldParse(parser, '{ ?a ?b <c>. <d> <e> <f>. } => { <d> <e> ?a, <f> }.',
                   ['_:b0', 'http://www.w3.org/2000/10/swap/log#implies', '_:b1'],
                   ['?a', '?b', 'c',  '_:b0'],
@@ -1821,27 +1827,27 @@ describe('Parser', () => {
                   ['d',  'e',  '?a', '_:b1'],
                   ['d',  'e',  'f',  '_:b1']));
 
-    describe('should parse a left implication between one-triple graphs',
+      describe('should parse a left implication between one-triple graphs',
       shouldParse(parser, '{ ?a ?b <c>. } <= { <d> <e> ?a }.',
-                  ['_:b1', 'http://www.w3.org/2000/10/swap/log#implies', '_:b0'],
+                  implies('_:b1', '_:b0'),
                   ['?a', '?b', 'c',  '_:b0'],
                   ['d',  'e',  '?a', '_:b1']));
 
-    describe('should parse a left implication between two-triple graphs',
+      describe('should parse a left implication between two-triple graphs',
       shouldParse(parser, '{ ?a ?b <c>. <d> <e> <f>. } <= { <d> <e> ?a, <f> }.',
-                  ['_:b1', 'http://www.w3.org/2000/10/swap/log#implies', '_:b0'],
+                  implies('_:b1', '_:b0'),
                   ['?a', '?b', 'c',  '_:b0'],
                   ['d',  'e',  'f',  '_:b0'],
                   ['d',  'e',  '?a', '_:b1'],
                   ['d',  'e',  'f',  '_:b1']));
 
-    describe('should parse an equality of one-triple graphs',
+      describe('should parse an equality of one-triple graphs',
       shouldParse(parser, '{ ?a ?b <c>. } = { <d> <e> ?a }.',
                   ['_:b0', 'http://www.w3.org/2002/07/owl#sameAs', '_:b1'],
                   ['?a', '?b', 'c',  '_:b0'],
                   ['d',  'e',  '?a', '_:b1']));
 
-    describe('should parse an equality of two-triple graphs',
+      describe('should parse an equality of two-triple graphs',
       shouldParse(parser, '{ ?a ?b <c>. <d> <e> <f>. } = { <d> <e> ?a, <f> }.',
                   ['_:b0', 'http://www.w3.org/2002/07/owl#sameAs', '_:b1'],
                   ['?a', '?b', 'c',  '_:b0'],
@@ -1849,17 +1855,17 @@ describe('Parser', () => {
                   ['d',  'e',  '?a', '_:b1'],
                   ['d',  'e',  'f',  '_:b1']));
 
-    describe('should parse nested implication graphs',
+      describe('should parse nested implication graphs',
       shouldParse(parser, '{ { ?a ?b ?c }<={ ?d ?e ?f }. } <= { { ?g ?h ?i } => { ?j ?k ?l } }.',
-                  ['_:b3', 'http://www.w3.org/2000/10/swap/log#implies', '_:b0'],
-                  ['_:b2', 'http://www.w3.org/2000/10/swap/log#implies', '_:b1', '_:b0'],
+                  implies('_:b3', '_:b0'),
+                  [...implies('_:b2', '_:b1'), '_:b0'],
                   ['?a', '?b', '?c', '_:b1'],
                   ['?d', '?e', '?f', '_:b2'],
                   ['_:b4', 'http://www.w3.org/2000/10/swap/log#implies', '_:b5', '_:b3'],
                   ['?g', '?h', '?i', '_:b4'],
                   ['?j', '?k', '?l', '_:b5']));
 
-    describe('should not reuse identifiers of blank nodes within and outside of formulas',
+      describe('should not reuse identifiers of blank nodes within and outside of formulas',
       shouldParse(parser, '_:a _:b _:c. { _:a _:b _:c } => { { _:a _:b _:c } => { _:a _:b _:c } }.',
                   ['_:b0_a', '_:b0_b', '_:b0_c'],
                   ['_:b0', 'http://www.w3.org/2000/10/swap/log#implies', '_:b1', ''],
@@ -1868,107 +1874,107 @@ describe('Parser', () => {
                   ['_:b2.a', '_:b2.b', '_:b2.c', '_:b2'],
                   ['_:b3.a', '_:b3.b', '_:b3.c', '_:b3']));
 
-    describe('should parse a @forSome statement',
+      describe('should parse a @forSome statement',
       shouldParse(parser, '@forSome <x>. <x> <x> <x>.',
                   ['_:b0', '_:b0', '_:b0']));
 
-    describe('should parse a named graph in a list',
+      describe('should parse a named graph in a list',
       shouldParse(parser, '<s> <p> ({<a> <b> <c>}) .',
                   ['s', 'p', '_:b1'],
                   ...list(['_:b1', '_:b0']),
                   ['a', 'b', 'c', '_:b0']
                   ));
 
-    describe('should parse a named graph as the second element in a list',
+      describe('should parse a named graph as the second element in a list',
       shouldParse(parser, '<s> <p> (<x> {<a> <b> <c>}) .',
                   ['s', 'p', '_:b0'],
                   ...list(['_:b0', 'x'], ['_:b2', '_:b1']),
                   ['a', 'b', 'c', '_:b1']
                   ));
 
-    describe('should parse a named graph as the second element in a list of 3 elements',
+      describe('should parse a named graph as the second element in a list of 3 elements',
       shouldParse(parser, '<s> <p> (<x> {<a> <b> <c>} <y>) .',
                   ['s', 'p', '_:b0'],
                   ...list(['_:b0', 'x'], ['_:b2', '_:b1'], ['_:b3', 'y']),
                   ['a', 'b', 'c', '_:b1']
                   ));
 
-    describe('should parse a named graph in a subject list',
+      describe('should parse a named graph in a subject list',
       shouldParse(parser, '({<a> <b> <c>}) <p> <o> .',
                   ['_:b1', 'p', 'o'],
                   ...list(['_:b1', '_:b0']),
                   ['a', 'b', 'c', '_:b0']
                   ));
 
-    describe('should parse a named graph as the second element in a subject list',
+      describe('should parse a named graph as the second element in a subject list',
       shouldParse(parser, '(<x> {<a> <b> <c>}) <p> <o> .',
                   ['_:b0', 'p', 'o'],
                   ...list(['_:b0', 'x'], ['_:b2', '_:b1']),
                   ['a', 'b', 'c', '_:b1']
                   ));
 
-    describe('should parse a named graph as the second element in a subject list with 3 elements',
+      describe('should parse a named graph as the second element in a subject list with 3 elements',
       shouldParse(parser, '(<x> {<a> <b> <c>} <y>) <p> <o> .',
                   ['_:b0', 'p', 'o'],
                   ...list(['_:b0', 'x'], ['_:b2', '_:b1'], ['_:b3', 'y']),
                   ['a', 'b', 'c', '_:b1']
                   ));
 
-    describe('should parse a @forSome statement with multiple entities',
+      describe('should parse a @forSome statement with multiple entities',
       shouldParse(parser, '@prefix a: <a:>. @base <b:>. @forSome a:x, <y>, a:z. a:x <y> a:z.',
                   ['_:b0', '_:b1', '_:b2']));
 
-    it('should not parse a @forSome statement with an invalid prefix',
+      it('should not parse a @forSome statement with an invalid prefix',
       shouldNotParse(parser, '@forSome a:b.',
                      'Undefined prefix "a:" on line 1.'));
 
-    it('should not parse a @forSome statement with a blank node',
+      it('should not parse a @forSome statement with a blank node',
       shouldNotParse(parser, '@forSome _:a.',
                      'Unexpected blank on line 1.'));
 
-    it('should not parse a @forSome statement with a variable',
+      it('should not parse a @forSome statement with a variable',
       shouldNotParse(parser, '@forSome ?a.',
                      'Unexpected var on line 1.'));
 
-    describe('should correctly scope @forSome statements',
+      describe('should correctly scope @forSome statements',
       shouldParse(parser, '@forSome <x>. <x> <x> { @forSome <x>. <x> <x> <x>. }. <x> <x> <x>.',
                   ['_:b0', '_:b0', '_:b1'],
                   ['_:b2', '_:b2', '_:b2', '_:b1'],
                   ['_:b0', '_:b0', '_:b0']));
 
-    describe('should parse a @forAll statement',
+      describe('should parse a @forAll statement',
       shouldParse(parser, '@forAll  <x>. <x> <x> <x>.',
                   ['?b0', '?b0', '?b0']));
 
-    describe('should parse a @forAll statement with multiple entities',
+      describe('should parse a @forAll statement with multiple entities',
       shouldParse(parser, '@prefix a: <a:>. @base <b:>. @forAll  a:x, <y>, a:z. a:x <y> a:z.',
                   ['?b0', '?b1', '?b2']));
 
-    it('should not parse a @forAll statement with an invalid prefix',
+      it('should not parse a @forAll statement with an invalid prefix',
       shouldNotParse(parser, '@forAll a:b.',
                      'Undefined prefix "a:" on line 1.'));
 
-    it('should not parse a @forAll statement with a blank node',
+      it('should not parse a @forAll statement with a blank node',
       shouldNotParse(parser, '@forAll _:a.',
                      'Unexpected blank on line 1.'));
 
-    it('should not parse a @forAll statement with a variable',
+      it('should not parse a @forAll statement with a variable',
       shouldNotParse(parser, '@forAll ?a.',
                      'Unexpected var on line 1.'));
 
-    describe('should correctly scope @forAll statements',
+      describe('should correctly scope @forAll statements',
       shouldParse(parser, '@forAll <x>. <x> <x> { @forAll <x>. <x> <x> <x>. }. <x> <x> <x>.',
                   ['?b0', '?b0', '_:b1'],
                   ['?b2', '?b2', '?b2', '_:b1'],
                   ['?b0', '?b0', '?b0']));
 
-    describe('should parse a ! path of length 2 as subject',
+      describe('should parse a ! path of length 2 as subject',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           ':joe!fam:mother a fam:Person.',
                   ['ex:joe', 'f:mother', '_:b0'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']));
 
-    describe('should parse a ! path of length 4 as subject',
+      describe('should parse a ! path of length 4 as subject',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>. @prefix loc: <l:>.' +
                           ':joe!fam:mother!loc:office!loc:zip loc:code 1234.',
                   ['ex:joe', 'f:mother', '_:b0'],
@@ -1976,13 +1982,13 @@ describe('Parser', () => {
                   ['_:b1',   'l:zip',    '_:b2'],
                   ['_:b2',   'l:code',   '"1234"^^http://www.w3.org/2001/XMLSchema#integer']));
 
-    describe('should parse a ! path of length 2 as object',
+      describe('should parse a ! path of length 2 as object',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '<x> <is> :joe!fam:mother.',
                   ['x', 'is', '_:b0'],
                   ['ex:joe', 'f:mother', '_:b0']));
 
-    describe('should parse a ! path of length 4 as object',
+      describe('should parse a ! path of length 4 as object',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>. @prefix loc: <l:>.' +
                           '<x> <is> :joe!fam:mother!loc:office!loc:zip.',
                   ['x',      'is',       '_:b2'],
@@ -1990,13 +1996,13 @@ describe('Parser', () => {
                   ['_:b0',   'l:office', '_:b1'],
                   ['_:b1',   'l:zip',    '_:b2']));
 
-    describe('should parse a ^ path of length 2 as subject',
+      describe('should parse a ^ path of length 2 as subject',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           ':joe^fam:son a fam:Person.',
                   ['_:b0', 'f:son', 'ex:joe'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']));
 
-    describe('should parse a ^ path of length 4 as subject',
+      describe('should parse a ^ path of length 4 as subject',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           ':joe^fam:son^fam:sister^fam:mother a fam:Person.',
                   ['_:b0', 'f:son',    'ex:joe'],
@@ -2004,13 +2010,13 @@ describe('Parser', () => {
                   ['_:b2', 'f:mother', '_:b1'],
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']));
 
-    describe('should parse a ^ path of length 2 as object',
+      describe('should parse a ^ path of length 2 as object',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '<x> <is> :joe^fam:son.',
                   ['x',    'is',    '_:b0'],
                   ['_:b0', 'f:son', 'ex:joe']));
 
-    describe('should parse a ^ path of length 4 as object',
+      describe('should parse a ^ path of length 4 as object',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '<x> <is> :joe^fam:son^fam:sister^fam:mother.',
                   ['x',    'is',       '_:b2'],
@@ -2018,67 +2024,67 @@ describe('Parser', () => {
                   ['_:b1', 'f:sister', '_:b0'],
                   ['_:b2', 'f:mother', '_:b1']));
 
-    describe('should parse mixed !/^ paths as subject',
+      describe('should parse mixed !/^ paths as subject',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           ':joe!fam:mother^fam:mother a fam:Person.',
                   ['ex:joe', 'f:mother', '_:b0'],
                   ['_:b1',   'f:mother', '_:b0'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']));
 
-    describe('should parse mixed !/^ paths as object',
+      describe('should parse mixed !/^ paths as object',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '<x> <is> :joe!fam:mother^fam:mother.',
                   ['x', 'is', '_:b1'],
                   ['ex:joe', 'f:mother', '_:b0'],
                   ['_:b1',   'f:mother', '_:b0']));
 
-    describe('should parse a ! path in a blank node as subject',
+      describe('should parse a ! path in a blank node as subject',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '[fam:knows :joe!fam:mother] a fam:Person.',
                   ['_:b0', 'f:knows', '_:b1'],
                   ['ex:joe', 'f:mother', '_:b1'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']));
 
-    describe('should parse a ! path in a blank node as object',
+      describe('should parse a ! path in a blank node as object',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '<x> <is> [fam:knows :joe!fam:mother].',
                   ['x', 'is', '_:b0'],
                   ['_:b0', 'f:knows', '_:b1'],
                   ['ex:joe', 'f:mother', '_:b1']));
 
-    describe('should parse a ^ path in a blank node as subject',
+      describe('should parse a ^ path in a blank node as subject',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '[fam:knows :joe^fam:son] a fam:Person.',
                   ['_:b0', 'f:knows', '_:b1'],
                   ['_:b1', 'f:son', 'ex:joe'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']));
 
-    describe('should parse a ^ path in a blank node as object',
+      describe('should parse a ^ path in a blank node as object',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '<x> <is> [fam:knows :joe^fam:son].',
                   ['x', 'is', '_:b0'],
                   ['_:b0', 'f:knows', '_:b1'],
                   ['_:b1', 'f:son', 'ex:joe']));
 
-    describe('should parse an empty list in the subject position',
+      describe('should parse an empty list in the subject position',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '() <p> <o> .',
                   ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'p',  'o']
                   ));
 
-    describe('should parse an empty list in the predicate position',
+      describe('should parse an empty list in the predicate position',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '<s> () <o> .',
                   ['s', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil',  'o']
                   ));
 
-    describe('should parse an empty list in the object position',
+      describe('should parse an empty list in the object position',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '<s> <p> () .',
                   ['s', 'p', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']
                   ));
 
-    describe('should parse a single element list in the subject position',
+      describe('should parse a single element list in the subject position',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '( <s> ) <p> <o> .',
                   ...list(['_:b0', 's']),
@@ -2086,21 +2092,21 @@ describe('Parser', () => {
                   ));
 
 
-    describe('should parse a single element list in the predicate position',
+      describe('should parse a single element list in the predicate position',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '<s> ( <p> ) <o> .',
                   ...list(['_:b0', 'p']),
                   ['s', '_:b0',  'o']
                   ));
 
-    describe('should parse a single element list in the object position',
+      describe('should parse a single element list in the object position',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '<s> <p> ( <o> ) .',
                   ...list(['_:b0', 'o']),
                   ['s', 'p',  '_:b0']
                   ));
 
-    describe('should parse a ! path in a list as subject',
+      describe('should parse a ! path in a list as subject',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '(<x> :joe!fam:mother <y>) a :List.',
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',  'ex:List'],
@@ -2112,7 +2118,7 @@ describe('Parser', () => {
                   ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
                   ['ex:joe', 'f:mother', '_:b2']));
 
-    describe('should parse a ! path in a list as object',
+      describe('should parse a ! path in a list as object',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '<l> <is> (<x> :joe!fam:mother <y>).',
                   ['l', 'is', '_:b0'],
@@ -2124,7 +2130,7 @@ describe('Parser', () => {
                   ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
                   ['ex:joe', 'f:mother', '_:b2']));
 
-    describe('should parse a ^ path in a list as subject',
+      describe('should parse a ^ path in a list as subject',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '(<x> :joe^fam:son <y>) a :List.',
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',  'ex:List'],
@@ -2136,7 +2142,7 @@ describe('Parser', () => {
                   ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
                   ['_:b2', 'f:son', 'ex:joe']));
 
-    describe('should parse a ^ path in a list as object',
+      describe('should parse a ^ path in a list as object',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '<l> <is> (<x> :joe^fam:son <y>).',
                   ['l', 'is', '_:b0'],
@@ -2148,7 +2154,7 @@ describe('Parser', () => {
                   ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
                   ['_:b2', 'f:son', 'ex:joe']));
 
-    describe('should parse a ! path of length 2 as subject in a list',
+      describe('should parse a ! path of length 2 as subject in a list',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '(:joe!fam:mother) a fam:Person.',
                   ['ex:joe', 'f:mother', '_:b1'],
@@ -2156,7 +2162,7 @@ describe('Parser', () => {
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']));
 
-    describe('should parse a !^ path of length 3 as subject in a list',
+      describe('should parse a !^ path of length 3 as subject in a list',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '(:joe!fam:mother^fam:father) a fam:Person.',
                   ['ex:joe', 'f:mother', '_:b1'],
@@ -2165,20 +2171,20 @@ describe('Parser', () => {
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']));
 
-    describe('should parse a ! path of length 2 starting with an empty list',
+      describe('should parse a ! path of length 2 starting with an empty list',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '()!fam:mother a fam:Person.',
                   ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'f:mother', '_:b0'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']));
 
-    describe('should parse a ! path of length 2 starting with a non-empty list',
+      describe('should parse a ! path of length 2 starting with a non-empty list',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '( :a )!fam:mother a fam:Person.',
                   ...list(['_:b0', 'ex:a']),
                   ['_:b0', 'f:mother', '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']));
 
-    describe('should parse a ! path of length 2 starting with a non-empty list in another list',
+      describe('should parse a ! path of length 2 starting with a non-empty list in another list',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '(( :a )!fam:mother 1) a fam:Person.',
                   ...list(['_:b0', '_:b2'], ['_:b3', '"1"^^http://www.w3.org/2001/XMLSchema#integer']),
@@ -2186,7 +2192,7 @@ describe('Parser', () => {
                   ['_:b1', 'f:mother', '_:b2'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']));
 
-    describe('should parse a ! path of length 2 starting with an empty list in another list',
+      describe('should parse a ! path of length 2 starting with an empty list in another list',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '(()!fam:mother 1) a fam:Person.',
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person'],
@@ -2194,7 +2200,7 @@ describe('Parser', () => {
                   ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'f:mother', '_:b1']
                   ));
 
-    describe('should parse a ! path of length 2 starting with an empty list in another list as second element',
+      describe('should parse a ! path of length 2 starting with an empty list in another list as second element',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '(1 ()!fam:mother) a fam:Person.',
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person'],
@@ -2202,14 +2208,14 @@ describe('Parser', () => {
                   ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'f:mother', '_:b2']
                   ));
 
-    describe('should parse a ! path of length 2 starting with an empty list in another list of one element',
+      describe('should parse a ! path of length 2 starting with an empty list in another list of one element',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '(()!fam:mother) a fam:Person.',
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person'],
                   ...list(['_:b0', '_:b1']),
                   ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'f:mother', '_:b1']));
 
-    describe('should parse a ! path of length 2 as nested subject in a list',
+      describe('should parse a ! path of length 2 as nested subject in a list',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '((:joe!fam:mother) 1) a fam:Person.',
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person'],
@@ -2217,7 +2223,7 @@ describe('Parser', () => {
                   ...list(['_:b1', '_:b2']),
                   ['ex:joe', 'f:mother', '_:b2']));
 
-    describe('should parse a birthday rule',
+      describe('should parse a birthday rule',
       shouldParse(parser,
         '@prefix foaf: <http://xmlns.com/foaf/0.1/> .' +
         '@prefix math: <http://www.w3.org/2000/10/swap/math#> .' +
@@ -2229,9 +2235,7 @@ describe('Parser', () => {
         '  ((?date ?s!foaf:birthday)!math:difference 31622400) math:integerQuotient ?age .' +
         '} .',
           ['?x', 'http://example.org/trueOnDate', '?date', '_:b0'],
-          // eslint-disable-next-line no-warning-comments
-          // FIXME: when merging with https://github.com/rdfjs/N3.js/pull/327
-          ['_:b1', 'http://www.w3.org/2000/10/swap/log#implies', '_:b0'],
+          implies('_:b1', '_:b0'),
           ...[
             ...list(['_:b2', '_:b6'], ['_:b7', '"31622400"^^http://www.w3.org/2001/XMLSchema#integer']),
             ['_:b2', 'http://www.w3.org/2000/10/swap/math#integerQuotient', '?age'],
@@ -2241,7 +2245,7 @@ describe('Parser', () => {
           ].map(elem => [...elem, '_:b1'])
         ));
 
-    describe('should parse a formula as list item',
+      describe('should parse a formula as list item',
         shouldParse(parser, '<a> <findAll> ( <b> { <b> a <type>. <b> <something> <foo> } <o> ).',
         ['a', 'findAll', '_:b0'],
         ...list(['_:b0', 'b'], ['_:b2', '_:b1'], ['_:b3', 'o']),
@@ -2249,91 +2253,92 @@ describe('Parser', () => {
         ['b', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'type', '_:b1']
     ));
 
-    it('should not parse an invalid ! path',
+      it('should not parse an invalid ! path',
       shouldNotParse(parser, '<a>!"invalid" ', 'Expected entity but got literal on line 1.'));
 
-    it('should not parse an invalid ^ path',
+      it('should not parse an invalid ^ path',
       shouldNotParse(parser, '<a>^"invalid" ', 'Expected entity but got literal on line 1.'));
 
-    describe('should parse literal as subject',
+      describe('should parse literal as subject',
         shouldParse(parser, '<a> <b> {1 <greaterThan> 0}.',
             ['a', 'b', '_:b0'],
             ['"1"^^http://www.w3.org/2001/XMLSchema#integer', 'greaterThan', '"0"^^http://www.w3.org/2001/XMLSchema#integer', '_:b0']
         ));
 
-    describe('should parse literals with datatype as subject',
+      describe('should parse literals with datatype as subject',
         shouldParse(parser, '"a"^^<c> <greaterThan> <d>.',
             ['"a"^^http://example.org/c', 'greaterThan', 'd']
         ));
 
 
-    describe('should parse literals with datatype as subject and object',
+      describe('should parse literals with datatype as subject and object',
         shouldParse(parser, '"a"^^<c> <greaterThan> "b"^^<c>.',
             ['"a"^^http://example.org/c', 'greaterThan', '"b"^^http://example.org/c']
         ));
 
-    describe('should parse literals without datatype as subject and object',
+      describe('should parse literals without datatype as subject and object',
         shouldParse(parser, '"a" <greaterThan> "b".',
             ['"a"', 'greaterThan', '"b"']
         ));
 
-    describe('should parse literals without datatype as subject',
+      describe('should parse literals without datatype as subject',
         shouldParse(parser, '"a" <greaterThan> <b>.',
             ['"a"', 'greaterThan', 'b']
         ));
 
-    describe('should parse literals with datatype as predicate',
+      describe('should parse literals with datatype as predicate',
         shouldParse(parser, '<greaterThan> "a"^^<c> "b"^^<c>.',
             ['greaterThan', '"a"^^http://example.org/c', '"b"^^http://example.org/c']
         ));
 
-    describe('should parse literals without datatype as predicate',
+      describe('should parse literals without datatype as predicate',
         shouldParse(parser, '<greaterThan> "a" "b".',
             ['greaterThan', '"a"', '"b"']
         ));
 
-    describe('should parse subject, predicate, and object as integer',
+      describe('should parse subject, predicate, and object as integer',
         shouldParse(parser, '1 1 1.',
             ['"1"^^http://www.w3.org/2001/XMLSchema#integer', '"1"^^http://www.w3.org/2001/XMLSchema#integer', '"1"^^http://www.w3.org/2001/XMLSchema#integer']
         ));
 
-    describe('should parse literals with integer as predicate',
+      describe('should parse literals with integer as predicate',
         shouldParse(parser, '<greaterThan> 1 "b".',
             ['greaterThan', '"1"^^http://www.w3.org/2001/XMLSchema#integer', '"b"']
         ));
 
-    describe('should parse literals with datatype as predicate in graph',
+      describe('should parse literals with datatype as predicate in graph',
         shouldParse(parser, '<x> <y> {<greaterThan> "a"^^<c> "b"^^<c>}.',
             ['x', 'y', '_:b0'],
             ['greaterThan', '"a"^^http://example.org/c', '"b"^^http://example.org/c', '_:b0']
         ));
 
-    describe('should parse literals without datatype as predicate in graph',
+      describe('should parse literals without datatype as predicate in graph',
         shouldParse(parser, '<x> <y> {<greaterThan> "a" "b"}.',
             ['x', 'y', '_:b0'],
             ['greaterThan', '"a"', '"b"', '_:b0']
         ));
 
-    describe('should parse literals with datatype as subject in graph',
+      describe('should parse literals with datatype as subject in graph',
         shouldParse(parser, '<a> <b> {"a"^^<c> <greaterThan> "b"^^<c>}.',
             ['a', 'b', '_:b0'],
             ['"a"^^http://example.org/c', 'greaterThan', '"b"^^http://example.org/c', '_:b0']
         ));
 
-    describe('should parse literals with language as subject',
+      describe('should parse literals with language as subject',
         shouldParse(parser, '<a> <b> {"bonjour"@fr <sameAs> "hello"@en}.',
             ['a', 'b', '_:b0'],
             ['"bonjour"@fr', 'sameAs', '"hello"@en', '_:b0']
         ));
 
-    it('should not parse RDF-star in the subject position',
+      it('should not parse RDF-star in the subject position',
       shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
         'Unexpected RDF-star syntax on line 1.'));
 
-    it('should not parse RDF-star in the object position',
+      it('should not parse RDF-star in the object position',
       shouldNotParse(parser, '<a> <b> <<<a> <b> <c>>>.',
         'Unexpected RDF-star syntax on line 1.'));
-  });
+    });
+  }
 
   describe('A Parser instance for the N3 format testing rdfStar support', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3' }); }

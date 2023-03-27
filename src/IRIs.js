@@ -26,5 +26,6 @@ export default {
   },
   log: {
     implies: `${SWAP}log#implies`,
+    isImpliedBy: `${SWAP}log#isImpliedBy`,
   },
 };

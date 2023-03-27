@@ -802,16 +802,30 @@ describe('Lexer', () => {
     it('should tokenize the left implication',
       shouldTokenize('<a> <= <b> ',
                      { type: 'IRI', value: 'a', line: 1 },
-                     { type: 'inverse', value: '>', line: 1 },
+                     { type: 'abbreviation', value: '<', line: 1 },
                      { type: 'IRI', value: 'b', line: 1 },
                      { type: 'eof', line: 1 }));
 
     it('should tokenize a split left implication',
       shouldTokenize(streamOf('<a> <', '= <b> '),
-        { type: 'IRI', value: 'a', line: 1 },
-        { type: 'inverse', value: '>', line: 1 },
-        { type: 'IRI', value: 'b', line: 1 },
-        { type: 'eof', line: 1 }));
+                     { type: 'IRI', value: 'a', line: 1 },
+                     { type: 'abbreviation', value: '<', line: 1 },
+                     { type: 'IRI', value: 'b', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize a split left implication as inverse of [=>] when isImpliedBy is disabled',
+      shouldTokenize(new Lexer({ isImpliedBy: false }), streamOf('<a> <', '= <b> '),
+                     { type: 'IRI', value: 'a', line: 1 },
+                     { type: 'inverse', value: '>', line: 1 },
+                     { type: 'IRI', value: 'b', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize a left implication as inverse of [=>] when isImpliedBy is disabled',
+      shouldTokenize(new Lexer({ isImpliedBy: false }), streamOf('<a> <= <b> '),
+                     { type: 'IRI', value: 'a', line: 1 },
+                     { type: 'inverse', value: '>', line: 1 },
+                     { type: 'IRI', value: 'b', line: 1 },
+                     { type: 'eof', line: 1 }));
 
     it('should tokenize paths',
       shouldTokenize(':joe!fam:mother!loc:office!loc:zip :joe!fam:mother^fam:mother',
