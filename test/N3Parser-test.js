@@ -1866,22 +1866,43 @@ describe('Parser', () => {
 
     describe('should parse a named graph in a list',
       shouldParse(parser, '<s> <p> ({<a> <b> <c>}) .',
+                  ['s', 'p', '_:b1'],
+                  ...list(['_:b1', '_:b0']),
+                  ['a', 'b', 'c', '_:b0']
+                  ));
+
+    describe('should parse a named graph as the second element in a list',
+      shouldParse(parser, '<s> <p> (<x> {<a> <b> <c>}) .',
                   ['s', 'p', '_:b0'],
-                  ...list(['_:b0', '_:b1']),
+                  ...list(['_:b0', 'x'], ['_:b2', '_:b1']),
                   ['a', 'b', 'c', '_:b1']
                   ));
 
-    describe('should parse a named graph as the second element in a list',
-      shouldParse(parser, '<s> <p> (<x> {<a> <b> <c>}) .',
+    describe('should parse a named graph as the second element in a list of 3 elements',
+      shouldParse(parser, '<s> <p> (<x> {<a> <b> <c>} <y>) .',
                   ['s', 'p', '_:b0'],
-                  ...list(['_:b0', 'x'], ['_:b1', '_:b2']),
-                  ['a', 'b', 'c', '_:b2']
+                  ...list(['_:b0', 'x'], ['_:b2', '_:b1'], ['_:b3', 'y']),
+                  ['a', 'b', 'c', '_:b1']
                   ));
 
-    describe('should parse a named graph as the second element in a list',
-      shouldParse(parser, '<s> <p> (<x> {<a> <b> <c>}) .',
-                  ['s', 'p', '_:b0'],
-                  ...list(['_:b0', '_:b1'], ['_:b2', 'x']),
+    describe('should parse a named graph in a subject list',
+      shouldParse(parser, '({<a> <b> <c>}) <p> <o> .',
+                  ['_:b1', 'p', 'o'],
+                  ...list(['_:b1', '_:b0']),
+                  ['a', 'b', 'c', '_:b0']
+                  ));
+
+    describe('should parse a named graph as the second element in a subject list',
+      shouldParse(parser, '(<x> {<a> <b> <c>}) <p> <o> .',
+                  ['_:b0', 'p', 'o'],
+                  ...list(['_:b0', 'x'], ['_:b2', '_:b1']),
+                  ['a', 'b', 'c', '_:b1']
+                  ));
+
+    describe('should parse a named graph as the second element in a subject list with 3 elements',
+      shouldParse(parser, '(<x> {<a> <b> <c>} <y>) <p> <o> .',
+                  ['_:b0', 'p', 'o'],
+                  ...list(['_:b0', 'x'], ['_:b2', '_:b1'], ['_:b3', 'y']),
                   ['a', 'b', 'c', '_:b1']
                   ));
 
@@ -2175,7 +2196,7 @@ describe('Parser', () => {
     describe('should parse a formula as list item',
         shouldParse(parser, '<a> <findAll> ( <b> { <b> a <type>. <b> <something> <foo> } <o> ).',
         ['a', 'findAll', '_:b0'],
-        ...list(['_:b0', 'b'], ['_:b2', 'o']),
+        ...list(['_:b0', 'b'], ['_:b2', '_:b1'], ['_:b3', 'o']),
         ['b', 'something', 'foo', '_:b1'],
         ['b', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'type', '_:b1']
     ));
@@ -2883,7 +2904,7 @@ function shouldParse(parser, input) {
     // Ignore degenerate cases (for now)
     .filter(arr => arr.length > 0 && (arr.length !== 1 || arr[0] !== ''))
     ) {
-      // it(`should run on chunking ${JSON.stringify(chunk)}`, _shouldParseChunks(parser, chunk, items));
+      it(`should run on chunking ${JSON.stringify(chunk)}`, _shouldParseChunks(parser, chunk, items));
     }
 
     it('should run on full string', done => {
