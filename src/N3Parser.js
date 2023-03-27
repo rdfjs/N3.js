@@ -472,9 +472,6 @@ export default class N3Parser {
       // Was this list the parent's predicate?
       }
       else if (this._object === null) {
-        // Note that we *must* already be in N3 mode if the predicate is a list
-        // so we must use the path reader
-        // TODO: Check if can have n3 paths on the predicate (by looking at the grammar)
         next = this._readObject;
 
         // No list tail if this was an empty list
