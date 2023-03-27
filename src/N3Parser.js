@@ -418,9 +418,8 @@ export default class N3Parser {
   }
 
   // ### `_readListItem` reads items from a list
-  _readListItem(token) {
-    let item = null,                      // The item of the list
-        list = null,                      // The list itself
+  _readListItem(token, item = null /* The list item */) {
+    let list = null,                      // The list itself
         next = this._readListItem;        // The next function to execute
     const previousList = this._subject,   // The previous list that contains this list
         stack = this._contextStack,       // The stack of parent contexts
@@ -510,7 +509,7 @@ export default class N3Parser {
       this._graph = null;
       break;
     default:
-      if ((item = this._readEntity(token)) === undefined)
+      if (item === null && (item = this._readEntity(token)) === undefined)
         return;
     }
 
@@ -613,12 +612,20 @@ export default class N3Parser {
     if (token.type !== '}')
       return this._readPunctuation(token);
 
+    const graph = this._graph;
+
     // Store the last quad of the formula
     if (this._subject !== null)
-      this._emit(this._subject, this._predicate, this._object, this._graph);
+      this._emit(this._subject, this._predicate, this._object, graph);
 
     // Restore the parent context containing this formula
     this._restoreContext('formula', token);
+
+    // If the formula was in a list context, continue reading the list
+    if (this._contextStack.length > 0 && this._contextStack[this._contextStack.length - 1].type === 'list') {
+      return this._readListItem(token, graph);
+    }
+
     // If the formula was the subject, continue reading the predicate.
     // If the formula was the object, read punctuation.
     return this._object === null ? this._readPredicate : this._getContextEndReader();
