@@ -1,4 +1,9 @@
 import {
+  termToId,
+  termFromId,
+} from '../src/';
+
+import {
   Term,
   NamedNode,
   BlankNode,
@@ -6,11 +11,6 @@ import {
   Variable,
   DefaultGraph,
   Quad,
-  termToId,
-  termFromId,
-} from '../src/';
-
-import {
   escapeQuotes,
   unescapeQuotes,
 } from '../src/N3DataFactory';
