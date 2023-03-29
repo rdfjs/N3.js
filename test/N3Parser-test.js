@@ -1,4 +1,6 @@
-import { Parser, NamedNode, BlankNode, Quad, termFromId } from '../src/';
+import rdfDataModel from '@rdfjs/data-model';
+import { isomorphic } from 'rdf-isomorphic';
+import { Parser, NamedNode, BlankNode, Quad, termFromId, DataFactory as DF } from '../src/';
 
 const BASE_IRI = 'http://example.org/';
 
@@ -1869,6 +1871,83 @@ describe('Parser', () => {
         { s: 'n-http://example.org/a', p: 'v-b', o: 'l-1',    g: 'defaultGraph' },
         { s: 'n-http://example.org/a', p: 'v-b', o: 'b-b0_d', g: 'defaultGraph' },
       ]);
+    });
+  });
+
+  describe('A parser instance with external data factory', () => {
+    it('should parse', () => {
+      const parser = new Parser({
+        baseIRI: BASE_IRI,
+        format: 'n3',
+        factory: rdfDataModel,
+      });
+      const quads = parser.parse(`
+        @prefix : <http://example.com/> .
+        { :weather a :Raining } => { :weather a :Cloudy } .
+      `);
+
+      quads.length.should.be.gt(0);
+
+      const g1 = DF.blankNode();
+      const g2 = DF.blankNode();
+
+      isomorphic(quads, [
+        DF.quad(
+          DF.namedNode('http://example.com/weather'),
+          DF.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+          DF.namedNode('http://example.com/Raining'),
+          g1
+        ),
+        DF.quad(
+          DF.namedNode('http://example.com/weather'),
+          DF.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+          DF.namedNode('http://example.com/Cloudy'),
+          g2
+        ),
+        DF.quad(
+          g1,
+          DF.namedNode('http://www.w3.org/2000/10/swap/log#implies'),
+          g2
+        ),
+      ]).should.be.true;
+    });
+  });
+
+  describe('A turtle parser instance with external data factory', () => {
+    it('should parse', () => {
+      const parser = new Parser({
+        baseIRI: BASE_IRI,
+        format: 'turtle',
+        factory: rdfDataModel,
+      });
+      const quads = parser.parse(`
+        @prefix : <http://example.com/> .
+        :weather a :Raining .
+
+        :jeswr :knows [
+          :name "Thomas" ;
+        ] .
+      `);
+
+      const bnode = DF.blankNode();
+
+      isomorphic(quads, [
+        DF.quad(
+          DF.namedNode('http://example.com/weather'),
+          DF.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+          DF.namedNode('http://example.com/Raining')
+        ),
+        DF.quad(
+          DF.namedNode('http://example.com/jeswr'),
+          DF.namedNode('http://example.com/knows'),
+          bnode
+        ),
+        DF.quad(
+          bnode,
+          DF.namedNode('http://example.com/name'),
+          DF.literal('Thomas')
+        ),
+      ]).should.be.true;
     });
   });
 
