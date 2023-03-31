@@ -706,6 +706,19 @@ describe('Lexer', () => {
                      { type: '.', line: 6 },
                      { type: 'eof', line: 7 }));
 
+    it('should tokenize the "a" predicate nested in Blank Nodes and lists',
+      shouldTokenize(':a :b ([ a :mother ]).',
+                    { type: 'prefixed', prefix: '', value: 'a', line: 1 },
+                    { type: 'prefixed', prefix: '', value: 'b', line: 1 },
+                    { type: '(', line: 1 },
+                    { type: '[', line: 1 },
+                    { type: 'abbreviation', value: 'a', line: 1 },
+                    { type: 'prefixed', prefix: '', value: 'mother', line: 1 },
+                    { type: ']', line: 1 },
+                    { type: ')', line: 1 },
+                    { type: '.', line: 1 },
+                    { type: 'eof', line: 1 }));
+
     it('should tokenize an empty default graph',
       shouldTokenize('{}',
                      { type: '{', line: 1 },

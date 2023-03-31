@@ -447,7 +447,8 @@ export default class N3Parser {
   // ### `_readListItem` reads items from a list
   _readListItem(token, item = null /* The list item */) {
     let list = null,                      // The list itself
-        next = this._readListItem;        // The next function to execute
+        next = this._readListItem,        // The next function to execute
+        possiblePath = this._n3Mode;      // If this is possibly the start of a longer path
     const previousList = this._subject,   // The previous list that contains this list
         stack = this._contextStack,       // The stack of parent contexts
         parent = stack[stack.length - 1]; // The parent containing the current list
@@ -459,12 +460,15 @@ export default class N3Parser {
                         list = this._blankNode(), this.RDF_FIRST,
                         this._subject = item = this._blankNode());
       next = this._readBlankNodeHead;
+      possiblePath = false;
       break;
     case '(':
       // Stack the current list quad and start a new list
+      // This need to be created *after* in N3 mode
       this._saveContext('list', this._graph,
                         list = this._blankNode(), this.RDF_FIRST, this.RDF_NIL);
       this._subject = null;
+      possiblePath = false;
       break;
     case ')':
       // Closing the list; restore the parent context
@@ -571,12 +575,12 @@ export default class N3Parser {
     // If an item was read, add it to the list
     if (item !== null) {
       // In N3 mode, the item might be a path
-      if (this._n3Mode) {
+      if (possiblePath) {
         // Create a new context to add the item's path
         this._saveContext('item', this._graph, list, this.RDF_FIRST, item);
         this._subject = item, this._predicate = null;
         // _readPath will restore the context and output the item
-        return this._getPathReader(this._readListItem);
+        return this._getPathReader(next);
       }
       // Output the item
       this._emit(list, this.RDF_FIRST, item, this._graph);

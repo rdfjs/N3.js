@@ -115,6 +115,12 @@ describe('Parser', () => {
       shouldParse('<a> a <t>.',
                   ['a', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 't']));
 
+    describe('should parse abbreviations inside blank Nodes within lists',
+      shouldParse('@prefix : <http://example.org/#> . :a :b ([ a :mother ]).',
+                  ['http://example.org/#a', 'http://example.org/#b', '_:b0'],
+                  ...list(['_:b0', '_:b1']),
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/#mother']));
+
     describe('should parse triples with prefixes',
       shouldParse('@prefix : <#>.\n' +
                   '@prefix a: <a#>.\n' +
@@ -1856,6 +1862,26 @@ describe('Parser', () => {
       describe('should parse a simple equality',
       shouldParse(parser, '<a> = <b>.',
                   ['a', 'http://www.w3.org/2002/07/owl#sameAs', 'b']));
+
+      describe('should parse a list equality',
+        shouldParse(parser, '() = ().',
+                    ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'http://www.w3.org/2002/07/owl#sameAs', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
+      describe('should parse a list equality with IRI',
+        shouldParse(parser, ':e = ().',
+                    ['http://example.org/#e', 'http://www.w3.org/2002/07/owl#sameAs', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']));
+
+      describe('should parse abbreviations inside blank Nodes within lists with explicit prefix definition',
+        shouldParse('@prefix : <http://example.org/#> . :a :b ([ a :mother ]).',
+                    ['http://example.org/#a', 'http://example.org/#b', '_:b0'],
+                    ...list(['_:b0', '_:b1']),
+                    ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/#mother']));
+
+      describe('should parse abbreviations inside blank Nodes within lists',
+        shouldParse(parser, ':a :b ([ a :mother ]).',
+                    ['http://example.org/#a', 'http://example.org/#b', '_:b0'],
+                    ...list(['_:b0', '_:b1']),
+                    ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://example.org/#mother']));
 
       describe('should parse a simple right implication',
       shouldParse(parser, '<a> => <b>.',
