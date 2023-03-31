@@ -159,7 +159,6 @@ describe('Parser', () => {
                   ['#x', 'a#c', 'a#d'],
                   ['#x', 'a#c', 'a#e']));
 
-
     it('should error on undefined \':\' prefix',
       shouldNotParse(':a :b :c .',
         'Undefined prefix ":" on line 1.'));
