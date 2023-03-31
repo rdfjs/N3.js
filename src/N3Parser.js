@@ -31,6 +31,8 @@ export default class N3Parser {
     this._supportsRDFStar = options.rdfStar !== false;
     // Whether the log:isImpliedBy predicate is supported
     this._isImpliedBy = options.isImpliedBy !== false;
+    // Enable support for deprecated N3 Quantifiers
+    this._supportsN3Quantifiers = options.n3Quantifiers === true;
     // Disable relative IRIs in N-Triples or N-Quads mode
     if (isLineMode)
       this._resolveRelativeIRI = iri => { return null; };
@@ -224,6 +226,9 @@ export default class N3Parser {
     case '@forSome':
       if (!this._n3Mode)
         return this._error('Unexpected "@forSome"', token);
+      if (!this._supportsN3Quantifiers)
+        return this._error('The "@forSome" quantifier has been deprecated in the Notion3 specification.' +
+          'Enable the n3Quantifiers option to parse the deprecated quantifier. Encountered', token);
       this._subject = null;
       this._predicate = this.N3_FORSOME;
       this._quantifier = this._blankNode;
@@ -231,6 +236,9 @@ export default class N3Parser {
     case '@forAll':
       if (!this._n3Mode)
         return this._error('Unexpected "@forAll"', token);
+      if (!this._supportsN3Quantifiers)
+        return this._error('The "@forAll" quantifier has been deprecated in the Notion3 specification.' +
+          'Enable the n3Quantifiers option to parse the deprecated quantifier. Encountered', token);
       this._subject = null;
       this._predicate = this.N3_FORALL;
       this._quantifier = this._variable;
