@@ -2371,6 +2371,14 @@ describe('Parser', () => {
       shouldParse(parser, '@prefix : <http://myCustomPrefix/> . :a :b :c .',
         ['http://myCustomPrefix/a', 'http://myCustomPrefix/b', 'http://myCustomPrefix/c']));
 
+    describe('should ignore empty statements',
+      shouldParse(parser, `:a .
+        {:b} .
+        [:c :d] .`, ['_:b1', 'http://example.org/#c', 'http://example.org/#d']));
+
+    describe('should ignore empty statements and produce no triples if no actual statements exist',
+      shouldParse(parser, ':a .'));
+
     it('should not parse nested quads',
       shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
         'Expected >> to follow "_:.b" but got IRI on line 1.'));
