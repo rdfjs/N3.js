@@ -159,6 +159,15 @@ describe('Parser', () => {
                   ['#x', 'a#c', 'a#d'],
                   ['#x', 'a#c', 'a#e']));
 
+
+    it('should error on undefined \':\' prefix',
+      shouldNotParse(':a :b :c .',
+        'Undefined prefix ":" on line 1.'));
+
+    describe('should used explicit definition for : if provided',
+      shouldParse('@prefix : <http://myCustomPrefix/> . :a :b :c .',
+        ['http://myCustomPrefix/a', 'http://myCustomPrefix/b', 'http://myCustomPrefix/c']));
+
     it('should not parse undefined empty prefix in subject',
       shouldNotParse(':a ',
                      'Undefined prefix ":" on line 1.'));
@@ -2354,6 +2363,14 @@ describe('Parser', () => {
     describe('should parse RDF-star',
       shouldParse(parser, '<<<a> <b> <c>>> <a> <b> .',
         [['a', 'b', 'c'], 'a', 'b']));
+
+    describe('should treat : as base IRI prefix if not defined otherwise',
+      shouldParse(parser, ':a :b :c .',
+        ['http://example.org/#a', 'http://example.org/#b', 'http://example.org/#c']));
+
+    describe('should used explicit definition for : if provided',
+      shouldParse(parser, '@prefix : <http://myCustomPrefix/> . :a :b :c .',
+        ['http://myCustomPrefix/a', 'http://myCustomPrefix/b', 'http://myCustomPrefix/c']));
 
     it('should not parse nested quads',
       shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
