@@ -19,7 +19,6 @@ describe('Lexer', () => {
       shouldTokenize('',
                      { type: 'eof', line: 1 }));
 
-
     it('should tokenize byte order mark at beginning as empty string',
         shouldTokenize('\ufeff', { type: 'eof', line: 1 }));
 
@@ -873,6 +872,55 @@ describe('Lexer', () => {
                      { type: 'prefixed', prefix: 'fam', value: 'mother', line: 1 },
                      { type: 'eof', line: 1 }));
 
+    it('should tokenize paths with blank nodes',
+     shouldTokenize('_:joe!fam:mother!loc:office!loc:zip _:joe^fam:mother^fam:mother',
+                    { type: 'blank', prefix: '_', value: 'joe', line: 1 },
+                    { type: '!', line: 1 },
+                    { type: 'prefixed', prefix: 'fam', value: 'mother', line: 1 },
+                    { type: '!', line: 1 },
+                    { type: 'prefixed', prefix: 'loc', value: 'office', line: 1 },
+                    { type: '!', line: 1 },
+                    { type: 'prefixed', prefix: 'loc', value: 'zip', line: 1 },
+    
+                    { type: 'blank', prefix: '_', value: 'joe', line: 1 },
+                    { type: '^', line: 1 },
+                    { type: 'prefixed', prefix: 'fam', value: 'mother', line: 1 },
+                    { type: '^', line: 1 },
+                    { type: 'prefixed', prefix: 'fam', value: 'mother', line: 1 },
+                    { type: 'eof', line: 1 }));
+                  
+    it('should tokenize paths with integer and decimal literals',
+      shouldTokenize('1!fam:mother 1.0^fam:mother <o>',
+                    { type: 'literal', prefix: 'http://www.w3.org/2001/XMLSchema#integer', value: '1', line: 1 },
+                    { type: '!', line: 1 },
+                    { type: 'prefixed', prefix: 'fam', value: 'mother', line: 1 },
+                    { type: 'literal', prefix: 'http://www.w3.org/2001/XMLSchema#decimal', value: '1.0', line: 1 },
+                    { type: '^', line: 1 },
+                    { type: 'prefixed', prefix: 'fam', value: 'mother', line: 1 },
+                    { type: 'IRI', value: 'o', line: 1 },
+                    { type: 'eof', line: 1 }));
+                  
+    it('should tokenize paths with complex decimal literals',
+      shouldTokenize('2.16!fam:son <x> <y> .',
+                    { type: 'literal', prefix: 'http://www.w3.org/2001/XMLSchema#decimal', value: '2.16', line: 1 },
+                    { type: '!', line: 1 },
+                    { type: 'prefixed', prefix: 'fam', value: 'son', line: 1 },
+                    { type: 'IRI', value: 'x', line: 1 },
+                    { type: 'IRI', value: 'y', line: 1 },
+                    { type: '.', line: 1 },
+                    { type: 'eof', line: 1 }));
+              
+    it('should tokenize paths with boolean literals',
+      shouldTokenize('true!fam:mother false^fam:mother <o>',
+                    { type: 'literal', prefix: 'http://www.w3.org/2001/XMLSchema#boolean', value: 'true', line: 1 },
+                    { type: '!', line: 1 },
+                    { type: 'prefixed', prefix: 'fam', value: 'mother', line: 1 },
+                    { type: 'literal', prefix: 'http://www.w3.org/2001/XMLSchema#boolean', value: 'false', line: 1 },
+                    { type: '^', line: 1 },
+                    { type: 'prefixed', prefix: 'fam', value: 'mother', line: 1 },
+                    { type: 'IRI', value: 'o', line: 1 },
+                    { type: 'eof', line: 1 }));
+              
     it('should not tokenize an invalid document',
       shouldNotTokenize(' \n @!', 'Unexpected "@!" on line 2.'));
 

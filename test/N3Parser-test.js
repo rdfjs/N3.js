@@ -1113,7 +1113,7 @@ describe('Parser', () => {
 
     it('should not parse an RDF-star triple with a triple as predicate',
       shouldNotParse('<a> <<<b> <c> <d>>> <e>',
-        'Expected entity but got << on line 1.'));
+        'Unexpected RDF-star syntax in predicate position on line 1.'));
 
     describe('should parse an RDF-star triple with a triple with blanknodes as subject correctly',
       shouldParse('<<_:a <b> _:c>> <b> <c>.',
@@ -1357,11 +1357,11 @@ describe('Parser', () => {
 
     it('should not parse quoted triple as predicate',
       shouldNotParse('<p> << <a> <b> <c> >> <q>',
-          'Expected entity but got << on line 1.'));
+          'Unexpected RDF-star syntax in predicate position on line 1.'));
 
     it('should not parse quoted quad as predicate',
       shouldNotParse('<p> << <a> <b> <c> <d> >> <q>',
-          'Expected entity but got << on line 1.'));
+          'Unexpected RDF-star syntax in predicate position on line 1.'));
   });
 
   describe('An Parser instance without document IRI', () => {
@@ -2427,6 +2427,18 @@ describe('Parser', () => {
       shouldParse(parser, '<<<a> <b> <c>>>!<p1> <p2> <o> .',
         [['a', 'b', 'c'], 'p1', '_:b0'], ['_:b0', 'p2', 'o']));
 
+    describe('should parse RDF-star quoted triple subject',
+      shouldParse(parser, '<<<a> <b> <c>>> <p> <o> .',
+        [['a', 'b', 'c'], 'p', 'o']));
+      
+    describe('should parse RDF-star quoted triple predicate',
+      shouldParse(parser, '<s> <<<a> <b> <c>>> <o> .',
+        ['s', ['a', 'b', 'c'], 'o']));
+  
+    describe('should parse RDF-star quoted triple object',
+      shouldParse(parser, '<s> <p> <<<a> <b> <c>>> .',
+        ['s', 'p', ['a', 'b', 'c']]));
+
     describe('should parse RDF-star path',
       shouldParse(parser, '<<<a> <b> <c>>>!<p1>^<p2> <p3> <o> .',
         [['a', 'b', 'c'], 'p1', '_:b0'], ['_:b1', 'p2', '_:b0'], ['_:b1', 'p3', 'o']));
@@ -2453,7 +2465,7 @@ describe('Parser', () => {
 
     it('should not parse nested quads',
       shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
-        'Expected >> to follow "_:.b" but got IRI on line 1.'));
+        'Expected >> to follow "_:b" but got IRI on line 1.'));
 
     describe('should not require . after last triple in a formula',
       shouldParse(parser, '<a><b>{<c><d><e>} .',
@@ -2463,40 +2475,126 @@ describe('Parser', () => {
     describe('should parse path with literal start as object',
       shouldParse(parser, '<a> <b> "c"!<c> .', ['a', 'b', '_:b0'], ['"c"', 'c', '_:b0']));
   
+    describe('should parse path with literal start and no list',
+      shouldParse(parser, '"clist"!<c> <a> <b> .',
+        ['_:b0', 'a', 'b'],
+        ['"clist"', 'c', '_:b0']
+      ));
+
+    describe('should parse path with decimal literal start and no list',
+      shouldParse(parser, '2.16!<c> <a> <b> .',
+        ['_:b0', 'a', 'b'],
+        ['"2.16"^^http://www.w3.org/2001/XMLSchema#decimal', 'c', '_:b0']
+      ));
+
+
+    describe('should parse subject path with namednode start and no list',
+      shouldParse(parser, '<clist>!<c> <a> <b> .',
+        ['_:b0', 'a', 'b'],
+        ['clist', 'c', '_:b0']
+      ));
+
+    // TODO: Investigate why the prefix is here
+    describe('should parse subject path with blank node start and no list',
+      shouldParse(parser, '_:bx!<c> <a> <b> .',
+        ['_:b0', 'a', 'b'],
+        ['_:b0_bx', 'c', '_:b0']
+      ));
+    
+    describe('should parse subject with blanknode and no list',
+      shouldParse(parser, '_:bx <a> <b> .',
+        ['_:b0_bx', 'a', 'b']
+      ));
+
+    describe('should parse predicate path with namednode start and no list',
+      shouldParse(parser, '<a> <clist>!<c> <b> .',
+        ['a', '_:b0', 'b'],
+        ['clist', 'c', '_:b0']
+      ));
+
+      describe('should parse predicate ^ path with namednode start and no list',
+      shouldParse(parser, '<a> <clist>^<c> <b> .',
+        ['a', '_:b0', 'b'],
+        ['_:b0', 'c', 'clist']
+      ));
+
     describe('should parse path with literal start in list',
-      shouldParse(parser, '<a> <b> ( "c"!<c> ) .',
+      shouldParse(parser, '<a> <b> ( "clist"!<c> ) .',
         ['a', 'b', '_:b0'],
         ...list(['_:b0', '_:b1']),
-        ['"c"', 'c', '_:b1']
-        ));
+        ['"clist"', 'c', '_:b1']
+      ));
 
-    for (const [elem, value] of [
+    describe('should parse path with literal start in subject list',
+      shouldParse(parser, ' ( "clist"!<c> ) <a> <b> .',
+        ['_:b0', 'a', 'b'],
+        ...list(['_:b0', '_:b1']),
+        ['"clist"', 'c', '_:b1']
+      ));
+
+    describe('should parse path with literal start in nested list',
+      shouldParse(parser, '<a> <b> (( "clist"!<c> )) .',
+        ['a', 'b', '_:b0'],
+        ...list(['_:b0', '_:b1']),
+        ...list(['_:b1', '_:b2']),
+        ['"clist"', 'c', '_:b2']
+      ));
+
+    describe('should parse ^ path with literal start in list',
+      shouldParse(parser, '<a> <b> ( "clist"^<c> ) .',
+        ['a', 'b', '_:b0'],
+        ...list(['_:b0', '_:b1']),
+        ['_:b1', 'c', '"clist"']
+      ));
+
+    describe('should parse ^ path with literal second elem in list',
+      shouldParse(parser, '<a> <b> ( <x> "clist"^<c> ) .',
+        ['a', 'b', '_:b0'],
+        ...list(['_:b0', 'x'], ['_:b1', '_:b2']),
+        ['_:b2', 'c', '"clist"']
+      ));
+
+    describe('should parse path with datatyped literal start in list',
+      shouldParse(parser, '<a> <b> ( "clist"^^<f>!<c> ) .',
+        ['a', 'b', '_:b0'],
+        ...list(['_:b0', '_:b1']),
+        ['"clist"^^http://example.org/f', 'c', '_:b1']
+      ));
+
+    const possiblePathElems = [
       ['()', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
       ['( )', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
       ['(  )', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
       ['<http://www.w3.org/1999/02/22-rdf-syntax-ns#nil>', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
       [':joe', 'ex:joe'],
       ['<<:joe a :Person>>', ['ex:joe', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'ex:Person']],
-      // ['"d"', "'d'"],
+      ['"d"', '"d"'],
+      ['"clist"^^<f>', '"clist"^^http://example.org/f'],
+      ['1', '"1"^^http://www.w3.org/2001/XMLSchema#integer'],
+      ['2.16', '"2.16"^^http://www.w3.org/2001/XMLSchema#decimal'],
+      ['true', '"true"^^http://www.w3.org/2001/XMLSchema#boolean'],
+      ['false', '"false"^^http://www.w3.org/2001/XMLSchema#boolean'],
       ['<d>', 'd'],
-      // ['?d', '?d'],
+      ['?d', '?d'],
       // ['_:bnd', '_:bnd']
-    ]) {
+    ]
+
+    for (const [elem, value] of possiblePathElems) {
       for (const pathType of ['!', '^']) {
         // eslint-disable-next-line no-inner-declarations
         function son(bnode) {
           return pathType === '!' ? [value, 'f:son', `_:b${bnode}`] : [`_:b${bnode}`, 'f:son', value];
         }
 
-        // function checkPlain(content, ...triples) {
-        //   describe(`should parse [${content}]`,
-        //     shouldParse(parser, `@prefix : <ex:>. @prefix fam: <f:>.${content}`,
-        //       ...triples));
-        // }
+        function checkPlain(content, ...triples) {
+          describe(`should parse [${content}]`,
+            shouldParse(parser, `@prefix : <ex:>. @prefix fam: <f:>. ${content}`,
+              ...triples));
+        }
 
-        // checkPlain(`${elem}${pathType}fam:son <x> <y>`, ['_:b0', 'x', 'y'], son('0'));
-        // checkPlain(`<x> ${elem}${pathType}fam:son <y>`, ['x', '_:b0', 'y'], son('0'));
-        // checkPlain(`<x> <y> ${elem}${pathType}fam:son`, ['x', 'y', '_:b0'], son('0'));
+        checkPlain(`${elem}${pathType}fam:son <x> <y> .`, ['_:b0', 'x', 'y'], son('0'));
+        checkPlain(`<x> ${elem}${pathType}fam:son <y> .`, ['x', '_:b0', 'y'], son('0'));
+        checkPlain(`<x> <y> ${elem}${pathType}fam:son .`, ['x', 'y', '_:b0'], son('0'));
 
         for (const [pathElem, pathValue] of [
           ['fam:son', 'f:son'],

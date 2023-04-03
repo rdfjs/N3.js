@@ -90,7 +90,7 @@ export default class N3Parser {
       this._inversePredicate = false;
       // In N3, blank nodes are scoped to a formula
       // (using a dot as separator, as a blank node label cannot start with it)
-      this._prefixes._ = (this._graph ? `${this._graph.value}.` : '.');
+      this._prefixes._ = (this._graph ? `${this._graph.value}.` : '');
       // Quantifiers are scoped to a formula
       this._quantified = Object.create(this._quantified);
     }
@@ -267,14 +267,11 @@ export default class N3Parser {
       // Read the subject entity
       if ((this._subject = this._readEntity(token)) === undefined)
         return;
-      // In N3 mode, the subject might be a path
-      if (this._n3Mode)
-        return this._getPathReader(this._readPredicateOrNamedGraph);
     }
 
     // The next token must be a predicate,
     // or, if the subject was actually a graph IRI, a named graph
-    return this._readPredicateOrNamedGraph;
+    return this._n3Mode ? this._getPathReader(this._readPredicateOrNamedGraph) : this._readPredicateOrNamedGraph;
   }
 
   // ### `_readPredicate` reads a quad's predicate
@@ -316,6 +313,12 @@ export default class N3Parser {
       return this._n3Mode ?
         this._readList(token, this._subject, this.RDF_NIL, null) :
         this._error(`Expected entity but got ${type}`, token);
+    case '<<':
+      if (!this._n3Mode || !this._supportsRDFStar)
+        return this._error('Unexpected RDF-star syntax in predicate position', token);
+      this._saveContext('<<', this._graph, this._subject, null, null);
+      this._graph = null;
+      return this._readSubject;
     case '[':
       if (this._n3Mode) {
         // Start a new quad with a new blank node as subject
@@ -331,7 +334,7 @@ export default class N3Parser {
         return;
     }
     // The next token must be an object
-    return this._readObject;
+    return this._n3Mode ? this._getPathReader(this._readObject) : this._readObject;
   }
 
   // ### `_readObject` reads a quad's object
@@ -371,11 +374,8 @@ export default class N3Parser {
       // Read the object entity
       if ((this._object = this._readEntity(token)) === undefined)
         return;
-      // In N3 mode, the object might be a path
-      if (this._n3Mode)
-        return this._getPathReader(this._getContextEndReader());
     }
-    return this._getContextEndReader();
+    return this._n3Mode ? this._getPathReader(this._getContextEndReader()) : this._getContextEndReader();
   }
 
   // ### `_readPredicateOrNamedGraph` reads a quad's predicate, or a named graph
@@ -502,7 +502,9 @@ export default class N3Parser {
       // Was this list the parent's predicate?
       }
       else if (this._object === null) {
-        next = this._readObject;
+        // We are already in N3 mode, so the predicate can be a path
+        // next = this._n3Mode ? this._getPathReader(this._readObject) : this._readObject;
+        next = this._getPathReader(this._readObject);
 
         // No list tail if this was an empty list
         if (this._predicate === this.RDF_NIL)
@@ -510,7 +512,7 @@ export default class N3Parser {
       }
       // The list was in the parent context's object
       else {
-        next = this._getContextEndReader();
+        next = this._n3Mode ? this._getPathReader(this._getContextEndReader()) : this._getContextEndReader();
         // No list tail if this was an empty list
         if (this._object === this.RDF_NIL)
           return next;
@@ -627,11 +629,14 @@ export default class N3Parser {
     const { literal, token } = this._completeLiteral(tkn);
     this._subject = literal;
 
+    // Can only have subject literals in N3 mode
+    this._myPathReader = this._getPathReader(this._readPredicateOrNamedGraph)
+
     return token === null ?
       // If the token was consumed, continue with the rest of the input
-      this._readPredicateOrNamedGraph :
+      this._myPathReader :
       // Otherwise, consume the token now
-      this._readPredicateOrNamedGraph(token);
+      this._myPathReader(token);
   }
 
   // Completes a literal in predicate position
@@ -639,11 +644,14 @@ export default class N3Parser {
     const { literal, token } = this._completeLiteral(tkn);
     this._predicate = literal;
 
+    // Can only have subject literals in N3 mode
+    this._myPathReader = this._getPathReader(this._readObject)
+
     return token === null ?
       // If the token was consumed, continue with the rest of the input
-      this._readObject :
+      this._myPathReader :
       // Otherwise, consume the token now
-      this._readObject(token);
+      this._myPathReader(token);
   }
 
   // Completes a literal in object position
@@ -653,20 +661,40 @@ export default class N3Parser {
       return;
 
     // if (token.type === '!' || token.type === '^')
-    //   return this._getPathReader(this._readListItemDataTypeOrLang)(token)
+    //   return this._getPathReader(this._readListItemDataTypeOrLang).call(this,token)
 
     this._object = completed.literal;
 
+    let afterFunc = this._getContextEndReader();
+
     // If this literal was part of a list, write the item
     // (we could also check the context stack, but passing in a flag is faster)
-    if (listItem)
-      this._emit(this._subject, this.RDF_FIRST, this._object, this._graph);
+    if (listItem) {
+      // This is similar logic to the end of the list function
+      if (this._n3Mode) {
+        // this._readCallback = token => {
+        //   this._emit(this._subject, this.RDF_FIRST, this._object, this._graph);
+        //   this._getPathReader(this._getContextEndReader())(completed.token)(token);
+        // }
+
+        // This is needed here so that paths are correctly overriden to the list object
+        this._predicate = this.RDF_FIRST;
+
+        afterFunc = token => {
+          this._emit(this._subject, this.RDF_FIRST, this._object, this._graph);
+          this._brr = this._getContextEndReader()
+         return this._brr(token);
+        }
+      } else {
+        this._emit(this._subject, this.RDF_FIRST, this._object, this._graph);
+      }
+    }
     // If the token was consumed, continue with the rest of the input
     if (completed.token === null)
-      return this._getContextEndReader();
+      return this._n3Mode ? this._getPathReader(afterFunc) : afterFunc;
     // Otherwise, consume the token now
     else {
-      this._readCallback = this._n3Mode ? this._getPathReader(this._getContextEndReader()) : this._getContextEndReader();
+      this._readCallback = this._n3Mode ? this._getPathReader(afterFunc) : afterFunc;
       return this._readCallback(completed.token);
     }
   }
@@ -928,6 +956,9 @@ export default class N3Parser {
     // If we were reading a subject, replace the subject by the path's object
     if (this._predicate === null)
       subject = this._subject, this._subject = object;
+    // If we were reading an predicate, replace the subject by the path's object
+    else if (this._object === null || this._object === undefined)
+      subject = this._predicate, this._predicate = object;
     // If we were reading an object, replace the subject by the path's object
     else
       subject = this._object,  this._object  = object;
@@ -946,6 +977,9 @@ export default class N3Parser {
     // If we were reading a subject, replace the subject by the path's subject
     if (this._predicate === null)
       object = this._subject, this._subject = subject;
+    // If we were reading an predicate, replace the subject by the path's subject
+    else if (this._object === null || this._object === undefined)
+     object = this._predicate, this._predicate = subject;
     // If we were reading an object, replace the subject by the path's subject
     else
       object = this._object,  this._object  = subject;
@@ -973,15 +1007,20 @@ export default class N3Parser {
     if (this._subject === null) {
       this._subject = quad;
       // In N3 mode, the subject might be a path
-      if (this._n3Mode)
-        return this._getPathReader(this._readPredicateOrNamedGraph);
-      else
-        return this._readPredicate;
+      return this._n3Mode
+        ? this._getPathReader(this._readPredicateOrNamedGraph)
+        : this._readPredicate;
+    } else if (this._predicate === null) {
+      this._predicate = quad;
+      // We are already in N3 mode, so the predicate can be a path
+      return this._getPathReader(this._readObject);
     }
     // If the triple was the object, read context end.
     else {
       this._object = quad;
-      return this._getContextEndReader();
+      return this._n3Mode
+        ? this._getPathReader(this._getContextEndReader())
+        : this._getContextEndReader();
     }
   }
 
