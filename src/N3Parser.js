@@ -651,6 +651,10 @@ export default class N3Parser {
     const completed = this._completeLiteral(token);
     if (!completed)
       return;
+
+    // if (token.type === '!' || token.type === '^')
+    //   return this._getPathReader(this._readListItemDataTypeOrLang)(token)
+
     this._object = completed.literal;
 
     // If this literal was part of a list, write the item
@@ -662,7 +666,7 @@ export default class N3Parser {
       return this._getContextEndReader();
     // Otherwise, consume the token now
     else {
-      this._readCallback = this._getContextEndReader();
+      this._readCallback = this._n3Mode ? this._getPathReader(this._getContextEndReader()) : this._getContextEndReader();
       return this._readCallback(completed.token);
     }
   }
@@ -1011,16 +1015,16 @@ export default class N3Parser {
       return this._readPunctuation;
 
     switch (contextStack[contextStack.length - 1].type) {
-    case 'blank':
-      return this._readBlankNodeTail;
-    case 'list':
-      return this._readListItem;
-    case 'formula':
-      return this._readFormulaTail;
-    case '<<':
-      return this._readRDFStarTail;
-    case '{|':
-      return this._readAnnotatedTail;
+      case 'blank':
+        return this._readBlankNodeTail;
+      case 'list':
+        return this._readListItem;
+      case 'formula':
+        return this._readFormulaTail;
+      case '<<':
+        return this._readRDFStarTail;
+      case '{|':
+        return this._readAnnotatedTail;
     }
   }
 

@@ -120,6 +120,22 @@ describe('Lexer', () => {
                      { type: 'prefixed', prefix: 'isbn13', value: '9780136019701', line: 1 },
                      { type: 'eof', line: 1 }));
 
+    it('should tokenize prefixed names with a period in suffix',
+      shouldTokenize('a:b.c d:e.f h:i.j .',
+                     { type: 'prefixed', prefix: 'a', value: 'b.c', line: 1 },
+                     { type: 'prefixed', prefix: 'd', value: 'e.f', line: 1 },
+                     { type: 'prefixed', prefix: 'h', value: 'i.j', line: 1 },
+                     { type: '.', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize prefixed names with a period in suffix',
+      shouldTokenize('a:b.c d:e.f h:i.j.',
+                     { type: 'prefixed', prefix: 'a', value: 'b.c', line: 1 },
+                     { type: 'prefixed', prefix: 'd', value: 'e.f', line: 1 },
+                     { type: 'prefixed', prefix: 'h', value: 'i.j', line: 1 },
+                     { type: '.', line: 1 },
+                     { type: 'eof', line: 1 }));
+
     it('should tokenize prefixed names starting with true',
       shouldTokenize('true:a  truer:b ',
                      { type: 'prefixed', prefix: 'true',   value: 'a', line: 1 },
