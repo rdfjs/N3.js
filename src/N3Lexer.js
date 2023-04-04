@@ -360,9 +360,9 @@ export default class N3Lexer {
         // We could be in streaming mode, and then we just wait for more input to arrive.
         // Otherwise, a syntax error has occurred in the input.
         // One exception: error on an unaccounted linebreak (= not inside a triple-quoted literal).
-        if (inputFinished || (!/^'''|^"""/.test(input) && /\n|\r/.test(input)))
+        if (inputFinished || (!/^'''|^"""/.test(input) && /\n|\r/.test(input))) {
           return reportSyntaxError(this);
-        else
+        } else
           return this._input = input;
       }
 

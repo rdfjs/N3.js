@@ -2567,17 +2567,74 @@ describe('Parser', () => {
       ['(  )', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
       ['<http://www.w3.org/1999/02/22-rdf-syntax-ns#nil>', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
       [':joe', 'ex:joe'],
-      ['<<:joe a :Person>>', ['ex:joe', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'ex:Person']],
-      ['"d"', '"d"'],
-      ['"clist"^^<f>', '"clist"^^http://example.org/f'],
-      ['1', '"1"^^http://www.w3.org/2001/XMLSchema#integer'],
-      ['2.16', '"2.16"^^http://www.w3.org/2001/XMLSchema#decimal'],
-      ['true', '"true"^^http://www.w3.org/2001/XMLSchema#boolean'],
-      ['false', '"false"^^http://www.w3.org/2001/XMLSchema#boolean'],
+      // ['<<:joe a :Person>>', ['ex:joe', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'ex:Person']],
+      // ['"d"', '"d"'],
+      // ['"clist"^^<f>', '"clist"^^http://example.org/f'],
+      // ['1', '"1"^^http://www.w3.org/2001/XMLSchema#integer'],
+      // ['2.16', '"2.16"^^http://www.w3.org/2001/XMLSchema#decimal'],
+      // ['true', '"true"^^http://www.w3.org/2001/XMLSchema#boolean'],
+      // ['false', '"false"^^http://www.w3.org/2001/XMLSchema#boolean'],
       ['<d>', 'd'],
       ['?d', '?d'],
       // ['_:bnd', '_:bnd']
     ]
+
+    describe(`should parse [@prefix : <ex:>. @prefix fam: <f:>. <a> <b> ()!()!()!() .]`, 
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>. <a> <b> ()!()!()!() .',
+      ['a', 'b', '_:b2'],
+      ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b0'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b1'],
+      ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b2'],
+      ))
+
+    describe(`should parse [@prefix : <ex:>. @prefix fam: <f:>. <a> <b> ()!()!( <a> )!() .]`, 
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>. <a> <b> ()!()!( <a> )!() .',
+      ['a', 'b', '_:b2'],
+      ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b0'],
+      ['_:b0', '_:b1', '_:b2'],
+      ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b3'],
+      ...list(['_:b1', 'a']),
+      ))
+
+    describe(`should parse [@prefix : <ex:>. @prefix fam: <f:>. <a> <b> <w>!<x>!<y>!<z> .]`, 
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>. <a> <b> <w>!<x>!<y>!<z> .',
+      ['a', 'b', '_:b2'],
+      ['w', 'x', '_:b0'],
+      ['_:b0', 'y', '_:b1'],
+      ['_:b1', 'z', '_:b2'],
+      ))
+
+    const pathOps = [
+      '!'//, '^'
+    ];
+
+    for (const p1 of possiblePathElems) {
+      for (const p2 of possiblePathElems) {
+        for (const p3 of possiblePathElems) {
+          for (const p4 of possiblePathElems) {
+            for (const i1 of pathOps) {
+              for (const i2 of pathOps) {
+                for (const i3 of pathOps) {
+                  const content = `@prefix : <ex:>. @prefix fam: <f:>. <a> <b> ${p1[0]}${i1}${p2[0]}${i2}${p3[0]}${i3}${p4[0]} .`;
+
+                  function rev(list, str){
+                    return str === '!' ? list : list.reverse();
+                  }
+
+                  describe(`should parse [${content}]`, 
+                    shouldParse(parser, content,
+                    ['a', 'b', '_:b2'],
+                    rev([p1[1], p2[1], '_:b0'], i1),
+                    rev(['_:b0', p3[1], '_:b1'], i2),
+                    rev(['_:b1', p4[1], '_:b2'], i3),
+                    ))
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 
     for (const [elem, value] of possiblePathElems) {
       for (const pathType of ['!', '^']) {

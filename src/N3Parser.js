@@ -199,6 +199,7 @@ export default class N3Parser {
     // Start a new list
     this._saveContext('list', this._graph, subject, predicate, object);
     this._subject = null;
+    console.log('read list item at read list')
     return this._readListItem;
   }
 
@@ -264,6 +265,7 @@ export default class N3Parser {
       this._graph = null;
       return this._readSubject;
     default:
+      console.log('reading subject')
       // Read the subject entity
       if ((this._subject = this._readEntity(token)) === undefined)
         return;
@@ -316,7 +318,7 @@ export default class N3Parser {
     case '<<':
       if (!this._n3Mode || !this._supportsRDFStar)
         return this._error('Unexpected RDF-star syntax in predicate position', token);
-      this._saveContext('<<', this._graph, this._subject, null, null);
+      this._saveContext('<<', this._graph, this._subject, this._predicate, this._object);
       this._graph = null;
       return this._readSubject;
     case '[':
@@ -330,6 +332,7 @@ export default class N3Parser {
       if (!this._n3Mode)
         return this._error('Disallowed blank node as predicate', token);
     default:
+      console.log('reading predicate')
       if ((this._predicate = this._readEntity(token)) === undefined)
         return;
     }
@@ -371,6 +374,7 @@ export default class N3Parser {
       this._graph = null;
       return this._readSubject;
     default:
+      console.log('reading object')
       // Read the object entity
       if ((this._object = this._readEntity(token)) === undefined)
         return;
@@ -446,6 +450,7 @@ export default class N3Parser {
 
   // ### `_readListItem` reads items from a list
   _readListItem(token, item = null /* The list item */) {
+    console.log('reading list item - ', this._contextStack.length)
     let list = null,                      // The list itself
         next = this._readListItem,        // The next function to execute
         possiblePath = this._n3Mode;      // If this is possibly the start of a longer path
@@ -471,8 +476,22 @@ export default class N3Parser {
       possiblePath = false;
       break;
     case ')':
+      console.log('restoring list context')
       // Closing the list; restore the parent context
       this._restoreContext('list', token);
+
+      let path = false;
+      if (stack.length !== 0 && stack[stack.length - 1].type === 'path') {
+        // path = true;
+        this._restoreContext('path', token);
+        return this._afterPathContextRestore(previousList || this.RDF_NIL);
+        // if (previousList === null) {
+        //   return this._afterPathContextRestore(this.RDF_NIL);
+        // }
+
+        // this._emit(this._subject, this.RDF_NIL, this._object, this._graph);
+      }
+
       if (stack.length !== 0 && stack[stack.length - 1].type === 'list') {
         if (this._n3Mode) {
           const { _subject, _predicate, _graph } = this;
@@ -483,6 +502,7 @@ export default class N3Parser {
             // If this list is contained within a parent list, return the membership quad here.
             // This will be `<parent list element> rdf:first <this list>.`.
             this._emit(_subject, _predicate, this._object, _graph);
+            console.log('at end of path reader')
             return this._readListItem(tk);
           });
         }
@@ -550,6 +570,7 @@ export default class N3Parser {
       this._graph = null;
       break;
     default:
+      console.log('reading list item', this._contextStack.length, token)
       if (item === null && (item = this._readEntity(token)) === undefined)
         return;
     }
@@ -610,6 +631,7 @@ export default class N3Parser {
     // Create a datatyped literal
     case 'type':
     case 'typeIRI':
+      console.log('reading type iri')
       const datatype = this._readEntity(token);
       if (datatype === undefined) return; // No datatype means an error occurred
       literal = this._literal(this._literalValue, datatype);
@@ -715,6 +737,7 @@ export default class N3Parser {
 
     // If the formula was in a list context, continue reading the list
     if (this._contextStack.length > 0 && this._contextStack[this._contextStack.length - 1].type === 'list') {
+      console.log('read formula tail')
       return this._readListItem(token, graph);
     }
 
@@ -762,6 +785,7 @@ export default class N3Parser {
       this._object = null;
       return this._readPredicate;
     default:
+      console.log('reading punc')
       // An entity means this is a quad (only allowed if not already inside a graph)
       if (this._supportsQuads && this._graph === null && (graph = this._readEntity(token)) !== undefined) {
         next = this._readQuadPunctuation;
@@ -819,6 +843,8 @@ export default class N3Parser {
   _readPrefixIRI(token) {
     if (token.type !== 'IRI')
       return this._error(`Expected IRI to follow prefix "${this._prefix}:"`, token);
+
+    console.log('reading prefix iri')
     const prefixNode = this._readEntity(token);
     this._prefixes[this._prefix] = prefixNode.value;
     this._prefixCallback(this._prefix, prefixNode);
@@ -875,6 +901,7 @@ export default class N3Parser {
     switch (token.type) {
     case 'IRI':
     case 'prefixed':
+      console.log('reading prefixed')
       if ((entity = this._readEntity(token, true)) !== undefined)
         break;
     default:
@@ -942,17 +969,61 @@ export default class N3Parser {
         // Output the list item
         this._emit(this._subject, this.RDF_FIRST, item, this._graph);
       }
+      console.log('after path')
       return this._afterPath(token);
     }
   }
 
   // ### `_readForwardPath` reads a '!' path
   _readForwardPath(token) {
-    let subject, predicate;
+    console.log('reading forward path', token)
+    // let next = 
+
+    // switch (token.type) {
+    //   case '(': {
+    //     console.log('read forward path');
+    //     // this._saveContext('path', this._graph, this._subject, this._predicate, this._object);
+    //     return this._readList(token, this.RDF_NIL, null, null);
+    //   }
+    // }
+
+    let predicate;
+    // const object = this._blankNode();
+    // // If we were reading a subject, replace the subject by the path's object
+    // if (this._predicate === null)
+    //   subject = this._subject, this._subject = object;
+    // // If we were reading an predicate, replace the subject by the path's object
+    // else if (this._object === null || this._object === undefined)
+    //   subject = this._predicate, this._predicate = object;
+    // // If we were reading an object, replace the subject by the path's object
+    // else
+    //   subject = this._object,  this._object  = object;
+
+    switch (token.type) {
+      case '(':
+        // console.log('saving )', this._graph, this._subject, this._predicate, this._object)
+        // console.log('would have logged', this._graph, subject, predicate, object)
+        // this._saveContext('path', this._graph, this._subject, this._predicate, this._object);
+        this._saveContext('path', this._graph, this._subject, this._predicate, this._object);
+        // TODO: Work out how to do the emission (probably an if statement in the list restore)
+        return this._readList(token, this.RDF_NIL, null, null);
+      default:
+        console.log('reading entity in forward path')
+        // The next token is the predicate
+        if ((predicate = this._readEntity(token)) === undefined)
+          return;
+    }
+    return this._afterPathContextRestore(predicate);
+
+    // Emit the path's current quad and read its next section
+    // this._emit(subject, predicate, object, this._graph);
+    // return this._readPath;
+  }
+
+  _afterPathContextRestore(predicate) {
+    console.log('restoring context [', predicate, ']')
+    let subject;
     const object = this._blankNode();
-    // The next token is the predicate
-    if ((predicate = this._readEntity(token)) === undefined)
-      return;
     // If we were reading a subject, replace the subject by the path's object
     if (this._predicate === null)
       subject = this._subject, this._subject = object;
@@ -962,6 +1033,7 @@ export default class N3Parser {
     // If we were reading an object, replace the subject by the path's object
     else
       subject = this._object,  this._object  = object;
+    
     // Emit the path's current quad and read its next section
     this._emit(subject, predicate, object, this._graph);
     return this._readPath;
@@ -972,6 +1044,7 @@ export default class N3Parser {
     const subject = this._blankNode();
     let predicate, object;
     // The next token is the predicate
+    console.log('reading backward path')
     if ((predicate = this._readEntity(token)) === undefined)
       return;
     // If we were reading a subject, replace the subject by the path's subject
@@ -1000,6 +1073,7 @@ export default class N3Parser {
     // If the triple is in a list then return to reading the remaining elements
     if (this._contextStack.length > 0 && this._contextStack[this._contextStack.length - 1].type === 'list') {
       this._graph = quad;
+      console.log('read rdfstar table')
       return this._readListItem(token);
     }
 
@@ -1057,6 +1131,7 @@ export default class N3Parser {
       case 'blank':
         return this._readBlankNodeTail;
       case 'list':
+        console.log('read list item at get context end reader')
         return this._readListItem;
       case 'formula':
         return this._readFormulaTail;
@@ -1069,6 +1144,7 @@ export default class N3Parser {
 
   // ### `_emit` sends a quad through the callback
   _emit(subject, predicate, object, graph) {
+    console.log('emitting', subject, predicate, object, graph)
     this._callback(null, this._quad(subject, predicate, object, graph || this.DEFAULTGRAPH));
   }
 
