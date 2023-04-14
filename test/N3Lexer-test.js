@@ -1104,6 +1104,15 @@ describe('Lexer', () => {
       shouldTokenize('<<',
         { type: '<<', line: 1 }, { type: 'eof', line: 1 }));
 
+    it('should tokenize an <- start',
+      shouldTokenize('<a> <- <b> <c> .',
+        { type: 'IRI', value: 'a', line: 1 },
+        { type: '<-', line: 1 },
+        { type: 'IRI', value: 'b', line: 1 },
+        { type: 'IRI', value: 'c', line: 1 },
+        { type: '.', line: 1 },
+        { type: 'eof', line: 1 }));
+
     it('should tokenize a split Quadterm start',
       shouldTokenize(streamOf('<', '<'),
         { type: '<<', line: 1 }, { type: 'eof', line: 1 }));

@@ -156,10 +156,24 @@ export default class N3Lexer {
         else if (input.length > 1 && input[1] === '<')
           type = '<<', matchLength = 2;
         // Try to find a backwards implication arrow
-        else if (this._n3Mode && input.length > 1 && input[1] === '=') {
-          matchLength = 2;
-          if (this._isImpliedBy) type = 'abbreviation', value = '<';
-          else type = 'inverse', value = '>';
+        else if (this._n3Mode && input.length > 1) {
+          if (input[1] === '=') {
+            matchLength = 2;
+            if (this._isImpliedBy) type = 'abbreviation', value = '<';
+            else type = 'inverse', value = '>';
+          } else if (input[1] === '-') {
+            if (input.length > 2) {
+
+            // TODO: Double check the ending check - and see if something similar is needed for <= to handle evil cases like <=a> <= <b>
+            // the semicolon is also getting really evil; I should check the actual grammar here
+              if (' \t\r\n<#:'.includes(input[2])) {
+                type = '<-';  matchLength = 2;
+              }
+            } else {
+              inconclusive = true;
+              break;
+            }
+          }
         }
         break;
 

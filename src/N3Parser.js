@@ -329,6 +329,17 @@ export default class N3Parser {
       this._saveContext('<<', this._graph, this._subject, this._predicate, this._object);
       this._graph = null;
       return this._readSubject;
+    case '<-':
+      if (!this._n3Mode)
+        return this._error('<- shorthand only supported in N3 mode', token);
+      this._inversePredicate = true;
+      return this._readPredicate;
+    case 'is':
+      if (!this._n3Mode)
+        return this._error('is shorthand only supported in N3 mode', token);
+      this._inversePredicate = true;
+      this._is = true;
+      return this._readPredicate;
     case '[':
       if (this._n3Mode) {
         // Start a new quad with a new blank node as subject
@@ -349,6 +360,19 @@ export default class N3Parser {
 
   // ### `_readObject` reads a quad's object
   _readObject(token) {
+    if (this._is) {
+      // Have read the is of an is .. of statement; we now expect an of
+      if (token.type !== 'of')
+        return this._error('Expected "of" but got ' + token.type, token);
+      
+      // TODO: put is in the context stack
+      // Disable is
+      this._is = false;
+
+      // Now move on to read teh actual object
+      return this._readObject;
+    }
+
     switch (token.type) {
     case 'literal':
       // Regular literal, can still get a datatype or language
