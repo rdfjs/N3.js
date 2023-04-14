@@ -105,6 +105,102 @@ describe('Lexer', () => {
                      { type: '.', line: 4 },
                      { type: 'eof', line: 4 }));
 
+    it('should tokenize id',
+      shouldTokenize('<a> <b> [ id <c> <d> <e> ] .',
+                     { type: 'IRI', value: 'a', line: 1 },
+                     { type: 'IRI', value: 'b', line: 1 },
+                     { type: '[',               line: 1 },
+                     { type: 'id',              line: 1 },
+                     { type: 'IRI', value: 'c', line: 1 },
+                     { type: 'IRI', value: 'd', line: 1 },
+                     { type: 'IRI', value: 'e', line: 1 },
+                     { type: ']',               line: 1 },
+                     { type: '.',               line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize has',
+      shouldTokenize('<a> has <b> <c> .',
+                    { type: 'IRI', value: 'a', line: 1 },
+                    { type: 'has',             line: 1 },
+                    { type: 'IRI', value: 'b', line: 1 },
+                    { type: 'IRI', value: 'c', line: 1 },
+                    { type: '.',               line: 1 },
+                    { type: 'eof', line: 1 }));
+
+    it('should tokenize is of',
+      shouldTokenize('<a> is <b> of <c> .',
+                    { type: 'IRI', value: 'a', line: 1 },
+                    { type: 'is',              line: 1 },
+                    { type: 'IRI', value: 'b', line: 1 },
+                    { type: 'of',              line: 1 },
+                    { type: 'IRI', value: 'c', line: 1 },
+                    { type: '.',               line: 1 },
+                    { type: 'eof', line: 1 }));
+                  
+    it('should tokenize is of with lacking white space',
+      shouldTokenize('<a>is<b>of<c> .',
+                    { type: 'IRI', value: 'a', line: 1 },
+                    { type: 'is',              line: 1 },
+                    { type: 'IRI', value: 'b', line: 1 },
+                    { type: 'of',              line: 1 },
+                    { type: 'IRI', value: 'c', line: 1 },
+                    { type: '.',               line: 1 },
+                    { type: 'eof', line: 1 }));
+
+    it('should tokenize prefixed names with leading digits',
+      shouldTokenize('leg:3032571 isbn13:9780136019701 ',
+                     { type: 'prefixed', prefix: 'leg',    value: '3032571',       line: 1 },
+                     { type: 'prefixed', prefix: 'isbn13', value: '9780136019701', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize prefixed names with leading i',
+     shouldTokenize('leg:3032571 i:9780136019701 ',
+                    { type: 'prefixed', prefix: 'leg',    value: '3032571',       line: 1 },
+                    { type: 'prefixed', prefix: 'i', value: '9780136019701', line: 1 },
+                    { type: 'eof', line: 1 }));
+
+    it('should tokenize prefixed names with leading o',
+      shouldTokenize('leg:3032571 o:9780136019701 ',
+                     { type: 'prefixed', prefix: 'leg',    value: '3032571',       line: 1 },
+                     { type: 'prefixed', prefix: 'o', value: '9780136019701', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize prefixed names with leading h',
+     shouldTokenize('leg:3032571 h:9780136019701 ',
+                    { type: 'prefixed', prefix: 'leg',    value: '3032571',       line: 1 },
+                    { type: 'prefixed', prefix: 'h', value: '9780136019701', line: 1 },
+                    { type: 'eof', line: 1 }));
+   
+    it('should tokenize prefixed names with leading digits [no suffix]',
+      shouldTokenize('leg:3032571 isbn13: ',
+                     { type: 'prefixed', prefix: 'leg',    value: '3032571',       line: 1 },
+                     { type: 'prefixed', prefix: 'isbn13', value: '', line: 1 },
+                     { type: 'eof', line: 1 }));
+    
+    it('should tokenize prefixed names with leading i [no suffix]',
+     shouldTokenize('leg:3032571 i: ',
+                    { type: 'prefixed', prefix: 'leg',    value: '3032571',       line: 1 },
+                    { type: 'prefixed', prefix: 'i', value: '', line: 1 },
+                    { type: 'eof', line: 1 }));
+    
+    it('should tokenize prefixed names with leading o [no suffix]',
+      shouldTokenize('leg:3032571 o: ',
+                     { type: 'prefixed', prefix: 'leg',    value: '3032571',       line: 1 },
+                     { type: 'prefixed', prefix: 'o', value: '', line: 1 },
+                     { type: 'eof', line: 1 }));
+    
+    it('should tokenize prefixed names with leading h [no suffix]',
+     shouldTokenize('leg:3032571 h: ',
+                    { type: 'prefixed', prefix: 'leg',    value: '3032571',       line: 1 },
+                    { type: 'prefixed', prefix: 'h', value: '', line: 1 },
+                    { type: 'eof', line: 1 }));
+              
+    it('should tokenize prefixed names with leading digits and more [no suffix]',
+     shouldTokenize('leg:3032571 BASEsbn13: ',
+                    { type: 'prefixed', prefix: 'leg',    value: '3032571',       line: 1 },
+                    { type: 'prefixed', prefix: 'BASEsbn13', value: '', line: 1 },
+                    { type: 'eof', line: 1 }));
+     
     it('should tokenize prefixed names',
       shouldTokenize(':a b:c d-dd:e-ee.',
                      { type: 'prefixed', prefix: '',      value: 'a',    line: 1 },

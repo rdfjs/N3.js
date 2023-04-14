@@ -410,6 +410,9 @@ export default class N3Parser {
       this._subject = null;
       return this._readBlankNodeTail(token);
     }
+    else if (token.type === 'id') {
+      return this._readId;
+    }
     else if (this._contextStack.length > 1 && this._contextStack[this._contextStack.length - 2].type === '<<') {
       return this._error('Compound blank node expressions not permitted within quoted triple', token);
     }
@@ -417,6 +420,15 @@ export default class N3Parser {
       this._predicate = null;
       return this._readPredicate(token);
     }
+  }
+
+  // ### `_readId` reads an id in a blank node expression to convert it to an IRI
+  _readId(token) {
+    this._subject = this._readEntity(token);
+    if (this._subject.termType !== 'NamedNode') {
+      this._error(`id must be an IRI, received ${this._subject.termType}`, token);
+    }
+    return this._readBlankNodeHead;
   }
 
   // ### `_readBlankNodeTail` reads the end of a blank node

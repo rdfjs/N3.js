@@ -288,6 +288,34 @@ export default class N3Lexer {
           inconclusive = true;
         break;
 
+      case 'i':
+        // TODO: See if the characters checked here are sufficient
+        if (this._n3Mode && input.length > 2 && ' \t\r\n<#'.includes(input[2])) {
+          matchLength = 2;
+          switch (input[1]) {
+            case 's':
+              type = 'is';
+              break;
+            case 'd':
+              type = 'id';
+              break;
+          }
+        }
+        inconclusive = true;
+        break;
+      // has
+      case 'h':
+        if (this._n3Mode && input.length > 3 && input[1] === 'a' && input[2] === 's' && ' \t\r\n<#'.includes(input[3]))
+        type = 'has', matchLength = 3;
+        else inconclusive = true;
+        break;
+      // of
+      case 'o':
+        if (this._n3Mode && input.length > 2 && input[1] === 'f' && ' \t\r\n<#'.includes(input[2]))
+          type = 'of', matchLength = 2;
+        else inconclusive = true;
+        break;
+
       case '=':
         // Try to find an implication arrow or equals sign
         if (this._n3Mode && input.length > 1) {
