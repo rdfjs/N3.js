@@ -397,7 +397,9 @@ export default class N3Parser {
         return this._error('Unexpected graph', token);
       this._saveContext('formula', this._graph, this._subject, this._predicate,
                         this._graph = this._blankNode());
-      return this._readSubject;
+      
+    // Whether or not the prefix and base need to be contextual is undefined; see https://github.com/w3c/N3/issues/175
+      return this._readInTopContext;
     case '<<':
       if (!this._supportsRDFStar)
         return this._error('Unexpected RDF-star syntax', token);
@@ -425,7 +427,8 @@ export default class N3Parser {
       return this._error(`Expected graph but got ${token.type}`, token);
     // The "subject" we read is actually the GRAPH's label
     this._graph = this._subject, this._subject = null;
-    return this._readSubject;
+    // Whether or not the prefix and base need to be contextual is undefined; see https://github.com/w3c/N3/issues/175
+    return this._n3Mode ? this._readInTopContext : this._readSubject;
   }
 
   // ### `_readBlankNodeHead` reads the head of a blank node
@@ -604,7 +607,8 @@ export default class N3Parser {
         return this._error('Unexpected graph', token);
       this._saveContext('formula', this._graph, this._subject, this._predicate,
                         this._graph = this._blankNode());
-      return this._readSubject;
+      // Whether or not the prefix and base need to be contextual is undefined; see https://github.com/w3c/N3/issues/175
+      return this._readInTopContext;
     case '<<':
       if (!this._supportsRDFStar)
         return this._error('Unexpected RDF-star syntax', token);
@@ -804,7 +808,8 @@ export default class N3Parser {
     // A dot just ends the statement, without sharing anything with the next
     case '.':
       this._subject = null;
-      next = this._contextStack.length ? this._readSubject : this._readInTopContext;
+      // Whether or not the prefix and base need to be contextual is undefined; see https://github.com/w3c/N3/issues/175
+      next = (this._contextStack.length && !this._n3Mode) ? this._readSubject : this._readInTopContext;
       if (inversePredicate) this._inversePredicate = false;
       break;
     // Semicolon means the subject is shared; predicate and object are different

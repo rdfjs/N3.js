@@ -328,6 +328,19 @@ describe('Lexer', () => {
                      { type: '.', line: 4 },
                      { type: 'eof', line: 4 }));
 
+    it('should tokenize a prefixed IRI with escaped hash in suffix',
+    shouldTokenize('ex:\\#a ',
+                     { type: 'prefixed', prefix: 'ex', value: '#a', line: 1 },
+                     { type: 'eof', line: 1 }));
+
+    it('should tokenize prefixed IRIs in triple with escaped hash in suffix',
+     shouldTokenize('ex:\\#a ex:\\#b ex:\\#c . ',
+                      { type: 'prefixed', prefix: 'ex', value: '#a', line: 1 },
+                      { type: 'prefixed', prefix: 'ex', value: '#b', line: 1 },
+                      { type: 'prefixed', prefix: 'ex', value: '#c', line: 1 },
+                      { type: '.', line: 1 },
+                      { type: 'eof', line: 1 }));
+                 
     it('should correctly recognize different types of newlines',
       shouldTokenize('<a>\r<b>\n<c>\r\n.',
                      { type: 'IRI', value: 'a', line: 1 },

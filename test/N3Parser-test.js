@@ -1842,6 +1842,10 @@ describe('Parser', () => {
       it('should not parse a named graph with the GRAPH keyword',
       shouldNotParse(parser, 'GRAPH <g> {}', 'Expected entity but got GRAPH on line 1.'));
 
+      describe('should parse @prefix p: <http://a.example/>. \n<http://a.example/s> <http://a.example/p> p:\\#numbersign\n.', 
+      shouldParse(parser, '@prefix p: <http://a.example/>. \n<http://a.example/s> <http://a.example/p> p:\\#numbersign\n.',
+        ['http://a.example/s', 'http://a.example/p', 'http://a.example/#numbersign']));
+
       it('should not parse a quad',
       shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "http://example.org/c" on line 1.'));
 
