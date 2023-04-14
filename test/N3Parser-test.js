@@ -2586,10 +2586,32 @@ describe('Parser', () => {
       ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b1'],
       ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b2'],
       ))
+    
+    describe(`should parse [<a> <b> <c>!( <d> ) .]`, 
+      shouldParse(parser, '<a> <b> <c>!( <d> ) .',
+      ['a', 'b', '_:b1'],
+      ['c', '_:b0', '_:b1'],
+      ...list(['_:b0', 'd']),
+    ))
+
+    describe(`should parse [<c>!( <d> ) <a> <b> .]`, 
+      shouldParse(parser, '<c>!( <d> ) <a> <b> .',
+      ['_:b1', 'a', 'b'],
+      ['c', '_:b0', '_:b1'],
+      ...list(['_:b0', 'd']),
+    ))
+
+    // To get this working we need to make sure to do an emission
+    // and follow the right path at the end of a path
+    describe(`should parse [<a> <b> <c>!<d> .]`, 
+      shouldParse(parser, '<a> <b> <c>!<d> .',
+      ['a', 'b', '_:b0'],
+      ['c', 'd', '_:b0'],
+      ))
 
     describe(`should parse [@prefix : <ex:>. @prefix fam: <f:>. <a> <b> ()!()!( <a> )!() .]`, 
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>. <a> <b> ()!()!( <a> )!() .',
-      ['a', 'b', '_:b2'],
+      ['a', 'b', '_:b3'],
       ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b0'],
       ['_:b0', '_:b1', '_:b2'],
       ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b3'],
