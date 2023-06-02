@@ -75,7 +75,7 @@ console.log(myQuad.object.language);       // en
 ```
 
 In the rest of this document, we will treat “triples” and “quads” equally:
-we assume that a quad is simply a triple in a named or default graph ("_").
+we assume that a quad is simply a triple in a named or default graph.
 
 ## Parsing
 
