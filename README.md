@@ -213,7 +213,7 @@ writer.addQuad(
 );
 writer.addQuad(quad(
   namedNode('http://example.org/cartoons#Tom'),     // Subject
-    namedNode('http://example.org/cartoons#name'),  // Predicate
+  namedNode('http://example.org/cartoons#name'),  // Predicate
   literal('Tom')                                    // Object
 ));
 writer.end();
