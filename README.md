@@ -177,7 +177,7 @@ A dedicated `prefix` event signals every prefix with `prefix` and `term` argumen
 Write quads through `addQuad`.
 
 ```JavaScript
-const writer = new N3.Writer({ prefixes: { c: 'http://example.org/cartoons#' } }); // Create a writer with a special context as Graph
+const writer = new N3.Writer({ prefixes: { c: 'http://example.org/cartoons#' } }); // Create a writer which uses `c` as a prefix for the namespace `http://example.org/cartoons#`
 writer.addQuad(
   namedNode('http://example.org/cartoons#Tom'),                 // Subject
   namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), // Predicate
