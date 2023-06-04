@@ -61,10 +61,10 @@ N3.js follows the [RDF.js low-level specification](http://rdf.js.org/).
 const { DataFactory } = N3;
 const { namedNode, literal, defaultGraph, quad } = DataFactory;
 const myQuad = quad(
-  namedNode('https://ruben.verborgh.org/profile/#me'),
-  namedNode('http://xmlns.com/foaf/0.1/givenName'),
-  literal('Ruben', 'en'),
-  defaultGraph(),
+  namedNode('https://ruben.verborgh.org/profile/#me'), // Subject
+  namedNode('http://xmlns.com/foaf/0.1/givenName'),    // Predicate
+  literal('Ruben', 'en'),                              // Object
+  defaultGraph(),                                      // Graph
 );
 console.log(myQuad.termType);              // Quad
 console.log(myQuad.value);                 // ''
@@ -177,16 +177,16 @@ A dedicated `prefix` event signals every prefix with `prefix` and `term` argumen
 Write quads through `addQuad`.
 
 ```JavaScript
-const writer = new N3.Writer({ prefixes: { c: 'http://example.org/cartoons#' } });
+const writer = new N3.Writer({ prefixes: { c: 'http://example.org/cartoons#' } }); // Create a writer which uses `c` as a prefix for the namespace `http://example.org/cartoons#`
 writer.addQuad(
-  namedNode('http://example.org/cartoons#Tom'),
-  namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-  namedNode('http://example.org/cartoons#Cat')
+  namedNode('http://example.org/cartoons#Tom'),                 // Subject
+  namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), // Predicate
+  namedNode('http://example.org/cartoons#Cat')                  // Object
 );
 writer.addQuad(quad(
-  namedNode('http://example.org/cartoons#Tom'),
-  namedNode('http://example.org/cartoons#name'),
-  literal('Tom')
+  namedNode('http://example.org/cartoons#Tom'),   // Subject
+  namedNode('http://example.org/cartoons#name'),  // Predicate
+  literal('Tom')                                  // Object
 ));
 writer.end((error, result) => console.log(result));
 ```
@@ -207,14 +207,14 @@ const writer2 = new N3.Writer({ format: 'application/trig' });
 ```JavaScript
 const writer = new N3.Writer(process.stdout, { end: false, prefixes: { c: 'http://example.org/cartoons#' } });
 writer.addQuad(
-  namedNode('http://example.org/cartoons#Tom'),
-  namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-  namedNode('http://example.org/cartoons#Cat')
+  namedNode('http://example.org/cartoons#Tom'),                   // Subject
+  namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),   // Predicate
+  namedNode('http://example.org/cartoons#Cat')                    // Object
 );
 writer.addQuad(quad(
-  namedNode('http://example.org/cartoons#Tom'),
-  namedNode('http://example.org/cartoons#name'),
-  literal('Tom')
+  namedNode('http://example.org/cartoons#Tom'),     // Subject
+  namedNode('http://example.org/cartoons#name'),  // Predicate
+  literal('Tom')                                    // Object
 ));
 writer.end();
 ```
