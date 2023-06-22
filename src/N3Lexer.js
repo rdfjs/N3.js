@@ -324,13 +324,10 @@ export default class N3Lexer {
         break;
       case '|':
         // We need 2 tokens lookahead to parse "|}"
-        if (input.length < 2)
-          break;
         // Try to find a quoted triple annotation end
-        if (input[0] === '|' && input.length > 1 && input[1] === '}') {
+        if (input.length >= 2 && input[1] === '}')
           type = '|}', matchLength = 2;
-          break;
-        }
+        break;
 
       default:
         inconclusive = true;
