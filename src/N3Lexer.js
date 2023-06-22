@@ -313,7 +313,7 @@ export default class N3Lexer {
             break;
 
           // Try to find a quoted triple annotation start
-          if (input.length > 1 && input[1] === '|') {
+          if (input[1] === '|') {
             type = '{|', matchLength = 2;
             break;
           }
