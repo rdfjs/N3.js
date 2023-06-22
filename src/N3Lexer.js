@@ -300,13 +300,37 @@ export default class N3Lexer {
       case ']':
       case '(':
       case ')':
-      case '{':
       case '}':
         if (!this._lineMode) {
           matchLength = 1;
           type = firstChar;
+          break;
+        }
+      case '{':
+        if (!this._lineMode) {
+          // We need at least 2 tokens lookahead to distinguish "{|" and "{ "
+          if (input.length < 2)
+            break;
+
+          // Try to find a quoted triple annotation start
+          if (input.length > 1 && input[1] === '|') {
+            type = '{|', matchLength = 2;
+            break;
+          }
+
+          matchLength = 1;
+          type = firstChar;
         }
         break;
+      case '|':
+        // We need at least 2 tokens lookahead to distinguish "|}" and "|"
+        if (input.length < 2)
+          break;
+        // Try to find a quoted triple annotation end
+        if (input[0] === '|' && input.length > 1 && input[1] === '}') {
+          type = '|}', matchLength = 2;
+          break;
+        }
 
       default:
         inconclusive = true;
