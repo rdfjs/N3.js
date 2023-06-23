@@ -304,8 +304,8 @@ export default class N3Lexer {
         if (!this._lineMode) {
           matchLength = 1;
           type = firstChar;
-          break;
         }
+        break;
       case '{':
         // We need at least 2 tokens lookahead to distinguish "{|" and "{ "
         if (!this._lineMode && input.length >= 2) {
