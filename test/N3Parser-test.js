@@ -746,7 +746,7 @@ describe('Parser', () => {
 
     it('should not parse a single opening brace',
       shouldNotParse('{',
-                     'Expected entity but got eof on line 1.'));
+                     'Unexpected "{" on line 1.'));
 
     it('should not parse a superfluous closing brace ',
       shouldNotParse('{}}',
@@ -1044,6 +1044,46 @@ describe('Parser', () => {
       shouldParse('<a> <b> <c> <g>.\n<<<a> <b> <c>>> <d> <e>.',
           ['a', 'b', 'c', 'g'],
           [['a', 'b', 'c'], 'd', 'e']));
+
+    it('should parse an RDF* triple using annotation syntax with one predicate-object',
+      shouldParse('<a> <b> <c> {| <b> <c> |}.',
+          ['a', 'b', 'c'], [['a', 'b', 'c'], 'b', 'c']));
+
+    it('should parse an RDF* triple using annotation syntax with two predicate-objects',
+        shouldParse('<a> <b> <c> {| <b1> <c1>; <b2> <c2> |}.',
+            ['a', 'b', 'c'], [['a', 'b', 'c'], 'b1', 'c1'], [['a', 'b', 'c'], 'b2', 'c2']));
+
+    it('should parse an RDF* triple using annotation syntax with one predicate-object followed by regular triples',
+        shouldParse('<a> <b> <c> {| <b> <c> |}.\n<a2> <b2> <c2>.',
+            ['a', 'b', 'c'], [['a', 'b', 'c'], 'b', 'c'], ['a2', 'b2', 'c2']));
+
+    it('should not parse an RDF* triple using annotation syntax with zero predicate-objects',
+        shouldNotParse('<a> <b> <c> {| |}',
+            'Expected entity but got |} on line 1.'));
+
+    it('should not parse an RDF* triple using an incomplete annotation syntax',
+        shouldNotParse('<a> <b> <c> {| <b> |}',
+            'Expected entity but got |} on line 1.'));
+
+    it('should not parse an RDF* triple using an incomplete annotation syntax after a semicolon',
+        shouldNotParse('<a> <b> <c> {| <b1> <c1>; |}',
+            'Expected entity but got |} on line 1.'));
+
+    it('should not parse an RDF* triple using an incomplete annotation syntax after a semicolon and entity',
+        shouldNotParse('<a> <b> <c> {| <b1> <c1>; <b2> |}',
+            'Expected entity but got |} on line 1.'));
+
+    it('should not parse an RDF* triple using an incomplete annotation syntax that misses |}',
+        shouldNotParse('<a> <b> <c> {| <b1> <c1>',
+            'Expected entity but got eof on line 1.'));
+
+    it('should not parse an RDF* triple using an incomplete annotation syntax that misses |} and starts a new subject',
+        shouldNotParse('<a> <b> <c> {| <b1> <c1>. <a2> <b2> <c2>',
+            'Expected entity but got eof on line 1.'));
+
+    it('should not parse an out of place |}',
+        shouldNotParse('<a> <b> <c> |}',
+            'Unexpected asserted triple closing on line 1.'));
   });
 
   describe('An Parser instance without document IRI', () => {
@@ -1227,6 +1267,10 @@ describe('Parser', () => {
     it('should not parse RDF* in the object position',
       shouldNotParse(parser, '<a> <b> <<a> <b> <c>>>.',
         'Unexpected RDF* syntax on line 1.'));
+
+    it('should not parse RDF* with annotated syntax',
+        shouldNotParse(parser, '<a> <b> <c> {| <b> <c> |}.',
+            'Unexpected RDF* syntax on line 1.'));
   });
 
   describe('A Parser instance for the TurtleStar format', () => {
@@ -1288,6 +1332,10 @@ describe('Parser', () => {
     it('should not parse RDF* in the object position',
       shouldNotParse(parser, '<a> <b> <<<a> <b> <c>>>.',
         'Unexpected RDF* syntax on line 1.'));
+
+    it('should not parse RDF* with annotated syntax',
+        shouldNotParse(parser, '<a> <b> <c> {| <b> <c> |}.',
+            'Unexpected RDF* syntax on line 1.'));
   });
 
   describe('A Parser instance for the TriGStar format', () => {
@@ -1316,6 +1364,10 @@ describe('Parser', () => {
     it('should not parse a single quad',
       shouldNotParse(parser, '_:a <http://ex.org/b> "c" <http://ex.org/g>.',
                              'Expected punctuation to follow ""c"" on line 1.'));
+
+    it('should not parse object lists',
+        shouldNotParse(parser, '<http://example/s> <http://example/p> <http://example/o>, <http://example/o2> .',
+            'Unexpected "," on line 1.'));
 
     it('should not parse relative IRIs',
       shouldNotParse(parser, '<a> <b> <c>.', 'Invalid IRI on line 1.'));
@@ -1375,6 +1427,10 @@ describe('Parser', () => {
     it('should not parse nested quads',
       shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
         'Expected >> to follow "_:b0_b" on line 1.'));
+
+    it('should not parse annotated triples',
+        shouldNotParse(parser, '_:a <http://ex.org/b> _:c {| <http://ex.org/b1> "c1" |} .',
+            'Unexpected "{|" on line 1.'));
   });
 
   describe('A Parser instance for the N-Quads format', () => {
@@ -1430,6 +1486,10 @@ describe('Parser', () => {
     it('should parse RDF*',
       shouldParse(parser, '<<_:a <http://example.org/b> _:c>> <http://example.org/a> _:c .',
         [['_:b0_a', 'b', '_:b0_c'], 'a', '_:b0_c']));
+
+    it('should not parse annotated triples',
+        shouldNotParse(parser, '_:a <http://ex.org/b> _:c {| <http://ex.org/b1> "c1" |} .',
+            'Unexpected "{|" on line 1.'));
   });
 
   describe('A Parser instance for the N3 format', () => {
@@ -1777,6 +1837,10 @@ describe('Parser', () => {
     it('should not parse RDF* in the object position',
       shouldNotParse(parser, '<a> <b> <<<a> <b> <c>>>.',
         'Unexpected RDF* syntax on line 1.'));
+
+    it('should not parse RDF* with annotated syntax',
+        shouldNotParse(parser, '<a> <b> <c> {| <b> <c> |}.',
+            'Unexpected RDF* syntax on line 1.'));
   });
 
   describe('A Parser instance for the N3Star format', () => {

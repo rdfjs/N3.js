@@ -1090,6 +1090,49 @@ describe('Lexer', () => {
         { type: '.', line: 1 },
         { type: 'eof', line: 1 }));
 
+    it('should tokenize a quoted triple annotation start',
+        shouldTokenize('{|',
+            { type: '{|', line: 1 },
+            { type: 'eof', line: 1 }));
+
+    it('should tokenize a split quoted triple annotation start',
+        shouldTokenize(streamOf('{', '|'),
+            { type: '{|', line: 1 },
+            { type: 'eof', line: 1 }));
+
+    it('should tokenize a quoted triple annotation end',
+        shouldTokenize('|}',
+            { type: '|}', line: 1 },
+            { type: 'eof', line: 1 }));
+
+    it('should tokenize a split quoted triple annotation end',
+        shouldTokenize(streamOf('|', '}'),
+            { type: '|}', line: 1 },
+            { type: 'eof', line: 1 }));
+
+    it('should tokenize an empty quoted triple annotation',
+        shouldTokenize('{| |}',
+            { type: '{|', line: 1 },
+            { type: '|}', line: 1 },
+            { type: 'eof', line: 1 }));
+
+    it('should tokenize a non-empty quoted triple annotation',
+        shouldTokenize('{| <http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo> |}.',
+            { type: '{|', line: 1 },
+            { type: 'IRI', value: 'http://ex.org/?bla#bar', line: 1 },
+            { type: 'IRI', value: 'http://ex.org/?bla#boo', line: 2 },
+            { type: '|}', line: 2 },
+            { type: '.', line: 2 },
+            { type: 'eof', line: 2 }));
+
+    it('should not tokenize an incomplete closing triple annotation',
+        shouldNotTokenize('{| |',
+            'Unexpected "|" on line 1.'));
+
+    it('should not tokenize an invalid closing triple annotation',
+        shouldNotTokenize('{| ||',
+            'Unexpected "||" on line 1.'));
+
     it('returns start and end index for every token', () => {
       const tokens = new Lexer().tokenize('<a:a> <b:c> "lit"@EN.');
       tokens.should.deep.equal([

@@ -614,6 +614,22 @@ export default class N3Parser {
     case ',':
       next = this._readObject;
       break;
+    // {| means that the current triple is annotated with predicate-object pairs.
+    case '{|':
+      if (!this._supportsRDFStar)
+        return this._error('Unexpected RDF* syntax', token);
+      // Continue using the last triple as quoted triple subject for the predicate-object pairs.
+      const predicate = this._predicate, object = this._object;
+      this._subject = this._quad(subject, predicate, object, this.DEFAULTGRAPH);
+      next = this._readPredicate;
+      break;
+    // |} means that the current quoted triple in annotation syntax is finalized.
+    case '|}':
+      if (this._subject.termType !== 'Quad')
+        return this._error('Unexpected asserted triple closing', token);
+      this._subject = null;
+      next = this._readPunctuation;
+      break;
     default:
       // An entity means this is a quad (only allowed if not already inside a graph)
       if (this._supportsQuads && this._graph === null && (graph = this._readEntity(token)) !== undefined) {
