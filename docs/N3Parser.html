@@ -2124,8 +2124,7 @@ If the formula was the object, read punctuation.</p>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;,&#x27;</span>:
       next = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_readObject</span>;
-      <span class="hljs-keyword">break</span>;
-    <span class="hljs-attr">default</span>:</pre></div></div>
+      <span class="hljs-keyword">break</span>;</pre></div></div>
             
         </li>
         
@@ -2135,6 +2134,62 @@ If the formula was the object, read punctuation.</p>
               
               <div class="sswrap ">
                 <a class="ss" href="#section-114">&#x00a7;</a>
+              </div>
+              <p>{| means that the current triple is annotated with predicate-object pairs.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;{|&#x27;</span>:
+      <span class="hljs-keyword">if</span> (!<span class="hljs-variable language_">this</span>.<span class="hljs-property">_supportsRDFStar</span>)
+        <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_error</span>(<span class="hljs-string">&#x27;Unexpected RDF* syntax&#x27;</span>, token);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-115">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-115">&#x00a7;</a>
+              </div>
+              <p>Continue using the last triple as quoted triple subject for the predicate-object pairs.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">const</span> predicate = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_predicate</span>, object = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_object</span>;
+      <span class="hljs-variable language_">this</span>.<span class="hljs-property">_subject</span> = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_quad</span>(subject, predicate, object, <span class="hljs-variable language_">this</span>.<span class="hljs-property">DEFAULTGRAPH</span>);
+      next = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_readPredicate</span>;
+      <span class="hljs-keyword">break</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-116">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-116">&#x00a7;</a>
+              </div>
+              <p>|} means that the current quoted triple in annotation syntax is finalized.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;|}&#x27;</span>:
+      <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_subject</span>.<span class="hljs-property">termType</span> !== <span class="hljs-string">&#x27;Quad&#x27;</span>)
+        <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_error</span>(<span class="hljs-string">&#x27;Unexpected asserted triple closing&#x27;</span>, token);
+      <span class="hljs-variable language_">this</span>.<span class="hljs-property">_subject</span> = <span class="hljs-literal">null</span>;
+      next = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_readPunctuation</span>;
+      <span class="hljs-keyword">break</span>;
+    <span class="hljs-attr">default</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-117">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-117">&#x00a7;</a>
               </div>
               <p>An entity means this is a quad (only allowed if not already inside a graph)</p>
 
@@ -2150,11 +2205,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-115">
+        <li id="section-118">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-115">&#x00a7;</a>
+                <a class="ss" href="#section-118">&#x00a7;</a>
               </div>
               <p>A quad has been completed now, so return it</p>
 
@@ -2173,11 +2228,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-116">
+        <li id="section-119">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-116">&#x00a7;</a>
+                <a class="ss" href="#section-119">&#x00a7;</a>
               </div>
               <h3 id="_readblanknodepunctuation-reads-punctuation-in-a-blank-node"><code>_readBlankNodePunctuation</code> reads punctuation in a blank node</h3>
 
@@ -2190,11 +2245,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-117">
+        <li id="section-120">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-117">&#x00a7;</a>
+                <a class="ss" href="#section-120">&#x00a7;</a>
               </div>
               <p>Semicolon means the subject is shared; predicate and object are different</p>
 
@@ -2207,11 +2262,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-118">
+        <li id="section-121">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-118">&#x00a7;</a>
+                <a class="ss" href="#section-121">&#x00a7;</a>
               </div>
               <p>Comma means both the subject and predicate are shared; the object is different</p>
 
@@ -2227,11 +2282,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-119">
+        <li id="section-122">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-119">&#x00a7;</a>
+                <a class="ss" href="#section-122">&#x00a7;</a>
               </div>
               <p>A quad has been completed now, so return it</p>
 
@@ -2244,11 +2299,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-120">
+        <li id="section-123">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-120">&#x00a7;</a>
+                <a class="ss" href="#section-123">&#x00a7;</a>
               </div>
               <h3 id="_readquadpunctuation-reads-punctuation-after-a-quad"><code>_readQuadPunctuation</code> reads punctuation after a quad</h3>
 
@@ -2263,11 +2318,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-121">
+        <li id="section-124">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-121">&#x00a7;</a>
+                <a class="ss" href="#section-124">&#x00a7;</a>
               </div>
               <h3 id="_readprefix-reads-the-prefix-of-a-prefix-declaration"><code>_readPrefix</code> reads the prefix of a prefix declaration</h3>
 
@@ -2283,11 +2338,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-122">
+        <li id="section-125">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-122">&#x00a7;</a>
+                <a class="ss" href="#section-125">&#x00a7;</a>
               </div>
               <h3 id="_readprefixiri-reads-the-iri-of-a-prefix-declaration"><code>_readPrefixIRI</code> reads the IRI of a prefix declaration</h3>
 
@@ -2305,11 +2360,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-123">
+        <li id="section-126">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-123">&#x00a7;</a>
+                <a class="ss" href="#section-126">&#x00a7;</a>
               </div>
               <h3 id="_readbaseiri-reads-the-iri-of-a-base-declaration"><code>_readBaseIRI</code> reads the IRI of a base declaration</h3>
 
@@ -2326,11 +2381,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-124">
+        <li id="section-127">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-124">&#x00a7;</a>
+                <a class="ss" href="#section-127">&#x00a7;</a>
               </div>
               <h3 id="_readnamedgraphlabel-reads-the-label-of-a-named-graph"><code>_readNamedGraphLabel</code> reads the label of a named graph</h3>
 
@@ -2352,11 +2407,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-125">
+        <li id="section-128">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-125">&#x00a7;</a>
+                <a class="ss" href="#section-128">&#x00a7;</a>
               </div>
               <h3 id="_readnamedgraphlabel-reads-a-blank-node-label-of-a-named-graph"><code>_readNamedGraphLabel</code> reads a blank node label of a named graph</h3>
 
@@ -2372,11 +2427,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-126">
+        <li id="section-129">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-126">&#x00a7;</a>
+                <a class="ss" href="#section-129">&#x00a7;</a>
               </div>
               <h3 id="_readdeclarationpunctuation-reads-the-punctuation-of-a-declaration"><code>_readDeclarationPunctuation</code> reads the punctuation of a declaration</h3>
 
@@ -2387,11 +2442,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-127">
+        <li id="section-130">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-127">&#x00a7;</a>
+                <a class="ss" href="#section-130">&#x00a7;</a>
               </div>
               <p>SPARQL-style declarations don’t have punctuation</p>
 
@@ -2410,11 +2465,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-128">
+        <li id="section-131">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-128">&#x00a7;</a>
+                <a class="ss" href="#section-131">&#x00a7;</a>
               </div>
               <p>Reads a list of quantified symbols from a @forSome or @forAll statement</p>
 
@@ -2434,11 +2489,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-129">
+        <li id="section-132">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-129">&#x00a7;</a>
+                <a class="ss" href="#section-132">&#x00a7;</a>
               </div>
               <p>Without explicit quantifiers, map entities to a quantified entity</p>
 
@@ -2450,11 +2505,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-130">
+        <li id="section-133">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-130">&#x00a7;</a>
+                <a class="ss" href="#section-133">&#x00a7;</a>
               </div>
               <p>With explicit quantifiers, output the reified quantifier</p>
 
@@ -2465,11 +2520,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-131">
+        <li id="section-134">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-131">&#x00a7;</a>
+                <a class="ss" href="#section-134">&#x00a7;</a>
               </div>
               <p>If this is the first item, start a new quantifier list</p>
 
@@ -2482,11 +2537,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-132">
+        <li id="section-135">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-132">&#x00a7;</a>
+                <a class="ss" href="#section-135">&#x00a7;</a>
               </div>
               <p>Otherwise, continue the previous list</p>
 
@@ -2499,11 +2554,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-133">
+        <li id="section-136">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-133">&#x00a7;</a>
+                <a class="ss" href="#section-136">&#x00a7;</a>
               </div>
               <p>Output the list item</p>
 
@@ -2517,11 +2572,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-134">
+        <li id="section-137">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-134">&#x00a7;</a>
+                <a class="ss" href="#section-137">&#x00a7;</a>
               </div>
               <p>Reads punctuation from a @forSome or @forAll statement</p>
 
@@ -2532,11 +2587,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-135">
+        <li id="section-138">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-135">&#x00a7;</a>
+                <a class="ss" href="#section-138">&#x00a7;</a>
               </div>
               <p>Read more quantifiers</p>
 
@@ -2548,11 +2603,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-136">
+        <li id="section-139">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-136">&#x00a7;</a>
+                <a class="ss" href="#section-139">&#x00a7;</a>
               </div>
               <p>End of the quantifier list</p>
 
@@ -2563,11 +2618,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-137">
+        <li id="section-140">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-137">&#x00a7;</a>
+                <a class="ss" href="#section-140">&#x00a7;</a>
               </div>
               <p>With explicit quantifiers, close the quantifier list</p>
 
@@ -2581,11 +2636,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-138">
+        <li id="section-141">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-138">&#x00a7;</a>
+                <a class="ss" href="#section-141">&#x00a7;</a>
               </div>
               <p>Read a dot</p>
 
@@ -2599,11 +2654,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-139">
+        <li id="section-142">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-139">&#x00a7;</a>
+                <a class="ss" href="#section-142">&#x00a7;</a>
               </div>
               <h3 id="_getpathreader-reads-a-potential-path-and-then-resumes-with-the-given-function"><code>_getPathReader</code> reads a potential path and then resumes with the given function</h3>
 
@@ -2617,11 +2672,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-140">
+        <li id="section-143">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-140">&#x00a7;</a>
+                <a class="ss" href="#section-143">&#x00a7;</a>
               </div>
               <h3 id="_readpath-reads-a-potential-path"><code>_readPath</code> reads a potential path</h3>
 
@@ -2633,11 +2688,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-141">
+        <li id="section-144">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-141">&#x00a7;</a>
+                <a class="ss" href="#section-144">&#x00a7;</a>
               </div>
               <p>Forward path</p>
 
@@ -2648,11 +2703,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-142">
+        <li id="section-145">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-142">&#x00a7;</a>
+                <a class="ss" href="#section-145">&#x00a7;</a>
               </div>
               <p>Backward path</p>
 
@@ -2663,11 +2718,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-143">
+        <li id="section-146">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-143">&#x00a7;</a>
+                <a class="ss" href="#section-146">&#x00a7;</a>
               </div>
               <p>Not a path; resume reading where we left off</p>
 
@@ -2679,11 +2734,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-144">
+        <li id="section-147">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-144">&#x00a7;</a>
+                <a class="ss" href="#section-147">&#x00a7;</a>
               </div>
               <p>If we were reading a list item, we still need to output it</p>
 
@@ -2694,11 +2749,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-145">
+        <li id="section-148">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-145">&#x00a7;</a>
+                <a class="ss" href="#section-148">&#x00a7;</a>
               </div>
               <p>The list item is the remaining subejct after reading the path</p>
 
@@ -2709,11 +2764,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-146">
+        <li id="section-149">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-146">&#x00a7;</a>
+                <a class="ss" href="#section-149">&#x00a7;</a>
               </div>
               <p>Switch back to the context of the list</p>
 
@@ -2724,11 +2779,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-147">
+        <li id="section-150">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-147">&#x00a7;</a>
+                <a class="ss" href="#section-150">&#x00a7;</a>
               </div>
               <p>Output the list item</p>
 
@@ -2743,11 +2798,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-148">
+        <li id="section-151">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-148">&#x00a7;</a>
+                <a class="ss" href="#section-151">&#x00a7;</a>
               </div>
               <h3 id="_readforwardpath-reads-a--path"><code>_readForwardPath</code> reads a ‘!’ path</h3>
 
@@ -2760,11 +2815,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-149">
+        <li id="section-152">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-149">&#x00a7;</a>
+                <a class="ss" href="#section-152">&#x00a7;</a>
               </div>
               <p>The next token is the predicate</p>
 
@@ -2776,11 +2831,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-150">
+        <li id="section-153">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-150">&#x00a7;</a>
+                <a class="ss" href="#section-153">&#x00a7;</a>
               </div>
               <p>If we were reading a subject, replace the subject by the path’s object</p>
 
@@ -2792,11 +2847,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-151">
+        <li id="section-154">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-151">&#x00a7;</a>
+                <a class="ss" href="#section-154">&#x00a7;</a>
               </div>
               <p>If we were reading an object, replace the subject by the path’s object</p>
 
@@ -2808,11 +2863,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-152">
+        <li id="section-155">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-152">&#x00a7;</a>
+                <a class="ss" href="#section-155">&#x00a7;</a>
               </div>
               <p>Emit the path’s current quad and read its next section</p>
 
@@ -2825,11 +2880,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-153">
+        <li id="section-156">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-153">&#x00a7;</a>
+                <a class="ss" href="#section-156">&#x00a7;</a>
               </div>
               <h3 id="_readbackwardpath-reads-a--path"><code>_readBackwardPath</code> reads a ‘^’ path</h3>
 
@@ -2842,11 +2897,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-154">
+        <li id="section-157">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-154">&#x00a7;</a>
+                <a class="ss" href="#section-157">&#x00a7;</a>
               </div>
               <p>The next token is the predicate</p>
 
@@ -2858,11 +2913,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-155">
+        <li id="section-158">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-155">&#x00a7;</a>
+                <a class="ss" href="#section-158">&#x00a7;</a>
               </div>
               <p>If we were reading a subject, replace the subject by the path’s subject</p>
 
@@ -2874,11 +2929,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-156">
+        <li id="section-159">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-156">&#x00a7;</a>
+                <a class="ss" href="#section-159">&#x00a7;</a>
               </div>
               <p>If we were reading an object, replace the subject by the path’s subject</p>
 
@@ -2890,11 +2945,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-157">
+        <li id="section-160">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-157">&#x00a7;</a>
+                <a class="ss" href="#section-160">&#x00a7;</a>
               </div>
               <p>Emit the path’s current quad and read its next section</p>
 
@@ -2907,11 +2962,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-158">
+        <li id="section-161">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-158">&#x00a7;</a>
+                <a class="ss" href="#section-161">&#x00a7;</a>
               </div>
               <h3 id="_readrdfstartailorgraph-reads-the-graph-of-a-nested-rdf-quad-or-the-end-of-a-nested-rdf-triple"><code>_readRDFStarTailOrGraph</code> reads the graph of a nested RDF* quad or the end of a nested RDF* triple</h3>
 
@@ -2923,11 +2978,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-159">
+        <li id="section-162">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-159">&#x00a7;</a>
+                <a class="ss" href="#section-162">&#x00a7;</a>
               </div>
               <p>An entity means this is a quad (only allowed if not already inside a graph)</p>
 
@@ -2943,11 +2998,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-160">
+        <li id="section-163">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-160">&#x00a7;</a>
+                <a class="ss" href="#section-163">&#x00a7;</a>
               </div>
               <h3 id="_readrdfstartail-reads-the-end-of-a-nested-rdf-triple"><code>_readRDFStarTail</code> reads the end of a nested RDF* triple</h3>
 
@@ -2960,11 +3015,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-161">
+        <li id="section-164">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-161">&#x00a7;</a>
+                <a class="ss" href="#section-164">&#x00a7;</a>
               </div>
               <p>Read the quad and restore the previous context</p>
 
@@ -2977,11 +3032,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-162">
+        <li id="section-165">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-162">&#x00a7;</a>
+                <a class="ss" href="#section-165">&#x00a7;</a>
               </div>
               <p>If the triple was the subject, continue by reading the predicate.</p>
 
@@ -2995,11 +3050,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-163">
+        <li id="section-166">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-163">&#x00a7;</a>
+                <a class="ss" href="#section-166">&#x00a7;</a>
               </div>
               <p>If the triple was the object, read context end.</p>
 
@@ -3014,11 +3069,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-164">
+        <li id="section-167">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-164">&#x00a7;</a>
+                <a class="ss" href="#section-167">&#x00a7;</a>
               </div>
               <h3 id="_getcontextendreader-gets-the-next-reader-function-at-the-end-of-a-context"><code>_getContextEndReader</code> gets the next reader function at the end of a context</h3>
 
@@ -3044,11 +3099,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-165">
+        <li id="section-168">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-165">&#x00a7;</a>
+                <a class="ss" href="#section-168">&#x00a7;</a>
               </div>
               <h3 id="_emit-sends-a-quad-through-the-callback"><code>_emit</code> sends a quad through the callback</h3>
 
@@ -3061,11 +3116,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-166">
+        <li id="section-169">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-166">&#x00a7;</a>
+                <a class="ss" href="#section-169">&#x00a7;</a>
               </div>
               <h3 id="_error-emits-an-error-message-through-the-callback"><code>_error</code> emits an error message through the callback</h3>
 
@@ -3085,11 +3140,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-167">
+        <li id="section-170">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-167">&#x00a7;</a>
+                <a class="ss" href="#section-170">&#x00a7;</a>
               </div>
               <h3 id="_resolveiri-resolves-an-iri-against-the-base-path"><code>_resolveIRI</code> resolves an IRI against the base path</h3>
 
@@ -3102,11 +3157,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-168">
+        <li id="section-171">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-168">&#x00a7;</a>
+                <a class="ss" href="#section-171">&#x00a7;</a>
               </div>
               <h3 id="_resolverelativeiri-resolves-an-iri-against-the-base-path"><code>_resolveRelativeIRI</code> resolves an IRI against the base path,</h3>
 <p>assuming that a base path has been set and that the IRI is indeed relative</p>
@@ -3118,11 +3173,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-169">
+        <li id="section-172">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-169">&#x00a7;</a>
+                <a class="ss" href="#section-172">&#x00a7;</a>
               </div>
               <p>An empty relative IRI indicates the base IRI</p>
 
@@ -3134,11 +3189,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-170">
+        <li id="section-173">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-170">&#x00a7;</a>
+                <a class="ss" href="#section-173">&#x00a7;</a>
               </div>
               <p>Decide resolving strategy based in the first character</p>
 
@@ -3149,11 +3204,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-171">
+        <li id="section-174">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-171">&#x00a7;</a>
+                <a class="ss" href="#section-174">&#x00a7;</a>
               </div>
               <p>Resolve relative fragment IRIs against the base IRI</p>
 
@@ -3164,11 +3219,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-172">
+        <li id="section-175">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-172">&#x00a7;</a>
+                <a class="ss" href="#section-175">&#x00a7;</a>
               </div>
               <p>Resolve relative query string IRIs by replacing the query string</p>
 
@@ -3179,11 +3234,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-173">
+        <li id="section-176">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-173">&#x00a7;</a>
+                <a class="ss" href="#section-176">&#x00a7;</a>
               </div>
               <p>Resolve root-relative IRIs at the root of the base IRI</p>
 
@@ -3194,11 +3249,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-174">
+        <li id="section-177">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-174">&#x00a7;</a>
+                <a class="ss" href="#section-177">&#x00a7;</a>
               </div>
               <p>Resolve scheme-relative IRIs to the scheme</p>
 
@@ -3209,11 +3264,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-175">
+        <li id="section-178">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-175">&#x00a7;</a>
+                <a class="ss" href="#section-178">&#x00a7;</a>
               </div>
               <p>Resolve all other IRIs at the base IRI’s path</p>
 
@@ -3224,11 +3279,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-176">
+        <li id="section-179">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-176">&#x00a7;</a>
+                <a class="ss" href="#section-179">&#x00a7;</a>
               </div>
               <p>Relative IRIs cannot contain a colon in the first path segment</p>
 
@@ -3241,11 +3296,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-177">
+        <li id="section-180">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-177">&#x00a7;</a>
+                <a class="ss" href="#section-180">&#x00a7;</a>
               </div>
               <h3 id="_removedotsegments-resolves--and--path-segments-in-an-iri-as-per-rfc3986"><code>_removeDotSegments</code> resolves ‘./‘ and ‘../‘ path segments in an IRI as per RFC3986</h3>
 
@@ -3256,11 +3311,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-178">
+        <li id="section-181">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-178">&#x00a7;</a>
+                <a class="ss" href="#section-181">&#x00a7;</a>
               </div>
               <p>Don’t modify the IRI if it does not contain any dot segments</p>
 
@@ -3272,11 +3327,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-179">
+        <li id="section-182">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-179">&#x00a7;</a>
+                <a class="ss" href="#section-182">&#x00a7;</a>
               </div>
               <p>Start with an imaginary slash before the IRI in order to resolve trailing ‘./‘ and ‘../‘</p>
 
@@ -3291,11 +3346,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-180">
+        <li id="section-183">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-180">&#x00a7;</a>
+                <a class="ss" href="#section-183">&#x00a7;</a>
               </div>
               <p>The path starts with the first slash after the authority</p>
 
@@ -3307,11 +3362,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-181">
+        <li id="section-184">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-181">&#x00a7;</a>
+                <a class="ss" href="#section-184">&#x00a7;</a>
               </div>
               <p>Skip two slashes before the authority</p>
 
@@ -3322,11 +3377,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-182">
+        <li id="section-185">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-182">&#x00a7;</a>
+                <a class="ss" href="#section-185">&#x00a7;</a>
               </div>
               <p>Skip to slash after the authority</p>
 
@@ -3340,11 +3395,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-183">
+        <li id="section-186">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-183">&#x00a7;</a>
+                <a class="ss" href="#section-186">&#x00a7;</a>
               </div>
               <p>Don’t modify a query string or fragment</p>
 
@@ -3358,11 +3413,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-184">
+        <li id="section-187">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-184">&#x00a7;</a>
+                <a class="ss" href="#section-187">&#x00a7;</a>
               </div>
               <p>Handle ‘/.’ or ‘/..’ path segments</p>
 
@@ -3376,11 +3431,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-185">
+        <li id="section-188">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-185">&#x00a7;</a>
+                <a class="ss" href="#section-188">&#x00a7;</a>
               </div>
               <p>Remove a ‘/.’ segment</p>
 
@@ -3394,11 +3449,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-186">
+        <li id="section-189">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-186">&#x00a7;</a>
+                <a class="ss" href="#section-189">&#x00a7;</a>
               </div>
               <p>Remove a trailing ‘/.’ segment</p>
 
@@ -3412,11 +3467,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-187">
+        <li id="section-190">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-187">&#x00a7;</a>
+                <a class="ss" href="#section-190">&#x00a7;</a>
               </div>
               <p>Remove a ‘/..’ segment</p>
 
@@ -3430,11 +3485,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-188">
+        <li id="section-191">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-188">&#x00a7;</a>
+                <a class="ss" href="#section-191">&#x00a7;</a>
               </div>
               <p>Try to remove the parent path from result</p>
 
@@ -3446,11 +3501,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-189">
+        <li id="section-192">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-189">&#x00a7;</a>
+                <a class="ss" href="#section-192">&#x00a7;</a>
               </div>
               <p>Remove a trailing ‘/..’ segment</p>
 
@@ -3471,11 +3526,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-190">
+        <li id="section-193">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-190">&#x00a7;</a>
+                <a class="ss" href="#section-193">&#x00a7;</a>
               </div>
               <h2 id="public-methods">Public methods</h2>
 
@@ -3484,11 +3539,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-191">
+        <li id="section-194">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-191">&#x00a7;</a>
+                <a class="ss" href="#section-194">&#x00a7;</a>
               </div>
               <h3 id="parse-parses-the-n3-input-and-emits-each-parsed-quad-through-the-callback"><code>parse</code> parses the N3 input and emits each parsed quad through the callback</h3>
 
@@ -3499,11 +3554,11 @@ If the formula was the object, read punctuation.</p>
         </li>
         
         
-        <li id="section-192">
+        <li id="section-195">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-192">&#x00a7;</a>
+                <a class="ss" href="#section-195">&#x00a7;</a>
               </div>
               <p>The read callback is the next function to be executed when a token arrives.
 We start reading in the top context.</p>
@@ -3522,11 +3577,11 @@ We start reading in the top context.</p>
         </li>
         
         
-        <li id="section-193">
+        <li id="section-196">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-193">&#x00a7;</a>
+                <a class="ss" href="#section-196">&#x00a7;</a>
               </div>
               <p>Parse synchronously if no quad callback is given</p>
 
@@ -3546,11 +3601,11 @@ We start reading in the top context.</p>
         </li>
         
         
-        <li id="section-194">
+        <li id="section-197">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-194">&#x00a7;</a>
+                <a class="ss" href="#section-197">&#x00a7;</a>
               </div>
               <p>Parse asynchronously otherwise, executing the read callback when a token arrives</p>
 
@@ -3569,11 +3624,11 @@ We start reading in the top context.</p>
         </li>
         
         
-        <li id="section-195">
+        <li id="section-198">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-195">&#x00a7;</a>
+                <a class="ss" href="#section-198">&#x00a7;</a>
               </div>
               <p>The empty function</p>
 
@@ -3584,11 +3639,11 @@ We start reading in the top context.</p>
         </li>
         
         
-        <li id="section-196">
+        <li id="section-199">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-196">&#x00a7;</a>
+                <a class="ss" href="#section-199">&#x00a7;</a>
               </div>
               <p>Initializes the parser with the given data factory</p>
 
@@ -3599,11 +3654,11 @@ We start reading in the top context.</p>
         </li>
         
         
-        <li id="section-197">
+        <li id="section-200">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-197">&#x00a7;</a>
+                <a class="ss" href="#section-200">&#x00a7;</a>
               </div>
               <p>Set factory methods</p>
 
@@ -3620,11 +3675,11 @@ We start reading in the top context.</p>
         </li>
         
         
-        <li id="section-198">
+        <li id="section-201">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-198">&#x00a7;</a>
+                <a class="ss" href="#section-201">&#x00a7;</a>
               </div>
               <p>Set common named nodes</p>
 
