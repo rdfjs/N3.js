@@ -402,6 +402,18 @@ describe('Writer', () => {
       });
     });
 
+    it('should serialize triples with the same blank node as object', done => {
+      const writer = new Writer();
+      const blank = writer.blank();
+      writer.addQuad(blank, new NamedNode('a'), new NamedNode('b'));
+      writer.addQuad(blank, new NamedNode('c'), new NamedNode('d'));
+      writer.end((error, output) => {
+        output.should.equal('[] <a> <b>;\n' +
+                            '    <c> <d>.\n');
+        done(error);
+      });
+    });
+
     it('should serialize triples with a one-triple blank node as object', done => {
       const writer = new Writer();
       writer.addQuad(new NamedNode('a1'), new NamedNode('b'), writer.blank(new NamedNode('d'), new NamedNode('e')));
