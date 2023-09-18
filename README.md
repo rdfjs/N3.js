@@ -281,12 +281,12 @@ Then, we find triples with `:Mickey` as subject.
 
 ```JavaScript
 const store = new N3.Store();
-store.add(
+store.addQuad(
   namedNode('http://ex.org/Pluto'),
   namedNode('http://ex.org/type'),
   namedNode('http://ex.org/Dog')
 );
-store.add(
+store.addQuad(
   namedNode('http://ex.org/Mickey'),
   namedNode('http://ex.org/type'),
   namedNode('http://ex.org/Mouse')
