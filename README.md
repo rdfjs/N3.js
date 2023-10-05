@@ -282,14 +282,18 @@ Then, we find triples with `:Mickey` as subject.
 ```JavaScript
 const store = new N3.Store();
 store.add(
-  namedNode('http://ex.org/Pluto'),
-  namedNode('http://ex.org/type'),
-  namedNode('http://ex.org/Dog')
+  quad(
+    namedNode('http://ex.org/Pluto'),
+    namedNode('http://ex.org/type'),
+    namedNode('http://ex.org/Dog')
+  )
 );
 store.add(
-  namedNode('http://ex.org/Mickey'),
-  namedNode('http://ex.org/type'),
-  namedNode('http://ex.org/Mouse')
+  quad(
+    namedNode('http://ex.org/Mickey'),
+    namedNode('http://ex.org/type'),
+    namedNode('http://ex.org/Mouse')
+  )
 );
 
 // Retrieve all quads
