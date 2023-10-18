@@ -59,7 +59,7 @@
     "spec": "npm run spec-turtle && npm run spec-ntriples && npm run spec-nquads && npm run spec-trig",
     "spec-earl": "npm run spec-earl-turtle && npm run spec-earl-ntriples && npm run spec-earl-nquads && npm run spec-earl-trig",
     "spec-ntriples": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-n-triples/manifest.ttl -i '{ \"format\": \"n-triples\" }' -c .rdf-test-suite-cache/",
-    "spec-nquads": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-n-quads/manifest.ttl-i '{ \"format\": \"n-quads\" }' -c .rdf-test-suite-cache/",
+    "spec-nquads": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-n-quads/manifest.ttl -i '{ \"format\": \"n-quads\" }' -c .rdf-test-suite-cache/",
     "spec-turtle": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-turtle/manifest.ttl -i '{ \"format\": \"turtle\" }' -c .rdf-test-suite-cache/",
     "spec-trig": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-trig/manifest.ttl -i '{ \"format\": \"trig\" }' -c .rdf-test-suite-cache/",
     "spec-earl-ntriples": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-n-triples/manifest.ttl -i '{ \"format\": \"n-triples\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-ntriples.ttl",
