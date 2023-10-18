@@ -7,20 +7,17 @@ import {
   termFromId, termToId,
 } from '../src/';
 import namespaces from '../src/IRIs';
-import chai, { expect } from 'chai';
 import { Readable } from 'readable-stream';
 import arrayifyStream from 'arrayify-stream';
-
-const should = chai.should();
 
 describe('Store', () => {
   describe('The Store export', () => {
     it('should be a function', () => {
-      Store.should.be.a('function');
+      expect(Store).toBeInstanceOf(Function);
     });
 
     it('should be an Store constructor', () => {
-      new Store().should.be.an.instanceof(Store);
+      expect(new Store()).toBeInstanceOf(Store);
     });
   });
 
@@ -28,15 +25,15 @@ describe('Store', () => {
     const store = new Store({});
 
     it('should have size 0', () => {
-      expect(store.size).to.eql(0);
+      expect(store.size).toEqual(0);
     });
 
     it('should be empty', () => {
-      store.getQuads().should.be.empty;
+      expect(store.getQuads()).toHaveLength(0);
     });
 
     describe('when importing a stream of 2 quads', () => {
-      before(done => {
+      beforeAll(done => {
         const stream = new ArrayReader([
           new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
           new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
@@ -45,11 +42,11 @@ describe('Store', () => {
         events.on('end', done);
       });
 
-      it('should have size 2', () => { store.size.should.eql(2); });
+      it('should have size 2', () => { expect(store.size).toEqual(2); });
     });
 
     describe('when removing a stream of 2 quads', () => {
-      before(done => {
+      beforeAll(done => {
         const stream = new ArrayReader([
           new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
           new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
@@ -58,11 +55,11 @@ describe('Store', () => {
         events.on('end', done);
       });
 
-      it('should have size 0', () => { store.size.should.eql(0); });
+      it('should have size 0', () => { expect(store.size).toEqual(0); });
     });
 
     describe('when importing a stream of 2 nested quads', () => {
-      before(done => {
+      beforeAll(done => {
         const stream = new ArrayReader([
           new Quad(new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')), new NamedNode('p2'), new NamedNode('o2')),
           new Quad(new NamedNode('s1'), new NamedNode('p1'), new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2'))),
@@ -71,11 +68,11 @@ describe('Store', () => {
         events.on('end', done);
       });
 
-      it('should have size 2', () => { store.size.should.eql(2); });
+      it('should have size 2', () => { expect(store.size).toEqual(2); });
     });
 
     describe('when removing a stream of 2 nested quads', () => {
-      before(done => {
+      beforeAll(done => {
         const stream = new ArrayReader([
           new Quad(new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')), new NamedNode('p2'), new NamedNode('o2')),
           new Quad(new NamedNode('s1'), new NamedNode('p1'), new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2'))),
@@ -84,18 +81,18 @@ describe('Store', () => {
         events.on('end', done);
       });
 
-      it('should have size 0', () => { store.size.should.eql(0); });
+      it('should have size 0', () => { expect(store.size).toEqual(0); });
     });
 
     describe('every', () => {
       describe('with no parameters and a callback always returning true', () => {
         it('should return false', () => {
-          store.every(alwaysTrue, null, null, null, null).should.be.false;
+          expect(store.every(alwaysTrue, null, null, null, null)).toBe(false);
         });
       });
       describe('with no parameters and a callback always returning false', () => {
         it('should return false', () => {
-          store.every(alwaysFalse, null, null, null, null).should.be.false;
+          expect(store.every(alwaysFalse, null, null, null, null)).toBe(false);
         });
       });
     });
@@ -103,40 +100,47 @@ describe('Store', () => {
     describe('some', () => {
       describe('with no parameters and a callback always returning true', () => {
         it('should return false', () => {
-          store.some(alwaysTrue, null, null, null, null).should.be.false;
+          expect(store.some(alwaysTrue, null, null, null, null)).toBe(false);
         });
       });
       describe('with no parameters and a callback always returning false', () => {
         it('should return false', () => {
-          store.some(alwaysFalse, null, null, null, null).should.be.false;
+          expect(store.some(alwaysFalse, null, null, null, null)).toBe(false);
         });
       });
     });
 
-    it('should still have size 0 (instead of null) after adding and removing a triple', () => {
-      expect(store.size).to.eql(0);
-      store.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')).should.be.true;
-      store.removeQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')).should.be.true;
-      expect(store.size).to.eql(0);
-    });
+    it(
+      'should still have size 0 (instead of null) after adding and removing a triple',
+      () => {
+        expect(store.size).toEqual(0);
+        expect(store.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))).toBe(true);
+        expect(
+          store.removeQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))
+        ).toBe(true);
+        expect(store.size).toEqual(0);
+      }
+    );
 
     it('should be able to generate unnamed blank nodes', () => {
-      store.createBlankNode().value.should.eql('b0');
-      store.createBlankNode().value.should.eql('b1');
+      expect(store.createBlankNode().value).toEqual('b0');
+      expect(store.createBlankNode().value).toEqual('b1');
 
-      store.addQuad('_:b0', '_:b1', '_:b2').should.be.true;
-      store.createBlankNode().value.should.eql('b3');
+      expect(store.addQuad('_:b0', '_:b1', '_:b2')).toBe(true);
+      expect(store.createBlankNode().value).toEqual('b3');
       store.removeQuads(store.getQuads());
     });
 
     it('should be able to generate named blank nodes', () => {
-      store.createBlankNode('blank').value.should.eql('blank');
-      store.createBlankNode('blank').value.should.eql('blank1');
-      store.createBlankNode('blank').value.should.eql('blank2');
+      expect(store.createBlankNode('blank').value).toEqual('blank');
+      expect(store.createBlankNode('blank').value).toEqual('blank1');
+      expect(store.createBlankNode('blank').value).toEqual('blank2');
     });
 
     it('should be able to store triples with generated blank nodes', () => {
-      store.addQuad(store.createBlankNode('x'), new NamedNode('b'), new NamedNode('c')).should.be.true;
+      expect(
+        store.addQuad(store.createBlankNode('x'), new NamedNode('b'), new NamedNode('c'))
+      ).toBe(true);
       shouldIncludeAll(store.getQuads(null, new NamedNode('b')), ['_:x', 'b', 'c'])();
       store.removeQuads(store.getQuads());
     });
@@ -152,125 +156,145 @@ describe('Store', () => {
     ]);
 
     it('should have size 5', () => {
-      store.size.should.eql(5);
+      expect(store.size).toEqual(5);
     });
 
     describe('adding a triple that already exists', () => {
       it('should return false', () => {
-        store.addQuad('s1', 'p1', 'o1').should.be.false;
+        expect(store.addQuad('s1', 'p1', 'o1')).toBe(false);
       });
 
       it('should not increase the size', () => {
-        store.size.should.eql(5);
+        expect(store.size).toEqual(5);
       });
 
       it('should return false', () => {
-        store.addQuad(new Quad('s1', 'p1', 'o1'), 'p1', 'o1').should.be.false;
+        expect(store.addQuad(new Quad('s1', 'p1', 'o1'), 'p1', 'o1')).toBe(false);
       });
 
       it('should not increase the size', () => {
-        store.size.should.eql(5);
+        expect(store.size).toEqual(5);
       });
     });
 
     describe('adding a triple that did not exist yet', () => {
       it('should return true', () => {
-        store.has(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4'))).should.be.false;
-        store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4')).should.be.false;
-        store.has(null, null, new NamedNode('o4')).should.be.false;
+        expect(
+          store.has(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4')))
+        ).toBe(false);
+        expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4'))).toBe(false);
+        expect(store.has(null, null, new NamedNode('o4'))).toBe(false);
 
-        store.addQuad('s1', 'p1', 'o4').should.be.true;
+        expect(store.addQuad('s1', 'p1', 'o4')).toBe(true);
 
-        store.has(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4'))).should.be.true;
-        store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4')).should.be.true;
-        store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4'), new DefaultGraph()).should.be.true;
-        store.has(null, null, new NamedNode('o4')).should.be.true;
+        expect(
+          store.has(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4')))
+        ).toBe(true);
+        expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4'))).toBe(true);
+        expect(
+          store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4'), new DefaultGraph())
+        ).toBe(true);
+        expect(store.has(null, null, new NamedNode('o4'))).toBe(true);
       });
 
       it('should increase the size', () => {
-        store.size.should.eql(6);
+        expect(store.size).toEqual(6);
       });
 
       it('should return true', () => {
-        store.addQuad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), 'p1', 'o4').should.be.true;
+        expect(
+          store.addQuad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), 'p1', 'o4')
+        ).toBe(true);
       });
 
       it('should increase the size', () => {
-        store.size.should.eql(7);
+        expect(store.size).toEqual(7);
       });
 
       it('should return self', () => {
-        should.equal(store.add(new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2'))), store);
+        expect(
+          store.add(new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')))
+        ).toBe(store);
       });
 
       it('should increase the size', () => {
-        store.size.should.eql(8);
+        expect(store.size).toEqual(8);
       });
     });
 
     describe('removing an existing triple', () => {
       it('should return true', () => {
-        store.removeQuad('s1', 'p1', 'o4').should.be.true;
+        expect(store.removeQuad('s1', 'p1', 'o4')).toBe(true);
       });
 
       it('should decrease the size', () => {
-        store.size.should.eql(7);
+        expect(store.size).toEqual(7);
       });
 
       it('should return true', () => {
-        store.removeQuad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), 'p1', 'o4').should.be.true;
+        expect(
+          store.removeQuad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), 'p1', 'o4')
+        ).toBe(true);
       });
 
       it('should decrease the size', () => {
-        store.size.should.eql(6);
+        expect(store.size).toEqual(6);
       });
 
       it('should return self', () => {
-        should.equal(store.delete(new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2'))), store);
+        expect(
+          store.delete(new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')))
+        ).toBe(store);
       });
 
       it('should increase the size', () => {
-        store.size.should.eql(5);
+        expect(store.size).toEqual(5);
       });
     });
 
     describe('removing a non-existing triple', () => {
       it('should return false', () => {
-        store.removeQuad('s1', 'p1', 'o5').should.be.false;
+        expect(store.removeQuad('s1', 'p1', 'o5')).toBe(false);
       });
 
       it('should not decrease the size', () => {
-        store.size.should.eql(5);
+        expect(store.size).toEqual(5);
       });
 
       it('should return false', () => {
-        store.removeQuad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4')), 'p1', 'o1').should.be.false;
+        expect(
+          store.removeQuad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4')), 'p1', 'o1')
+        ).toBe(false);
       });
 
       it('should not decrease the size', () => {
-        store.size.should.eql(5);
+        expect(store.size).toEqual(5);
       });
     });
 
     describe('removing matching quads', () => {
-      it('should return the removed quads',
+      it(
+        'should return the removed quads',
         forResultStream(shouldIncludeAll, () => { return store.removeMatches('s1', 'p1'); },
           ['s1', 'p1', 'o1'],
           ['s1', 'p1', 'o2'],
-          ['s1', 'p1', 'o3']));
+          ['s1', 'p1', 'o3'])
+      );
 
       it('should decrease the size', () => {
-        store.size.should.eql(2);
+        expect(store.size).toEqual(2);
       });
     });
 
     describe('removing a graph', () => {
-      it('should return the removed quads',
+      it(
+        'should return the removed quads',
         forResultStream(shouldIncludeAll, () => { return store.deleteGraph('g1'); },
-          ['s2', 'p2', 'o2', 'g1']));
+          ['s2', 'p2', 'o2', 'g1'])
+      );
 
       it('should decrease the size', () => {
-        store.size.should.eql(1);
+        expect(store.size).toEqual(1);
       });
     });
   });
@@ -287,18 +311,20 @@ describe('Store', () => {
       ]);
     });
 
-    it('should return the removed quads',
+    it(
+      'should return the removed quads',
       forResultStream(shouldIncludeAll, () => { return store.removeMatches(null, 'p2', 'o2'); },
-        [termToId(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'))), 'p2', 'o2']));
+        [termToId(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'))), 'p2', 'o2'])
+    );
 
     it('should decrease the size', () => {
-      store.size.should.eql(5);
+      expect(store.size).toEqual(5);
     });
 
     it('should match RDF* and normal quads at the same time', done => {
       const stream = store.removeMatches(null, 'p1', 'o2');
       stream.on('end', () => {
-        store.size.should.eql(3);
+        expect(store.size).toEqual(3);
         done();
       });
     });
@@ -306,7 +332,7 @@ describe('Store', () => {
     it('should allow matching using a quad', done => {
       const stream = store.removeMatches(termToId(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'))));
       stream.on('end', () => {
-        store.size.should.eql(1);
+        expect(store.size).toEqual(1);
         done();
       });
     });
@@ -314,39 +340,40 @@ describe('Store', () => {
 
   describe('A Store with 7 elements', () => {
     const store = new Store();
-    store.addQuad('s1', 'p1', 'o1').should.be.true;
-    store.addQuad({ subject: 's1', predicate: 'p1', object: 'o2' }).should.be.true;
+    expect(store.addQuad('s1', 'p1', 'o1')).toBe(true);
+    expect(store.addQuad({ subject: 's1', predicate: 'p1', object: 'o2' })).toBe(true);
     store.addQuads([
       { subject: 's1', predicate: 'p2', object: 'o2' },
       { subject: 's2', predicate: 'p1', object: 'o1' },
     ]);
-    store.addQuad('s1', 'p1', 'o1', 'c4').should.be.true;
+    expect(store.addQuad('s1', 'p1', 'o1', 'c4')).toBe(true);
     store.addQuad(new Quad('s2', 'p2', 'o2'), 'p1', 'o3');
-    should.equal(store.add(new Quad('s2', 'p2', 'o2')), store);
+    expect(store.add(new Quad('s2', 'p2', 'o2'))).toBe(store);
 
     it('should have size 7', () => {
-      store.size.should.eql(7);
+      expect(store.size).toEqual(7);
     });
 
     describe('when searched without parameters', () => {
-      it('should return all items',
-        shouldIncludeAll(store.getQuads(),
-                         ['s1', 'p1', 'o1'],
-                         ['s1', 'p1', 'o2'],
-                         ['s1', 'p2', 'o2'],
-                         ['s2', 'p1', 'o1'],
-                         ['s1', 'p1', 'o1', 'c4'],
-                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3'],
-                         ['s2', 'p2', 'o2']));
+      it('should return all items', shouldIncludeAll(store.getQuads(),
+                       ['s1', 'p1', 'o1'],
+                       ['s1', 'p1', 'o2'],
+                       ['s1', 'p2', 'o2'],
+                       ['s2', 'p1', 'o1'],
+                       ['s1', 'p1', 'o1', 'c4'],
+                       [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3'],
+                       ['s2', 'p2', 'o2']));
     });
 
     describe('when searched with an existing subject parameter', () => {
-      it('should return all items with this subject in all graphs',
+      it(
+        'should return all items with this subject in all graphs',
         shouldIncludeAll(store.getQuads(new NamedNode('s1'), null, null),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o2'],
                          ['s1', 'p2', 'o2'],
-                         ['s1', 'p1', 'o1', 'c4']));
+                         ['s1', 'p1', 'o1', 'c4'])
+      );
     });
 
     describe('when searched with a non-existing subject parameter', () => {
@@ -358,13 +385,15 @@ describe('Store', () => {
     });
 
     describe('when searched with an existing predicate parameter', () => {
-      it('should return all items with this predicate in all graphs',
+      it(
+        'should return all items with this predicate in all graphs',
         shouldIncludeAll(store.getQuads(null, new NamedNode('p1'), null),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o2'],
                          ['s2', 'p1', 'o1'],
                          ['s1', 'p1', 'o1', 'c4'],
-                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3']));
+                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3'])
+      );
     });
 
     describe('when searched with a non-existing predicate parameter', () => {
@@ -372,11 +401,13 @@ describe('Store', () => {
     });
 
     describe('when searched with an existing object parameter', () => {
-      it('should return all items with this object in all graphs',
+      it(
+        'should return all items with this object in all graphs',
         shouldIncludeAll(store.getQuads(null, null, new NamedNode('o1')),
                          ['s1', 'p1', 'o1'],
                          ['s2', 'p1', 'o1'],
-                         ['s1', 'p1', 'o1', 'c4']));
+                         ['s1', 'p1', 'o1', 'c4'])
+      );
     });
 
     describe('when searched with a non-existing object parameter', () => {
@@ -384,11 +415,13 @@ describe('Store', () => {
     });
 
     describe('when searched with existing subject and predicate parameters', () => {
-      it('should return all items with this subject and predicate in all graphs',
+      it(
+        'should return all items with this subject and predicate in all graphs',
         shouldIncludeAll(store.getQuads(new NamedNode('s1'), new NamedNode('p1'), null),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o2'],
-                         ['s1', 'p1', 'o1', 'c4']));
+                         ['s1', 'p1', 'o1', 'c4'])
+      );
     });
 
     describe('when searched with non-existing subject and predicate parameters', () => {
@@ -396,10 +429,12 @@ describe('Store', () => {
     });
 
     describe('when searched with existing subject and object parameters', () => {
-      it('should return all items with this subject and object in all graphs',
+      it(
+        'should return all items with this subject and object in all graphs',
         shouldIncludeAll(store.getQuads(new NamedNode('s1'), null, new NamedNode('o1')),
                          ['s1', 'p1', 'o1'],
-                         ['s1', 'p1', 'o1', 'c4']));
+                         ['s1', 'p1', 'o1', 'c4'])
+      );
     });
 
     describe('when searched with non-existing subject and object parameters', () => {
@@ -407,11 +442,13 @@ describe('Store', () => {
     });
 
     describe('when searched with existing predicate and object parameters', () => {
-      it('should return all items with this predicate and object in all graphs',
+      it(
+        'should return all items with this predicate and object in all graphs',
         shouldIncludeAll(store.getQuads(null, new NamedNode('p1'), new NamedNode('o1')),
                          ['s1', 'p1', 'o1'],
                          ['s2', 'p1', 'o1'],
-                         ['s1', 'p1', 'o1', 'c4']));
+                         ['s1', 'p1', 'o1', 'c4'])
+      );
     });
 
     describe('when searched with non-existing predicate and object parameters in the default graph', () => {
@@ -419,10 +456,12 @@ describe('Store', () => {
     });
 
     describe('when searched with existing subject, predicate, and object parameters', () => {
-      it('should return all items with this subject, predicate, and object in all graphs',
+      it(
+        'should return all items with this subject, predicate, and object in all graphs',
         shouldIncludeAll(store.getQuads(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
                          ['s1', 'p1', 'o1'],
-                         ['s1', 'p1', 'o1', 'c4']));
+                         ['s1', 'p1', 'o1', 'c4'])
+      );
     });
 
     describe('when searched with a non-existing triple', () => {
@@ -430,20 +469,24 @@ describe('Store', () => {
     });
 
     describe('when searched with the default graph parameter', () => {
-      it('should return all items in the default graph',
+      it(
+        'should return all items in the default graph',
         shouldIncludeAll(store.getQuads(null, null, null, new DefaultGraph()),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o2'],
                          ['s1', 'p2', 'o2'],
                          ['s2', 'p1', 'o1'],
                          [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3'],
-                         ['s2', 'p2', 'o2']));
+                         ['s2', 'p2', 'o2'])
+      );
     });
 
     describe('when searched with an existing named graph parameter', () => {
-      it('should return all items in that graph',
+      it(
+        'should return all items in that graph',
         shouldIncludeAll(store.getQuads(null, null, null, new NamedNode('c4')),
-                         ['s1', 'p1', 'o1', 'c4']));
+                         ['s1', 'p1', 'o1', 'c4'])
+      );
     });
 
     describe('when searched with a non-existing named graph parameter', () => {
@@ -455,63 +498,67 @@ describe('Store', () => {
         it('should return an object implementing the DatasetCore interface', () => {
           const dataset = store.match();
 
-          dataset.add.should.be.a('function');
-          dataset.delete.should.be.a('function');
-          dataset.has.should.be.a('function');
-          dataset.match.should.be.a('function');
-          dataset[Symbol.iterator].should.be.a('function');
+          expect(dataset.add).toBeInstanceOf(Function);
+          expect(dataset.delete).toBeInstanceOf(Function);
+          expect(dataset.has).toBeInstanceOf(Function);
+          expect(dataset.match).toBeInstanceOf(Function);
+          expect(dataset[Symbol.iterator]).toBeInstanceOf(Function);
         });
 
-        it('should return an object implementing the Readable stream interface', () => {
-          const stream = store.match();
+        it(
+          'should return an object implementing the Readable stream interface',
+          () => {
+            const stream = store.match();
 
-          stream.addListener.should.be.a('function');
-          stream.emit.should.be.a('function');
-          should.equal(stream.propertyIsEnumerable('destroyed'), false);
-          stream.destroyed.should.equal(false);
-          stream.destroy.should.be.a('function');
-          stream.eventNames.should.be.a('function');
-          stream.getMaxListeners.should.be.a('function');
-          stream.listenerCount.should.be.a('function');
-          stream.listeners.should.be.a('function');
-          stream.isPaused.should.be.a('function');
-          should.equal(stream.isPaused(), false);
-          stream.off.should.be.a('function');
-          stream.on.should.be.a('function');
-          stream.once.should.be.a('function');
-          stream.pause.should.be.a('function');
-          stream.pipe.should.be.a('function');
-          stream.prependListener.should.be.a('function');
-          stream.prependOnceListener.should.be.a('function');
-          stream.rawListeners.should.be.a('function');
-          stream.read.should.be.a('function');
-          stream.readable.should.equal(true);
-          should.equal(stream.propertyIsEnumerable('readableBuffer'), false);
-          should.exist(stream.readableBuffer);
-          // Readable from 'readable-stream' does not implement the `readableEncoding` property.
-          // stream.readableEncoding.should.equal(???);
-          // Readable from 'readable-stream' does not implement the `readableEnded` property.
-          // stream.readableEnded.should.equal(false);
-          should.equal(stream.propertyIsEnumerable('readableFlowing'), false);
-          should.equal(stream.readableFlowing, null);
-          should.equal(stream.propertyIsEnumerable('readableHighWaterMark'), false);
-          stream.readableHighWaterMark.should.equal(16);
-          should.equal(stream.propertyIsEnumerable('readableLength'), false);
-          stream.readableLength.should.equal(0);
-          // Readable from 'readable-stream' does not implement the `readableObjectMode` property.
-          // stream.readableObjectMode.should.equal(true);
-          stream.removeAllListeners.should.be.a('function');
-          stream.removeListener.should.be.a('function');
-          stream.resume.should.be.a('function');
-          stream.setEncoding.should.be.a('function');
-          stream.setMaxListeners.should.be.a('function');
-          stream.unpipe.should.be.a('function');
-          stream.unshift.should.be.a('function');
-          stream.wrap.should.be.a('function');
-          stream[Symbol.asyncIterator].should.be.a('function');
-        });
+            expect(typeof stream.addListener).toEqual('function');
+            expect(typeof stream.emit).toEqual('function');
+            expect(stream.propertyIsEnumerable('destroyed')).toBe(false);
+            expect(stream.destroyed).toBe(false);
+            expect(typeof stream.destroy).toEqual('function');
+            expect(typeof stream.eventNames).toEqual('function');
+            expect(typeof stream.getMaxListeners).toEqual('function');
+            expect(typeof stream.listenerCount).toEqual('function');
+            expect(typeof stream.listeners).toEqual('function');
+            expect(typeof stream.isPaused).toEqual('function');
+            expect(stream.isPaused()).toBe(false);
+            expect(typeof stream.off).toEqual('function');
+            expect(typeof stream.on).toEqual('function');
+            expect(typeof stream.once).toEqual('function');
+            expect(typeof stream.pause).toEqual('function');
+            expect(typeof stream.pipe).toEqual('function');
+            expect(typeof stream.prependListener).toEqual('function');
+            expect(typeof stream.prependOnceListener).toEqual('function');
+            expect(typeof stream.rawListeners).toEqual('function');
+            expect(typeof stream.read).toEqual('function');
+            expect(stream.readable).toBe(true);
+            expect(stream.propertyIsEnumerable('readableBuffer')).toBe(false);
+            expect(stream.readableBuffer).toBeDefined();
+            // Readable from 'readable-stream' does not implement the `readableEncoding` property.
+            // stream.readableEncoding.should.equal(???);
+            // Readable from 'readable-stream' does not implement the `readableEnded` property.
+            // stream.readableEnded.should.equal(false);
+            expect(stream.propertyIsEnumerable('readableFlowing')).toBe(false);
+            expect(stream.readableFlowing).toBeNull();
+            expect(stream.propertyIsEnumerable('readableHighWaterMark')).toBe(false);
+            expect(stream.readableHighWaterMark).toBe(16);
+            expect(stream.propertyIsEnumerable('readableLength')).toBe(false);
+            expect(stream.readableLength).toBe(0);
+            // Readable from 'readable-stream' does not implement the `readableObjectMode` property.
+            // stream.readableObjectMode.should.equal(true);
+            expect(typeof stream.removeAllListeners).toEqual('function');
+            expect(typeof stream.removeListener).toEqual('function');
+            expect(typeof stream.resume).toEqual('function');
+            expect(typeof stream.setEncoding).toEqual('function');
+            expect(typeof stream.setMaxListeners).toEqual('function');
+            expect(typeof stream.unpipe).toEqual('function');
+            expect(typeof stream.unshift).toEqual('function');
+            expect(typeof stream.wrap).toEqual('function');
+            expect(typeof stream[Symbol.asyncIterator]).toEqual('function');
+          }
+        );
 
-        it('should return all items',
+        it(
+          'should return all items',
           forResultStream(shouldIncludeAll, store.match(),
             ['s1', 'p1', 'o1'],
             ['s1', 'p1', 'o2'],
@@ -519,16 +566,19 @@ describe('Store', () => {
             ['s2', 'p1', 'o1'],
             ['s1', 'p1', 'o1', 'c4'],
             [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3'],
-            ['s2', 'p2', 'o2']));
+            ['s2', 'p2', 'o2'])
+        );
       });
 
       describe('with an existing subject parameter', () => {
-        it('should return all items with this subject in all graphs',
+        it(
+          'should return all items with this subject in all graphs',
           forResultStream(shouldIncludeAll, store.match(new NamedNode('s1'), null, null),
             ['s1', 'p1', 'o1'],
             ['s1', 'p1', 'o2'],
             ['s1', 'p2', 'o2'],
-            ['s1', 'p1', 'o1', 'c4']));
+            ['s1', 'p1', 'o1', 'c4'])
+        );
 
         it('should return an object implementing the DatasetCore interface', () => {
           const subject = new NamedNode('s1');
@@ -537,13 +587,13 @@ describe('Store', () => {
           let count = 0;
           for (const quad of dataset) {
             count += 1;
-            should.equal(quad.subject.equals(subject), true);
+            expect(quad.subject.equals(subject)).toBe(true);
           }
 
-          should.equal(count, 4);
-          should.equal(dataset.size, count);
+          expect(count).toBe(4);
+          expect(dataset.size).toBe(count);
 
-          should.equal(dataset.has(new Quad('s2', 'p1', 'o1')), false);
+          expect(dataset.has(new Quad('s2', 'p1', 'o1'))).toBe(false);
           dataset.add(new Quad('s2', 'p1', 'o1'));
 
           count = 0;
@@ -551,9 +601,9 @@ describe('Store', () => {
           for (const _quad of dataset) {
             count += 1;
           }
-          should.equal(count, 5);
+          expect(count).toBe(5);
 
-          should.equal(dataset.has(new Quad('s2', 'p1', 'o1')), true);
+          expect(dataset.has(new Quad('s2', 'p1', 'o1'))).toBe(true);
 
           const nextDataset = dataset.match(new NamedNode('s2'));
           nextDataset.add(new Quad('s2', 'p2', 'o2'));
@@ -563,15 +613,15 @@ describe('Store', () => {
           for (const _quad of nextDataset) {
             count += 1;
           }
-          should.equal(count, 2);
+          expect(count).toBe(2);
 
-          should.equal(nextDataset.has(new Quad('s2', 'p1', 'o1')), true);
-          should.equal(nextDataset.has(new Quad('s2', 'p2', 'o2')), true);
+          expect(nextDataset.has(new Quad('s2', 'p1', 'o1'))).toBe(true);
+          expect(nextDataset.has(new Quad('s2', 'p2', 'o2'))).toBe(true);
 
           nextDataset.delete(new Quad('s2', 'p1', 'o1'));
           nextDataset.delete(new Quad('s2', 'p2', 'o2'));
-          should.equal(nextDataset.has(new Quad('s2', 'p1', 'o1')), false);
-          should.equal(nextDataset.has(new Quad('s2', 'p2', 'o2')), false);
+          expect(nextDataset.has(new Quad('s2', 'p1', 'o1'))).toBe(false);
+          expect(nextDataset.has(new Quad('s2', 'p2', 'o2'))).toBe(false);
         });
       });
 
@@ -582,321 +632,384 @@ describe('Store', () => {
 
     describe('getSubjects', () => {
       describe('with existing predicate, object and graph parameters', () => {
-        it('should return all subjects with this predicate, object and graph', () => {
-          store.getSubjects(new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c4')).should.have.deep.members([new NamedNode('s1')]);
-        });
+        it(
+          'should return all subjects with this predicate, object and graph',
+          () => {
+            expect(
+              store.getSubjects(new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c4'))
+            ).toEqual(expect.arrayContaining([new NamedNode('s1')]));
+          }
+        );
       });
 
       describe('with existing predicate and object parameters', () => {
         it('should return all subjects with this predicate and object', () => {
-          store.getSubjects(new NamedNode('p2'), new NamedNode('o2'), null).should.have.deep.members([new NamedNode('s1'), new NamedNode('s2')]);
+          expect(store.getSubjects(new NamedNode('p2'), new NamedNode('o2'), null)).toEqual(expect.arrayContaining([new NamedNode('s1'), new NamedNode('s2')]));
         });
       });
 
       describe('with existing predicate and graph parameters', () => {
         it('should return all subjects with this predicate and graph', () => {
-          store.getSubjects(new NamedNode('p1'), null, new DefaultGraph()).should.have.deep.members([new NamedNode('s1'), new NamedNode('s2'), new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2'))]);
+          expect(store.getSubjects(new NamedNode('p1'), null, new DefaultGraph())).toEqual(expect.arrayContaining(
+            [new NamedNode('s1'), new NamedNode('s2'), new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2'))]
+          ));
         });
       });
 
       describe('with existing object and graph parameters', () => {
         it('should return all subjects with this object and graph', () => {
-          store.getSubjects(null, new NamedNode('o1'), new DefaultGraph()).should.have.deep.members([new NamedNode('s1'), new NamedNode('s2')]);
+          expect(store.getSubjects(null, new NamedNode('o1'), new DefaultGraph())).toEqual(expect.arrayContaining([new NamedNode('s1'), new NamedNode('s2')]));
         });
       });
 
       describe('with an existing predicate parameter', () => {
         it('should return all subjects with this predicate', () => {
-          store.getSubjects(new NamedNode('p1'), null, null).should.have.deep.members([new NamedNode('s1'), new NamedNode('s2'),  new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2'))]);
+          expect(store.getSubjects(new NamedNode('p1'), null, null)).toEqual(expect.arrayContaining(
+            [new NamedNode('s1'), new NamedNode('s2'),  new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2'))]
+          ));
         });
       });
 
       describe('with an existing object parameter', () => {
         it('should return all subjects with this object', () => {
-          store.getSubjects(null, new NamedNode('o1'), null).should.have.deep.members([new NamedNode('s1'), new NamedNode('s2')]);
+          expect(store.getSubjects(null, new NamedNode('o1'), null)).toEqual(expect.arrayContaining([new NamedNode('s1'), new NamedNode('s2')]));
         });
       });
 
       describe('with an existing graph parameter', () => {
         it('should return all subjects in the graph', () => {
-          store.getSubjects(null, null, new NamedNode('c4')).should.have.deep.members([new NamedNode('s1')]);
+          expect(store.getSubjects(null, null, new NamedNode('c4'))).toEqual(expect.arrayContaining([new NamedNode('s1')]));
         });
       });
 
       describe('with no parameters', () => {
         it('should return all subjects', () => {
-          store.getSubjects(null, null, null).should.have.deep.members([new NamedNode('s1'), new NamedNode('s2'),  new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2'))]);
+          expect(store.getSubjects(null, null, null)).toEqual(expect.arrayContaining(
+            [new NamedNode('s1'), new NamedNode('s2'),  new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2'))]
+          ));
         });
       });
     });
 
     describe('getPredicates', () => {
       describe('with existing subject, object and graph parameters', () => {
-        it('should return all predicates with this subject, object and graph', () => {
-          store.getPredicates(new NamedNode('s1'), new NamedNode('o1'), new NamedNode('c4')).should.have.deep.members([new NamedNode('p1')]);
-        });
+        it(
+          'should return all predicates with this subject, object and graph',
+          () => {
+            expect(
+              store.getPredicates(new NamedNode('s1'), new NamedNode('o1'), new NamedNode('c4'))
+            ).toEqual(expect.arrayContaining([new NamedNode('p1')]));
+          }
+        );
       });
 
       describe('with existing subject and object parameters', () => {
         it('should return all predicates with this subject and object', () => {
-          store.getPredicates(new NamedNode('s1'), new NamedNode('o2'), null).should.have.deep.members([new NamedNode('p1'), new NamedNode('p2')]);
+          expect(store.getPredicates(new NamedNode('s1'), new NamedNode('o2'), null)).toEqual(expect.arrayContaining([new NamedNode('p1'), new NamedNode('p2')]));
         });
       });
 
       describe('with existing subject and graph parameters', () => {
         it('should return all predicates with this subject and graph', () => {
-          store.getPredicates(new NamedNode('s1'), null, new DefaultGraph()).should.have.deep.members([new NamedNode('p1'), new NamedNode('p2')]);
+          expect(store.getPredicates(new NamedNode('s1'), null, new DefaultGraph())).toEqual(expect.arrayContaining([new NamedNode('p1'), new NamedNode('p2')]));
         });
       });
 
       describe('with existing object and graph parameters', () => {
         it('should return all predicates with this object and graph', () => {
-          store.getPredicates(null, new NamedNode('o1'), new DefaultGraph()).should.have.deep.members([new NamedNode('p1')]);
+          expect(store.getPredicates(null, new NamedNode('o1'), new DefaultGraph())).toEqual(expect.arrayContaining([new NamedNode('p1')]));
         });
       });
 
       describe('with an existing subject parameter', () => {
         it('should return all predicates with this subject', () => {
-          store.getPredicates(new NamedNode('s2'), null, null).should.have.deep.members([new NamedNode('p1'), new NamedNode('p2')]);
+          expect(store.getPredicates(new NamedNode('s2'), null, null)).toEqual(expect.arrayContaining([new NamedNode('p1'), new NamedNode('p2')]));
         });
       });
 
       describe('with an existing object parameter', () => {
         it('should return all predicates with this object', () => {
-          store.getPredicates(null, new NamedNode('o1'), null).should.have.deep.members([new NamedNode('p1')]);
+          expect(store.getPredicates(null, new NamedNode('o1'), null)).toEqual(expect.arrayContaining([new NamedNode('p1')]));
         });
       });
 
       describe('with an existing graph parameter', () => {
         it('should return all predicates in the graph', () => {
-          store.getPredicates(null, null, new NamedNode('c4')).should.have.deep.members([new NamedNode('p1')]);
+          expect(store.getPredicates(null, null, new NamedNode('c4'))).toEqual(expect.arrayContaining([new NamedNode('p1')]));
         });
       });
 
       describe('with no parameters', () => {
         it('should return all predicates', () => {
-          store.getPredicates(null, null, null).should.have.deep.members([new NamedNode('p1'), new NamedNode('p2')]);
+          expect(store.getPredicates(null, null, null)).toEqual(expect.arrayContaining([new NamedNode('p1'), new NamedNode('p2')]));
         });
       });
     });
 
     describe('getObjects', () => {
       describe('with existing subject, predicate and graph parameters', () => {
-        it('should return all objects with this subject, predicate and graph', () => {
-          store.getObjects(new NamedNode('s1'), new NamedNode('p1'), new DefaultGraph()).should.have.deep.members([new NamedNode('o1'), new NamedNode('o2')]);
-        });
+        it(
+          'should return all objects with this subject, predicate and graph',
+          () => {
+            expect(
+              store.getObjects(new NamedNode('s1'), new NamedNode('p1'), new DefaultGraph())
+            ).toEqual(expect.arrayContaining([new NamedNode('o1'), new NamedNode('o2')]));
+          }
+        );
       });
 
       describe('with existing subject and predicate parameters', () => {
         it('should return all objects with this subject and predicate', () => {
-          store.getObjects(new NamedNode('s1'), new NamedNode('p1'), null).should.have.deep.members([new NamedNode('o1'), new NamedNode('o2')]);
+          expect(store.getObjects(new NamedNode('s1'), new NamedNode('p1'), null)).toEqual(expect.arrayContaining([new NamedNode('o1'), new NamedNode('o2')]));
         });
       });
 
       describe('with existing subject and graph parameters', () => {
         it('should return all objects with this subject and graph', () => {
-          store.getObjects(new NamedNode('s1'), null, new DefaultGraph()).should.have.deep.members([new NamedNode('o1'), new NamedNode('o2')]);
+          expect(store.getObjects(new NamedNode('s1'), null, new DefaultGraph())).toEqual(expect.arrayContaining([new NamedNode('o1'), new NamedNode('o2')]));
         });
       });
 
       describe('with existing predicate and graph parameters', () => {
         it('should return all objects with this predicate and graph', () => {
-          store.getObjects(null, new NamedNode('p1'), new DefaultGraph()).should.have.deep.members([new NamedNode('o1'), new NamedNode('o2'), new NamedNode('o3')]);
+          expect(store.getObjects(null, new NamedNode('p1'), new DefaultGraph())).toEqual(
+            expect.arrayContaining([new NamedNode('o1'), new NamedNode('o2'), new NamedNode('o3')])
+          );
         });
       });
 
       describe('with an existing subject parameter', () => {
         it('should return all objects with this subject', () => {
-          store.getObjects(new NamedNode('s1'), null, null).should.have.deep.members([new NamedNode('o1'), new NamedNode('o2')]);
+          expect(store.getObjects(new NamedNode('s1'), null, null)).toEqual(expect.arrayContaining([new NamedNode('o1'), new NamedNode('o2')]));
         });
       });
 
       describe('with an existing predicate parameter', () => {
         it('should return all objects with this predicate', () => {
-          store.getObjects(null, new NamedNode('p1'), null).should.have.deep.members([new NamedNode('o1'), new NamedNode('o2'),  new NamedNode('o3')]);
+          expect(store.getObjects(null, new NamedNode('p1'), null)).toEqual(
+            expect.arrayContaining([new NamedNode('o1'), new NamedNode('o2'),  new NamedNode('o3')])
+          );
         });
       });
 
       describe('with an existing graph parameter', () => {
         it('should return all objects in the graph', () => {
-          store.getObjects(null, null, new NamedNode('c4')).should.have.deep.members([new NamedNode('o1')]);
+          expect(store.getObjects(null, null, new NamedNode('c4'))).toEqual(expect.arrayContaining([new NamedNode('o1')]));
         });
       });
 
       describe('with no parameters', () => {
         it('should return all objects', () => {
-          store.getObjects(null, null, null).should.have.deep.members([new NamedNode('o1'), new NamedNode('o2'), new NamedNode('o3')]);
+          expect(store.getObjects(null, null, null)).toEqual(
+            expect.arrayContaining([new NamedNode('o1'), new NamedNode('o2'), new NamedNode('o3')])
+          );
         });
       });
     });
 
     describe('getGraphs', () => {
       describe('with existing subject, predicate and object parameters', () => {
-        it('should return all graphs with this subject, predicate and object', () => {
-          store.getGraphs(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')).should.have.deep.members([new NamedNode('c4'), new DefaultGraph()]);
-        });
+        it(
+          'should return all graphs with this subject, predicate and object',
+          () => {
+            expect(
+              store.getGraphs(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'))
+            ).toEqual(expect.arrayContaining([new NamedNode('c4'), new DefaultGraph()]));
+          }
+        );
       });
 
       describe('with existing subject and predicate parameters', () => {
         it('should return all graphs with this subject and predicate', () => {
-          store.getGraphs(new NamedNode('s1'), new NamedNode('p1'), null).should.have.deep.members([new NamedNode('c4'),  new DefaultGraph()]);
+          expect(store.getGraphs(new NamedNode('s1'), new NamedNode('p1'), null)).toEqual(expect.arrayContaining([new NamedNode('c4'),  new DefaultGraph()]));
         });
       });
 
       describe('with existing subject and object parameters', () => {
         it('should return all graphs with this subject and object', () => {
-          store.getGraphs(new NamedNode('s1'), null, new NamedNode('o2')).should.have.deep.members([new DefaultGraph()]);
+          expect(store.getGraphs(new NamedNode('s1'), null, new NamedNode('o2'))).toEqual(expect.arrayContaining([new DefaultGraph()]));
         });
       });
 
       describe('with existing predicate and object parameters', () => {
         it('should return all graphs with this predicate and object', () => {
-          store.getGraphs(null, new NamedNode('p1'), new NamedNode('o1')).should.have.deep.members([new DefaultGraph(), new NamedNode('c4')]);
+          expect(store.getGraphs(null, new NamedNode('p1'), new NamedNode('o1'))).toEqual(expect.arrayContaining([new DefaultGraph(), new NamedNode('c4')]));
         });
       });
 
       describe('with an existing subject parameter', () => {
         it('should return all graphs with this subject', () => {
-          store.getGraphs(new NamedNode('s1'), null, null).should.have.deep.members([new NamedNode('c4'), new DefaultGraph()]);
+          expect(store.getGraphs(new NamedNode('s1'), null, null)).toEqual(expect.arrayContaining([new NamedNode('c4'), new DefaultGraph()]));
         });
       });
 
       describe('with an existing predicate parameter', () => {
         it('should return all graphs with this predicate', () => {
-          store.getGraphs(null, new NamedNode('p1'), null).should.have.deep.members([new NamedNode('c4'), new DefaultGraph()]);
+          expect(store.getGraphs(null, new NamedNode('p1'), null)).toEqual(expect.arrayContaining([new NamedNode('c4'), new DefaultGraph()]));
         });
       });
 
       describe('with an existing object parameter', () => {
         it('should return all graphs with this object', () => {
-          store.getGraphs(null, null, new NamedNode('o2')).should.have.deep.members([new DefaultGraph()]);
+          expect(store.getGraphs(null, null, new NamedNode('o2'))).toEqual(expect.arrayContaining([new DefaultGraph()]));
         });
       });
 
       describe('with no parameters', () => {
         it('should return all graphs', () => {
-          store.getGraphs(null, null, null).should.have.deep.members([new NamedNode('c4'), new DefaultGraph()]);
+          expect(store.getGraphs(null, null, null)).toEqual(expect.arrayContaining([new NamedNode('c4'), new DefaultGraph()]));
         });
       });
     });
 
     describe('forEach', () => {
       describe('with existing subject, predicate, object and graph parameters', () => {
-        it('should have iterated all items with this subject, predicate, object and graph',
+        it(
+          'should have iterated all items with this subject, predicate, object and graph',
           shouldIncludeAll(collect(store, 'forEach', 's1', 'p1', 'o2', ''),
-                           ['s1', 'p1', 'o2', '']));
+                           ['s1', 'p1', 'o2', ''])
+        );
       });
 
       describe('with existing subject, predicate and object parameters', () => {
-        it('should have iterated all items with this subject, predicate and object',
+        it(
+          'should have iterated all items with this subject, predicate and object',
           shouldIncludeAll(collect(store, 'forEach', 's1', 'p2', 'o2', null),
-                           ['s1', 'p2', 'o2', '']));
+                           ['s1', 'p2', 'o2', ''])
+        );
       });
 
       describe('with existing subject, predicate and graph parameters', () => {
-        it('should have iterated all items with this subject, predicate and graph',
+        it(
+          'should have iterated all items with this subject, predicate and graph',
           shouldIncludeAll(collect(store, 'forEach', 's1', 'p1', null, ''),
                            ['s1', 'p1', 'o1', ''],
-                           ['s1', 'p1', 'o2', '']));
+                           ['s1', 'p1', 'o2', ''])
+        );
       });
 
       describe('with existing subject, object and graph parameters', () => {
-        it('should have iterated all items with this subject, object and graph',
+        it(
+          'should have iterated all items with this subject, object and graph',
           shouldIncludeAll(collect(store, 'forEach', 's1', null, 'o2', ''),
                            ['s1', 'p1', 'o2', ''],
-                           ['s1', 'p2', 'o2', '']));
+                           ['s1', 'p2', 'o2', ''])
+        );
       });
 
       describe('with existing predicate, object and graph parameters', () => {
-        it('should have iterated all items with this predicate, object and graph',
+        it(
+          'should have iterated all items with this predicate, object and graph',
           shouldIncludeAll(collect(store, 'forEach', null, 'p1', 'o1', ''),
                            ['s1', 'p1', 'o1', ''],
-                           ['s2', 'p1', 'o1', '']));
+                           ['s2', 'p1', 'o1', ''])
+        );
       });
 
       describe('with existing subject and predicate parameters', () => {
-        it('should iterate all items with this subject and predicate',
+        it(
+          'should iterate all items with this subject and predicate',
           shouldIncludeAll(collect(store, 'forEach', 's1', 'p1', null, null),
                            ['s1', 'p1', 'o1', ''],
                            ['s1', 'p1', 'o2', ''],
-                           ['s1', 'p1', 'o1', 'c4']));
+                           ['s1', 'p1', 'o1', 'c4'])
+        );
       });
 
       describe('with existing subject and object parameters', () => {
-        it('should iterate all items with this subject and predicate',
+        it(
+          'should iterate all items with this subject and predicate',
           shouldIncludeAll(collect(store, 'forEach', 's1', null, 'o2', null),
                            ['s1', 'p1', 'o2', ''],
-                           ['s1', 'p2', 'o2', '']));
+                           ['s1', 'p2', 'o2', ''])
+        );
       });
 
       describe('with existing subject and graph parameters', () => {
-        it('should iterate all items with this subject and graph',
+        it(
+          'should iterate all items with this subject and graph',
           shouldIncludeAll(collect(store, 'forEach', 's1', null, null, 'c4'),
-                         ['s1', 'p1', 'o1', 'c4']));
+                         ['s1', 'p1', 'o1', 'c4'])
+        );
       });
 
       describe('with existing predicate and object parameters', () => {
-        it('should iterate all items with this predicate and object',
+        it(
+          'should iterate all items with this predicate and object',
           shouldIncludeAll(collect(store, 'forEach', null, 'p1', 'o1', null),
                            ['s1', 'p1', 'o1', ''],
                            ['s2', 'p1', 'o1', ''],
-                           ['s1', 'p1', 'o1', 'c4']));
+                           ['s1', 'p1', 'o1', 'c4'])
+        );
       });
 
       describe('with existing predicate and graph parameters', () => {
-        it('should iterate all items with this predicate and graph',
-        shouldIncludeAll(collect(store, 'forEach', null, 'p1', null, ''),
-                           ['s1', 'p1', 'o1', ''],
-                           ['s1', 'p1', 'o2', ''],
-                           ['s2', 'p1', 'o1', ''],
-                           [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']));
+        it(
+          'should iterate all items with this predicate and graph',
+          shouldIncludeAll(collect(store, 'forEach', null, 'p1', null, ''),
+                             ['s1', 'p1', 'o1', ''],
+                             ['s1', 'p1', 'o2', ''],
+                             ['s2', 'p1', 'o1', ''],
+                             [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', ''])
+        );
       });
 
       describe('with existing object and graph parameters', () => {
-        it('should iterate all items with this object and graph',
+        it(
+          'should iterate all items with this object and graph',
           shouldIncludeAll(collect(store, 'forEach', null, null, 'o1', ''),
                            ['s1', 'p1', 'o1', ''],
-                           ['s2', 'p1', 'o1', '']));
+                           ['s2', 'p1', 'o1', ''])
+        );
       });
 
       describe('with an existing subject parameter', () => {
-        it('should iterate all items with this subject',
+        it(
+          'should iterate all items with this subject',
           shouldIncludeAll(collect(store, 'forEach', 's2', null, null, null),
                          ['s2', 'p1', 'o1', ''],
-                         ['s2', 'p2', 'o2', '']));
+                         ['s2', 'p2', 'o2', ''])
+        );
       });
 
       describe('with an existing predicate parameter', () => {
-        it('should iterate all items with this predicate',
+        it(
+          'should iterate all items with this predicate',
           shouldIncludeAll(collect(store, 'forEach', null, 'p1', null, null),
                            ['s1', 'p1', 'o1', ''],
                            ['s1', 'p1', 'o2', ''],
                            ['s2', 'p1', 'o1', ''],
                            ['s1', 'p1', 'o1', 'c4'],
-                           [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']));
+                           [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', ''])
+        );
       });
 
       describe('with an existing object parameter', () => {
-        it('should iterate all items with this object',
+        it(
+          'should iterate all items with this object',
           shouldIncludeAll(collect(store, 'forEach', null, null, 'o1', null),
                            ['s1', 'p1', 'o1', ''],
                            ['s2', 'p1', 'o1', ''],
-                           ['s1', 'p1', 'o1', 'c4']));
+                           ['s1', 'p1', 'o1', 'c4'])
+        );
       });
 
       describe('with an existing graph parameter', () => {
-        it('should iterate all items with this graph',
+        it(
+          'should iterate all items with this graph',
           shouldIncludeAll(collect(store, 'forEach', null, null, null, ''),
                            ['s1', 'p1', 'o1'],
                            ['s1', 'p1', 'o2'],
                            ['s1', 'p2', 'o2'],
                            ['s2', 'p1', 'o1'],
                            ['s2', 'p2', 'o2'],
-                           [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']));
+                           [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', ''])
+        );
       });
 
       describe('with no parameters', () => {
-        it('should iterate all items',
+        it(
+          'should iterate all items',
           shouldIncludeAll(collect(store, 'forEach', null, null, null, null),
                            ['s1', 'p1', 'o1'],
                            ['s1', 'p1', 'o2'],
@@ -904,98 +1017,111 @@ describe('Store', () => {
                            ['s2', 'p1', 'o1'],
                            ['s2', 'p2', 'o2'],
                            ['s1', 'p1', 'o1', 'c4'],
-                           [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']));
+                           [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', ''])
+        );
       });
     });
 
     describe('forSubjects', () => {
       describe('with existing predicate, object and graph parameters', () => {
-        it('should iterate all subjects with this predicate, object and graph', () => {
-          collect(store, 'forSubjects', 'p1', 'o1', '').should.have.deep.members([new NamedNode('s1'), new NamedNode('s2')]);
-        });
+        it(
+          'should iterate all subjects with this predicate, object and graph',
+          () => {
+            expect(collect(store, 'forSubjects', 'p1', 'o1', '')).toEqual(expect.arrayContaining([new NamedNode('s1'), new NamedNode('s2')]));
+          }
+        );
       });
       describe('with a non-existing predicate', () => {
         it('should be empty', () => {
-          collect(store, 'forSubjects', 'p3', null, null).should.be.empty;
+          expect(collect(store, 'forSubjects', 'p3', null, null)).toHaveLength(0);
         });
       });
       describe('with a non-existing object', () => {
         it('should be empty', () => {
-          collect(store, 'forSubjects', null, 'o4', null).should.be.empty;
+          expect(collect(store, 'forSubjects', null, 'o4', null)).toHaveLength(0);
         });
       });
       describe('with a non-existing graph', () => {
         it('should be empty', () => {
-          collect(store, 'forSubjects', null, null, 'g2').should.be.empty;
+          expect(collect(store, 'forSubjects', null, null, 'g2')).toHaveLength(0);
         });
       });
     });
 
     describe('forPredicates', () => {
       describe('with existing subject, object and graph parameters', () => {
-        it('should iterate all predicates with this subject, object and graph', () => {
-          collect(store, 'forPredicates', 's1', 'o2', '').should.have.deep.members([new NamedNode('p1'), new NamedNode('p2')]);
-        });
+        it(
+          'should iterate all predicates with this subject, object and graph',
+          () => {
+            expect(collect(store, 'forPredicates', 's1', 'o2', '')).toEqual(expect.arrayContaining([new NamedNode('p1'), new NamedNode('p2')]));
+          }
+        );
       });
       describe('with a non-existing subject', () => {
         it('should be empty', () => {
-          collect(store, 'forPredicates', 's3', null, null).should.be.empty;
+          expect(collect(store, 'forPredicates', 's3', null, null)).toHaveLength(0);
         });
       });
       describe('with a non-existing object', () => {
         it('should be empty', () => {
-          collect(store, 'forPredicates', null, 'o4', null).should.be.empty;
+          expect(collect(store, 'forPredicates', null, 'o4', null)).toHaveLength(0);
         });
       });
       describe('with a non-existing graph', () => {
         it('should be empty', () => {
-          collect(store, 'forPredicates', null, null, 'g2').should.be.empty;
+          expect(collect(store, 'forPredicates', null, null, 'g2')).toHaveLength(0);
         });
       });
     });
 
     describe('forObjects', () => {
       describe('with existing subject, predicate and graph parameters', () => {
-        it('should iterate all objects with this subject, predicate and graph', () => {
-          collect(store, 'forObjects', 's1', 'p1', '').should.have.deep.members([new NamedNode('o1'), new NamedNode('o2')]);
-        });
+        it(
+          'should iterate all objects with this subject, predicate and graph',
+          () => {
+            expect(collect(store, 'forObjects', 's1', 'p1', '')).toEqual(expect.arrayContaining([new NamedNode('o1'), new NamedNode('o2')]));
+          }
+        );
       });
       describe('with a non-existing subject', () => {
         it('should be empty', () => {
-          collect(store, 'forObjects', 's3', null, null).should.be.empty;
+          expect(collect(store, 'forObjects', 's3', null, null)).toHaveLength(0);
         });
       });
       describe('with a non-existing predicate', () => {
         it('should be empty', () => {
-          collect(store, 'forObjects', null, 'p3', null).should.be.empty;
+          expect(collect(store, 'forObjects', null, 'p3', null)).toHaveLength(0);
         });
       });
       describe('with a non-existing graph', () => {
         it('should be empty', () => {
-          collect(store, 'forObjects', null, null, 'g2').should.be.empty;
+          expect(collect(store, 'forObjects', null, null, 'g2')).toHaveLength(0);
         });
       });
     });
 
     describe('forGraphs', () => {
       describe('with existing subject, predicate and object parameters', () => {
-        it('should iterate all graphs with this subject, predicate and object', () => {
-          collect(store, 'forGraphs', 's1', 'p1', 'o1').should.have.deep.members([new DefaultGraph(), new NamedNode('c4')]);
-        });
+        it(
+          'should iterate all graphs with this subject, predicate and object',
+          () => {
+            expect(collect(store, 'forGraphs', 's1', 'p1', 'o1')).toEqual(expect.arrayContaining([new DefaultGraph(), new NamedNode('c4')]));
+          }
+        );
       });
       describe('with a non-existing subject', () => {
         it('should be empty', () => {
-          collect(store, 'forObjects', 's3', null, null).should.be.empty;
+          expect(collect(store, 'forObjects', 's3', null, null)).toHaveLength(0);
         });
       });
       describe('with a non-existing predicate', () => {
         it('should be empty', () => {
-          collect(store, 'forObjects', null, 'p3', null).should.be.empty;
+          expect(collect(store, 'forObjects', null, 'p3', null)).toHaveLength(0);
         });
       });
       describe('with a non-existing graph', () => {
         it('should be empty', () => {
-          collect(store, 'forPredicates', null, null, 'g2').should.be.empty;
+          expect(collect(store, 'forPredicates', null, null, 'g2')).toHaveLength(0);
         });
       });
     });
@@ -1006,17 +1132,17 @@ describe('Store', () => {
 
       describe('with no parameters and a callback always returning true', () => {
         it('should return true', () => {
-          store.every(alwaysTrue, null, null, null, null).should.be.true;
+          expect(store.every(alwaysTrue, null, null, null, null)).toBe(true);
         });
       });
       describe('with no parameters and a callback always returning false', () => {
         it('should return false', () => {
-          store.every(alwaysFalse, null, null, null, null).should.be.false;
+          expect(store.every(alwaysFalse, null, null, null, null)).toBe(false);
         });
       });
       describe('with no parameters and a callback that returns false after 3 calls', () => {
         it('should return false', () => {
-          store.every(thirdTimeFalse, null, null, null, null).should.be.false;
+          expect(store.every(thirdTimeFalse, null, null, null, null)).toBe(false);
         });
       });
     });
@@ -1027,55 +1153,54 @@ describe('Store', () => {
 
       describe('with no parameters and a callback always returning true', () => {
         it('should return true', () => {
-          store.some(alwaysTrue, null, null, null, null).should.be.true;
+          expect(store.some(alwaysTrue, null, null, null, null)).toBe(true);
         });
       });
       describe('with no parameters and a callback always returning false', () => {
         it('should return false', () => {
-          store.some(alwaysFalse, null, null, null, null).should.be.false;
+          expect(store.some(alwaysFalse, null, null, null, null)).toBe(false);
         });
       });
       describe('with no parameters and a callback that returns true after 3 calls', () => {
         it('should return false', () => {
-          store.some(thirdTimeFalse, null, null, null, null).should.be.true;
+          expect(store.some(thirdTimeFalse, null, null, null, null)).toBe(true);
         });
       });
       describe('with a non-existing subject', () => {
         it('should return true', () => {
-          store.some(null, new NamedNode('s3'), null, null, null).should.be.false;
+          expect(store.some(null, new NamedNode('s3'), null, null, null)).toBe(false);
         });
       });
       describe('with a non-existing predicate', () => {
         it('should return false', () => {
-          store.some(null, null, new NamedNode('p3'), null, null).should.be.false;
+          expect(store.some(null, null, new NamedNode('p3'), null, null)).toBe(false);
         });
       });
       describe('with a non-existing object', () => {
         it('should return false', () => {
-          store.some(null, null, null, new NamedNode('o4'), null).should.be.false;
+          expect(store.some(null, null, null, new NamedNode('o4'), null)).toBe(false);
         });
       });
       describe('with a non-existing graph', () => {
         it('should return false', () => {
-          store.some(null, null, null, null, new NamedNode('g2')).should.be.false;
+          expect(store.some(null, null, null, null, new NamedNode('g2'))).toBe(false);
         });
       });
     });
 
     describe('when destructured', () => {
-      it('should destructure all quads',
-        shouldIncludeAll(
-          () => {
-            const [a, b, c, d, e, f, g] = store;
-            return [a, b, c, d, e, f, g];
-          },
-          ['s1', 'p1', 'o1'],
-          ['s1', 'p1', 'o2'],
-          ['s1', 'p2', 'o2'],
-          ['s2', 'p1', 'o1'],
-          ['s2', 'p2', 'o2'],
-          ['s1', 'p1', 'o1', 'c4'],
-          [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3']));
+      it('should destructure all quads', shouldIncludeAll(
+        () => {
+          const [a, b, c, d, e, f, g] = store;
+          return [a, b, c, d, e, f, g];
+        },
+        ['s1', 'p1', 'o1'],
+        ['s1', 'p1', 'o2'],
+        ['s1', 'p2', 'o2'],
+        ['s2', 'p1', 'o1'],
+        ['s2', 'p2', 'o2'],
+        ['s1', 'p1', 'o1', 'c4'],
+        [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3']));
     });
 
     describe('when iterated with for...of', () => {
@@ -1085,289 +1210,371 @@ describe('Store', () => {
         for (const quad of store) {
           count += 1;
         }
-        should.equal(count, 7);
+        expect(count).toBe(7);
       });
     });
 
     describe('when spread', () => {
-      it('should spread all quads',
-        shouldIncludeAll(
-          [...store],
-          ['s1', 'p1', 'o1'],
-          ['s1', 'p1', 'o2'],
-          ['s1', 'p2', 'o2'],
-          ['s2', 'p1', 'o1'],
-          ['s1', 'p1', 'o1', 'c4'],
-          [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3'],
-          ['s2', 'p2', 'o2']));
+      it('should spread all quads', shouldIncludeAll(
+        [...store],
+        ['s1', 'p1', 'o1'],
+        ['s1', 'p1', 'o2'],
+        ['s1', 'p2', 'o2'],
+        ['s2', 'p1', 'o1'],
+        ['s1', 'p1', 'o1', 'c4'],
+        [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3'],
+        ['s2', 'p2', 'o2']));
     });
 
     describe('when yield starred', () => {
-      it('should yield all quads',
-        shouldIncludeAll(
-          () => {
-            function* yieldAll() {
-              yield* store;
-            }
-            return Array.from(yieldAll());
-          },
-          ['s1', 'p1', 'o1'],
-          ['s1', 'p1', 'o2'],
-          ['s1', 'p2', 'o2'],
-          ['s2', 'p1', 'o1'],
-          ['s2', 'p2', 'o2'],
-          ['s1', 'p1', 'o1', 'c4'],
-          [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3']));
+      it('should yield all quads', shouldIncludeAll(
+        () => {
+          function* yieldAll() {
+            yield* store;
+          }
+          return Array.from(yieldAll());
+        },
+        ['s1', 'p1', 'o1'],
+        ['s1', 'p1', 'o2'],
+        ['s1', 'p2', 'o2'],
+        ['s2', 'p1', 'o1'],
+        ['s2', 'p2', 'o2'],
+        ['s1', 'p1', 'o1', 'c4'],
+        [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3']));
     });
 
     describe('when counted without parameters', () => {
       it('should count all items in all graphs', () => {
-        store.countQuads().should.equal(7);
+        expect(store.countQuads()).toBe(7);
       });
     });
 
     describe('when counted with an existing subject parameter', () => {
       it('should count all items with this subject in all graphs', () => {
-        store.countQuads(new NamedNode('s1'), null, null).should.equal(4);
+        expect(store.countQuads(new NamedNode('s1'), null, null)).toBe(4);
       });
     });
 
     describe('when counted with a non-existing subject parameter', () => {
       it('should be empty', () => {
-        store.countQuads(new NamedNode('s3'), null, null).should.equal(0);
+        expect(store.countQuads(new NamedNode('s3'), null, null)).toBe(0);
       });
     });
 
     describe('when counted with a non-existing subject parameter that exists elsewhere', () => {
       it('should be empty', () => {
-        store.countQuads(new NamedNode('p1'), null, null).should.equal(0);
+        expect(store.countQuads(new NamedNode('p1'), null, null)).toBe(0);
       });
     });
 
     describe('when counted with an existing predicate parameter', () => {
       it('should count all items with this predicate in all graphs', () => {
-        store.countQuads(null, new NamedNode('p1'), null).should.equal(5);
+        expect(store.countQuads(null, new NamedNode('p1'), null)).toBe(5);
       });
     });
 
     describe('when counted with a non-existing predicate parameter', () => {
       it('should be empty', () => {
-        store.countQuads(null, new NamedNode('p3'), null).should.equal(0);
+        expect(store.countQuads(null, new NamedNode('p3'), null)).toBe(0);
       });
     });
 
     describe('when counted with an existing object parameter', () => {
       it('should count all items with this object in all graphs', () => {
-        store.countQuads(null, null, 'o1').should.equal(3);
+        expect(store.countQuads(null, null, 'o1')).toBe(3);
       });
     });
 
     describe('when counted with a non-existing object parameter', () => {
       it('should be empty', () => {
-        store.countQuads(null, null, 'o4').should.equal(0);
+        expect(store.countQuads(null, null, 'o4')).toBe(0);
       });
     });
 
     describe('when counted with existing subject and predicate parameters', () => {
-      it('should count all items with this subject and predicate in all graphs', () => {
-        store.countQuads('s1', 'p1', null).should.equal(3);
-      });
+      it(
+        'should count all items with this subject and predicate in all graphs',
+        () => {
+          expect(store.countQuads('s1', 'p1', null)).toBe(3);
+        }
+      );
     });
 
     describe('when counted with non-existing subject and predicate parameters', () => {
       it('should be empty', () => {
-        store.countQuads('s2', 'p3', null).should.equal(0);
+        expect(store.countQuads('s2', 'p3', null)).toBe(0);
       });
     });
 
     describe('when counted with existing subject and object parameters', () => {
-      it('should count all items with this subject and object in all graphs', () => {
-        store.countQuads('s1', null, 'o1').should.equal(2);
-      });
+      it(
+        'should count all items with this subject and object in all graphs',
+        () => {
+          expect(store.countQuads('s1', null, 'o1')).toBe(2);
+        }
+      );
     });
 
     describe('when counted with non-existing subject and object parameters', () => {
       it('should be empty', () => {
-        store.countQuads('s2', null, 'o3').should.equal(0);
+        expect(store.countQuads('s2', null, 'o3')).toBe(0);
       });
     });
 
     describe('when counted with existing predicate and object parameters', () => {
-      it('should count all items with this predicate and object in all graphs', () => {
-        store.countQuads(null, 'p1', 'o1').should.equal(3);
-      });
+      it(
+        'should count all items with this predicate and object in all graphs',
+        () => {
+          expect(store.countQuads(null, 'p1', 'o1')).toBe(3);
+        }
+      );
     });
 
     describe('when counted with non-existing predicate and object parameters', () => {
       it('should be empty', () => {
-        store.countQuads(null, 'p2', 'o3').should.equal(0);
+        expect(store.countQuads(null, 'p2', 'o3')).toBe(0);
       });
     });
 
     describe('when counted with existing subject, predicate, and object parameters', () => {
-      it('should count all items with this subject, predicate, and object in all graphs', () => {
-        store.countQuads('s1', 'p1', 'o1').should.equal(2);
-      });
+      it(
+        'should count all items with this subject, predicate, and object in all graphs',
+        () => {
+          expect(store.countQuads('s1', 'p1', 'o1')).toBe(2);
+        }
+      );
     });
 
     describe('when counted with a non-existing triple', () => {
       it('should be empty', () => {
-        store.countQuads('s2', 'p2', 'o1').should.equal(0);
+        expect(store.countQuads('s2', 'p2', 'o1')).toBe(0);
       });
     });
 
     describe('when counted with the default graph parameter', () => {
       it('should count all items in the default graph', () => {
-        store.countQuads(null, null, null, new DefaultGraph()).should.equal(6);
+        expect(store.countQuads(null, null, null, new DefaultGraph())).toBe(6);
       });
     });
 
     describe('when counted with an existing named graph parameter', () => {
       it('should count all items in that graph', () => {
-        store.countQuads(null, null, null, 'c4').should.equal(1);
+        expect(store.countQuads(null, null, null, 'c4')).toBe(1);
       });
     });
 
     describe('when counted with a non-existing named graph parameter', () => {
       it('should be empty', () => {
-        store.countQuads(null, null, null, 'c5').should.equal(0);
+        expect(store.countQuads(null, null, null, 'c5')).toBe(0);
       });
     });
 
     describe('when trying to remove a triple with a non-existing subject', () => {
-      before(() => { store.removeQuad(new NamedNode('s0'), new NamedNode('p1'), new NamedNode('o1')).should.be.false; });
-      it('should still have size 7', () => { store.size.should.eql(7); });
+      beforeAll(
+        () => {
+          expect(
+          store.removeQuad(new NamedNode('s0'), new NamedNode('p1'), new NamedNode('o1'))
+        ).toBe(false);
+        }
+      );
+      it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
 
     describe('when trying to remove a triple with a non-existing predicate', () => {
-      before(() => { store.removeQuad(new NamedNode('s1'), new NamedNode('p0'), new NamedNode('o1')).should.be.false; });
-      it('should still have size 7', () => { store.size.should.eql(7); });
+      beforeAll(
+        () => {
+          expect(
+          store.removeQuad(new NamedNode('s1'), new NamedNode('p0'), new NamedNode('o1'))
+        ).toBe(false);
+        }
+      );
+      it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
 
     describe('when trying to remove a triple with a non-existing object', () => {
-      before(() => { store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o0')).should.be.false; });
-      it('should still have size 7', () => { store.size.should.eql(7); });
+      beforeAll(
+        () => {
+          expect(
+          store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o0'))
+        ).toBe(false);
+        }
+      );
+      it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
 
     describe('when trying to remove a triple for which no subjects exist', () => {
-      before(() => { store.removeQuad(new NamedNode('o1'), new NamedNode('p1'), new NamedNode('o1')).should.be.false; });
-      it('should still have size 7', () => { store.size.should.eql(7); });
+      beforeAll(
+        () => {
+          expect(
+          store.removeQuad(new NamedNode('o1'), new NamedNode('p1'), new NamedNode('o1'))
+        ).toBe(false);
+        }
+      );
+      it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
 
     describe('when trying to remove a triple for which no predicates exist', () => {
-      before(() => { store.removeQuad(new NamedNode('s1'), new NamedNode('s1'), new NamedNode('o1')).should.be.false; });
-      it('should still have size 7', () => { store.size.should.eql(7); });
+      beforeAll(
+        () => {
+          expect(
+          store.removeQuad(new NamedNode('s1'), new NamedNode('s1'), new NamedNode('o1'))
+        ).toBe(false);
+        }
+      );
+      it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
 
     describe('when trying to remove a triple for which no objects exist', () => {
-      before(() => { store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('s1')).should.be.false; });
-      it('should still have size 7', () => { store.size.should.eql(7); });
+      beforeAll(
+        () => {
+          expect(
+          store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('s1'))
+        ).toBe(false);
+        }
+      );
+      it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
 
     describe('when trying to remove a triple that does not exist', () => {
-      before(() => { store.removeQuad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o1')).should.be.false; });
-      it('should still have size 7', () => { store.size.should.eql(7); });
+      beforeAll(
+        () => {
+          expect(
+          store.removeQuad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o1'))
+        ).toBe(false);
+        }
+      );
+      it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
 
     describe('when trying to remove an incomplete triple', () => {
-      before(() => { store.removeQuad(new NamedNode('s1'), null, null).should.be.false; });
-      it('should still have size 7', () => { store.size.should.eql(7); });
+      beforeAll(
+        () => { expect(store.removeQuad(new NamedNode('s1'), null, null)).toBe(false); }
+      );
+      it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
 
     describe('when trying to remove a triple with a non-existing graph', () => {
-      before(() => { store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c0')).should.be.false; });
-      it('should still have size 7', () => { store.size.should.eql(7); });
+      beforeAll(
+        () => {
+          expect(
+          store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c0'))
+        ).toBe(false);
+        }
+      );
+      it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
 
     describe('when removing an existing triple', () => {
-      before(() => { store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')).should.be.true; });
+      beforeAll(
+        () => {
+          expect(
+          store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'))
+        ).toBe(true);
+        }
+      );
 
-      it('should have size 6', () => { store.size.should.eql(6); });
+      it('should have size 6', () => { expect(store.size).toEqual(6); });
 
-      it('should not contain that triple anymore',
+      it(
+        'should not contain that triple anymore',
         shouldIncludeAll(() => { return store.getQuads(); },
                          ['s1', 'p1', 'o2'],
                          ['s1', 'p2', 'o2'],
                          ['s2', 'p1', 'o1'],
                          ['s2', 'p2', 'o2'],
                          ['s1', 'p1', 'o1', 'c4'],
-                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']));
+                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', ''])
+      );
     });
 
     describe('when removing an existing triple from a named graph', () => {
-      before(() => { store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c4')).should.be.true; });
+      beforeAll(
+        () => {
+          expect(
+          store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c4'))
+        ).toBe(true);
+        }
+      );
 
-      it('should have size 5', () => { store.size.should.eql(5); });
+      it('should have size 5', () => { expect(store.size).toEqual(5); });
 
       itShouldBeEmpty(() => { return store.getQuads(null, null, null, 'c4'); });
     });
 
     describe('when removing multiple triples', () => {
-      before(() => {
+      beforeAll(() => {
         store.removeQuads([
           new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
           new Quad(new NamedNode('s2'), new NamedNode('p1'), new NamedNode('o1')),
         ]);
       });
 
-      it('should have size 3', () => { store.size.should.eql(3); });
+      it('should have size 3', () => { expect(store.size).toEqual(3); });
 
-      it('should not contain those triples anymore',
+      it(
+        'should not contain those triples anymore',
         shouldIncludeAll(() => { return store.getQuads(); },
                          ['s1', 'p1', 'o2'],
                          ['s2', 'p2', 'o2'],
-                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']));
+                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', ''])
+      );
     });
 
     describe('when adding and removing a triple', () => {
-      before(() => {
-        store.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')).should.be.true;
-        store.removeQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')).should.be.true;
+      beforeAll(() => {
+        expect(store.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))).toBe(true);
+        expect(
+          store.removeQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))
+        ).toBe(true);
       });
 
-      it('should have an unchanged size', () => { store.size.should.eql(3); });
+      it('should have an unchanged size', () => { expect(store.size).toEqual(3); });
     });
   });
 
   describe('A Store containing a blank node', () => {
     const store = new Store();
     const b1 = store.createBlankNode();
-    store.addQuad(new NamedNode('s1'), new NamedNode('p1'), b1).should.be.true;
+    expect(store.addQuad(new NamedNode('s1'), new NamedNode('p1'), b1)).toBe(true);
 
     describe('when searched with more than one variable', () => {
-      it('should return a triple with the blank node as an object',
+      it(
+        'should return a triple with the blank node as an object',
         shouldIncludeAll(store.getQuads(),
-                         ['s1', 'p1', `_:${b1.value}`]));
+                         ['s1', 'p1', `_:${b1.value}`])
+      );
     });
 
     describe('when searched with one variable', () => {
-      it('should return a triple with the blank node as an object',
+      it(
+        'should return a triple with the blank node as an object',
         shouldIncludeAll(store.getQuads('s1', 'p1'),
-                         ['s1', 'p1', `_:${b1.value}`]));
+                         ['s1', 'p1', `_:${b1.value}`])
+      );
     });
   });
 
   describe('A Store with a custom DataFactory', () => {
     const factory = {};
     let store;
-    before(() => {
+    beforeAll(() => {
       factory.quad = function (s, p, o, g) { return { s: s, p: p, o: o, g: g }; };
       ['namedNode', 'blankNode', 'literal', 'variable', 'defaultGraph'].forEach(f => {
         factory[f] = function (n) { return n ? `${f[0]}-${n}` : f; };
       });
 
       store = new Store({ factory: factory });
-      store.addQuad('s1', 'p1', 'o1').should.be.true;
-      store.addQuad({ subject: 's1', predicate: 'p1', object: 'o2' }).should.be.true;
+      expect(store.addQuad('s1', 'p1', 'o1')).toBe(true);
+      expect(store.addQuad({ subject: 's1', predicate: 'p1', object: 'o2' })).toBe(true);
       store.addQuads([
         { subject: 's1', predicate: 'p2', object: 'o2' },
         { subject: 's2', predicate: 'p1', object: 'o1' },
       ]);
-      store.addQuad('s1', 'p1', 'o1', 'c4').should.be.true;
+      expect(store.addQuad('s1', 'p1', 'o1', 'c4')).toBe(true);
     });
 
     it('should use the factory when returning quads', () => {
-      store.getQuads().should.deep.equal([
+      expect(store.getQuads()).toEqual([
         { s: 'n-s1', p: 'n-p1', o: 'n-o1', g: 'defaultGraph' },
         { s: 'n-s1', p: 'n-p1', o: 'n-o2', g: 'defaultGraph' },
         { s: 'n-s1', p: 'n-p2', o: 'n-o2', g: 'defaultGraph' },
@@ -1381,23 +1588,26 @@ describe('Store', () => {
     const store = new Store();
 
     it('should implement the DatasetCore interface', () => {
-      store.add.should.be.a('function');
-      store.delete.should.be.a('function');
-      store.has.should.be.a('function');
-      store.match.should.be.a('function');
-      store[Symbol.iterator].should.be.a('function');
+      expect(store.add).toBeInstanceOf(Function);
+      expect(store.delete).toBeInstanceOf(Function);
+      expect(store.has).toBeInstanceOf(Function);
+      expect(store.match).toBeInstanceOf(Function);
+      expect(store[Symbol.iterator]).toBeInstanceOf(Function);
     });
 
     // Test inspired by http://www.devthought.com/2012/01/18/an-object-is-not-a-hash/.
     // The value `__proto__` is not supported however – fixing it introduces too much overhead.
-    it('should be able to contain entities with JavaScript object property names', () => {
-      store.addQuad('toString', 'valueOf', 'toLocaleString', 'hasOwnProperty').should.be.true;
-      shouldIncludeAll(store.getQuads(null, null, null, 'hasOwnProperty'),
-                       ['toString', 'valueOf', 'toLocaleString', 'hasOwnProperty'])();
-    });
+    it(
+      'should be able to contain entities with JavaScript object property names',
+      () => {
+        expect(store.addQuad('toString', 'valueOf', 'toLocaleString', 'hasOwnProperty')).toBe(true);
+        shouldIncludeAll(store.getQuads(null, null, null, 'hasOwnProperty'),
+                         ['toString', 'valueOf', 'toLocaleString', 'hasOwnProperty'])();
+      }
+    );
 
     it('should be able to contain entities named "null"', () => {
-      store.addQuad('null', 'null', 'null', 'null').should.be.true;
+      expect(store.addQuad('null', 'null', 'null', 'null')).toBe(true);
       shouldIncludeAll(store.getQuads(null, null, null, 'null'), ['null', 'null', 'null', 'null'])();
     });
   });
@@ -1405,7 +1615,7 @@ describe('Store', () => {
   describe('A Store containing a well-formed rdf:Collection as subject', () => {
     const store = new Store();
     const listElements = addList(store, new NamedNode('element1'), new Literal('"element2"'));
-    store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o1')).should.be.true;
+    expect(store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o1'))).toBe(true);
     const listItemsJSON = {
       b0: [
         { termType: 'NamedNode', value: 'element1' },
@@ -1416,26 +1626,27 @@ describe('Store', () => {
 
     describe('extractLists without remove', () => {
       const lists = store.extractLists();
-      it('should not delete triples',
-        shouldIncludeAll(store.getQuads(),
-          [`_:${listElements[0].value}`, 'p1', 'o1'],
-          [`_:${listElements[0].value}`, namespaces.rdf.first, 'element1'],
-          [`_:${listElements[0].value}`, namespaces.rdf.rest, `_:${listElements[1].value}`],
-          [`_:${listElements[1].value}`, namespaces.rdf.first, '"element2"'],
-          [`_:${listElements[1].value}`, namespaces.rdf.rest, namespaces.rdf.nil]
-        ));
+      it('should not delete triples', shouldIncludeAll(store.getQuads(),
+        [`_:${listElements[0].value}`, 'p1', 'o1'],
+        [`_:${listElements[0].value}`, namespaces.rdf.first, 'element1'],
+        [`_:${listElements[0].value}`, namespaces.rdf.rest, `_:${listElements[1].value}`],
+        [`_:${listElements[1].value}`, namespaces.rdf.first, '"element2"'],
+        [`_:${listElements[1].value}`, namespaces.rdf.rest, namespaces.rdf.nil]
+      ));
       it('should generate a list of Collections', () => {
-        expect(listsToJSON(lists)).to.deep.equal(listItemsJSON);
+        expect(listsToJSON(lists)).toEqual(listItemsJSON);
       });
     });
 
     describe('extractLists with remove', () => {
       const lists = store.extractLists({ remove: true });
-      it('should remove the first/rest triples and return the list members',
+      it(
+        'should remove the first/rest triples and return the list members',
         shouldIncludeAll(store.getQuads(),
-                         [`_:${listElements[0].value}`, 'p1', 'o1']));
+                         [`_:${listElements[0].value}`, 'p1', 'o1'])
+      );
       it('should generate a list of Collections', () => {
-        expect(listsToJSON(lists)).to.deep.equal(listItemsJSON);
+        expect(listsToJSON(lists)).toEqual(listItemsJSON);
       });
     });
   });
@@ -1443,7 +1654,7 @@ describe('Store', () => {
   describe('A Store containing a well-formed rdf:Collection as object', () => {
     const store = new Store();
     const listElements = addList(store, new NamedNode('element1'), new Literal('"element2"'));
-    store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0]).should.be.true;
+    expect(store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0])).toBe(true);
     const listItemsJSON = {
       b0: [
         { termType: 'NamedNode', value: 'element1' },
@@ -1454,26 +1665,27 @@ describe('Store', () => {
 
     describe('extractLists without remove', () => {
       const lists = store.extractLists();
-      it('should not delete triples',
-        shouldIncludeAll(store.getQuads(),
-          ['s1', 'p1', `_:${listElements[0].value}`],
-          [`_:${listElements[0].value}`, namespaces.rdf.first, 'element1'],
-          [`_:${listElements[0].value}`, namespaces.rdf.rest, `_:${listElements[1].value}`],
-          [`_:${listElements[1].value}`, namespaces.rdf.first, '"element2"'],
-          [`_:${listElements[1].value}`, namespaces.rdf.rest, namespaces.rdf.nil]
-        ));
+      it('should not delete triples', shouldIncludeAll(store.getQuads(),
+        ['s1', 'p1', `_:${listElements[0].value}`],
+        [`_:${listElements[0].value}`, namespaces.rdf.first, 'element1'],
+        [`_:${listElements[0].value}`, namespaces.rdf.rest, `_:${listElements[1].value}`],
+        [`_:${listElements[1].value}`, namespaces.rdf.first, '"element2"'],
+        [`_:${listElements[1].value}`, namespaces.rdf.rest, namespaces.rdf.nil]
+      ));
       it('should generate a list of Collections', () => {
-        expect(listsToJSON(lists)).to.deep.equal(listItemsJSON);
+        expect(listsToJSON(lists)).toEqual(listItemsJSON);
       });
     });
 
     describe('extractLists with remove', () => {
       const lists = store.extractLists({ remove: true });
-      it('should remove the first/rest triples and return the list members',
+      it(
+        'should remove the first/rest triples and return the list members',
         shouldIncludeAll(store.getQuads(),
-                         ['s1', 'p1', `_:${listElements[0].value}`]));
+                         ['s1', 'p1', `_:${listElements[0].value}`])
+      );
       it('should generate a list of Collections', () => {
-        expect(listsToJSON(lists)).to.deep.equal(listItemsJSON);
+        expect(listsToJSON(lists)).toEqual(listItemsJSON);
       });
     });
   });
@@ -1485,119 +1697,136 @@ describe('Store', () => {
 
     describe('extractLists without remove', () => {
       const lists = store.extractLists();
-      it('should not delete triples',
-        shouldIncludeAll(store.getQuads(),
-          ['s1', 'p1', 'o1'],
-          [`_:${listElements[0].value}`, namespaces.rdf.first, 'element1'],
-          [`_:${listElements[0].value}`, namespaces.rdf.rest, `_:${listElements[1].value}`],
-          [`_:${listElements[1].value}`, namespaces.rdf.first, '"element2"'],
-          [`_:${listElements[1].value}`, namespaces.rdf.rest, namespaces.rdf.nil]
-        ));
+      it('should not delete triples', shouldIncludeAll(store.getQuads(),
+        ['s1', 'p1', 'o1'],
+        [`_:${listElements[0].value}`, namespaces.rdf.first, 'element1'],
+        [`_:${listElements[0].value}`, namespaces.rdf.rest, `_:${listElements[1].value}`],
+        [`_:${listElements[1].value}`, namespaces.rdf.first, '"element2"'],
+        [`_:${listElements[1].value}`, namespaces.rdf.rest, namespaces.rdf.nil]
+      ));
       it('should generate a list of Collections', () => {
-        expect(listsToJSON(lists)).to.deep.equal({});
+        expect(listsToJSON(lists)).toEqual({});
       });
     });
 
     describe('extractLists with remove', () => {
       const lists = store.extractLists({ remove: true });
-      it('should remove the first/rest triples and return the list members',
+      it(
+        'should remove the first/rest triples and return the list members',
         shouldIncludeAll(store.getQuads(),
-                         ['s1', 'p1', 'o1']));
+                         ['s1', 'p1', 'o1'])
+      );
       it('should generate a list of Collections', () => {
-        expect(listsToJSON(lists)).to.deep.equal({});
+        expect(listsToJSON(lists)).toEqual({});
       });
     });
   });
 
   describe('A Store containing a rdf:Collection without first', () => {
     const store = new Store();
-    store.addQuad(store.createBlankNode(), new NamedNode(namespaces.rdf.rest), namespaces.rdf.nil).should.be.true;
+    expect(
+      store.addQuad(store.createBlankNode(), new NamedNode(namespaces.rdf.rest), namespaces.rdf.nil)
+    ).toBe(true);
 
     it('extractLists throws an error', () => {
-      expect(() => store.extractLists()).throws('b0 has no list head');
+      expect(() => store.extractLists()).toThrowError('b0 has no list head');
     });
   });
 
   describe('A Store containing an rdf:Collection with multiple rdf:first arcs on head', () => {
     const store = new Store();
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode());
-    store.addQuad(listElements[0], new NamedNode(namespaces.rdf.first), store.createBlankNode()).should.be.true;
+    expect(
+      store.addQuad(listElements[0], new NamedNode(namespaces.rdf.first), store.createBlankNode())
+    ).toBe(true);
 
     it('extractLists throws an error', () => {
-      expect(() => store.extractLists()).throws('b2 has multiple rdf:first arcs');
+      expect(() => store.extractLists()).toThrowError('b2 has multiple rdf:first arcs');
     });
   });
 
   describe('A Store containing an rdf:Collection with multiple rdf:first arcs on tail', () => {
     const store = new Store();
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode());
-    store.addQuad(listElements[1], new NamedNode(namespaces.rdf.first), store.createBlankNode()).should.be.true;
+    expect(
+      store.addQuad(listElements[1], new NamedNode(namespaces.rdf.first), store.createBlankNode())
+    ).toBe(true);
 
     it('extractLists throws an error', () => {
-      expect(() => store.extractLists()).throws('b3 has multiple rdf:first arcs');
+      expect(() => store.extractLists()).toThrowError('b3 has multiple rdf:first arcs');
     });
   });
 
   describe('A Store containing an rdf:Collection with multiple rdf:rest arcs on head', () => {
     const store = new Store();
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode());
-    store.addQuad(listElements[0], new NamedNode(namespaces.rdf.rest), store.createBlankNode()).should.be.true;
+    expect(
+      store.addQuad(listElements[0], new NamedNode(namespaces.rdf.rest), store.createBlankNode())
+    ).toBe(true);
 
     it('extractLists throws an error', () => {
-      expect(() => store.extractLists()).throws('b2 has multiple rdf:rest arcs');
+      expect(() => store.extractLists()).toThrowError('b2 has multiple rdf:rest arcs');
     });
   });
 
   describe('A Store containing an rdf:Collection with multiple rdf:rest arcs on tail', () => {
     const store = new Store();
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode());
-    store.addQuad(listElements[1], new NamedNode(namespaces.rdf.rest), store.createBlankNode()).should.be.true;
+    expect(
+      store.addQuad(listElements[1], new NamedNode(namespaces.rdf.rest), store.createBlankNode())
+    ).toBe(true);
 
     it('extractLists throws an error', () => {
-      expect(() => store.extractLists()).throws('b3 has multiple rdf:rest arcs');
+      expect(() => store.extractLists()).toThrowError('b3 has multiple rdf:rest arcs');
     });
   });
 
   describe('A Store containing an rdf:Collection with non-list arcs out', () => {
     const store = new Store();
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
-    store.addQuad(listElements[1], new NamedNode('http://a.example/foo'), store.createBlankNode()).should.be.true;
+    expect(
+      store.addQuad(listElements[1], new NamedNode('http://a.example/foo'), store.createBlankNode())
+    ).toBe(true);
 
     it('extractLists throws an error', () => {
-      expect(() => store.extractLists()).throws('b4 can\'t be subject and object');
+      expect(() => store.extractLists()).toThrowError('b4 can\'t be subject and object');
     });
   });
 
   describe('A Store containing an rdf:Collection with multiple incoming rdf:rest arcs', () => {
     const store = new Store();
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
-    store.addQuad(store.createBlankNode(), new NamedNode(namespaces.rdf.rest), listElements[1]).should.be.true;
+    expect(
+      store.addQuad(store.createBlankNode(), new NamedNode(namespaces.rdf.rest), listElements[1])
+    ).toBe(true);
 
     it('extractLists throws an error', () => {
-      expect(() => store.extractLists()).throws('b4 has incoming rdf:rest arcs');
+      expect(() => store.extractLists()).toThrowError('b4 has incoming rdf:rest arcs');
     });
   });
 
   describe('A Store containing an rdf:Collection with co-references out of head', () => {
     const store = new Store();
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
-    store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o1')).should.be.true;
-    store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o2')).should.be.true;
+    expect(store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o1'))).toBe(true);
+    expect(store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o2'))).toBe(true);
 
     it('extractLists throws an error', () => {
-      expect(() => store.extractLists()).throws('b3 has non-list arcs out');
+      expect(() => store.extractLists()).toThrowError('b3 has non-list arcs out');
     });
   });
 
   describe('A Store containing an rdf:Collection with co-references into head', () => {
     const store = new Store();
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
-    store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0]).should.be.true;
-    store.addQuad(new NamedNode('s2'), new NamedNode(namespaces.rdf.rest), listElements[0]).should.be.true;
-    store.addQuad(new NamedNode('s2'), new NamedNode('p1'), listElements[0]).should.be.true;
+    expect(store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0])).toBe(true);
+    expect(
+      store.addQuad(new NamedNode('s2'), new NamedNode(namespaces.rdf.rest), listElements[0])
+    ).toBe(true);
+    expect(store.addQuad(new NamedNode('s2'), new NamedNode('p1'), listElements[0])).toBe(true);
 
     it('extractLists throws an error', () => {
-      expect(() => store.extractLists()).throws('b3 can\'t have coreferences');
+      expect(() => store.extractLists()).toThrowError('b3 can\'t have coreferences');
     });
   });
 
@@ -1609,30 +1838,37 @@ describe('Store', () => {
       store.createBlankNode(),
       store.createBlankNode(),
     ];
-    store.addQuad(listElements[0], new NamedNode(namespaces.rdf.first), member0).should.be.true;
-    store.addQuad(listElements[0], new NamedNode(namespaces.rdf.rest), listElements[1], new NamedNode('g1')).should.be.true;
-    store.addQuad(listElements[1], new NamedNode(namespaces.rdf.first), member1).should.be.true;
-    store.addQuad(listElements[1], new NamedNode(namespaces.rdf.rest), new NamedNode(namespaces.rdf.nil)).should.be.true;
-    store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0]).should.be.true;
+    expect(
+      store.addQuad(listElements[0], new NamedNode(namespaces.rdf.first), member0)
+    ).toBe(true);
+    expect(
+      store.addQuad(listElements[0], new NamedNode(namespaces.rdf.rest), listElements[1], new NamedNode('g1'))
+    ).toBe(true);
+    expect(
+      store.addQuad(listElements[1], new NamedNode(namespaces.rdf.first), member1)
+    ).toBe(true);
+    expect(
+      store.addQuad(listElements[1], new NamedNode(namespaces.rdf.rest), new NamedNode(namespaces.rdf.nil))
+    ).toBe(true);
+    expect(store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0])).toBe(true);
 
     describe('extractLists without ignoreErrors', () => {
       it('extractLists throws an error', () => {
-        expect(() => store.extractLists()).throws('b0 not confined to single graph');
+        expect(() => store.extractLists()).toThrowError('b0 not confined to single graph');
       });
     });
 
     describe('extractLists with ignoreErrors', () => {
       const lists = store.extractLists({ ignoreErrors: true });
-      it('should not delete triples',
-        shouldIncludeAll(store.getQuads(),
-          ['s1', 'p1', `_:${listElements[0].value}`],
-          [`_:${listElements[0].value}`, namespaces.rdf.first, 'element1'],
-          [`_:${listElements[0].value}`, namespaces.rdf.rest, `_:${listElements[1].value}`, 'g1'],
-          [`_:${listElements[1].value}`, namespaces.rdf.first, '"element2"'],
-          [`_:${listElements[1].value}`, namespaces.rdf.rest, namespaces.rdf.nil]
-        ));
+      it('should not delete triples', shouldIncludeAll(store.getQuads(),
+        ['s1', 'p1', `_:${listElements[0].value}`],
+        [`_:${listElements[0].value}`, namespaces.rdf.first, 'element1'],
+        [`_:${listElements[0].value}`, namespaces.rdf.rest, `_:${listElements[1].value}`, 'g1'],
+        [`_:${listElements[1].value}`, namespaces.rdf.first, '"element2"'],
+        [`_:${listElements[1].value}`, namespaces.rdf.rest, namespaces.rdf.nil]
+      ));
       it('should generate an empty list of Collections', () => {
-        expect(listsToJSON(lists)).to.deep.equal({});
+        expect(listsToJSON(lists)).toEqual({});
       });
     });
   });
@@ -1646,23 +1882,29 @@ describe('Store', () => {
       ]);
     });
 
-    it('should include added elements in match if iteration has not yet started', () => {
-      const m = store.match(null, null, null, null);
-      store.add(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')));
-      [...m].should.have.length(3);
-      [...store.match(null, null, null, null)].should.have.length(3);
-    });
+    it(
+      'should include added elements in match if iteration has not yet started',
+      () => {
+        const m = store.match(null, null, null, null);
+        store.add(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')));
+        expect([...m]).toHaveLength(3);
+        expect([...store.match(null, null, null, null)]).toHaveLength(3);
+      }
+    );
 
-    it('should still include results of original match after iterating while adding new data', () => {
-      const m = store.match(null, null, null, null)[Symbol.iterator]();
-      m.next().value.should.deep.equal(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')));
-      store.add(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o0')));
-      store.add(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')));
-      store.add(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4')));
-      m.next().value.should.deep.equal(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o3')));
-      m.next().done.should.be.true;
-      [...store.match(null, null, null, null)].should.have.length(5);
-    });
+    it(
+      'should still include results of original match after iterating while adding new data',
+      () => {
+        const m = store.match(null, null, null, null)[Symbol.iterator]();
+        expect(m.next().value).toEqual(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')));
+        store.add(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o0')));
+        store.add(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')));
+        store.add(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4')));
+        expect(m.next().value).toEqual(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o3')));
+        expect(m.next().done).toBe(true);
+        expect([...store.match(null, null, null, null)]).toHaveLength(5);
+      }
+    );
   });
 });
 
@@ -1683,7 +1925,7 @@ function collect(store, method, arg1, arg2, arg3, arg4) {
 function itShouldBeEmpty(result) {
   it('should be empty', () => {
     if (typeof result === 'function') result = result();
-    result.should.be.empty;
+    expect(Object.keys(result)).toHaveLength(0);
   });
 }
 
@@ -1694,9 +1936,9 @@ function shouldIncludeAll(result) {
   return function () {
     if (typeof result === 'function') result = result();
     result = result.map(r => { return r.toJSON(); });
-    result.should.have.length(items.length);
+    expect(result).toHaveLength(items.length);
     for (let i = 0; i < items.length; i++)
-      result.should.include.something.that.deep.equals(items[i].toJSON());
+      expect(result).toContainEqual(items[i].toJSON());
   };
 }
 

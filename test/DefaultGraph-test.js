@@ -3,64 +3,64 @@ import { DefaultGraph, Term } from '../src/';
 describe('DefaultGraph', () => {
   describe('The DefaultGraph module', () => {
     it('should be a function', () => {
-      DefaultGraph.should.be.a('function');
+      expect(DefaultGraph).toBeInstanceOf(Function);
     });
 
     it('should be a DefaultGraph constructor', () => {
-      new DefaultGraph().should.be.an.instanceof(DefaultGraph);
+      expect(new DefaultGraph()).toBeInstanceOf(DefaultGraph);
     });
 
     it('should be a Term constructor', () => {
-      new DefaultGraph().should.be.an.instanceof(Term);
+      expect(new DefaultGraph()).toBeInstanceOf(Term);
     });
   });
 
   describe('A DefaultGraph instance', () => {
     let defaultGraph;
-    before(() => { defaultGraph = new DefaultGraph(); });
+    beforeAll(() => { defaultGraph = new DefaultGraph(); });
 
     it('should be a DefaultGraph', () => {
-      defaultGraph.should.be.an.instanceof(DefaultGraph);
+      expect(defaultGraph).toBeInstanceOf(DefaultGraph);
     });
 
     it('should be a Term', () => {
-      defaultGraph.should.be.an.instanceof(Term);
+      expect(defaultGraph).toBeInstanceOf(Term);
     });
 
     it('should have term type "DefaultGraph"', () => {
-      defaultGraph.termType.should.equal('DefaultGraph');
+      expect(defaultGraph.termType).toBe('DefaultGraph');
     });
 
     it('should have the empty string as value', () => {
-      defaultGraph.should.have.property('value', '');
+      expect(defaultGraph).toHaveProperty('value', '');
     });
 
     it('should have the empty string as id', () => {
-      defaultGraph.should.have.property('id', '');
+      expect(defaultGraph).toHaveProperty('id', '');
     });
 
     it('should equal another DefaultGraph instance', () => {
-      defaultGraph.equals(new DefaultGraph()).should.be.true;
+      expect(defaultGraph.equals(new DefaultGraph())).toBe(true);
     });
 
     it('should equal an object with the same term type', () => {
-      defaultGraph.equals({
+      expect(defaultGraph.equals({
         termType: 'DefaultGraph',
-      }).should.be.true;
+      })).toBe(true);
     });
 
     it('should not equal a falsy object', () => {
-      defaultGraph.equals(null).should.be.false;
+      expect(defaultGraph.equals(null)).toBe(false);
     });
 
     it('should not equal an object with a different term type', () => {
-      defaultGraph.equals({
+      expect(defaultGraph.equals({
         termType: 'Literal',
-      }).should.be.false;
+      })).toBe(false);
     });
 
     it('should provide a JSON representation', () => {
-      defaultGraph.toJSON().should.deep.equal({
+      expect(defaultGraph.toJSON()).toEqual({
         termType: 'DefaultGraph',
         value: '',
       });

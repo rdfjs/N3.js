@@ -4,37 +4,34 @@ import { Readable, Writable } from 'readable-stream';
 describe('StreamWriter', () => {
   describe('The StreamWriter export', () => {
     it('should be a function', () => {
-      StreamWriter.should.be.a('function');
+      expect(typeof StreamWriter).toEqual('function');
     });
 
     it('should be a StreamWriter constructor', () => {
-      new StreamWriter().should.be.an.instanceof(StreamWriter);
+      expect(new StreamWriter()).toBeInstanceOf(StreamWriter);
     });
   });
 
   describe('A StreamWriter instance', () => {
-    it('should serialize 0 triples',
-      shouldSerialize(''));
+    it('should serialize 0 triples', shouldSerialize(''));
 
-    it('should serialize 1 triple',
-      shouldSerialize(['abc', 'def', 'ghi'],
-                      '<abc> <def> <ghi>.\n'));
+    it('should serialize 1 triple', shouldSerialize(['abc', 'def', 'ghi'],
+                    '<abc> <def> <ghi>.\n'));
 
-    it('should serialize 2 triples',
-      shouldSerialize(['abc', 'def', 'ghi'],
-                      ['jkl', 'mno', 'pqr'],
-                      '<abc> <def> <ghi>.\n' +
-                      '<jkl> <mno> <pqr>.\n'));
+    it('should serialize 2 triples', shouldSerialize(['abc', 'def', 'ghi'],
+                    ['jkl', 'mno', 'pqr'],
+                    '<abc> <def> <ghi>.\n' +
+                    '<jkl> <mno> <pqr>.\n'));
 
-    it('should serialize 3 triples',
-      shouldSerialize(['abc', 'def', 'ghi'],
-                      ['jkl', 'mno', 'pqr'],
-                      ['stu', 'vwx', 'yz'],
-                      '<abc> <def> <ghi>.\n' +
-                      '<jkl> <mno> <pqr>.\n' +
-                      '<stu> <vwx> <yz>.\n'));
+    it('should serialize 3 triples', shouldSerialize(['abc', 'def', 'ghi'],
+                    ['jkl', 'mno', 'pqr'],
+                    ['stu', 'vwx', 'yz'],
+                    '<abc> <def> <ghi>.\n' +
+                    '<jkl> <mno> <pqr>.\n' +
+                    '<stu> <vwx> <yz>.\n'));
 
-    it('should use prefixes when possible',
+    it(
+      'should use prefixes when possible',
       shouldSerialize({ prefixes: { a: 'http://a.org/', b: new NamedNode('http://a.org/b#'), c: 'http://a.org/b' } },
                       ['http://a.org/bc', 'http://a.org/b#ef', 'http://a.org/bhi'],
                       ['http://a.org/bc/de', 'http://a.org/b#e#f', 'http://a.org/b#x/t'],
@@ -44,7 +41,8 @@ describe('StreamWriter', () => {
                       '@prefix c: <http://a.org/b>.\n\n' +
                       'a:bc b:ef a:bhi.\n' +
                       '<http://a.org/bc/de> <http://a.org/b#e#f> <http://a.org/b#x/t>.\n' +
-                      '<http://a.org/3a> <http://a.org/b#3a> b:a3.\n'));
+                      '<http://a.org/3a> <http://a.org/b#3a> b:a3.\n')
+    );
 
     it('should take over prefixes from the input stream', done => {
       const inputStream = new Readable(),
@@ -60,7 +58,7 @@ describe('StreamWriter', () => {
 
       writer.on('error', done);
       writer.on('end', () => {
-        outputStream.result.should.equal('@prefix a: <http://a.org/>.\n\n' +
+        expect(outputStream.result).toBe('@prefix a: <http://a.org/>.\n\n' +
                                          '@prefix b: <http://b.org/>.\n\n');
         done();
       });
@@ -74,7 +72,7 @@ describe('StreamWriter', () => {
     writer.on('error', e => { error = e; });
     writer.import(input);
     input.emit('error', new Error());
-    expect(error).to.be.an.instanceof(Error);
+    expect(error).toBeInstanceOf(Error);
   });
 });
 
@@ -92,11 +90,11 @@ function shouldSerialize(/* options?, tripleArrays..., expectedResult */) {
     const inputStream = new ArrayReader(tripleArrays),
         writer = new StreamWriter(options),
         outputStream = new StringWriter();
-    writer.import(inputStream).should.equal(writer);
+    expect(writer.import(inputStream)).toBe(writer);
     writer.pipe(outputStream);
     writer.on('error', done);
     writer.on('end', () => {
-      outputStream.result.should.equal(expectedResult);
+      expect(outputStream.result).toBe(expectedResult);
       done();
     });
   };
