@@ -8,11 +8,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version:
-          - 14.x
-          - 16.x
-          - 18.x
-          - 20.x
+        node-version: [14, 16, 18, 20]
     steps:
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
@@ -29,12 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version:
-          - 12.x
-          - 14.x
-          - 16.x
-          - 18.x
-          - 20.x
+        node-version: [12, 14, 16, 18, 20]
     steps:
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
@@ -46,16 +37,6 @@ jobs:
       - run: npm run spec-ntriples
       - run: npm run spec-nquads
       - run: npm run spec-trig
-
-  coveralls:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Consolidate test coverage from different jobs
-        uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.github_token }}
-          parallel-finished: true
 
   docs:
     runs-on: ubuntu-latest
