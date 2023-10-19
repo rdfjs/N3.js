@@ -5,6 +5,7 @@
     before: true,
     after: true,
     beforeEach: true,
+    beforeAll: true,
     afterEach: true,
     expect: true,
   },

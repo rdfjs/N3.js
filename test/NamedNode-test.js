@@ -3,77 +3,83 @@ import { NamedNode, Term } from '../src/';
 describe('NamedNode', () => {
   describe('The NamedNode module', () => {
     it('should be a function', () => {
-      NamedNode.should.be.a('function');
+      expect(NamedNode).toBeInstanceOf(Function);
     });
 
     it('should be a NamedNode constructor', () => {
-      new NamedNode().should.be.an.instanceof(NamedNode);
+      expect(new NamedNode()).toBeInstanceOf(NamedNode);
     });
 
     it('should be a Term constructor', () => {
-      new NamedNode().should.be.an.instanceof(Term);
+      expect(new NamedNode()).toBeInstanceOf(Term);
     });
   });
 
   describe('A NamedNode instance created from an IRI', () => {
     let namedNode;
-    before(() => { namedNode = new NamedNode('http://example.org/foo#bar'); });
+    beforeAll(() => { namedNode = new NamedNode('http://example.org/foo#bar'); });
 
     it('should be a NamedNode', () => {
-      namedNode.should.be.an.instanceof(NamedNode);
+      expect(namedNode).toBeInstanceOf(NamedNode);
     });
 
     it('should be a Term', () => {
-      namedNode.should.be.an.instanceof(Term);
+      expect(namedNode).toBeInstanceOf(Term);
     });
 
     it('should have term type "NamedNode"', () => {
-      namedNode.termType.should.equal('NamedNode');
+      expect(namedNode.termType).toBe('NamedNode');
     });
 
     it('should have the IRI as value', () => {
-      namedNode.should.have.property('value', 'http://example.org/foo#bar');
+      expect(namedNode).toHaveProperty('value', 'http://example.org/foo#bar');
     });
 
     it('should have the IRI as id', () => {
-      namedNode.should.have.property('id', 'http://example.org/foo#bar');
+      expect(namedNode).toHaveProperty('id', 'http://example.org/foo#bar');
     });
 
     it('should equal a NamedNode instance with the same IRI', () => {
-      namedNode.equals(new NamedNode('http://example.org/foo#bar')).should.be.true;
+      expect(namedNode.equals(new NamedNode('http://example.org/foo#bar'))).toBe(true);
     });
 
     it('should equal an object with the same term type and value', () => {
-      namedNode.equals({
+      expect(namedNode.equals({
         termType: 'NamedNode',
         value: 'http://example.org/foo#bar',
-      }).should.be.true;
+      })).toBe(true);
     });
 
     it('should not equal a falsy object', () => {
-      namedNode.equals(null).should.be.false;
+      expect(namedNode.equals(null)).toBe(false);
     });
 
     it('should not equal a NamedNode instance with another IRI', () => {
-      namedNode.equals(new NamedNode('http://example.org/other')).should.be.false;
+      expect(namedNode.equals(new NamedNode('http://example.org/other'))).toBe(false);
     });
 
-    it('should not equal an object with the same term type but a different value', () => {
-      namedNode.equals({
-        termType: 'NamedNode',
-        value: 'http://example.org/other',
-      }).should.be.false;
-    });
+    it(
+      'should not equal an object with the same term type but a different value',
+      () => {
+        expect(namedNode.equals({
+          termType: 'NamedNode',
+          value: 'http://example.org/other',
+        })).toBe(false);
+      }
+    );
 
-    it('should not equal an object with a different term type but the same value', () => {
-      namedNode.equals({
-        termType: 'BlankNode',
-        value: 'http://example.org/foo#bar',
-      }).should.be.false;
-    });
+    it(
+      'should not equal an object with a different term type but the same value',
+      () => {
+        expect(namedNode.equals({
+          termType: 'BlankNode',
+          value: 'http://example.org/foo#bar',
+        })).toBe(false);
+      }
+    );
 
     it('should provide a JSON representation', () => {
-      namedNode.toJSON().should.deep.equal({
+      expect(namedNode.toJSON()).toEqual({
         termType: 'NamedNode',
         value: 'http://example.org/foo#bar',
       });

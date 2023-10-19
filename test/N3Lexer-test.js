@@ -6,315 +6,404 @@ import { EventEmitter } from 'events';
 describe('Lexer', () => {
   describe('The Lexer export', () => {
     it('should be a function', () => {
-      Lexer.should.be.a('function');
+      expect(Lexer).toBeInstanceOf(Function);
     });
 
     it('should be an Lexer constructor', () => {
-      new Lexer().should.be.an.instanceof(Lexer);
+      expect(new Lexer()).toBeInstanceOf(Lexer);
     });
   });
 
   describe('A Lexer instance', () => {
-    it('should tokenize the empty string',
-      shouldTokenize('',
-                     { type: 'eof', line: 1 }));
+    it('should tokenize the empty string', shouldTokenize('',
+                   { type: 'eof', line: 1 }));
 
+    it(
+      'should tokenize byte order mark at beginning as empty string',
+      shouldTokenize('\ufeff', { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize byte order mark at beginning as empty string',
-        shouldTokenize('\ufeff', { type: 'eof', line: 1 }));
+    it('should tokenize a whitespace string', shouldTokenize(' \t \n  ',
+                   { type: 'eof', line: 2 }));
 
-    it('should tokenize a whitespace string',
-      shouldTokenize(' \t \n  ',
-                     { type: 'eof', line: 2 }));
+    it('should tokenize an IRI', shouldTokenize('<http://ex.org/?bla#foo>',
+                   { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
+                   { type: 'eof', line: 1 }));
 
-    it('should tokenize an IRI',
-      shouldTokenize('<http://ex.org/?bla#foo>',
-                     { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
-                     { type: 'eof', line: 1 }));
-
-    it('should tokenize a split IRI',
+    it(
+      'should tokenize a split IRI',
       shouldTokenize(streamOf('<', 'http://ex.org/?bla#foo>'),
         { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
-        { type: 'eof', line: 1 }));
+        { type: 'eof', line: 1 })
+    );
 
-    it('should not tokenize an IRI with disallowed characters',
+    it(
+      'should not tokenize an IRI with disallowed characters',
       shouldNotTokenize('<http://ex.org/bla"foo>',
-                        'Unexpected "<http://ex.org/bla"foo>" on line 1.'));
+                        'Unexpected "<http://ex.org/bla"foo>" on line 1.')
+    );
 
-    it('should not tokenize an IRI with escaped characters',
+    it(
+      'should not tokenize an IRI with escaped characters',
       shouldNotTokenize('<http://ex.org/bla\\"foo>',
-                        'Unexpected "<http://ex.org/bla\\"foo>" on line 1.'));
+                        'Unexpected "<http://ex.org/bla\\"foo>" on line 1.')
+    );
 
-    it('should not tokenize an IRI with disallowed escaped characters',
+    it(
+      'should not tokenize an IRI with disallowed escaped characters',
       shouldNotTokenize('<http://ex.org/bla\\u0020foo>',
-                        'Unexpected "<http://ex.org/bla\\u0020foo>" on line 1.'));
+                        'Unexpected "<http://ex.org/bla\\u0020foo>" on line 1.')
+    );
 
-    it('should not tokenize an IRI with invalid 4-digit unicode escapes',
+    it(
+      'should not tokenize an IRI with invalid 4-digit unicode escapes',
       shouldNotTokenize('<http://ex.org/bla\\uXYZZfoo>',
-                        'Unexpected "<http://ex.org/bla\\uXYZZfoo>" on line 1.'));
+                        'Unexpected "<http://ex.org/bla\\uXYZZfoo>" on line 1.')
+    );
 
-    it('should not tokenize an IRI with invalid 8-digit unicode escapes',
+    it(
+      'should not tokenize an IRI with invalid 8-digit unicode escapes',
       shouldNotTokenize('<http://ex.org/bla\\uXYZZxyzzfoo>',
-                        'Unexpected "<http://ex.org/bla\\uXYZZxyzzfoo>" on line 1.'));
+                        'Unexpected "<http://ex.org/bla\\uXYZZxyzzfoo>" on line 1.')
+    );
 
-    it('should not tokenize an IRI with a non-numeric 4-digit unicode escapes', done => {
-      const stream = new EventEmitter(), lexer = new Lexer();
-      lexer.tokenize(stream, (error, token) => {
-        error.should.be.an.instanceof(Error);
-        error.message.should.equal('Unexpected "<\\uz234>" on line 1.');
-        done(token);
-      });
-      stream.emit('data', '<\\uz234>');
-    });
+    it(
+      'should not tokenize an IRI with a non-numeric 4-digit unicode escapes',
+      done => {
+        const stream = new EventEmitter(), lexer = new Lexer();
+        lexer.tokenize(stream, (error, token) => {
+          expect(error).toBeInstanceOf(Error);
+          expect(error.message).toBe('Unexpected "<\\uz234>" on line 1.');
+          done(token);
+        });
+        stream.emit('data', '<\\uz234>');
+      }
+    );
 
-    it('should not tokenize an IRI with a non-numeric 8-digit unicode escapes', done => {
-      const stream = new EventEmitter(), lexer = new Lexer();
-      lexer.tokenize(stream, (error, token) => {
-        error.should.be.an.instanceof(Error);
-        error.message.should.equal('Unexpected "<\\Uz2345678>" on line 1.');
-        done(token);
-      });
-      stream.emit('data', '<\\Uz2345678>');
-    });
+    it(
+      'should not tokenize an IRI with a non-numeric 8-digit unicode escapes',
+      done => {
+        const stream = new EventEmitter(), lexer = new Lexer();
+        lexer.tokenize(stream, (error, token) => {
+          expect(error).toBeInstanceOf(Error);
+          expect(error.message).toBe('Unexpected "<\\Uz2345678>" on line 1.');
+          done(token);
+        });
+        stream.emit('data', '<\\Uz2345678>');
+      }
+    );
 
-    it('should tokenize an IRI with four-digit unicode escapes',
+    it(
+      'should tokenize an IRI with four-digit unicode escapes',
       shouldTokenize('<http://a.example/\\u0073>',
                      { type: 'IRI', value: 'http://a.example/s', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize an IRI with eight-digit unicode escapes',
+    it(
+      'should tokenize an IRI with eight-digit unicode escapes',
       shouldTokenize('<http://a.example/\\U00000073\\U00A00073>',
                      { type: 'IRI', value: 'http://a.example/s\uffc0\udc73', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should not decode an IRI',
-      shouldTokenize('<http://a.example/%66oo-bar>',
-                     { type: 'IRI', value: 'http://a.example/%66oo-bar', line: 1 },
-                     { type: 'eof', line: 1 }));
+    it('should not decode an IRI', shouldTokenize('<http://a.example/%66oo-bar>',
+                   { type: 'IRI', value: 'http://a.example/%66oo-bar', line: 1 },
+                   { type: 'eof', line: 1 }));
 
-    it('should tokenize two IRIs separated by whitespace',
+    it(
+      'should tokenize two IRIs separated by whitespace',
       shouldTokenize(' \n\t<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t',
                      { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 2 },
                      { type: 'IRI', value: 'http://ex.org/?bla#bar', line: 3 },
-                     { type: 'eof', line: 4 }));
+                     { type: 'eof', line: 4 })
+    );
 
-    it('should tokenize a statement with IRIs',
+    it(
+      'should tokenize a statement with IRIs',
       shouldTokenize(' \n\t<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo> .',
                      { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 2 },
                      { type: 'IRI', value: 'http://ex.org/?bla#bar', line: 3 },
                      { type: 'IRI', value: 'http://ex.org/?bla#boo', line: 4 },
                      { type: '.', line: 4 },
-                     { type: 'eof', line: 4 }));
+                     { type: 'eof', line: 4 })
+    );
 
-    it('should tokenize prefixed names',
-      shouldTokenize(':a b:c d-dd:e-ee.',
-                     { type: 'prefixed', prefix: '',      value: 'a',    line: 1 },
-                     { type: 'prefixed', prefix: 'b',     value: 'c',    line: 1 },
-                     { type: 'prefixed', prefix: 'd-dd',  value: 'e-ee', line: 1 },
-                     { type: '.', line: 1 },
-                     { type: 'eof', line: 1 }));
+    it('should tokenize prefixed names', shouldTokenize(':a b:c d-dd:e-ee.',
+                   { type: 'prefixed', prefix: '',      value: 'a',    line: 1 },
+                   { type: 'prefixed', prefix: 'b',     value: 'c',    line: 1 },
+                   { type: 'prefixed', prefix: 'd-dd',  value: 'e-ee', line: 1 },
+                   { type: '.', line: 1 },
+                   { type: 'eof', line: 1 }));
 
-    it('should tokenize prefixed names with leading digits',
+    it(
+      'should tokenize prefixed names with leading digits',
       shouldTokenize('leg:3032571 isbn13:9780136019701 ',
                      { type: 'prefixed', prefix: 'leg',    value: '3032571',       line: 1 },
                      { type: 'prefixed', prefix: 'isbn13', value: '9780136019701', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize prefixed names starting with true',
+    it(
+      'should tokenize prefixed names starting with true',
       shouldTokenize('true:a  truer:b ',
                      { type: 'prefixed', prefix: 'true',   value: 'a', line: 1 },
                      { type: 'prefixed', prefix: 'truer',  value: 'b', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize prefixed names starting with false',
+    it(
+      'should tokenize prefixed names starting with false',
       shouldTokenize('false:a falser:b ',
                      { type: 'prefixed', prefix: 'false',  value: 'a', line: 1 },
                      { type: 'prefixed', prefix: 'falser', value: 'b', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize prefixed names with non-leading colons',
+    it(
+      'should tokenize prefixed names with non-leading colons',
       shouldTokenize('og:video:height ',
                      { type: 'prefixed', prefix: 'og', value: 'video:height', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize prefixed names with reserved escape sequences',
+    it(
+      'should tokenize prefixed names with reserved escape sequences',
       shouldTokenize('wgs:lat\\-long ',
                      { type: 'prefixed', prefix: 'wgs', value: 'lat-long', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize the colon prefixed name',
-      shouldTokenize(': : :.',
-                     { type: 'prefixed', prefix: '', value: '', line: 1 },
-                     { type: 'prefixed', prefix: '', value: '', line: 1 },
-                     { type: 'prefixed', prefix: '', value: '', line: 1 },
-                     { type: '.', line: 1 },
-                     { type: 'eof', line: 1 }));
+    it('should tokenize the colon prefixed name', shouldTokenize(': : :.',
+                   { type: 'prefixed', prefix: '', value: '', line: 1 },
+                   { type: 'prefixed', prefix: '', value: '', line: 1 },
+                   { type: 'prefixed', prefix: '', value: '', line: 1 },
+                   { type: '.', line: 1 },
+                   { type: 'eof', line: 1 }));
 
-    it('should tokenize a prefixed name with a dot, split in half while streaming',
+    it(
+      'should tokenize a prefixed name with a dot, split in half while streaming',
       shouldTokenize(streamOf('dbpedia:Anthony_J._Batt', 'aglia '),
                      { type: 'prefixed', prefix: 'dbpedia', value: 'Anthony_J._Battaglia', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a prefixed name with a dot, split after the dot while streaming',
+    it(
+      'should tokenize a prefixed name with a dot, split after the dot while streaming',
       shouldTokenize(streamOf('dbpedia:Anthony_J.', '_Battaglia '),
                      { type: 'prefixed', prefix: 'dbpedia', value: 'Anthony_J._Battaglia', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a blank node with a dot, split in half while streaming',
+    it(
+      'should tokenize a blank node with a dot, split in half while streaming',
       shouldTokenize(streamOf('_:Anthony_J._Batt', 'aglia '),
                      { type: 'blank', prefix: '_', value: 'Anthony_J._Battaglia', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a blank node with a dot, split after the dot while streaming',
+    it(
+      'should tokenize a blank node with a dot, split after the dot while streaming',
       shouldTokenize(streamOf('_:Anthony_J.', '_Battaglia '),
                      { type: 'blank', prefix: '_', value: 'Anthony_J._Battaglia', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should not decode a prefixed name',
-      shouldTokenize('ex:%66oo-bar ',
-                     { type: 'prefixed', prefix: 'ex', value: '%66oo-bar', line: 1 },
-                     { type: 'eof', line: 1 }));
+    it('should not decode a prefixed name', shouldTokenize('ex:%66oo-bar ',
+                   { type: 'prefixed', prefix: 'ex', value: '%66oo-bar', line: 1 },
+                   { type: 'eof', line: 1 }));
 
-    it('should not tokenize a prefixed name with disallowed characters',
+    it(
+      'should not tokenize a prefixed name with disallowed characters',
       shouldNotTokenize('ex:bla"foo',
-                        'Unexpected ""foo" on line 1.'));
+                        'Unexpected ""foo" on line 1.')
+    );
 
-    it('should not tokenize a prefixed name with escaped characters',
+    it(
+      'should not tokenize a prefixed name with escaped characters',
       shouldNotTokenize('ex:bla\\"foo',
-                        'Unexpected "ex:bla\\"foo" on line 1.'));
+                        'Unexpected "ex:bla\\"foo" on line 1.')
+    );
 
-    it('should not tokenize a prefixed name with disallowed escaped characters',
+    it(
+      'should not tokenize a prefixed name with disallowed escaped characters',
       shouldNotTokenize('ex:bla\\u0020foo',
-                        'Unexpected "ex:bla\\u0020foo" on line 1.'));
+                        'Unexpected "ex:bla\\u0020foo" on line 1.')
+    );
 
-    it('should not tokenize a prefixed name with invalid 4-digit unicode escapes',
+    it(
+      'should not tokenize a prefixed name with invalid 4-digit unicode escapes',
       shouldNotTokenize('ex:bla\\uXYZZfoo',
-                        'Unexpected "ex:bla\\uXYZZfoo" on line 1.'));
+                        'Unexpected "ex:bla\\uXYZZfoo" on line 1.')
+    );
 
-    it('should not tokenize a prefixed name with invalid 8-digit unicode escapes',
+    it(
+      'should not tokenize a prefixed name with invalid 8-digit unicode escapes',
       shouldNotTokenize('ex:bla\\uXYZZxyzzfoo',
-                        'Unexpected "ex:bla\\uXYZZxyzzfoo" on line 1.'));
+                        'Unexpected "ex:bla\\uXYZZxyzzfoo" on line 1.')
+    );
 
-    it('should not tokenize a prefixed name with four-digit unicode escapes',
+    it(
+      'should not tokenize a prefixed name with four-digit unicode escapes',
       shouldNotTokenize('ex:foo\\u0073bar',
-                        'Unexpected "ex:foo\\u0073bar" on line 1.'));
+                        'Unexpected "ex:foo\\u0073bar" on line 1.')
+    );
 
-    it('should not tokenize a prefixed name with eight-digit unicode escapes',
+    it(
+      'should not tokenize a prefixed name with eight-digit unicode escapes',
       shouldNotTokenize('ex:foo\\U00000073\\U00A00073bar',
-                        'Unexpected "ex:foo\\U00000073\\U00A00073bar" on line 1.'));
+                        'Unexpected "ex:foo\\U00000073\\U00A00073bar" on line 1.')
+    );
 
-    it('should tokenize two prefixed names separated by whitespace',
+    it(
+      'should tokenize two prefixed names separated by whitespace',
       shouldTokenize(' \n\tex:foo \n\tex:bar \n\t',
                      { type: 'prefixed', prefix: 'ex', value: 'foo', line: 2 },
                      { type: 'prefixed', prefix: 'ex', value: 'bar', line: 3 },
-                     { type: 'eof', line: 4 }));
+                     { type: 'eof', line: 4 })
+    );
 
-    it('should tokenize a statement with prefixed names',
+    it(
+      'should tokenize a statement with prefixed names',
       shouldTokenize(' \n\tex:foo \n\tex:bar \n\tex:baz .',
                      { type: 'prefixed', prefix: 'ex', value: 'foo', line: 2 },
                      { type: 'prefixed', prefix: 'ex', value: 'bar', line: 3 },
                      { type: 'prefixed', prefix: 'ex', value: 'baz', line: 4 },
                      { type: '.', line: 4 },
-                     { type: 'eof', line: 4 }));
+                     { type: 'eof', line: 4 })
+    );
 
-    it('should correctly recognize different types of newlines',
+    it(
+      'should correctly recognize different types of newlines',
       shouldTokenize('<a>\r<b>\n<c>\r\n.',
                      { type: 'IRI', value: 'a', line: 1 },
                      { type: 'IRI', value: 'b', line: 2 },
                      { type: 'IRI', value: 'c', line: 3 },
                      { type: '.', line: 4 },
-                     { type: 'eof', line: 4 }));
+                     { type: 'eof', line: 4 })
+    );
 
-    it('should tokenize a single comment',
-      shouldTokenize('#mycomment',
-                     { type: 'eof', line: 1 }));
+    it('should tokenize a single comment', shouldTokenize('#mycomment',
+                   { type: 'eof', line: 1 }));
 
-    it('should tokenize a stream with split comment',
+    it(
+      'should tokenize a stream with split comment',
       shouldTokenize(streamOf('#mycom', 'ment'),
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should ignore comments',
+    it(
+      'should ignore comments',
       shouldTokenize('<#foo> #mycomment\n <#foo>  #mycomment \r# mycomment\n\n<#bla>#',
                      { type: 'IRI', value: '#foo', line: 1 },
                      { type: 'IRI', value: '#foo', line: 2 },
                      { type: 'IRI', value: '#bla', line: 5 },
-                     { type: 'eof', line: 5 }));
+                     { type: 'eof', line: 5 })
+    );
 
-    it('should tokenize comments after abbreviations and local names',
+    it(
+      'should tokenize comments after abbreviations and local names',
       shouldTokenize('[a#\na:a#\n].',
                      { type: '[', line: 1 },
                      { type: 'abbreviation', value: 'a', line: 1 },
                      { type: 'prefixed', prefix: 'a', value: 'a', line: 2 },
                      { type: ']', line: 3 },
                      { type: '.', line: 3 },
-                     { type: 'eof', line: 3 }));
+                     { type: 'eof', line: 3 })
+    );
 
-    it('should tokenize a quoted string literal',
-      shouldTokenize('"string" ',
-                     { type: 'literal', value: 'string', line: 1 },
-                     { type: 'eof', line: 1 }));
+    it('should tokenize a quoted string literal', shouldTokenize('"string" ',
+                   { type: 'literal', value: 'string', line: 1 },
+                   { type: 'eof', line: 1 }));
 
-    it('should not tokenize a quoted string literal with a newline',
+    it(
+      'should not tokenize a quoted string literal with a newline',
       shouldNotTokenize('"abc\ndef" ',
-                        'Unexpected ""abc" on line 1.'));
+                        'Unexpected ""abc" on line 1.')
+    );
 
-    it('should not tokenize a quoted string literal with a carriage return',
+    it(
+      'should not tokenize a quoted string literal with a carriage return',
       shouldNotTokenize('"abc\rdef" ',
-                        'Unexpected ""abc" on line 1.'));
+                        'Unexpected ""abc" on line 1.')
+    );
 
-    it('should tokenize a triple quoted string literal',
+    it(
+      'should tokenize a triple quoted string literal',
       shouldTokenize('"""string"""',
                      { type: 'literal', value: 'string', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a triple quoted string literal with quoted newlines inside',
+    it(
+      'should tokenize a triple quoted string literal with quoted newlines inside',
       shouldTokenize('"""st"r\r\ni""\n\rng"""',
                      { type: 'literal', value: 'st"r\r\ni""\n\rng', line: 1 },
-                     { type: 'eof', line: 4 }));
+                     { type: 'eof', line: 4 })
+    );
 
-    it('should tokenize a string with escape characters',
+    it(
+      'should tokenize a string with escape characters',
       shouldTokenize('"\\\\ \\\' \\" \\n \\r \\t \\ua1b2" \n """\\\\ \\\' \\" \\n \\r \\t \\U0000a1b2"""',
                      { type: 'literal', value: '\\ \' " \n \r \t \ua1b2', line: 1 },
                      { type: 'literal', value: '\\ \' " \n \r \t \ua1b2', line: 2 },
-                     { type: 'eof', line: 2 }));
+                     { type: 'eof', line: 2 })
+    );
 
-    it('should not tokenize a string with invalid characters',
+    it(
+      'should not tokenize a string with invalid characters',
       shouldNotTokenize('"\\uXYZX" ',
-                        'Unexpected ""\\uXYZX"" on line 1.'));
+                        'Unexpected ""\\uXYZX"" on line 1.')
+    );
 
-    it('should not tokenize a double-quoted string ending with an escaped quote',
+    it(
+      'should not tokenize a double-quoted string ending with an escaped quote',
       shouldNotTokenize('"abc\\"',
-                        'Unexpected ""abc\\"" on line 1.'));
+                        'Unexpected ""abc\\"" on line 1.')
+    );
 
-    it('should not tokenize a single-quoted string ending with an escaped quote',
+    it(
+      'should not tokenize a single-quoted string ending with an escaped quote',
       shouldNotTokenize("'abc\\'",
-                        'Unexpected "\'abc\\\'" on line 1.'));
+                        'Unexpected "\'abc\\\'" on line 1.')
+    );
 
-    it('should not tokenize a double-quoted string ending with a backslash and escaped quote',
+    it(
+      'should not tokenize a double-quoted string ending with a backslash and escaped quote',
       shouldNotTokenize('"abc\\\\\\"',
-                        'Unexpected ""abc\\\\\\"" on line 1.'));
+                        'Unexpected ""abc\\\\\\"" on line 1.')
+    );
 
-    it('should not tokenize a single-quoted string ending with a backslash and escaped quote',
+    it(
+      'should not tokenize a single-quoted string ending with a backslash and escaped quote',
       shouldNotTokenize("'abc\\\\\\'",
-                        'Unexpected "\'abc\\\\\\\'" on line 1.'));
+                        'Unexpected "\'abc\\\\\\\'" on line 1.')
+    );
 
-    it('should tokenize a double-quoted string ending in backslashes',
+    it(
+      'should tokenize a double-quoted string ending in backslashes',
       shouldTokenize('"abc\\\\" "abc\\\\\\\\"',
                      { type: 'literal', value: 'abc\\', line: 1 },
                      { type: 'literal', value: 'abc\\\\', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a single-quoted string ending in backslashes',
+    it(
+      'should tokenize a single-quoted string ending in backslashes',
       shouldTokenize("'abc\\\\' 'abc\\\\\\\\'",
                      { type: 'literal', value: 'abc\\', line: 1 },
                      { type: 'literal', value: 'abc\\\\', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should not tokenize a triple-quoted string with invalid characters',
+    it(
+      'should not tokenize a triple-quoted string with invalid characters',
       shouldNotTokenize("'''\\uXYZX''' ",
-                        "Unexpected \"'''\\uXYZX'''\" on line 1."));
+                        "Unexpected \"'''\\uXYZX'''\" on line 1.")
+    );
 
-    it('should tokenize a quoted string literal with language code',
+    it(
+      'should tokenize a quoted string literal with language code',
       shouldTokenize('"string"@en "string"@nl-be "string"@EN ',
                      { type: 'literal', value: 'string', line: 1 },
                      { type: 'langcode', value: 'en', line: 1 },
@@ -322,54 +411,71 @@ describe('Lexer', () => {
                      { type: 'langcode', value: 'nl-be', line: 1 },
                      { type: 'literal', value: 'string', line: 1 },
                      { type: 'langcode', value: 'EN', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a quoted string literal with type',
+    it(
+      'should tokenize a quoted string literal with type',
       shouldTokenize('"stringA"^^<type> "stringB"^^ns:mytype ',
                      { type: 'literal', value: 'stringA', line: 1 },
                      { type: 'typeIRI', value: 'type', line: 1 },
                      { type: 'literal', value: 'stringB', line: 1 },
                      { type: 'type', value: 'mytype', prefix: 'ns', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should not tokenize a single hat',
-      shouldNotTokenize('^',
-                        'Unexpected "^" on line 1.'));
+    it('should not tokenize a single hat', shouldNotTokenize('^',
+                      'Unexpected "^" on line 1.'));
 
-    it('should not tokenize a double hat followed by a non-IRI',
+    it(
+      'should not tokenize a double hat followed by a non-IRI',
       shouldNotTokenize('^^1',
-                        'Unexpected "1" on line 1.'));
+                        'Unexpected "1" on line 1.')
+    );
 
-    it('should tokenize a single-quoted string literal',
+    it(
+      'should tokenize a single-quoted string literal',
       shouldTokenize("'string' ",
                      { type: 'literal', value: 'string', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a triple single-quoted string literal',
+    it(
+      'should tokenize a triple single-quoted string literal',
       shouldTokenize("'''string'''",
                      { type: 'literal', value: 'string', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should not tokenize a single-quoted string literal with a newline',
+    it(
+      'should not tokenize a single-quoted string literal with a newline',
       shouldNotTokenize("'abc\ndef' ",
-                        'Unexpected "\'abc" on line 1.'));
+                        'Unexpected "\'abc" on line 1.')
+    );
 
-    it('should not tokenize a single-quoted string literal with a carriage return',
+    it(
+      'should not tokenize a single-quoted string literal with a carriage return',
       shouldNotTokenize("'abc\rdef' ",
-                        'Unexpected "\'abc" on line 1.'));
+                        'Unexpected "\'abc" on line 1.')
+    );
 
-    it('should tokenize a triple single-quoted string literal with quotes newlines inside',
+    it(
+      'should tokenize a triple single-quoted string literal with quotes newlines inside',
       shouldTokenize("'''st'r\ni''ng'''",
                      { type: 'literal', value: 'st\'r\ni\'\'ng', line: 1 },
-                     { type: 'eof', line: 2 }));
+                     { type: 'eof', line: 2 })
+    );
 
-    it('should tokenize a single-quoted string with escape characters',
+    it(
+      'should tokenize a single-quoted string with escape characters',
       shouldTokenize("'\\\\ \\\" \\' \\n \\r \\t \\ua1b2' \n '''\\\\ \\\" \\' \\n \\r \\t \\U0020a1b2'''",
                      { type: 'literal', value: '\\ " \' \n \r \t \ua1b2', line: 1 },
                      { type: 'literal', value: '\\ " \' \n \r \t \udfe8\uddb2', line: 2 },
-                     { type: 'eof', line: 2 }));
+                     { type: 'eof', line: 2 })
+    );
 
-    it('should tokenize a single-quoted string literal with language code',
+    it(
+      'should tokenize a single-quoted string literal with language code',
       shouldTokenize("'string'@en 'string'@nl-be 'string'@EN ",
                      { type: 'literal', value: 'string', line: 1 },
                      { type: 'langcode', value: 'en', line: 1 },
@@ -377,29 +483,32 @@ describe('Lexer', () => {
                      { type: 'langcode', value: 'nl-be', line: 1 },
                      { type: 'literal', value: 'string', line: 1 },
                      { type: 'langcode', value: 'EN', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a single-quoted string literal with type',
+    it(
+      'should tokenize a single-quoted string literal with type',
       shouldTokenize("'stringA'^^<type> 'stringB'^^ns:mytype ",
                      { type: 'literal', value: 'stringA', line: 1 },
                      { type: 'typeIRI', value: 'type', line: 1 },
                      { type: 'literal', value: 'stringB', line: 1 },
                      { type: 'type', value: 'mytype', prefix: 'ns', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize an integer literal',
-      shouldTokenize('10, +20. -30, 40. ',
-                     { type: 'literal', value:  '10', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
-                     { type: ',', line: 1 },
-                     { type: 'literal', value: '+20', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
-                     { type: '.', line: 1 },
-                     { type: 'literal', value: '-30', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
-                     { type: ',', line: 1 },
-                     { type: 'literal', value:  '40', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
-                     { type: '.', line: 1 },
-                     { type: 'eof', line: 1 }));
+    it('should tokenize an integer literal', shouldTokenize('10, +20. -30, 40. ',
+                   { type: 'literal', value:  '10', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                   { type: ',', line: 1 },
+                   { type: 'literal', value: '+20', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                   { type: '.', line: 1 },
+                   { type: 'literal', value: '-30', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                   { type: ',', line: 1 },
+                   { type: 'literal', value:  '40', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                   { type: '.', line: 1 },
+                   { type: 'eof', line: 1 }));
 
-    it('should tokenize a decimal literal',
+    it(
+      'should tokenize a decimal literal',
       shouldTokenize('1. 2.0, .3. -0.4, -.5. ',
                      { type: 'literal', value:    '1', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
                      { type: '.', line: 1 },
@@ -411,9 +520,11 @@ describe('Lexer', () => {
                      { type: ',', line: 1 },
                      { type: 'literal', value:  '-.5', prefix: 'http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
                      { type: '.', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a double literal',
+    it(
+      'should tokenize a double literal',
       shouldTokenize('10e20, +30.40E+50. -60.70e-80. .171e-11.',
                      { type: 'literal', value:      '10e20', prefix: 'http://www.w3.org/2001/XMLSchema#double', line: 1 },
                      { type: ',', line: 1 },
@@ -423,19 +534,19 @@ describe('Lexer', () => {
                      { type: '.', line: 1 },
                      { type: 'literal', value: '.171e-11', prefix: 'http://www.w3.org/2001/XMLSchema#double', line: 1 },
                      { type: '.', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should not tokenize an invalid number',
-      shouldNotTokenize('10-10 ',
-                        'Unexpected "10-10" on line 1.'));
+    it('should not tokenize an invalid number', shouldNotTokenize('10-10 ',
+                      'Unexpected "10-10" on line 1.'));
 
-    it('should tokenize booleans',
-      shouldTokenize('true false ',
-                     { type: 'literal', value:  'true', prefix: 'http://www.w3.org/2001/XMLSchema#boolean', line: 1 },
-                     { type: 'literal', value: 'false', prefix: 'http://www.w3.org/2001/XMLSchema#boolean', line: 1 },
-                     { type: 'eof', line: 1 }));
+    it('should tokenize booleans', shouldTokenize('true false ',
+                   { type: 'literal', value:  'true', prefix: 'http://www.w3.org/2001/XMLSchema#boolean', line: 1 },
+                   { type: 'literal', value: 'false', prefix: 'http://www.w3.org/2001/XMLSchema#boolean', line: 1 },
+                   { type: 'eof', line: 1 }));
 
-    it('should tokenize statements with shared subjects',
+    it(
+      'should tokenize statements with shared subjects',
       shouldTokenize('<a> <b> <c>;\n<d> <e>.',
                      { type: 'IRI', value: 'a', line: 1 },
                      { type: 'IRI', value: 'b', line: 1 },
@@ -444,9 +555,11 @@ describe('Lexer', () => {
                      { type: 'IRI', value: 'd', line: 2 },
                      { type: 'IRI', value: 'e', line: 2 },
                      { type: '.', line: 2 },
-                     { type: 'eof', line: 2 }));
+                     { type: 'eof', line: 2 })
+    );
 
-    it('should tokenize statements with shared subjects and predicates',
+    it(
+      'should tokenize statements with shared subjects and predicates',
       shouldTokenize('<a> <b> <c>,\n<d>.',
                      { type: 'IRI', value: 'a', line: 1 },
                      { type: 'IRI', value: 'b', line: 1 },
@@ -454,9 +567,11 @@ describe('Lexer', () => {
                      { type: ',', line: 1 },
                      { type: 'IRI', value: 'd', line: 2 },
                      { type: '.', line: 2 },
-                     { type: 'eof', line: 2 }));
+                     { type: 'eof', line: 2 })
+    );
 
-    it('should tokenize statements with shared subjects and predicates and prefixed names',
+    it(
+      'should tokenize statements with shared subjects and predicates and prefixed names',
       shouldTokenize('a:a b:b c:c;d:d e:e,f:f.',
                      { type: 'prefixed', prefix: 'a', value: 'a', line: 1 },
                      { type: 'prefixed', prefix: 'b', value: 'b', line: 1 },
@@ -467,9 +582,11 @@ describe('Lexer', () => {
                      { type: ',', line: 1 },
                      { type: 'prefixed', prefix: 'f', value: 'f', line: 1 },
                      { type: '.', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a stream',
+    it(
+      'should tokenize a stream',
       shouldTokenize(streamOf('<a>\n<b', '> ', '"""', 'c\n', '"""', '.',
                               '<d> <e', '> ', '""', '.',
                               '<g> <h> "i"', '@e', 'n.'),
@@ -486,49 +603,69 @@ describe('Lexer', () => {
                      { type: 'literal', value: 'i', line: 3 },
                      { type: 'langcode', value: 'en', line: 3 },
                      { type: '.', line: 3 },
-                     { type: 'eof', line: 3 }));
+                     { type: 'eof', line: 3 })
+    );
 
-    it('should tokenize a stream ending with a digit and a dot',
+    it(
+      'should tokenize a stream ending with a digit and a dot',
       shouldTokenize(streamOf('1', '.'),
                      { type: 'literal', value: '1', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
                      { type: '.', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a stream containing a decimal without leading digit',
+    it(
+      'should tokenize a stream containing a decimal without leading digit',
       shouldTokenize(streamOf('.', '1 '),
                      { type: 'literal', value: '.1', prefix: 'http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a stream containing a decimal with leading digit',
+    it(
+      'should tokenize a stream containing a decimal with leading digit',
       shouldTokenize(streamOf('1.', '1 '),
                      { type: 'literal', value: '1.1', prefix: 'http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should immediately signal an error if a linebreak occurs anywhere outside a triple-quoted literal',
-      shouldNotTokenize(streamOf('abc\n', null), 'Unexpected "abc" on line 1.'));
+    it(
+      'should immediately signal an error if a linebreak occurs anywhere outside a triple-quoted literal',
+      shouldNotTokenize(streamOf('abc\n', null), 'Unexpected "abc" on line 1.')
+    );
 
-    it('should immediately signal an error if a linebreak occurs inside a single-quoted literal',
-      shouldNotTokenize(streamOf('"abc\n', null), 'Unexpected ""abc" on line 1.'));
+    it(
+      'should immediately signal an error if a linebreak occurs inside a single-quoted literal',
+      shouldNotTokenize(streamOf('"abc\n', null), 'Unexpected ""abc" on line 1.')
+    );
 
-    it('should immediately signal an error if a carriage return occurs anywhere outside a triple-quoted literal',
-      shouldNotTokenize(streamOf('abc\r', null), 'Unexpected "abc" on line 1.'));
+    it(
+      'should immediately signal an error if a carriage return occurs anywhere outside a triple-quoted literal',
+      shouldNotTokenize(streamOf('abc\r', null), 'Unexpected "abc" on line 1.')
+    );
 
-    it('should immediately signal an error if a carriage return occurs inside a single-quoted literal',
-      shouldNotTokenize(streamOf('"abc\r', null), 'Unexpected ""abc" on line 1.'));
+    it(
+      'should immediately signal an error if a carriage return occurs inside a single-quoted literal',
+      shouldNotTokenize(streamOf('"abc\r', null), 'Unexpected ""abc" on line 1.')
+    );
 
-    it('should tokenize a split single-quoted string',
+    it(
+      'should tokenize a split single-quoted string',
       shouldTokenize(streamOf("'abc", "def' "),
                      { type: 'literal', value: 'abcdef', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a split single-quoted string followed by a triple-quoted string',
+    it(
+      'should tokenize a split single-quoted string followed by a triple-quoted string',
       // Checks whether _literalClosingPos is properly reset
       shouldTokenize(streamOf("'abcdef", "' '''a'''"),
                      { type: 'literal', value: 'abcdef', line: 1 },
                      { type: 'literal', value: 'a', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize split triple-quoted strings',
+    it(
+      'should tokenize split triple-quoted strings',
       shouldTokenize(streamOf('"', '""abc""" ',
                               '""', '"def""" ',
                               '"""', 'ghi""" ',
@@ -541,22 +678,28 @@ describe('Lexer', () => {
                      { type: 'literal', value: 'jkl', line: 1 },
                      { type: 'literal', value: 'mno', line: 1 },
                      { type: 'literal', value: 'pqr', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a triple-quoted string split after a newline',
+    it(
+      'should tokenize a triple-quoted string split after a newline',
       shouldTokenize(streamOf('"""abc\n', 'def"""'),
                      { type: 'literal', value: 'abc\ndef', line: 1 },
-                     { type: 'eof', line: 2 }));
+                     { type: 'eof', line: 2 })
+    );
 
-    it('should tokenize @ keywords',
+    it(
+      'should tokenize @ keywords',
       shouldTokenize('@prefix @base @forSome @forAll ',
                      { type: '@prefix',  line: 1 },
                      { type: '@base',    line: 1 },
                      { type: '@forSome', line: 1 },
                      { type: '@forAll',  line: 1 },
-                     { type: 'eof',      line: 1 }));
+                     { type: 'eof',      line: 1 })
+    );
 
-    it('should tokenize @prefix declarations',
+    it(
+      'should tokenize @prefix declarations',
       shouldTokenize('@prefix : <http://iri.org/#>.\n@prefix abc:<http://iri.org/#>.\n@prefix:<http://example/c/>.',
                      { type: '@prefix', line: 1 },
                      { type: 'prefix', value: '', line: 1 },
@@ -570,13 +713,17 @@ describe('Lexer', () => {
                      { type: 'prefix', value: '', line: 3 },
                      { type: 'IRI', value: 'http://example/c/', line: 3 },
                      { type: '.', line: 3 },
-                     { type: 'eof', line: 3 }));
+                     { type: 'eof', line: 3 })
+    );
 
-    it('should not tokenize prefixes that end with a dot',
+    it(
+      'should not tokenize prefixes that end with a dot',
       shouldNotTokenize('@prefix abc.: <def>.',
-                        'Unexpected "abc.:" on line 1.'));
+                        'Unexpected "abc.:" on line 1.')
+    );
 
-    it('should tokenize @base declarations',
+    it(
+      'should tokenize @base declarations',
       shouldTokenize('@base <http://iri.org/#>.\n@base <http://iri.org/#>.',
                      { type: '@base', line: 1 },
                      { type: 'IRI', value: 'http://iri.org/#', line: 1 },
@@ -584,9 +731,11 @@ describe('Lexer', () => {
                      { type: '@base', line: 2 },
                      { type: 'IRI', value: 'http://iri.org/#', line: 2 },
                      { type: '.', line: 2 },
-                     { type: 'eof', line: 2 }));
+                     { type: 'eof', line: 2 })
+    );
 
-    it('should tokenize PREFIX declarations',
+    it(
+      'should tokenize PREFIX declarations',
       shouldTokenize('PREFIX : <http://iri.org/#>\npreFiX abc: <http://iri.org/#>',
                      { type: 'PREFIX', line: 1 },
                      { type: 'prefix', value: '', line: 1 },
@@ -594,17 +743,21 @@ describe('Lexer', () => {
                      { type: 'PREFIX', line: 2 },
                      { type: 'prefix', value: 'abc', line: 2 },
                      { type: 'IRI', value: 'http://iri.org/#', line: 2 },
-                     { type: 'eof', line: 2 }));
+                     { type: 'eof', line: 2 })
+    );
 
-    it('should tokenize BASE declarations',
+    it(
+      'should tokenize BASE declarations',
       shouldTokenize('BASE <http://iri.org/#>\nbAsE <http://iri.org/#>',
                      { type: 'BASE', line: 1 },
                      { type: 'IRI', value: 'http://iri.org/#', line: 1 },
                      { type: 'BASE', line: 2 },
                      { type: 'IRI', value: 'http://iri.org/#', line: 2 },
-                     { type: 'eof', line: 2 }));
+                     { type: 'eof', line: 2 })
+    );
 
-    it('should tokenize blank nodes',
+    it(
+      'should tokenize blank nodes',
       shouldTokenize('[] [<a> <b>] [a:b "c"^^d:e][a:b[]] _:a:b.',
                      { type: '[', line: 1 },
                      { type: ']', line: 1 },
@@ -625,26 +778,26 @@ describe('Lexer', () => {
                      { type: 'blank', prefix: '_', value: 'a', line: 1 },
                      { type: 'prefixed', prefix: '',  value: 'b', line: 1 },
                      { type: '.', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should not tokenize invalid blank nodes',
-      shouldNotTokenize('_::',
-                        'Unexpected "_::" on line 1.'));
+    it('should not tokenize invalid blank nodes', shouldNotTokenize('_::',
+                      'Unexpected "_::" on line 1.'));
 
-    it('should tokenize lists',
-      shouldTokenize('() (<a>) (<a> <b>)',
-                     { type: '(', line: 1 },
-                     { type: ')', line: 1 },
-                     { type: '(', line: 1 },
-                     { type: 'IRI', value: 'a', line: 1 },
-                     { type: ')', line: 1 },
-                     { type: '(', line: 1 },
-                     { type: 'IRI', value: 'a', line: 1 },
-                     { type: 'IRI', value: 'b', line: 1 },
-                     { type: ')', line: 1 },
-                     { type: 'eof', line: 1 }));
+    it('should tokenize lists', shouldTokenize('() (<a>) (<a> <b>)',
+                   { type: '(', line: 1 },
+                   { type: ')', line: 1 },
+                   { type: '(', line: 1 },
+                   { type: 'IRI', value: 'a', line: 1 },
+                   { type: ')', line: 1 },
+                   { type: '(', line: 1 },
+                   { type: 'IRI', value: 'a', line: 1 },
+                   { type: 'IRI', value: 'b', line: 1 },
+                   { type: ')', line: 1 },
+                   { type: 'eof', line: 1 }));
 
-    it('should tokenize mixed lists',
+    it(
+      'should tokenize mixed lists',
       shouldTokenize('<a> <b> (1 "2" :o)(1()(1))',
                      { type: 'IRI', value: 'a', line: 1 },
                      { type: 'IRI', value: 'b', line: 1 },
@@ -661,17 +814,18 @@ describe('Lexer', () => {
                      { type: 'literal', value: '1', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
                      { type: ')', line: 1 },
                      { type: ')', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize the "a" predicate',
-      shouldTokenize('<x> a <y>.',
-                     { type: 'IRI', value: 'x', line: 1 },
-                     { type: 'abbreviation', value: 'a', line: 1 },
-                     { type: 'IRI', value: 'y', line: 1 },
-                     { type: '.', line: 1 },
-                     { type: 'eof', line: 1 }));
+    it('should tokenize the "a" predicate', shouldTokenize('<x> a <y>.',
+                   { type: 'IRI', value: 'x', line: 1 },
+                   { type: 'abbreviation', value: 'a', line: 1 },
+                   { type: 'IRI', value: 'y', line: 1 },
+                   { type: '.', line: 1 },
+                   { type: 'eof', line: 1 }));
 
-    it('should tokenize the "a" predicate without spacing',
+    it(
+      'should tokenize the "a" predicate without spacing',
       shouldTokenize('[a<>].\n[a[]].\n[a()].\n<>a<>.\n<>a[].\n<>a().\n',
                      { type: '[', line: 1 },
                      { type: 'abbreviation', value: 'a', line: 1 },
@@ -704,31 +858,36 @@ describe('Lexer', () => {
                      { type: '(', line: 6 },
                      { type: ')', line: 6 },
                      { type: '.', line: 6 },
-                     { type: 'eof', line: 7 }));
+                     { type: 'eof', line: 7 })
+    );
 
-    it('should tokenize an empty default graph',
-      shouldTokenize('{}',
-                     { type: '{', line: 1 },
-                     { type: '}', line: 1 },
-                     { type: 'eof', line: 1 }));
+    it('should tokenize an empty default graph', shouldTokenize('{}',
+                   { type: '{', line: 1 },
+                   { type: '}', line: 1 },
+                   { type: 'eof', line: 1 }));
 
-    it('should tokenize a non-empty default graph',
+    it(
+      'should tokenize a non-empty default graph',
       shouldTokenize('{<a> <b> c:d}',
                      { type: '{', line: 1 },
                      { type: 'IRI', value: 'a', line: 1 },
                      { type: 'IRI', value: 'b', line: 1 },
                      { type: 'prefixed', prefix: 'c', value: 'd', line: 1 },
                      { type: '}', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize an empty graph identified by an IRI',
+    it(
+      'should tokenize an empty graph identified by an IRI',
       shouldTokenize('<g>{}',
                      { type: 'IRI', value: 'g', line: 1 },
                      { type: '{', line: 1 },
                      { type: '}', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a non-empty graph identified by an IRI',
+    it(
+      'should tokenize a non-empty graph identified by an IRI',
       shouldTokenize('<g> {<a> <b> c:d}',
                      { type: 'IRI', value: 'g', line: 1 },
                      { type: '{', line: 1 },
@@ -736,16 +895,20 @@ describe('Lexer', () => {
                      { type: 'IRI', value: 'b', line: 1 },
                      { type: 'prefixed', prefix: 'c', value: 'd', line: 1 },
                      { type: '}', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize an empty graph identified by a blank node',
+    it(
+      'should tokenize an empty graph identified by a blank node',
       shouldTokenize('_:g{}',
                      { type: 'blank', prefix: '_', value: 'g', line: 1 },
                      { type: '{', line: 1 },
                      { type: '}', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a non-empty graph identified by a blank node',
+    it(
+      'should tokenize a non-empty graph identified by a blank node',
       shouldTokenize('_:g {<a> <b> c:d}',
                      { type: 'blank', prefix: '_', value: 'g', line: 1 },
                      { type: '{', line: 1 },
@@ -753,17 +916,21 @@ describe('Lexer', () => {
                      { type: 'IRI', value: 'b', line: 1 },
                      { type: 'prefixed', prefix: 'c', value: 'd', line: 1 },
                      { type: '}', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize an empty graph with the GRAPH keyword',
+    it(
+      'should tokenize an empty graph with the GRAPH keyword',
       shouldTokenize('GRAPH<g>{}',
                      { type: 'GRAPH', line: 1 },
                      { type: 'IRI', value: 'g', line: 1 },
                      { type: '{', line: 1 },
                      { type: '}', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a non-empty graph with the GRAPH keyword',
+    it(
+      'should tokenize a non-empty graph with the GRAPH keyword',
       shouldTokenize('graph <g> {<a> <b> c:d}',
                      { type: 'GRAPH', line: 1 },
                      { type: 'IRI', value: 'g', line: 1 },
@@ -772,48 +939,50 @@ describe('Lexer', () => {
                      { type: 'IRI', value: 'b', line: 1 },
                      { type: 'prefixed', prefix: 'c', value: 'd', line: 1 },
                      { type: '}', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize variables',
-      shouldTokenize('?a ?abc ?a_B_c.',
-                     { type: 'var', value: '?a',     line: 1 },
-                     { type: 'var', value: '?abc',   line: 1 },
-                     { type: 'var', value: '?a_B_c', line: 1 },
-                     { type: '.',   value: '',       line: 1 },
-                     { type: 'eof', line: 1 }));
+    it('should tokenize variables', shouldTokenize('?a ?abc ?a_B_c.',
+                   { type: 'var', value: '?a',     line: 1 },
+                   { type: 'var', value: '?abc',   line: 1 },
+                   { type: 'var', value: '?a_B_c', line: 1 },
+                   { type: '.',   value: '',       line: 1 },
+                   { type: 'eof', line: 1 }));
 
-    it('should not tokenize invalid variables',
-      shouldNotTokenize('?0a ', 'Unexpected "?0a" on line 1.'));
+    it(
+      'should not tokenize invalid variables',
+      shouldNotTokenize('?0a ', 'Unexpected "?0a" on line 1.')
+    );
 
-    it('should tokenize the equality sign',
-      shouldTokenize('<a> = <b> ',
-                     { type: 'IRI', value: 'a', line: 1 },
-                     { type: 'abbreviation', value: '=', line: 1 },
-                     { type: 'IRI', value: 'b', line: 1 },
-                     { type: 'eof', line: 1 }));
+    it('should tokenize the equality sign', shouldTokenize('<a> = <b> ',
+                   { type: 'IRI', value: 'a', line: 1 },
+                   { type: 'abbreviation', value: '=', line: 1 },
+                   { type: 'IRI', value: 'b', line: 1 },
+                   { type: 'eof', line: 1 }));
 
-    it('should tokenize the right implication',
-      shouldTokenize('<a> => <b> ',
-                     { type: 'IRI', value: 'a', line: 1 },
-                     { type: 'abbreviation', value: '>', line: 1 },
-                     { type: 'IRI', value: 'b', line: 1 },
-                     { type: 'eof', line: 1 }));
+    it('should tokenize the right implication', shouldTokenize('<a> => <b> ',
+                   { type: 'IRI', value: 'a', line: 1 },
+                   { type: 'abbreviation', value: '>', line: 1 },
+                   { type: 'IRI', value: 'b', line: 1 },
+                   { type: 'eof', line: 1 }));
 
-    it('should tokenize the left implication',
-      shouldTokenize('<a> <= <b> ',
-                     { type: 'IRI', value: 'a', line: 1 },
-                     { type: 'inverse', value: '>', line: 1 },
-                     { type: 'IRI', value: 'b', line: 1 },
-                     { type: 'eof', line: 1 }));
+    it('should tokenize the left implication', shouldTokenize('<a> <= <b> ',
+                   { type: 'IRI', value: 'a', line: 1 },
+                   { type: 'inverse', value: '>', line: 1 },
+                   { type: 'IRI', value: 'b', line: 1 },
+                   { type: 'eof', line: 1 }));
 
-    it('should tokenize a split left implication',
+    it(
+      'should tokenize a split left implication',
       shouldTokenize(streamOf('<a> <', '= <b> '),
         { type: 'IRI', value: 'a', line: 1 },
         { type: 'inverse', value: '>', line: 1 },
         { type: 'IRI', value: 'b', line: 1 },
-        { type: 'eof', line: 1 }));
+        { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize paths',
+    it(
+      'should tokenize paths',
       shouldTokenize(':joe!fam:mother!loc:office!loc:zip :joe!fam:mother^fam:mother',
                      { type: 'prefixed', prefix: '', value: 'joe', line: 1 },
                      { type: '!', line: 1 },
@@ -828,34 +997,37 @@ describe('Lexer', () => {
                      { type: 'prefixed', prefix: 'fam', value: 'mother', line: 1 },
                      { type: '^', line: 1 },
                      { type: 'prefixed', prefix: 'fam', value: 'mother', line: 1 },
-                     { type: 'eof', line: 1 }));
+                     { type: 'eof', line: 1 })
+    );
 
-    it('should not tokenize an invalid document',
-      shouldNotTokenize(' \n @!', 'Unexpected "@!" on line 2.'));
+    it(
+      'should not tokenize an invalid document',
+      shouldNotTokenize(' \n @!', 'Unexpected "@!" on line 2.')
+    );
 
     it('does not call setEncoding if not available', () => {
       new Lexer().tokenize({ on: function () {} });
     });
 
-    it('should tokenize an Quadterm start',
-      shouldTokenize('<<',
-        { type: '<<', line: 1 }, { type: 'eof', line: 1 }));
+    it('should tokenize an Quadterm start', shouldTokenize('<<',
+      { type: '<<', line: 1 }, { type: 'eof', line: 1 }));
 
-    it('should tokenize a split Quadterm start',
+    it(
+      'should tokenize a split Quadterm start',
       shouldTokenize(streamOf('<', '<'),
-        { type: '<<', line: 1 }, { type: 'eof', line: 1 }));
+        { type: '<<', line: 1 }, { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize an Quadterm end',
-      shouldTokenize('>>',
-        { type: '>>', line: 1 }, { type: 'eof', line: 1 }));
+    it('should tokenize an Quadterm end', shouldTokenize('>>',
+      { type: '>>', line: 1 }, { type: 'eof', line: 1 }));
 
-    it('should tokenize an empty Quadterm',
-      shouldTokenize('<< >>',
-        { type: '<<', line: 1 },
-        { type: '>>', line: 1 },
-        { type: 'eof', line: 1 }));
+    it('should tokenize an empty Quadterm', shouldTokenize('<< >>',
+      { type: '<<', line: 1 },
+      { type: '>>', line: 1 },
+      { type: 'eof', line: 1 }));
 
-    it('should tokenize an RDF* statement with IRIs',
+    it(
+      'should tokenize an RDF* statement with IRIs',
       shouldTokenize('<<<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo>>> .',
         { type: '<<', line: 1 },
         { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
@@ -863,13 +1035,17 @@ describe('Lexer', () => {
         { type: 'IRI', value: 'http://ex.org/?bla#boo', line: 3 },
         { type: '>>', line: 3 },
         { type: '.', line: 3 },
-        { type: 'eof', line: 3 }));
+        { type: 'eof', line: 3 })
+    );
 
-    it('should not tokenize a wrongly closed RDF* statement with IRIs',
+    it(
+      'should not tokenize a wrongly closed RDF* statement with IRIs',
       shouldNotTokenize('<<<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo>> .',
-        'Unexpected ">" on line 3.'));
+        'Unexpected ">" on line 3.')
+    );
 
-    it('should tokenize a split RDF* statement with IRIs',
+    it(
+      'should tokenize a split RDF* statement with IRIs',
       shouldTokenize(streamOf('<', '<<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo>>> .'),
         { type: '<<', line: 1 },
         { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
@@ -877,9 +1053,11 @@ describe('Lexer', () => {
         { type: 'IRI', value: 'http://ex.org/?bla#boo', line: 3 },
         { type: '>>', line: 3 },
         { type: '.', line: 3 },
-        { type: 'eof', line: 3 }));
+        { type: 'eof', line: 3 })
+    );
 
-    it('should tokenize an RDF* statement with string literals',
+    it(
+      'should tokenize an RDF* statement with string literals',
       shouldTokenize('<<"string"@en "string"@nl-be "string"@EN>> .',
         { type: '<<', line: 1 },
         { type: 'literal', value: 'string', line: 1 },
@@ -890,9 +1068,11 @@ describe('Lexer', () => {
         { type: 'langcode', value: 'EN', line: 1 },
         { type: '>>', line: 1 },
         { type: '.', line: 1 },
-        { type: 'eof', line: 1 }));
+        { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize an RDF* statement with integers',
+    it(
+      'should tokenize an RDF* statement with integers',
       shouldTokenize('<<1 2 3>>.',
         { type: '<<', line: 1 },
         { type: 'literal', value: '1', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
@@ -900,9 +1080,11 @@ describe('Lexer', () => {
         { type: 'literal', value: '3', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
         { type: '>>', line: 1 },
         { type: '.', line: 1 },
-        { type: 'eof', line: 1 }));
+        { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize an RDF* statement with decimals',
+    it(
+      'should tokenize an RDF* statement with decimals',
       shouldTokenize('<<1.2 3.4 5.6>>.',
         { type: '<<', line: 1 },
         { type: 'literal', value: '1.2', prefix: 'http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
@@ -910,9 +1092,11 @@ describe('Lexer', () => {
         { type: 'literal', value: '5.6', prefix: 'http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
         { type: '>>', line: 1 },
         { type: '.', line: 1 },
-        { type: 'eof', line: 1 }));
+        { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize an RDF* statement with booleans',
+    it(
+      'should tokenize an RDF* statement with booleans',
       shouldTokenize('<<true false true>>.',
         { type: '<<', line: 1 },
         { type: 'literal', value: 'true',  prefix: 'http://www.w3.org/2001/XMLSchema#boolean', line: 1 },
@@ -920,16 +1104,20 @@ describe('Lexer', () => {
         { type: 'literal', value: 'true',  prefix: 'http://www.w3.org/2001/XMLSchema#boolean', line: 1 },
         { type: '>>', line: 1 },
         { type: '.', line: 1 },
-        { type: 'eof', line: 1 }));
+        { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a prefixed iri followed by the end of a QuadTerm',
+    it(
+      'should tokenize a prefixed iri followed by the end of a QuadTerm',
       shouldTokenize('c:c>> .',
         { type: 'prefixed', prefix: 'c', value: 'c', line: 1 },
         { type: '>>', line: 1 },
         { type: '.', line: 1 },
-        { type: 'eof', line: 1 }));
+        { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize an RDF* statement with prefixed names',
+    it(
+      'should tokenize an RDF* statement with prefixed names',
       shouldTokenize('<<a:a b:b c:c>> .',
         { type: '<<', line: 1 },
         { type: 'prefixed', prefix: 'a', value: 'a', line: 1 },
@@ -937,9 +1125,11 @@ describe('Lexer', () => {
         { type: 'prefixed', prefix: 'c', value: 'c', line: 1 },
         { type: '>>', line: 1 },
         { type: '.', line: 1 },
-        { type: 'eof', line: 1 }));
+        { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize an RDF* statement with blank nodes',
+    it(
+      'should tokenize an RDF* statement with blank nodes',
       shouldTokenize('<<_:a _:b _:c>> .',
         { type: '<<', line: 1 },
         { type: 'blank', prefix: '_', value: 'a', line: 1 },
@@ -947,9 +1137,11 @@ describe('Lexer', () => {
         { type: 'blank', prefix: '_', value: 'c', line: 1 },
         { type: '>>', line: 1 },
         { type: '.', line: 1 },
-        { type: 'eof', line: 1 }));
+        { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize an RDF* statement with variables',
+    it(
+      'should tokenize an RDF* statement with variables',
       shouldTokenize('<<?a ?b ?c>> .',
         { type: '<<', line: 1 },
         { type: 'var', value: '?a', line: 1 },
@@ -957,9 +1149,11 @@ describe('Lexer', () => {
         { type: 'var', value: '?c', line: 1 },
         { type: '>>', line: 1 },
         { type: '.', line: 1 },
-        { type: 'eof', line: 1 }));
+        { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize an RDF* statement with mixed types',
+    it(
+      'should tokenize an RDF* statement with mixed types',
       shouldTokenize('<<<http://ex.org/?bla#foo> "string"@nl-be c:c>> .',
         { type: '<<', line: 1 },
         { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
@@ -968,9 +1162,11 @@ describe('Lexer', () => {
         { type: 'prefixed', prefix: 'c', value: 'c', line: 1 },
         { type: '>>', line: 1 },
         { type: '.', line: 1 },
-        { type: 'eof', line: 1 }));
+        { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize an RDF* statement with mixed types',
+    it(
+      'should tokenize an RDF* statement with mixed types',
       shouldTokenize('<<_:a a:a "string"@EN>> .',
         { type: '<<', line: 1 },
         { type: 'blank', prefix: '_', value: 'a', line: 1 },
@@ -979,9 +1175,11 @@ describe('Lexer', () => {
         { type: 'langcode', value: 'EN', line: 1 },
         { type: '>>', line: 1 },
         { type: '.', line: 1 },
-        { type: 'eof', line: 1 }));
+        { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize an RDF* statement with mixed types',
+    it(
+      'should tokenize an RDF* statement with mixed types',
       shouldTokenize('<<"literal"@AU <http://ex.org/?bla#foo> _:a>> .',
         { type: '<<', line: 1 },
         { type: 'literal', value: 'literal', line: 1 },
@@ -990,9 +1188,11 @@ describe('Lexer', () => {
         { type: 'blank', prefix: '_', value: 'a', line: 1 },
         { type: '>>', line: 1 },
         { type: '.', line: 1 },
-        { type: 'eof', line: 1 }));
+        { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize RDF* statements with shared subjects',
+    it(
+      'should tokenize RDF* statements with shared subjects',
       shouldTokenize('<<<a> <b> <c>;\n<d> <e>>>.',
         { type: '<<', line: 1 },
         { type: 'IRI', value: 'a', line: 1 },
@@ -1003,9 +1203,11 @@ describe('Lexer', () => {
         { type: 'IRI', value: 'e', line: 2 },
         { type: '>>', line: 2 },
         { type: '.', line: 2 },
-        { type: 'eof', line: 2 }));
+        { type: 'eof', line: 2 })
+    );
 
-    it('should tokenize RDF* statements with shared subjects and predicates',
+    it(
+      'should tokenize RDF* statements with shared subjects and predicates',
       shouldTokenize('<<<a> <b> <c>,\n<d>>>.',
         { type: '<<', line: 1 },
         { type: 'IRI', value: 'a', line: 1 },
@@ -1015,9 +1217,11 @@ describe('Lexer', () => {
         { type: 'IRI', value: 'd', line: 2 },
         { type: '>>', line: 2 },
         { type: '.', line: 2 },
-        { type: 'eof', line: 2 }));
+        { type: 'eof', line: 2 })
+    );
 
-    it('should tokenize an RDF* statement with shared subjects and predicates and prefixed names',
+    it(
+      'should tokenize an RDF* statement with shared subjects and predicates and prefixed names',
       shouldTokenize('<<a:a b:b c:c;d:d e:e,f:f>> .',
         { type: '<<', line: 1 },
         { type: 'prefixed', prefix: 'a', value: 'a', line: 1 },
@@ -1030,9 +1234,11 @@ describe('Lexer', () => {
         { type: 'prefixed', prefix: 'f', value: 'f', line: 1 },
         { type: '>>', line: 1 },
         { type: '.', line: 1 },
-        { type: 'eof', line: 1 }));
+        { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a QuadTerm followed by other tokens',
+    it(
+      'should tokenize a QuadTerm followed by other tokens',
       shouldTokenize('<<_:a <b> "lit"@EN>> _:a b:b.',
         { type: '<<', line: 1 },
         { type: 'blank', prefix: '_', value: 'a', line: 1 },
@@ -1043,9 +1249,11 @@ describe('Lexer', () => {
         { type: 'blank', prefix: '_', value: 'a', line: 1 },
         { type: 'prefixed', prefix: 'b', value: 'b', line: 1 },
         { type: '.', line: 1 },
-        { type: 'eof', line: 1 }));
+        { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a QuadTerm preceded by other tokens',
+    it(
+      'should tokenize a QuadTerm preceded by other tokens',
       shouldTokenize('"lit"@DE _:b <<_:a b:b "lit"@EN>>.',
         { type: 'literal', value: 'lit', line: 1 },
         { type: 'langcode', value: 'DE', line: 1 },
@@ -1057,9 +1265,11 @@ describe('Lexer', () => {
         { type: 'langcode', value: 'EN', line: 1 },
         { type: '>>', line: 1 },
         { type: '.', line: 1 },
-        { type: 'eof', line: 1 }));
+        { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a nested QuadTerm as subject in a statement',
+    it(
+      'should tokenize a nested QuadTerm as subject in a statement',
       shouldTokenize('<<<<_:b <b> "lit"@DE>> <a> "lit"@EN>>.',
         { type: '<<', line: 1 },
         { type: '<<', line: 1 },
@@ -1073,9 +1283,11 @@ describe('Lexer', () => {
         { type: 'langcode', value: 'EN', line: 1 },
         { type: '>>', line: 1 },
         { type: '.', line: 1 },
-        { type: 'eof', line: 1 }));
+        { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a nested QuadTerm as object in a statement',
+    it(
+      'should tokenize a nested QuadTerm as object in a statement',
       shouldTokenize('<<a:a _:a <<_:b <b> "lit"@DE>>>>.',
         { type: '<<', line: 1 },
         { type: 'prefixed', prefix: 'a', value: 'a', line: 1 },
@@ -1088,54 +1300,65 @@ describe('Lexer', () => {
         { type: '>>', line: 1 },
         { type: '>>', line: 1 },
         { type: '.', line: 1 },
+        { type: 'eof', line: 1 })
+    );
+
+    it('should tokenize a quoted triple annotation start', shouldTokenize('{|',
+        { type: '{|', line: 1 },
         { type: 'eof', line: 1 }));
 
-    it('should tokenize a quoted triple annotation start',
-        shouldTokenize('{|',
-            { type: '{|', line: 1 },
-            { type: 'eof', line: 1 }));
+    it(
+      'should tokenize a split quoted triple annotation start',
+      shouldTokenize(streamOf('{', '|'),
+          { type: '{|', line: 1 },
+          { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a split quoted triple annotation start',
-        shouldTokenize(streamOf('{', '|'),
-            { type: '{|', line: 1 },
-            { type: 'eof', line: 1 }));
+    it('should tokenize a quoted triple annotation end', shouldTokenize('|}',
+        { type: '|}', line: 1 },
+        { type: 'eof', line: 1 }));
 
-    it('should tokenize a quoted triple annotation end',
-        shouldTokenize('|}',
-            { type: '|}', line: 1 },
-            { type: 'eof', line: 1 }));
+    it(
+      'should tokenize a split quoted triple annotation end',
+      shouldTokenize(streamOf('|', '}'),
+          { type: '|}', line: 1 },
+          { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize a split quoted triple annotation end',
-        shouldTokenize(streamOf('|', '}'),
-            { type: '|}', line: 1 },
-            { type: 'eof', line: 1 }));
+    it(
+      'should tokenize an empty quoted triple annotation',
+      shouldTokenize('{| |}',
+          { type: '{|', line: 1 },
+          { type: '|}', line: 1 },
+          { type: 'eof', line: 1 })
+    );
 
-    it('should tokenize an empty quoted triple annotation',
-        shouldTokenize('{| |}',
-            { type: '{|', line: 1 },
-            { type: '|}', line: 1 },
-            { type: 'eof', line: 1 }));
+    it(
+      'should tokenize a non-empty quoted triple annotation',
+      shouldTokenize('{| <http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo> |}.',
+          { type: '{|', line: 1 },
+          { type: 'IRI', value: 'http://ex.org/?bla#bar', line: 1 },
+          { type: 'IRI', value: 'http://ex.org/?bla#boo', line: 2 },
+          { type: '|}', line: 2 },
+          { type: '.', line: 2 },
+          { type: 'eof', line: 2 })
+    );
 
-    it('should tokenize a non-empty quoted triple annotation',
-        shouldTokenize('{| <http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo> |}.',
-            { type: '{|', line: 1 },
-            { type: 'IRI', value: 'http://ex.org/?bla#bar', line: 1 },
-            { type: 'IRI', value: 'http://ex.org/?bla#boo', line: 2 },
-            { type: '|}', line: 2 },
-            { type: '.', line: 2 },
-            { type: 'eof', line: 2 }));
+    it(
+      'should not tokenize an incomplete closing triple annotation',
+      shouldNotTokenize('{| |',
+          'Unexpected "|" on line 1.')
+    );
 
-    it('should not tokenize an incomplete closing triple annotation',
-        shouldNotTokenize('{| |',
-            'Unexpected "|" on line 1.'));
-
-    it('should not tokenize an invalid closing triple annotation',
-        shouldNotTokenize('{| ||',
-            'Unexpected "||" on line 1.'));
+    it(
+      'should not tokenize an invalid closing triple annotation',
+      shouldNotTokenize('{| ||',
+          'Unexpected "||" on line 1.')
+    );
 
     it('returns start and end index for every token', () => {
       const tokens = new Lexer().tokenize('<a:a> <b:c> "lit"@EN.');
-      tokens.should.deep.equal([
+      expect(tokens).toEqual([
         { line: 1, prefix: '', type: 'IRI', value: 'a:a', start: 0, end: 6 },
         { line: 1, prefix: '', type: 'IRI', value: 'b:c', start: 6, end: 12 },
         { line: 1, prefix: '', type: 'literal', value: 'lit', start: 12, end: 17 },
@@ -1147,7 +1370,7 @@ describe('Lexer', () => {
 
     it('returns start and end index relative to line', () => {
       const tokens = new Lexer().tokenize('<a:a> <b:c> "lit"@EN ; \n <b:d> <d:e> .');
-      tokens.should.deep.equal([
+      expect(tokens).toEqual([
         { line: 1, prefix: '', type: 'IRI', value: 'a:a', start: 0, end: 6 },
         { line: 1, prefix: '', type: 'IRI', value: 'b:c', start: 6, end: 12 },
         { line: 1, prefix: '', type: 'literal', value: 'lit', start: 12, end: 17 },
@@ -1162,7 +1385,7 @@ describe('Lexer', () => {
 
     it('returns index including whitespaces', () => {
       const tokens = new Lexer().tokenize('<a:a>   <b:c>    <d:e>  .');
-      tokens.should.deep.equal([
+      expect(tokens).toEqual([
         { line: 1, prefix: '', type: 'IRI', value: 'a:a', start: 0, end: 8 },
         { line: 1, prefix: '', type: 'IRI', value: 'b:c', start: 8, end: 17 },
         { line: 1, prefix: '', type: 'IRI', value: 'd:e', start: 17, end: 24 },
@@ -1173,7 +1396,7 @@ describe('Lexer', () => {
 
     it('returns index for comments and eof', () => {
       const tokens = new Lexer({ comments: true }).tokenize('# some\n<a:a> <b:b> <c:c> . # trailing comment\n# thing');
-      tokens.should.deep.equal([
+      expect(tokens).toEqual([
         { line: 1, prefix: '', type: 'comment', value: ' some', start: 0, end: 7 },
         { line: 2, prefix: '', type: 'IRI', value: 'a:a', start: 0, end: 6 },
         { line: 2, prefix: '', type: 'IRI', value: 'b:b', start: 6, end: 12 },
@@ -1188,7 +1411,7 @@ describe('Lexer', () => {
     describe('passing data after the stream has been finished', () => {
       const tokens = [];
       let error;
-      before(() => {
+      beforeAll(() => {
         const stream = new EventEmitter(), lexer = new Lexer();
         lexer.tokenize(stream, (err, token) => {
           if (err)
@@ -1203,18 +1426,18 @@ describe('Lexer', () => {
       });
 
       it('parses only the first chunk (plus EOF)', () => {
-        tokens.should.have.length(2);
+        expect(tokens).toHaveLength(2);
       });
 
       it('does not emit an error', () => {
-        expect(error).to.not.exist;
+        expect(error).toBeFalsy();
       });
     });
 
     describe('passing data after a syntax error', () => {
       const tokens = [];
       let error;
-      before(() => {
+      beforeAll(() => {
         const stream = new EventEmitter(), lexer = new Lexer();
         lexer.tokenize(stream, (err, token) => {
           if (err)
@@ -1230,19 +1453,19 @@ describe('Lexer', () => {
       });
 
       it('parses only the first chunk', () => {
-        tokens.should.have.length(1);
+        expect(tokens).toHaveLength(1);
       });
 
       it('emits the error', () => {
-        expect(error).to.exist;
-        expect(error).to.have.property('message', 'Unexpected "error" on line 1.');
+        expect(error).toBeDefined();
+        expect(error).toHaveProperty('message', 'Unexpected "error" on line 1.');
       });
     });
 
     describe('when the stream errors', () => {
       const tokens = [];
       let error;
-      before(() => {
+      beforeAll(() => {
         const stream = new EventEmitter(), lexer = new Lexer();
         lexer.tokenize(stream, (err, token) => {
           if (err)
@@ -1254,8 +1477,8 @@ describe('Lexer', () => {
       });
 
       it('passes the error', () => {
-        expect(error).to.exist;
-        expect(error).to.have.property('message', 'my error');
+        expect(error).toBeDefined();
+        expect(error).toHaveProperty('message', 'my error');
       });
     });
 
@@ -1264,7 +1487,7 @@ describe('Lexer', () => {
           tokens = lexer.tokenize('<a> <b> <c>.');
 
       it('returns all tokens synchronously', () => {
-        tokens.should.deep.equal([
+        expect(tokens).toEqual([
           { line: 1, type: 'IRI', value: 'a', prefix: '', start: 0,  end:  4 },
           { line: 1, type: 'IRI', value: 'b', prefix: '', start: 4,  end:  8 },
           { line: 1, type: 'IRI', value: 'c', prefix: '', start: 8,  end: 11 },
@@ -1278,8 +1501,7 @@ describe('Lexer', () => {
       const lexer = new Lexer();
 
       it('throws an error', () => {
-        (function () { lexer.tokenize('<a> bar'); })
-        .should.throw('Unexpected "bar" on line 1.');
+        expect((() => { lexer.tokenize('<a> bar'); })).toThrow('Unexpected "bar" on line 1.');
       });
     });
   });
@@ -1288,39 +1510,56 @@ describe('Lexer', () => {
 describe('A Lexer instance with the n3 option set to false', () => {
   function createLexer() { return new Lexer({ n3: false }); }
 
-  it('should not tokenize a variable',
-    shouldNotTokenize(createLexer(), '?a', 'Unexpected "?a" on line 1.'));
+  it(
+    'should not tokenize a variable',
+    shouldNotTokenize(createLexer(), '?a', 'Unexpected "?a" on line 1.')
+  );
 
-  it('should not tokenize a right implication',
-    shouldNotTokenize(createLexer(), '<a> => <c>.', 'Unexpected "=>" on line 1.'));
+  it(
+    'should not tokenize a right implication',
+    shouldNotTokenize(createLexer(), '<a> => <c>.', 'Unexpected "=>" on line 1.')
+  );
 
-  it('should not tokenize a left implication',
-    shouldNotTokenize(createLexer(), '<a> <= <c>.', 'Unexpected "<=" on line 1.'));
+  it(
+    'should not tokenize a left implication',
+    shouldNotTokenize(createLexer(), '<a> <= <c>.', 'Unexpected "<=" on line 1.')
+  );
 
-  it('should not tokenize an equality',
-    shouldNotTokenize(createLexer(), '<a> = <c>.', 'Unexpected "=" on line 1.'));
+  it(
+    'should not tokenize an equality',
+    shouldNotTokenize(createLexer(), '<a> = <c>.', 'Unexpected "=" on line 1.')
+  );
 
-  it('should not tokenize a ! path',
-    shouldNotTokenize(createLexer(), ':joe!fam:mother', 'Unexpected "!fam:mother" on line 1.'));
+  it(
+    'should not tokenize a ! path',
+    shouldNotTokenize(createLexer(), ':joe!fam:mother', 'Unexpected "!fam:mother" on line 1.')
+  );
 
-  it('should not tokenize a ^ path',
-    shouldNotTokenize(createLexer(), ':joe^fam:father', 'Unexpected "^fam:father" on line 1.'));
+  it(
+    'should not tokenize a ^ path',
+    shouldNotTokenize(createLexer(), ':joe^fam:father', 'Unexpected "^fam:father" on line 1.')
+  );
 });
 
 describe('A Lexer instance with the comment option set to true', () => {
   function createLexer() { return new Lexer({ comments: true }); }
 
-  it('should tokenize a single comment',
+  it(
+    'should tokenize a single comment',
     shouldTokenize(createLexer(), '#mycomment',
                    { type: 'comment', value: 'mycomment', line: 1 },
-                   { type: 'eof', line: 1 }));
+                   { type: 'eof', line: 1 })
+  );
 
-  it('should tokenize a stream with split comment',
+  it(
+    'should tokenize a stream with split comment',
     shouldTokenize(createLexer(), streamOf('#mycom', 'ment'),
                    { type: 'comment', value: 'mycomment', line: 1 },
-                   { type: 'eof', line: 1 }));
+                   { type: 'eof', line: 1 })
+  );
 
-  it('should tokenize comments',
+  it(
+    'should tokenize comments',
     shouldTokenize(createLexer(), '<#foo> #mycomment\n <#foo>  #mycomment \r# mycomment\n\n<#bla>#',
                    { type: 'IRI', value: '#foo', line: 1 },
                    { type: 'comment', value: 'mycomment', line: 1 },
@@ -1329,7 +1568,8 @@ describe('A Lexer instance with the comment option set to true', () => {
                    { type: 'comment', value: ' mycomment', line: 3 },
                    { type: 'IRI', value: '#bla', line: 5 },
                    { type: 'comment', value: '', line: 5 },
-                   { type: 'eof', line: 5 }));
+                   { type: 'eof', line: 5 })
+  );
 });
 
 function shouldTokenize(lexer, input) {
@@ -1347,8 +1587,8 @@ function shouldTokenize(lexer, input) {
     lexer.tokenize(input, tokenCallback);
 
     function tokenCallback(error, token) {
-      expect(error).not.to.exist;
-      expect(token).to.exist;
+      expect(error).toBeFalsy();
+      expect(token).toBeDefined();
       const expectedItem = expected[result.length];
       if (expectedItem)
         for (const attribute in token)
@@ -1357,7 +1597,7 @@ function shouldTokenize(lexer, input) {
             delete token[attribute];
       result.push(token);
       if (token.type === 'eof') {
-        result.should.eql(expected);
+        expect(result).toEqual(expected);
         done(null, result);
       }
     }
@@ -1373,9 +1613,9 @@ function shouldNotTokenize(lexer, input, expectedError) {
     lexer.tokenize(input, tokenCallback);
     function tokenCallback(error, token) {
       if (error) {
-        expect(token).not.to.exist;
-        error.should.be.an.instanceof(Error);
-        error.message.should.eql(expectedError);
+        expect(token).toBeFalsy();
+        expect(error).toBeInstanceOf(Error);
+        expect(error.message).toEqual(expectedError);
         done();
       }
       else if (token.type === 'eof')
