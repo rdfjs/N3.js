@@ -36,7 +36,7 @@
     "arrayify-stream": "^1.0.0",
     "browserify": "^17.0.0",
     "colors": "^1.1.2",
-    "docco": "^0.8.0",
+    "docco": "^0.9.1",
     "eslint": "^5.14.1",
     "jest": "^29.7.0",
     "pre-commit": "^1.2.2",
