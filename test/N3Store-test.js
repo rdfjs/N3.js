@@ -372,8 +372,6 @@ describe('Store', () => {
     );
   });
 
-  // These tests should probably be broken in the future; they are here to serve to use that we should to a mver bump
-  // at such a time
   describe('A store with quoted quads', () => {
     let store;
     beforeEach(() => {
