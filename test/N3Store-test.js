@@ -1,11 +1,13 @@
 import {
   Store,
+  termFromId, termToId,
+} from '../src/';
+import {
   NamedNode,
   Literal,
   DefaultGraph,
   Quad,
-  termFromId, termToId,
-} from '../src/';
+} from '../src/N3DataFactory';
 import namespaces from '../src/IRIs';
 import { Readable } from 'readable-stream';
 import arrayifyStream from 'arrayify-stream';
@@ -299,42 +301,118 @@ describe('Store', () => {
     });
   });
 
-  describe('removing matching quads for RDF*', () => {
+  describe('removing matching quads for RDF-star', () => {
     let store;
-    beforeEach(() => {
-      store = new Store([
-        new Quad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), new NamedNode('p2'), new NamedNode('o1')),
-        new Quad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), new NamedNode('p1'), new NamedNode('o1')),
-        new Quad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), new NamedNode('p2'), new NamedNode('o2')),
-        new Quad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), new NamedNode('p1'), new NamedNode('o2')),
-        new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
-      ]);
+    const allQuads = [
+      new Quad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), new NamedNode('p2'), new NamedNode('o1')),
+      new Quad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), new NamedNode('p1'), new NamedNode('o1')),
+      new Quad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), new NamedNode('p2'), new NamedNode('o2')),
+      new Quad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), new NamedNode('p1'), new NamedNode('o2')),
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
+    ];
+    beforeAll(() => {
+      store = new Store(allQuads);
+    });
+
+    it('should start with the correct size', () => {
+      expect(store.size).toEqual(5);
     });
 
     it(
       'should return the removed quads',
-      forResultStream(shouldIncludeAll, () => { return store.removeMatches(null, 'p2', 'o2'); },
-        [termToId(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'))), 'p2', 'o2'])
+      () => arrayifyStream(store.removeMatches(null, 'p2', 'o2')).then(quads => {
+        expect(quads.length).toBe(1);
+        expect(quads[0].equals(
+          new Quad(
+            new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+            new NamedNode('p2'),
+            new NamedNode('o2')
+            )
+          )).toBe(true);
+      })
     );
 
     it('should decrease the size', () => {
-      expect(store.size).toEqual(5);
+      expect(store.size).toEqual(4);
     });
 
-    it('should match RDF* and normal quads at the same time', done => {
+    it('should match RDF-star and normal quads at the same time', done => {
       const stream = store.removeMatches(null, 'p1', 'o2');
       stream.on('end', () => {
-        expect(store.size).toEqual(3);
+        expect(store.size).toEqual(2);
         done();
       });
     });
 
     it('should allow matching using a quad', done => {
-      const stream = store.removeMatches(termToId(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'))));
+      const stream = store.removeMatches(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')));
       stream.on('end', () => {
-        expect(store.size).toEqual(1);
+        expect(store.size).toEqual(0);
         done();
       });
+    });
+
+    it(
+      'should allow matching using a quad and only match against relevant quads',
+      done => {
+        const s2 = new Store([
+          ...allQuads,
+          new Quad(
+            new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
+            new NamedNode('p1'),
+            new NamedNode('o2')),
+        ]);
+
+        const stream = s2.removeMatches(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')));
+        stream.on('end', () => {
+          expect(s2.size).toEqual(2);
+          done();
+        });
+      }
+    );
+  });
+
+  // These tests should probably be broken in the future; they are here to serve to use that we should to a mver bump
+  // at such a time
+  describe('A store with quoted quads', () => {
+    let store;
+    beforeEach(() => {
+      store = new Store([
+        new Quad(
+          new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
+          new NamedNode('p1'),
+          new NamedNode('o2')),
+        new Quad(
+        new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2'), new NamedNode('g')),
+        new NamedNode('p1'),
+        new NamedNode('o2')),
+      ]);
+    });
+
+    it('should have the correct size', () => {
+      expect(store.size).toBe(2);
+    });
+
+    it('should get all quads with shared predicate', () => {
+      expect(store.getQuads(null, new NamedNode('p1'), null).length).toBe(2);
+    });
+
+    it('should get all quads with shared predicate 2', () => {
+      expect(store.getQuads(
+        new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
+        new NamedNode('p1'),
+        null
+        ).length).toBe(1);
+      expect(store.getQuads(
+        new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2'), new NamedNode('g')),
+        new NamedNode('p1'),
+        null
+        ).length).toBe(1);
+      expect(store.getQuads(
+        new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2'), new NamedNode('g2')),
+        new NamedNode('p1'),
+        null
+        ).length).toBe(0);
     });
   });
 
@@ -1889,6 +1967,35 @@ describe('Store', () => {
         store.add(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')));
         expect([...m]).toHaveLength(3);
         expect([...store.match(null, null, null, null)]).toHaveLength(3);
+      }
+    );
+
+    it(
+      'should include added elements in match if iteration has not yet started (deeply nested)',
+      () => {
+        const m = store.match(null, null, null, null);
+        store.add(new Quad(
+          new NamedNode('s1'),
+          new NamedNode('p1'),
+          new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o3'))
+          )
+        );
+        store.add(new Quad(
+          new NamedNode('s1'),
+          new NamedNode('p1'),
+          new Quad(
+            new NamedNode('s1'),
+            new NamedNode('p1'),
+            new Quad(
+              new NamedNode('s1'),
+              new NamedNode('p1'),
+              new NamedNode('o3')
+              )
+            )
+          )
+        );
+        expect([...m]).toHaveLength(4);
+        expect([...store.match(null, null, null, null)]).toHaveLength(4);
       }
     );
 
