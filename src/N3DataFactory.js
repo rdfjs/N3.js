@@ -10,7 +10,6 @@ let DEFAULTGRAPH;
 let _blankNodeCounter = 0;
 
 const escapedLiteral = /^"(.*".*)(?="[^"]*$)/;
-const quadId = /^<<("(?:""|[^"])*"[^ ]*|[^ ]+) ("(?:""|[^"])*"[^ ]*|[^ ]+) ("(?:""|[^"])*"[^ ]*|[^ ]+) ?("(?:""|[^"])*"[^ ]*|[^ ]+)?>>$/;
 
 // ## DataFactory singleton
 const DataFactory = {
@@ -188,9 +187,12 @@ export class DefaultGraph extends Term {
 // ## DefaultGraph singleton
 DEFAULTGRAPH = new DefaultGraph();
 
-
 // ### Constructs a term from the given internal string ID
-export function termFromId(id, factory) {
+// The third 'nested' parameter of this function is to aid
+// with recursion over nested terms. It should not be used
+// by consumers of this library.
+// See https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725
+export function termFromId(id, factory, nested) {
   factory = factory || DataFactory;
 
   // Falsy value or empty string indicate the default graph
@@ -215,21 +217,28 @@ export function termFromId(id, factory) {
     return factory.literal(id.substr(1, endPos - 1),
             id[endPos + 1] === '@' ? id.substr(endPos + 2)
                                    : factory.namedNode(id.substr(endPos + 3)));
-  case '<':
-    const components = quadId.exec(id);
-    return factory.quad(
-      termFromId(unescapeQuotes(components[1]), factory),
-      termFromId(unescapeQuotes(components[2]), factory),
-      termFromId(unescapeQuotes(components[3]), factory),
-      components[4] && termFromId(unescapeQuotes(components[4]), factory)
-    );
+  case '[':
+    id = JSON.parse(id);
+    break;
   default:
-    return factory.namedNode(id);
+    if (!nested || !Array.isArray(id)) {
+      return factory.namedNode(id);
+    }
   }
+  return factory.quad(
+    termFromId(id[0], factory, true),
+    termFromId(id[1], factory, true),
+    termFromId(id[2], factory, true),
+    id[3] && termFromId(id[3], factory, true)
+  );
 }
 
 // ### Constructs an internal string ID from the given term or ID string
-export function termToId(term) {
+// The third 'nested' parameter of this function is to aid
+// with recursion over nested terms. It should not be used
+// by consumers of this library.
+// See https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725
+export function termToId(term, nested) {
   if (typeof term === 'string')
     return term;
   if (term instanceof Term && term.termType !== 'Quad')
@@ -247,17 +256,15 @@ export function termToId(term) {
     term.language ? `@${term.language}` :
       (term.datatype && term.datatype.value !== xsd.string ? `^^${term.datatype.value}` : '')}`;
   case 'Quad':
-    // To identify RDF* quad components, we escape quotes by doubling them.
-    // This avoids the overhead of backslash parsing of Turtle-like syntaxes.
-    return `<<${
-        escapeQuotes(termToId(term.subject))
-      } ${
-        escapeQuotes(termToId(term.predicate))
-      } ${
-        escapeQuotes(termToId(term.object))
-      }${
-        (isDefaultGraph(term.graph)) ? '' : ` ${termToId(term.graph)}`
-      }>>`;
+    const res = [
+      termToId(term.subject, true),
+      termToId(term.predicate, true),
+      termToId(term.object, true),
+    ];
+    if (!isDefaultGraph(term.graph)) {
+      res.push(termToId(term.graph, true));
+    }
+    return nested ? res : JSON.stringify(res);
   default: throw new Error(`Unexpected termType: ${term.termType}`);
   }
 }
