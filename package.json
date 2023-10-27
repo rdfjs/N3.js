@@ -94,5 +94,13 @@
         "statements": 100
       }
     }
+  },
+  "release": {
+    "branches": [
+      "main"
+    ]
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
