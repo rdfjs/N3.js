@@ -981,6 +981,20 @@ describe('Lexer', () => {
         { type: 'eof', line: 1 })
     );
 
+    it('should tokenize a split left implication as inverse of [=>] when isImpliedBy is disabled',
+    shouldTokenize(new Lexer({ isImpliedBy: false }), streamOf('<a> <', '= <b> '),
+        { type: 'IRI', value: 'a', line: 1 },
+        { type: 'inverse', value: '>', line: 1 },
+        { type: 'IRI', value: 'b', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should tokenize a left implication as inverse of [=>] when isImpliedBy is disabled',
+    shouldTokenize(new Lexer({ isImpliedBy: false }), streamOf('<a> <= <b> '),
+        { type: 'IRI', value: 'a', line: 1 },
+        { type: 'inverse', value: '>', line: 1 },
+        { type: 'IRI', value: 'b', line: 1 },
+        { type: 'eof', line: 1 }));
+
     it(
       'should tokenize paths',
       shouldTokenize(':joe!fam:mother!loc:office!loc:zip :joe!fam:mother^fam:mother',
@@ -1037,6 +1051,52 @@ describe('Lexer', () => {
         { type: '.', line: 3 },
         { type: 'eof', line: 3 })
     );
+
+    it('should tokenize an RDF-star annotated statement',
+    shouldTokenize('<a> <b> <c> {| <d> <e> |}',
+      { type: 'IRI', value: 'a', line: 1 },
+      { type: 'IRI', value: 'b', line: 1 },
+      { type: 'IRI', value: 'c', line: 1 },
+      { type: '{|', line: 1 },
+      { type: 'IRI', value: 'd', line: 1 },
+      { type: 'IRI', value: 'e', line: 1 },
+      { type: '|}', line: 1 },
+      { type: 'eof', line: 1 }));
+
+    it('should tokenize an RDF-star annotated statement with multiple annotations',
+    shouldTokenize('<a> <b> <c> {| <d> <e>; <f> <g> |}',
+      { type: 'IRI', value: 'a', line: 1 },
+      { type: 'IRI', value: 'b', line: 1 },
+      { type: 'IRI', value: 'c', line: 1 },
+      { type: '{|', line: 1 },
+      { type: 'IRI', value: 'd', line: 1 },
+      { type: 'IRI', value: 'e', line: 1 },
+      { type: ';', line: 1 },
+      { type: 'IRI', value: 'f', line: 1 },
+      { type: 'IRI', value: 'g', line: 1 },
+      { type: '|}', line: 1 },
+      { type: 'eof', line: 1 }));
+
+    it('should tokenize an RDF-star annotated statement with multiple annotations, one containing a blank node',
+    shouldTokenize('<a> <b> <c> {| <d> [ <e> "f" ]; <f> <g> |}',
+      { type: 'IRI', value: 'a', line: 1 },
+      { type: 'IRI', value: 'b', line: 1 },
+      { type: 'IRI', value: 'c', line: 1 },
+      { type: '{|', line: 1 },
+      { type: 'IRI', value: 'd', line: 1 },
+      { type: '[',   value: '', line: 1 },
+      { type: 'IRI', value: 'e', line: 1 },
+      { type: 'literal', value: 'f', line: 1 },
+      { type: ']',   value: '', line: 1 },
+      { type: ';', line: 1 },
+      { type: 'IRI', value: 'f', line: 1 },
+      { type: 'IRI', value: 'g', line: 1 },
+      { type: '|}', line: 1 },
+      { type: 'eof', line: 1 }));
+
+    it('should not tokenize an annotated statement that is not closed',
+    shouldNotTokenize('<a> <b> <c> {| <d> [ <e> "f" ]; <f> <g> |',
+      'Unexpected "|" on line 1.'));
 
     it(
       'should not tokenize a wrongly closed RDF* statement with IRIs',
