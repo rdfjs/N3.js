@@ -1763,7 +1763,7 @@ describe('Parser', () => {
       return isImpliedBy ? [to, 'http://www.w3.org/2000/10/swap/log#isImpliedBy', from] : [from, 'http://www.w3.org/2000/10/swap/log#implies', to];
     }
 
-    describe(`A Parser instance for the N3 format with rdfStar support disabled and with ${isImpliedBy ? 'enabled' : 'disabled'}`, () => {
+    describe(`A Parser instance for the N3 format with rdfStar support disabled and with isImpliedBy ${isImpliedBy ? 'enabled' : 'disabled'}`, () => {
       function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3', rdfStar: false, isImpliedBy }); }
 
       describe('should parse a single triple',
@@ -2337,6 +2337,45 @@ describe('Parser', () => {
       it('should not parse RDF-star in the object position',
       shouldNotParse(parser, '<a> <b> <<<a> <b> <c>>>.',
         'Unexpected RDF-star syntax on line 1.'));
+
+      describe('should parse the empty graph as an rdf:value of "true"^^xsd:boolean in the object position',
+        shouldParse(parser, '<a> <b> {}.',
+            ['a', 'b', '_:b0'],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#value', '"true"^^http://www.w3.org/2001/XMLSchema#boolean']
+        ));
+
+      // describe('should parse the empty graph as an rdf:value of "true"^^xsd:boolean in the predicate position',
+      // shouldParse(parser, '<a> {} <c>.',
+      //     ['a', '_:b0', 'c'],
+      //     ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#value', '"true"^^http://www.w3.org/2001/XMLSchema#boolean']
+      // ));
+
+      describe('should parse the empty graph as an rdf:value of "true"^^xsd:boolean in the subject position',
+        shouldParse(parser, '{} <b> <c>.',
+            ['_:b0', 'b', 'c'],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#value', '"true"^^http://www.w3.org/2001/XMLSchema#boolean']
+        ));
+
+      describe('should parse the empty graph in the object position as an rdf:value of "true"^^xsd:boolean while retaining the encompassing graph',
+        shouldParse(parser, '<a> <b> { <x> <y> {} }.',
+          ['a', 'b', '_:b0'],
+          ['x', 'y', '_:b1', '_:b0'],
+          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#value', '"true"^^http://www.w3.org/2001/XMLSchema#boolean', '_:b0']
+      ));
+
+      // describe('should parse the empty graph in the predicate position as an rdf:value of "true"^^xsd:boolean while retaining the encompassing graph',
+      //   shouldParse(parser, '<a> <b> { <x> {} <z> }.',
+      //     ['a', 'b', '_:b0'],
+      //     ['x', '_:b1', 'z', '_:b0'],
+      //     ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#value', '"true"^^http://www.w3.org/2001/XMLSchema#boolean', '_:b0']
+      // ));
+
+      describe('should parse the empty graph in the subject position as an rdf:value of "true"^^xsd:boolean while retaining the encompassing graph',
+        shouldParse(parser, '<a> <b> { {} <y> <z> }.',
+          ['a', 'b', '_:b0'],
+          ['_:b1', 'y', 'z', '_:b0'],
+          ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#value', '"true"^^http://www.w3.org/2001/XMLSchema#boolean', '_:b0']
+      ));
     });
   }
 

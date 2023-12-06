@@ -663,8 +663,23 @@ export default class N3Parser {
     const graph = this._graph;
 
     // Store the last quad of the formula
-    if (this._subject !== null)
-      this._emit(this._subject, this._predicate, this._object, graph);
+
+    if (this._subject !== null) {
+      // Catch the empty graph being closed when parsing N3.
+      // In this case, we emit the empty graph as the value "true"^^xsd:boolean
+      if (!this._predicate && !this._object) {
+        const outerGraph = this._contextStack[this._contextStack.length - 1].graph;
+        this._emit(
+          graph,
+          this._namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#value'),
+          this._literal('true', this._namedNode('http://www.w3.org/2001/XMLSchema#boolean')),
+          outerGraph
+        ); // Restore the parent context containing this formula
+      }
+      else {
+        this._emit(this._subject, this._predicate, this._object, graph);
+      }
+    }
 
     // Restore the parent context containing this formula
     this._restoreContext('formula', token);
