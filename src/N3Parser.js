@@ -662,19 +662,17 @@ export default class N3Parser {
 
     const graph = this._graph;
 
+    let closingEmptyGraph = false;
+
     // Store the last quad of the formula
 
     if (this._subject !== null) {
       // Catch the empty graph being closed when parsing N3.
       // In this case, we emit the empty graph as the value "true"^^xsd:boolean
-      if (!this._predicate && !this._object) {
-        const outerGraph = this._contextStack[this._contextStack.length - 1].graph;
-        this._emit(
-          graph,
-          this._namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#value'),
-          this._literal('true', this._namedNode('http://www.w3.org/2001/XMLSchema#boolean')),
-          outerGraph
-        ); // Restore the parent context containing this formula
+      // The predicate value is set to 'null' in the _readSubject function,
+      // after which the graph is closed directly when processing an empty graph.
+      if (!this._predicate) {
+        closingEmptyGraph = true;
       }
       else {
         this._emit(this._subject, this._predicate, this._object, graph);
@@ -683,6 +681,15 @@ export default class N3Parser {
 
     // Restore the parent context containing this formula
     this._restoreContext('formula', token);
+
+    if (closingEmptyGraph) {
+      const xsdBoolean = 'http://www.w3.org/2001/XMLSchema#boolean';
+      if (this._subject && this._subject.equals(graph))
+        this._subject = this._literal('true', this._namedNode(xsdBoolean));
+
+      if (this._object && this._object.equals(graph))
+        this._object = this._literal('true', this._namedNode(xsdBoolean));
+    }
 
     // If the formula was in a list context, continue reading the list
     if (this._contextStack.length > 0 && this._contextStack[this._contextStack.length - 1].type === 'list') {
