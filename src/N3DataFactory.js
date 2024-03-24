@@ -2,7 +2,7 @@
 // See https://github.com/rdfjs/representation-task-force/blob/master/interface-spec.md
 
 import namespaces from './IRIs';
-import { isDefaultGraph } from './N3Util';
+
 const { rdf, xsd } = namespaces;
 
 // eslint-disable-next-line prefer-const
@@ -261,7 +261,7 @@ export function termToId(term, nested) {
       termToId(term.predicate, true),
       termToId(term.object, true),
     ];
-    if (!isDefaultGraph(term.graph)) {
+    if (term.graph && term.graph.termType !== 'DefaultGraph') {
       res.push(termToId(term.graph, true));
     }
     return nested ? res : JSON.stringify(res);

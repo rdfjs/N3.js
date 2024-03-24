@@ -2,5 +2,9 @@
   rules: {
     no-console: off,
     no-process-exit: off,
+
+    'import/no-commonjs': off,
+    'import/no-nodejs-modules': off,
+    'import/unambiguous': off,
   }
 }

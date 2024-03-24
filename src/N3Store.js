@@ -1,6 +1,6 @@
 // **N3Store** objects store N3 quads by graph in memory.
-import { default as N3DataFactory, termToId, termFromId } from './N3DataFactory';
 import { Readable } from 'readable-stream';
+import { default as N3DataFactory, termToId, termFromId } from './N3DataFactory';
 import namespaces from './IRIs';
 import { isDefaultGraph } from './N3Util';
 

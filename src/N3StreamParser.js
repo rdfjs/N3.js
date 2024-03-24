@@ -1,6 +1,6 @@
 // **N3StreamParser** parses a text stream into a quad stream.
-import N3Parser from './N3Parser';
 import { Transform } from 'readable-stream';
+import N3Parser from './N3Parser';
 
 // ## Constructor
 export default class N3StreamParser extends Transform {

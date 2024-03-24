@@ -1,6 +1,6 @@
+import { Parser, NamedNode, BlankNode, Quad, termFromId, DataFactory as DF } from '../src';
 import rdfDataModel from '@rdfjs/data-model';
 import { isomorphic } from 'rdf-isomorphic';
-import { Parser, NamedNode, BlankNode, Quad, termFromId, DataFactory as DF } from '../src/';
 
 const BASE_IRI = 'http://example.org/';
 

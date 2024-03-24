@@ -13,5 +13,24 @@
   rules: {
     max-nested-callbacks: 0, // Mocha works with deeply nested callbacks
     new-cap: 0, // test constructors as regular functions
+
+    'import/no-commonjs': 0,
+    'import/no-internal-modules': 0,
+    'import/no-nodejs-modules': 0,
+    'import/no-relative-parent-imports': 0,
+    'import/unambiguous': 0,
+    'import/order': [ 2, {
+        groups: [
+          'index',
+          'sibling',
+          'parent',
+          'internal',
+          'external',
+          'builtin',
+          'object',
+          'type',
+        ],
+      },
+    ],
   },
 }

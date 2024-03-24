@@ -1,4 +1,4 @@
-import { Util, DataFactory } from '../src/';
+import { Util, DataFactory } from '../src';
 
 const { namedNode, blankNode, literal, variable, defaultGraph, quad } = DataFactory;
 

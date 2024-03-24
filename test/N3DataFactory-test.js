@@ -6,7 +6,7 @@ import {
   Variable,
   DefaultGraph,
   Quad,
-} from '../src/';
+} from '../src';
 
 describe('DataFactory', () => {
   describe('namedNode', () => {

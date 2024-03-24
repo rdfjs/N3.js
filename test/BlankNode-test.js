@@ -1,4 +1,4 @@
-import { BlankNode, Term } from '../src/';
+import { BlankNode, Term } from '../src';
 
 describe('BlankNode', () => {
   describe('The BlankNode module', () => {

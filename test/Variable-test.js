@@ -1,4 +1,4 @@
-import { Variable, Term } from '../src/';
+import { Variable, Term } from '../src';
 
 describe('Variable', () => {
   describe('The Variable module', () => {

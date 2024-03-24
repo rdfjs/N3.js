@@ -1,7 +1,7 @@
 import {
   Store,
   termFromId, termToId,
-} from '../src/';
+} from '../src';
 import {
   NamedNode,
   Literal,

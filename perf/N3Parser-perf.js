@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-const N3 = require('..');
 const fs = require('fs'),
     path = require('path'),
     assert = require('assert');
+const N3 = require('..');
 
 if (process.argv.length !== 3) {
   console.error('Usage: N3Parser-perf.js filename');

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-const N3 = require('../lib');
 const assert = require('assert');
+const N3 = require('../lib');
 
 console.log('N3Store performance test');
 

@@ -6,5 +6,8 @@
     no-process-exit: 0,
     no-shadow: 0,
     no-sync: 0,
+
+    'import/no-commonjs': 0,
+    'import/unambiguous': 0,
   }
 }

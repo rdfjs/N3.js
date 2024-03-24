@@ -1,7 +1,7 @@
 import {
   termToId,
   termFromId,
-} from '../src/';
+} from '../src';
 
 import {
   Term,

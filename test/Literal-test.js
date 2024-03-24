@@ -1,4 +1,4 @@
-import { Literal, NamedNode, Term } from '../src/';
+import { Literal, NamedNode, Term } from '../src';
 
 describe('Literal', () => {
   describe('The Literal module', () => {
