@@ -97,7 +97,7 @@ See <a href="https://github.com/rdfjs/representation-task-force/blob/master/inte
             
             <div class="content"><div class='highlight'><pre>
 <span class="hljs-keyword">import</span> namespaces <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./IRIs&#x27;</span>;
-<span class="hljs-keyword">import</span> { isDefaultGraph } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3Util&#x27;</span>;
+
 <span class="hljs-keyword">const</span> { rdf, xsd } = namespaces;</pre></div></div>
             
         </li>
@@ -116,8 +116,7 @@ See <a href="https://github.com/rdfjs/representation-task-force/blob/master/inte
             <div class="content"><div class='highlight'><pre><span class="hljs-keyword">let</span> <span class="hljs-variable constant_">DEFAULTGRAPH</span>;
 <span class="hljs-keyword">let</span> _blankNodeCounter = <span class="hljs-number">0</span>;
 
-<span class="hljs-keyword">const</span> escapedLiteral = <span class="hljs-regexp">/^&quot;(.*&quot;.*)(?=&quot;[^&quot;]*$)/</span>;
-<span class="hljs-keyword">const</span> quadId = <span class="hljs-regexp">/^&lt;&lt;(&quot;(?:&quot;&quot;|[^&quot;])*&quot;[^ ]*|[^ ]+) (&quot;(?:&quot;&quot;|[^&quot;])*&quot;[^ ]*|[^ ]+) (&quot;(?:&quot;&quot;|[^&quot;])*&quot;[^ ]*|[^ ]+) ?(&quot;(?:&quot;&quot;|[^&quot;])*&quot;[^ ]*|[^ ]+)?&gt;&gt;$/</span>;</pre></div></div>
+<span class="hljs-keyword">const</span> escapedLiteral = <span class="hljs-regexp">/^&quot;(.*&quot;.*)(?=&quot;[^&quot;]*$)/</span>;</pre></div></div>
             
         </li>
         
@@ -724,10 +723,14 @@ otherwise, compare term types.</p>
                 <a class="ss" href="#section-37">&#x00a7;</a>
               </div>
               <h3 id="constructs-a-term-from-the-given-internal-string-id">Constructs a term from the given internal string ID</h3>
+<p>The third ‘nested’ parameter of this function is to aid
+with recursion over nested terms. It should not be used
+by consumers of this library.
+See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725</a></p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">termFromId</span>(<span class="hljs-params">id, factory</span>) {
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">termFromId</span>(<span class="hljs-params">id, factory, nested</span>) {
   factory = factory || <span class="hljs-title class_">DataFactory</span>;</pre></div></div>
             
         </li>
@@ -815,17 +818,20 @@ otherwise, compare term types.</p>
     <span class="hljs-keyword">return</span> factory.<span class="hljs-title function_">literal</span>(id.<span class="hljs-title function_">substr</span>(<span class="hljs-number">1</span>, endPos - <span class="hljs-number">1</span>),
             id[endPos + <span class="hljs-number">1</span>] === <span class="hljs-string">&#x27;@&#x27;</span> ? id.<span class="hljs-title function_">substr</span>(endPos + <span class="hljs-number">2</span>)
                                    : factory.<span class="hljs-title function_">namedNode</span>(id.<span class="hljs-title function_">substr</span>(endPos + <span class="hljs-number">3</span>)));
-  <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;&lt;&#x27;</span>:
-    <span class="hljs-keyword">const</span> components = quadId.<span class="hljs-title function_">exec</span>(id);
-    <span class="hljs-keyword">return</span> factory.<span class="hljs-title function_">quad</span>(
-      <span class="hljs-title function_">termFromId</span>(unescapeQuotes(components[<span class="hljs-number">1</span>]), factory),
-      <span class="hljs-title function_">termFromId</span>(unescapeQuotes(components[<span class="hljs-number">2</span>]), factory),
-      <span class="hljs-title function_">termFromId</span>(unescapeQuotes(components[<span class="hljs-number">3</span>]), factory),
-      components[<span class="hljs-number">4</span>] &amp;&amp; <span class="hljs-title function_">termFromId</span>(unescapeQuotes(components[<span class="hljs-number">4</span>]), factory)
-    );
+  <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;[&#x27;</span>:
+    id = <span class="hljs-title class_">JSON</span>.<span class="hljs-title function_">parse</span>(id);
+    <span class="hljs-keyword">break</span>;
   <span class="hljs-attr">default</span>:
-    <span class="hljs-keyword">return</span> factory.<span class="hljs-title function_">namedNode</span>(id);
+    <span class="hljs-keyword">if</span> (!nested || !<span class="hljs-title class_">Array</span>.<span class="hljs-title function_">isArray</span>(id)) {
+      <span class="hljs-keyword">return</span> factory.<span class="hljs-title function_">namedNode</span>(id);
+    }
   }
+  <span class="hljs-keyword">return</span> factory.<span class="hljs-title function_">quad</span>(
+    <span class="hljs-title function_">termFromId</span>(id[<span class="hljs-number">0</span>], factory, <span class="hljs-literal">true</span>),
+    <span class="hljs-title function_">termFromId</span>(id[<span class="hljs-number">1</span>], factory, <span class="hljs-literal">true</span>),
+    <span class="hljs-title function_">termFromId</span>(id[<span class="hljs-number">2</span>], factory, <span class="hljs-literal">true</span>),
+    id[<span class="hljs-number">3</span>] &amp;&amp; <span class="hljs-title function_">termFromId</span>(id[<span class="hljs-number">3</span>], factory, <span class="hljs-literal">true</span>)
+  );
 }</pre></div></div>
             
         </li>
@@ -838,10 +844,14 @@ otherwise, compare term types.</p>
                 <a class="ss" href="#section-43">&#x00a7;</a>
               </div>
               <h3 id="constructs-an-internal-string-id-from-the-given-term-or-id-string">Constructs an internal string ID from the given term or ID string</h3>
+<p>The third ‘nested’ parameter of this function is to aid
+with recursion over nested terms. It should not be used
+by consumers of this library.
+See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725</a></p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">termToId</span>(<span class="hljs-params">term</span>) {
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">termToId</span>(<span class="hljs-params">term, nested</span>) {
   <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> term === <span class="hljs-string">&#x27;string&#x27;</span>)
     <span class="hljs-keyword">return</span> term;
   <span class="hljs-keyword">if</span> (term <span class="hljs-keyword">instanceof</span> <span class="hljs-title class_">Term</span> &amp;&amp; term.<span class="hljs-property">termType</span> !== <span class="hljs-string">&#x27;Quad&#x27;</span>)
@@ -870,7 +880,19 @@ otherwise, compare term types.</p>
   <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;Literal&#x27;</span>:      <span class="hljs-keyword">return</span> <span class="hljs-string">`&quot;<span class="hljs-subst">${term.value}</span>&quot;<span class="hljs-subst">${
     term.language ? <span class="hljs-string">`@<span class="hljs-subst">${term.language}</span>`</span> :
       (term.datatype &amp;&amp; term.datatype.value !== xsd.string ? <span class="hljs-string">`^^<span class="hljs-subst">${term.datatype.value}</span>`</span> : <span class="hljs-string">&#x27;&#x27;</span>)}</span>`</span>;
-  <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;Quad&#x27;</span>:</pre></div></div>
+  <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;Quad&#x27;</span>:
+    <span class="hljs-keyword">const</span> res = [
+      <span class="hljs-title function_">termToId</span>(term.<span class="hljs-property">subject</span>, <span class="hljs-literal">true</span>),
+      <span class="hljs-title function_">termToId</span>(term.<span class="hljs-property">predicate</span>, <span class="hljs-literal">true</span>),
+      <span class="hljs-title function_">termToId</span>(term.<span class="hljs-property">object</span>, <span class="hljs-literal">true</span>),
+    ];
+    <span class="hljs-keyword">if</span> (term.<span class="hljs-property">graph</span> &amp;&amp; term.<span class="hljs-property">graph</span>.<span class="hljs-property">termType</span> !== <span class="hljs-string">&#x27;DefaultGraph&#x27;</span>) {
+      res.<span class="hljs-title function_">push</span>(<span class="hljs-title function_">termToId</span>(term.<span class="hljs-property">graph</span>, <span class="hljs-literal">true</span>));
+    }
+    <span class="hljs-keyword">return</span> nested ? res : <span class="hljs-title class_">JSON</span>.<span class="hljs-title function_">stringify</span>(res);
+  <span class="hljs-attr">default</span>: <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Error</span>(<span class="hljs-string">`Unexpected termType: <span class="hljs-subst">${term.termType}</span>`</span>);
+  }
+}</pre></div></div>
             
         </li>
         
@@ -880,33 +902,6 @@ otherwise, compare term types.</p>
               
               <div class="sswrap ">
                 <a class="ss" href="#section-45">&#x00a7;</a>
-              </div>
-              <p>To identify RDF* quad components, we escape quotes by doubling them.
-This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">return</span> <span class="hljs-string">`&lt;&lt;<span class="hljs-subst">${
-        escapeQuotes(termToId(term.subject))
-      }</span> <span class="hljs-subst">${
-        escapeQuotes(termToId(term.predicate))
-      }</span> <span class="hljs-subst">${
-        escapeQuotes(termToId(term.object))
-      }</span><span class="hljs-subst">${
-        (isDefaultGraph(term.graph)) ? <span class="hljs-string">&#x27;&#x27;</span> : <span class="hljs-string">` <span class="hljs-subst">${termToId(term.graph)}</span>`</span>
-      }</span>&gt;&gt;`</span>;
-  <span class="hljs-attr">default</span>: <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Error</span>(<span class="hljs-string">`Unexpected termType: <span class="hljs-subst">${term.termType}</span>`</span>);
-  }
-}</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-46">
-            <div class="annotation">
-              
-              <div class="sswrap ">
-                <a class="ss" href="#section-46">&#x00a7;</a>
               </div>
               <h2 id="quad-constructor">Quad constructor</h2>
 
@@ -924,11 +919,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-47">
+        <li id="section-46">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-47">&#x00a7;</a>
+                <a class="ss" href="#section-46">&#x00a7;</a>
               </div>
               <h3 id="the-term-type-of-this-term">The term type of this term</h3>
 
@@ -957,11 +952,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-48">
+        <li id="section-47">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-48">&#x00a7;</a>
+                <a class="ss" href="#section-47">&#x00a7;</a>
               </div>
               <h3 id="returns-a-plain-object-representation-of-this-quad">Returns a plain object representation of this quad</h3>
 
@@ -980,11 +975,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-49">
+        <li id="section-48">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-49">&#x00a7;</a>
+                <a class="ss" href="#section-48">&#x00a7;</a>
               </div>
               <h3 id="returns-whether-this-object-represents-the-same-quad-as-the-other">Returns whether this object represents the same quad as the other</h3>
 
@@ -1002,18 +997,37 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-50">
+        <li id="section-49">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-50">&#x00a7;</a>
+                <a class="ss" href="#section-49">&#x00a7;</a>
               </div>
               <h3 id="escapes-the-quotes-within-the-given-literal">Escapes the quotes within the given literal</h3>
 
             </div>
             
             <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">escapeQuotes</span>(<span class="hljs-params">id</span>) {
-  <span class="hljs-keyword">return</span> id.<span class="hljs-title function_">replace</span>(escapedLiteral, <span class="hljs-function">(<span class="hljs-params">_, quoted</span>) =&gt;</span> <span class="hljs-string">`&quot;<span class="hljs-subst">${quoted.replace(<span class="hljs-regexp">/&quot;/g</span>, <span class="hljs-string">&#x27;&quot;&quot;&#x27;</span>)}</span>`</span>);
+  <span class="hljs-keyword">return</span> id.<span class="hljs-title function_">replace</span>(escapedLiteral, <span class="hljs-function">(<span class="hljs-params">_, quoted</span>) =&gt;</span> <span class="hljs-string">`&quot;<span class="hljs-subst">${quoted.replace(/<span class="hljs-string">&quot;/g, &#x27;&quot;</span><span class="hljs-string">&quot;&#x27;)}`);
+}
+
+</span></span></span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-50">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-50">&#x00a7;</a>
+              </div>
+              <h3 id="unescapes-the-quotes-within-the-given-literal">Unescapes the quotes within the given literal</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">unescapeQuotes</span>(<span class="hljs-params">id</span>) {
+  <span class="hljs-keyword">return</span> id.<span class="hljs-title function_">replace</span>(escapedLiteral, <span class="hljs-function">(<span class="hljs-params">_, quoted</span>) =&gt;</span> <span class="hljs-string">`&quot;<span class="hljs-subst">${quoted.replace(/<span class="hljs-string">&quot;&quot;</span>/g, <span class="hljs-string">&#x27;&quot;&#x27;</span>)}</span>`</span>);
 }</pre></div></div>
             
         </li>
@@ -1024,23 +1038,6 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
               
               <div class="sswrap ">
                 <a class="ss" href="#section-51">&#x00a7;</a>
-              </div>
-              <h3 id="unescapes-the-quotes-within-the-given-literal">Unescapes the quotes within the given literal</h3>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">unescapeQuotes</span>(<span class="hljs-params">id</span>) {
-  <span class="hljs-keyword">return</span> id.<span class="hljs-title function_">replace</span>(escapedLiteral, <span class="hljs-function">(<span class="hljs-params">_, quoted</span>) =&gt;</span> <span class="hljs-string">`&quot;<span class="hljs-subst">${quoted.replace(<span class="hljs-regexp">/&quot;&quot;/g</span>, <span class="hljs-string">&#x27;&quot;&#x27;</span>)}</span>`</span>);
-}</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-52">
-            <div class="annotation">
-              
-              <div class="sswrap ">
-                <a class="ss" href="#section-52">&#x00a7;</a>
               </div>
               <h3 id="creates-an-iri">Creates an IRI</h3>
 
@@ -1053,11 +1050,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-53">
+        <li id="section-52">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-53">&#x00a7;</a>
+                <a class="ss" href="#section-52">&#x00a7;</a>
               </div>
               <h3 id="creates-a-blank-node">Creates a blank node</h3>
 
@@ -1070,11 +1067,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-54">
+        <li id="section-53">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-54">&#x00a7;</a>
+                <a class="ss" href="#section-53">&#x00a7;</a>
               </div>
               <h3 id="creates-a-literal">Creates a literal</h3>
 
@@ -1085,11 +1082,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-55">
+        <li id="section-54">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-55">&#x00a7;</a>
+                <a class="ss" href="#section-54">&#x00a7;</a>
               </div>
               <p>Create a language-tagged string</p>
 
@@ -1101,11 +1098,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-56">
+        <li id="section-55">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-56">&#x00a7;</a>
+                <a class="ss" href="#section-55">&#x00a7;</a>
               </div>
               <p>Automatically determine datatype for booleans and numbers</p>
 
@@ -1117,11 +1114,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-57">
+        <li id="section-56">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-57">&#x00a7;</a>
+                <a class="ss" href="#section-56">&#x00a7;</a>
               </div>
               <p>Convert a boolean</p>
 
@@ -1133,11 +1130,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-58">
+        <li id="section-57">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-58">&#x00a7;</a>
+                <a class="ss" href="#section-57">&#x00a7;</a>
               </div>
               <p>Convert an integer or double</p>
 
@@ -1157,11 +1154,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-59">
+        <li id="section-58">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-59">&#x00a7;</a>
+                <a class="ss" href="#section-58">&#x00a7;</a>
               </div>
               <p>Create a datatyped literal</p>
 
@@ -1175,11 +1172,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-60">
+        <li id="section-59">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-60">&#x00a7;</a>
+                <a class="ss" href="#section-59">&#x00a7;</a>
               </div>
               <h3 id="creates-a-variable">Creates a variable</h3>
 
@@ -1192,11 +1189,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-61">
+        <li id="section-60">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-61">&#x00a7;</a>
+                <a class="ss" href="#section-60">&#x00a7;</a>
               </div>
               <h3 id="returns-the-default-graph">Returns the default graph</h3>
 
@@ -1209,11 +1206,11 @@ This avoids the overhead of backslash parsing of Turtle-like syntaxes.</p>
         </li>
         
         
-        <li id="section-62">
+        <li id="section-61">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-62">&#x00a7;</a>
+                <a class="ss" href="#section-61">&#x00a7;</a>
               </div>
               <h3 id="creates-a-quad">Creates a quad</h3>
 
