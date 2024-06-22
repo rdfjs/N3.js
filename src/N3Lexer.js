@@ -1,4 +1,5 @@
 // **N3Lexer** tokenizes N3 documents.
+import { Buffer } from 'buffer';
 import queueMicrotask from 'queue-microtask';
 import namespaces from './IRIs';
 
