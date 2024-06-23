@@ -5,6 +5,7 @@ import Store from './N3Store';
 import StreamParser from './N3StreamParser';
 import StreamWriter from './N3StreamWriter';
 import * as Util from './N3Util';
+import Reasoner from './N3Reasoner';
 
 import {
   default as DataFactory,
@@ -45,6 +46,7 @@ export {
 
   termFromId,
   termToId,
+  Reasoner,
 };
 
 // Export all named exports as a default object for backward compatibility
@@ -70,4 +72,5 @@ export default {
 
   termFromId,
   termToId,
+  Reasoner,
 };
