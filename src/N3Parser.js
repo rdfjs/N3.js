@@ -159,7 +159,7 @@ export default class N3Parser {
       const iri = this._resolveIRI(token.value);
       if (iri === null)
         return this._error('Invalid IRI', token);
-      value = this._namedNode(iri);
+      value = this._namedNode(iri, token);
       break;
     // Read a prefixed name
     case 'type':
@@ -167,11 +167,11 @@ export default class N3Parser {
       const prefix = this._prefixes[token.prefix];
       if (prefix === undefined)
         return this._error(`Undefined prefix "${token.prefix}:"`, token);
-      value = this._namedNode(prefix + token.value);
+      value = this._namedNode(prefix + token.value, token);
       break;
     // Read a blank node
     case 'blank':
-      value = this._blankNode(this._prefixes[token.prefix] + token.value);
+      value = this._blankNode(this._prefixes[token.prefix] + token.value, token);
       break;
     // Read a variable
     case 'var':
@@ -194,7 +194,7 @@ export default class N3Parser {
     case '[':
       // Start a new quad with a new blank node as subject
       this._saveContext('blank', this._graph,
-                        this._subject = this._blankNode(), null, null);
+                        this._subject = this._blankNode(undefined, token), null, null);
       return this._readBlankNodeHead;
     case '(':
       // Start a new list
@@ -206,7 +206,7 @@ export default class N3Parser {
       if (!this._n3Mode)
         return this._error('Unexpected graph', token);
       this._saveContext('formula', this._graph,
-                        this._graph = this._blankNode(), null, null);
+                        this._graph = this._blankNode(undefined, token), null, null);
       return this._readSubject;
     case '}':
        // No subject; the graph in which we are reading is closed instead
@@ -234,7 +234,7 @@ export default class N3Parser {
         return this._completeSubjectLiteral;
       }
       else
-        this._subject = this._literal(token.value, this._namedNode(token.prefix));
+        this._subject = this._literal(token.value, this._namedNode(token.prefix, token), token);
 
       break;
     case '<<':
@@ -282,7 +282,7 @@ export default class N3Parser {
       if (this._n3Mode) {
         // Start a new quad with a new blank node as subject
         this._saveContext('blank', this._graph, this._subject,
-                          this._subject = this._blankNode(), null);
+                          this._subject = this._blankNode(undefined, token), null);
         return this._readBlankNodeHead;
       }
     case 'blank':
@@ -307,12 +307,12 @@ export default class N3Parser {
       }
       // Pre-datatyped string literal (prefix stores the datatype)
       else
-        this._object = this._literal(token.value, this._namedNode(token.prefix));
+        this._object = this._literal(token.value, this._namedNode(token.prefix, token), token);
       break;
     case '[':
       // Start a new quad with a new blank node as subject
       this._saveContext('blank', this._graph, this._subject, this._predicate,
-                        this._subject = this._blankNode());
+                        this._subject = this._blankNode(undefined, token));
       return this._readBlankNodeHead;
     case '(':
       // Start a new list
@@ -324,7 +324,7 @@ export default class N3Parser {
       if (!this._n3Mode)
         return this._error('Unexpected graph', token);
       this._saveContext('formula', this._graph, this._subject, this._predicate,
-                        this._graph = this._blankNode());
+                        this._graph = this._blankNode(undefined, token));
       return this._readSubject;
     case '<<':
       if (!this._supportsRDFStar)
@@ -419,14 +419,14 @@ export default class N3Parser {
     case '[':
       // Stack the current list quad and start a new quad with a blank node as subject
       this._saveContext('blank', this._graph,
-                        list = this._blankNode(), this.RDF_FIRST,
-                        this._subject = item = this._blankNode());
+                        list = this._blankNode(undefined, token), this.RDF_FIRST,
+                        this._subject = item = this._blankNode(undefined, token));
       next = this._readBlankNodeHead;
       break;
     case '(':
       // Stack the current list quad and start a new list
       this._saveContext('list', this._graph,
-                        list = this._blankNode(), this.RDF_FIRST, this.RDF_NIL);
+                        list = this._blankNode(undefined, token), this.RDF_FIRST, this.RDF_NIL);
       this._subject = null;
       break;
     case ')':
@@ -462,7 +462,7 @@ export default class N3Parser {
       }
       // Pre-datatyped string literal (prefix stores the datatype)
       else {
-        item = this._literal(token.value, this._namedNode(token.prefix));
+        item = this._literal(token.value, this._namedNode(token.prefix, token), token);
         next = this._getContextEndReader();
       }
       break;
@@ -471,7 +471,7 @@ export default class N3Parser {
       if (!this._n3Mode)
         return this._error('Unexpected graph', token);
       this._saveContext('formula', this._graph, this._subject, this._predicate,
-                        this._graph = this._blankNode());
+                        this._graph = this._blankNode(undefined, token));
       return this._readSubject;
     default:
       if ((item = this._readEntity(token)) === undefined)
@@ -480,7 +480,7 @@ export default class N3Parser {
 
      // Create a new blank node if no item head was assigned yet
     if (list === null)
-      this._subject = list = this._blankNode();
+      this._subject = list = this._blankNode(undefined, token);
 
     // Is this the first element of the list?
     if (previousList === null) {
@@ -524,7 +524,7 @@ export default class N3Parser {
   // ### `_completeLiteral` completes a literal with an optional datatype or language
   _completeLiteral(token) {
     // Create a simple string literal by default
-    let literal = this._literal(this._literalValue);
+    let literal = this._literal(this._literalValue, undefined, token);
 
     switch (token.type) {
     // Create a datatyped literal
@@ -532,12 +532,12 @@ export default class N3Parser {
     case 'typeIRI':
       const datatype = this._readEntity(token);
       if (datatype === undefined) return; // No datatype means an error occurred
-      literal = this._literal(this._literalValue, datatype);
+      literal = this._literal(this._literalValue, datatype, token);
       token = null;
       break;
     // Create a language-tagged string
     case 'langcode':
-      literal = this._literal(this._literalValue, token.value);
+      literal = this._literal(this._literalValue, token.value, token);
       token = null;
       break;
     }
@@ -721,7 +721,7 @@ export default class N3Parser {
   _readNamedGraphBlankLabel(token) {
     if (token.type !== ']')
       return this._error('Invalid graph label', token);
-    this._subject = this._blankNode();
+    this._subject = this._blankNode(undefined, token);
     return this._readGraph;
   }
 
@@ -751,17 +751,17 @@ export default class N3Parser {
     }
     // Without explicit quantifiers, map entities to a quantified entity
     if (!this._explicitQuantifiers)
-      this._quantified[entity.id] = this._quantifier(this._blankNode().value);
+      this._quantified[entity.id] = this._quantifier(this._blankNode(undefined, token).value);
     // With explicit quantifiers, output the reified quantifier
     else {
       // If this is the first item, start a new quantifier list
       if (this._subject === null)
         this._emit(this._graph || this.DEFAULTGRAPH, this._predicate,
-                   this._subject = this._blankNode(), this.QUANTIFIERS_GRAPH);
+                   this._subject = this._blankNode(undefined, token), this.QUANTIFIERS_GRAPH);
       // Otherwise, continue the previous list
       else
         this._emit(this._subject, this.RDF_REST,
-                   this._subject = this._blankNode(), this.QUANTIFIERS_GRAPH);
+                   this._subject = this._blankNode(undefined, token), this.QUANTIFIERS_GRAPH);
       // Output the list item
       this._emit(this._subject, this.RDF_FIRST, entity, this.QUANTIFIERS_GRAPH);
     }
@@ -818,7 +818,7 @@ export default class N3Parser {
   // ### `_readForwardPath` reads a '!' path
   _readForwardPath(token) {
     let subject, predicate;
-    const object = this._blankNode();
+    const object = this._blankNode(undefined, token);
     // The next token is the predicate
     if ((predicate = this._readEntity(token)) === undefined)
       return;
@@ -835,7 +835,7 @@ export default class N3Parser {
 
   // ### `_readBackwardPath` reads a '^' path
   _readBackwardPath(token) {
-    const subject = this._blankNode();
+    const subject = this._blankNode(undefined, token);
     let predicate, object;
     // The next token is the predicate
     if ((predicate = this._readEntity(token)) === undefined)

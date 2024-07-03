@@ -12,11 +12,12 @@ let _blankNodeCounter = 0;
 const escapedLiteral = /^"(.*".*)(?="[^"]*$)/;
 
 // ## DataFactory singleton
+// Note: The default data factory does not set the token field of terms.
 const DataFactory = {
-  namedNode,
-  blankNode,
-  variable,
-  literal,
+  namedNode: iri => namedNode(iri),
+  blankNode: name => blankNode(name),
+  variable: name => variable(name),
+  literal: (name, datatype) => literal(name, datatype),
   defaultGraph,
   quad,
   triple: quad,
@@ -63,6 +64,12 @@ export class Term {
 
 // ## NamedNode constructor
 export class NamedNode extends Term {
+  constructor(id, token) {
+    super(id);
+
+    this.token = token;
+  }
+
   // ### The term type of this term
   get termType() {
     return 'NamedNode';
@@ -71,6 +78,12 @@ export class NamedNode extends Term {
 
 // ## Literal constructor
 export class Literal extends Term {
+  constructor(id, token) {
+    super(id);
+
+    this.token = token;
+  }
+
   // ### The term type of this term
   get termType() {
     return 'Literal';
@@ -92,7 +105,7 @@ export class Literal extends Term {
 
   // ### The datatype IRI of this literal
   get datatype() {
-    return new NamedNode(this.datatypeString);
+    return new NamedNode(this.datatypeString, this.token);
   }
 
   // ### The datatype string of this literal
@@ -132,8 +145,10 @@ export class Literal extends Term {
 
 // ## BlankNode constructor
 export class BlankNode extends Term {
-  constructor(name) {
+  constructor(name, token) {
     super(`_:${name}`);
+
+    this.token = token;
   }
 
   // ### The term type of this term
@@ -148,8 +163,10 @@ export class BlankNode extends Term {
 }
 
 export class Variable extends Term {
-  constructor(name) {
+  constructor(name, token) {
     super(`?${name}`);
+
+    this.token = token;
   }
 
   // ### The term type of this term
@@ -167,6 +184,7 @@ export class Variable extends Term {
 export class DefaultGraph extends Term {
   constructor() {
     super('');
+
     return DEFAULTGRAPH || this;
   }
 
@@ -192,7 +210,7 @@ DEFAULTGRAPH = new DefaultGraph();
 // with recursion over nested terms. It should not be used
 // by consumers of this library.
 // See https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725
-export function termFromId(id, factory, nested) {
+export function termFromId(id, factory, nested, token) {
   factory = factory || DataFactory;
 
   // Falsy value or empty string indicate the default graph
@@ -208,7 +226,7 @@ export function termFromId(id, factory, nested) {
   case '"':
     // Shortcut for internal literals
     if (factory === DataFactory)
-      return new Literal(id);
+      return new Literal(id, token);
     // Literal without datatype or language
     if (id[id.length - 1] === '"')
       return factory.literal(id.substr(1, id.length - 2));
@@ -273,7 +291,8 @@ export function termToId(term, nested) {
 // ## Quad constructor
 export class Quad extends Term {
   constructor(subject, predicate, object, graph) {
-    super('');
+    super(undefined);
+
     this._subject   = subject;
     this._predicate = predicate;
     this._object    = object;
@@ -333,20 +352,20 @@ export function unescapeQuotes(id) {
 }
 
 // ### Creates an IRI
-function namedNode(iri) {
-  return new NamedNode(iri);
+export function namedNode(iri, token) {
+  return new NamedNode(iri, token);
 }
 
 // ### Creates a blank node
-function blankNode(name) {
-  return new BlankNode(name || `n3-${_blankNodeCounter++}`);
+export function blankNode(name, token) {
+  return new BlankNode(name || `n3-${_blankNodeCounter++}`, token);
 }
 
 // ### Creates a literal
-function literal(value, languageOrDataType) {
+export function literal(value, languageOrDataType, token) {
   // Create a language-tagged string
   if (typeof languageOrDataType === 'string')
-    return new Literal(`"${value}"@${languageOrDataType.toLowerCase()}`);
+    return new Literal(`"${value}"@${languageOrDataType.toLowerCase()}`, token);
 
   // Automatically determine datatype for booleans and numbers
   let datatype = languageOrDataType ? languageOrDataType.value : '';
@@ -368,13 +387,13 @@ function literal(value, languageOrDataType) {
 
   // Create a datatyped literal
   return (datatype === '' || datatype === xsd.string) ?
-    new Literal(`"${value}"`) :
-    new Literal(`"${value}"^^${datatype}`);
+    new Literal(`"${value}"`, token) :
+    new Literal(`"${value}"^^${datatype}`, token);
 }
 
 // ### Creates a variable
-function variable(name) {
-  return new Variable(name);
+export function variable(name, token) {
+  return new Variable(name, token);
 }
 
 // ### Returns the default graph
