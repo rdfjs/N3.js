@@ -2522,9 +2522,12 @@ describe('Parser', () => {
       });
 
       for (const quad of parser.parse('<a> <b> 1, _:d.')) {
-        expect(quad.subject.token).toBeDefined();
-        expect(quad.predicate.token).toBeDefined();
-        expect(quad.object.token).toBeDefined();
+        expect(quad.subject.context).toBeDefined();
+        expect(quad.subject.context.token).toBeDefined();
+        expect(quad.predicate.context).toBeDefined();
+        expect(quad.predicate.context.token).toBeDefined();
+        expect(quad.object.context).toBeDefined();
+        expect(quad.object.context.token).toBeDefined();
       }
     });
   });

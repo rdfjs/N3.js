@@ -5,6 +5,8 @@ import namespaces from './IRIs';
 
 const { rdf, xsd } = namespaces;
 
+const DEFAULT_CONTEXT = { token: null };
+
 // eslint-disable-next-line prefer-const
 let DEFAULTGRAPH;
 let _blankNodeCounter = 0;
@@ -26,8 +28,9 @@ export default DataFactory;
 
 // ## Term constructor
 export class Term {
-  constructor(id) {
+  constructor(id, context = DEFAULT_CONTEXT) {
     this.id = id;
+    this.context = context;
   }
 
   // ### The value of this term
@@ -64,12 +67,6 @@ export class Term {
 
 // ## NamedNode constructor
 export class NamedNode extends Term {
-  constructor(id, token) {
-    super(id);
-
-    this.token = token;
-  }
-
   // ### The term type of this term
   get termType() {
     return 'NamedNode';
@@ -78,12 +75,6 @@ export class NamedNode extends Term {
 
 // ## Literal constructor
 export class Literal extends Term {
-  constructor(id, token) {
-    super(id);
-
-    this.token = token;
-  }
-
   // ### The term type of this term
   get termType() {
     return 'Literal';
@@ -105,7 +96,7 @@ export class Literal extends Term {
 
   // ### The datatype IRI of this literal
   get datatype() {
-    return new NamedNode(this.datatypeString, this.token);
+    return new NamedNode(this.datatypeString);
   }
 
   // ### The datatype string of this literal
@@ -145,10 +136,8 @@ export class Literal extends Term {
 
 // ## BlankNode constructor
 export class BlankNode extends Term {
-  constructor(name, token) {
-    super(`_:${name}`);
-
-    this.token = token;
+  constructor(name, context = DEFAULT_CONTEXT) {
+    super(`_:${name}`, context);
   }
 
   // ### The term type of this term
@@ -163,10 +152,8 @@ export class BlankNode extends Term {
 }
 
 export class Variable extends Term {
-  constructor(name, token) {
-    super(`?${name}`);
-
-    this.token = token;
+  constructor(name, context = DEFAULT_CONTEXT) {
+    super(`?${name}`, context);
   }
 
   // ### The term type of this term
@@ -183,7 +170,7 @@ export class Variable extends Term {
 // ## DefaultGraph constructor
 export class DefaultGraph extends Term {
   constructor() {
-    super('');
+    super('', DEFAULT_CONTEXT);
 
     return DEFAULTGRAPH || this;
   }
@@ -291,7 +278,7 @@ export function termToId(term, nested) {
 // ## Quad constructor
 export class Quad extends Term {
   constructor(subject, predicate, object, graph) {
-    super(undefined);
+    super('', DEFAULT_CONTEXT);
 
     this._subject   = subject;
     this._predicate = predicate;
@@ -352,20 +339,20 @@ export function unescapeQuotes(id) {
 }
 
 // ### Creates an IRI
-export function namedNode(iri, token) {
-  return new NamedNode(iri, token);
+export function namedNode(iri, context = DEFAULT_CONTEXT) {
+  return new NamedNode(iri, context);
 }
 
 // ### Creates a blank node
-export function blankNode(name, token) {
-  return new BlankNode(name || `n3-${_blankNodeCounter++}`, token);
+export function blankNode(name, context = DEFAULT_CONTEXT) {
+  return new BlankNode(name || `n3-${_blankNodeCounter++}`, context);
 }
 
 // ### Creates a literal
-export function literal(value, languageOrDataType, token) {
+export function literal(value, languageOrDataType, context = DEFAULT_CONTEXT) {
   // Create a language-tagged string
   if (typeof languageOrDataType === 'string')
-    return new Literal(`"${value}"@${languageOrDataType.toLowerCase()}`, token);
+    return new Literal(`"${value}"@${languageOrDataType.toLowerCase()}`, context);
 
   // Automatically determine datatype for booleans and numbers
   let datatype = languageOrDataType ? languageOrDataType.value : '';
@@ -387,13 +374,13 @@ export function literal(value, languageOrDataType, token) {
 
   // Create a datatyped literal
   return (datatype === '' || datatype === xsd.string) ?
-    new Literal(`"${value}"`, token) :
-    new Literal(`"${value}"^^${datatype}`, token);
+    new Literal(`"${value}"`, context) :
+    new Literal(`"${value}"^^${datatype}`, context);
 }
 
 // ### Creates a variable
-export function variable(name, token) {
-  return new Variable(name, token);
+export function variable(name, context = DEFAULT_CONTEXT) {
+  return new Variable(name, context);
 }
 
 // ### Returns the default graph
