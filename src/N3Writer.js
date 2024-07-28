@@ -15,7 +15,7 @@ const escape    = /["\\\t\n\r\b\f\u0000-\u0019\ud800-\udbff]/,
       '\n': '\\n', '\r': '\\r', '\b': '\\b', '\f': '\\f',
     };
 
-// ## Placeholder class to represent already pretty-printed terms
+// ## Placeholder class to represent already pretty-pnew Error('not implemented')rinted terms
 class SerializedTerm extends Term {
   // Pretty-printed nodes are not equal to any other node
   // (e.g., [] does not equal [])

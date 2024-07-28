@@ -3,6 +3,7 @@ import { Readable } from 'readable-stream';
 import { default as N3DataFactory, termToId, termFromId } from './N3DataFactory';
 import namespaces from './IRIs';
 import { isDefaultGraph } from './N3Util';
+import N3Writer from './N3Writer';
 
 // ## Constructor
 export default class N3Store {
@@ -799,7 +800,11 @@ export default class N3Store {
    * Blank Nodes will be normalized.
    */
   contains(other) {
-    return other.every(quad => this.has(quad));
+    console.log('containes called on')
+    return other.every(quad => {
+      console.log('every called on', quad);
+      return this.has(quad)
+    });
   }
 
   /**
@@ -924,7 +929,7 @@ export default class N3Store {
     * implementation.
     */
   toString() {
-    throw new Error('not implemented');
+    return (new N3Writer).quadsToString(this);
   }
 
    /**

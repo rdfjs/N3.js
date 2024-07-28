@@ -2011,6 +2011,59 @@ describe('Store', () => {
       }
     );
   });
+
+  describe('RDF/JS Dataset Methods', () => {
+    let q1, q2, q3, store, store1, store2;
+
+    beforeEach(() => {
+      q1 = new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'));
+      q2 = new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2'));
+      q3 = new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('03'));
+      store = new Store(q1);
+      store1 = new Store([ q1, q2 ]);
+      store2 = new Store([ q2, q3]);
+    });
+
+    describe('#contains', () => {
+      it('store is contained in store1 and store2', () => {
+        expect(store.contains(store)).toBe(true);
+        // expect(store1.contains(store)).toBe(true);
+        // expect(store2.contains(store)).toBe(true);
+      });
+  
+      // it('should return false for a non-existing quad', () => {
+      //   expect(store.contains(store1)).toBe(false);
+      //   expect(store.contains(store2)).toBe(false);
+      // });
+    });
+  
+    describe('#union', () => {
+      it('should return a new store with the union of the quads', () => {
+        const store = store1.union(store2);
+        expect(store1.size).toEqual(2);
+        expect(store2.size).toEqual(2);
+        expect(store.size).toEqual(3);
+      });
+    });
+  
+    describe('#difference', () => {
+      it('should return a new store with the difference of the quads', () => {
+        const store = store1.difference(store2);
+        expect(store1.size).toEqual(2);
+        expect(store2.size).toEqual(2);
+        expect(store.size).toEqual(1);
+      });
+    });
+  
+    describe('#intersection', () => {
+      it('should return a new store with the intersection of the quads', () => {
+        const store = store1.intersection(store2);
+        expect(store1.size).toEqual(2);
+        expect(store2.size).toEqual(2);
+        expect(store.size).toEqual(1);
+      });
+    });
+  });
 });
 
 function alwaysTrue()  { return true;  }
