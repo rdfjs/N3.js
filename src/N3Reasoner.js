@@ -1,4 +1,17 @@
-import { termToId } from './N3DataFactory';
+import DF, { termToId } from './N3DataFactory';
+
+/**
+ * Gets rules from a dataset. This will only collect horn rules declared using log:implies.
+ */
+export function getRulesFromDataset(dataset) {
+  const rules = [];
+  for (const { subject, object } of dataset.match(null, DF.namedNode('http://www.w3.org/2000/10/swap/log#implies'), null, DF.defaultGraph())) {
+    const premise = [...dataset.match(null, null, null, subject)];
+    const conclusion = [...dataset.match(null, null, null, object)];
+    rules.push({ premise, conclusion });
+  }
+  return rules;
+}
 
 export default class N3Reasoner {
   constructor(store) {
@@ -14,10 +27,6 @@ export default class N3Reasoner {
   }
 
   // eslint-disable-next-line no-warning-comments
-  // TODO [FUTURE]: Improve performance by 'pre-computing' the index lookup,
-  // e.g., if a rule only has one variable, then we can just give it a pointer
-  // to the index that it should do lookups from.
-  // Similarly with insertions.
   _evaluatePremise(rule, content, cb, i = 0) {
     let v1, v2, value, index1, index2;
     const [val0, val1, val2] = rule.premise[i].value, index = content[rule.premise[i].content];

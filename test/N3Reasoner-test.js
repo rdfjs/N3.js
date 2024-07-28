@@ -1,8 +1,14 @@
-import { Quad, NamedNode, Variable, Store, Reasoner } from '../src/';
-import { getTimblAndFoaf } from 'deep-taxonomy-benchmark';
-import { SUBCLASS_RULE, RDFS_RULE, generateDeepTaxonomy } from '../test/util';
+import { Quad, NamedNode, Variable, Store, Reasoner, getRulesFromDataset, Parser } from '../src';
+import { getTimblAndFoaf, generateDeepTaxonomy, getRdfs, TARGET_RESULT } from 'deep-taxonomy-benchmark';
 
 describe('Reasoner', () => {
+  let RDFS_RULE, SUBCLASS_RULE;
+
+  beforeEach(async () => {
+    RDFS_RULE = getRulesFromDataset(await getRdfs());
+    SUBCLASS_RULE = getRulesFromDataset(new Store((new Parser({ format: 'text/n3' })).parse('{ ?s a ?o . ?o <http://www.w3.org/2000/01/rdf-schema#subClassOf> ?o2 . } => { ?s a ?o2 . } .')));
+  });
+
   describe('Testing Reasoning', () => {
     let store;
     beforeEach(() => {
@@ -300,20 +306,14 @@ describe('Reasoner', () => {
 
       new Reasoner(store).reason(SUBCLASS_RULE);
 
-      return expect(store.has(
-        new Quad(
-          new NamedNode('http://eulersharp.sourceforge.net/2009/12dtb/test#ind'),
-          new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-          new NamedNode('http://eulersharp.sourceforge.net/2009/12dtb/test#A2')
-        ),
-      )).toEqual(true);
+      return expect(store.has(TARGET_RESULT)).toEqual(true);
     }
   });
 
-  it('Should correctly apply RDFS to TimBL profile and FOAF', async function () {
+  it('Should correctly apply RDFS to TimBL profile and FOAF', async () => {
     const store = new Store([...await getTimblAndFoaf()]);
-  
+
     new Reasoner(store).reason(RDFS_RULE);
-    return expect(store.size).toEqual(1712);
+    return expect(store.size).toEqual(1830);
   });
 });

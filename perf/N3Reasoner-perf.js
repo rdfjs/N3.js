@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-const N3 = require('..');
 const path = require('path');
+const N3 = require('..');
 const { load, SUBCLASS_RULE, RDFS_RULE, generateDeepTaxonomy } = require('../test/util');
 
 async function deepTaxonomy(extended = false) {

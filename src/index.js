@@ -2,7 +2,7 @@ import Lexer from './N3Lexer';
 import Parser from './N3Parser';
 import Writer from './N3Writer';
 import Store from './N3Store';
-import Reasoner from './N3Reasoner';
+import Reasoner, { getRulesFromDataset } from './N3Reasoner';
 import StreamParser from './N3StreamParser';
 import StreamWriter from './N3StreamWriter';
 import * as Util from './N3Util';
@@ -47,6 +47,7 @@ export {
 
   termFromId,
   termToId,
+  getRulesFromDataset,
 };
 
 // Export all named exports as a default object for backward compatibility
