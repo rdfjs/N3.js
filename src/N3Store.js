@@ -377,8 +377,11 @@ export default class N3Store {
     return [...this.readQuads(subject, predicate, object, graph)];
   }
 
-  // ### `readQuads` returns an generator of quads matching a pattern.
-  // Setting any field to `undefined` or `null` indicates a wildcard.
+  /**
+   * `readQuads` returns an generator of quads matching a pattern.
+   * Setting any field to `undefined` or `null` indicates a wildcard.
+   * @deprecated Use `match` instead.
+   */
   *readQuads(subject, predicate, object, graph) {
     // Convert terms to internal string representation
     graph = graph && termToId(graph);

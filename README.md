@@ -332,9 +332,8 @@ The store provides the following manipulation methods in addition to implementin
 ### Searching quads or entities
 The store provides the following search methods
 ([documentation](http://rdfjs.github.io/N3.js/docs/N3Store.html)):
-- `readQuads` returns a generator of quads matching the given pattern
+- `match` returns a stream and stream of quads matching the given pattern
 - `getQuads` returns an array of quads matching the given pattern
-- `match` returns a stream of quads matching the given pattern
 - `countQuads` counts the number of quads matching the given pattern
 - `forEach` executes a callback on all matching quads
 - `every` returns whether a callback on matching quads always returns true
