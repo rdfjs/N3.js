@@ -304,6 +304,13 @@ for (const quad of store.match(namedNode('http://ex.org/Mickey'), null, null))
   console.log(quad);
 ```
 
+If you are using multiple stores then you can reduce memory consumption by allowing them to share an entity index:
+```JavaScript
+const entityIndex = new N3.EntityIndex();
+const store1 = new N3.Store([], { entityIndex });
+const store2 = new N3.Store([], { entityIndex });
+```
+
 ### [`DatasetCore` Interface](https://rdf.js.org/dataset-spec/#datasetcore-interface)
 This store adheres to the `DatasetCore` interface which exposes the following properties
 
