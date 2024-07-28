@@ -460,7 +460,7 @@ export default class N3Store {
   // Setting any field to `undefined` or `null` indicates a wildcard.
   // For backwards compatibility, the object return also implements the Readable stream interface.
   match(subject, predicate, object, graph) {
-    return new DatasetCoreAndReadableStream(this, subject, predicate, object, graph);
+    return new DatasetCoreAndReadableStream(this, subject, predicate, object, graph, { entityIndex: this._entityIndex });
   }
 
   // ### `countQuads` returns the number of quads matching a pattern.
@@ -808,15 +808,15 @@ function isString(s) {
  * A class that implements both DatasetCore and Readable.
  */
 class DatasetCoreAndReadableStream extends Readable {
-  constructor(n3Store, subject, predicate, object, graph) {
+  constructor(n3Store, subject, predicate, object, graph, options) {
     super({ objectMode: true });
-    Object.assign(this, { n3Store, subject, predicate, object, graph });
+    Object.assign(this, { n3Store, subject, predicate, object, graph, options });
   }
 
   get filtered() {
     if (!this._filtered) {
       const { n3Store, graph, object, predicate, subject } = this;
-      const newStore = this._filtered = new N3Store({ factory: n3Store._factory });
+      const newStore = this._filtered = new N3Store({ factory: n3Store._factory, entityIndex: this.options.entityIndex });
       for (const quad of n3Store.readQuads(subject, predicate, object, graph))
         newStore.addQuad(quad);
     }
@@ -846,7 +846,7 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   match(subject, predicate, object, graph) {
-    return new DatasetCoreAndReadableStream(this.filtered, subject, predicate, object, graph);
+    return new DatasetCoreAndReadableStream(this.filtered, subject, predicate, object, graph, this.options);
   }
 
   *[Symbol.iterator]() {
