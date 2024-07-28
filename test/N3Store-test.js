@@ -2012,7 +2012,7 @@ describe('Store', () => {
     );
   });
 
-  describe.each([true, false])('RDF/JS Dataset Methods [DatasetCoreAndReadableStream: %s]', match => {
+  describe.each([true, false, 'instantiated'])('RDF/JS Dataset Methods [DatasetCoreAndReadableStream: %s]', match => {
     let q1, q2, q3, store, store1, store2, empty;
 
     beforeEach(() => {
@@ -2029,6 +2029,13 @@ describe('Store', () => {
         store = store2.match(new NamedNode('s1'));
         store1 = store1.match();
         store2 = store2.match();
+      }
+
+      if (match === 'instantiated') {
+        empty.size;
+        store.size;
+        store1.size;
+        store2.size;
       }
     });
 
@@ -2135,15 +2142,11 @@ describe('Store', () => {
     });
 
     describe('#toStream', () => {
-      it('should convert to a stream', done => {
-        const stream = store1.toStream();
-        stream.once('data', quad => {
-          expect(quad).toEqual(q1);
-          stream.once('data', quad => {
-            expect(quad).toEqual(q2);
-            done();
-          });
-        });
+      it('should convert to a stream', () => {
+        expect(arrayifyStream(store2.toStream())).resolves.toEqual([q1, q3]);
+        expect(arrayifyStream(store1.toStream())).resolves.toEqual([q1, q2]);
+        expect(arrayifyStream(store.toStream())).resolves.toEqual([q1]);
+        expect(arrayifyStream(empty.toStream())).resolves.toEqual([]);
       });
     });
 
