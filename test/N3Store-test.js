@@ -1,6 +1,7 @@
 import {
   Store,
   termFromId, termToId,
+  EntityIndex,
 } from '../src';
 import {
   NamedNode,
@@ -2010,6 +2011,21 @@ describe('Store', () => {
         expect([...store.match(null, null, null, null)]).toHaveLength(5);
       }
     );
+  });
+});
+
+describe('EntityIndex', () => {
+  it('should be a constructor', () => {
+    expect(new EntityIndex()).toBeInstanceOf(EntityIndex);
+  });
+
+  it('custom index should be used when instantiated with store', () => {
+    const entityIndex = new EntityIndex();
+    const store = new Store([
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o0')),
+    ], { entityIndex });
+    expect(store.size).toBe(1);
+    expect(entityIndex._id).toEqual(3);
   });
 });
 

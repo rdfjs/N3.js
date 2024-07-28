@@ -5,7 +5,7 @@ import namespaces from './IRIs';
 import { isDefaultGraph } from './N3Util';
 
 export class N3EntityIndex {
-  constructor(options) {
+  constructor(options = {}) {
     this._id = 0;
     // `_ids` maps entities such as `http://xmlns.com/foaf/0.1/name` to numbers,
     // saving memory by using only numbers as keys in `_graphs`
@@ -17,7 +17,7 @@ export class N3EntityIndex {
     this._factory = options.factory || N3DataFactory;
   }
 
-  _termFromId(id, factory) {
+  _termFromId(id) {
     if (id[0] === '.') {
       const entities = this._entities;
       const terms = id.split('.');
@@ -29,7 +29,7 @@ export class N3EntityIndex {
       );
       return q;
     }
-    return termFromId(id, factory);
+    return termFromId(id, this._factory);
   }
 
   _termToNumericId(term) {
@@ -89,7 +89,7 @@ export default class N3Store {
       options = quads, quads = null;
     options = options || {};
     this._factory = options.factory || N3DataFactory;
-    this._entityIndex = new N3EntityIndex({ factory: this._factory });
+    this._entityIndex = options.entityIndex || new N3EntityIndex({ factory: this._factory });
     this._entities = this._entityIndex._entities;
     this._termFromId = this._entityIndex._termFromId.bind(this._entityIndex);
     this._termToNumericId = this._entityIndex._termToNumericId.bind(this._entityIndex);
@@ -158,24 +158,24 @@ export default class N3Store {
   *_findInIndex(index0, key0, key1, key2, name0, name1, name2, graphId) {
     let tmp, index1, index2;
     const entityKeys = this._entities;
-    const graph = this._termFromId(graphId, this._factory);
+    const graph = this._termFromId(graphId);
     const parts = { subject: null, predicate: null, object: null };
 
     // If a key is specified, use only that part of index 0.
     if (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
     for (const value0 in index0) {
       if (index1 = index0[value0]) {
-        parts[name0] = this._termFromId(entityKeys[value0], this._factory);
+        parts[name0] = this._termFromId(entityKeys[value0]);
         // If a key is specified, use only that part of index 1.
         if (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
         for (const value1 in index1) {
           if (index2 = index1[value1]) {
-            parts[name1] = this._termFromId(entityKeys[value1], this._factory);
+            parts[name1] = this._termFromId(entityKeys[value1]);
             // If a key is specified, use only that part of index 2, if it exists.
             const values = key2 ? (key2 in index2 ? [key2] : []) : Object.keys(index2);
             // Create quads for all items found in index 2.
             for (let l = 0; l < values.length; l++) {
-              parts[name2] = this._termFromId(entityKeys[values[l]], this._factory);
+              parts[name2] = this._termFromId(entityKeys[values[l]]);
               yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
             }
           }
