@@ -4,30 +4,15 @@ import { default as N3DataFactory, termToId, termFromId } from './N3DataFactory'
 import namespaces from './IRIs';
 import { isDefaultGraph } from './N3Util';
 
-// ## Constructor
-export default class N3Store {
-  constructor(quads, options) {
-    // The number of quads is initially zero
-    this._size = 0;
-    // `_graphs` contains subject, predicate, and object indexes per graph
-    this._graphs = Object.create(null);
+export class N3EntityIndex {
+  constructor(options) {
+    this._id = 0;
     // `_ids` maps entities such as `http://xmlns.com/foaf/0.1/name` to numbers,
     // saving memory by using only numbers as keys in `_graphs`
-    this._id = 0;
     this._ids = Object.create(null);
-    this._entities = Object.create(null); // inverse of `_ids`
-    // `_blankNodeIndex` is the index of the last automatically named blank node
-    this._blankNodeIndex = 0;
-
-    // Shift parameters if `quads` is not given
-    if (!options && quads && !quads[0])
-      options = quads, quads = null;
-    options = options || {};
-    this._factory = options.factory || N3DataFactory;
-
-    // Add quads if passed
-    if (quads)
-      this.addQuads(quads);
+     // inverse of `_ids`
+    this._entities = Object.create(null);
+    this._factory = options.factory;
   }
 
   _termFromId(id, factory) {
@@ -67,6 +52,57 @@ export default class N3Store {
       : termToId(term);
 
     return this._ids[str] || (this._ids[this._entities[++this._id] = str] = this._id);
+  }
+}
+
+// ## Constructor
+export default class N3Store {
+  constructor(quads, options) {
+    // The number of quads is initially zero
+    this._size = 0;
+    // `_graphs` contains subject, predicate, and object indexes per graph
+    this._graphs = Object.create(null);
+    // `_blankNodeIndex` is the index of the last automatically named blank node
+    this._blankNodeIndex = 0;
+
+    // Shift parameters if `quads` is not given
+    if (!options && quads && !quads[0])
+      options = quads, quads = null;
+    options = options || {};
+    this._factory = options.factory || N3DataFactory;
+    this._entityIndex = new N3EntityIndex({ factory: this._factory });
+
+    // Add quads if passed
+    if (quads)
+      this.addQuads(quads);
+  }
+
+  _termFromId(id, factory) {
+    return this._entityIndex._termFromId(id, factory);
+  }
+
+  _termToNumericId(term) {
+    return this._entityIndex._termToNumericId(term);
+  }
+
+  _termToNewNumericId(term) {
+    return this._entityIndex._termToNewNumericId(term);
+  }
+
+  get _entities() {
+    return this._entityIndex._entities;
+  }
+
+  get _ids() {
+    return this._entityIndex._ids;
+  }
+
+  get _id() {
+    return this._entityIndex._id;
+  }
+
+  set _id(value) {
+    return this._entityIndex._id = value;
   }
 
   // ## Public properties
