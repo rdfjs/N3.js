@@ -304,8 +304,8 @@ for (const quad of store.match(namedNode('http://ex.org/Mickey'), null, null))
   console.log(quad);
 ```
 
-### [`DatasetCore` Interface](https://rdf.js.org/dataset-spec/#datasetcore-interface)
-This store adheres to the `DatasetCore` interface which exposes the following properties
+### [`Dataset` Interface](https://rdf.js.org/dataset-spec/#dataset-interface)
+This store adheres to the `Datase` interface which exposes the following properties
 
 Attributes:
  - `size` — A non-negative integer that specifies the number of quads in the set.
@@ -318,7 +318,7 @@ Methods:
  - `[Symbol.iterator]` — Implements the iterator protocol to allow iteration over all `quads` in the dataset as in the example above.
 
 ### Addition and deletion of quads
-The store provides the following manipulation methods in addition to implementing the standard [`DatasetCore` Interface](https://rdf.js.org/dataset-spec/#datasetcore-interface)
+The store provides the following manipulation methods in addition to implementing the standard [`Dataset` Interface](https://rdf.js.org/dataset-spec/#dataset-interface)
 ([documentation](http://rdfjs.github.io/N3.js/docs/N3Store.html)):
 - `addQuad` to insert one quad
 - `addQuads` to insert an array of quads
