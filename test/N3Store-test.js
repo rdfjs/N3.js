@@ -34,19 +34,6 @@ describe('Store', () => {
       expect(store.getQuads()).toHaveLength(0);
     });
 
-    describe('when importing a stream of 2 quads', () => {
-      beforeAll(done => {
-        const stream = new ArrayReader([
-          new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
-          new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
-        ]);
-        const events = store.import(stream);
-        events.on('end', done);
-      });
-
-      it('should have size 2', () => { expect(store.size).toEqual(2); });
-    });
-
     describe('when removing a stream of 2 quads', () => {
       beforeAll(done => {
         const stream = new ArrayReader([
@@ -88,13 +75,13 @@ describe('Store', () => {
 
     describe('every', () => {
       describe('with no parameters and a callback always returning true', () => {
-        it('should return false', () => {
-          expect(store.every(alwaysTrue, null, null, null, null)).toBe(false);
+        it('should return true on empty set', () => {
+          expect(store.every(alwaysTrue, null, null, null, null)).toBe(true);
         });
       });
       describe('with no parameters and a callback always returning false', () => {
-        it('should return false', () => {
-          expect(store.every(alwaysFalse, null, null, null, null)).toBe(false);
+        it('should return true on empty set', () => {
+          expect(store.every(alwaysFalse, null, null, null, null)).toBe(true);
         });
       });
     });
@@ -1227,6 +1214,19 @@ describe('Store', () => {
       let count = 3;
       function thirdTimeFalse() { return count-- !== 0; }
 
+      describe('empty store always returns false', () => {
+        const emptyStore = new Store();
+        it('should return false', () => {
+          expect(emptyStore.some(alwaysTrue, null, null, null, null)).toBe(false);
+          expect(emptyStore.some(alwaysFalse, null, null, null, null)).toBe(false);
+          expect(emptyStore.some(alwaysTrue, new NamedNode('s3'), null, null, null)).toBe(false);
+          expect(emptyStore.some(alwaysFalse, new NamedNode('s3'), null, null, null)).toBe(false);
+
+          expect(emptyStore.some(null, null, null, null, null)).toBe(false);
+          expect(emptyStore.some(null, new NamedNode('s3'), null, null, null)).toBe(false);
+          expect(emptyStore.some(null, new NamedNode('s3'), null, null, null)).toBe(false);
+        });
+      });
       describe('with no parameters and a callback always returning true', () => {
         it('should return true', () => {
           expect(store.some(alwaysTrue, null, null, null, null)).toBe(true);
@@ -2012,31 +2012,46 @@ describe('Store', () => {
     );
   });
 
-  describe('RDF/JS Dataset Methods', () => {
-    let q1, q2, q3, store, store1, store2;
+  describe.each([true, false])('RDF/JS Dataset Methods [DatasetCoreAndReadableStream: %s]', match => {
+    let q1, q2, q3, store, store1, store2, empty;
 
     beforeEach(() => {
       q1 = new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'));
       q2 = new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2'));
-      q3 = new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('03'));
-      store = new Store(q1);
-      store1 = new Store([ q1, q2 ]);
-      store2 = new Store([ q2, q3]);
+      q3 = new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o3'));
+      empty = new Store();
+      store = new Store([q1]);
+      store1 = new Store([q1, q2]);
+      store2 = new Store([q1, q3]);
+
+      if (match) {
+        empty = store2.match(new NamedNode('sn'));
+        store = store2.match(new NamedNode('s1'));
+        store1 = store1.match();
+        store2 = store2.match();
+      }
     });
 
     describe('#contains', () => {
-      it('store is contained in store1 and store2', () => {
-        expect(store.contains(store)).toBe(true);
-        // expect(store1.contains(store)).toBe(true);
-        // expect(store2.contains(store)).toBe(true);
+      it('empty set is contained in all sets', () => {
+        expect(empty.contains(empty)).toBe(true);
+        expect(store.contains(empty)).toBe(true);
+        expect(store1.contains(empty)).toBe(true);
+        expect(store2.contains(empty)).toBe(true);
       });
-  
-      // it('should return false for a non-existing quad', () => {
-      //   expect(store.contains(store1)).toBe(false);
-      //   expect(store.contains(store2)).toBe(false);
-      // });
+
+      it('store is contained in store, store1 and store2', () => {
+        expect(store.contains(store)).toBe(true);
+        expect(store1.contains(store)).toBe(true);
+        expect(store2.contains(store)).toBe(true);
+      });
+
+      it('should return false for a non-existing quad', () => {
+        expect(store.contains(store1)).toBe(false);
+        expect(store.contains(store2)).toBe(false);
+      });
     });
-  
+
     describe('#union', () => {
       it('should return a new store with the union of the quads', () => {
         const store = store1.union(store2);
@@ -2045,7 +2060,7 @@ describe('Store', () => {
         expect(store.size).toEqual(3);
       });
     });
-  
+
     describe('#difference', () => {
       it('should return a new store with the difference of the quads', () => {
         const store = store1.difference(store2);
@@ -2054,13 +2069,154 @@ describe('Store', () => {
         expect(store.size).toEqual(1);
       });
     });
-  
+
     describe('#intersection', () => {
       it('should return a new store with the intersection of the quads', () => {
         const store = store1.intersection(store2);
         expect(store1.size).toEqual(2);
         expect(store2.size).toEqual(2);
         expect(store.size).toEqual(1);
+      });
+    });
+
+    describe('#deleteMatches', () => {
+      it('should delete all quads if pattern is null', () => {
+        store1.deleteMatches(null, null, null);
+        expect(store1.size).toEqual(0);
+      });
+
+      it('should delete matching quads', () => {
+        store1.deleteMatches(q1.subject, q1.predicate, q1.object);
+        expect(store1.size).toEqual(1);
+      });
+    });
+
+    describe('#addAll', () => {
+      it('should add quads to the store', () => {
+        store1.addAll([q3]);
+        expect(store1.size).toEqual(3);
+        store1.addAll([q3]);
+        expect(store1.size).toEqual(3);
+      });
+    });
+
+    describe('#deleteMatches', () => {
+      it('should delete matching quads', () => {
+        store1.deleteMatches(q1.subject, q1.predicate, q1.object);
+        expect(store1.size).toEqual(1);
+      });
+    });
+
+    describe('#map', () => {
+      it('should map over quads', () => {
+        const quads = store1.map(quad => quad);
+        expect(quads.size).toEqual(2);
+        expect(quads.contains(store1));
+        expect(store1.contains(quads));
+      });
+    });
+
+    describe('#reduce', () => {
+      it('should reduce over quads', () => {
+        expect(store1.reduce((acc, quad) => acc + 1, 0)).toEqual(2);
+        expect(store1.reduce((acc, quad) => acc + quad.subject.value.length, 0)).toEqual(4);
+      });
+    });
+
+    describe('#toArray', () => {
+      it('should convert to an array', () => {
+        const quads = store1.toArray();
+        expect(quads).toHaveLength(2);
+        expect(quads[0]).toEqual(q1);
+        expect(quads[1]).toEqual(q2);
+      });
+    });
+
+    describe('#toStream', () => {
+      it('should convert to a stream', done => {
+        const stream = store1.toStream();
+        stream.once('data', quad => {
+          expect(quad).toEqual(q1);
+          stream.once('data', quad => {
+            expect(quad).toEqual(q2);
+            done();
+          });
+        });
+      });
+    });
+
+    describe('#toString', () => {
+      it('should convert to a string', () => {
+        expect(store1.toString()).toEqual('<s1> <p1> <o1> .\n<s1> <p1> <o2> .\n');
+      });
+    });
+
+    describe('#toCanonical', () => {
+      it('should convert to a canonical string', () => {
+        expect(() => store1.toCanonical()).toThrowError('not implemented');
+      });
+    });
+
+    describe('#filter', () => {
+      it('should filter quads by subject', () => {
+        const quads = store1.filter(quad => quad.subject.value === 's1');
+        expect(quads.size).toEqual(2);
+        expect(quads.contains(store1)).toEqual(true);
+        expect(store1.contains(quads)).toEqual(true);
+      });
+
+      it('should filter quads by object', () => {
+        const quads = store1.filter(quad => quad.object.value === 'o1');
+        expect(quads.size).toEqual(1);
+        expect(store1.contains(quads)).toEqual(true);
+        expect(quads.has(q1)).toEqual(true);
+      });
+    });
+
+    describe('#import', () => {
+      beforeEach(done => {
+        const stream = new ArrayReader([
+          new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
+          new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+        ]);
+        const events = empty.import(stream);
+        events.on('end', done);
+      });
+
+      it('should have size 2', () => { expect(empty.size).toEqual(2); });
+    });
+
+    describe('#forEach', () => {
+      it('should iterate over quads', () => {
+        let count = 0;
+        store1.forEach(quad => {
+          count++;
+          expect(quad).toEqual(count === 1 ? q1 : q2);
+        });
+        expect(count).toEqual(2);
+      });
+    });
+
+    describe('#equals', () => {
+      it('should be equal to itself', () => {
+        expect(empty.equals(empty)).toBe(true);
+        expect(store.equals(store)).toBe(true);
+        expect(store1.equals(store1)).toBe(true);
+        expect(store2.equals(store2)).toBe(true);
+      });
+
+      it('should be equal to a new store containing the same elements', () => {
+        expect(store.equals(new Store([q1]))).toBe(true);
+        expect(store1.equals(new Store([q1, q2]))).toBe(true);
+        expect(empty.equals(new Store())).toBe(true);
+        expect(store2.equals(new Store([q1, q3]))).toBe(true);
+      });
+
+      it('should not be equal to a store with different elements', () => {
+        expect(empty.equals(store)).toBe(false);
+        expect(store.equals(new Store([q2]))).toBe(false);
+        expect(store1.equals(new Store([q1]))).toBe(false);
+        expect(store2.equals(new Store([q1]))).toBe(false);
       });
     });
   });
