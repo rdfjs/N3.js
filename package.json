@@ -37,6 +37,7 @@
     "arrayify-stream": "^1.0.0",
     "browserify": "^17.0.0",
     "colors": "^1.1.2",
+    "deep-taxonomy-benchmark": "^1.2.0",
     "docco": "^0.9.1",
     "eslint": "^5.14.1",
     "eslint-plugin-import": "^2.29.1",
