@@ -12,7 +12,9 @@ export class N3EntityIndex {
     this._ids = Object.create(null);
      // inverse of `_ids`
     this._entities = Object.create(null);
-    this._factory = options.factory;
+    // `_blankNodeIndex` is the index of the last automatically named blank node
+    this._blankNodeIndex = 0;
+    this._factory = options.factory || N3DataFactory;
   }
 
   _termFromId(id, factory) {
@@ -53,6 +55,25 @@ export class N3EntityIndex {
 
     return this._ids[str] || (this._ids[this._entities[++this._id] = str] = this._id);
   }
+
+  createBlankNode(suggestedName) {
+    let name, index;
+    // Generate a name based on the suggested name
+    if (suggestedName) {
+      name = suggestedName = `_:${suggestedName}`, index = 1;
+      while (this._ids[name])
+        name = suggestedName + index++;
+    }
+    // Generate a generic blank node name
+    else {
+      do { name = `_:b${this._blankNodeIndex++}`; }
+      while (this._ids[name]);
+    }
+    // Add the blank node to the entities, avoiding the generation of duplicates
+    this._ids[name] = ++this._id;
+    this._entities[this._id] = name;
+    return this._factory.blankNode(name.substr(2));
+  }
 }
 
 // ## Constructor
@@ -62,8 +83,6 @@ export default class N3Store {
     this._size = 0;
     // `_graphs` contains subject, predicate, and object indexes per graph
     this._graphs = Object.create(null);
-    // `_blankNodeIndex` is the index of the last automatically named blank node
-    this._blankNodeIndex = 0;
 
     // Shift parameters if `quads` is not given
     if (!options && quads && !quads[0])
@@ -91,18 +110,6 @@ export default class N3Store {
 
   get _entities() {
     return this._entityIndex._entities;
-  }
-
-  get _ids() {
-    return this._entityIndex._ids;
-  }
-
-  get _id() {
-    return this._entityIndex._id;
-  }
-
-  set _id(value) {
-    return this._entityIndex._id = value;
   }
 
   // ## Public properties
@@ -695,22 +702,7 @@ export default class N3Store {
 
   // ### `createBlankNode` creates a new blank node, returning its name
   createBlankNode(suggestedName) {
-    let name, index;
-    // Generate a name based on the suggested name
-    if (suggestedName) {
-      name = suggestedName = `_:${suggestedName}`, index = 1;
-      while (this._ids[name])
-        name = suggestedName + index++;
-    }
-    // Generate a generic blank node name
-    else {
-      do { name = `_:b${this._blankNodeIndex++}`; }
-      while (this._ids[name]);
-    }
-    // Add the blank node to the entities, avoiding the generation of duplicates
-    this._ids[name] = ++this._id;
-    this._entities[this._id] = name;
-    return this._factory.blankNode(name.substr(2));
+    return this._entityIndex.createBlankNode(suggestedName);
   }
 
   // ### `extractLists` finds and removes all list triples
