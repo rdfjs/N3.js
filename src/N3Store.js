@@ -90,26 +90,14 @@ export default class N3Store {
     options = options || {};
     this._factory = options.factory || N3DataFactory;
     this._entityIndex = new N3EntityIndex({ factory: this._factory });
+    this._entities = this._entityIndex._entities;
+    this._termFromId = this._entityIndex._termFromId.bind(this._entityIndex);
+    this._termToNumericId = this._entityIndex._termToNumericId.bind(this._entityIndex);
+    this._termToNewNumericId = this._entityIndex._termToNewNumericId.bind(this._entityIndex);
 
     // Add quads if passed
     if (quads)
       this.addQuads(quads);
-  }
-
-  _termFromId(id, factory) {
-    return this._entityIndex._termFromId(id, factory);
-  }
-
-  _termToNumericId(term) {
-    return this._entityIndex._termToNumericId(term);
-  }
-
-  _termToNewNumericId(term) {
-    return this._entityIndex._termToNewNumericId(term);
-  }
-
-  get _entities() {
-    return this._entityIndex._entities;
   }
 
   // ## Public properties
