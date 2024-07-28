@@ -871,13 +871,10 @@ export default class N3Store {
    * This method is aligned with `Array.prototype.reduce()` in ECMAScript-262.
    */
   reduce(callback, initialValue) {
-    let accumulator = initialValue;
-    for (const quad of this) {
-      if (accumulator === undefined)
-        accumulator = quad;
-      else
-        accumulator = callback(accumulator, quad, this);
-    }
+    const iter = this.readQuads();
+    let accumulator = initialValue === undefined ? iter.next().value : initialValue;
+    for (const quad of iter)
+      accumulator = callback(accumulator, quad, this);
     return accumulator;
   }
 

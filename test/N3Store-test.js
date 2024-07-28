@@ -2118,8 +2118,10 @@ describe('Store', () => {
 
     describe('#reduce', () => {
       it('should reduce over quads', () => {
-        expect(store1.reduce((acc, quad) => acc + 1, 0)).toEqual(2);
+        expect(store1.reduce((acc, _) => acc + 1, 0)).toEqual(2);
         expect(store1.reduce((acc, quad) => acc + quad.subject.value.length, 0)).toEqual(4);
+        expect(store1.reduce((acc, _) => acc, 0)).toEqual(0);
+        expect(store.reduce((acc, _) => acc)).toEqual(q1);
       });
     });
 
@@ -2217,6 +2219,21 @@ describe('Store', () => {
         expect(store.equals(new Store([q2]))).toBe(false);
         expect(store1.equals(new Store([q1]))).toBe(false);
         expect(store2.equals(new Store([q1]))).toBe(false);
+      });
+    });
+
+    describe('#some', () => {
+      it('should return true if any quad passes the test', () => {
+        expect(store1.some(quad => quad.subject.value === 's1')).toBe(true);
+        expect(store1.some(quad => quad.subject.value === 's2')).toBe(false);
+      });
+
+      it('should return false if no quad passes the test', () => {
+        expect(store1.some(quad => quad.subject.value === 's2')).toBe(false);
+      });
+
+      it('should return false on the empty set', () => {
+        expect(empty.some(quad => true)).toBe(false);
       });
     });
   });
