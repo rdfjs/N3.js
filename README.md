@@ -305,7 +305,7 @@ for (const quad of store.match(namedNode('http://ex.org/Mickey'), null, null))
 ```
 
 ### [`Dataset` Interface](https://rdf.js.org/dataset-spec/#dataset-interface)
-This store adheres to the `Datase` interface which exposes the following properties
+This store adheres to the `Dataset` interface which exposes the following properties
 
 Attributes:
  - `size` — A non-negative integer that specifies the number of quads in the set.
