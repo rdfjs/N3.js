@@ -5,6 +5,8 @@ import namespaces from './IRIs';
 
 const { rdf, xsd } = namespaces;
 
+const DEFAULT_CONTEXT = { token: null };
+
 // eslint-disable-next-line prefer-const
 let DEFAULTGRAPH;
 let _blankNodeCounter = 0;
@@ -12,11 +14,12 @@ let _blankNodeCounter = 0;
 const escapedLiteral = /^"(.*".*)(?="[^"]*$)/;
 
 // ## DataFactory singleton
+// Note: The default data factory does not set the token field of terms.
 const DataFactory = {
-  namedNode,
-  blankNode,
-  variable,
-  literal,
+  namedNode: iri => namedNode(iri),
+  blankNode: name => blankNode(name),
+  variable: name => variable(name),
+  literal: (name, datatype) => literal(name, datatype),
   defaultGraph,
   quad,
   triple: quad,
@@ -25,8 +28,9 @@ export default DataFactory;
 
 // ## Term constructor
 export class Term {
-  constructor(id) {
+  constructor(id, context = DEFAULT_CONTEXT) {
     this.id = id;
+    this.context = context;
   }
 
   // ### The value of this term
@@ -132,8 +136,8 @@ export class Literal extends Term {
 
 // ## BlankNode constructor
 export class BlankNode extends Term {
-  constructor(name) {
-    super(`_:${name}`);
+  constructor(name, context = DEFAULT_CONTEXT) {
+    super(`_:${name}`, context);
   }
 
   // ### The term type of this term
@@ -148,8 +152,8 @@ export class BlankNode extends Term {
 }
 
 export class Variable extends Term {
-  constructor(name) {
-    super(`?${name}`);
+  constructor(name, context = DEFAULT_CONTEXT) {
+    super(`?${name}`, context);
   }
 
   // ### The term type of this term
@@ -166,7 +170,8 @@ export class Variable extends Term {
 // ## DefaultGraph constructor
 export class DefaultGraph extends Term {
   constructor() {
-    super('');
+    super('', DEFAULT_CONTEXT);
+
     return DEFAULTGRAPH || this;
   }
 
@@ -192,7 +197,7 @@ DEFAULTGRAPH = new DefaultGraph();
 // with recursion over nested terms. It should not be used
 // by consumers of this library.
 // See https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725
-export function termFromId(id, factory, nested) {
+export function termFromId(id, factory, nested, token) {
   factory = factory || DataFactory;
 
   // Falsy value or empty string indicate the default graph
@@ -208,7 +213,7 @@ export function termFromId(id, factory, nested) {
   case '"':
     // Shortcut for internal literals
     if (factory === DataFactory)
-      return new Literal(id);
+      return new Literal(id, token);
     // Literal without datatype or language
     if (id[id.length - 1] === '"')
       return factory.literal(id.substr(1, id.length - 2));
@@ -273,7 +278,8 @@ export function termToId(term, nested) {
 // ## Quad constructor
 export class Quad extends Term {
   constructor(subject, predicate, object, graph) {
-    super('');
+    super('', DEFAULT_CONTEXT);
+
     this._subject   = subject;
     this._predicate = predicate;
     this._object    = object;
@@ -333,20 +339,20 @@ export function unescapeQuotes(id) {
 }
 
 // ### Creates an IRI
-function namedNode(iri) {
-  return new NamedNode(iri);
+export function namedNode(iri, context = DEFAULT_CONTEXT) {
+  return new NamedNode(iri, context);
 }
 
 // ### Creates a blank node
-function blankNode(name) {
-  return new BlankNode(name || `n3-${_blankNodeCounter++}`);
+export function blankNode(name, context = DEFAULT_CONTEXT) {
+  return new BlankNode(name || `n3-${_blankNodeCounter++}`, context);
 }
 
 // ### Creates a literal
-function literal(value, languageOrDataType) {
+export function literal(value, languageOrDataType, context = DEFAULT_CONTEXT) {
   // Create a language-tagged string
   if (typeof languageOrDataType === 'string')
-    return new Literal(`"${value}"@${languageOrDataType.toLowerCase()}`);
+    return new Literal(`"${value}"@${languageOrDataType.toLowerCase()}`, context);
 
   // Automatically determine datatype for booleans and numbers
   let datatype = languageOrDataType ? languageOrDataType.value : '';
@@ -368,13 +374,13 @@ function literal(value, languageOrDataType) {
 
   // Create a datatyped literal
   return (datatype === '' || datatype === xsd.string) ?
-    new Literal(`"${value}"`) :
-    new Literal(`"${value}"^^${datatype}`);
+    new Literal(`"${value}"`, context) :
+    new Literal(`"${value}"^^${datatype}`, context);
 }
 
 // ### Creates a variable
-function variable(name) {
-  return new Variable(name);
+export function variable(name, context = DEFAULT_CONTEXT) {
+  return new Variable(name, context);
 }
 
 // ### Returns the default graph

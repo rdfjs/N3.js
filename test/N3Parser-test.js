@@ -1,4 +1,4 @@
-import { Parser, NamedNode, BlankNode, Quad, termFromId, DataFactory as DF } from '../src';
+import { Parser, NamedNode, BlankNode, Quad, termFromId, DataFactory as DF, literal, variable, namedNode, blankNode, DataFactory } from '../src';
 import rdfDataModel from '@rdfjs/data-model';
 import { isomorphic } from 'rdf-isomorphic';
 
@@ -2508,6 +2508,27 @@ describe('Parser', () => {
         { s: 'n-http://example.org/a', p: 'v-b', o: 'l-1',    g: 'defaultGraph' },
         { s: 'n-http://example.org/a', p: 'v-b', o: 'b-b0_d', g: 'defaultGraph' },
       ]);
+    });
+
+    it('should provide tokens using a custom factory', () => {
+      parser = new Parser({
+        factory: {
+          ...DataFactory,
+          namedNode: namedNode,
+          blankNode: blankNode,
+          literal: literal,
+          variable: variable,
+        },
+      });
+
+      for (const quad of parser.parse('<a> <b> 1, _:d.')) {
+        expect(quad.subject.context).toBeDefined();
+        expect(quad.subject.context.token).toBeDefined();
+        expect(quad.predicate.context).toBeDefined();
+        expect(quad.predicate.context.token).toBeDefined();
+        expect(quad.object.context).toBeDefined();
+        expect(quad.object.context.token).toBeDefined();
+      }
     });
   });
 

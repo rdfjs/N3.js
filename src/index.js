@@ -20,6 +20,10 @@ import {
 
   termFromId,
   termToId,
+  namedNode,
+  blankNode,
+  literal,
+  variable,
 } from './N3DataFactory';
 
 // Named exports
@@ -31,9 +35,7 @@ export {
   StreamParser,
   StreamWriter,
   Util,
-
   DataFactory,
-
   Term,
   NamedNode,
   Literal,
@@ -45,6 +47,10 @@ export {
 
   termFromId,
   termToId,
+  namedNode,
+  blankNode,
+  literal,
+  variable,
 };
 
 // Export all named exports as a default object for backward compatibility
@@ -56,9 +62,7 @@ export default {
   StreamParser,
   StreamWriter,
   Util,
-
   DataFactory,
-
   Term,
   NamedNode,
   Literal,
@@ -70,4 +74,8 @@ export default {
 
   termFromId,
   termToId,
+  namedNode,
+  blankNode,
+  literal,
+  variable,
 };
