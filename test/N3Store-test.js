@@ -1,6 +1,7 @@
 import {
   Store,
   termFromId, termToId,
+  EntityIndex,
 } from '../src';
 import {
   NamedNode,
@@ -647,6 +648,14 @@ describe('Store', () => {
       });
 
       describe('with an existing subject parameter', () => {
+        const largeStore = new Store([]);
+        const results = [];
+        for (let i = 0; i < 100; i += 1) {
+          largeStore.add(new Quad(`s${i}`, 'p1', 'o1'));
+          largeStore.add(new Quad(`s${i}`, 'p2', 'o1'));
+          results.push([`s${i}`, 'p2', 'o1']);
+        }
+
         it(
           'should return all items with this subject in all graphs',
           forResultStream(shouldIncludeAll, store.match(new NamedNode('s1'), null, null),
@@ -654,6 +663,12 @@ describe('Store', () => {
             ['s1', 'p1', 'o2'],
             ['s1', 'p2', 'o2'],
             ['s1', 'p1', 'o1', 'c4'])
+        );
+
+        it(
+          'should return all items with this subject in all graphs in a large store',
+          forResultStream(shouldIncludeAll, largeStore.match(null, new NamedNode('p2'), null),
+            ...results)
         );
 
         it('should return an object implementing the DatasetCore interface', () => {
@@ -2010,6 +2025,52 @@ describe('Store', () => {
         expect([...store.match(null, null, null, null)]).toHaveLength(5);
       }
     );
+  });
+});
+
+describe('EntityIndex', () => {
+  let entityIndex;
+  beforeEach(() => {
+    entityIndex = new EntityIndex();
+  });
+
+  it('should be a constructor', () => {
+    expect(entityIndex).toBeInstanceOf(EntityIndex);
+  });
+
+  it('custom index should be used when instantiated with store', () => {
+    const index = {
+      '': 1,
+      's1': 2,
+      'p1': 3,
+      'o0': 4,
+      's2': 5,
+      'p2': 6,
+      'o2': 7,
+    };
+
+    const store = new Store([
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o0')),
+    ], { entityIndex });
+    expect(store.size).toBe(1);
+    expect(entityIndex._id).toEqual(4);
+
+    const substore = store.match();
+    substore.add(new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')));
+    expect(store.size).toBe(1);
+    expect(substore.size).toBe(2);
+    expect(entityIndex._id).toEqual(7);
+    expect(entityIndex._ids).toEqual(index);
+
+    const store2 = new Store([
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o5')),
+    ], { entityIndex });
+    expect(store2.size).toBe(1);
+    expect(entityIndex._id).toEqual(8);
+    expect(entityIndex._ids).toEqual({
+      ...index,
+      o5: 8,
+    });
   });
 });
 

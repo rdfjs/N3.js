@@ -174,16 +174,11 @@ A dedicated `prefix` event signals every prefix with `prefix` and `term` argumen
 ### From quads to a string
 
 `N3.Writer` serializes quads as an RDF document.
-Write quads through `addQuad`.
+Write quads through `add`.
 
 ```JavaScript
 const writer = new N3.Writer({ prefixes: { c: 'http://example.org/cartoons#' } }); // Create a writer which uses `c` as a prefix for the namespace `http://example.org/cartoons#`
-writer.addQuad(
-  namedNode('http://example.org/cartoons#Tom'),                 // Subject
-  namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), // Predicate
-  namedNode('http://example.org/cartoons#Cat')                  // Object
-);
-writer.addQuad(quad(
+writer.add(quad(
   namedNode('http://example.org/cartoons#Tom'),   // Subject
   namedNode('http://example.org/cartoons#name'),  // Predicate
   literal('Tom')                                  // Object
@@ -202,7 +197,7 @@ const writer2 = new N3.Writer({ format: 'application/trig' });
 
 ### From quads to an RDF stream
 
-`N3.Writer` can also write quads to a Node.js stream.
+`N3.Writer` can also write quads to a Node.js stream through `addQuad`.
 
 ```JavaScript
 const writer = new N3.Writer(process.stdout, { end: false, prefixes: { c: 'http://example.org/cartoons#' } });
@@ -304,6 +299,13 @@ for (const quad of store.match(namedNode('http://ex.org/Mickey'), null, null))
   console.log(quad);
 ```
 
+If you are using multiple stores, you can reduce memory consumption by allowing them to share an entity index:
+```JavaScript
+const entityIndex = new N3.EntityIndex();
+const store1 = new N3.Store([], { entityIndex });
+const store2 = new N3.Store([], { entityIndex });
+```
+
 ### [`DatasetCore` Interface](https://rdf.js.org/dataset-spec/#datasetcore-interface)
 This store adheres to the `DatasetCore` interface which exposes the following properties
 
@@ -332,9 +334,8 @@ The store provides the following manipulation methods in addition to implementin
 ### Searching quads or entities
 The store provides the following search methods
 ([documentation](http://rdfjs.github.io/N3.js/docs/N3Store.html)):
-- `readQuads` returns a generator of quads matching the given pattern
+- `match` returns a stream and generator of quads matching the given pattern
 - `getQuads` returns an array of quads matching the given pattern
-- `match` returns a stream of quads matching the given pattern
 - `countQuads` counts the number of quads matching the given pattern
 - `forEach` executes a callback on all matching quads
 - `every` returns whether a callback on matching quads always returns true

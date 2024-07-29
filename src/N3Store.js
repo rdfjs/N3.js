@@ -4,33 +4,25 @@ import { default as N3DataFactory, termToId, termFromId } from './N3DataFactory'
 import namespaces from './IRIs';
 import { isDefaultGraph } from './N3Util';
 
+const ITERATOR = Symbol('iter');
+
 // ## Constructor
-export default class N3Store {
-  constructor(quads, options) {
-    // The number of quads is initially zero
-    this._size = 0;
-    // `_graphs` contains subject, predicate, and object indexes per graph
-    this._graphs = Object.create(null);
+export class N3EntityIndex {
+  constructor(options = {}) {
+    this._id = 1;
     // `_ids` maps entities such as `http://xmlns.com/foaf/0.1/name` to numbers,
     // saving memory by using only numbers as keys in `_graphs`
-    this._id = 0;
     this._ids = Object.create(null);
-    this._entities = Object.create(null); // inverse of `_ids`
+    this._ids[''] = 1;
+     // inverse of `_ids`
+    this._entities = Object.create(null);
+    this._entities[1] = '';
     // `_blankNodeIndex` is the index of the last automatically named blank node
     this._blankNodeIndex = 0;
-
-    // Shift parameters if `quads` is not given
-    if (!options && quads && !quads[0])
-      options = quads, quads = null;
-    options = options || {};
     this._factory = options.factory || N3DataFactory;
-
-    // Add quads if passed
-    if (quads)
-      this.addQuads(quads);
   }
 
-  _termFromId(id, factory) {
+  _termFromId(id) {
     if (id[0] === '.') {
       const entities = this._entities;
       const terms = id.split('.');
@@ -42,7 +34,7 @@ export default class N3Store {
       );
       return q;
     }
-    return termFromId(id, factory);
+    return termFromId(id, this._factory);
   }
 
   _termToNumericId(term) {
@@ -67,6 +59,50 @@ export default class N3Store {
       : termToId(term);
 
     return this._ids[str] || (this._ids[this._entities[++this._id] = str] = this._id);
+  }
+
+  createBlankNode(suggestedName) {
+    let name, index;
+    // Generate a name based on the suggested name
+    if (suggestedName) {
+      name = suggestedName = `_:${suggestedName}`, index = 1;
+      while (this._ids[name])
+        name = suggestedName + index++;
+    }
+    // Generate a generic blank node name
+    else {
+      do { name = `_:b${this._blankNodeIndex++}`; }
+      while (this._ids[name]);
+    }
+    // Add the blank node to the entities, avoiding the generation of duplicates
+    this._ids[name] = ++this._id;
+    this._entities[this._id] = name;
+    return this._factory.blankNode(name.substr(2));
+  }
+}
+
+// ## Constructor
+export default class N3Store {
+  constructor(quads, options) {
+    // The number of quads is initially zero
+    this._size = 0;
+    // `_graphs` contains subject, predicate, and object indexes per graph
+    this._graphs = Object.create(null);
+
+    // Shift parameters if `quads` is not given
+    if (!options && quads && !quads[0])
+      options = quads, quads = null;
+    options = options || {};
+    this._factory = options.factory || N3DataFactory;
+    this._entityIndex = options.entityIndex || new N3EntityIndex({ factory: this._factory });
+    this._entities = this._entityIndex._entities;
+    this._termFromId = this._entityIndex._termFromId.bind(this._entityIndex);
+    this._termToNumericId = this._entityIndex._termToNumericId.bind(this._entityIndex);
+    this._termToNewNumericId = this._entityIndex._termToNewNumericId.bind(this._entityIndex);
+
+    // Add quads if passed
+    if (quads)
+      this.addQuads(quads);
   }
 
   // ## Public properties
@@ -127,24 +163,24 @@ export default class N3Store {
   *_findInIndex(index0, key0, key1, key2, name0, name1, name2, graphId) {
     let tmp, index1, index2;
     const entityKeys = this._entities;
-    const graph = this._termFromId(graphId, this._factory);
+    const graph = this._termFromId(entityKeys[graphId]);
     const parts = { subject: null, predicate: null, object: null };
 
     // If a key is specified, use only that part of index 0.
     if (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
     for (const value0 in index0) {
       if (index1 = index0[value0]) {
-        parts[name0] = this._termFromId(entityKeys[value0], this._factory);
+        parts[name0] = this._termFromId(entityKeys[value0]);
         // If a key is specified, use only that part of index 1.
         if (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
         for (const value1 in index1) {
           if (index2 = index1[value1]) {
-            parts[name1] = this._termFromId(entityKeys[value1], this._factory);
+            parts[name1] = this._termFromId(entityKeys[value1]);
             // If a key is specified, use only that part of index 2, if it exists.
             const values = key2 ? (key2 in index2 ? [key2] : []) : Object.keys(index2);
             // Create quads for all items found in index 2.
             for (let l = 0; l < values.length; l++) {
-              parts[name2] = this._termFromId(entityKeys[values[l]], this._factory);
+              parts[name2] = this._termFromId(entityKeys[values[l]]);
               yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
             }
           }
@@ -215,11 +251,8 @@ export default class N3Store {
   // ### `_getGraphs` returns an array with the given graph,
   // or all graphs if the argument is null or undefined.
   _getGraphs(graph) {
-    if (!isString(graph))
-      return this._graphs;
-    const graphs = {};
-    graphs[graph] = this._graphs[graph];
-    return graphs;
+    graph = graph === '' ? 1 : (graph && (this._termToNumericId(graph) || -1));
+    return typeof graph !== 'number' ? this._graphs : { [graph]: this._graphs[graph] };
   }
 
   // ### `_uniqueEntities` returns a function that accepts an entity ID
@@ -253,7 +286,7 @@ export default class N3Store {
         predicate = subject.predicate, subject = subject.subject;
 
     // Convert terms to internal string representation
-    graph = termToId(graph);
+    graph = graph ? this._termToNewNumericId(graph) : 1;
 
     // Find the graph that will contain the triple
     let graphItem = this._graphs[graph];
@@ -313,9 +346,8 @@ export default class N3Store {
     if (!predicate)
       graph = subject.graph, object = subject.object,
         predicate = subject.predicate, subject = subject.subject;
-
     // Convert terms to internal string representation
-    graph = termToId(graph);
+    graph = graph ? this._termToNumericId(graph) : 1;
 
     // Find internal identifiers for all components
     // and verify the quad exists.
@@ -357,10 +389,16 @@ export default class N3Store {
   removeMatches(subject, predicate, object, graph) {
     const stream = new Readable({ objectMode: true });
 
-    stream._read = () => {
-      for (const quad of this.readQuads(subject, predicate, object, graph))
-        stream.push(quad);
-      stream.push(null);
+    const iterable = this.readQuads(subject, predicate, object, graph);
+    stream._read = size => {
+      while (size-- > 0) {
+        const { done, value } = iterable.next();
+        if (done) {
+          stream.push(null);
+          return;
+        }
+        stream.push(value);
+      }
     };
 
     return this.remove(stream);
@@ -377,12 +415,12 @@ export default class N3Store {
     return [...this.readQuads(subject, predicate, object, graph)];
   }
 
-  // ### `readQuads` returns an generator of quads matching a pattern.
-  // Setting any field to `undefined` or `null` indicates a wildcard.
+  /**
+   * `readQuads` returns a generator of quads matching a pattern.
+   * Setting any field to `undefined` or `null` indicates a wildcard.
+   * @deprecated Use `match` instead.
+   */
   *readQuads(subject, predicate, object, graph) {
-    // Convert terms to internal string representation
-    graph = graph && termToId(graph);
-
     const graphs = this._getGraphs(graph);
     let content, subjectId, predicateId, objectId;
 
@@ -429,15 +467,12 @@ export default class N3Store {
   // Setting any field to `undefined` or `null` indicates a wildcard.
   // For backwards compatibility, the object return also implements the Readable stream interface.
   match(subject, predicate, object, graph) {
-    return new DatasetCoreAndReadableStream(this, subject, predicate, object, graph);
+    return new DatasetCoreAndReadableStream(this, subject, predicate, object, graph, { entityIndex: this._entityIndex });
   }
 
   // ### `countQuads` returns the number of quads matching a pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   countQuads(subject, predicate, object, graph) {
-    // Convert terms to internal string representation
-    graph = graph && termToId(graph);
-
     const graphs = this._getGraphs(graph);
     let count = 0, content, subjectId, predicateId, objectId;
 
@@ -514,9 +549,6 @@ export default class N3Store {
   // ### `forSubjects` executes the callback on all subjects that match the pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   forSubjects(callback, predicate, object, graph) {
-    // Convert terms to internal string representation
-    graph = graph && termToId(graph);
-
     const graphs = this._getGraphs(graph);
     let content, predicateId, objectId;
     callback = this._uniqueEntities(callback);
@@ -559,9 +591,6 @@ export default class N3Store {
   // ### `forPredicates` executes the callback on all predicates that match the pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   forPredicates(callback, subject, object, graph) {
-    // Convert terms to internal string representation
-    graph = graph && termToId(graph);
-
     const graphs = this._getGraphs(graph);
     let content, subjectId, objectId;
     callback = this._uniqueEntities(callback);
@@ -604,9 +633,6 @@ export default class N3Store {
   // ### `forObjects` executes the callback on all objects that match the pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   forObjects(callback, subject, predicate, graph) {
-    // Convert terms to internal string representation
-    graph = graph && termToId(graph);
-
     const graphs = this._getGraphs(graph);
     let content, subjectId, predicateId;
     callback = this._uniqueEntities(callback);
@@ -653,28 +679,13 @@ export default class N3Store {
       this.some(quad => {
         callback(quad.graph);
         return true; // Halt iteration of some()
-      }, subject, predicate, object, graph);
+      }, subject, predicate, object, this._termFromId(this._entities[graph]));
     }
   }
 
   // ### `createBlankNode` creates a new blank node, returning its name
   createBlankNode(suggestedName) {
-    let name, index;
-    // Generate a name based on the suggested name
-    if (suggestedName) {
-      name = suggestedName = `_:${suggestedName}`, index = 1;
-      while (this._ids[name])
-        name = suggestedName + index++;
-    }
-    // Generate a generic blank node name
-    else {
-      do { name = `_:b${this._blankNodeIndex++}`; }
-      while (this._ids[name]);
-    }
-    // Add the blank node to the entities, avoiding the generation of duplicates
-    this._ids[name] = ++this._id;
-    this._entities[this._id] = name;
-    return this._factory.blankNode(name.substr(2));
+    return this._entityIndex.createBlankNode(suggestedName);
   }
 
   // ### `extractLists` finds and removes all list triples
@@ -783,24 +794,19 @@ export default class N3Store {
   }
 }
 
-// Determines whether the argument is a string
-function isString(s) {
-  return typeof s === 'string' || s instanceof String;
-}
-
 /**
  * A class that implements both DatasetCore and Readable.
  */
 class DatasetCoreAndReadableStream extends Readable {
-  constructor(n3Store, subject, predicate, object, graph) {
+  constructor(n3Store, subject, predicate, object, graph, options) {
     super({ objectMode: true });
-    Object.assign(this, { n3Store, subject, predicate, object, graph });
+    Object.assign(this, { n3Store, subject, predicate, object, graph, options });
   }
 
   get filtered() {
     if (!this._filtered) {
       const { n3Store, graph, object, predicate, subject } = this;
-      const newStore = this._filtered = new N3Store({ factory: n3Store._factory });
+      const newStore = this._filtered = new N3Store({ factory: n3Store._factory, entityIndex: this.options.entityIndex });
       for (const quad of n3Store.readQuads(subject, predicate, object, graph))
         newStore.addQuad(quad);
     }
@@ -811,10 +817,18 @@ class DatasetCoreAndReadableStream extends Readable {
     return this.filtered.size;
   }
 
-  _read() {
-    for (const quad of this)
-      this.push(quad);
-    this.push(null);
+  _read(size) {
+    if (size > 0 && !this[ITERATOR])
+      this[ITERATOR] = this[Symbol.iterator]();
+    const iterable = this[ITERATOR];
+    while (size-- > 0) {
+      const { done, value } = iterable.next();
+      if (done) {
+        this.push(null);
+        return;
+      }
+      this.push(value);
+    }
   }
 
   add(quad) {
@@ -830,7 +844,7 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   match(subject, predicate, object, graph) {
-    return new DatasetCoreAndReadableStream(this.filtered, subject, predicate, object, graph);
+    return new DatasetCoreAndReadableStream(this.filtered, subject, predicate, object, graph, this.options);
   }
 
   *[Symbol.iterator]() {
