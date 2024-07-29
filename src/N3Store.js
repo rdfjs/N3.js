@@ -378,7 +378,7 @@ export default class N3Store {
   }
 
   /**
-   * `readQuads` returns an generator of quads matching a pattern.
+   * `readQuads` returns a generator of quads matching a pattern.
    * Setting any field to `undefined` or `null` indicates a wildcard.
    * @deprecated Use `match` instead.
    */
