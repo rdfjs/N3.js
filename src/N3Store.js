@@ -772,8 +772,8 @@ export default class N3Store {
   }
 
   /**
-   * Returns `true` if the current instance is a superset of the given dataset; differently put: if the given dataset
-   * is a subset of, is contained in the current dataset.
+   * Returns `true` if the current dataset is a superset of the given dataset; in other words, returns `true` if
+   * the given dataset is a subset of, i.e., is contained within, the current dataset.
    *
    * Blank Nodes will be normalized.
    */
