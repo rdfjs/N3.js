@@ -5,7 +5,7 @@ describe('Reasoner', () => {
   let RDFS_RULE, SUBCLASS_RULE;
 
   beforeEach(async () => {
-    RDFS_RULE = getRulesFromDataset(await getRdfs());
+    RDFS_RULE = await getRdfs();
     SUBCLASS_RULE = getRulesFromDataset(new Store((new Parser({ format: 'text/n3' })).parse('{ ?s a ?o . ?o <http://www.w3.org/2000/01/rdf-schema#subClassOf> ?o2 . } => { ?s a ?o2 . } .')));
   });
 

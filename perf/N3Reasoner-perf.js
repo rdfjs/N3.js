@@ -2,7 +2,7 @@
 const { getTimblAndFoaf, generateDeepTaxonomy, getRdfs } = require('deep-taxonomy-benchmark');
 const N3 = require('..');
 
-const SUBCLASS_RULE = N3.getRulesFromDataset(new N3.Store((new N3.Parser({ format: 'text/n3' })).parse('{ ?s a ?o . ?o <http://www.w3.org/2000/01/rdf-schema#subClassOf> ?o2 . } => { ?s a ?o2 . } .')));
+const SUBCLASS_RULE = new N3.Store((new N3.Parser({ format: 'text/n3' })).parse('{ ?s a ?o . ?o <http://www.w3.org/2000/01/rdf-schema#subClassOf> ?o2 . } => { ?s a ?o2 . } .'));
 
 async function deepTaxonomy(extended = false) {
   for (let i = 1; i <= (extended ? 3 : 5); i++) {
@@ -16,11 +16,10 @@ async function deepTaxonomy(extended = false) {
 }
 
 async function run() {
-  const RDFS_RULE = N3.getRulesFromDataset(await getRdfs());
   const store = new N3.Store([...await getTimblAndFoaf()]);
 
   console.time('Reasoning');
-  new N3.Reasoner(store).reason(RDFS_RULE);
+  new N3.Reasoner(store).reason(await getRdfs());
   console.timeEnd('Reasoning');
 }
 

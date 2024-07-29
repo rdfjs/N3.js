@@ -130,6 +130,9 @@ export default class N3Reasoner {
   }
 
   reason(rules) {
+    if (!Array.isArray(rules)) {
+      rules = getRulesFromDataset(rules);
+    }
     rules = rules.map(rule => this._createRule(rule));
 
     for (const r1 of rules) {
