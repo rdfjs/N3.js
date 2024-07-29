@@ -174,16 +174,11 @@ A dedicated `prefix` event signals every prefix with `prefix` and `term` argumen
 ### From quads to a string
 
 `N3.Writer` serializes quads as an RDF document.
-Write quads through `addQuad`.
+Write quads through `add`.
 
 ```JavaScript
 const writer = new N3.Writer({ prefixes: { c: 'http://example.org/cartoons#' } }); // Create a writer which uses `c` as a prefix for the namespace `http://example.org/cartoons#`
-writer.addQuad(
-  namedNode('http://example.org/cartoons#Tom'),                 // Subject
-  namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), // Predicate
-  namedNode('http://example.org/cartoons#Cat')                  // Object
-);
-writer.addQuad(quad(
+writer.add(quad(
   namedNode('http://example.org/cartoons#Tom'),   // Subject
   namedNode('http://example.org/cartoons#name'),  // Predicate
   literal('Tom')                                  // Object
@@ -202,7 +197,7 @@ const writer2 = new N3.Writer({ format: 'application/trig' });
 
 ### From quads to an RDF stream
 
-`N3.Writer` can also write quads to a Node.js stream.
+`N3.Writer` can also write quads to a Node.js stream through `addQuad`.
 
 ```JavaScript
 const writer = new N3.Writer(process.stdout, { end: false, prefixes: { c: 'http://example.org/cartoons#' } });
