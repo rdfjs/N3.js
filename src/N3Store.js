@@ -789,8 +789,8 @@ export default class N3Store {
 
 
   /**
-   * Returns `true` if the current instance is a superset of the given dataset; differently put: if the given dataset
-   * is a subset of, is contained in the current dataset.
+   * Returns `true` if the current dataset is a superset of the given dataset; in other words, returns `true` if
+   * the given dataset is a subset of, i.e., is contained within, the current dataset.
    *
    * Blank Nodes will be normalized.
    */
@@ -802,7 +802,7 @@ export default class N3Store {
    * This method removes the quads in the current dataset that match the given arguments.
    *
    * The logic described in {@link https://rdf.js.org/dataset-spec/#quad-matching|Quad Matching} is applied for each
-   * quad in this dataset to select the quads which will be deleted.
+   * quad in this dataset, to select the quads which will be deleted.
    *
    * @param subject   The optional exact subject to match.
    * @param predicate The optional exact predicate to match.
@@ -816,14 +816,14 @@ export default class N3Store {
   }
 
   /**
-   * Returns a new dataset that contains all quads from the current dataset, not included in the given dataset.
+   * Returns a new dataset that contains all quads from the current dataset that are not included in the given dataset.
    */
   difference(other) {
     return this.filter(quad => !other.has(quad));
   }
 
   /**
-   * Returns true if the current instance contains the same graph structure as the given dataset.
+   * Returns true if the current dataset contains the same graph structure as the given dataset.
    *
    * Blank Nodes will be normalized.
    */
@@ -845,7 +845,7 @@ export default class N3Store {
   }
 
   /**
-   * Returns a new dataset containing alls quads from the current dataset that are also included in the given dataset.
+   * Returns a new dataset containing all quads from the current dataset that are also included in the given dataset.
    */
   intersection(other) {
     return this.filter(quad => other.has(quad));
@@ -862,9 +862,9 @@ export default class N3Store {
   }
 
   /**
-   * This method calls the `iteratee` on each `quad` of the `Dataset`. The first time the `iteratee` is called, the
-   * `accumulator` value is the `initialValue` or, if not given, equals to the first quad of the `Dataset`. The return
-   * value of the `iteratee` is used as `accumulator` value for the next calls.
+   * This method calls the `iteratee` method on each `quad` of the `Dataset`. The first time the `iteratee` method
+   * is called, the `accumulator` value is the `initialValue`, or, if not given, equals the first quad of the `Dataset`.
+   * The return value of each call to the `iteratee` method is used as the `accumulator` value for the next call.
    *
    * This method returns the return value of the last `iteratee` call.
    *
@@ -879,7 +879,7 @@ export default class N3Store {
   }
 
   /**
-   * Returns the set of quads within the dataset as a host language native sequence, for example an `Array` in
+   * Returns the set of quads within the dataset as a host-language-native sequence, for example an `Array` in
    * ECMAScript-262.
    *
    * Since a `Dataset` is an unordered set, the order of the quads within the returned sequence is arbitrary.
@@ -889,7 +889,7 @@ export default class N3Store {
   }
 
   /**
-   * Returns an N-Quads string representation of the dataset, preprocessed with
+   * Returns an N-Quads string representation of the dataset, preprocessed with the
    * {@link https://json-ld.github.io/normalization/spec/|RDF Dataset Normalization} algorithm.
    */
   toCanonical() {
