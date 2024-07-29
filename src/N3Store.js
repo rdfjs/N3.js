@@ -793,8 +793,56 @@ class DatasetCoreAndReadableStream extends Readable {
 
   get filtered() {
     if (!this._filtered) {
-      const { n3Store, graph, object, predicate, subject } = this;
-      const newStore = this._filtered = new N3Store({ factory: n3Store._factory, entityIndex: this.options.entityIndex });
+      const { n3Store, graph, object, predicate, subject, options: { entityIndex } } = this;
+      const newStore = this._filtered = new N3Store({ factory: n3Store._factory, entityIndex });
+      const graphs = this.n3Store._getGraphs(graph);
+
+      
+      const subjectId = subject && entityIndex._termToNumericId(subject);
+      const predicateId = predicate && entityIndex._termToNumericId(predicate);
+      const objectId = object && entityIndex._termToNumericId(object);
+
+
+
+      // If only predicate and possibly object are given, the predicate index will be the fastest
+      yield* this._findInIndex(content.predicates, predicateId, objectId, null,
+        'predicate', 'object', 'subject', graphId);
+else if (objectId)
+// If only object is given, the object index will be the fastest
+yield* this._findInIndex(content.objects, objectId, null, null,
+        'object', 'subject', 'predicate', graphId);
+else
+// If nothing is given, iterate subjects and predicates first
+yield* this._findInIndex(content.subjects, null, null, null,
+        'subject', 'predicate', 'object', graphId);
+
+      for (const graph in graphs) {
+        let { subjects } = graphs[graph];
+
+        const newSubjects = false;
+        const subjectIndex = subject ? ((subjectId in subjects) ? { [subjectId]: subjects[subjectId] } : {}) : subjects;
+        for (const sid in subjectIndex) {
+          const newPredicates = false;
+          const predicates = subjectIndex[sid];
+          const predicateIndex = predicate ? ((predicateId in predicates) ? { [predicateId]: predicates[predicateId] } : {}) : predicates;
+          for (const pid in predicateIndex) {
+            const objects = predicateIndex[pid]
+            if (!object && obj) {
+              (newPredicates ||= {})[pid] = { ...objects };
+            } else if (objectId in objects) {
+              (newPredicates ||= {})[pid] = { [objectId]: null };
+            }
+          }
+          subjectIndex[id] = predicateIndex;
+        }
+
+
+        newStore._graphs[graph] = { subjects: {}, predicates: {}, objects: {} };
+      }
+      
+      
+      
+      
       for (const quad of n3Store.readQuads(subject, predicate, object, graph))
         newStore.addQuad(quad);
     }
