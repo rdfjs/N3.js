@@ -350,6 +350,8 @@ The store provides the following search methods
 
 ## Reasoning
 
+N3.js now supports reasoning as follows:
+
 ```JavaScript
 import { Reasoner, Store, Parser } from 'n3';
 
@@ -369,6 +371,8 @@ const dataset = new Store(/* Dataset */)
 // Applies the rules to the store; mutating it
 new Reasoner(store).reason(rules);
 ```
+
+**Note**: N3.js currently only supports rules with [Basic Graph Patterns](https://www.w3.org/TR/sparql11-query/#BasicGraphPattern) in the premise and conclusion. Built-ins and backwards chaining are *not* supported, for an RDF/JS reasoner that supports all Notation3 reasoning features see [eye-js](https://github.com/eyereasoner/eye-js/).
 
 ## Compatibility
 ### Format specifications
