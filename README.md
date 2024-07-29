@@ -12,14 +12,14 @@ It offers:
   [TriG](https://www.w3.org/TR/trig/),
   [N-Triples](https://www.w3.org/TR/n-triples/),
   [N-Quads](https://www.w3.org/TR/n-quads/),
-  [RDF*](https://blog.liu.se/olafhartig/2019/01/10/position-statement-rdf-star-and-sparql-star/)
+  [RDF-star](https://www.w3.org/2021/12/rdf-star.html)
   and [Notation3 (N3)](https://www.w3.org/TeamSubmission/n3/)
 - [**Writing**](#writing) triples/quads to
   [Turtle](https://www.w3.org/TR/turtle/),
   [TriG](https://www.w3.org/TR/trig/),
   [N-Triples](https://www.w3.org/TR/n-triples/),
   [N-Quads](https://www.w3.org/TR/n-quads/)
-  and [RDF*](https://blog.liu.se/olafhartig/2019/01/10/position-statement-rdf-star-and-sparql-star/)
+  and [RDF-star](https://www.w3.org/2021/12/rdf-star.html)
 - [**Storage**](#storing) of triples/quads in memory
 
 Parsing and writing is:
@@ -174,16 +174,11 @@ A dedicated `prefix` event signals every prefix with `prefix` and `term` argumen
 ### From quads to a string
 
 `N3.Writer` serializes quads as an RDF document.
-Write quads through `addQuad`.
+Write quads through `add`.
 
 ```JavaScript
 const writer = new N3.Writer({ prefixes: { c: 'http://example.org/cartoons#' } }); // Create a writer which uses `c` as a prefix for the namespace `http://example.org/cartoons#`
-writer.addQuad(
-  namedNode('http://example.org/cartoons#Tom'),                 // Subject
-  namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), // Predicate
-  namedNode('http://example.org/cartoons#Cat')                  // Object
-);
-writer.addQuad(quad(
+writer.add(quad(
   namedNode('http://example.org/cartoons#Tom'),   // Subject
   namedNode('http://example.org/cartoons#name'),  // Predicate
   literal('Tom')                                  // Object
@@ -202,7 +197,7 @@ const writer2 = new N3.Writer({ format: 'application/trig' });
 
 ### From quads to an RDF stream
 
-`N3.Writer` can also write quads to a Node.js stream.
+`N3.Writer` can also write quads to a Node.js stream through `addQuad`.
 
 ```JavaScript
 const writer = new N3.Writer(process.stdout, { end: false, prefixes: { c: 'http://example.org/cartoons#' } });
@@ -304,6 +299,13 @@ for (const quad of store.match(namedNode('http://ex.org/Mickey'), null, null))
   console.log(quad);
 ```
 
+If you are using multiple stores, you can reduce memory consumption by allowing them to share an entity index:
+```JavaScript
+const entityIndex = new N3.EntityIndex();
+const store1 = new N3.Store([], { entityIndex });
+const store2 = new N3.Store([], { entityIndex });
+```
+
 ### [`Dataset` Interface](https://rdf.js.org/dataset-spec/#dataset-interface)
 This store adheres to the `Dataset` interface which exposes the following properties
 
@@ -332,9 +334,8 @@ The store implements the following manipulation methods in addition to the stand
 ### Searching quads or entities
 The store provides the following search methods
 ([documentation](http://rdfjs.github.io/N3.js/docs/N3Store.html)):
-- `readQuads` returns a generator of quads matching the given pattern
+- `match` returns a stream and generator of quads matching the given pattern
 - `getQuads` returns an array of quads matching the given pattern
-- `match` returns a stream of quads matching the given pattern
 - `countQuads` counts the number of quads matching the given pattern
 - `forEach` executes a callback on all matching quads
 - `every` returns whether a callback on matching quads always returns true
@@ -362,16 +363,16 @@ The N3.js parser and writer is fully compatible with the following W3C specifica
 
 In addition, the N3.js parser also supports [Notation3 (N3)](https://www.w3.org/TeamSubmission/n3/) (no official specification yet).
 
-The N3.js parser and writer are also fully compatible with the RDF* variants
+The N3.js parser and writer are also fully compatible with the RDF-star variants
 of the W3C specifications.
 
 The default mode is permissive
-and allows a mixture of different syntaxes, including RDF*.
+and allows a mixture of different syntaxes, including RDF-star.
 Pass a `format` option to the constructor with the name or MIME type of a format
 for strict, fault-intolerant behavior.
 If a format string contains `star` or `*`
 (e.g., `turtlestar` or `TriG*`),
-RDF* support for that format will be enabled.
+RDF-star support for that format will be enabled.
 
 ### Interface specifications
 The N3.js submodules are compatible with the following [RDF.js](http://rdf.js.org) interfaces:
