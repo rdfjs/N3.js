@@ -1,5 +1,5 @@
 // N3.js implementations of the RDF/JS core data types
-// See https://github.com/rdfjs/representation-task-force/blob/master/interface-spec.md
+// See http://rdf.js.org/data-model-spec/
 
 import namespaces from './IRIs';
 
