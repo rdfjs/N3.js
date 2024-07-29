@@ -647,6 +647,14 @@ describe('Store', () => {
       });
 
       describe('with an existing subject parameter', () => {
+        const largeStore = new Store([]);
+        const results = [];
+        for (let i = 0; i < 100; i += 1) {
+          largeStore.add(new Quad(`s${i}`, 'p1', 'o1'));
+          largeStore.add(new Quad(`s${i}`, 'p2', 'o1'));
+          results.push([`s${i}`, 'p2', 'o1']);
+        }
+
         it(
           'should return all items with this subject in all graphs',
           forResultStream(shouldIncludeAll, store.match(new NamedNode('s1'), null, null),
@@ -654,6 +662,12 @@ describe('Store', () => {
             ['s1', 'p1', 'o2'],
             ['s1', 'p2', 'o2'],
             ['s1', 'p1', 'o1', 'c4'])
+        );
+
+        it(
+          'should return all items with this subject in all graphs in a large store',
+          forResultStream(shouldIncludeAll, largeStore.match(null, new NamedNode('p2'), null),
+            ...results)
         );
 
         it('should return an object implementing the DatasetCore interface', () => {

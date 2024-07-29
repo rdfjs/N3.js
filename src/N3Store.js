@@ -4,6 +4,8 @@ import { default as N3DataFactory, termToId, termFromId } from './N3DataFactory'
 import namespaces from './IRIs';
 import { isDefaultGraph } from './N3Util';
 
+const ITERATOR = Symbol('iter');
+
 // ## Constructor
 export default class N3Store {
   constructor(quads, options) {
@@ -357,10 +359,16 @@ export default class N3Store {
   removeMatches(subject, predicate, object, graph) {
     const stream = new Readable({ objectMode: true });
 
-    stream._read = () => {
-      for (const quad of this.readQuads(subject, predicate, object, graph))
-        stream.push(quad);
-      stream.push(null);
+    const iterable = this.readQuads(subject, predicate, object, graph);
+    stream._read = size => {
+      while (size-- > 0) {
+        const { done, value } = iterable.next();
+        if (done) {
+          stream.push(null);
+          return;
+        }
+        stream.push(value);
+      }
     };
 
     return this.remove(stream);
@@ -811,10 +819,18 @@ class DatasetCoreAndReadableStream extends Readable {
     return this.filtered.size;
   }
 
-  _read() {
-    for (const quad of this)
-      this.push(quad);
-    this.push(null);
+  _read(size) {
+    if (size > 0 && !this[ITERATOR])
+      this[ITERATOR] = this[Symbol.iterator]();
+    const iterable = this[ITERATOR];
+    while (size-- > 0) {
+      const { done, value } = iterable.next();
+      if (done) {
+        this.push(null);
+        return;
+      }
+      this.push(value);
+    }
   }
 
   add(quad) {
