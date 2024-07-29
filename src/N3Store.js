@@ -799,7 +799,7 @@ export default class N3Store {
   }
 
   /**
-   * This method removes the quads in the current instance that match the given arguments.
+   * This method removes the quads in the current dataset that match the given arguments.
    *
    * The logic described in {@link https://rdf.js.org/dataset-spec/#quad-matching|Quad Matching} is applied for each
    * quad in this dataset to select the quads which will be deleted.
