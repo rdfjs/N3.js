@@ -1,4 +1,4 @@
-import DF, { termToId } from './N3DataFactory';
+import DF from './N3DataFactory';
 
 /**
  * Gets rules from a dataset. This will only collect horn rules declared using log:implies.
@@ -111,13 +111,13 @@ export default class N3Reasoner {
   }
 
   _createRule({ premise, conclusion }) {
-    const ids = this._store._ids, entities = this._store._entities, varMapping = {};
+    const varMapping = {};
 
     const toId = value => value.termType === 'Variable' ?
       // If the term is a variable, then create an empty object that values can be placed into
       (varMapping[value.value] = varMapping[value.value] || {}) :
       // If the term is not a variable, then set the ID value
-      { value: ids[value = termToId(value)] || (ids[entities[++this._store._id] = value] = this._store._id) };
+      { value: this._store._termToNewNumericId(value) };
 
     // eslint-disable-next-line func-style
     const t = term => ({ subject: toId(term.subject), predicate: toId(term.predicate), object: toId(term.object) });
