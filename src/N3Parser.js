@@ -239,7 +239,7 @@ export default class N3Parser {
       break;
     case '<<':
       if (!this._supportsRDFStar)
-        return this._error('Unexpected RDF* syntax', token);
+        return this._error('Unexpected RDF-star syntax', token);
       this._saveContext('<<', this._graph, null, null, null);
       this._graph = null;
       return this._readSubject;
@@ -328,7 +328,7 @@ export default class N3Parser {
       return this._readSubject;
     case '<<':
       if (!this._supportsRDFStar)
-        return this._error('Unexpected RDF* syntax', token);
+        return this._error('Unexpected RDF-star syntax', token);
       this._saveContext('<<', this._graph, this._subject, this._predicate, null);
       this._graph = null;
       return this._readSubject;
@@ -617,7 +617,7 @@ export default class N3Parser {
     // {| means that the current triple is annotated with predicate-object pairs.
     case '{|':
       if (!this._supportsRDFStar)
-        return this._error('Unexpected RDF* syntax', token);
+        return this._error('Unexpected RDF-star syntax', token);
       // Continue using the last triple as quoted triple subject for the predicate-object pairs.
       const predicate = this._predicate, object = this._object;
       this._subject = this._quad(subject, predicate, object, this.DEFAULTGRAPH);
@@ -851,7 +851,7 @@ export default class N3Parser {
     return this._readPath;
   }
 
-  // ### `_readRDFStarTailOrGraph` reads the graph of a nested RDF* quad or the end of a nested RDF* triple
+  // ### `_readRDFStarTailOrGraph` reads the graph of a nested RDF-star quad or the end of a nested RDF-star triple
   _readRDFStarTailOrGraph(token) {
     if (token.type !== '>>') {
       // An entity means this is a quad (only allowed if not already inside a graph)
@@ -862,7 +862,7 @@ export default class N3Parser {
     return this._readRDFStarTail(token);
   }
 
-  // ### `_readRDFStarTail` reads the end of a nested RDF* triple
+  // ### `_readRDFStarTail` reads the end of a nested RDF-star triple
   _readRDFStarTail(token) {
     if (token.type !== '>>')
       return this._error(`Expected >> but got ${token.type}`, token);
