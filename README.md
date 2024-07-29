@@ -318,7 +318,7 @@ Methods:
  - `[Symbol.iterator]` — Implements the iterator protocol to allow iteration over all `quads` in the dataset as in the example above.
 
 ### Addition and deletion of quads
-The store provides the following manipulation methods in addition to implementing the standard [`Dataset` Interface](https://rdf.js.org/dataset-spec/#dataset-interface)
+The store implements the following manipulation methods in addition to the standard [`Dataset` Interface](https://rdf.js.org/dataset-spec/#dataset-interface)
 ([documentation](http://rdfjs.github.io/N3.js/docs/N3Store.html)):
 - `addQuad` to insert one quad
 - `addQuads` to insert an array of quads
