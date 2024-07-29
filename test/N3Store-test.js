@@ -2025,39 +2025,37 @@ describe('EntityIndex', () => {
   });
 
   it('custom index should be used when instantiated with store', () => {
+    const index = {
+      '': 1,
+      's1': 2,
+      'p1': 3,
+      'o0': 4,
+      's2': 5,
+      'p2': 6,
+      'o2': 7,
+    };
+
     const store = new Store([
       new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o0')),
     ], { entityIndex });
     expect(store.size).toBe(1);
-    expect(entityIndex._id).toEqual(3);
+    expect(entityIndex._id).toEqual(4);
 
     const substore = store.match();
     substore.add(new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')));
     expect(store.size).toBe(1);
     expect(substore.size).toBe(2);
-    expect(entityIndex._id).toEqual(6);
-    expect(entityIndex._ids).toEqual({
-      s1: 1,
-      p1: 2,
-      o0: 3,
-      s2: 4,
-      p2: 5,
-      o2: 6,
-    });
+    expect(entityIndex._id).toEqual(7);
+    expect(entityIndex._ids).toEqual(index);
 
     const store2 = new Store([
       new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o5')),
     ], { entityIndex });
     expect(store2.size).toBe(1);
-    expect(entityIndex._id).toEqual(7);
+    expect(entityIndex._id).toEqual(8);
     expect(entityIndex._ids).toEqual({
-      s1: 1,
-      p1: 2,
-      o0: 3,
-      s2: 4,
-      p2: 5,
-      o2: 6,
-      o5: 7,
+      ...index,
+      o5: 8,
     });
   });
 });
