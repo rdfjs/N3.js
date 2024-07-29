@@ -145,8 +145,8 @@ export default class N3Reasoner {
 
               const premise = [];
 
-              // Since these *will* be substited when we apply the rule,
-              // we need to do this so that we index correctly in the subsequent section
+              // Since these *will* be substituted when we apply the rule,
+              // we need to do this, so that we index correctly in the subsequent section
               p.subject.value = p.subject.value || 1;
               p.object.value = p.object.value || 1;
               p.predicate.value = p.predicate.value || 1;
@@ -163,7 +163,7 @@ export default class N3Reasoner {
               (c.next = c.next || []).push({
                 premise,
                 conclusion: r2.conclusion,
-                // This is a single premise of the form { subject, predicate, object }
+                // This is a single premise of the form { subject, predicate, object },
                 // which we can use to instantiate the rule using the new data that was emitted
                 basePremise: p,
               });

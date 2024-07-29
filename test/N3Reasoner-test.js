@@ -283,7 +283,7 @@ describe('Reasoner', () => {
           new NamedNode('http://www.w3.org/2000/01/rdf-schema#range'),
           new Variable('?x')
         ), new Quad(
-          new Variable('?u'), // With rules like this we *do not* need to iterate over the subject index so we should avoid doing so
+          new Variable('?u'), // With rules like this, we *do not* need to iterate over the subject index, so we should avoid doing so
           new Variable('?a'),
           new Variable('?v')
         )],
