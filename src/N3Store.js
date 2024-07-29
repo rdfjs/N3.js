@@ -3,6 +3,7 @@ import { Readable } from 'readable-stream';
 import { default as N3DataFactory, termToId, termFromId } from './N3DataFactory';
 import namespaces from './IRIs';
 import { isDefaultGraph } from './N3Util';
+import N3Writer from './N3Writer';
 
 const ITERATOR = Symbol('iter');
 
@@ -511,7 +512,7 @@ export default class N3Store {
   // Setting any field to `undefined` or `null` indicates a wildcard.
   forEach(callback, subject, predicate, object, graph) {
     this.some(quad => {
-      callback(quad);
+      callback(quad, this);
       return false;
     }, subject, predicate, object, graph);
   }
@@ -520,12 +521,7 @@ export default class N3Store {
   // and returns `true` if it returns truthy for all them.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   every(callback, subject, predicate, object, graph) {
-    let some = false;
-    const every = !this.some(quad => {
-      some = true;
-      return !callback(quad);
-    }, subject, predicate, object, graph);
-    return some && every;
+    return !this.some(quad => !callback(quad, this), subject, predicate, object, graph);
   }
 
   // ### `some` executes the callback on all quads,
@@ -786,6 +782,158 @@ export default class N3Store {
     return lists;
   }
 
+  /**
+   * Returns `true` if the current dataset is a superset of the given dataset; in other words, returns `true` if
+   * the given dataset is a subset of, i.e., is contained within, the current dataset.
+   *
+   * Blank Nodes will be normalized.
+   */
+  addAll(quads) {
+    if (Array.isArray(quads))
+      this.addQuads(quads);
+    else {
+      for (const quad of quads)
+        this.add(quad);
+    }
+    return this;
+  }
+
+
+  /**
+   * Returns `true` if the current dataset is a superset of the given dataset; in other words, returns `true` if
+   * the given dataset is a subset of, i.e., is contained within, the current dataset.
+   *
+   * Blank Nodes will be normalized.
+   */
+  contains(other) {
+    return other.every(quad => this.has(quad));
+  }
+
+  /**
+   * This method removes the quads in the current dataset that match the given arguments.
+   *
+   * The logic described in {@link https://rdf.js.org/dataset-spec/#quad-matching|Quad Matching} is applied for each
+   * quad in this dataset, to select the quads which will be deleted.
+   *
+   * @param subject   The optional exact subject to match.
+   * @param predicate The optional exact predicate to match.
+   * @param object    The optional exact object to match.
+   * @param graph     The optional exact graph to match.
+   */
+  deleteMatches(subject, predicate, object, graph) {
+    for (const quad of this.match(subject, predicate, object, graph))
+      this.removeQuad(quad);
+    return this;
+  }
+
+  /**
+   * Returns a new dataset that contains all quads from the current dataset that are not included in the given dataset.
+   */
+  difference(other) {
+    return this.filter(quad => !other.has(quad));
+  }
+
+  /**
+   * Returns true if the current dataset contains the same graph structure as the given dataset.
+   *
+   * Blank Nodes will be normalized.
+   */
+  equals(other) {
+    return other === this || (this.size === other.size && this.contains(other));
+  }
+
+  /**
+   * Creates a new dataset with all the quads that pass the test implemented by the provided `iteratee`.
+   *
+   * This method is aligned with Array.prototype.filter() in ECMAScript-262.
+   */
+  filter(iteratee) {
+    const store = new N3Store();
+    for (const quad of this)
+      if (iteratee(quad, this))
+        store.add(quad);
+    return store;
+  }
+
+  /**
+   * Returns a new dataset containing all quads from the current dataset that are also included in the given dataset.
+   */
+  intersection(other) {
+    return this.filter(quad => other.has(quad));
+  }
+
+  /**
+   * Returns a new dataset containing all quads returned by applying `iteratee` to each quad in the current dataset.
+   */
+  map(iteratee) {
+    const store = new N3Store();
+    for (const quad of this)
+      store.add(iteratee(quad, this));
+    return store;
+  }
+
+  /**
+   * This method calls the `iteratee` method on each `quad` of the `Dataset`. The first time the `iteratee` method
+   * is called, the `accumulator` value is the `initialValue`, or, if not given, equals the first quad of the `Dataset`.
+   * The return value of each call to the `iteratee` method is used as the `accumulator` value for the next call.
+   *
+   * This method returns the return value of the last `iteratee` call.
+   *
+   * This method is aligned with `Array.prototype.reduce()` in ECMAScript-262.
+   */
+  reduce(callback, initialValue) {
+    const iter = this.readQuads();
+    let accumulator = initialValue === undefined ? iter.next().value : initialValue;
+    for (const quad of iter)
+      accumulator = callback(accumulator, quad, this);
+    return accumulator;
+  }
+
+  /**
+   * Returns the set of quads within the dataset as a host-language-native sequence, for example an `Array` in
+   * ECMAScript-262.
+   *
+   * Since a `Dataset` is an unordered set, the order of the quads within the returned sequence is arbitrary.
+   */
+  toArray() {
+    return this.getQuads();
+  }
+
+  /**
+   * Returns an N-Quads string representation of the dataset, preprocessed with the
+   * {@link https://json-ld.github.io/normalization/spec/|RDF Dataset Normalization} algorithm.
+   */
+  toCanonical() {
+    throw new Error('not implemented');
+  }
+
+  /**
+   * Returns a stream that contains all quads of the dataset.
+   */
+  toStream() {
+    return this.match();
+  }
+
+  /**
+   * Returns an N-Quads string representation of the dataset.
+   *
+   * No prior normalization is required, therefore the results for the same quads may vary depending on the `Dataset`
+   * implementation.
+   */
+  toString() {
+    return (new N3Writer()).quadsToString(this);
+  }
+
+  /**
+   * Returns a new `Dataset` that is a concatenation of this dataset and the quads given as an argument.
+   */
+  union(quads) {
+    const store = new N3Store();
+    store.addAll(this);
+    store.addAll(quads);
+    return store;
+  }
+
   // ### Store is an iterable.
   // Can be used where iterables are expected: for...of loops, array spread operator,
   // `yield*`, and destructuring assignment (order is not guaranteed).
@@ -829,6 +977,82 @@ class DatasetCoreAndReadableStream extends Readable {
       }
       this.push(value);
     }
+  }
+
+  addAll(quads) {
+    return this.filtered.addAll(quads);
+  }
+
+  contains(other) {
+    return this.filtered.contains(other);
+  }
+
+  deleteMatches(subject, predicate, object, graph) {
+    return this.filtered.deleteMatches(subject, predicate, object, graph);
+  }
+
+  difference(other) {
+    return this.filtered.difference(other);
+  }
+
+  equals(other) {
+    return this.filtered.equals(other);
+  }
+
+  every(callback, subject, predicate, object, graph) {
+    return this.filtered.every(callback, subject, predicate, object, graph);
+  }
+
+  filter(iteratee) {
+    return this.filtered.filter(iteratee);
+  }
+
+  forEach(callback, subject, predicate, object, graph) {
+    return this.filtered.forEach(callback, subject, predicate, object, graph);
+  }
+
+  import(stream) {
+    return this.filtered.import(stream);
+  }
+
+  intersection(other) {
+    return this.filtered.intersection(other);
+  }
+
+  map(iteratee) {
+    return this.filtered.map(iteratee);
+  }
+
+  some(callback, subject, predicate, object, graph) {
+    return this.filtered.some(callback, subject, predicate, object, graph);
+  }
+
+  toCanonical() {
+    return this.filtered.toCanonical();
+  }
+
+  toStream() {
+    return this._filtered ?
+      this._filtered.toStream()
+      : this.n3Store.match(this.subject, this.predicate, this.object, this.graph);
+  }
+
+  union(quads) {
+    return this._filtered ?
+      this._filtered.union(quads)
+      : this.n3Store.match(this.subject, this.predicate, this.object, this.graph).addAll(quads);
+  }
+
+  toArray() {
+    return this._filtered ? this._filtered.toArray() : this.n3Store.getQuads(this.subject, this.predicate, this.object, this.graph);
+  }
+
+  reduce(callback, initialValue) {
+    return this.filtered.reduce(callback, initialValue);
+  }
+
+  toString() {
+    return (new N3Writer()).quadsToString(this);
   }
 
   add(quad) {

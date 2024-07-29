@@ -130,9 +130,10 @@ export default class N3Writer {
 
   // ### `quadsToString` serializes an array of quads as a string
   quadsToString(quads) {
-    return quads.map(t => {
-      return this.quadToString(t.subject, t.predicate, t.object, t.graph);
-    }).join('');
+    let quadsString = '';
+    for (const quad of quads)
+      quadsString += this.quadToString(quad.subject, quad.predicate, quad.object, quad.graph);
+    return quadsString;
   }
 
   // ### `_encodeSubject` represents a subject
