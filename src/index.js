@@ -1,7 +1,7 @@
 import Lexer from './N3Lexer';
 import Parser from './N3Parser';
 import Writer from './N3Writer';
-import Store from './N3Store';
+import Store, { N3EntityIndex as EntityIndex } from './N3Store';
 import StreamParser from './N3StreamParser';
 import StreamWriter from './N3StreamWriter';
 import * as Util from './N3Util';
@@ -28,6 +28,7 @@ export {
   Parser,
   Writer,
   Store,
+  EntityIndex,
   StreamParser,
   StreamWriter,
   Util,
