@@ -349,6 +349,33 @@ The store provides the following search methods
 - `getGraphs` returns an array of unique graphs occurring in matching quad
 - `forGraphs` executes a callback on unique graphs occurring in matching quads
 
+## Reasoning
+
+N3.js supports reasoning as follows:
+
+```JavaScript
+import { Reasoner, Store, Parser } from 'n3';
+
+const parser = new Parser({ format: 'text/n3' });
+const rules = `
+{
+  ?s a ?o .
+  ?o <http://www.w3.org/2000/01/rdf-schema#subClassOf> ?o2 .
+} => {
+  ?s a ?o2 .
+} .
+`
+
+const rulesDataset = new Store(parser.parse(rules));
+const dataset = new Store(/* Dataset */)
+
+// Applies the rules to the store; mutating it
+const reasoner = new Reasoner(store);
+reasoner.reason(rules);
+```
+
+**Note**: N3.js currently only supports rules with [Basic Graph Patterns](https://www.w3.org/TR/sparql11-query/#BasicGraphPattern) in the premise and conclusion. Built-ins and backward-chaining are *not* supported. For an RDF/JS reasoner that supports all Notation3 reasoning features, see [eye-js](https://github.com/eyereasoner/eye-js/).
+
 ## Compatibility
 ### Format specifications
 The N3.js parser and writer is fully compatible with the following W3C specifications:
