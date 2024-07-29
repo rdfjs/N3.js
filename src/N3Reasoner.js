@@ -114,9 +114,9 @@ export default class N3Reasoner {
     const ids = this._store._ids, entities = this._store._entities, varMapping = {};
 
     const toId = value => value.termType === 'Variable' ?
-      // If the term is a variable then create an empty object that values can be placed into
+      // If the term is a variable, then create an empty object that values can be placed into
       (varMapping[value.value] = varMapping[value.value] || {}) :
-      // If the term is not a variable then set the ID value
+      // If the term is not a variable, then set the ID value
       { value: ids[value = termToId(value)] || (ids[entities[++this._store._id] = value] = this._store._id) };
 
     // eslint-disable-next-line func-style
