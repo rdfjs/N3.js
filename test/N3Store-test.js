@@ -2027,17 +2027,23 @@ describe('Store', () => {
     );
   });
 
-  describe.each([true, false, 'instantiated'])('RDF/JS Dataset Methods [DatasetCoreAndReadableStream: %s]', match => {
-    let q1, q2, q3, store, store1, store2, empty;
+  const matrix = [true, false, 'instantiated'].flatMap(match => [true, false].map(share => [match, share]));
+
+  describe.each(matrix)('RDF/JS Dataset Methods [DatasetCoreAndReadableStream: %s] [sharedIndex: %s]', (match, shareIndex) => {
+    let q, store, store1, store2, store3, empty, options;
 
     beforeEach(() => {
-      q1 = new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'));
-      q2 = new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2'));
-      q3 = new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o3'));
-      empty = new Store();
-      store = new Store([q1]);
-      store1 = new Store([q1, q2]);
-      store2 = new Store([q1, q3]);
+      options = shareIndex ? { entityIndex: new EntityIndex() } : {};
+      q = [new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+        new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
+        new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o3')),
+        new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o3'))];
+      q = [...q, ...q.map(quad => new Quad(quad.subject, quad.predicate, quad.object, new NamedNode('c4')))];
+      empty = new Store([], options);
+      store = new Store([q[0]], options);
+      store1 = new Store([q[0], q[1]], options);
+      store2 = new Store([q[0], q[2]], options);
+      store3 = new Store([q[0], q[3]], options);
 
       if (match) {
         empty = store2.match(new NamedNode('sn'));
@@ -2066,11 +2072,23 @@ describe('Store', () => {
         expect(store.contains(store)).toBe(true);
         expect(store1.contains(store)).toBe(true);
         expect(store2.contains(store)).toBe(true);
+        expect(store3.contains(store)).toBe(true);
+      });
+
+      it('stores should contain themsevles', () => {
+        expect(store1.contains(store1)).toBe(true);
+        expect(store2.contains(store2)).toBe(true);
+        expect(store3.contains(store3)).toBe(true);
       });
 
       it('should return false for a non-existing quad', () => {
         expect(store.contains(store1)).toBe(false);
+        expect(store.contains(store3)).toBe(false);
         expect(store.contains(store2)).toBe(false);
+        expect(empty.contains(store1)).toBe(false);
+        expect(empty.contains(store2)).toBe(false);
+        expect(store2.contains(store1)).toBe(false);
+        expect(store1.contains(store2)).toBe(false);
       });
     });
 
@@ -2108,23 +2126,23 @@ describe('Store', () => {
       });
 
       it('should delete matching quads', () => {
-        store1.deleteMatches(q1.subject, q1.predicate, q1.object);
+        store1.deleteMatches(q[0].subject, q[0].predicate, q[0].object);
         expect(store1.size).toEqual(1);
       });
     });
 
     describe('#addAll', () => {
       it('should add quads to the store', () => {
-        store1.addAll([q3]);
+        store1.addAll([q[2]]);
         expect(store1.size).toEqual(3);
-        store1.addAll([q3]);
+        store1.addAll([q[2]]);
         expect(store1.size).toEqual(3);
       });
     });
 
     describe('#deleteMatches', () => {
       it('should delete matching quads', () => {
-        store1.deleteMatches(q1.subject, q1.predicate, q1.object);
+        store1.deleteMatches(q[0].subject, q[0].predicate, q[0].object);
         expect(store1.size).toEqual(1);
       });
     });
@@ -2143,7 +2161,7 @@ describe('Store', () => {
         expect(store1.reduce((acc, _) => acc + 1, 0)).toEqual(2);
         expect(store1.reduce((acc, quad) => acc + quad.subject.value.length, 0)).toEqual(4);
         expect(store1.reduce((acc, _) => acc, 0)).toEqual(0);
-        expect(store.reduce((acc, _) => acc)).toEqual(q1);
+        expect(store.reduce((acc, _) => acc)).toEqual(q[0]);
       });
     });
 
@@ -2151,16 +2169,16 @@ describe('Store', () => {
       it('should convert to an array', () => {
         const quads = store1.toArray();
         expect(quads).toHaveLength(2);
-        expect(quads[0]).toEqual(q1);
-        expect(quads[1]).toEqual(q2);
+        expect(quads[0]).toEqual(q[0]);
+        expect(quads[1]).toEqual(q[1]);
       });
     });
 
     describe('#toStream', () => {
       it('should convert to a stream', () => {
-        expect(arrayifyStream(store2.toStream())).resolves.toEqual([q1, q3]);
-        expect(arrayifyStream(store1.toStream())).resolves.toEqual([q1, q2]);
-        expect(arrayifyStream(store.toStream())).resolves.toEqual([q1]);
+        expect(arrayifyStream(store2.toStream())).resolves.toEqual([q[0], q[2]]);
+        expect(arrayifyStream(store1.toStream())).resolves.toEqual([q[0], q[1]]);
+        expect(arrayifyStream(store.toStream())).resolves.toEqual([q[0]]);
         expect(arrayifyStream(empty.toStream())).resolves.toEqual([]);
       });
     });
@@ -2189,7 +2207,7 @@ describe('Store', () => {
         const quads = store1.filter(quad => quad.object.value === 'o1');
         expect(quads.size).toEqual(1);
         expect(store1.contains(quads)).toEqual(true);
-        expect(quads.has(q1)).toEqual(true);
+        expect(quads.has(q[0])).toEqual(true);
       });
     });
 
@@ -2211,7 +2229,7 @@ describe('Store', () => {
         let count = 0;
         store1.forEach(quad => {
           count++;
-          expect(quad).toEqual(count === 1 ? q1 : q2);
+          expect(quad).toEqual(count === 1 ? q[0] : q[1]);
         });
         expect(count).toEqual(2);
       });
@@ -2226,17 +2244,17 @@ describe('Store', () => {
       });
 
       it('should be equal to a new store containing the same elements', () => {
-        expect(store.equals(new Store([q1]))).toBe(true);
-        expect(store1.equals(new Store([q1, q2]))).toBe(true);
+        expect(store.equals(new Store([q[0]]))).toBe(true);
+        expect(store1.equals(new Store([q[0], q[1]]))).toBe(true);
         expect(empty.equals(new Store())).toBe(true);
-        expect(store2.equals(new Store([q1, q3]))).toBe(true);
+        expect(store2.equals(new Store([q[0], q[2]]))).toBe(true);
       });
 
       it('should not be equal to a store with different elements', () => {
         expect(empty.equals(store)).toBe(false);
-        expect(store.equals(new Store([q2]))).toBe(false);
-        expect(store1.equals(new Store([q1]))).toBe(false);
-        expect(store2.equals(new Store([q1]))).toBe(false);
+        expect(store.equals(new Store([q[1]]))).toBe(false);
+        expect(store1.equals(new Store([q[0]]))).toBe(false);
+        expect(store2.equals(new Store([q[0]]))).toBe(false);
       });
     });
 
