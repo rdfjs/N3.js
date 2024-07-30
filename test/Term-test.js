@@ -22,25 +22,25 @@ const DEEP_TRIPLE = new Quad(
         new BlankNode('n3-000'),
         new Variable('var-b'),
         new Literal('"abc"@en-us'),
-        new NamedNode('http://ex.org/d')
+        new NamedNode('http://ex.org/d'),
       ),
       new Variable('var-b'),
       new Quad(
         new BlankNode('n3-000'),
         new Variable('var-b'),
         new Literal('"abc"@en-us'),
-        new NamedNode('http://ex.org/d')
+        new NamedNode('http://ex.org/d'),
       ),
-      new NamedNode('http://ex.org/d')
+      new NamedNode('http://ex.org/d'),
     ),
     new Variable('var-b'),
     new Quad(
       new BlankNode('n3-000'),
       new Variable('var-b'),
       new Literal('"abc"@en-us'),
-      new NamedNode('http://ex.org/d')
+      new NamedNode('http://ex.org/d'),
     ),
-    new NamedNode('http://ex.org/d')
+    new NamedNode('http://ex.org/d'),
   ),
   new NamedNode('http://ex.org/b'),
   new Quad(
@@ -48,18 +48,18 @@ const DEEP_TRIPLE = new Quad(
       new BlankNode('n3-000'),
       new Variable('var-b'),
       new Literal('"abc"@en-us'),
-      new NamedNode('http://ex.org/d')
+      new NamedNode('http://ex.org/d'),
     ),
     new Variable('var-b'),
     new Quad(
       new BlankNode('n3-000'),
       new Variable('var-b'),
       new Literal('"abc"@en-us'),
-      new NamedNode('http://ex.org/d')
+      new NamedNode('http://ex.org/d'),
     ),
-    new NamedNode('http://ex.org/d')
+    new NamedNode('http://ex.org/d'),
   ),
-  new NamedNode('http://ex.org/d')
+  new NamedNode('http://ex.org/d'),
 );
 
 describe('Term', () => {
@@ -108,7 +108,7 @@ describe('Term', () => {
           termType: 'BlankNode',
           value: 'b1',
         });
-      }
+      },
     );
 
     it(
@@ -118,7 +118,7 @@ describe('Term', () => {
           termType: 'Variable',
           value: 'v1',
         });
-      }
+      },
     );
 
     it(
@@ -133,7 +133,7 @@ describe('Term', () => {
             value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString',
           },
         });
-      }
+      },
     );
 
     it(
@@ -143,10 +143,10 @@ describe('Term', () => {
           new NamedNode('http://ex.org/a'),
           new NamedNode('http://ex.org/b'),
           new Literal('"abc"@en-us'),
-          new DefaultGraph()
+          new DefaultGraph(),
         );
         expect(q.equals(termFromId(termToId(q)))).toBe(true);
-      }
+      },
     );
 
     it(
@@ -157,9 +157,9 @@ describe('Term', () => {
           new NamedNode('http://ex.org/a'),
           new NamedNode('http://ex.org/b'),
           new Literal('"abc"@en-us'),
-          new NamedNode('http://ex.org/d')
+          new NamedNode('http://ex.org/d'),
         ));
-      }
+      },
     );
 
     it('should create a Quad correctly', () => {
@@ -168,7 +168,7 @@ describe('Term', () => {
         new NamedNode('http://ex.org/a'),
         new NamedNode('http://ex.org/b'),
         new NamedNode('http://ex.org/c'),
-        new DefaultGraph()
+        new DefaultGraph(),
       ));
     });
 
@@ -178,7 +178,7 @@ describe('Term', () => {
         new BlankNode('n3-123'),
         new Variable('var-a'),
         new Variable('var-b'),
-        new BlankNode('n3-000')
+        new BlankNode('n3-000'),
       ));
     });
 
@@ -188,7 +188,7 @@ describe('Term', () => {
         new Variable('var-a'),
         new Variable('var-b'),
         new Literal('"abc"@en-us'),
-        new Variable('var-d')
+        new Variable('var-d'),
       ));
     });
 
@@ -198,7 +198,7 @@ describe('Term', () => {
         new BlankNode('n3-000'),
         new Variable('var-b'),
         new BlankNode('n3-123'),
-        new NamedNode('http://ex.org/d')
+        new NamedNode('http://ex.org/d'),
       ));
     });
 
@@ -210,9 +210,9 @@ describe('Term', () => {
           new BlankNode('n3-000'),
           new Variable('var-b'),
           new Literal('"Hello "W"orl"d!"@en-us'),
-          new NamedNode('http://ex.org/d')
+          new NamedNode('http://ex.org/d'),
         ));
-      }
+      },
     );
 
     it(
@@ -222,11 +222,11 @@ describe('Term', () => {
           new Literal('"Hello "W"orl"d!"@en-us'),
           new NamedNode('http://ex.org/b'),
           new NamedNode('http://ex.org/c'),
-          new DefaultGraph()
+          new DefaultGraph(),
         );
 
         expect(termFromId(termToId(q))).toEqual(q);
-      }
+      },
     );
 
     it('should correctly handle deeply nested quads', () => {
@@ -259,14 +259,14 @@ describe('Term', () => {
         'should create a BlankNode from a string that starts with an underscore',
         () => {
           expect(termFromId('_:b1', factory)).toEqual(['b', 'b1']);
-        }
+        },
       );
 
       it(
         'should create a Variable from a string that starts with a question mark',
         () => {
           expect(termFromId('?v1', factory)).toEqual(['v', 'v1']);
-        }
+        },
       );
 
       it('should create a Literal without language or datatype', () => {
@@ -300,14 +300,14 @@ describe('Term', () => {
       () => {
         expect(termToId(new Variable('abc'))).toBe('?abc');
         expect(termToId(new Variable('abc').toJSON())).toBe('?abc');
-      }
+      },
     );
 
     it(
       'should create an id that starts with a question mark from a Variable string',
       () => {
         expect(termToId('?abc')).toBe('?abc');
-      }
+      },
     );
 
     it(
@@ -315,14 +315,14 @@ describe('Term', () => {
       () => {
         expect(termToId(new Literal('"abc"'))).toBe('"abc"');
         expect(termToId(new Literal('"abc"').toJSON())).toBe('"abc"');
-      }
+      },
     );
 
     it(
       'should create an id that starts with a quotation mark from a Literal string',
       () => {
         expect(termToId('"abc"')).toBe('"abc"');
-      }
+      },
     );
 
     it(
@@ -330,14 +330,14 @@ describe('Term', () => {
       () => {
         expect(termToId(new Literal('"abc"^^http://example.org'))).toBe('"abc"^^http://example.org');
         expect(termToId(new Literal('"abc"^^http://example.org').toJSON())).toBe('"abc"^^http://example.org');
-      }
+      },
     );
 
     it(
       'should create an id that starts with a quotation mark and datatype from a Literal string with a datatype',
       () => {
         expect(termToId('"abc"^^http://example.org')).toBe('"abc"^^http://example.org');
-      }
+      },
     );
 
     it(
@@ -345,14 +345,14 @@ describe('Term', () => {
       () => {
         expect(termToId(new Literal('"abc"@en-us'))).toBe('"abc"@en-us');
         expect(termToId(new Literal('"abc"@en-us').toJSON())).toBe('"abc"@en-us');
-      }
+      },
     );
 
     it(
       'should create an id that starts with a quotation mark and language tag from a Literal string with a language',
       () => {
         expect(termToId('"abc"@en-us')).toBe('"abc"@en-us');
-      }
+      },
     );
 
     it(
@@ -360,14 +360,14 @@ describe('Term', () => {
       () => {
         expect(termToId(new Literal('"abc"^^http://example.org@en-us'))).toBe('"abc"^^http://example.org@en-us');
         expect(termToId(new Literal('"abc"^^http://example.org@en-us').toJSON())).toBe('"abc"^^http://example.org@en-us');
-      }
+      },
     );
 
     it(
       'should create an id that starts with a quotation mark, datatype and language tag from a Literal string with a datatype and language',
       () => {
         expect(termToId('"abc"^^http://example.org@en-us')).toBe('"abc"^^http://example.org@en-us');
-      }
+      },
     );
 
     it(
@@ -375,14 +375,14 @@ describe('Term', () => {
       () => {
         expect(termToId(new BlankNode('abc'))).toBe('_:abc');
         expect(termToId(new BlankNode('abc').toJSON())).toBe('_:abc');
-      }
+      },
     );
 
     it(
       'should create an id that starts with an underscore from a BlankNode string',
       () => {
         expect(termToId('_:abc')).toBe('_:abc');
-      }
+      },
     );
 
     it('should create an IRI from a NamedNode', () => {
@@ -399,7 +399,7 @@ describe('Term', () => {
         new NamedNode('http://ex.org/a'),
         new NamedNode('http://ex.org/b'),
         new Literal('"abc"@en-us'),
-        new DefaultGraph()
+        new DefaultGraph(),
       ))).toBe('["http://ex.org/a","http://ex.org/b","\\"abc\\"@en-us"]');
     });
 
@@ -408,9 +408,9 @@ describe('Term', () => {
         new NamedNode('http://ex.org/a'),
         new NamedNode('http://ex.org/b'),
         new Literal('"abc"@en-us'),
-        new NamedNode('http://ex.org/d')
+        new NamedNode('http://ex.org/d'),
       ))).toBe(
-        '["http://ex.org/a","http://ex.org/b","\\"abc\\"@en-us","http://ex.org/d"]'
+        '["http://ex.org/a","http://ex.org/b","\\"abc\\"@en-us","http://ex.org/d"]',
       );
     });
 
@@ -423,7 +423,7 @@ describe('Term', () => {
         termType: 'Quad',
         value: '',
       })).toBe(
-        '["http://ex.org/a","http://ex.org/b","\\"abc\\"@en-us","http://ex.org/d"]'
+        '["http://ex.org/a","http://ex.org/b","\\"abc\\"@en-us","http://ex.org/d"]',
       );
     });
 
@@ -432,9 +432,9 @@ describe('Term', () => {
         new BlankNode('n3-000'),
         new Variable('var-b'),
         new Literal('"Hello "W"orl"d!"@en-us'),
-        new NamedNode('http://ex.org/d')
+        new NamedNode('http://ex.org/d'),
       ))).toBe(
-        '["_:n3-000","?var-b","\\"Hello \\"W\\"orl\\"d!\\"@en-us","http://ex.org/d"]'
+        '["_:n3-000","?var-b","\\"Hello \\"W\\"orl\\"d!\\"@en-us","http://ex.org/d"]',
       );
     });
 
@@ -446,15 +446,15 @@ describe('Term', () => {
             new BlankNode('n3-000'),
             new Variable('var-b'),
             new Literal('"abc"@en-us'),
-            new NamedNode('http://ex.org/d')
+            new NamedNode('http://ex.org/d'),
           ),
           new NamedNode('http://ex.org/b'),
           new Literal('"abc"@en-us'),
-          new DefaultGraph()
+          new DefaultGraph(),
         ))).toBe(
-          '[["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/b","\\"abc\\"@en-us"]'
+          '[["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/b","\\"abc\\"@en-us"]',
         );
-      }
+      },
     );
 
     it(
@@ -467,13 +467,13 @@ describe('Term', () => {
             new BlankNode('n3-000'),
             new Variable('var-b'),
             new Literal('"abc"@en-us'),
-            new NamedNode('http://ex.org/d')
+            new NamedNode('http://ex.org/d'),
           ),
-          new DefaultGraph()
+          new DefaultGraph(),
         ))).toBe(
-          '["\\"abc\\"@en-us","http://ex.org/b",["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"]]'
+          '["\\"abc\\"@en-us","http://ex.org/b",["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"]]',
         );
-      }
+      },
     );
 
     it(
@@ -484,20 +484,20 @@ describe('Term', () => {
             new BlankNode('n3-000'),
             new Variable('var-b'),
             new Literal('"abc"@en-us'),
-            new NamedNode('http://ex.org/d')
+            new NamedNode('http://ex.org/d'),
           ),
           new NamedNode('http://ex.org/b'),
           new Quad(
             new BlankNode('n3-000'),
             new Variable('var-b'),
             new Literal('"abc"@en-us'),
-            new NamedNode('http://ex.org/d')
+            new NamedNode('http://ex.org/d'),
           ),
-          new DefaultGraph()
+          new DefaultGraph(),
         ))).toBe(
-          '[["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/b",["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"]]'
+          '[["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/b",["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"]]',
         );
-      }
+      },
     );
 
     it(
@@ -508,15 +508,15 @@ describe('Term', () => {
             new BlankNode('n3-000'),
             new Variable('var-b'),
             new Literal('"abc"@en-us'),
-            new NamedNode('http://ex.org/d')
+            new NamedNode('http://ex.org/d'),
           ),
           new NamedNode('http://ex.org/b'),
           new Literal('"abc"@en-us'),
-          new NamedNode('http://ex.org/d')
+          new NamedNode('http://ex.org/d'),
         ))).toBe(
-          '[["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/b","\\"abc\\"@en-us","http://ex.org/d"]'
+          '[["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/b","\\"abc\\"@en-us","http://ex.org/d"]',
         );
-      }
+      },
     );
 
     it(
@@ -529,13 +529,13 @@ describe('Term', () => {
             new BlankNode('n3-000'),
             new Variable('var-b'),
             new Literal('"abc"@en-us'),
-            new NamedNode('http://ex.org/d')
+            new NamedNode('http://ex.org/d'),
           ),
-          new NamedNode('http://ex.org/d')
+          new NamedNode('http://ex.org/d'),
         ))).toBe(
-          '["\\"abc\\"@en-us","http://ex.org/b",["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/d"]'
+          '["\\"abc\\"@en-us","http://ex.org/b",["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/d"]',
         );
-      }
+      },
     );
 
     it('should create an id from a Quad with Quad as subject and object', () => {
@@ -544,18 +544,18 @@ describe('Term', () => {
           new BlankNode('n3-000'),
           new Variable('var-b'),
           new Literal('"abc"@en-us'),
-          new NamedNode('http://ex.org/d')
+          new NamedNode('http://ex.org/d'),
         ),
         new NamedNode('http://ex.org/b'),
         new Quad(
           new BlankNode('n3-000'),
           new Variable('var-b'),
           new Literal('"abc"@en-us'),
-          new NamedNode('http://ex.org/d')
+          new NamedNode('http://ex.org/d'),
         ),
-        new NamedNode('http://ex.org/d')
+        new NamedNode('http://ex.org/d'),
       ))).toBe(
-        '[["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/b",["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/d"]'
+        '[["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/b",["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/d"]',
       );
     });
 
@@ -565,18 +565,18 @@ describe('Term', () => {
           new BlankNode('n3-000'),
           new Variable('var-b'),
           new Literal('"Hello "W"orl"d!"@en-us'),
-          new NamedNode('http://ex.org/d')
+          new NamedNode('http://ex.org/d'),
         ),
         new NamedNode('http://ex.org/b'),
         new Quad(
           new BlankNode('n3-000'),
           new Variable('var-b'),
           new Literal('"Hello "W"orl"d!"@en-us'),
-          new NamedNode('http://ex.org/d')
+          new NamedNode('http://ex.org/d'),
         ),
-        new DefaultGraph()
+        new DefaultGraph(),
       ))).toBe(
-        '[["_:n3-000","?var-b","\\"Hello \\"W\\"orl\\"d!\\"@en-us","http://ex.org/d"],"http://ex.org/b",["_:n3-000","?var-b","\\"Hello \\"W\\"orl\\"d!\\"@en-us","http://ex.org/d"]]'
+        '[["_:n3-000","?var-b","\\"Hello \\"W\\"orl\\"d!\\"@en-us","http://ex.org/d"],"http://ex.org/b",["_:n3-000","?var-b","\\"Hello \\"W\\"orl\\"d!\\"@en-us","http://ex.org/d"]]',
       );
     });
 
@@ -587,26 +587,26 @@ describe('Term', () => {
           new Quad(
             new NamedNode('http://example.org/s1'),
             new NamedNode('http://example.org/p1'),
-            new NamedNode('http://example.org/o1')
+            new NamedNode('http://example.org/o1'),
           ),
           new NamedNode('http://example.org/p1'),
           new Quad(
             new Quad(
               new Literal('"s1"'),
               new NamedNode('http://example.org/p1'),
-              new BlankNode('o1')
+              new BlankNode('o1'),
             ),
             new NamedNode('p2'),
             new Quad(
               new Quad(
                 new Literal('"s1"'),
                 new NamedNode('http://example.org/p1'),
-                new BlankNode('o1')
+                new BlankNode('o1'),
               ),
               new NamedNode('http://example.org/p1'),
-              new NamedNode('http://example.org/o1')
-            )
-          )
+              new NamedNode('http://example.org/o1'),
+            ),
+          ),
         );
 
         expect(q).toEqual(termFromId(termToId(q)));
@@ -614,7 +614,7 @@ describe('Term', () => {
         expect(q.equals(termFromId(termToId(q)))).toBe(true);
         expect(termFromId(termToId(q)).equals(q)).toBe(true);
         expect(termFromId(termToId(q)).equals(termFromId(termToId(q)))).toBe(true);
-      }
+      },
     );
 
     it('should correctly handle deeply nested quads', () => {
@@ -625,25 +625,25 @@ describe('Term', () => {
               new BlankNode('n3-000'),
               new Variable('var-b'),
               new Literal('"abc"@en-us'),
-              new NamedNode('http://ex.org/d')
+              new NamedNode('http://ex.org/d'),
             ),
             new Variable('var-b'),
             new Quad(
               new BlankNode('n3-000'),
               new Variable('var-b'),
               new Literal('"abc"@en-us'),
-              new NamedNode('http://ex.org/d')
+              new NamedNode('http://ex.org/d'),
             ),
-            new NamedNode('http://ex.org/d')
+            new NamedNode('http://ex.org/d'),
           ),
           new Variable('var-b'),
           new Quad(
             new BlankNode('n3-000'),
             new Variable('var-b'),
             new Literal('"abc"@en-us'),
-            new NamedNode('http://ex.org/d')
+            new NamedNode('http://ex.org/d'),
           ),
-          new NamedNode('http://ex.org/d')
+          new NamedNode('http://ex.org/d'),
         ),
         new NamedNode('http://ex.org/b'),
         new Quad(
@@ -651,18 +651,18 @@ describe('Term', () => {
             new BlankNode('n3-000'),
             new Variable('var-b'),
             new Literal('"abc"@en-us'),
-            new NamedNode('http://ex.org/d')
+            new NamedNode('http://ex.org/d'),
           ),
           new Variable('var-b'),
           new Quad(
             new BlankNode('n3-000'),
             new Variable('var-b'),
             new Literal('"abc"@en-us'),
-            new NamedNode('http://ex.org/d')
+            new NamedNode('http://ex.org/d'),
           ),
-          new NamedNode('http://ex.org/d')
+          new NamedNode('http://ex.org/d'),
         ),
-        new NamedNode('http://ex.org/d')
+        new NamedNode('http://ex.org/d'),
       );
 
       expect(q.equals(termFromId(termToId(q)))).toBe(true);

@@ -21,7 +21,7 @@ describe('Quad', () => {
       quad = new Quad(
         subject   = termFromId('s'),
         predicate = termFromId('p'),
-        object    = termFromId('o')
+        object    = termFromId('o'),
       );
     });
 
@@ -116,7 +116,7 @@ describe('Quad', () => {
         subject   = termFromId('s'),
         predicate = termFromId('p'),
         object    = termFromId('o'),
-        graph     = termFromId('g')
+        graph     = termFromId('g'),
       );
     });
 
@@ -210,7 +210,7 @@ describe('Quad', () => {
       quad = new Quad(
         subject   = termFromId('<<_:n3-123 ?var-a ?var-b _:n3-000>>'),
         predicate = termFromId('p'),
-        object    = termFromId('<<http://ex.org/a http://ex.org/b http://ex.org/c>>')
+        object    = termFromId('<<http://ex.org/a http://ex.org/b http://ex.org/c>>'),
       );
     });
 

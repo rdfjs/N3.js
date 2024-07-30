@@ -62,7 +62,7 @@ describe('Literal', () => {
           language: '',
           datatype: { value: 'http://www.w3.org/2001/XMLSchema#string', termType: 'NamedNode' },
         })).toBe(true);
-      }
+      },
     );
 
     it('should not equal a falsy object', () => {
@@ -82,7 +82,7 @@ describe('Literal', () => {
           language: '',
           datatype: { value: 'http://www.w3.org/2001/XMLSchema#string', termType: 'NamedNode' },
         })).toBe(false);
-      }
+      },
     );
 
     it(
@@ -94,7 +94,7 @@ describe('Literal', () => {
           language: 'en',
           datatype: { value: 'http://www.w3.org/2001/XMLSchema#string', termType: 'NamedNode' },
         })).toBe(false);
-      }
+      },
     );
 
     it(
@@ -106,7 +106,7 @@ describe('Literal', () => {
           language: '',
           datatype: { value: 'other', termType: 'NamedNode' },
         })).toBe(false);
-      }
+      },
     );
 
     it('should not equal an object with a different term type', () => {
@@ -178,7 +178,7 @@ describe('Literal', () => {
           language: '',
           datatype: { value: 'http://www.w3.org/2001/XMLSchema#string', termType: 'NamedNode' },
         })).toBe(true);
-      }
+      },
     );
 
     it('should not equal a falsy object', () => {
@@ -198,7 +198,7 @@ describe('Literal', () => {
           language: '',
           datatype: { value: 'http://www.w3.org/2001/XMLSchema#string', termType: 'NamedNode' },
         })).toBe(false);
-      }
+      },
     );
 
     it(
@@ -210,7 +210,7 @@ describe('Literal', () => {
           language: 'en',
           datatype: { value: 'http://www.w3.org/2001/XMLSchema#string', termType: 'NamedNode' },
         })).toBe(false);
-      }
+      },
     );
 
     it(
@@ -222,7 +222,7 @@ describe('Literal', () => {
           language: '',
           datatype: { value: 'other', termType: 'NamedNode' },
         })).toBe(false);
-      }
+      },
     );
 
     it('should not equal an object with a different term type', () => {
@@ -294,7 +294,7 @@ describe('Literal', () => {
           language: 'en-us',
           datatype: { value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString', termType: 'NamedNode' },
         })).toBe(true);
-      }
+      },
     );
 
     it('should not equal a falsy object', () => {
@@ -314,7 +314,7 @@ describe('Literal', () => {
           language: 'en-us',
           datatype: { value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString', termType: 'NamedNode' },
         })).toBe(false);
-      }
+      },
     );
 
     it(
@@ -326,7 +326,7 @@ describe('Literal', () => {
           language: '',
           datatype: { value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString', termType: 'NamedNode' },
         })).toBe(false);
-      }
+      },
     );
 
     it(
@@ -338,7 +338,7 @@ describe('Literal', () => {
           language: 'en-us',
           datatype: { value: 'other', termType: 'NamedNode' },
         })).toBe(false);
-      }
+      },
     );
 
     it('should not equal an object with a different term type', () => {
@@ -410,7 +410,7 @@ describe('Literal', () => {
           language: 'en-us',
           datatype: { value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString', termType: 'NamedNode' },
         })).toBe(true);
-      }
+      },
     );
 
     it('should not equal a falsy object', () => {
@@ -430,7 +430,7 @@ describe('Literal', () => {
           language: 'en-us',
           datatype: { value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString', termType: 'NamedNode' },
         })).toBe(false);
-      }
+      },
     );
 
     it(
@@ -442,7 +442,7 @@ describe('Literal', () => {
           language: 'fr',
           datatype: { value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString', termType: 'NamedNode' },
         })).toBe(false);
-      }
+      },
     );
 
     it(
@@ -454,7 +454,7 @@ describe('Literal', () => {
           language: 'en-us',
           datatype: { value: 'other', termType: 'NamedNode' },
         })).toBe(false);
-      }
+      },
     );
 
     it('should not equal an object with a different term type', () => {
@@ -526,7 +526,7 @@ describe('Literal', () => {
           language: '',
           datatype: { value: 'http://example.org/types#type', termType: 'NamedNode' },
         })).toBe(true);
-      }
+      },
     );
 
     it('should not equal a falsy object', () => {
@@ -546,7 +546,7 @@ describe('Literal', () => {
           language: '',
           datatype: { value: 'http://example.org/types#type', termType: 'NamedNode' },
         })).toBe(false);
-      }
+      },
     );
 
     it(
@@ -558,7 +558,7 @@ describe('Literal', () => {
           language: 'en',
           datatype: { value: 'http://example.org/types#type', termType: 'NamedNode' },
         })).toBe(false);
-      }
+      },
     );
 
     it(
@@ -570,7 +570,7 @@ describe('Literal', () => {
           language: '',
           datatype: { value: 'other', termType: 'NamedNode' },
         })).toBe(false);
-      }
+      },
     );
 
     it('should not equal an object with a different term type', () => {
@@ -598,7 +598,7 @@ describe('Literal', () => {
   describe('A Literal instance created from a string with a datatype', () => {
     let literal;
     beforeAll(
-      () => { literal = new Literal('"my @^^ string"^^http://example.org/types#type'); }
+      () => { literal = new Literal('"my @^^ string"^^http://example.org/types#type'); },
     );
 
     it('should be a Literal', () => {
@@ -633,7 +633,7 @@ describe('Literal', () => {
 
     it('should equal a Literal instance with the same value', () => {
       expect(
-        literal.equals(new Literal('"my @^^ string"^^http://example.org/types#type'))
+        literal.equals(new Literal('"my @^^ string"^^http://example.org/types#type')),
       ).toBe(true);
     });
 
@@ -646,7 +646,7 @@ describe('Literal', () => {
           language: '',
           datatype: { value: 'http://example.org/types#type', termType: 'NamedNode' },
         })).toBe(true);
-      }
+      },
     );
 
     it('should not equal a falsy object', () => {
@@ -655,7 +655,7 @@ describe('Literal', () => {
 
     it('should not equal a Literal instance with another value', () => {
       expect(
-        literal.equals(new Literal('"other string"^^http://example.org/types#type'))
+        literal.equals(new Literal('"other string"^^http://example.org/types#type')),
       ).toBe(false);
     });
 
@@ -668,7 +668,7 @@ describe('Literal', () => {
           language: '',
           datatype: { value: 'http://example.org/types#type', termType: 'NamedNode' },
         })).toBe(false);
-      }
+      },
     );
 
     it(
@@ -680,7 +680,7 @@ describe('Literal', () => {
           language: 'en',
           datatype: { value: 'http://example.org/types#type', termType: 'NamedNode' },
         })).toBe(false);
-      }
+      },
     );
 
     it(
@@ -692,7 +692,7 @@ describe('Literal', () => {
           language: '',
           datatype: { value: 'other', termType: 'NamedNode' },
         })).toBe(false);
-      }
+      },
     );
 
     it('should not equal an object with a different term type', () => {

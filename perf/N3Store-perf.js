@@ -95,7 +95,7 @@ for (let i = 0; i < dimQuads; i++) {
   store.addQuad(
     prefix + i,
     prefix + i,
-    prefix + i
+    prefix + i,
   );
 }
 console.timeEnd(TEST);

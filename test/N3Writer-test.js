@@ -25,14 +25,14 @@ describe('Writer', () => {
     it('should serialize a single triple', () => {
       const writer = new Writer();
       expect(
-        writer.quadToString(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))
+        writer.quadToString(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')),
       ).toBe('<a> <b> <c> .\n');
     });
 
     it('should serialize a single quad', () => {
       const writer = new Writer();
       expect(
-        writer.quadToString(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g'))
+        writer.quadToString(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')),
       ).toBe('<a> <b> <c> <g> .\n');
     });
 
@@ -67,189 +67,189 @@ describe('Writer', () => {
     it(
       'should serialize a literal with a type',
       shouldSerialize(['a', 'b', '"cde"^^fgh'],
-                      '<a> <b> "cde"^^<fgh>.\n')
+                      '<a> <b> "cde"^^<fgh>.\n'),
     );
 
     it(
       'should serialize a literal with a language',
       shouldSerialize(['a', 'b', '"cde"@en-us'],
-                      '<a> <b> "cde"@en-us.\n')
+                      '<a> <b> "cde"@en-us.\n'),
     );
 
     // e.g. http://vocab.getty.edu/aat/300264727.ttl
     it(
       'should serialize a literal with an artificial language',
       shouldSerialize(['a', 'b', '"cde"@qqq-002'],
-                       '<a> <b> "cde"@qqq-002.\n')
+                       '<a> <b> "cde"@qqq-002.\n'),
     );
 
     it(
       'should serialize a literal containing a single quote',
       shouldSerialize(['a', 'b', '"c\'de"'],
-                      '<a> <b> "c\'de".\n')
+                      '<a> <b> "c\'de".\n'),
     );
 
     it(
       'should serialize a literal containing a double quote',
       shouldSerialize(['a', 'b', '"c"de"'],
-                      '<a> <b> "c\\"de".\n')
+                      '<a> <b> "c\\"de".\n'),
     );
 
     it(
       'should serialize a literal containing a backspace',
       shouldSerialize(['a', 'b', '"c\\de"'],
-                      '<a> <b> "c\\\\de".\n')
+                      '<a> <b> "c\\\\de".\n'),
     );
 
     it(
       'should serialize a literal containing a tab character',
       shouldSerialize(['a', 'b', '"c\tde"'],
-                      '<a> <b> "c\\tde".\n')
+                      '<a> <b> "c\\tde".\n'),
     );
 
     it(
       'should serialize a literal containing a newline character',
       shouldSerialize(['a', 'b', '"c\nde"'],
-                      '<a> <b> "c\\nde".\n')
+                      '<a> <b> "c\\nde".\n'),
     );
 
     it(
       'should serialize a literal containing a cariage return character',
       shouldSerialize(['a', 'b', '"c\rde"'],
-                      '<a> <b> "c\\rde".\n')
+                      '<a> <b> "c\\rde".\n'),
     );
 
     it(
       'should serialize a literal containing a backspace character',
       shouldSerialize(['a', 'b', '"c\bde"'],
-                      '<a> <b> "c\\bde".\n')
+                      '<a> <b> "c\\bde".\n'),
     );
 
     it(
       'should serialize a literal containing a form feed character',
       shouldSerialize(['a', 'b', '"c\fde"'],
-                      '<a> <b> "c\\fde".\n')
+                      '<a> <b> "c\\fde".\n'),
     );
 
     it(
       'should serialize a literal containing a line separator',
       shouldSerialize(['a', 'b', '"c\u2028de"'],
-                      '<a> <b> "c\u2028de".\n')
+                      '<a> <b> "c\u2028de".\n'),
     );
 
     it(
       'should serialize a literal containing a paragraph separator',
       shouldSerialize(['a', 'b', '"c\u2029de"'],
-                      '<a> <b> "c\u2029de".\n')
+                      '<a> <b> "c\u2029de".\n'),
     );
 
     it(
       'should serialize a literal containing special unicode characters',
       shouldSerialize(['a', 'b', '"c\u0000\u0001"'],
-                      '<a> <b> "c\\u0000\\u0001".\n')
+                      '<a> <b> "c\\u0000\\u0001".\n'),
     );
 
     it(
       'should serialize a true boolean literal',
       shouldSerialize(['a', 'b', `"true"^^${xsd.boolean}`],
-                      '<a> <b> true.\n')
+                      '<a> <b> true.\n'),
     );
 
     it(
       'should serialize a false boolean literal',
       shouldSerialize(['a', 'b', `"false"^^${xsd.boolean}`],
-                      '<a> <b> false.\n')
+                      '<a> <b> false.\n'),
     );
 
     it(
       'should serialize an invalid boolean literal',
       shouldSerialize(['a', 'b', `"invalid"^^${xsd.boolean}`],
-                      `<a> <b> "invalid"^^<${xsd.boolean}>.\n`)
+                      `<a> <b> "invalid"^^<${xsd.boolean}>.\n`),
     );
 
     it(
       'should serialize an integer literal',
       shouldSerialize(['a', 'b', `"123"^^${xsd.integer}`],
-                      '<a> <b> 123.\n')
+                      '<a> <b> 123.\n'),
     );
 
     it(
       'should serialize a positive integer literal',
       shouldSerialize(['a', 'b', `"+123"^^${xsd.integer}`],
-                      '<a> <b> +123.\n')
+                      '<a> <b> +123.\n'),
     );
 
     it(
       'should serialize a negative integer literal',
       shouldSerialize(['a', 'b', `"-123"^^${xsd.integer}`],
-                      '<a> <b> -123.\n')
+                      '<a> <b> -123.\n'),
     );
 
     it(
       'should serialize an invalid integer literal',
       shouldSerialize(['a', 'b', `"invalid"^^${xsd.integer}`],
-                      `<a> <b> "invalid"^^<${xsd.integer}>.\n`)
+                      `<a> <b> "invalid"^^<${xsd.integer}>.\n`),
     );
 
     it(
       'should serialize a decimal literal',
       shouldSerialize(['a', 'b', `"123.456"^^${xsd.decimal}`],
-                      '<a> <b> 123.456.\n')
+                      '<a> <b> 123.456.\n'),
     );
 
     it(
       'should serialize a positive decimal literal',
       shouldSerialize(['a', 'b', `"+123.456"^^${xsd.decimal}`],
-                      '<a> <b> +123.456.\n')
+                      '<a> <b> +123.456.\n'),
     );
 
     it(
       'should serialize a negative decimal literal',
       shouldSerialize(['a', 'b', `"-123.456"^^${xsd.decimal}`],
-                      '<a> <b> -123.456.\n')
+                      '<a> <b> -123.456.\n'),
     );
 
     it(
       'should serialize an invalid decimal literal',
       shouldSerialize(['a', 'b', `"invalid"^^${xsd.decimal}`],
-                      `<a> <b> "invalid"^^<${xsd.decimal}>.\n`)
+                      `<a> <b> "invalid"^^<${xsd.decimal}>.\n`),
     );
 
     it(
       'should serialize a double literal',
       shouldSerialize(['a', 'b', `"123.456E10"^^${xsd.double}`],
-                      '<a> <b> 123.456E10.\n')
+                      '<a> <b> 123.456E10.\n'),
     );
 
     it(
       'should serialize a positive double literal',
       shouldSerialize(['a', 'b', `"+123.456E10"^^${xsd.double}`],
-                      '<a> <b> +123.456E10.\n')
+                      '<a> <b> +123.456E10.\n'),
     );
 
     it(
       'should serialize a negative double literal',
       shouldSerialize(['a', 'b', `"-123.456E10"^^${xsd.double}`],
-                      '<a> <b> -123.456E10.\n')
+                      '<a> <b> -123.456E10.\n'),
     );
 
     it(
       'should serialize an invalid double literal',
       shouldSerialize(['a', 'b', `"invalid"^^${xsd.double}`],
-                      `<a> <b> "invalid"^^<${xsd.double}>.\n`)
+                      `<a> <b> "invalid"^^<${xsd.double}>.\n`),
     );
 
     it(
       'should serialize blank nodes',
       shouldSerialize(['_:a', 'b', { termType: 'BlankNode', value: 'c' }],
-                      '_:a <b> _:c.\n')
+                      '_:a <b> _:c.\n'),
     );
 
     it(
       'should not leave leading whitespace if the prefix set is empty',
       shouldSerialize({},
                       ['a', 'b', 'c'],
-                      '<a> <b> <c>.\n')
+                      '<a> <b> <c>.\n'),
     );
 
     it(
@@ -257,7 +257,7 @@ describe('Writer', () => {
       shouldSerialize({ prefixes: { a: 'http://a.org/', b: new NamedNode('http://a.org/b#'), c: 'http://a.org/c' } },
                       '@prefix a: <http://a.org/>.\n' +
                       '@prefix b: <http://a.org/b#>.\n' +
-                      '@prefix c: <http://a.org/c>.\n\n')
+                      '@prefix c: <http://a.org/c>.\n\n'),
     );
 
     it(
@@ -271,7 +271,7 @@ describe('Writer', () => {
                       '@prefix c: <http://a.org/b>.\n\n' +
                       'a:bc b:ef a:bhi.\n' +
                       '<http://a.org/bc/de> <http://a.org/b#e#f> <http://a.org/b#x/t>.\n' +
-                      '<http://a.org/3a> <http://a.org/b#3a> b:a3.\n')
+                      '<http://a.org/3a> <http://a.org/b#3a> b:a3.\n'),
     );
 
     it(
@@ -280,7 +280,7 @@ describe('Writer', () => {
                       ['a:bc', 'b:ef', 'c:bhi'],
                       '@prefix a: <http://a.org/>.\n' +
                       '@prefix b: <http://a.org/b#>.\n\n' +
-                      'a:bc b:ef <c:bhi>.\n')
+                      'a:bc b:ef <c:bhi>.\n'),
     );
 
     it(
@@ -290,7 +290,7 @@ describe('Writer', () => {
                       ['stu', 'vwx', 'yz'],
                       '<abc> <def> <ghi>;\n' +
                       '    <mno> <pqr>.\n' +
-                      '<stu> <vwx> <yz>.\n')
+                      '<stu> <vwx> <yz>.\n'),
     );
 
     it(
@@ -302,13 +302,13 @@ describe('Writer', () => {
                       ['stu', 'bef', 'yz'],
                       '<abc> <def> <ghi>, <pqr>;\n' +
                       '    <bef> <ghi>, <pqr>.\n' +
-                      '<stu> <bef> <yz>.\n')
+                      '<stu> <bef> <yz>.\n'),
     );
 
     it(
       'should write rdf:type as "a"',
       shouldSerialize(['abc', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'def'],
-                      '<abc> a <def>.\n')
+                      '<abc> a <def>.\n'),
     );
 
     it(
@@ -316,7 +316,7 @@ describe('Writer', () => {
       shouldSerialize(['abc', 'def', 'ghi', 'xyz'],
                       '<xyz> {\n' +
                       '<abc> <def> <ghi>\n' +
-                      '}\n')
+                      '}\n'),
     );
 
     it(
@@ -328,7 +328,7 @@ describe('Writer', () => {
                       '<abc> <def> <ghi>.\n' +
                       '<jkl> <mno> <pqr>.\n' +
                       '<stu> <vwx> <yz>\n' +
-                      '}\n')
+                      '}\n'),
     );
 
     it(
@@ -338,19 +338,19 @@ describe('Writer', () => {
                       ['stu', 'vwx', 'yz',  'abc'],
                       '<xyz> {\n<abc> <def> <ghi>\n}\n' +
                       '<jkl> <mno> <pqr>.\n' +
-                      '<abc> {\n<stu> <vwx> <yz>\n}\n')
+                      '<abc> {\n<stu> <vwx> <yz>\n}\n'),
     );
 
     it(
       'should output 8-bit unicode characters as escape sequences',
       shouldSerialize(['\ud835\udc00', '\ud835\udc00', '"\ud835\udc00"^^\ud835\udc00', '\ud835\udc00'],
-                      '<\\U0001d400> {\n<\\U0001d400> <\\U0001d400> "\\U0001d400"^^<\\U0001d400>\n}\n')
+                      '<\\U0001d400> {\n<\\U0001d400> <\\U0001d400> "\\U0001d400"^^<\\U0001d400>\n}\n'),
     );
 
     it(
       'should not use escape sequences in blank nodes',
       shouldSerialize(['_:\ud835\udc00', '_:\ud835\udc00', '_:\ud835\udc00', '_:\ud835\udc00'],
-                      '_:\ud835\udc00 {\n_:\ud835\udc00 _:\ud835\udc00 _:\ud835\udc00\n}\n')
+                      '_:\ud835\udc00 {\n_:\ud835\udc00 _:\ud835\udc00 _:\ud835\udc00\n}\n'),
     );
 
     it('calls the done callback when ending the outputstream errors', done => {
@@ -380,7 +380,7 @@ describe('Writer', () => {
           expect(output).toBe('@prefix a: <b#>.\n\na:a a:b a:c.\n');
           done(error);
         });
-      }
+      },
     );
 
     it('ignores an empty prefix list', done => {
@@ -403,7 +403,7 @@ describe('Writer', () => {
           expect(output).toBe('@prefix a: <b#>.\n\na:g {\na:_a a:b a:c\n}\n');
           done(error);
         });
-      }
+      },
     );
 
     it(
@@ -421,7 +421,7 @@ describe('Writer', () => {
                               '@prefix d: <e#>.\n\na:g {\na:a a:b a:d\n}\n');
           done(error);
         });
-      }
+      },
     );
 
     it('should not write prefixes in N-Triples mode', done => {
@@ -459,7 +459,7 @@ describe('Writer', () => {
         new NamedNode('https://pod.example/profile/card-1234.ttl')));
       writer.end((error, output) => {
         expect(output).toBe(
-          '<#me> <http://www.w3.org/2002/07/owl#sameAs> <https://pod.example/profile/card-1234.ttl>.\n'
+          '<#me> <http://www.w3.org/2002/07/owl#sameAs> <https://pod.example/profile/card-1234.ttl>.\n',
         );
         done(error);
       });
@@ -521,7 +521,7 @@ describe('Writer', () => {
                               '<a3> <b> [ <d> <e> ].\n');
           done(error);
         });
-      }
+      },
     );
 
     it(
@@ -539,7 +539,7 @@ describe('Writer', () => {
                               '].\n');
           done(error);
         });
-      }
+      },
     );
 
     it(
@@ -559,7 +559,7 @@ describe('Writer', () => {
                               '].\n');
           done(error);
         });
-      }
+      },
     );
 
     it(
@@ -579,7 +579,7 @@ describe('Writer', () => {
             '].\n');
           done(error);
         });
-      }
+      },
     );
 
     it('should serialize triples with nested blank nodes as object', done => {
@@ -639,7 +639,7 @@ describe('Writer', () => {
                               '[ <a> <b> ] <c> <d>.\n');
           done(error);
         });
-      }
+      },
     );
 
     it('should serialize triples with an empty blank node as graph', done => {
@@ -733,7 +733,7 @@ describe('Writer', () => {
             '<a3> <b> _:m3.\n');
           done(error);
         });
-      }
+      },
     );
 
     it('should accept triples in bulk', done => {
@@ -812,15 +812,15 @@ describe('Writer', () => {
       () => {
         const writer = new Writer();
         expect(
-          writer.quadToString(new Quad(new BlankNode('b1'), new NamedNode('b'), new Literal('l1')), new NamedNode('b'), new NamedNode('c'))
+          writer.quadToString(new Quad(new BlankNode('b1'), new NamedNode('b'), new Literal('l1')), new NamedNode('b'), new NamedNode('c')),
         ).toBe('<<_:b1 <b> "l">> <b> <c> .\n');
-      }
+      },
     );
 
     it('should serialize a triple with a triple with iris as subject', () => {
       const writer = new Writer();
       expect(
-        writer.quadToString(new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')), new NamedNode('b'), new NamedNode('c'))
+        writer.quadToString(new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')), new NamedNode('b'), new NamedNode('c')),
       ).toBe('<<<a> <b> <c>>> <b> <c> .\n');
     });
 
@@ -829,22 +829,22 @@ describe('Writer', () => {
       () => {
         const writer = new Writer();
         expect(
-          writer.quadToString(new Quad(new BlankNode('b1'), new BlankNode('b2'), new BlankNode('b3')), new NamedNode('b'), new NamedNode('c'))
+          writer.quadToString(new Quad(new BlankNode('b1'), new BlankNode('b2'), new BlankNode('b3')), new NamedNode('b'), new NamedNode('c')),
         ).toBe('<<_:b1 _:b2 _:b3>> <b> <c> .\n');
-      }
+      },
     );
 
     it('should serialize a triple with a triple as object', () => {
       const writer = new Writer();
       expect(
-        writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new BlankNode('b1'), new NamedNode('b'), new Literal('l1')))
+        writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new BlankNode('b1'), new NamedNode('b'), new Literal('l1'))),
       ).toBe('<a> <b> <<_:b1 <b> "l">> .\n');
     });
 
     it('should serialize a triple with a triple with iris as object', () => {
       const writer = new Writer();
       expect(
-        writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')))
+        writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))),
       ).toBe('<a> <b> <<<a> <b> <c>>> .\n');
     });
 
@@ -853,9 +853,9 @@ describe('Writer', () => {
       () => {
         const writer = new Writer();
         expect(
-          writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new BlankNode('b1'), new BlankNode('b2'), new BlankNode('b3')))
+          writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new BlankNode('b1'), new BlankNode('b2'), new BlankNode('b3'))),
         ).toBe('<a> <b> <<_:b1 _:b2 _:b3>> .\n');
-      }
+      },
     );
 
     it(
@@ -863,43 +863,43 @@ describe('Writer', () => {
       () => {
         const writer = new Writer();
         expect(
-          writer.quadToString(new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')), new NamedNode('b'), new NamedNode('c'), new NamedNode('g'))
+          writer.quadToString(new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')),
         ).toBe('<<<a> <b> <c>>> <b> <c> <g> .\n');
-      }
+      },
     );
 
     it('should serialize a quad with a triple as object', () => {
       const writer = new Writer();
       expect(
-        writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')), new NamedNode('g'))
+        writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')), new NamedNode('g')),
       ).toBe('<a> <b> <<<a> <b> <c>>> <g> .\n');
     });
 
     it('should serialize a quad with a quad as subject', () => {
       const writer = new Writer();
       expect(
-        writer.quadToString(new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')), new NamedNode('b'), new NamedNode('c'), new NamedNode('g'))
+        writer.quadToString(new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')),
       ).toBe('<<<a> <b> <c> <g>>> <b> <c> <g> .\n');
     });
 
     it('should serialize a quad with a quad as object', () => {
       const writer = new Writer();
       expect(
-        writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')), new NamedNode('g'))
+        writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')), new NamedNode('g')),
       ).toBe('<a> <b> <<<a> <b> <c> <g>>> <g> .\n');
     });
 
     it('should serialize a triple with a quad as subject', () => {
       const writer = new Writer();
       expect(
-        writer.quadToString(new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')), new NamedNode('b'), new NamedNode('c'))
+        writer.quadToString(new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')), new NamedNode('b'), new NamedNode('c')),
       ).toBe('<<<a> <b> <c> <g>>> <b> <c> .\n');
     });
 
     it('should serialize a triple with a quad as object', () => {
       const writer = new Writer();
       expect(
-        writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')))
+        writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g'))),
       ).toBe('<a> <b> <<<a> <b> <c> <g>>> .\n');
     });
   });

@@ -65,7 +65,7 @@ describe('BlankNode', () => {
           termType: 'BlankNode',
           value: 'b2',
         })).toBe(false);
-      }
+      },
     );
 
     it(
@@ -75,7 +75,7 @@ describe('BlankNode', () => {
           termType: 'NamedNode',
           value: 'b1',
         })).toBe(false);
-      }
+      },
     );
 
     it('should provide a JSON representation', () => {

@@ -24,10 +24,10 @@ describe('Parser', () => {
   });
 
   describe('A Parser instance', () => {
-    it('should parse the empty string', shouldParse(''
+    it('should parse the empty string', shouldParse('',
                 /* no triples */));
 
-    it('should parse a whitespace string', shouldParse(' \t \n  '
+    it('should parse a whitespace string', shouldParse(' \t \n  ',
                 /* no triples */));
 
     it('should parse a single triple', shouldParse('<a> <b> <c>.',
@@ -38,7 +38,7 @@ describe('Parser', () => {
       shouldParse('<a> <b> <c>.\n<d> <e> <f>.\n<g> <h> <i>.',
                   ['a', 'b', 'c'],
                   ['d', 'e', 'f'],
-                  ['g', 'h', 'i'])
+                  ['g', 'h', 'i']),
     );
 
     it('should parse a triple with a literal', shouldParse('<a> <b> "string".',
@@ -47,7 +47,7 @@ describe('Parser', () => {
     it(
       'should parse a triple with a numeric literal',
       shouldParse('<a> <b> 3.0.',
-                  ['a', 'b', '"3.0"^^http://www.w3.org/2001/XMLSchema#decimal'])
+                  ['a', 'b', '"3.0"^^http://www.w3.org/2001/XMLSchema#decimal']),
     );
 
     it('should parse a triple with an integer literal', shouldParse('<a> <b> 3.',
@@ -56,44 +56,44 @@ describe('Parser', () => {
     it(
       'should parse a triple with a floating point literal',
       shouldParse('<a> <b> 1.3e2.',
-                  ['a', 'b', '"1.3e2"^^http://www.w3.org/2001/XMLSchema#double'])
+                  ['a', 'b', '"1.3e2"^^http://www.w3.org/2001/XMLSchema#double']),
     );
 
     it(
       'should parse a triple with a boolean literal',
       shouldParse('<a> <b> true.',
-                  ['a', 'b', '"true"^^http://www.w3.org/2001/XMLSchema#boolean'])
+                  ['a', 'b', '"true"^^http://www.w3.org/2001/XMLSchema#boolean']),
     );
 
     it(
       'should parse a triple with a literal and a language code',
       shouldParse('<a> <b> "string"@en.',
-                  ['a', 'b', '"string"@en'])
+                  ['a', 'b', '"string"@en']),
     );
 
     it(
       'should normalize language codes to lowercase',
       shouldParse('<a> <b> "string"@EN.',
-                  ['a', 'b', '"string"@en'])
+                  ['a', 'b', '"string"@en']),
     );
 
     it(
       'should parse a triple with a literal and an IRI type',
       shouldParse('<a> <b> "string"^^<type>.',
-                  ['a', 'b', '"string"^^http://example.org/type'])
+                  ['a', 'b', '"string"^^http://example.org/type']),
     );
 
     it(
       'should parse a triple with a literal and a prefixed name type',
       shouldParse('@prefix x: <urn:x:y#>. <a> <b> "string"^^x:z.',
-                  ['a', 'b', '"string"^^urn:x:y#z'])
+                  ['a', 'b', '"string"^^urn:x:y#z']),
     );
 
     it(
       'should differentiate between IRI and prefixed name types',
       shouldParse('@prefix : <noturn:>. :a :b "x"^^<urn:foo>. :a :b "x"^^:urn:foo.',
                   ['noturn:a', 'noturn:b', '"x"^^urn:foo'],
-                  ['noturn:a', 'noturn:b', '"x"^^noturn:urn:foo'])
+                  ['noturn:a', 'noturn:b', '"x"^^noturn:urn:foo']),
     );
 
     it(
@@ -117,13 +117,13 @@ describe('Parser', () => {
                          start: 8,
                          end: 16,
                        },
-                     })
+                     }),
     );
 
     it(
       'should parse a triple with the "a" shorthand predicate',
       shouldParse('<a> a <t>.',
-                  ['a', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 't'])
+                  ['a', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 't']),
     );
 
     it('should parse triples with prefixes', shouldParse('@prefix : <#>.\n' +
@@ -135,21 +135,21 @@ describe('Parser', () => {
       'should parse triples with the prefix "prefix"',
       shouldParse('@prefix prefix: <http://prefix.cc/>.' +
                   'prefix:a prefix:b prefix:c.',
-                  ['http://prefix.cc/a', 'http://prefix.cc/b', 'http://prefix.cc/c'])
+                  ['http://prefix.cc/a', 'http://prefix.cc/b', 'http://prefix.cc/c']),
     );
 
     it(
       'should parse triples with the prefix "base"',
       shouldParse('PREFIX base: <http://prefix.cc/>' +
                   'base:a base:b base:c.',
-                  ['http://prefix.cc/a', 'http://prefix.cc/b', 'http://prefix.cc/c'])
+                  ['http://prefix.cc/a', 'http://prefix.cc/b', 'http://prefix.cc/c']),
     );
 
     it(
       'should parse triples with the prefix "graph"',
       shouldParse('PREFIX graph: <http://prefix.cc/>' +
                   'graph:a graph:b graph:c.',
-                  ['http://prefix.cc/a', 'http://prefix.cc/b', 'http://prefix.cc/c'])
+                  ['http://prefix.cc/a', 'http://prefix.cc/b', 'http://prefix.cc/c']),
     );
 
     it('should not parse @PREFIX', shouldNotParse('@PREFIX : <#>.',
@@ -173,13 +173,13 @@ describe('Parser', () => {
                   ':x a:a a:b;a:c a:d,a:e.',
                   ['#x', 'a#a', 'a#b'],
                   ['#x', 'a#c', 'a#d'],
-                  ['#x', 'a#c', 'a#e'])
+                  ['#x', 'a#c', 'a#e']),
     );
 
     it(
       'should not parse undefined empty prefix in subject',
       shouldNotParse(':a ',
-                     'Undefined prefix ":" on line 1.')
+                     'Undefined prefix ":" on line 1.'),
     );
 
     it('should not parse undefined prefix in subject', shouldNotParse('a:a ',
@@ -188,19 +188,19 @@ describe('Parser', () => {
     it(
       'should not parse undefined prefix in predicate',
       shouldNotParse('<a> b:c ',
-                     'Undefined prefix "b:" on line 1.')
+                     'Undefined prefix "b:" on line 1.'),
     );
 
     it(
       'should not parse undefined prefix in object',
       shouldNotParse('<a> <b> c:d ',
-                     'Undefined prefix "c:" on line 1.')
+                     'Undefined prefix "c:" on line 1.'),
     );
 
     it(
       'should not parse undefined prefix in datatype',
       shouldNotParse('<a> <b> "c"^^d:e ',
-                     'Undefined prefix "d:" on line 1.')
+                     'Undefined prefix "d:" on line 1.'),
     );
 
     it(
@@ -208,65 +208,65 @@ describe('Parser', () => {
       shouldParse('PREFIX : <#>\n' +
                   'PrEfIX a: <a#> ' +
                   ':x a:a a:b.',
-                  ['#x', 'a#a', 'a#b'])
+                  ['#x', 'a#a', 'a#b']),
     );
 
     it(
       'should not parse prefix declarations without prefix',
       shouldNotParse('@prefix <a> ',
-                     'Expected prefix to follow @prefix on line 1.')
+                     'Expected prefix to follow @prefix on line 1.'),
     );
 
     it(
       'should not parse prefix declarations without IRI',
       shouldNotParse('@prefix : .',
-                     'Expected IRI to follow prefix ":" on line 1.')
+                     'Expected IRI to follow prefix ":" on line 1.'),
     );
 
     it(
       'should not parse prefix declarations without a dot',
       shouldNotParse('@prefix : <a> ;',
-                     'Expected declaration to end with a dot on line 1.')
+                     'Expected declaration to end with a dot on line 1.'),
     );
 
     it(
       'should parse statements with shared subjects',
       shouldParse('<a> <b> <c>;\n<d> <e>.',
                   ['a', 'b', 'c'],
-                  ['a', 'd', 'e'])
+                  ['a', 'd', 'e']),
     );
 
     it(
       'should parse statements with shared subjects and trailing semicolon',
       shouldParse('<a> <b> <c>;\n<d> <e>;\n.',
                   ['a', 'b', 'c'],
-                  ['a', 'd', 'e'])
+                  ['a', 'd', 'e']),
     );
 
     it(
       'should parse statements with shared subjects and multiple semicolons',
       shouldParse('<a> <b> <c>;;\n<d> <e>.',
                   ['a', 'b', 'c'],
-                  ['a', 'd', 'e'])
+                  ['a', 'd', 'e']),
     );
 
     it(
       'should parse statements with shared subjects and predicates',
       shouldParse('<a> <b> <c>, <d>.',
                   ['a', 'b', 'c'],
-                  ['a', 'b', 'd'])
+                  ['a', 'b', 'd']),
     );
 
     it(
       'should not accept ; without preceding predicate',
       shouldNotParse('<a> <b> <c>. <x>; <y> <z>.',
-                     'Expected predicate but got ; on line 1.')
+                     'Expected predicate but got ; on line 1.'),
     );
 
     it(
       'should not accept , without preceding object',
       shouldNotParse('<a> <b> <c>. <x> <y>, <z>.',
-                     'Expected entity but got , on line 1.')
+                     'Expected entity but got , on line 1.'),
     );
 
     it('should parse diamonds', shouldParse('<> <> <> <>.\n(<>) <> (<>) <>.',
@@ -280,7 +280,7 @@ describe('Parser', () => {
     it(
       'should parse statements with named blank nodes',
       shouldParse('_:a <b> _:c.',
-                  ['_:b0_a', 'b', '_:b0_c'])
+                  ['_:b0_a', 'b', '_:b0_c']),
     );
 
     it(
@@ -304,7 +304,7 @@ describe('Parser', () => {
                          start: 0,
                          end: 4,
                        },
-                     })
+                     }),
     );
 
     it(
@@ -328,66 +328,66 @@ describe('Parser', () => {
                          start: 0,
                          end: 4,
                        },
-                     })
+                     }),
     );
 
     it(
       'should parse statements with empty blank nodes',
       shouldParse('[] <b> [].',
-                  ['_:b0', 'b', '_:b1'])
+                  ['_:b0', 'b', '_:b1']),
     );
 
     it(
       'should parse statements with unnamed blank nodes in the subject',
       shouldParse('[<a> <b>] <c> <d>.',
                   ['_:b0', 'c', 'd'],
-                  ['_:b0', 'a', 'b'])
+                  ['_:b0', 'a', 'b']),
     );
 
     it(
       'should parse statements with unnamed blank nodes in the object',
       shouldParse('<a> <b> [<c> <d>].',
                   ['a', 'b', '_:b0'],
-                  ['_:b0', 'c', 'd'])
+                  ['_:b0', 'c', 'd']),
     );
 
     it(
       'should parse statements with unnamed blank nodes with a string object',
       shouldParse('<a> <b> [<c> "x"].',
                   ['a', 'b', '_:b0'],
-                  ['_:b0', 'c', '"x"'])
+                  ['_:b0', 'c', '"x"']),
     );
 
     it(
       'should not parse a blank node with missing subject',
       shouldNotParse('<a> <b> [<c>].',
-                     'Expected entity but got ] on line 1.')
+                     'Expected entity but got ] on line 1.'),
     );
 
     it(
       'should not parse a blank node with only a semicolon',
       shouldNotParse('<a> <b> [;].',
-                     'Expected predicate but got ; on line 1.')
+                     'Expected predicate but got ; on line 1.'),
     );
 
     it(
       'should not parse a dangling blank node closing brace',
       shouldNotParse('<a:a> <b:b> <c:c> ; ]',
-                     'Unexpected ] on line 1.')
+                     'Unexpected ] on line 1.'),
     );
 
     it(
       'should parse a blank node with a trailing semicolon',
       shouldParse('<a> <b> [ <u> <v>; ].',
                   ['a', 'b', '_:b0'],
-                  ['_:b0', 'u', 'v'])
+                  ['_:b0', 'u', 'v']),
     );
 
     it(
       'should parse a blank node with multiple trailing semicolons',
       shouldParse('<a> <b> [ <u> <v>;;; ].',
                   ['a', 'b', '_:b0'],
-                  ['_:b0', 'u', 'v'])
+                  ['_:b0', 'u', 'v']),
     );
 
     it(
@@ -395,7 +395,7 @@ describe('Parser', () => {
       shouldParse('<a> <b> [ <u> <v>; <w> <z> ].',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'u', 'v'],
-                  ['_:b0', 'w', 'z'])
+                  ['_:b0', 'w', 'z']),
     );
 
     it(
@@ -403,7 +403,7 @@ describe('Parser', () => {
       shouldParse('<a> <b> [ <u> <v>;;; <w> <z> ].',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'u', 'v'],
-                  ['_:b0', 'w', 'z'])
+                  ['_:b0', 'w', 'z']),
     );
 
     it(
@@ -411,7 +411,7 @@ describe('Parser', () => {
       shouldParse('<a> <b> [ <u> <v>, <z> ].',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'u', 'v'],
-                  ['_:b0', 'u', 'z'])
+                  ['_:b0', 'u', 'z']),
     );
 
     it(
@@ -419,7 +419,7 @@ describe('Parser', () => {
       shouldParse('<a> <b> [ <u> <v>; <w> "z" ].',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'u', 'v'],
-                  ['_:b0', 'w', '"z"'])
+                  ['_:b0', 'w', '"z"']),
     );
 
     it(
@@ -427,7 +427,7 @@ describe('Parser', () => {
       shouldParse('<a> <b> [ <u> <v>; <w> "z"^^<t> ].',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'u', 'v'],
-                  ['_:b0', 'w', '"z"^^http://example.org/t'])
+                  ['_:b0', 'w', '"z"^^http://example.org/t']),
     );
 
     it(
@@ -435,7 +435,7 @@ describe('Parser', () => {
       shouldParse('<a> <b> [ <u> <v>; <w> "z"^^<t> ].',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'u', 'v'],
-                  ['_:b0', 'w', '"z"^^http://example.org/t'])
+                  ['_:b0', 'w', '"z"^^http://example.org/t']),
     );
 
     it(
@@ -443,7 +443,7 @@ describe('Parser', () => {
       shouldParse('<a> <b> [ <u> <v>; <w> <z>; ].',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'u', 'v'],
-                  ['_:b0', 'w', 'z'])
+                  ['_:b0', 'w', 'z']),
     );
 
     it(
@@ -451,7 +451,7 @@ describe('Parser', () => {
       shouldParse('[<a> [<x> <y>]] <c> <d>.',
                   ['_:b0', 'c', 'd'],
                   ['_:b0', 'a', '_:b1'],
-                  ['_:b1', 'x', 'y'])
+                  ['_:b1', 'x', 'y']),
     );
 
     it(
@@ -459,14 +459,14 @@ describe('Parser', () => {
       shouldParse('<a> <b> [<c> [<d> <e>]].',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'c', '_:b1'],
-                  ['_:b1', 'd', 'e'])
+                  ['_:b1', 'd', 'e']),
     );
 
     it(
       'should reuse identifiers of blank nodes within and outside of graphs',
       shouldParse('_:a <b> _:c. <g> { _:a <b> _:c }',
                   ['_:b0_a', 'b', '_:b0_c'],
-                  ['_:b0_a', 'b', '_:b0_c', 'g'])
+                  ['_:b0_a', 'b', '_:b0_c', 'g']),
     );
 
     it('should not parse an invalid blank node', shouldNotParse('[ <a> <b> .',
@@ -475,31 +475,31 @@ describe('Parser', () => {
     it(
       'should parse a statements with only an anonymous node',
       shouldParse('[<p> <o>].',
-                  ['_:b0', 'p', 'o'])
+                  ['_:b0', 'p', 'o']),
     );
 
     it(
       'should not parse a statement with only a blank anonymous node',
       shouldNotParse('[].',
-                     'Unexpected . on line 1.')
+                     'Unexpected . on line 1.'),
     );
 
     it(
       'should not parse an anonymous node with only an anonymous node inside',
       shouldNotParse('[[<p> <o>]].',
-                     'Disallowed blank node as predicate on line 1.')
+                     'Disallowed blank node as predicate on line 1.'),
     );
 
     it(
       'should parse statements with an empty list in the subject',
       shouldParse('() <a> <b>.',
-                  ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'a', 'b'])
+                  ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'a', 'b']),
     );
 
     it(
       'should parse statements with an empty list in the object',
       shouldParse('<a> <b> ().',
-                  ['a', 'b', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'])
+                  ['a', 'b', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     );
 
     it(
@@ -507,7 +507,7 @@ describe('Parser', () => {
       shouldParse('(<x>) <a> <b>.',
                   ['_:b0', 'a', 'b'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'])
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     );
 
     it(
@@ -515,7 +515,7 @@ describe('Parser', () => {
       shouldParse('<a> <b> (<x>).',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'])
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     );
 
     it('should parse a list with a literal', shouldParse('<a> <b> ("x").',
@@ -528,7 +528,7 @@ describe('Parser', () => {
       shouldParse('<a> <b> ("x"^^<y>).',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"x"^^http://example.org/y'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'])
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     );
 
     it(
@@ -536,7 +536,7 @@ describe('Parser', () => {
       shouldParse('<a> <b> ("x"@en-GB).',
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"x"@en-gb'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'])
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     );
 
     it(
@@ -546,7 +546,7 @@ describe('Parser', () => {
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'])
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     );
 
     it(
@@ -556,7 +556,7 @@ describe('Parser', () => {
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'])
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     );
 
     it(
@@ -570,7 +570,7 @@ describe('Parser', () => {
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"1"^^http://www.w3.org/2001/XMLSchema#integer'],
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b3'],
                   ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"z"^^http://example.org/t'],
-                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'])
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     );
 
     it(
@@ -580,13 +580,13 @@ describe('Parser', () => {
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a#x'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a#y'],
-                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'])
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     );
 
     it(
       'should not parse statements with undefined prefixes in lists',
       shouldNotParse('<a> <b> (a:x a:y).',
-                     'Undefined prefix "a:" on line 1.')
+                     'Undefined prefix "a:" on line 1.'),
     );
 
     it(
@@ -596,7 +596,7 @@ describe('Parser', () => {
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b0_x'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b0_y'],
-                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'])
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     );
 
     it(
@@ -606,7 +606,7 @@ describe('Parser', () => {
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'])
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     );
 
     it(
@@ -618,7 +618,7 @@ describe('Parser', () => {
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
-                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'])
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     );
 
     it(
@@ -626,7 +626,7 @@ describe('Parser', () => {
       shouldParse('([]) <a> <b>.',
                   ['_:b0', 'a', 'b'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'])
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     );
 
     it(
@@ -637,7 +637,7 @@ describe('Parser', () => {
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2'],
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3'],
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                  ['_:b3', 'x', 'y'])
+                  ['_:b3', 'x', 'y']),
     );
 
     it(
@@ -646,7 +646,7 @@ describe('Parser', () => {
                   ['_:b0', 'c', 'd'],
                   ['_:b0', 'a', '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'b'],
-                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'])
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     );
 
     it('should not parse an invalid list', shouldNotParse('<a> <b> (]).',
@@ -659,13 +659,13 @@ describe('Parser', () => {
                   '@base <d/>.\n' +
                   '<e> <f> <g>.',
                   ['http://ex.org/a', 'http://ex.org/b', 'http://ex.org/c'],
-                  ['http://ex.org/d/e', 'http://ex.org/d/f', 'http://ex.org/d/g'])
+                  ['http://ex.org/d/e', 'http://ex.org/d/f', 'http://ex.org/d/g']),
     );
 
     it(
       'should not resolve IRIs against @BASE',
       shouldNotParse('@BASE <http://ex.org/>.',
-                     'Expected entity but got @BASE on line 1.')
+                     'Expected entity but got @BASE on line 1.'),
     );
 
     it(
@@ -675,7 +675,7 @@ describe('Parser', () => {
                   'BASE <d/> ' +
                   '<e> <f> <g>.',
                   ['http://ex.org/a', 'http://ex.org/b', 'http://ex.org/c'],
-                  ['http://ex.org/d/e', 'http://ex.org/d/f', 'http://ex.org/d/g'])
+                  ['http://ex.org/d/e', 'http://ex.org/d/f', 'http://ex.org/d/g']),
     );
 
     it(
@@ -685,7 +685,7 @@ describe('Parser', () => {
                   '@base <d/?bar>.\n' +
                   '<> <f> <g>.',
                   ['http://ex.org/?foo', 'http://ex.org/b', 'http://ex.org/c'],
-                  ['http://ex.org/d/?bar', 'http://ex.org/d/f', 'http://ex.org/d/g'])
+                  ['http://ex.org/d/?bar', 'http://ex.org/d/f', 'http://ex.org/d/g']),
     );
 
     it(
@@ -698,7 +698,7 @@ describe('Parser', () => {
                   '<> <?a> <?a=b>.',
                   ['http://ex.org/?', 'http://ex.org/?a', 'http://ex.org/?a=b'],
                   ['http://ex.org/d?', 'http://ex.org/d?a', 'http://ex.org/d?a=b'],
-                  ['http://ex.org/d?e', 'http://ex.org/d?a', 'http://ex.org/d?a=b'])
+                  ['http://ex.org/d?e', 'http://ex.org/d?a', 'http://ex.org/d?a=b']),
     );
 
     it(
@@ -709,19 +709,19 @@ describe('Parser', () => {
                   '<a:a> <b:B> <C-D:c>.',
                   ['http://ex.org/a', 'http://ex.org/b', 'http://ex.org/c'],
                   ['A:',  'b:',  'c:'],
-                  ['a:a', 'b:B', 'C-D:c'])
+                  ['a:a', 'b:B', 'C-D:c']),
     );
 
     it(
       'should not allow relative URIs with a colon in the first path segment',
       shouldNotParse('<entity.beeldbank_leiden_person:A.E._Stuur.> <x:x> <x:x> .',
-                     'Invalid IRI on line 1.')
+                     'Invalid IRI on line 1.'),
     );
 
     it(
       'should not allow relative URIs with a colon in the first path segment as base',
       shouldNotParse('@base <entity.beeldbank_leiden_person:A.E._Stuur.> .',
-                     'Expected valid IRI to follow base declaration on line 1.')
+                     'Expected valid IRI to follow base declaration on line 1.'),
     );
 
     it(
@@ -731,28 +731,28 @@ describe('Parser', () => {
                   '@base <d/>.\n' +
                   '<e> <f> "g"^^<h>.',
                   ['http://ex.org/a', 'http://ex.org/b', '"c"^^http://ex.org/d'],
-                  ['http://ex.org/d/e', 'http://ex.org/d/f', '"g"^^http://ex.org/d/h'])
+                  ['http://ex.org/d/e', 'http://ex.org/d/f', '"g"^^http://ex.org/d/h']),
     );
 
     it(
       'should resolve IRIs against a base with a fragment',
       shouldParse('@base <http://ex.org/foo#bar>.\n' +
                   '<a> <b> <#c>.\n',
-                  ['http://ex.org/a', 'http://ex.org/b', 'http://ex.org/foo#c'])
+                  ['http://ex.org/a', 'http://ex.org/b', 'http://ex.org/foo#c']),
     );
 
     it(
       'should resolve IRIs with an empty fragment',
       shouldParse('@base <http://ex.org/foo>.\n' +
                   '<#> <b#> <#c>.\n',
-                  ['http://ex.org/foo#', 'http://ex.org/b#', 'http://ex.org/foo#c'])
+                  ['http://ex.org/foo#', 'http://ex.org/b#', 'http://ex.org/foo#c']),
     );
 
     it(
       'should not resolve prefixed names',
       shouldParse('PREFIX ex: <http://ex.org/a/bb/ccc/../>\n' +
                   'ex:a ex:b ex:c .',
-                  ['http://ex.org/a/bb/ccc/../a', 'http://ex.org/a/bb/ccc/../b', 'http://ex.org/a/bb/ccc/../c'])
+                  ['http://ex.org/a/bb/ccc/../a', 'http://ex.org/a/bb/ccc/../b', 'http://ex.org/a/bb/ccc/../c']),
     );
 
     it('should parse an empty default graph', shouldParse('{}'));
@@ -760,13 +760,13 @@ describe('Parser', () => {
     it(
       'should parse a one-triple default graph ending without a dot',
       shouldParse('{<a> <b> <c>}',
-                  ['a', 'b', 'c'])
+                  ['a', 'b', 'c']),
     );
 
     it(
       'should parse a one-triple default graph ending with a dot',
       shouldParse('{<a> <b> <c>.}',
-                  ['a', 'b', 'c'])
+                  ['a', 'b', 'c']),
     );
 
     it(
@@ -774,7 +774,7 @@ describe('Parser', () => {
       shouldParse('{<a> <b> <c>;<d> <e>,<f>}',
                   ['a', 'b', 'c'],
                   ['a', 'd', 'e'],
-                  ['a', 'd', 'f'])
+                  ['a', 'd', 'f']),
     );
 
     it(
@@ -782,7 +782,7 @@ describe('Parser', () => {
       shouldParse('{<a> <b> <c>;<d> <e>,<f>.}',
                   ['a', 'b', 'c'],
                   ['a', 'd', 'e'],
-                  ['a', 'd', 'f'])
+                  ['a', 'd', 'f']),
     );
 
     it(
@@ -790,19 +790,19 @@ describe('Parser', () => {
       shouldParse('{<a> <b> <c>;<d> <e>,<f>;}',
                   ['a', 'b', 'c'],
                   ['a', 'd', 'e'],
-                  ['a', 'd', 'f'])
+                  ['a', 'd', 'f']),
     );
 
     it(
       'should parse a default graph with a blank node ending with a dot',
       shouldParse('{ [<p> <o>]. }',
-                  ['_:b0', 'p', 'o'])
+                  ['_:b0', 'p', 'o']),
     );
 
     it(
       'should parse a default graph with a blank node ending without a dot',
       shouldParse('{ [<p> <o>] }',
-                  ['_:b0', 'p', 'o'])
+                  ['_:b0', 'p', 'o']),
     );
 
     it('should parse an empty named graph with an IRI', shouldParse('<g>{}'));
@@ -810,13 +810,13 @@ describe('Parser', () => {
     it(
       'should parse a one-triple named graph with an IRI ending without a dot',
       shouldParse('<g> {<a> <b> <c>}',
-                  ['a', 'b', 'c', 'g'])
+                  ['a', 'b', 'c', 'g']),
     );
 
     it(
       'should parse a one-triple named graph with an IRI ending with a dot',
       shouldParse('<g>{<a> <b> <c>.}',
-                  ['a', 'b', 'c', 'g'])
+                  ['a', 'b', 'c', 'g']),
     );
 
     it(
@@ -824,7 +824,7 @@ describe('Parser', () => {
       shouldParse('<g> {<a> <b> <c>;<d> <e>,<f>}',
                   ['a', 'b', 'c', 'g'],
                   ['a', 'd', 'e', 'g'],
-                  ['a', 'd', 'f', 'g'])
+                  ['a', 'd', 'f', 'g']),
     );
 
     it(
@@ -832,24 +832,24 @@ describe('Parser', () => {
       shouldParse('<g>{<a> <b> <c>;<d> <e>,<f>.}',
                   ['a', 'b', 'c', 'g'],
                   ['a', 'd', 'e', 'g'],
-                  ['a', 'd', 'f', 'g'])
+                  ['a', 'd', 'f', 'g']),
     );
 
     it(
       'should parse an empty named graph with a prefixed name',
-      shouldParse('@prefix g: <g#>.\ng:h {}')
+      shouldParse('@prefix g: <g#>.\ng:h {}'),
     );
 
     it(
       'should parse a one-triple named graph with a prefixed name ending without a dot',
       shouldParse('@prefix g: <g#>.\ng:h {<a> <b> <c>}',
-                  ['a', 'b', 'c', 'g#h'])
+                  ['a', 'b', 'c', 'g#h']),
     );
 
     it(
       'should parse a one-triple named graph with a prefixed name ending with a dot',
       shouldParse('@prefix g: <g#>.\ng:h{<a> <b> <c>.}',
-                  ['a', 'b', 'c', 'g#h'])
+                  ['a', 'b', 'c', 'g#h']),
     );
 
     it(
@@ -857,7 +857,7 @@ describe('Parser', () => {
       shouldParse('@prefix g: <g#>.\ng:h {<a> <b> <c>;<d> <e>,<f>}',
                   ['a', 'b', 'c', 'g#h'],
                   ['a', 'd', 'e', 'g#h'],
-                  ['a', 'd', 'f', 'g#h'])
+                  ['a', 'd', 'f', 'g#h']),
     );
 
     it(
@@ -865,19 +865,19 @@ describe('Parser', () => {
       shouldParse('@prefix g: <g#>.\ng:h{<a> <b> <c>;<d> <e>,<f>.}',
                   ['a', 'b', 'c', 'g#h'],
                   ['a', 'd', 'e', 'g#h'],
-                  ['a', 'd', 'f', 'g#h'])
+                  ['a', 'd', 'f', 'g#h']),
     );
 
     it(
       'should parse a named graph with a blank node ending with a dot',
       shouldParse('<g> { [<p> <o>]. }',
-                  ['_:b0', 'p', 'o', 'g'])
+                  ['_:b0', 'p', 'o', 'g']),
     );
 
     it(
       'should parse a named graph with a blank node ending without a dot',
       shouldParse('<g> { [<p> <o>] }',
-                  ['_:b0', 'p', 'o', 'g'])
+                  ['_:b0', 'p', 'o', 'g']),
     );
 
     it('should parse an empty anonymous graph', shouldParse('[] {}'));
@@ -885,13 +885,13 @@ describe('Parser', () => {
     it(
       'should parse a one-triple anonymous graph ending without a dot',
       shouldParse('[] {<a> <b> <c>}',
-                  ['a', 'b', 'c', '_:b0'])
+                  ['a', 'b', 'c', '_:b0']),
     );
 
     it(
       'should parse a one-triple anonymous graph ending with a dot',
       shouldParse('[]{<a> <b> <c>.}',
-                  ['a', 'b', 'c', '_:b0'])
+                  ['a', 'b', 'c', '_:b0']),
     );
 
     it(
@@ -899,7 +899,7 @@ describe('Parser', () => {
       shouldParse('[] {<a> <b> <c>;<d> <e>,<f>}',
                   ['a', 'b', 'c', '_:b0'],
                   ['a', 'd', 'e', '_:b0'],
-                  ['a', 'd', 'f', '_:b0'])
+                  ['a', 'd', 'f', '_:b0']),
     );
 
     it(
@@ -907,46 +907,46 @@ describe('Parser', () => {
       shouldParse('[]{<a> <b> <c>;<d> <e>,<f>.}',
                   ['a', 'b', 'c', '_:b0'],
                   ['a', 'd', 'e', '_:b0'],
-                  ['a', 'd', 'f', '_:b0'])
+                  ['a', 'd', 'f', '_:b0']),
     );
 
     it(
       'should parse an empty named graph with an IRI and the GRAPH keyword',
-      shouldParse('GRAPH <g> {}')
+      shouldParse('GRAPH <g> {}'),
     );
 
     it(
       'should parse an empty named graph with a prefixed name and the GRAPH keyword',
-      shouldParse('@prefix g: <g#>.\nGRAPH g:h {}')
+      shouldParse('@prefix g: <g#>.\nGRAPH g:h {}'),
     );
 
     it(
       'should parse an empty anonymous graph and the GRAPH keyword',
-      shouldParse('GRAPH [] {}')
+      shouldParse('GRAPH [] {}'),
     );
 
     it(
       'should parse a one-triple named graph with an IRI and the GRAPH keyword',
       shouldParse('GRAPH <g> {<a> <b> <c>}',
-                  ['a', 'b', 'c', 'g'])
+                  ['a', 'b', 'c', 'g']),
     );
 
     it(
       'should parse a one-triple named graph with a prefixed name and the GRAPH keyword',
       shouldParse('@prefix g: <g#>.\nGRAPH g:h {<a> <b> <c>}',
-                  ['a', 'b', 'c', 'g#h'])
+                  ['a', 'b', 'c', 'g#h']),
     );
 
     it(
       'should parse a one-triple anonymous graph and the GRAPH keyword',
       shouldParse('GRAPH [] {<a> <b> <c>}',
-                  ['a', 'b', 'c', '_:b0'])
+                  ['a', 'b', 'c', '_:b0']),
     );
 
     it(
       'should parse a graph with 8-bit unicode escape sequences',
       shouldParse('<\\U0001d400> {\n<\\U0001d400> <\\U0001d400> "\\U0001d400"^^<\\U0001d400>\n}\n',
-                  ['\ud835\udC00', '\ud835\udc00', '"\ud835\udc00"^^http://example.org/\ud835\udc00', '\ud835\udc00'])
+                  ['\ud835\udC00', '\ud835\udc00', '"\ud835\udc00"^^http://example.org/\ud835\udc00', '\ud835\udc00']),
     );
 
     it('should not parse a single closing brace', shouldNotParse('}',
@@ -970,31 +970,31 @@ describe('Parser', () => {
     it(
       'should not parse a named graph with a list node as label',
       shouldNotParse('() {}',
-                     'Expected entity but got { on line 1.')
+                     'Expected entity but got { on line 1.'),
     );
 
     it(
       'should not parse a named graph with a non-empty blank node as label',
       shouldNotParse('[<a> <b>] {}',
-                     'Expected entity but got { on line 1.')
+                     'Expected entity but got { on line 1.'),
     );
 
     it(
       'should not parse a named graph with the GRAPH keyword and a non-empty blank node as label',
       shouldNotParse('GRAPH [<a> <b>] {}',
-                     'Invalid graph label on line 1.')
+                     'Invalid graph label on line 1.'),
     );
 
     it(
       'should not parse a triple after the GRAPH keyword',
       shouldNotParse('GRAPH <a> <b> <c>.',
-                     'Expected graph but got IRI on line 1.')
+                     'Expected graph but got IRI on line 1.'),
     );
 
     it(
       'should not parse repeated GRAPH keywords',
       shouldNotParse('GRAPH GRAPH <g> {}',
-                     'Invalid graph label on line 1.')
+                     'Invalid graph label on line 1.'),
     );
 
     it('should parse a quad with 4 IRIs', shouldParse('<a> <b> <c> <g>.',
@@ -1003,25 +1003,25 @@ describe('Parser', () => {
     it(
       'should parse a quad with 4 prefixed names',
       shouldParse('@prefix p: <p#>.\np:a p:b p:c p:g.',
-                  ['p#a', 'p#b', 'p#c', 'p#g'])
+                  ['p#a', 'p#b', 'p#c', 'p#g']),
     );
 
     it(
       'should not parse a quad with an undefined prefix',
       shouldNotParse('<a> <b> <c> p:g.',
-                     'Undefined prefix "p:" on line 1.')
+                     'Undefined prefix "p:" on line 1.'),
     );
 
     it(
       'should parse a quad with 3 IRIs and a literal',
       shouldParse('<a> <b> "c"^^<d> <g>.',
-                  ['a', 'b', '"c"^^http://example.org/d', 'g'])
+                  ['a', 'b', '"c"^^http://example.org/d', 'g']),
     );
 
     it(
       'should parse a quad with 2 blank nodes and a literal',
       shouldParse('_:a <b> "c"^^<d> _:g.',
-                  ['_:b0_a', 'b', '"c"^^http://example.org/d', '_:b0_g'])
+                  ['_:b0_a', 'b', '"c"^^http://example.org/d', '_:b0_g']),
     );
 
     it('should not parse a quad in a graph', shouldNotParse('{<a> <b> <c> <g>.}',
@@ -1030,25 +1030,25 @@ describe('Parser', () => {
     it(
       'should not parse a quad with different punctuation',
       shouldNotParse('<a> <b> <c> <g>;',
-                     'Expected dot to follow quad on line 1.')
+                     'Expected dot to follow quad on line 1.'),
     );
 
     it(
       'should not parse base declarations without IRI',
       shouldNotParse('@base a: ',
-                     'Expected valid IRI to follow base declaration on line 1.')
+                     'Expected valid IRI to follow base declaration on line 1.'),
     );
 
     it(
       'should not parse improperly nested parentheses and brackets',
       shouldNotParse('<a> <b> [<c> (<d>]).',
-                     'Expected entity but got ] on line 1.')
+                     'Expected entity but got ] on line 1.'),
     );
 
     it(
       'should not parse improperly nested square brackets',
       shouldNotParse('<a> <b> [<c> <d>]].',
-                     'Expected entity but got ] on line 1.')
+                     'Expected entity but got ] on line 1.'),
     );
 
     it('should error when an object is not there', shouldNotParse('<a> <b>.',
@@ -1060,13 +1060,13 @@ describe('Parser', () => {
     it(
       'should error with an abbreviation in the subject',
       shouldNotParse('a <a> <a>.',
-                     'Expected entity but got abbreviation on line 1.')
+                     'Expected entity but got abbreviation on line 1.'),
     );
 
     it(
       'should error with an abbreviation in the object',
       shouldNotParse('<a> <a> a .',
-                     'Expected entity but got abbreviation on line 1.')
+                     'Expected entity but got abbreviation on line 1.'),
     );
 
     it('should error if punctuation follows a subject', shouldNotParse('<a> .',
@@ -1085,7 +1085,7 @@ describe('Parser', () => {
         },
         previousToken: undefined,
         line: 1,
-      }
+      },
     );
 
     it('should not error if there is no triple callback', () => {
@@ -1130,7 +1130,7 @@ describe('Parser', () => {
           if (Object.keys(prefixes).length === 2)
             done();
         }
-      }
+      },
     );
 
     it('should return prefixes at the last triple callback', done => {
@@ -1172,127 +1172,127 @@ describe('Parser', () => {
       () => {
         shouldParse('<<<a> <b> <c>>> <b> <c>.',
           [['a', 'b', 'c'], 'b', 'c']);
-      }
+      },
     );
 
     it(
       'should not parse an RDF-star triple with a triple as predicate',
       shouldNotParse('<a> <<<b> <c> <d>>> <e>',
-        'Expected entity but got << on line 1.')
+        'Expected entity but got << on line 1.'),
     );
 
     it(
       'should parse an RDF-star triple with a triple with blanknodes as subject correctly',
       shouldParse('<<_:a <b> _:c>> <b> <c>.',
-        [['_:b0_a', 'b', '_:b0_c'], 'b', 'c'])
+        [['_:b0_a', 'b', '_:b0_c'], 'b', 'c']),
     );
 
     it(
       'should parse an RDF-star triple with a triple with blanknodes and literals as subject correctly',
       shouldParse('<<_:a <b> "c"^^<d>>> <b> <c>.',
-        [['_:b0_a', 'b', '"c"^^http://example.org/d'], 'b', 'c'])
+        [['_:b0_a', 'b', '"c"^^http://example.org/d'], 'b', 'c']),
     );
 
     it(
       'should parse an RDF-star triple with a triple as object correctly',
       shouldParse('<a> <b> <<<a> <b> <c>>>.',
-        ['a', 'b', ['a', 'b', 'c']])
+        ['a', 'b', ['a', 'b', 'c']]),
     );
 
     it(
       'should parse an RDF-star triple with a triple as object correctly',
       shouldParse('<a> <b> <<_:a <b> _:c>>.',
-        ['a', 'b', ['_:b0_a', 'b', '_:b0_c']])
+        ['a', 'b', ['_:b0_a', 'b', '_:b0_c']]),
     );
 
     it(
       'should parse an RDF-star triple with a triple as object correctly',
       shouldParse('<a> <b> <<_:a <b> "c"^^<d>>>.',
-        ['a', 'b', ['_:b0_a', 'b', '"c"^^http://example.org/d']])
+        ['a', 'b', ['_:b0_a', 'b', '"c"^^http://example.org/d']]),
     );
 
     it(
       'should parse nested triples correctly',
       shouldParse('<<<<<a> <b> <c>>> <f> <g>>> <d> <e>.',
-        [[['a', 'b', 'c'], 'f', 'g'], 'd', 'e'])
+        [[['a', 'b', 'c'], 'f', 'g'], 'd', 'e']),
     );
     it(
       'should parse nested triples correctly',
       shouldParse('<d> <e> <<<f> <g> <<<a> <b> <c>>>>>.',
-        ['d', 'e', ['f', 'g', ['a', 'b', 'c']]])
+        ['d', 'e', ['f', 'g', ['a', 'b', 'c']]]),
     );
     it(
       'should parse nested triples correctly',
       shouldParse('<<<f> <g> <<<a> <b> <c>>>>> <d> <e>.',
-        [['f', 'g', ['a', 'b', 'c']], 'd', 'e'])
+        [['f', 'g', ['a', 'b', 'c']], 'd', 'e']),
     );
     it(
       'should parse nested triples correctly',
       shouldParse('<d> <e> <<<<<a> <b> <c>>> <f> <g>>>.',
-        ['d', 'e', [['a', 'b', 'c'], 'f', 'g']])
+        ['d', 'e', [['a', 'b', 'c'], 'f', 'g']]),
     );
 
     it(
       'should not parse nested RDF-star statements that are partially closed',
       shouldNotParse('<d> <e> <<<<<a> <b> <c>>> <f> <g>.',
-        'Expected entity but got . on line 1.'
-      )
+        'Expected entity but got . on line 1.',
+      ),
     );
 
     it(
       'should not parse partially closed nested RDF-star statements',
       shouldNotParse('<d> <e> <<<<<a> <b> <c> <f> <g>>>.',
-        'Expected >> but got IRI on line 1.'
-      )
+        'Expected >> but got IRI on line 1.',
+      ),
     );
 
     it(
       'should not parse nested RDF-star statements with too many closing tags',
       shouldNotParse('<d> <e> <<<<<a> <b> <c>>>>> <f> <g>>>.',
-        'Expected entity but got >> on line 1.'
-      )
+        'Expected entity but got >> on line 1.',
+      ),
     );
 
     it(
       'should not parse nested RDF-star statements with too many closing tags',
       shouldNotParse('<d> <e> <<<<<a> <b> <c>>> <f> <g>>>>>.',
-        'Expected entity but got >> on line 1.'
-      )
+        'Expected entity but got >> on line 1.',
+      ),
     );
 
     it(
       'should not parse RDF-star statements with too many closing tags',
       shouldNotParse('<a> <b> <c>>>.',
-        'Expected entity but got >> on line 1.'
-      )
+        'Expected entity but got >> on line 1.',
+      ),
     );
 
     it(
       'should not parse incomplete RDF-star statements',
       shouldNotParse('<d> <e> <<<a> <b>>>.',
-        'Expected entity but got >> on line 1.'
-      )
+        'Expected entity but got >> on line 1.',
+      ),
     );
 
     it(
       'should not parse incomplete RDF-star statements',
       shouldNotParse('<<<a> <b>>> <d> <e>.',
-        'Expected entity but got >> on line 1.'
-      )
+        'Expected entity but got >> on line 1.',
+      ),
     );
 
     it(
       'should not parse incorrectly nested RDF-star statements',
       shouldNotParse('>> <<',
-        'Expected entity but got >> on line 1.'
-      )
+        'Expected entity but got >> on line 1.',
+      ),
     );
 
     it(
       'should not parse a nested triple on its own',
       shouldNotParse('<<<a> <b> <c>>>.',
-        'Unexpected . on line 1.'
-      )
+        'Unexpected . on line 1.',
+      ),
     );
 
     it('should parse an RDF-star quad', shouldParse('<<<a> <b> <c> <d>>> <a> <b> .',
@@ -1301,82 +1301,82 @@ describe('Parser', () => {
     it(
       'should not parse a malformed RDF-star quad',
       shouldNotParse('<<<a> <b> <c> <d> <e>>> <a> <b> .',
-        'Expected >> but got IRI on line 1.')
+        'Expected >> but got IRI on line 1.'),
     );
 
     it(
       'should parse statements with a shared RDF-star subject',
       shouldParse('<<<a> <b> <c>>> <b> <c>;\n<d> <c>.',
         [['a', 'b', 'c'], 'b', 'c'],
-        [['a', 'b', 'c'], 'd', 'c'])
+        [['a', 'b', 'c'], 'd', 'c']),
     );
 
     it(
       'should parse statements with a shared RDF-star subject',
       shouldParse('<<<a> <b> <c>>> <b> <c>;\n<d> <<<a> <b> <c>>>.',
         [['a', 'b', 'c'], 'b', 'c'],
-        [['a', 'b', 'c'], 'd', ['a', 'b', 'c']])
+        [['a', 'b', 'c'], 'd', ['a', 'b', 'c']]),
     );
 
     it(
       'should put nested triples in the default graph',
       shouldParse('<a> <b> <c> <g>.\n<<<a> <b> <c>>> <d> <e>.',
           ['a', 'b', 'c', 'g'],
-          [['a', 'b', 'c'], 'd', 'e'])
+          [['a', 'b', 'c'], 'd', 'e']),
     );
 
     it(
       'should parse an RDF-star triple using annotation syntax with one predicate-object',
       shouldParse('<a> <b> <c> {| <b> <c> |}.',
-          ['a', 'b', 'c'], [['a', 'b', 'c'], 'b', 'c'])
+          ['a', 'b', 'c'], [['a', 'b', 'c'], 'b', 'c']),
     );
 
     it(
       'should parse an RDF-star triple using annotation syntax with two predicate-objects',
       shouldParse('<a> <b> <c> {| <b1> <c1>; <b2> <c2> |}.',
-          ['a', 'b', 'c'], [['a', 'b', 'c'], 'b1', 'c1'], [['a', 'b', 'c'], 'b2', 'c2'])
+          ['a', 'b', 'c'], [['a', 'b', 'c'], 'b1', 'c1'], [['a', 'b', 'c'], 'b2', 'c2']),
     );
 
     it(
       'should parse an RDF-star triple using annotation syntax with one predicate-object followed by regular triples',
       shouldParse('<a> <b> <c> {| <b> <c> |}.\n<a2> <b2> <c2>.',
-          ['a', 'b', 'c'], [['a', 'b', 'c'], 'b', 'c'], ['a2', 'b2', 'c2'])
+          ['a', 'b', 'c'], [['a', 'b', 'c'], 'b', 'c'], ['a2', 'b2', 'c2']),
     );
 
     it(
       'should not parse an RDF-star triple using annotation syntax with zero predicate-objects',
       shouldNotParse('<a> <b> <c> {| |}',
-          'Expected entity but got |} on line 1.')
+          'Expected entity but got |} on line 1.'),
     );
 
     it(
       'should not parse an RDF-star triple using an incomplete annotation syntax',
       shouldNotParse('<a> <b> <c> {| <b> |}',
-          'Expected entity but got |} on line 1.')
+          'Expected entity but got |} on line 1.'),
     );
 
     it(
       'should not parse an RDF-star triple using an incomplete annotation syntax after a semicolon',
       shouldNotParse('<a> <b> <c> {| <b1> <c1>; |}',
-          'Expected entity but got |} on line 1.')
+          'Expected entity but got |} on line 1.'),
     );
 
     it(
       'should not parse an RDF-star triple using an incomplete annotation syntax after a semicolon and entity',
       shouldNotParse('<a> <b> <c> {| <b1> <c1>; <b2> |}',
-          'Expected entity but got |} on line 1.')
+          'Expected entity but got |} on line 1.'),
     );
 
     it(
       'should not parse an RDF-star triple using an incomplete annotation syntax that misses |}',
       shouldNotParse('<a> <b> <c> {| <b1> <c1>',
-          'Expected entity but got eof on line 1.')
+          'Expected entity but got eof on line 1.'),
     );
 
     it(
       'should not parse an RDF-star triple using an incomplete annotation syntax that misses |} and starts a new subject',
       shouldNotParse('<a> <b> <c> {| <b1> <c1>. <a2> <b2> <c2>',
-          'Expected entity but got eof on line 1.')
+          'Expected entity but got eof on line 1.'),
     );
 
     it('should not parse an out of place |}', shouldNotParse('<a> <b> <c> |}',
@@ -1415,56 +1415,56 @@ describe('Parser', () => {
       'should resolve IRIs with a trailing slash against the document IRI',
       shouldParse(parser,
                   '</a> </a/b> </a/b/c>.\n',
-                  ['http://ex.org/a', 'http://ex.org/a/b', 'http://ex.org/a/b/c'])
+                  ['http://ex.org/a', 'http://ex.org/a/b', 'http://ex.org/a/b/c']),
     );
 
     it(
       'should resolve IRIs starting with ./ against the document IRI',
       shouldParse(parser,
                   '<./a> <./a/b> <./a/b/c>.\n',
-                  ['http://ex.org/x/yy/zzz/a', 'http://ex.org/x/yy/zzz/a/b', 'http://ex.org/x/yy/zzz/a/b/c'])
+                  ['http://ex.org/x/yy/zzz/a', 'http://ex.org/x/yy/zzz/a/b', 'http://ex.org/x/yy/zzz/a/b/c']),
     );
 
     it(
       'should resolve IRIs starting with multiple ./ sequences against the document IRI',
       shouldParse(parser,
                   '<./././a> <./././././a/b> <././././././a/b/c>.\n',
-                  ['http://ex.org/x/yy/zzz/a', 'http://ex.org/x/yy/zzz/a/b', 'http://ex.org/x/yy/zzz/a/b/c'])
+                  ['http://ex.org/x/yy/zzz/a', 'http://ex.org/x/yy/zzz/a/b', 'http://ex.org/x/yy/zzz/a/b/c']),
     );
 
     it(
       'should resolve IRIs starting with ../ against the document IRI',
       shouldParse(parser,
                   '<../a> <../a/b> <../a/b/c>.\n',
-                  ['http://ex.org/x/yy/a', 'http://ex.org/x/yy/a/b', 'http://ex.org/x/yy/a/b/c'])
+                  ['http://ex.org/x/yy/a', 'http://ex.org/x/yy/a/b', 'http://ex.org/x/yy/a/b/c']),
     );
 
     it(
       'should resolve IRIs starting multiple ../ sequences against the document IRI',
       shouldParse(parser,
                   '<../../a> <../../../a/b> <../../../../../../../../a/b/c>.\n',
-                  ['http://ex.org/x/a', 'http://ex.org/a/b', 'http://ex.org/a/b/c'])
+                  ['http://ex.org/x/a', 'http://ex.org/a/b', 'http://ex.org/a/b/c']),
     );
 
     it(
       'should resolve IRIs starting with mixes of ./ and ../ sequences against the document IRI',
       shouldParse(parser,
                   '<.././a> <./.././a/b> <./.././.././a/b/c>.\n',
-                  ['http://ex.org/x/yy/a', 'http://ex.org/x/yy/a/b', 'http://ex.org/x/a/b/c'])
+                  ['http://ex.org/x/yy/a', 'http://ex.org/x/yy/a/b', 'http://ex.org/x/a/b/c']),
     );
 
     it(
       'should resolve IRIs starting with .x, ..x, or .../ against the document IRI',
       shouldParse(parser,
                   '<.x/a> <..x/a/b> <.../a/b/c>.\n',
-                  ['http://ex.org/x/yy/zzz/.x/a', 'http://ex.org/x/yy/zzz/..x/a/b', 'http://ex.org/x/yy/zzz/.../a/b/c'])
+                  ['http://ex.org/x/yy/zzz/.x/a', 'http://ex.org/x/yy/zzz/..x/a/b', 'http://ex.org/x/yy/zzz/.../a/b/c']),
     );
 
     it(
       'should resolve datatype IRIs against the document IRI',
       shouldParse(parser,
                   '<a> <b> "c"^^<d>.',
-                  ['http://ex.org/x/yy/zzz/a', 'http://ex.org/x/yy/zzz/b', '"c"^^http://ex.org/x/yy/zzz/d'])
+                  ['http://ex.org/x/yy/zzz/a', 'http://ex.org/x/yy/zzz/b', '"c"^^http://ex.org/x/yy/zzz/d']),
     );
 
     it(
@@ -1479,7 +1479,7 @@ describe('Parser', () => {
           ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://ex.org/x/yy/zzz/c'],
           ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b3'],
           ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://ex.org/x/yy/zzz/d'],
-          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'])
+          ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     );
 
     it('should respect @base statements', shouldParse(parser,
@@ -1517,12 +1517,12 @@ describe('Parser', () => {
 
     it(
       'should parse a single triple',
-      shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c'])
+      shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']),
     );
 
     it(
       'should parse a graph',
-      shouldParse(parser, '{<a> <b> <c>}', ['a', 'b', 'c'])
+      shouldParse(parser, '{<a> <b> <c>}', ['a', 'b', 'c']),
     );
   });
 
@@ -1531,92 +1531,92 @@ describe('Parser', () => {
 
     it(
       'should parse a single triple',
-      shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c'])
+      shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']),
     );
 
     it(
       'should not parse a default graph',
-      shouldNotParse(parser, '{}', 'Unexpected graph on line 1.')
+      shouldNotParse(parser, '{}', 'Unexpected graph on line 1.'),
     );
 
     it(
       'should not parse a named graph',
-      shouldNotParse(parser, '<g> {}', 'Expected entity but got { on line 1.')
+      shouldNotParse(parser, '<g> {}', 'Expected entity but got { on line 1.'),
     );
 
     it(
       'should not parse a named graph with the GRAPH keyword',
-      shouldNotParse(parser, 'GRAPH <g> {}', 'Expected entity but got GRAPH on line 1.')
+      shouldNotParse(parser, 'GRAPH <g> {}', 'Expected entity but got GRAPH on line 1.'),
     );
 
     it(
       'should not parse a quad',
-      shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "http://example.org/c" on line 1.')
+      shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "http://example.org/c" on line 1.'),
     );
 
     it(
       'should not parse a variable',
-      shouldNotParse(parser, '?a ?b ?c.', 'Unexpected "?a" on line 1.')
+      shouldNotParse(parser, '?a ?b ?c.', 'Unexpected "?a" on line 1.'),
     );
 
     it(
       'should not parse an equality statement',
-      shouldNotParse(parser, '<a> = <b>.', 'Unexpected "=" on line 1.')
+      shouldNotParse(parser, '<a> = <b>.', 'Unexpected "=" on line 1.'),
     );
 
     it(
       'should not parse a right implication statement',
-      shouldNotParse(parser, '<a> => <b>.', 'Unexpected "=>" on line 1.')
+      shouldNotParse(parser, '<a> => <b>.', 'Unexpected "=>" on line 1.'),
     );
 
     it(
       'should not parse a left implication statement',
-      shouldNotParse(parser, '<a> <= <b>.', 'Unexpected "<=" on line 1.')
+      shouldNotParse(parser, '<a> <= <b>.', 'Unexpected "<=" on line 1.'),
     );
 
     it(
       'should not parse a formula as object',
-      shouldNotParse(parser, '<a> <b> {}.', 'Unexpected graph on line 1.')
+      shouldNotParse(parser, '<a> <b> {}.', 'Unexpected graph on line 1.'),
     );
 
     it(
       'should not parse @forSome',
-      shouldNotParse(parser, '@forSome <x>.', 'Unexpected "@forSome" on line 1.')
+      shouldNotParse(parser, '@forSome <x>.', 'Unexpected "@forSome" on line 1.'),
     );
 
     it(
       'should not parse @forAll',
-      shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.')
+      shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'),
     );
 
     it(
       'should not parse a formula as list item',
       shouldNotParse(parser, '( <a> { <b> <c> <d> } <e> ).',
-        'Unexpected graph on line 1.')
+        'Unexpected graph on line 1.'),
     );
 
     it(
       'should not parse a literal as subject',
       shouldNotParse(parser, '1 <a> <b>.',
-        'Unexpected literal on line 1.')
+        'Unexpected literal on line 1.'),
     );
 
     it(
       'should not parse RDF-star in the subject position',
       shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
-        'Unexpected RDF-star syntax on line 1.')
+        'Unexpected RDF-star syntax on line 1.'),
     );
 
     it(
       'should not parse RDF-star in the object position',
       shouldNotParse(parser, '<a> <b> <<a> <b> <c>>>.',
-        'Unexpected RDF-star syntax on line 1.')
+        'Unexpected RDF-star syntax on line 1.'),
     );
 
     it(
       'should not parse RDF-star with annotated syntax',
       shouldNotParse(parser, '<a> <b> <c> {| <b> <c> |}.',
-          'Unexpected RDF-star syntax on line 1.')
+          'Unexpected RDF-star syntax on line 1.'),
     );
   });
 
@@ -1630,7 +1630,7 @@ describe('Parser', () => {
     it(
       'should not parse nested quads',
       shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
-        'Expected >> to follow "_:b0_b" on line 1.')
+        'Expected >> to follow "_:b0_b" on line 1.'),
     );
   });
 
@@ -1639,7 +1639,7 @@ describe('Parser', () => {
 
     it(
       'should parse a single triple',
-      shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c'])
+      shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']),
     );
 
     it('should parse a default graph', shouldParse(parser, '{}'));
@@ -1648,65 +1648,65 @@ describe('Parser', () => {
 
     it(
       'should parse a named graph with the GRAPH keyword',
-      shouldParse(parser, 'GRAPH <g> {}')
+      shouldParse(parser, 'GRAPH <g> {}'),
     );
 
     it(
       'should not parse a quad',
-      shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "http://example.org/c" on line 1.')
+      shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "http://example.org/c" on line 1.'),
     );
 
     it(
       'should not parse a variable',
-      shouldNotParse(parser, '?a ?b ?c.', 'Unexpected "?a" on line 1.')
+      shouldNotParse(parser, '?a ?b ?c.', 'Unexpected "?a" on line 1.'),
     );
 
     it(
       'should not parse an equality statement',
-      shouldNotParse(parser, '<a> = <b>.', 'Unexpected "=" on line 1.')
+      shouldNotParse(parser, '<a> = <b>.', 'Unexpected "=" on line 1.'),
     );
 
     it(
       'should not parse a right implication statement',
-      shouldNotParse(parser, '<a> => <b>.', 'Unexpected "=>" on line 1.')
+      shouldNotParse(parser, '<a> => <b>.', 'Unexpected "=>" on line 1.'),
     );
 
     it(
       'should not parse a left implication statement',
-      shouldNotParse(parser, '<a> <= <b>.', 'Unexpected "<=" on line 1.')
+      shouldNotParse(parser, '<a> <= <b>.', 'Unexpected "<=" on line 1.'),
     );
 
     it(
       'should not parse a formula as object',
-      shouldNotParse(parser, '<a> <b> {}.', 'Unexpected graph on line 1.')
+      shouldNotParse(parser, '<a> <b> {}.', 'Unexpected graph on line 1.'),
     );
 
     it(
       'should not parse @forSome',
-      shouldNotParse(parser, '@forSome <x>.', 'Unexpected "@forSome" on line 1.')
+      shouldNotParse(parser, '@forSome <x>.', 'Unexpected "@forSome" on line 1.'),
     );
 
     it(
       'should not parse @forAll',
-      shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.')
+      shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'),
     );
 
     it(
       'should not parse RDF-star in the subject position',
       shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
-        'Unexpected RDF-star syntax on line 1.')
+        'Unexpected RDF-star syntax on line 1.'),
     );
 
     it(
       'should not parse RDF-star in the object position',
       shouldNotParse(parser, '<a> <b> <<<a> <b> <c>>>.',
-        'Unexpected RDF-star syntax on line 1.')
+        'Unexpected RDF-star syntax on line 1.'),
     );
 
     it(
       'should not parse RDF-star with annotated syntax',
       shouldNotParse(parser, '<a> <b> <c> {| <b> <c> |}.',
-          'Unexpected RDF-star syntax on line 1.')
+          'Unexpected RDF-star syntax on line 1.'),
     );
   });
 
@@ -1719,7 +1719,7 @@ describe('Parser', () => {
     it(
       'should not parse nested quads',
       shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
-        'Expected >> to follow "_:b0_b" on line 1.')
+        'Expected >> to follow "_:b0_b" on line 1.'),
     );
   });
 
@@ -1729,100 +1729,100 @@ describe('Parser', () => {
     it(
       'should parse a single triple',
       shouldParse(parser, '_:a <http://ex.org/b> "c".',
-                          ['_:b0_a', 'http://ex.org/b', '"c"'])
+                          ['_:b0_a', 'http://ex.org/b', '"c"']),
     );
 
     it(
       'should parse a single triple starting with Bom',
       shouldParse(parser, '\ufeff_:a <http://ex.org/b> "c".',
-          ['_:b0_a', 'http://ex.org/b', '"c"'])
+          ['_:b0_a', 'http://ex.org/b', '"c"']),
     );
 
     it(
       'should not parse a single quad',
       shouldNotParse(parser, '_:a <http://ex.org/b> "c" <http://ex.org/g>.',
-                             'Expected punctuation to follow ""c"" on line 1.')
+                             'Expected punctuation to follow ""c"" on line 1.'),
     );
 
     it(
       'should not parse object lists',
       shouldNotParse(parser, '<http://example/s> <http://example/p> <http://example/o>, <http://example/o2> .',
-          'Unexpected "," on line 1.')
+          'Unexpected "," on line 1.'),
     );
 
     it(
       'should not parse relative IRIs',
-      shouldNotParse(parser, '<a> <b> <c>.', 'Invalid IRI on line 1.')
+      shouldNotParse(parser, '<a> <b> <c>.', 'Invalid IRI on line 1.'),
     );
 
     it(
       'should not parse a prefix declaration',
-      shouldNotParse(parser, '@prefix : <p#>.', 'Unexpected "@prefix" on line 1.')
+      shouldNotParse(parser, '@prefix : <p#>.', 'Unexpected "@prefix" on line 1.'),
     );
 
     it(
       'should not parse apostrophe literals',
       shouldNotParse(parser, "_:a <http://ex.org/b> 'c'.",
-                             "Unexpected \"'c'.\" on line 1.")
+                             "Unexpected \"'c'.\" on line 1."),
     );
 
     it(
       'should not parse triple-quoted literals',
       shouldNotParse(parser, '_:a <http://ex.org/b> """c""".',
-                             'Unexpected """"c"""." on line 1.')
+                             'Unexpected """"c"""." on line 1.'),
     );
 
     it(
       'should not parse triple-apostrophe literals',
       shouldNotParse(parser, "_:a <http://ex.org/b> '''c'''.",
-                             "Unexpected \"'''c'''.\" on line 1.")
+                             "Unexpected \"'''c'''.\" on line 1."),
     );
 
     it(
       'should not parse a variable',
-      shouldNotParse(parser, '?a ?b ?c.', 'Unexpected "?a" on line 1.')
+      shouldNotParse(parser, '?a ?b ?c.', 'Unexpected "?a" on line 1.'),
     );
 
     it(
       'should not parse an equality statement',
-      shouldNotParse(parser, '<urn:a:a> = <urn:b:b>.', 'Unexpected "=" on line 1.')
+      shouldNotParse(parser, '<urn:a:a> = <urn:b:b>.', 'Unexpected "=" on line 1.'),
     );
 
     it(
       'should not parse a right implication statement',
-      shouldNotParse(parser, '<urn:a:a> => <urn:b:b>.', 'Unexpected "=>" on line 1.')
+      shouldNotParse(parser, '<urn:a:a> => <urn:b:b>.', 'Unexpected "=>" on line 1.'),
     );
 
     it(
       'should not parse a left implication statement',
-      shouldNotParse(parser, '<urn:a:a> <= <urn:b:b>.', 'Unexpected "<=" on line 1.')
+      shouldNotParse(parser, '<urn:a:a> <= <urn:b:b>.', 'Unexpected "<=" on line 1.'),
     );
 
     it(
       'should not parse a formula as object',
-      shouldNotParse(parser, '<urn:a:a> <urn:b:b> {}.', 'Unexpected "{}." on line 1.')
+      shouldNotParse(parser, '<urn:a:a> <urn:b:b> {}.', 'Unexpected "{}." on line 1.'),
     );
 
     it(
       'should not parse @forSome',
-      shouldNotParse(parser, '@forSome <x>.', 'Unexpected "@forSome" on line 1.')
+      shouldNotParse(parser, '@forSome <x>.', 'Unexpected "@forSome" on line 1.'),
     );
 
     it(
       'should not parse @forAll',
-      shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.')
+      shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'),
     );
 
     it(
       'should not parse RDF-star in the subject position',
       shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
-        'Unexpected RDF-star syntax on line 1.')
+        'Unexpected RDF-star syntax on line 1.'),
     );
 
     it(
       'should not parse RDF-star in the object position',
       shouldNotParse(parser, '<http://ex.org/a> <http://ex.org/b> <<<a> <b> <c>>>.',
-        'Unexpected RDF-star syntax on line 1.')
+        'Unexpected RDF-star syntax on line 1.'),
     );
   });
 
@@ -1832,19 +1832,19 @@ describe('Parser', () => {
     it(
       'should parse RDF-star',
       shouldParse(parser, '<<_:a <http://example.org/b> _:c>> <http://example.org/a> _:b .',
-        [['_:b0_a', 'b', '_:b0_c'], 'a', '_:b0_b'])
+        [['_:b0_a', 'b', '_:b0_c'], 'a', '_:b0_b']),
     );
 
     it(
       'should not parse nested quads',
       shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
-        'Expected >> to follow "_:b0_b" on line 1.')
+        'Expected >> to follow "_:b0_b" on line 1.'),
     );
 
     it(
       'should not parse annotated triples',
       shouldNotParse(parser, '_:a <http://ex.org/b> _:c {| <http://ex.org/b1> "c1" |} .',
-          'Unexpected "{|" on line 1.')
+          'Unexpected "{|" on line 1.'),
     );
   });
 
@@ -1854,70 +1854,70 @@ describe('Parser', () => {
     it(
       'should parse a single triple',
       shouldParse(parser, '_:a <http://ex.org/b> "c".',
-                          ['_:b0_a', 'http://ex.org/b', '"c"'])
+                          ['_:b0_a', 'http://ex.org/b', '"c"']),
     );
 
     it(
       'should parse a single quad',
       shouldParse(parser, '_:a <http://ex.org/b> "c" <http://ex.org/g>.',
-                          ['_:b0_a', 'http://ex.org/b', '"c"', 'http://ex.org/g'])
+                          ['_:b0_a', 'http://ex.org/b', '"c"', 'http://ex.org/g']),
     );
 
     it(
       'should not parse relative IRIs',
-      shouldNotParse(parser, '<a> <b> <c>.', 'Invalid IRI on line 1.')
+      shouldNotParse(parser, '<a> <b> <c>.', 'Invalid IRI on line 1.'),
     );
 
     it(
       'should not parse a prefix declaration',
-      shouldNotParse(parser, '@prefix : <p#>.', 'Unexpected "@prefix" on line 1.')
+      shouldNotParse(parser, '@prefix : <p#>.', 'Unexpected "@prefix" on line 1.'),
     );
 
     it(
       'should not parse a variable',
-      shouldNotParse(parser, '?a ?b ?c.', 'Unexpected "?a" on line 1.')
+      shouldNotParse(parser, '?a ?b ?c.', 'Unexpected "?a" on line 1.'),
     );
 
     it(
       'should not parse an equality statement',
-      shouldNotParse(parser, '<urn:a:a> = <urn:b:b>.', 'Unexpected "=" on line 1.')
+      shouldNotParse(parser, '<urn:a:a> = <urn:b:b>.', 'Unexpected "=" on line 1.'),
     );
 
     it(
       'should not parse a right implication statement',
-      shouldNotParse(parser, '<urn:a:a> => <urn:b:b>.', 'Unexpected "=>" on line 1.')
+      shouldNotParse(parser, '<urn:a:a> => <urn:b:b>.', 'Unexpected "=>" on line 1.'),
     );
 
     it(
       'should not parse a left implication statement',
-      shouldNotParse(parser, '<urn:a:a> <= <urn:b:b>.', 'Unexpected "<=" on line 1.')
+      shouldNotParse(parser, '<urn:a:a> <= <urn:b:b>.', 'Unexpected "<=" on line 1.'),
     );
 
     it(
       'should not parse a formula as object',
-      shouldNotParse(parser, '<urn:a:a> <urn:b:b> {}.', 'Unexpected "{}." on line 1.')
+      shouldNotParse(parser, '<urn:a:a> <urn:b:b> {}.', 'Unexpected "{}." on line 1.'),
     );
 
     it(
       'should not parse @forSome',
-      shouldNotParse(parser, '@forSome <x>.', 'Unexpected "@forSome" on line 1.')
+      shouldNotParse(parser, '@forSome <x>.', 'Unexpected "@forSome" on line 1.'),
     );
 
     it(
       'should not parse @forAll',
-      shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.')
+      shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'),
     );
 
     it(
       'should not parse RDF-star in the subject position',
       shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
-        'Unexpected RDF-star syntax on line 1.')
+        'Unexpected RDF-star syntax on line 1.'),
     );
 
     it(
       'should not parse RDF-star in the object position',
       shouldNotParse(parser, '_:a <http://ex.org/b> <<<a> <b> <c>>>.',
-        'Unexpected RDF-star syntax on line 1.')
+        'Unexpected RDF-star syntax on line 1.'),
     );
   });
 
@@ -1927,13 +1927,13 @@ describe('Parser', () => {
     it(
       'should parse RDF-star',
       shouldParse(parser, '<<_:a <http://example.org/b> _:c>> <http://example.org/a> _:c .',
-        [['_:b0_a', 'b', '_:b0_c'], 'a', '_:b0_c'])
+        [['_:b0_a', 'b', '_:b0_c'], 'a', '_:b0_c']),
     );
 
     it(
       'should not parse annotated triples',
       shouldNotParse(parser, '_:a <http://ex.org/b> _:c {| <http://ex.org/b1> "c1" |} .',
-          'Unexpected "{|" on line 1.')
+          'Unexpected "{|" on line 1.'),
     );
   });
 
@@ -1942,49 +1942,49 @@ describe('Parser', () => {
 
     it(
       'should parse a single triple',
-      shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c'])
+      shouldParse(parser, '<a> <b> <c>.', ['a', 'b', 'c']),
     );
 
     it(
       'should not parse a default graph',
-      shouldNotParse(parser, '{}', 'Expected entity but got eof on line 1.')
+      shouldNotParse(parser, '{}', 'Expected entity but got eof on line 1.'),
     );
 
     it(
       'should not parse a named graph',
-      shouldNotParse(parser, '<g> {}', 'Expected entity but got { on line 1.')
+      shouldNotParse(parser, '<g> {}', 'Expected entity but got { on line 1.'),
     );
 
     it(
       'should not parse a named graph with the GRAPH keyword',
-      shouldNotParse(parser, 'GRAPH <g> {}', 'Expected entity but got GRAPH on line 1.')
+      shouldNotParse(parser, 'GRAPH <g> {}', 'Expected entity but got GRAPH on line 1.'),
     );
 
     it(
       'should not parse a quad',
-      shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "http://example.org/c" on line 1.')
+      shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "http://example.org/c" on line 1.'),
     );
 
     it(
       'allows a blank node in predicate position',
-      shouldParse(parser, '<a> [] <c>.', ['a', '_:b0', 'c'])
+      shouldParse(parser, '<a> [] <c>.', ['a', '_:b0', 'c']),
     );
 
     it(
       'allows a blank node label in predicate position',
-      shouldParse(parser, '<a> _:b <c>.', ['a', '_:b0_b', 'c'])
+      shouldParse(parser, '<a> _:b <c>.', ['a', '_:b0_b', 'c']),
     );
 
     it(
       'allows a blank node with properties in predicate position',
       shouldParse(parser, '<a> [<p> <o>] <c>.',
                   ['a', '_:b0', 'c'],
-                  ['_:b0', 'p', 'o'])
+                  ['_:b0', 'p', 'o']),
     );
 
     it(
       'should parse a variable',
-      shouldParse(parser, '?a ?b ?c.', ['?a', '?b', '?c'])
+      shouldParse(parser, '?a ?b ?c.', ['?a', '?b', '?c']),
     );
 
     it('should parse a simple equality', shouldParse(parser, '<a> = <b>.',
@@ -1993,13 +1993,13 @@ describe('Parser', () => {
     it(
       'should parse a simple right implication',
       shouldParse(parser, '<a> => <b>.',
-                  ['a', 'http://www.w3.org/2000/10/swap/log#implies', 'b'])
+                  ['a', 'http://www.w3.org/2000/10/swap/log#implies', 'b']),
     );
 
     it(
       'should parse a simple left implication',
       shouldParse(parser, '<a> <= <b>.',
-                  ['b', 'http://www.w3.org/2000/10/swap/log#implies', 'a'])
+                  ['b', 'http://www.w3.org/2000/10/swap/log#implies', 'a']),
     );
 
     it(
@@ -2007,7 +2007,7 @@ describe('Parser', () => {
       shouldParse(parser, '{ ?a ?b <c>. } => { <d> <e> ?a }.',
                   ['_:b0', 'http://www.w3.org/2000/10/swap/log#implies', '_:b1'],
                   ['?a', '?b', 'c',  '_:b0'],
-                  ['d',  'e',  '?a', '_:b1'])
+                  ['d',  'e',  '?a', '_:b1']),
     );
 
     it(
@@ -2017,7 +2017,7 @@ describe('Parser', () => {
                   ['?a', '?b', 'c',  '_:b0'],
                   ['d',  'e',  'f',  '_:b0'],
                   ['d',  'e',  '?a', '_:b1'],
-                  ['d',  'e',  'f',  '_:b1'])
+                  ['d',  'e',  'f',  '_:b1']),
     );
 
     it(
@@ -2025,7 +2025,7 @@ describe('Parser', () => {
       shouldParse(parser, '{ ?a ?b <c>. } <= { <d> <e> ?a }.',
                   ['_:b1', 'http://www.w3.org/2000/10/swap/log#implies', '_:b0'],
                   ['?a', '?b', 'c',  '_:b0'],
-                  ['d',  'e',  '?a', '_:b1'])
+                  ['d',  'e',  '?a', '_:b1']),
     );
 
     it(
@@ -2035,7 +2035,7 @@ describe('Parser', () => {
                   ['?a', '?b', 'c',  '_:b0'],
                   ['d',  'e',  'f',  '_:b0'],
                   ['d',  'e',  '?a', '_:b1'],
-                  ['d',  'e',  'f',  '_:b1'])
+                  ['d',  'e',  'f',  '_:b1']),
     );
 
     it(
@@ -2043,7 +2043,7 @@ describe('Parser', () => {
       shouldParse(parser, '{ ?a ?b <c>. } = { <d> <e> ?a }.',
                   ['_:b0', 'http://www.w3.org/2002/07/owl#sameAs', '_:b1'],
                   ['?a', '?b', 'c',  '_:b0'],
-                  ['d',  'e',  '?a', '_:b1'])
+                  ['d',  'e',  '?a', '_:b1']),
     );
 
     it(
@@ -2053,7 +2053,7 @@ describe('Parser', () => {
                   ['?a', '?b', 'c',  '_:b0'],
                   ['d',  'e',  'f',  '_:b0'],
                   ['d',  'e',  '?a', '_:b1'],
-                  ['d',  'e',  'f',  '_:b1'])
+                  ['d',  'e',  'f',  '_:b1']),
     );
 
     it(
@@ -2065,7 +2065,7 @@ describe('Parser', () => {
                   ['?d', '?e', '?f', '_:b2'],
                   ['_:b4', 'http://www.w3.org/2000/10/swap/log#implies', '_:b5', '_:b3'],
                   ['?g', '?h', '?i', '_:b4'],
-                  ['?j', '?k', '?l', '_:b5'])
+                  ['?j', '?k', '?l', '_:b5']),
     );
 
     it(
@@ -2076,37 +2076,37 @@ describe('Parser', () => {
                   ['_:b0.a', '_:b0.b', '_:b0.c', '_:b0'],
                   ['_:b2', 'http://www.w3.org/2000/10/swap/log#implies', '_:b3', '_:b1'],
                   ['_:b2.a', '_:b2.b', '_:b2.c', '_:b2'],
-                  ['_:b3.a', '_:b3.b', '_:b3.c', '_:b3'])
+                  ['_:b3.a', '_:b3.b', '_:b3.c', '_:b3']),
     );
 
     it(
       'should parse a @forSome statement',
       shouldParse(parser, '@forSome <x>. <x> <x> <x>.',
-                  ['_:b0', '_:b0', '_:b0'])
+                  ['_:b0', '_:b0', '_:b0']),
     );
 
     it(
       'should parse a @forSome statement with multiple entities',
       shouldParse(parser, '@prefix a: <a:>. @base <b:>. @forSome a:x, <y>, a:z. a:x <y> a:z.',
-                  ['_:b0', '_:b1', '_:b2'])
+                  ['_:b0', '_:b1', '_:b2']),
     );
 
     it(
       'should not parse a @forSome statement with an invalid prefix',
       shouldNotParse(parser, '@forSome a:b.',
-                     'Undefined prefix "a:" on line 1.')
+                     'Undefined prefix "a:" on line 1.'),
     );
 
     it(
       'should not parse a @forSome statement with a blank node',
       shouldNotParse(parser, '@forSome _:a.',
-                     'Unexpected blank on line 1.')
+                     'Unexpected blank on line 1.'),
     );
 
     it(
       'should not parse a @forSome statement with a variable',
       shouldNotParse(parser, '@forSome ?a.',
-                     'Unexpected var on line 1.')
+                     'Unexpected var on line 1.'),
     );
 
     it(
@@ -2114,37 +2114,37 @@ describe('Parser', () => {
       shouldParse(parser, '@forSome <x>. <x> <x> { @forSome <x>. <x> <x> <x>. }. <x> <x> <x>.',
                   ['_:b0', '_:b0', '_:b1'],
                   ['_:b2', '_:b2', '_:b2', '_:b1'],
-                  ['_:b0', '_:b0', '_:b0'])
+                  ['_:b0', '_:b0', '_:b0']),
     );
 
     it(
       'should parse a @forAll statement',
       shouldParse(parser, '@forAll  <x>. <x> <x> <x>.',
-                  ['?b0', '?b0', '?b0'])
+                  ['?b0', '?b0', '?b0']),
     );
 
     it(
       'should parse a @forAll statement with multiple entities',
       shouldParse(parser, '@prefix a: <a:>. @base <b:>. @forAll  a:x, <y>, a:z. a:x <y> a:z.',
-                  ['?b0', '?b1', '?b2'])
+                  ['?b0', '?b1', '?b2']),
     );
 
     it(
       'should not parse a @forAll statement with an invalid prefix',
       shouldNotParse(parser, '@forAll a:b.',
-                     'Undefined prefix "a:" on line 1.')
+                     'Undefined prefix "a:" on line 1.'),
     );
 
     it(
       'should not parse a @forAll statement with a blank node',
       shouldNotParse(parser, '@forAll _:a.',
-                     'Unexpected blank on line 1.')
+                     'Unexpected blank on line 1.'),
     );
 
     it(
       'should not parse a @forAll statement with a variable',
       shouldNotParse(parser, '@forAll ?a.',
-                     'Unexpected var on line 1.')
+                     'Unexpected var on line 1.'),
     );
 
     it(
@@ -2152,7 +2152,7 @@ describe('Parser', () => {
       shouldParse(parser, '@forAll <x>. <x> <x> { @forAll <x>. <x> <x> <x>. }. <x> <x> <x>.',
                   ['?b0', '?b0', '_:b1'],
                   ['?b2', '?b2', '?b2', '_:b1'],
-                  ['?b0', '?b0', '?b0'])
+                  ['?b0', '?b0', '?b0']),
     );
 
     it(
@@ -2160,7 +2160,7 @@ describe('Parser', () => {
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           ':joe!fam:mother a fam:Person.',
                   ['ex:joe', 'f:mother', '_:b0'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person'])
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']),
     );
 
     it(
@@ -2170,7 +2170,7 @@ describe('Parser', () => {
                   ['ex:joe', 'f:mother', '_:b0'],
                   ['_:b0',   'l:office', '_:b1'],
                   ['_:b1',   'l:zip',    '_:b2'],
-                  ['_:b2',   'l:code',   '"1234"^^http://www.w3.org/2001/XMLSchema#integer'])
+                  ['_:b2',   'l:code',   '"1234"^^http://www.w3.org/2001/XMLSchema#integer']),
     );
 
     it(
@@ -2178,7 +2178,7 @@ describe('Parser', () => {
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '<x> <is> :joe!fam:mother.',
                   ['x', 'is', '_:b0'],
-                  ['ex:joe', 'f:mother', '_:b0'])
+                  ['ex:joe', 'f:mother', '_:b0']),
     );
 
     it(
@@ -2188,7 +2188,7 @@ describe('Parser', () => {
                   ['x',      'is',       '_:b2'],
                   ['ex:joe', 'f:mother', '_:b0'],
                   ['_:b0',   'l:office', '_:b1'],
-                  ['_:b1',   'l:zip',    '_:b2'])
+                  ['_:b1',   'l:zip',    '_:b2']),
     );
 
     it(
@@ -2196,7 +2196,7 @@ describe('Parser', () => {
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           ':joe^fam:son a fam:Person.',
                   ['_:b0', 'f:son', 'ex:joe'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person'])
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']),
     );
 
     it(
@@ -2206,7 +2206,7 @@ describe('Parser', () => {
                   ['_:b0', 'f:son',    'ex:joe'],
                   ['_:b1', 'f:sister', '_:b0'],
                   ['_:b2', 'f:mother', '_:b1'],
-                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person'])
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']),
     );
 
     it(
@@ -2214,7 +2214,7 @@ describe('Parser', () => {
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '<x> <is> :joe^fam:son.',
                   ['x',    'is',    '_:b0'],
-                  ['_:b0', 'f:son', 'ex:joe'])
+                  ['_:b0', 'f:son', 'ex:joe']),
     );
 
     it(
@@ -2224,7 +2224,7 @@ describe('Parser', () => {
                   ['x',    'is',       '_:b2'],
                   ['_:b0', 'f:son',    'ex:joe'],
                   ['_:b1', 'f:sister', '_:b0'],
-                  ['_:b2', 'f:mother', '_:b1'])
+                  ['_:b2', 'f:mother', '_:b1']),
     );
 
     it(
@@ -2233,7 +2233,7 @@ describe('Parser', () => {
                           ':joe!fam:mother^fam:mother a fam:Person.',
                   ['ex:joe', 'f:mother', '_:b0'],
                   ['_:b1',   'f:mother', '_:b0'],
-                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person'])
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']),
     );
 
     it(
@@ -2242,7 +2242,7 @@ describe('Parser', () => {
                           '<x> <is> :joe!fam:mother^fam:mother.',
                   ['x', 'is', '_:b1'],
                   ['ex:joe', 'f:mother', '_:b0'],
-                  ['_:b1',   'f:mother', '_:b0'])
+                  ['_:b1',   'f:mother', '_:b0']),
     );
 
     it(
@@ -2251,7 +2251,7 @@ describe('Parser', () => {
                           '[fam:knows :joe!fam:mother] a fam:Person.',
                   ['_:b0', 'f:knows', '_:b1'],
                   ['ex:joe', 'f:mother', '_:b1'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person'])
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']),
     );
 
     it(
@@ -2260,7 +2260,7 @@ describe('Parser', () => {
                           '<x> <is> [fam:knows :joe!fam:mother].',
                   ['x', 'is', '_:b0'],
                   ['_:b0', 'f:knows', '_:b1'],
-                  ['ex:joe', 'f:mother', '_:b1'])
+                  ['ex:joe', 'f:mother', '_:b1']),
     );
 
     it(
@@ -2269,7 +2269,7 @@ describe('Parser', () => {
                           '[fam:knows :joe^fam:son] a fam:Person.',
                   ['_:b0', 'f:knows', '_:b1'],
                   ['_:b1', 'f:son', 'ex:joe'],
-                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person'])
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']),
     );
 
     it(
@@ -2278,7 +2278,7 @@ describe('Parser', () => {
                           '<x> <is> [fam:knows :joe^fam:son].',
                   ['x', 'is', '_:b0'],
                   ['_:b0', 'f:knows', '_:b1'],
-                  ['_:b1', 'f:son', 'ex:joe'])
+                  ['_:b1', 'f:son', 'ex:joe']),
     );
 
     it(
@@ -2292,7 +2292,7 @@ describe('Parser', () => {
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b3'],
                   ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
                   ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                  ['ex:joe', 'f:mother', '_:b2'])
+                  ['ex:joe', 'f:mother', '_:b2']),
     );
 
     it(
@@ -2306,7 +2306,7 @@ describe('Parser', () => {
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b3'],
                   ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
                   ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                  ['ex:joe', 'f:mother', '_:b2'])
+                  ['ex:joe', 'f:mother', '_:b2']),
     );
 
     it(
@@ -2320,7 +2320,7 @@ describe('Parser', () => {
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b3'],
                   ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
                   ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                  ['_:b2', 'f:son', 'ex:joe'])
+                  ['_:b2', 'f:son', 'ex:joe']),
     );
 
     it(
@@ -2334,7 +2334,7 @@ describe('Parser', () => {
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',  '_:b3'],
                   ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
                   ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-                  ['_:b2', 'f:son', 'ex:joe'])
+                  ['_:b2', 'f:son', 'ex:joe']),
     );
 
     it(
@@ -2346,60 +2346,60 @@ describe('Parser', () => {
       ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'o'],
       ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
       ['b', 'something', 'foo', '_:b1'],
-      ['b', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'type', '_:b1']
-  )
+      ['b', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'type', '_:b1'],
+  ),
     );
 
     it(
       'should not parse an invalid ! path',
-      shouldNotParse(parser, '<a>!"invalid" ', 'Expected entity but got literal on line 1.')
+      shouldNotParse(parser, '<a>!"invalid" ', 'Expected entity but got literal on line 1.'),
     );
 
     it(
       'should not parse an invalid ^ path',
-      shouldNotParse(parser, '<a>^"invalid" ', 'Expected entity but got literal on line 1.')
+      shouldNotParse(parser, '<a>^"invalid" ', 'Expected entity but got literal on line 1.'),
     );
 
     it(
       'should parse literal as subject',
       shouldParse(parser, '<a> <b> {1 <greaterThan> 0}.',
           ['a', 'b', '_:b0'],
-          ['"1"^^http://www.w3.org/2001/XMLSchema#integer', 'greaterThan', '"0"^^http://www.w3.org/2001/XMLSchema#integer', '_:b0']
-      )
+          ['"1"^^http://www.w3.org/2001/XMLSchema#integer', 'greaterThan', '"0"^^http://www.w3.org/2001/XMLSchema#integer', '_:b0'],
+      ),
     );
 
     it(
       'should parse literals with datatype as subject',
       shouldParse(parser, '<a> <b> {"a"^^<c> <greaterThan> "b"^^<c>}.',
           ['a', 'b', '_:b0'],
-          ['"a"^^http://example.org/c', 'greaterThan', '"b"^^http://example.org/c', '_:b0']
-      )
+          ['"a"^^http://example.org/c', 'greaterThan', '"b"^^http://example.org/c', '_:b0'],
+      ),
     );
 
     it(
       'should parse literals with language as subject',
       shouldParse(parser, '<a> <b> {"bonjour"@fr <sameAs> "hello"@en}.',
           ['a', 'b', '_:b0'],
-          ['"bonjour"@fr', 'sameAs', '"hello"@en', '_:b0']
-      )
+          ['"bonjour"@fr', 'sameAs', '"hello"@en', '_:b0'],
+      ),
     );
 
     it(
       'should not parse RDF-star in the subject position',
       shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
-        'Unexpected RDF-star syntax on line 1.')
+        'Unexpected RDF-star syntax on line 1.'),
     );
 
     it(
       'should not parse RDF-star in the object position',
       shouldNotParse(parser, '<a> <b> <<<a> <b> <c>>>.',
-        'Unexpected RDF-star syntax on line 1.')
+        'Unexpected RDF-star syntax on line 1.'),
     );
 
     it(
       'should not parse RDF-star with annotated syntax',
       shouldNotParse(parser, '<a> <b> <c> {| <b> <c> |}.',
-          'Unexpected RDF-star syntax on line 1.')
+          'Unexpected RDF-star syntax on line 1.'),
     );
   });
 
@@ -2412,7 +2412,7 @@ describe('Parser', () => {
     it(
       'should not parse nested quads',
       shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
-        'Expected >> to follow "_:.b" on line 1.')
+        'Expected >> to follow "_:.b" on line 1.'),
     );
   });
 
@@ -2425,7 +2425,7 @@ describe('Parser', () => {
                   ['', 'http://www.w3.org/2000/10/swap/reify#forSome', '_:b0', 'urn:n3:quantifiers'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x', 'urn:n3:quantifiers'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'urn:n3:quantifiers'],
-                  ['x', 'x', 'x'])
+                  ['x', 'x', 'x']),
     );
 
     it(
@@ -2438,7 +2438,7 @@ describe('Parser', () => {
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2', 'urn:n3:quantifiers'],
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a:z', 'urn:n3:quantifiers'],
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'urn:n3:quantifiers'],
-                  ['a:x', 'b:y', 'a:z'])
+                  ['a:x', 'b:y', 'a:z']),
     );
 
     it(
@@ -2452,7 +2452,7 @@ describe('Parser', () => {
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x', 'urn:n3:quantifiers'],
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'urn:n3:quantifiers'],
                   ['x', 'x', 'x', '_:b1'],
-                  ['x', 'x', 'x'])
+                  ['x', 'x', 'x']),
     );
 
     it(
@@ -2461,7 +2461,7 @@ describe('Parser', () => {
                   ['', 'http://www.w3.org/2000/10/swap/reify#forAll', '_:b0',       'urn:n3:quantifiers'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x', 'urn:n3:quantifiers'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'urn:n3:quantifiers'],
-                  ['x', 'x', 'x'])
+                  ['x', 'x', 'x']),
     );
 
     it(
@@ -2474,7 +2474,7 @@ describe('Parser', () => {
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2', 'urn:n3:quantifiers'],
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a:z', 'urn:n3:quantifiers'],
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'urn:n3:quantifiers'],
-                  ['a:x', 'b:y', 'a:z'])
+                  ['a:x', 'b:y', 'a:z']),
     );
 
     it(
@@ -2488,7 +2488,7 @@ describe('Parser', () => {
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x', 'urn:n3:quantifiers'],
                   ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'urn:n3:quantifiers'],
                   ['x', 'x', 'x', '_:b1'],
-                  ['x', 'x', 'x'])
+                  ['x', 'x', 'x']),
     );
   });
 
@@ -2533,18 +2533,18 @@ describe('Parser', () => {
           DF.namedNode('http://example.com/weather'),
           DF.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
           DF.namedNode('http://example.com/Raining'),
-          g1
+          g1,
         ),
         DF.quad(
           DF.namedNode('http://example.com/weather'),
           DF.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
           DF.namedNode('http://example.com/Cloudy'),
-          g2
+          g2,
         ),
         DF.quad(
           g1,
           DF.namedNode('http://www.w3.org/2000/10/swap/log#implies'),
-          g2
+          g2,
         ),
       ])).toBe(true);
     });
@@ -2572,17 +2572,17 @@ describe('Parser', () => {
         DF.quad(
           DF.namedNode('http://example.com/weather'),
           DF.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-          DF.namedNode('http://example.com/Raining')
+          DF.namedNode('http://example.com/Raining'),
         ),
         DF.quad(
           DF.namedNode('http://example.com/jeswr'),
           DF.namedNode('http://example.com/knows'),
-          bnode
+          bnode,
         ),
         DF.quad(
           bnode,
           DF.namedNode('http://example.com/name'),
-          DF.literal('Thomas')
+          DF.literal('Thomas'),
         ),
       ])).toBe(true);
     });

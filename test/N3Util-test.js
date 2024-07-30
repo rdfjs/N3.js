@@ -160,13 +160,13 @@ describe('Util', () => {
 
     it('does not match an IRI', () => {
       expect(
-        Util.inDefaultGraph(quad(null, null, null, namedNode('http://example.org/')))
+        Util.inDefaultGraph(quad(null, null, null, namedNode('http://example.org/'))),
       ).toBe(false);
     });
 
     it('does not match a literal', () => {
       expect(
-        Util.inDefaultGraph(quad(null, null, null, literal('http://example.org/')))
+        Util.inDefaultGraph(quad(null, null, null, literal('http://example.org/'))),
       ).toBe(false);
     });
 

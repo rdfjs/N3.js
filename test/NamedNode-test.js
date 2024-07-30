@@ -65,7 +65,7 @@ describe('NamedNode', () => {
           termType: 'NamedNode',
           value: 'http://example.org/other',
         })).toBe(false);
-      }
+      },
     );
 
     it(
@@ -75,7 +75,7 @@ describe('NamedNode', () => {
           termType: 'BlankNode',
           value: 'http://example.org/foo#bar',
         })).toBe(false);
-      }
+      },
     );
 
     it('should provide a JSON representation', () => {

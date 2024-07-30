@@ -65,7 +65,7 @@ describe('Variable', () => {
           termType: 'Variable',
           value: 'v2',
         })).toBe(false);
-      }
+      },
     );
 
     it(
@@ -75,7 +75,7 @@ describe('Variable', () => {
           termType: 'NamedNode',
           value: 'v1',
         })).toBe(false);
-      }
+      },
     );
 
     it('should provide a JSON representation', () => {
