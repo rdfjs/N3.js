@@ -807,7 +807,7 @@ export default class N3Store {
    * Blank Nodes will be normalized.
    */
   contains(other) {
-    if (!other instanceof N3Store || this._entityIndex !== other._entityIndex)
+    if (!(other instanceof N3Store) || this._entityIndex !== other._entityIndex)
       return other.every(quad => this.has(quad));
 
     const g1 = this._graphs, g2 = other._graphs;
