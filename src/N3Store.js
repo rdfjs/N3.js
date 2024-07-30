@@ -31,7 +31,7 @@ export class N3EntityIndex {
         this._termFromId(entities[terms[1]]),
         this._termFromId(entities[terms[2]]),
         this._termFromId(entities[terms[3]]),
-        terms[4] && this._termFromId(entities[terms[4]])
+        terms[4] && this._termFromId(entities[terms[4]]),
       );
       return q;
     }

@@ -229,7 +229,7 @@ export function termFromId(id, factory, nested) {
     termFromId(id[0], factory, true),
     termFromId(id[1], factory, true),
     termFromId(id[2], factory, true),
-    id[3] && termFromId(id[3], factory, true)
+    id[3] && termFromId(id[3], factory, true),
   );
 }
 

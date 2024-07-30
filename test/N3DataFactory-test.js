@@ -57,7 +57,7 @@ describe('DataFactory', () => {
 
     it('converts a non-empty string with an xsd:string type', () => {
       expect(
-        DataFactory.literal('abc', new NamedNode('http://www.w3.org/2001/XMLSchema#string'))
+        DataFactory.literal('abc', new NamedNode('http://www.w3.org/2001/XMLSchema#string')),
       ).toEqual(new Literal('"abc"'));
     });
 
@@ -107,12 +107,12 @@ describe('DataFactory', () => {
       expect(DataFactory.triple(
         new NamedNode('http://ex.org/a'),
         new NamedNode('http://ex.org/b'),
-        new Literal('abc')
+        new Literal('abc'),
       )).toEqual(new Quad(
         new NamedNode('http://ex.org/a'),
         new NamedNode('http://ex.org/b'),
         new Literal('abc'),
-        new DefaultGraph()
+        new DefaultGraph(),
       ));
     });
   });
@@ -123,12 +123,12 @@ describe('DataFactory', () => {
         new NamedNode('http://ex.org/a'),
         new NamedNode('http://ex.org/b'),
         new Literal('abc'),
-        new NamedNode('http://ex.org/d')
+        new NamedNode('http://ex.org/d'),
       )).toEqual(new Quad(
         new NamedNode('http://ex.org/a'),
         new NamedNode('http://ex.org/b'),
         new Literal('abc'),
-        new NamedNode('http://ex.org/d')
+        new NamedNode('http://ex.org/d'),
       ));
     });
 
@@ -138,21 +138,21 @@ describe('DataFactory', () => {
           new NamedNode('http://ex.org/a'),
           new NamedNode('http://ex.org/b'),
           new Literal('abc'),
-          new NamedNode('http://ex.org/d')
+          new NamedNode('http://ex.org/d'),
         ),
         new NamedNode('http://ex.org/b'),
         new Literal('abc'),
-        new NamedNode('http://ex.org/d')
+        new NamedNode('http://ex.org/d'),
       )).toEqual(new Quad(
         new Quad(
           new NamedNode('http://ex.org/a'),
           new NamedNode('http://ex.org/b'),
           new Literal('abc'),
-          new NamedNode('http://ex.org/d')
+          new NamedNode('http://ex.org/d'),
         ),
         new NamedNode('http://ex.org/b'),
         new Literal('abc'),
-        new NamedNode('http://ex.org/d')
+        new NamedNode('http://ex.org/d'),
       ));
     });
 
@@ -165,8 +165,8 @@ describe('DataFactory', () => {
           new NamedNode('http://ex.org/a'),
           new NamedNode('http://ex.org/b'),
           new Literal('abc'),
-          new NamedNode('http://ex.org/d')
-        )
+          new NamedNode('http://ex.org/d'),
+        ),
       )).toEqual(new Quad(
         new NamedNode('http://ex.org/a'),
         new NamedNode('http://ex.org/b'),
@@ -175,8 +175,8 @@ describe('DataFactory', () => {
           new NamedNode('http://ex.org/a'),
           new NamedNode('http://ex.org/b'),
           new Literal('abc'),
-          new NamedNode('http://ex.org/d')
-        )
+          new NamedNode('http://ex.org/d'),
+        ),
       ));
     });
 
@@ -184,12 +184,12 @@ describe('DataFactory', () => {
       expect(DataFactory.quad(
         new NamedNode('http://ex.org/a'),
         new NamedNode('http://ex.org/b'),
-        new Literal('abc')
+        new Literal('abc'),
       )).toEqual(new Quad(
         new NamedNode('http://ex.org/a'),
         new NamedNode('http://ex.org/b'),
         new Literal('abc'),
-        new DefaultGraph()
+        new DefaultGraph(),
       ));
     });
   });

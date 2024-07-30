@@ -22,7 +22,7 @@ export default class N3StreamParser extends Transform {
       // Handle quads by pushing them down the pipeline
       (error, quad) => { error && this.emit('error', error) || quad && this.push(quad); },
       // Emit prefixes through the `prefix` event
-      (prefix, uri) => { this.emit('prefix', prefix, uri); }
+      (prefix, uri) => { this.emit('prefix', prefix, uri); },
     );
 
     // Implement Transform methods through parser callbacks

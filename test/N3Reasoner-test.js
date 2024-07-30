@@ -16,12 +16,12 @@ describe('Reasoner', () => {
         new Quad(
           new NamedNode('http://example.org/s'),
           new NamedNode('a'),
-          new NamedNode('http://example.org/o')
+          new NamedNode('http://example.org/o'),
         ),
         new Quad(
           new NamedNode('http://example.org/o'),
           new NamedNode('subClassOf'),
-          new NamedNode('http://example.org/o2')
+          new NamedNode('http://example.org/o2'),
         ),
       ]);
     });
@@ -32,17 +32,17 @@ describe('Reasoner', () => {
         premise: [new Quad(
           new Variable('?s'),
           new NamedNode('a'),
-          new Variable('?o')
+          new Variable('?o'),
         ), new Quad(
           new Variable('?o'),
           new NamedNode('subClassOf'),
-          new Variable('?o2')
+          new Variable('?o2'),
         )],
         conclusion: [
           new Quad(
             new Variable('?s'),
             new NamedNode('a'),
-            new Variable('?o2')
+            new Variable('?o2'),
           ),
         ],
       }]);
@@ -51,8 +51,8 @@ describe('Reasoner', () => {
         new Quad(
           new NamedNode('http://example.org/s'),
           new NamedNode('a'),
-          new NamedNode('http://example.org/o2')
-        )
+          new NamedNode('http://example.org/o2'),
+        ),
       )).toEqual(true);
     });
 
@@ -62,13 +62,13 @@ describe('Reasoner', () => {
         premise: [new Quad(
           new Variable('?s'),
           new Variable('?a'),
-          new Variable('?o')
+          new Variable('?o'),
         )],
         conclusion: [
           new Quad(
             new Variable('?o'),
             new Variable('?a'),
-            new Variable('?s')
+            new Variable('?s'),
           ),
         ],
       }]);
@@ -81,13 +81,13 @@ describe('Reasoner', () => {
         premise: [new Quad(
           new NamedNode('http://example.org/s'),
           new Variable('?a'),
-          new Variable('?s')
+          new Variable('?s'),
         )],
         conclusion: [
           new Quad(
             new NamedNode('http://example.org/s'),
             new Variable('?s'),
-            new Variable('?a')
+            new Variable('?a'),
           ),
         ],
       }]);
@@ -100,13 +100,13 @@ describe('Reasoner', () => {
         premise: [new Quad(
           new Variable('?s'),
           new Variable('?a'),
-          new NamedNode('http://example.org/o')
+          new NamedNode('http://example.org/o'),
         )],
         conclusion: [
           new Quad(
             new Variable('?a'),
             new Variable('?s'),
-            new NamedNode('http://example.org/o')
+            new NamedNode('http://example.org/o'),
           ),
         ],
       }]);
@@ -119,20 +119,20 @@ describe('Reasoner', () => {
         premise: [new Quad(
           new NamedNode('http://example.org/s'),
           new NamedNode('a'),
-          new NamedNode('http://example.org/o')
+          new NamedNode('http://example.org/o'),
         )],
         conclusion: [
           new Quad(
             new NamedNode('http://example.org/s'),
             new NamedNode('has'),
-            new NamedNode('oProp')
+            new NamedNode('oProp'),
           ),
         ],
       }]);
       expect(store.has(new Quad(
         new NamedNode('http://example.org/s'),
         new NamedNode('has'),
-        new NamedNode('oProp')
+        new NamedNode('oProp'),
       ))).toEqual(true);
       expect(store.size).toEqual(3);
     });
@@ -143,26 +143,26 @@ describe('Reasoner', () => {
         premise: [new Quad(
           new Variable('?s'),
           new Variable('?a'),
-          new Variable('?o')
+          new Variable('?o'),
         )],
         conclusion: [
           new Quad(
             new Variable('?o'),
             new Variable('?s'),
-            new Variable('?a')
+            new Variable('?a'),
           ),
         ],
       }, {
         premise: [new Quad(
           new Variable('?s'),
           new Variable('?a'),
-          new Variable('?o')
+          new Variable('?o'),
         )],
         conclusion: [
           new Quad(
             new Variable('?o'),
             new Variable('?a'),
-            new Variable('?s')
+            new Variable('?s'),
           ),
         ],
       }]);
@@ -175,13 +175,13 @@ describe('Reasoner', () => {
         premise: [new Quad(
           new NamedNode('http://example.org/s'),
           new Variable('?a'),
-          new NamedNode('http://example.org/o')
+          new NamedNode('http://example.org/o'),
         )],
         conclusion: [
           new Quad(
             new NamedNode('http://example.org/sm'),
             new Variable('?a'),
-            new NamedNode('http://example.org/om')
+            new NamedNode('http://example.org/om'),
           ),
         ],
       }]);
@@ -195,17 +195,17 @@ describe('Reasoner', () => {
       new Quad(
         new NamedNode('http://example.org#me'),
         new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#other'),
-        new NamedNode('http://xmlns.com/foaf/0.1/Person')
+        new NamedNode('http://xmlns.com/foaf/0.1/Person'),
       ),
       new Quad(
         new NamedNode('http://example.org#me'),
         new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-        new NamedNode('http://xmlns.com/foaf/0.1/Person')
+        new NamedNode('http://xmlns.com/foaf/0.1/Person'),
       ),
       new Quad(
         new NamedNode('http://xmlns.com/foaf/0.1/Person'),
         new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
-        new NamedNode('http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing')
+        new NamedNode('http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing'),
       ),
     ]);
     expect(store.size).toEqual(3);
@@ -213,17 +213,17 @@ describe('Reasoner', () => {
       premise: [new Quad(
         new Variable('?s'),
         new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-        new Variable('?o')
+        new Variable('?o'),
       ), new Quad(
         new Variable('?o'),
         new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
-        new Variable('?o2')
+        new Variable('?o2'),
       )],
       conclusion: [
         new Quad(
           new Variable('?s'),
           new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-          new Variable('?o2')
+          new Variable('?o2'),
         ),
       ],
     }]);
@@ -231,8 +231,8 @@ describe('Reasoner', () => {
       new Quad(
         new NamedNode('http://example.org#me'),
         new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-        new NamedNode('http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing')
-      )
+        new NamedNode('http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing'),
+      ),
     )).toEqual(true);
     expect(store.size).toEqual(4);
   });
@@ -243,18 +243,18 @@ describe('Reasoner', () => {
         new Quad(
         new NamedNode('j'),
         new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-        new NamedNode('o')
+        new NamedNode('o'),
       ),
         new Quad(
         new NamedNode('o'),
         new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
-        new NamedNode('o2')
+        new NamedNode('o2'),
       ),
         new Quad(
         new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
         new NamedNode('http://www.w3.org/2000/01/rdf-schema#range'),
-        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#Class')
-      )]
+        new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#Class'),
+      )],
     );
 
     new Reasoner(store).reason([
@@ -263,17 +263,17 @@ describe('Reasoner', () => {
           new Quad(
           new Variable('?s'),
           new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-          new Variable('?o')
+          new Variable('?o'),
         ), new Quad(
           new Variable('?o'),
           new NamedNode('http://www.w3.org/2000/01/rdf-schema#subClassOf'),
-          new Variable('?o2')
+          new Variable('?o2'),
         )],
         conclusion: [
           new Quad(
             new Variable('?s'),
             new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-            new Variable('?o2')
+            new Variable('?o2'),
           ),
         ],
       },
@@ -281,17 +281,17 @@ describe('Reasoner', () => {
         premise: [new Quad(
           new Variable('?a'),
           new NamedNode('http://www.w3.org/2000/01/rdf-schema#range'),
-          new Variable('?x')
+          new Variable('?x'),
         ), new Quad(
           new Variable('?u'), // With rules like this, we *do not* need to iterate over the subject index, so we should avoid doing so
           new Variable('?a'),
-          new Variable('?v')
+          new Variable('?v'),
         )],
         conclusion: [
           new Quad(
             new Variable('?v'),
             new NamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-            new Variable('?x')
+            new Variable('?x'),
           ),
         ],
       },

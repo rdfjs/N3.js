@@ -106,10 +106,10 @@ describe('Store', () => {
         expect(store.size).toEqual(0);
         expect(store.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))).toBe(true);
         expect(
-          store.removeQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))
+          store.removeQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')),
         ).toBe(true);
         expect(store.size).toEqual(0);
-      }
+      },
     );
 
     it('should be able to generate unnamed blank nodes', () => {
@@ -129,7 +129,7 @@ describe('Store', () => {
 
     it('should be able to store triples with generated blank nodes', () => {
       expect(
-        store.addQuad(store.createBlankNode('x'), new NamedNode('b'), new NamedNode('c'))
+        store.addQuad(store.createBlankNode('x'), new NamedNode('b'), new NamedNode('c')),
       ).toBe(true);
       shouldIncludeAll(store.getQuads(null, new NamedNode('b')), ['_:x', 'b', 'c'])();
       store.removeQuads(store.getQuads());
@@ -170,7 +170,7 @@ describe('Store', () => {
     describe('adding a triple that did not exist yet', () => {
       it('should return true', () => {
         expect(
-          store.has(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4')))
+          store.has(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4'))),
         ).toBe(false);
         expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4'))).toBe(false);
         expect(store.has(null, null, new NamedNode('o4'))).toBe(false);
@@ -178,11 +178,11 @@ describe('Store', () => {
         expect(store.addQuad('s1', 'p1', 'o4')).toBe(true);
 
         expect(
-          store.has(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4')))
+          store.has(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4'))),
         ).toBe(true);
         expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4'))).toBe(true);
         expect(
-          store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4'), new DefaultGraph())
+          store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4'), new DefaultGraph()),
         ).toBe(true);
         expect(store.has(null, null, new NamedNode('o4'))).toBe(true);
       });
@@ -193,7 +193,7 @@ describe('Store', () => {
 
       it('should return true', () => {
         expect(
-          store.addQuad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), 'p1', 'o4')
+          store.addQuad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), 'p1', 'o4'),
         ).toBe(true);
       });
 
@@ -203,7 +203,7 @@ describe('Store', () => {
 
       it('should return self', () => {
         expect(
-          store.add(new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')))
+          store.add(new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2'))),
         ).toBe(store);
       });
 
@@ -223,7 +223,7 @@ describe('Store', () => {
 
       it('should return true', () => {
         expect(
-          store.removeQuad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), 'p1', 'o4')
+          store.removeQuad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), 'p1', 'o4'),
         ).toBe(true);
       });
 
@@ -233,7 +233,7 @@ describe('Store', () => {
 
       it('should return self', () => {
         expect(
-          store.delete(new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')))
+          store.delete(new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2'))),
         ).toBe(store);
       });
 
@@ -253,7 +253,7 @@ describe('Store', () => {
 
       it('should return false', () => {
         expect(
-          store.removeQuad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4')), 'p1', 'o1')
+          store.removeQuad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4')), 'p1', 'o1'),
         ).toBe(false);
       });
 
@@ -268,7 +268,7 @@ describe('Store', () => {
         forResultStream(shouldIncludeAll, () => { return store.removeMatches('s1', 'p1'); },
           ['s1', 'p1', 'o1'],
           ['s1', 'p1', 'o2'],
-          ['s1', 'p1', 'o3'])
+          ['s1', 'p1', 'o3']),
       );
 
       it('should decrease the size', () => {
@@ -280,7 +280,7 @@ describe('Store', () => {
       it(
         'should return the removed quads',
         forResultStream(shouldIncludeAll, () => { return store.deleteGraph('g1'); },
-          ['s2', 'p2', 'o2', 'g1'])
+          ['s2', 'p2', 'o2', 'g1']),
       );
 
       it('should decrease the size', () => {
@@ -314,10 +314,10 @@ describe('Store', () => {
           new Quad(
             new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
             new NamedNode('p2'),
-            new NamedNode('o2')
-            )
+            new NamedNode('o2'),
+            ),
           )).toBe(true);
-      })
+      }),
     );
 
     it('should decrease the size', () => {
@@ -356,7 +356,7 @@ describe('Store', () => {
           expect(s2.size).toEqual(2);
           done();
         });
-      }
+      },
     );
   });
 
@@ -387,17 +387,17 @@ describe('Store', () => {
       expect(store.getQuads(
         new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
         new NamedNode('p1'),
-        null
+        null,
         ).length).toBe(1);
       expect(store.getQuads(
         new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2'), new NamedNode('g')),
         new NamedNode('p1'),
-        null
+        null,
         ).length).toBe(1);
       expect(store.getQuads(
         new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2'), new NamedNode('g2')),
         new NamedNode('p1'),
-        null
+        null,
         ).length).toBe(0);
     });
   });
@@ -436,7 +436,7 @@ describe('Store', () => {
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o2'],
                          ['s1', 'p2', 'o2'],
-                         ['s1', 'p1', 'o1', 'c4'])
+                         ['s1', 'p1', 'o1', 'c4']),
       );
     });
 
@@ -456,7 +456,7 @@ describe('Store', () => {
                          ['s1', 'p1', 'o2'],
                          ['s2', 'p1', 'o1'],
                          ['s1', 'p1', 'o1', 'c4'],
-                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3'])
+                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3']),
       );
     });
 
@@ -470,7 +470,7 @@ describe('Store', () => {
         shouldIncludeAll(store.getQuads(null, null, new NamedNode('o1')),
                          ['s1', 'p1', 'o1'],
                          ['s2', 'p1', 'o1'],
-                         ['s1', 'p1', 'o1', 'c4'])
+                         ['s1', 'p1', 'o1', 'c4']),
       );
     });
 
@@ -484,7 +484,7 @@ describe('Store', () => {
         shouldIncludeAll(store.getQuads(new NamedNode('s1'), new NamedNode('p1'), null),
                          ['s1', 'p1', 'o1'],
                          ['s1', 'p1', 'o2'],
-                         ['s1', 'p1', 'o1', 'c4'])
+                         ['s1', 'p1', 'o1', 'c4']),
       );
     });
 
@@ -497,7 +497,7 @@ describe('Store', () => {
         'should return all items with this subject and object in all graphs',
         shouldIncludeAll(store.getQuads(new NamedNode('s1'), null, new NamedNode('o1')),
                          ['s1', 'p1', 'o1'],
-                         ['s1', 'p1', 'o1', 'c4'])
+                         ['s1', 'p1', 'o1', 'c4']),
       );
     });
 
@@ -511,7 +511,7 @@ describe('Store', () => {
         shouldIncludeAll(store.getQuads(null, new NamedNode('p1'), new NamedNode('o1')),
                          ['s1', 'p1', 'o1'],
                          ['s2', 'p1', 'o1'],
-                         ['s1', 'p1', 'o1', 'c4'])
+                         ['s1', 'p1', 'o1', 'c4']),
       );
     });
 
@@ -524,7 +524,7 @@ describe('Store', () => {
         'should return all items with this subject, predicate, and object in all graphs',
         shouldIncludeAll(store.getQuads(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
                          ['s1', 'p1', 'o1'],
-                         ['s1', 'p1', 'o1', 'c4'])
+                         ['s1', 'p1', 'o1', 'c4']),
       );
     });
 
@@ -541,7 +541,7 @@ describe('Store', () => {
                          ['s1', 'p2', 'o2'],
                          ['s2', 'p1', 'o1'],
                          [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3'],
-                         ['s2', 'p2', 'o2'])
+                         ['s2', 'p2', 'o2']),
       );
     });
 
@@ -549,7 +549,7 @@ describe('Store', () => {
       it(
         'should return all items in that graph',
         shouldIncludeAll(store.getQuads(null, null, null, new NamedNode('c4')),
-                         ['s1', 'p1', 'o1', 'c4'])
+                         ['s1', 'p1', 'o1', 'c4']),
       );
     });
 
@@ -618,7 +618,7 @@ describe('Store', () => {
             expect(typeof stream.unshift).toEqual('function');
             expect(typeof stream.wrap).toEqual('function');
             expect(typeof stream[Symbol.asyncIterator]).toEqual('function');
-          }
+          },
         );
 
         it(
@@ -630,7 +630,7 @@ describe('Store', () => {
             ['s2', 'p1', 'o1'],
             ['s1', 'p1', 'o1', 'c4'],
             [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3'],
-            ['s2', 'p2', 'o2'])
+            ['s2', 'p2', 'o2']),
         );
       });
 
@@ -649,13 +649,13 @@ describe('Store', () => {
             ['s1', 'p1', 'o1'],
             ['s1', 'p1', 'o2'],
             ['s1', 'p2', 'o2'],
-            ['s1', 'p1', 'o1', 'c4'])
+            ['s1', 'p1', 'o1', 'c4']),
         );
 
         it(
           'should return all items with this subject in all graphs in a large store',
           forResultStream(shouldIncludeAll, largeStore.match(null, new NamedNode('p2'), null),
-            ...results)
+            ...results),
         );
 
         it('should return an object implementing the DatasetCore interface', () => {
@@ -714,9 +714,9 @@ describe('Store', () => {
           'should return all subjects with this predicate, object and graph',
           () => {
             expect(
-              store.getSubjects(new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c4'))
+              store.getSubjects(new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c4')),
             ).toEqual(expect.arrayContaining([new NamedNode('s1')]));
-          }
+          },
         );
       });
 
@@ -729,7 +729,7 @@ describe('Store', () => {
       describe('with existing predicate and graph parameters', () => {
         it('should return all subjects with this predicate and graph', () => {
           expect(store.getSubjects(new NamedNode('p1'), null, new DefaultGraph())).toEqual(expect.arrayContaining(
-            [new NamedNode('s1'), new NamedNode('s2'), new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2'))]
+            [new NamedNode('s1'), new NamedNode('s2'), new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2'))],
           ));
         });
       });
@@ -743,7 +743,7 @@ describe('Store', () => {
       describe('with an existing predicate parameter', () => {
         it('should return all subjects with this predicate', () => {
           expect(store.getSubjects(new NamedNode('p1'), null, null)).toEqual(expect.arrayContaining(
-            [new NamedNode('s1'), new NamedNode('s2'),  new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2'))]
+            [new NamedNode('s1'), new NamedNode('s2'),  new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2'))],
           ));
         });
       });
@@ -763,7 +763,7 @@ describe('Store', () => {
       describe('with no parameters', () => {
         it('should return all subjects', () => {
           expect(store.getSubjects(null, null, null)).toEqual(expect.arrayContaining(
-            [new NamedNode('s1'), new NamedNode('s2'),  new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2'))]
+            [new NamedNode('s1'), new NamedNode('s2'),  new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2'))],
           ));
         });
       });
@@ -775,9 +775,9 @@ describe('Store', () => {
           'should return all predicates with this subject, object and graph',
           () => {
             expect(
-              store.getPredicates(new NamedNode('s1'), new NamedNode('o1'), new NamedNode('c4'))
+              store.getPredicates(new NamedNode('s1'), new NamedNode('o1'), new NamedNode('c4')),
             ).toEqual(expect.arrayContaining([new NamedNode('p1')]));
-          }
+          },
         );
       });
 
@@ -830,9 +830,9 @@ describe('Store', () => {
           'should return all objects with this subject, predicate and graph',
           () => {
             expect(
-              store.getObjects(new NamedNode('s1'), new NamedNode('p1'), new DefaultGraph())
+              store.getObjects(new NamedNode('s1'), new NamedNode('p1'), new DefaultGraph()),
             ).toEqual(expect.arrayContaining([new NamedNode('o1'), new NamedNode('o2')]));
-          }
+          },
         );
       });
 
@@ -851,7 +851,7 @@ describe('Store', () => {
       describe('with existing predicate and graph parameters', () => {
         it('should return all objects with this predicate and graph', () => {
           expect(store.getObjects(null, new NamedNode('p1'), new DefaultGraph())).toEqual(
-            expect.arrayContaining([new NamedNode('o1'), new NamedNode('o2'), new NamedNode('o3')])
+            expect.arrayContaining([new NamedNode('o1'), new NamedNode('o2'), new NamedNode('o3')]),
           );
         });
       });
@@ -865,7 +865,7 @@ describe('Store', () => {
       describe('with an existing predicate parameter', () => {
         it('should return all objects with this predicate', () => {
           expect(store.getObjects(null, new NamedNode('p1'), null)).toEqual(
-            expect.arrayContaining([new NamedNode('o1'), new NamedNode('o2'),  new NamedNode('o3')])
+            expect.arrayContaining([new NamedNode('o1'), new NamedNode('o2'),  new NamedNode('o3')]),
           );
         });
       });
@@ -879,7 +879,7 @@ describe('Store', () => {
       describe('with no parameters', () => {
         it('should return all objects', () => {
           expect(store.getObjects(null, null, null)).toEqual(
-            expect.arrayContaining([new NamedNode('o1'), new NamedNode('o2'), new NamedNode('o3')])
+            expect.arrayContaining([new NamedNode('o1'), new NamedNode('o2'), new NamedNode('o3')]),
           );
         });
       });
@@ -891,9 +891,9 @@ describe('Store', () => {
           'should return all graphs with this subject, predicate and object',
           () => {
             expect(
-              store.getGraphs(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'))
+              store.getGraphs(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
             ).toEqual(expect.arrayContaining([new NamedNode('c4'), new DefaultGraph()]));
-          }
+          },
         );
       });
 
@@ -945,7 +945,7 @@ describe('Store', () => {
         it(
           'should have iterated all items with this subject, predicate, object and graph',
           shouldIncludeAll(collect(store, 'forEach', 's1', 'p1', 'o2', ''),
-                           ['s1', 'p1', 'o2', ''])
+                           ['s1', 'p1', 'o2', '']),
         );
       });
 
@@ -953,7 +953,7 @@ describe('Store', () => {
         it(
           'should have iterated all items with this subject, predicate and object',
           shouldIncludeAll(collect(store, 'forEach', 's1', 'p2', 'o2', null),
-                           ['s1', 'p2', 'o2', ''])
+                           ['s1', 'p2', 'o2', '']),
         );
       });
 
@@ -962,7 +962,7 @@ describe('Store', () => {
           'should have iterated all items with this subject, predicate and graph',
           shouldIncludeAll(collect(store, 'forEach', 's1', 'p1', null, ''),
                            ['s1', 'p1', 'o1', ''],
-                           ['s1', 'p1', 'o2', ''])
+                           ['s1', 'p1', 'o2', '']),
         );
       });
 
@@ -971,7 +971,7 @@ describe('Store', () => {
           'should have iterated all items with this subject, object and graph',
           shouldIncludeAll(collect(store, 'forEach', 's1', null, 'o2', ''),
                            ['s1', 'p1', 'o2', ''],
-                           ['s1', 'p2', 'o2', ''])
+                           ['s1', 'p2', 'o2', '']),
         );
       });
 
@@ -980,7 +980,7 @@ describe('Store', () => {
           'should have iterated all items with this predicate, object and graph',
           shouldIncludeAll(collect(store, 'forEach', null, 'p1', 'o1', ''),
                            ['s1', 'p1', 'o1', ''],
-                           ['s2', 'p1', 'o1', ''])
+                           ['s2', 'p1', 'o1', '']),
         );
       });
 
@@ -990,7 +990,7 @@ describe('Store', () => {
           shouldIncludeAll(collect(store, 'forEach', 's1', 'p1', null, null),
                            ['s1', 'p1', 'o1', ''],
                            ['s1', 'p1', 'o2', ''],
-                           ['s1', 'p1', 'o1', 'c4'])
+                           ['s1', 'p1', 'o1', 'c4']),
         );
       });
 
@@ -999,7 +999,7 @@ describe('Store', () => {
           'should iterate all items with this subject and predicate',
           shouldIncludeAll(collect(store, 'forEach', 's1', null, 'o2', null),
                            ['s1', 'p1', 'o2', ''],
-                           ['s1', 'p2', 'o2', ''])
+                           ['s1', 'p2', 'o2', '']),
         );
       });
 
@@ -1007,7 +1007,7 @@ describe('Store', () => {
         it(
           'should iterate all items with this subject and graph',
           shouldIncludeAll(collect(store, 'forEach', 's1', null, null, 'c4'),
-                         ['s1', 'p1', 'o1', 'c4'])
+                         ['s1', 'p1', 'o1', 'c4']),
         );
       });
 
@@ -1017,7 +1017,7 @@ describe('Store', () => {
           shouldIncludeAll(collect(store, 'forEach', null, 'p1', 'o1', null),
                            ['s1', 'p1', 'o1', ''],
                            ['s2', 'p1', 'o1', ''],
-                           ['s1', 'p1', 'o1', 'c4'])
+                           ['s1', 'p1', 'o1', 'c4']),
         );
       });
 
@@ -1028,7 +1028,7 @@ describe('Store', () => {
                              ['s1', 'p1', 'o1', ''],
                              ['s1', 'p1', 'o2', ''],
                              ['s2', 'p1', 'o1', ''],
-                             [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', ''])
+                             [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']),
         );
       });
 
@@ -1037,7 +1037,7 @@ describe('Store', () => {
           'should iterate all items with this object and graph',
           shouldIncludeAll(collect(store, 'forEach', null, null, 'o1', ''),
                            ['s1', 'p1', 'o1', ''],
-                           ['s2', 'p1', 'o1', ''])
+                           ['s2', 'p1', 'o1', '']),
         );
       });
 
@@ -1046,7 +1046,7 @@ describe('Store', () => {
           'should iterate all items with this subject',
           shouldIncludeAll(collect(store, 'forEach', 's2', null, null, null),
                          ['s2', 'p1', 'o1', ''],
-                         ['s2', 'p2', 'o2', ''])
+                         ['s2', 'p2', 'o2', '']),
         );
       });
 
@@ -1058,7 +1058,7 @@ describe('Store', () => {
                            ['s1', 'p1', 'o2', ''],
                            ['s2', 'p1', 'o1', ''],
                            ['s1', 'p1', 'o1', 'c4'],
-                           [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', ''])
+                           [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']),
         );
       });
 
@@ -1068,7 +1068,7 @@ describe('Store', () => {
           shouldIncludeAll(collect(store, 'forEach', null, null, 'o1', null),
                            ['s1', 'p1', 'o1', ''],
                            ['s2', 'p1', 'o1', ''],
-                           ['s1', 'p1', 'o1', 'c4'])
+                           ['s1', 'p1', 'o1', 'c4']),
         );
       });
 
@@ -1081,7 +1081,7 @@ describe('Store', () => {
                            ['s1', 'p2', 'o2'],
                            ['s2', 'p1', 'o1'],
                            ['s2', 'p2', 'o2'],
-                           [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', ''])
+                           [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']),
         );
       });
 
@@ -1095,7 +1095,7 @@ describe('Store', () => {
                            ['s2', 'p1', 'o1'],
                            ['s2', 'p2', 'o2'],
                            ['s1', 'p1', 'o1', 'c4'],
-                           [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', ''])
+                           [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']),
         );
       });
     });
@@ -1106,7 +1106,7 @@ describe('Store', () => {
           'should iterate all subjects with this predicate, object and graph',
           () => {
             expect(collect(store, 'forSubjects', 'p1', 'o1', '')).toEqual(expect.arrayContaining([new NamedNode('s1'), new NamedNode('s2')]));
-          }
+          },
         );
       });
       describe('with a non-existing predicate', () => {
@@ -1132,7 +1132,7 @@ describe('Store', () => {
           'should iterate all predicates with this subject, object and graph',
           () => {
             expect(collect(store, 'forPredicates', 's1', 'o2', '')).toEqual(expect.arrayContaining([new NamedNode('p1'), new NamedNode('p2')]));
-          }
+          },
         );
       });
       describe('with a non-existing subject', () => {
@@ -1158,7 +1158,7 @@ describe('Store', () => {
           'should iterate all objects with this subject, predicate and graph',
           () => {
             expect(collect(store, 'forObjects', 's1', 'p1', '')).toEqual(expect.arrayContaining([new NamedNode('o1'), new NamedNode('o2')]));
-          }
+          },
         );
       });
       describe('with a non-existing subject', () => {
@@ -1184,7 +1184,7 @@ describe('Store', () => {
           'should iterate all graphs with this subject, predicate and object',
           () => {
             expect(collect(store, 'forGraphs', 's1', 'p1', 'o1')).toEqual(expect.arrayContaining([new DefaultGraph(), new NamedNode('c4')]));
-          }
+          },
         );
       });
       describe('with a non-existing subject', () => {
@@ -1387,7 +1387,7 @@ describe('Store', () => {
         'should count all items with this subject and predicate in all graphs',
         () => {
           expect(store.countQuads('s1', 'p1', null)).toBe(3);
-        }
+        },
       );
     });
 
@@ -1402,7 +1402,7 @@ describe('Store', () => {
         'should count all items with this subject and object in all graphs',
         () => {
           expect(store.countQuads('s1', null, 'o1')).toBe(2);
-        }
+        },
       );
     });
 
@@ -1417,7 +1417,7 @@ describe('Store', () => {
         'should count all items with this predicate and object in all graphs',
         () => {
           expect(store.countQuads(null, 'p1', 'o1')).toBe(3);
-        }
+        },
       );
     });
 
@@ -1432,7 +1432,7 @@ describe('Store', () => {
         'should count all items with this subject, predicate, and object in all graphs',
         () => {
           expect(store.countQuads('s1', 'p1', 'o1')).toBe(2);
-        }
+        },
       );
     });
 
@@ -1464,9 +1464,9 @@ describe('Store', () => {
       beforeAll(
         () => {
           expect(
-          store.removeQuad(new NamedNode('s0'), new NamedNode('p1'), new NamedNode('o1'))
+          store.removeQuad(new NamedNode('s0'), new NamedNode('p1'), new NamedNode('o1')),
         ).toBe(false);
-        }
+        },
       );
       it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
@@ -1475,9 +1475,9 @@ describe('Store', () => {
       beforeAll(
         () => {
           expect(
-          store.removeQuad(new NamedNode('s1'), new NamedNode('p0'), new NamedNode('o1'))
+          store.removeQuad(new NamedNode('s1'), new NamedNode('p0'), new NamedNode('o1')),
         ).toBe(false);
-        }
+        },
       );
       it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
@@ -1486,9 +1486,9 @@ describe('Store', () => {
       beforeAll(
         () => {
           expect(
-          store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o0'))
+          store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o0')),
         ).toBe(false);
-        }
+        },
       );
       it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
@@ -1497,9 +1497,9 @@ describe('Store', () => {
       beforeAll(
         () => {
           expect(
-          store.removeQuad(new NamedNode('o1'), new NamedNode('p1'), new NamedNode('o1'))
+          store.removeQuad(new NamedNode('o1'), new NamedNode('p1'), new NamedNode('o1')),
         ).toBe(false);
-        }
+        },
       );
       it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
@@ -1508,9 +1508,9 @@ describe('Store', () => {
       beforeAll(
         () => {
           expect(
-          store.removeQuad(new NamedNode('s1'), new NamedNode('s1'), new NamedNode('o1'))
+          store.removeQuad(new NamedNode('s1'), new NamedNode('s1'), new NamedNode('o1')),
         ).toBe(false);
-        }
+        },
       );
       it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
@@ -1519,9 +1519,9 @@ describe('Store', () => {
       beforeAll(
         () => {
           expect(
-          store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('s1'))
+          store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('s1')),
         ).toBe(false);
-        }
+        },
       );
       it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
@@ -1530,16 +1530,16 @@ describe('Store', () => {
       beforeAll(
         () => {
           expect(
-          store.removeQuad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o1'))
+          store.removeQuad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o1')),
         ).toBe(false);
-        }
+        },
       );
       it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
 
     describe('when trying to remove an incomplete triple', () => {
       beforeAll(
-        () => { expect(store.removeQuad(new NamedNode('s1'), null, null)).toBe(false); }
+        () => { expect(store.removeQuad(new NamedNode('s1'), null, null)).toBe(false); },
       );
       it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
@@ -1548,9 +1548,9 @@ describe('Store', () => {
       beforeAll(
         () => {
           expect(
-          store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c0'))
+          store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c0')),
         ).toBe(false);
-        }
+        },
       );
       it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
@@ -1559,9 +1559,9 @@ describe('Store', () => {
       beforeAll(
         () => {
           expect(
-          store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'))
+          store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
         ).toBe(true);
-        }
+        },
       );
 
       it('should have size 6', () => { expect(store.size).toEqual(6); });
@@ -1574,7 +1574,7 @@ describe('Store', () => {
                          ['s2', 'p1', 'o1'],
                          ['s2', 'p2', 'o2'],
                          ['s1', 'p1', 'o1', 'c4'],
-                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', ''])
+                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']),
       );
     });
 
@@ -1582,9 +1582,9 @@ describe('Store', () => {
       beforeAll(
         () => {
           expect(
-          store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c4'))
+          store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c4')),
         ).toBe(true);
-        }
+        },
       );
 
       it('should have size 5', () => { expect(store.size).toEqual(5); });
@@ -1607,7 +1607,7 @@ describe('Store', () => {
         shouldIncludeAll(() => { return store.getQuads(); },
                          ['s1', 'p1', 'o2'],
                          ['s2', 'p2', 'o2'],
-                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', ''])
+                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']),
       );
     });
 
@@ -1615,7 +1615,7 @@ describe('Store', () => {
       beforeAll(() => {
         expect(store.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))).toBe(true);
         expect(
-          store.removeQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))
+          store.removeQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')),
         ).toBe(true);
       });
 
@@ -1632,7 +1632,7 @@ describe('Store', () => {
       it(
         'should return a triple with the blank node as an object',
         shouldIncludeAll(store.getQuads(),
-                         ['s1', 'p1', `_:${b1.value}`])
+                         ['s1', 'p1', `_:${b1.value}`]),
       );
     });
 
@@ -1640,7 +1640,7 @@ describe('Store', () => {
       it(
         'should return a triple with the blank node as an object',
         shouldIncludeAll(store.getQuads('s1', 'p1'),
-                         ['s1', 'p1', `_:${b1.value}`])
+                         ['s1', 'p1', `_:${b1.value}`]),
       );
     });
   });
@@ -1694,7 +1694,7 @@ describe('Store', () => {
         expect(store.addQuad('toString', 'valueOf', 'toLocaleString', 'hasOwnProperty')).toBe(true);
         shouldIncludeAll(store.getQuads(null, null, null, 'hasOwnProperty'),
                          ['toString', 'valueOf', 'toLocaleString', 'hasOwnProperty'])();
-      }
+      },
     );
 
     it('should be able to contain entities named "null"', () => {
@@ -1722,7 +1722,7 @@ describe('Store', () => {
         [`_:${listElements[0].value}`, namespaces.rdf.first, 'element1'],
         [`_:${listElements[0].value}`, namespaces.rdf.rest, `_:${listElements[1].value}`],
         [`_:${listElements[1].value}`, namespaces.rdf.first, '"element2"'],
-        [`_:${listElements[1].value}`, namespaces.rdf.rest, namespaces.rdf.nil]
+        [`_:${listElements[1].value}`, namespaces.rdf.rest, namespaces.rdf.nil],
       ));
       it('should generate a list of Collections', () => {
         expect(listsToJSON(lists)).toEqual(listItemsJSON);
@@ -1734,7 +1734,7 @@ describe('Store', () => {
       it(
         'should remove the first/rest triples and return the list members',
         shouldIncludeAll(store.getQuads(),
-                         [`_:${listElements[0].value}`, 'p1', 'o1'])
+                         [`_:${listElements[0].value}`, 'p1', 'o1']),
       );
       it('should generate a list of Collections', () => {
         expect(listsToJSON(lists)).toEqual(listItemsJSON);
@@ -1761,7 +1761,7 @@ describe('Store', () => {
         [`_:${listElements[0].value}`, namespaces.rdf.first, 'element1'],
         [`_:${listElements[0].value}`, namespaces.rdf.rest, `_:${listElements[1].value}`],
         [`_:${listElements[1].value}`, namespaces.rdf.first, '"element2"'],
-        [`_:${listElements[1].value}`, namespaces.rdf.rest, namespaces.rdf.nil]
+        [`_:${listElements[1].value}`, namespaces.rdf.rest, namespaces.rdf.nil],
       ));
       it('should generate a list of Collections', () => {
         expect(listsToJSON(lists)).toEqual(listItemsJSON);
@@ -1773,7 +1773,7 @@ describe('Store', () => {
       it(
         'should remove the first/rest triples and return the list members',
         shouldIncludeAll(store.getQuads(),
-                         ['s1', 'p1', `_:${listElements[0].value}`])
+                         ['s1', 'p1', `_:${listElements[0].value}`]),
       );
       it('should generate a list of Collections', () => {
         expect(listsToJSON(lists)).toEqual(listItemsJSON);
@@ -1793,7 +1793,7 @@ describe('Store', () => {
         [`_:${listElements[0].value}`, namespaces.rdf.first, 'element1'],
         [`_:${listElements[0].value}`, namespaces.rdf.rest, `_:${listElements[1].value}`],
         [`_:${listElements[1].value}`, namespaces.rdf.first, '"element2"'],
-        [`_:${listElements[1].value}`, namespaces.rdf.rest, namespaces.rdf.nil]
+        [`_:${listElements[1].value}`, namespaces.rdf.rest, namespaces.rdf.nil],
       ));
       it('should generate a list of Collections', () => {
         expect(listsToJSON(lists)).toEqual({});
@@ -1805,7 +1805,7 @@ describe('Store', () => {
       it(
         'should remove the first/rest triples and return the list members',
         shouldIncludeAll(store.getQuads(),
-                         ['s1', 'p1', 'o1'])
+                         ['s1', 'p1', 'o1']),
       );
       it('should generate a list of Collections', () => {
         expect(listsToJSON(lists)).toEqual({});
@@ -1816,7 +1816,7 @@ describe('Store', () => {
   describe('A Store containing a rdf:Collection without first', () => {
     const store = new Store();
     expect(
-      store.addQuad(store.createBlankNode(), new NamedNode(namespaces.rdf.rest), namespaces.rdf.nil)
+      store.addQuad(store.createBlankNode(), new NamedNode(namespaces.rdf.rest), namespaces.rdf.nil),
     ).toBe(true);
 
     it('extractLists throws an error', () => {
@@ -1828,7 +1828,7 @@ describe('Store', () => {
     const store = new Store();
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode());
     expect(
-      store.addQuad(listElements[0], new NamedNode(namespaces.rdf.first), store.createBlankNode())
+      store.addQuad(listElements[0], new NamedNode(namespaces.rdf.first), store.createBlankNode()),
     ).toBe(true);
 
     it('extractLists throws an error', () => {
@@ -1840,7 +1840,7 @@ describe('Store', () => {
     const store = new Store();
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode());
     expect(
-      store.addQuad(listElements[1], new NamedNode(namespaces.rdf.first), store.createBlankNode())
+      store.addQuad(listElements[1], new NamedNode(namespaces.rdf.first), store.createBlankNode()),
     ).toBe(true);
 
     it('extractLists throws an error', () => {
@@ -1852,7 +1852,7 @@ describe('Store', () => {
     const store = new Store();
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode());
     expect(
-      store.addQuad(listElements[0], new NamedNode(namespaces.rdf.rest), store.createBlankNode())
+      store.addQuad(listElements[0], new NamedNode(namespaces.rdf.rest), store.createBlankNode()),
     ).toBe(true);
 
     it('extractLists throws an error', () => {
@@ -1864,7 +1864,7 @@ describe('Store', () => {
     const store = new Store();
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode());
     expect(
-      store.addQuad(listElements[1], new NamedNode(namespaces.rdf.rest), store.createBlankNode())
+      store.addQuad(listElements[1], new NamedNode(namespaces.rdf.rest), store.createBlankNode()),
     ).toBe(true);
 
     it('extractLists throws an error', () => {
@@ -1876,7 +1876,7 @@ describe('Store', () => {
     const store = new Store();
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
     expect(
-      store.addQuad(listElements[1], new NamedNode('http://a.example/foo'), store.createBlankNode())
+      store.addQuad(listElements[1], new NamedNode('http://a.example/foo'), store.createBlankNode()),
     ).toBe(true);
 
     it('extractLists throws an error', () => {
@@ -1888,7 +1888,7 @@ describe('Store', () => {
     const store = new Store();
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
     expect(
-      store.addQuad(store.createBlankNode(), new NamedNode(namespaces.rdf.rest), listElements[1])
+      store.addQuad(store.createBlankNode(), new NamedNode(namespaces.rdf.rest), listElements[1]),
     ).toBe(true);
 
     it('extractLists throws an error', () => {
@@ -1912,7 +1912,7 @@ describe('Store', () => {
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
     expect(store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0])).toBe(true);
     expect(
-      store.addQuad(new NamedNode('s2'), new NamedNode(namespaces.rdf.rest), listElements[0])
+      store.addQuad(new NamedNode('s2'), new NamedNode(namespaces.rdf.rest), listElements[0]),
     ).toBe(true);
     expect(store.addQuad(new NamedNode('s2'), new NamedNode('p1'), listElements[0])).toBe(true);
 
@@ -1930,16 +1930,16 @@ describe('Store', () => {
       store.createBlankNode(),
     ];
     expect(
-      store.addQuad(listElements[0], new NamedNode(namespaces.rdf.first), member0)
+      store.addQuad(listElements[0], new NamedNode(namespaces.rdf.first), member0),
     ).toBe(true);
     expect(
-      store.addQuad(listElements[0], new NamedNode(namespaces.rdf.rest), listElements[1], new NamedNode('g1'))
+      store.addQuad(listElements[0], new NamedNode(namespaces.rdf.rest), listElements[1], new NamedNode('g1')),
     ).toBe(true);
     expect(
-      store.addQuad(listElements[1], new NamedNode(namespaces.rdf.first), member1)
+      store.addQuad(listElements[1], new NamedNode(namespaces.rdf.first), member1),
     ).toBe(true);
     expect(
-      store.addQuad(listElements[1], new NamedNode(namespaces.rdf.rest), new NamedNode(namespaces.rdf.nil))
+      store.addQuad(listElements[1], new NamedNode(namespaces.rdf.rest), new NamedNode(namespaces.rdf.nil)),
     ).toBe(true);
     expect(store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0])).toBe(true);
 
@@ -1956,7 +1956,7 @@ describe('Store', () => {
         [`_:${listElements[0].value}`, namespaces.rdf.first, 'element1'],
         [`_:${listElements[0].value}`, namespaces.rdf.rest, `_:${listElements[1].value}`, 'g1'],
         [`_:${listElements[1].value}`, namespaces.rdf.first, '"element2"'],
-        [`_:${listElements[1].value}`, namespaces.rdf.rest, namespaces.rdf.nil]
+        [`_:${listElements[1].value}`, namespaces.rdf.rest, namespaces.rdf.nil],
       ));
       it('should generate an empty list of Collections', () => {
         expect(listsToJSON(lists)).toEqual({});
@@ -1980,7 +1980,7 @@ describe('Store', () => {
         store.add(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')));
         expect([...m]).toHaveLength(3);
         expect([...store.match(null, null, null, null)]).toHaveLength(3);
-      }
+      },
     );
 
     it(
@@ -1990,8 +1990,8 @@ describe('Store', () => {
         store.add(new Quad(
           new NamedNode('s1'),
           new NamedNode('p1'),
-          new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o3'))
-          )
+          new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o3')),
+          ),
         );
         store.add(new Quad(
           new NamedNode('s1'),
@@ -2002,14 +2002,14 @@ describe('Store', () => {
             new Quad(
               new NamedNode('s1'),
               new NamedNode('p1'),
-              new NamedNode('o3')
-              )
-            )
-          )
+              new NamedNode('o3'),
+              ),
+            ),
+          ),
         );
         expect([...m]).toHaveLength(4);
         expect([...store.match(null, null, null, null)]).toHaveLength(4);
-      }
+      },
     );
 
     it(
@@ -2023,7 +2023,7 @@ describe('Store', () => {
         expect(m.next().value).toEqual(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o3')));
         expect(m.next().done).toBe(true);
         expect([...store.match(null, null, null, null)]).toHaveLength(5);
-      }
+      },
     );
   });
 
@@ -2343,7 +2343,7 @@ function collect(store, method, arg1, arg2, arg3, arg4) {
     arg1 && termFromId(arg1),
     arg2 && termFromId(arg2),
     arg3 && termFromId(arg3),
-    arg4 && termFromId(arg4)
+    arg4 && termFromId(arg4),
   );
   return results;
 }

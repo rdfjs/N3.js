@@ -26,10 +26,10 @@ for (i = 0; i < dim; i++)
             N3.DataFactory.quad(
               N3.DataFactory.namedNode(prefix + i),
               N3.DataFactory.namedNode(prefix + j),
-              N3.DataFactory.namedNode(prefix + k)
+              N3.DataFactory.namedNode(prefix + k),
             ),
             N3.DataFactory.namedNode(prefix + l),
-            N3.DataFactory.namedNode(prefix + m)
+            N3.DataFactory.namedNode(prefix + m),
           );
 console.timeEnd(TEST);
 
@@ -46,10 +46,10 @@ for (i = 0; i < dim; i++)
             N3.DataFactory.quad(
               N3.DataFactory.namedNode(prefix + i),
               N3.DataFactory.namedNode(prefix + j),
-              N3.DataFactory.namedNode(prefix + k)
+              N3.DataFactory.namedNode(prefix + k),
             ),
             N3.DataFactory.namedNode(prefix + l),
-            N3.DataFactory.namedNode(prefix + m)
+            N3.DataFactory.namedNode(prefix + m),
           ).length, 1);
 console.timeEnd(TEST);
 
@@ -76,7 +76,7 @@ for (i = 0; i < dim; i++)
         assert.equal(store.getQuads(N3.DataFactory.quad(
           N3.DataFactory.namedNode(prefix + i),
           N3.DataFactory.namedNode(prefix + j),
-          N3.DataFactory.namedNode(prefix + k)
+          N3.DataFactory.namedNode(prefix + k),
         ), null, N3.DataFactory.namedNode(prefix + l)).length, 3);
 console.timeEnd(TEST);
 
@@ -96,7 +96,7 @@ for (i = 0; i < dim; i++)
         assert.equal(store.getQuads(N3.DataFactory.quad(
           N3.DataFactory.namedNode(prefix + i),
           N3.DataFactory.namedNode(prefix + j),
-          N3.DataFactory.namedNode(prefix + k)
+          N3.DataFactory.namedNode(prefix + k),
         ), N3.DataFactory.namedNode(prefix + l), null).length, 3);
 console.timeEnd(TEST);
 
@@ -109,10 +109,10 @@ for (i = 0; i < dim; i++)
         N3.DataFactory.quad(
           N3.DataFactory.namedNode(prefix + i),
           N3.DataFactory.namedNode(prefix + j),
-          N3.DataFactory.namedNode(prefix + k)
+          N3.DataFactory.namedNode(prefix + k),
         ),
         null,
-        null
+        null,
       ).length,
       9);
 console.timeEnd(TEST);
