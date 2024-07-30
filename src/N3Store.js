@@ -807,7 +807,24 @@ export default class N3Store {
    * Blank Nodes will be normalized.
    */
   contains(other) {
-    return other.every(quad => this.has(quad));
+    if (!(other instanceof N3Store) || this._entityIndex !== other._entityIndex)
+      return other.every(quad => this.has(quad));
+
+    const g1 = this._graphs, g2 = other._graphs;
+    let s1, s2, p1, p2, o1;
+    for (const graph in g2) {
+      if (!(s1 = g1[graph])) return false;
+      s1 = s1.subjects;
+      for (const subject in (s2 = g2[graph].subjects)) {
+        if (!(p1 = s1[subject])) return false;
+        for (const predicate in (p2 = s2[subject])) {
+          if (!(o1 = p1[predicate])) return false;
+          for (const object in p2[predicate])
+            if (!(object in o1)) return false;
+        }
+      }
+    }
+    return true;
   }
 
   /**
