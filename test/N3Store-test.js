@@ -2030,7 +2030,7 @@ describe('Store', () => {
   const matrix = [true, false, 'instantiated'].flatMap(match => [true, false].map(share => [match, share]));
 
   describe.each(matrix)('RDF/JS Dataset Methods [DatasetCoreAndReadableStream: %s] [sharedIndex: %s]', (match, shareIndex) => {
-    let q, store, store1, store2, store3, empty, options;
+    let q, store, store1, store2, store3, storeg, storeb, empty, options;
 
     beforeEach(() => {
       options = shareIndex ? { entityIndex: new EntityIndex() } : {};
@@ -2041,6 +2041,8 @@ describe('Store', () => {
       q = [...q, ...q.map(quad => new Quad(quad.subject, quad.predicate, quad.object, new NamedNode('c4')))];
       empty = new Store([], options);
       store = new Store([q[0]], options);
+      storeg = new Store([q[4]], options);
+      storeb = new Store([q[0], q[4]], options);
       store1 = new Store([q[0], q[1]], options);
       store2 = new Store([q[0], q[2]], options);
       store3 = new Store([q[0], q[3]], options);
@@ -2066,6 +2068,8 @@ describe('Store', () => {
         expect(store.contains(empty)).toBe(true);
         expect(store1.contains(empty)).toBe(true);
         expect(store2.contains(empty)).toBe(true);
+        expect(storeg.contains(empty)).toBe(true);
+        expect(storeb.contains(empty)).toBe(true);
       });
 
       it('store is contained in store, store1 and store2', () => {
@@ -2073,15 +2077,22 @@ describe('Store', () => {
         expect(store1.contains(store)).toBe(true);
         expect(store2.contains(store)).toBe(true);
         expect(store3.contains(store)).toBe(true);
+        expect(storeb.contains(store)).toBe(true);
+        expect(storeb.contains(storeg)).toBe(true);
       });
 
       it('stores should contain themsevles', () => {
         expect(store1.contains(store1)).toBe(true);
         expect(store2.contains(store2)).toBe(true);
         expect(store3.contains(store3)).toBe(true);
+        expect(storeb.contains(storeb)).toBe(true);
       });
 
       it('should return false for a non-existing quad', () => {
+        expect(storeg.contains(store)).toBe(false);
+        expect(store.contains(storeg)).toBe(false);
+        expect(storeg.contains(storeb)).toBe(false);
+        expect(store.contains(storeb)).toBe(false);
         expect(store.contains(store1)).toBe(false);
         expect(store.contains(store3)).toBe(false);
         expect(store.contains(store2)).toBe(false);
@@ -2089,6 +2100,8 @@ describe('Store', () => {
         expect(empty.contains(store2)).toBe(false);
         expect(store2.contains(store1)).toBe(false);
         expect(store1.contains(store2)).toBe(false);
+        expect(store1.contains(storeb)).toBe(false);
+        expect(storeb.contains(store1)).toBe(false);
       });
     });
 
