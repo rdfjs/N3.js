@@ -306,13 +306,14 @@ export default class N3Store {
     predicate = this._termToNewNumericId(predicate);
     object    = this._termToNewNumericId(object);
 
-    const changed = this._addToIndex(graphItem.subjects,   subject,   predicate, object);
+    if (!this._addToIndex(graphItem.subjects,   subject,   predicate, object))
+      return false;
     this._addToIndex(graphItem.predicates, predicate, object,    subject);
     this._addToIndex(graphItem.objects,    object,    subject,   predicate);
 
     // The cached quad count is now invalid
     this._size = null;
-    return changed;
+    return true;
   }
 
   // ### `addQuads` adds multiple quads to the store
