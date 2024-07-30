@@ -866,7 +866,7 @@ export default class N3Store {
    * This method is aligned with Array.prototype.filter() in ECMAScript-262.
    */
   filter(iteratee) {
-    const store = new N3Store();
+    const store = new N3Store({ entityIndex: this._entityIndex });
     for (const quad of this)
       if (iteratee(quad, this))
         store.add(quad);
@@ -884,7 +884,7 @@ export default class N3Store {
    * Returns a new dataset containing all quads returned by applying `iteratee` to each quad in the current dataset.
    */
   map(iteratee) {
-    const store = new N3Store();
+    const store = new N3Store({ entityIndex: this._entityIndex });
     for (const quad of this)
       store.add(iteratee(quad, this));
     return store;
@@ -946,7 +946,7 @@ export default class N3Store {
    * Returns a new `Dataset` that is a concatenation of this dataset and the quads given as an argument.
    */
   union(quads) {
-    const store = new N3Store();
+    const store = new N3Store({ entityIndex: this._entityIndex });
     store.addAll(this);
     store.addAll(quads);
     return store;
