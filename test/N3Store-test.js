@@ -2111,6 +2111,10 @@ describe('Store', () => {
         expect(store1.size).toEqual(2);
         expect(store2.size).toEqual(2);
         expect(store.size).toEqual(3);
+
+        expect(store.union(store).size).toEqual(3);
+        expect(store.union(empty).size).toEqual(3);
+        expect(store1.union(empty).size).toEqual(2);
       });
     });
 
@@ -2120,6 +2124,9 @@ describe('Store', () => {
         expect(store1.size).toEqual(2);
         expect(store2.size).toEqual(2);
         expect(store.size).toEqual(1);
+
+        expect(store.difference(store).size).toEqual(0);
+        expect(store2.difference(store2).size).toEqual(0);
       });
     });
 
@@ -2129,6 +2136,9 @@ describe('Store', () => {
         expect(store1.size).toEqual(2);
         expect(store2.size).toEqual(2);
         expect(store.size).toEqual(1);
+
+        expect(store.intersection(store).size).toEqual(1);
+        expect(store2.intersection(store2).size).toEqual(2);
       });
     });
 
