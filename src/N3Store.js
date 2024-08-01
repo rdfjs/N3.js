@@ -11,9 +11,9 @@ function merge(target, source, depth = 4) {
   if (depth === 0)
     return Object.assign(target, source);
 
-  for (const key in source) {
+  for (const key in source)
     target[key] =  merge(target[key] || Object.create(null), source[key], depth - 1);
-  }
+
   return target;
 }
 
@@ -866,9 +866,9 @@ export default class N3Store {
    * Returns a new dataset that contains all quads from the current dataset that are not included in the given dataset.
    */
   difference(other) {
-    if (other === this) {
+    if (other === this)
       return new N3Store({ entityIndex: this._entityIndex });
-    }
+
     return this.filter(quad => !other.has(quad));
   }
 
