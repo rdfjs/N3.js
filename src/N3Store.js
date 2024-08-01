@@ -12,7 +12,7 @@ function merge(target, source, depth = 4) {
     return Object.assign(target, source);
 
   for (const key in source)
-    target[key] =  merge(target[key] || Object.create(null), source[key], depth - 1);
+    target[key] = merge(target[key] || Object.create(null), source[key], depth - 1);
 
   return target;
 }
