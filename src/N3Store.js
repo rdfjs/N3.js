@@ -7,6 +7,16 @@ import N3Writer from './N3Writer';
 
 const ITERATOR = Symbol('iter');
 
+function merge(target, source, depth = 4) {
+  if (depth === 0)
+    return Object.assign(target, source);
+
+  for (const key in source)
+    target[key] = merge(target[key] || Object.create(null), source[key], depth - 1);
+
+  return target;
+}
+
 // ## Constructor
 export class N3EntityIndex {
   constructor(options = {}) {
@@ -792,13 +802,18 @@ export default class N3Store {
   addAll(quads) {
     if (Array.isArray(quads))
       this.addQuads(quads);
+    else if (quads instanceof N3Store && quads._entityIndex === this._entityIndex) {
+      if (quads._size !== 0) {
+        this._graphs = merge(this._graphs, quads._graphs);
+        this._size = null; // Invalidate the cached size
+      }
+    }
     else {
       for (const quad of quads)
         this.add(quad);
     }
     return this;
   }
-
 
   /**
    * Returns `true` if the current dataset is a superset of the given dataset; in other words, returns `true` if
@@ -807,6 +822,9 @@ export default class N3Store {
    * Blank Nodes will be normalized.
    */
   contains(other) {
+    if (other === this)
+      return true;
+
     if (!(other instanceof N3Store) || this._entityIndex !== other._entityIndex)
       return other.every(quad => this.has(quad));
 
@@ -848,6 +866,9 @@ export default class N3Store {
    * Returns a new dataset that contains all quads from the current dataset that are not included in the given dataset.
    */
   difference(other) {
+    if (other === this)
+      return new N3Store({ entityIndex: this._entityIndex });
+
     return this.filter(quad => !other.has(quad));
   }
 
@@ -877,6 +898,11 @@ export default class N3Store {
    * Returns a new dataset containing all quads from the current dataset that are also included in the given dataset.
    */
   intersection(other) {
+    if (other === this) {
+      const store = new N3Store({ entityIndex: this._entityIndex });
+      store._graphs = merge(Object.create(null), this._graphs);
+      store._size = this._size;
+    }
     return this.filter(quad => other.has(quad));
   }
 
@@ -947,7 +973,9 @@ export default class N3Store {
    */
   union(quads) {
     const store = new N3Store({ entityIndex: this._entityIndex });
-    store.addAll(this);
+    store._graphs = merge(Object.create(null), this._graphs);
+    store._size = this._size;
+
     store.addAll(quads);
     return store;
   }
