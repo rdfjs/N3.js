@@ -10,21 +10,13 @@ const ITERATOR = Symbol('iter');
 // ## Constructor
 export class N3EntityIndex {
   constructor(options = {}) {
-    this._id = 1;
-    // `_ids` maps entities such as `http://xmlns.com/foaf/0.1/name` to numbers,
-    // saving memory by using only numbers as keys in `_graphs`
-    this._ids = Object.create(null);
-    this._ids[''] = 1;
-     // inverse of `_ids`
-    this._entities = Object.create(null);
-    this._entities[1] = '';
-    // `_blankNodeIndex` is the index of the last automatically named blank node
-    this._blankNodeIndex = 0;
     this._factory = options.factory || N3DataFactory;
+    this._quads = Object.create(null);
+    this._quadEntities = Object.create(null);
   }
 
   _termFromId(id) {
-    if (id[0] === '.') {
+    if (typeof id === '') {
       const entities = this._entities;
       const terms = id.split('.');
       const q = this._factory.quad(
@@ -39,46 +31,27 @@ export class N3EntityIndex {
   }
 
   _termToNumericId(term) {
-    if (term.termType === 'Quad') {
-      const s = this._termToNumericId(term.subject),
-          p = this._termToNumericId(term.predicate),
-          o = this._termToNumericId(term.object);
-      let g;
-
-      return s && p && o && (isDefaultGraph(term.graph) || (g = this._termToNumericId(term.graph))) &&
-        this._ids[g ? `.${s}.${p}.${o}.${g}` : `.${s}.${p}.${o}`];
-    }
-    return this._ids[termToId(term)];
+    if (term.termType === 'Quad')
+      return this._quads[this._termToNumericId(term.graph)]?.[this._termToNumericId(term.subject)]?.[this._termToNumericId(term.predicate)]?.[this._termToNumericId(term.object)];
+    return Symbol.for(termToId(term));
   }
 
   _termToNewNumericId(term) {
-    // This assumes that no graph term is present - we may wish to error if there is one
-    const str = term && term.termType === 'Quad' ?
-      `.${this._termToNewNumericId(term.subject)}.${this._termToNewNumericId(term.predicate)}.${this._termToNewNumericId(term.object)}${
-        isDefaultGraph(term.graph) ? '' : `.${this._termToNewNumericId(term.graph)}`
-      }`
-      : termToId(term);
+    if (term && term.termType === 'Quad') {
+      const s = this._termToNumericId(term.subject),
+        p = this._termToNumericId(term.predicate),
+        o = this._termToNumericId(term.object),
+        g = this._termToNumericId(term.graph);
 
-    return this._ids[str] || (this._ids[this._entities[++this._id] = str] = this._id);
+      const sym = (((this._quads[g] ||= {})[s] ||= {})[p] ||= {})[o] ||= Symbol();
+      if (!(sym in this._quadEntities))
+        this._quadEntities[sym] = [s, p, o, g]
+    }
+    return Symbol.for(termToId(term));
   }
 
   createBlankNode(suggestedName) {
-    let name, index;
-    // Generate a name based on the suggested name
-    if (suggestedName) {
-      name = suggestedName = `_:${suggestedName}`, index = 1;
-      while (this._ids[name])
-        name = suggestedName + index++;
-    }
-    // Generate a generic blank node name
-    else {
-      do { name = `_:b${this._blankNodeIndex++}`; }
-      while (this._ids[name]);
-    }
-    // Add the blank node to the entities, avoiding the generation of duplicates
-    this._ids[name] = ++this._id;
-    this._entities[this._id] = name;
-    return this._factory.blankNode(name.substr(2));
+    return this._factory.blankNode(crypto.randomUUID().replace(/-/g, '_'));
   }
 }
 
@@ -163,25 +136,24 @@ export default class N3Store {
   // Finally, `graphId` will be the graph of the created quads.
   *_findInIndex(index0, key0, key1, key2, name0, name1, name2, graphId) {
     let tmp, index1, index2;
-    const entityKeys = this._entities;
-    const graph = this._termFromId(entityKeys[graphId]);
+    const graph = this._termFromId(graphId.description);
     const parts = { subject: null, predicate: null, object: null };
 
     // If a key is specified, use only that part of index 0.
     if (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
     for (const value0 in index0) {
       if (index1 = index0[value0]) {
-        parts[name0] = this._termFromId(entityKeys[value0]);
+        parts[name0] = this._termFromId(value0.description);
         // If a key is specified, use only that part of index 1.
         if (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
         for (const value1 in index1) {
           if (index2 = index1[value1]) {
-            parts[name1] = this._termFromId(entityKeys[value1]);
+            parts[name1] = this._termFromId(value1.description);
             // If a key is specified, use only that part of index 2, if it exists.
             const values = key2 ? (key2 in index2 ? [key2] : []) : Object.keys(index2);
             // Create quads for all items found in index 2.
             for (let l = 0; l < values.length; l++) {
-              parts[name2] = this._termFromId(entityKeys[values[l]]);
+              parts[name2] = this._termFromId(values[l].description);
               yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
             }
           }
@@ -681,8 +653,8 @@ export default class N3Store {
   }
 
   // ### `createBlankNode` creates a new blank node, returning its name
-  createBlankNode(suggestedName) {
-    return this._entityIndex.createBlankNode(suggestedName);
+  createBlankNode() {
+    return this._factory.blankNode(crypto.randomUUID());
   }
 
   // ### `extractLists` finds and removes all list triples
