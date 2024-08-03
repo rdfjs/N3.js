@@ -6,6 +6,7 @@ import { isDefaultGraph } from './N3Util';
 import N3Writer from './N3Writer';
 
 const ITERATOR = Symbol('iter');
+const DEFAULT_GRAPH = Symbol.for('');
 
 const cyrb53 = (str) => {
   let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
@@ -114,6 +115,7 @@ export default class N3Store {
   // ### `_addToIndex` adds a quad to a three-layered index.
   // Returns if the index has changed, if the entry did not already exist.
   _addToIndex(index0, key0, key1, key2) {
+    console.log('addtoindex', index0, key0, key1, key2)
     // Create layers as necessary
     const index1 = index0[key0] || (index0[key0] = {});
     const index2 = index1[key1] || (index1[key1] = {});
@@ -234,8 +236,10 @@ export default class N3Store {
   // ### `_getGraphs` returns an array with the given graph,
   // or all graphs if the argument is null or undefined.
   _getGraphs(graph) {
-    graph = graph === '' ? 1 : (graph && (this._termToNumericId(graph) || -1));
-    return typeof graph !== 'number' ? this._graphs : { [graph]: this._graphs[graph] };
+    if (graph === undefined || graph === null)
+      return this._graphs
+    graph = this._termToNumericId(graph);
+    return { [graph]: this._graphs[graph] };
   }
 
   // ### `_uniqueEntities` returns a function that accepts an entity ID
@@ -269,17 +273,10 @@ export default class N3Store {
         predicate = subject.predicate, subject = subject.subject;
 
     // Convert terms to internal string representation
-    graph = graph ? this._termToNewNumericId(graph) : 1;
+    graph = graph ? this._termToNewNumericId(graph) : DEFAULT_GRAPH;
 
     // Find the graph that will contain the triple
-    let graphItem = this._graphs[graph];
-    // Create the graph if it doesn't exist yet
-    if (!graphItem) {
-      graphItem = this._graphs[graph] = { subjects: {}, predicates: {}, objects: {} };
-      // Freezing a graph helps subsequent `add` performance,
-      // and properties will never be modified anyway
-      Object.freeze(graphItem);
-    }
+    let graphItem = this._graphs[graph] ||= Object.freeze({ subjects: {}, predicates: {}, objects: {} });
 
     // Since entities can often be long IRIs, we avoid storing them in every index.
     // Instead, we have a separate index that maps entities to numbers,
@@ -287,6 +284,8 @@ export default class N3Store {
     subject = this._termToNewNumericId(subject);
     predicate = this._termToNewNumericId(predicate);
     object = this._termToNewNumericId(object);
+
+    console.log(subject, predicate, object)
 
     if (!this._addToIndex(graphItem.subjects, subject, predicate, object))
       return false;
@@ -331,7 +330,7 @@ export default class N3Store {
       graph = subject.graph, object = subject.object,
         predicate = subject.predicate, subject = subject.subject;
     // Convert terms to internal string representation
-    graph = graph ? this._termToNumericId(graph) : 1;
+    graph = graph ? this._termToNumericId(graph) : DEFAULT_GRAPH;
 
     // Find internal identifiers for all components
     // and verify the quad exists.
