@@ -33,15 +33,15 @@ export class N3EntityIndex {
     this._factory = options.factory || N3DataFactory;
   }
 
-  _termFromId(id) {
+  _termFromId(idInt) {
+    const id = this._entities[idInt];
     if (id[0] === '.') {
-      const entities = this._entities;
       const terms = id.split('.');
       const q = this._factory.quad(
-        this._termFromId(entities[terms[1]]),
-        this._termFromId(entities[terms[2]]),
-        this._termFromId(entities[terms[3]]),
-        terms[4] && this._termFromId(entities[terms[4]]),
+        this._termFromId(terms[1]),
+        this._termFromId(terms[2]),
+        this._termFromId(terms[3]),
+        terms[4] && this._termFromId(terms[4]),
       );
       return q;
     }
@@ -106,7 +106,6 @@ export default class N3Store {
     options = options || {};
     this._factory = options.factory || N3DataFactory;
     this._entityIndex = options.entityIndex || new N3EntityIndex({ factory: this._factory });
-    this._entities = this._entityIndex._entities;
     this._termFromId = this._entityIndex._termFromId.bind(this._entityIndex);
     this._termToNumericId = this._entityIndex._termToNumericId.bind(this._entityIndex);
     this._termToNewNumericId = this._entityIndex._termToNewNumericId.bind(this._entityIndex);
@@ -173,25 +172,24 @@ export default class N3Store {
   // Finally, `graphId` will be the graph of the created quads.
   *_findInIndex(index0, key0, key1, key2, name0, name1, name2, graphId) {
     let tmp, index1, index2;
-    const entityKeys = this._entities;
-    const graph = this._termFromId(entityKeys[graphId]);
+    const graph = this._termFromId(graphId);
     const parts = { subject: null, predicate: null, object: null };
 
     // If a key is specified, use only that part of index 0.
     if (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
     for (const value0 in index0) {
       if (index1 = index0[value0]) {
-        parts[name0] = this._termFromId(entityKeys[value0]);
+        parts[name0] = this._termFromId(value0);
         // If a key is specified, use only that part of index 1.
         if (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
         for (const value1 in index1) {
           if (index2 = index1[value1]) {
-            parts[name1] = this._termFromId(entityKeys[value1]);
+            parts[name1] = this._termFromId(value1);
             // If a key is specified, use only that part of index 2, if it exists.
             const values = key2 ? (key2 in index2 ? [key2] : []) : Object.keys(index2);
             // Create quads for all items found in index 2.
             for (let l = 0; l < values.length; l++) {
-              parts[name2] = this._termFromId(entityKeys[values[l]]);
+              parts[name2] = this._termFromId(values[l]);
               yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
             }
           }
@@ -273,7 +271,7 @@ export default class N3Store {
     return id => {
       if (!(id in uniqueIds)) {
         uniqueIds[id] = true;
-        callback(this._termFromId(this._entities[id], this._factory));
+        callback(this._termFromId(id, this._factory));
       }
     };
   }
@@ -686,7 +684,7 @@ export default class N3Store {
       this.some(quad => {
         callback(quad.graph);
         return true; // Halt iteration of some()
-      }, subject, predicate, object, this._termFromId(this._entities[graph]));
+      }, subject, predicate, object, this._termFromId(graph));
     }
   }
 
