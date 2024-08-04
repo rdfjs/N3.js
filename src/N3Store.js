@@ -17,6 +17,8 @@ function merge(target, source, depth = 4) {
   return target;
 }
 
+const DEFAULT = Symbol();
+
 // ## Constructor
 export class N3EntityIndex {
   constructor(options = {}) {
@@ -24,52 +26,37 @@ export class N3EntityIndex {
     // `_ids` maps entities such as `http://xmlns.com/foaf/0.1/name` to numbers,
     // saving memory by using only numbers as keys in `_graphs`
     this._ids = Object.create(null);
-    this._ids[''] = 1;
+    this._ids[''] = DEFAULT;
      // inverse of `_ids`
     this._entities = Object.create(null);
-    this._entities[1] = '';
+    this._entities[DEFAULT] = '';
     // `_blankNodeIndex` is the index of the last automatically named blank node
     this._blankNodeIndex = 0;
     this._factory = options.factory || N3DataFactory;
   }
+  
+  newId() {
+    // this._id = Symbol();
+    return ++this._id;
+  }
 
   _termFromId(idInt) {
     const id = this._entities[idInt];
-    if (id[0] === '.') {
-      const terms = id.split('.');
-      const q = this._factory.quad(
-        this._termFromId(terms[1]),
-        this._termFromId(terms[2]),
-        this._termFromId(terms[3]),
-        terms[4] && this._termFromId(terms[4]),
-      );
-      return q;
-    }
     return termFromId(id, this._factory);
   }
 
   _termToNumericId(term) {
-    if (term.termType === 'Quad') {
-      const s = this._termToNumericId(term.subject),
-          p = this._termToNumericId(term.predicate),
-          o = this._termToNumericId(term.object);
-      let g;
-
-      return s && p && o && (isDefaultGraph(term.graph) || (g = this._termToNumericId(term.graph))) &&
-        this._ids[g ? `.${s}.${p}.${o}.${g}` : `.${s}.${p}.${o}`];
-    }
-    return this._ids[termToId(term)];
+    return !term && term !== '' ? undefined : this._ids[termToId(term)];
   }
 
   _termToNewNumericId(term) {
     // This assumes that no graph term is present - we may wish to error if there is one
-    const str = term && term.termType === 'Quad' ?
-      `.${this._termToNewNumericId(term.subject)}.${this._termToNewNumericId(term.predicate)}.${this._termToNewNumericId(term.object)}${
-        isDefaultGraph(term.graph) ? '' : `.${this._termToNewNumericId(term.graph)}`
-      }`
-      : termToId(term);
+    const str = term && termToId(term);
 
-    return this._ids[str] || (this._ids[this._entities[++this._id] = str] = this._id);
+    if (typeof str !== 'string')
+      throw new Error('Attempting to set invalid')
+
+    return this._ids[str] || (this._ids[this._entities[this.newId()] = str] = this._id);
   }
 
   createBlankNode(suggestedName) {
@@ -86,7 +73,7 @@ export class N3EntityIndex {
       while (this._ids[name]);
     }
     // Add the blank node to the entities, avoiding the generation of duplicates
-    this._ids[name] = ++this._id;
+    this._ids[name] = this.newId();
     this._entities[this._id] = name;
     return this._factory.blankNode(name.substr(2));
   }
@@ -131,7 +118,7 @@ export default class N3Store {
     for (const graphKey in graphs)
       for (const subjectKey in (subjects = graphs[graphKey].subjects))
         for (const predicateKey in (subject = subjects[subjectKey]))
-          size += Object.keys(subject[predicateKey]).length;
+          size += Object.keys(subject[predicateKey]).length + Object.getOwnPropertySymbols(subject[predicateKey]).length;
     return this._size = size;
   }
 
@@ -260,8 +247,10 @@ export default class N3Store {
   // ### `_getGraphs` returns an array with the given graph,
   // or all graphs if the argument is null or undefined.
   _getGraphs(graph) {
-    graph = graph === '' ? 1 : (graph && (this._termToNumericId(graph) || -1));
-    return typeof graph !== 'number' ? this._graphs : { [graph]: this._graphs[graph] };
+    if (graph === undefined || graph === null)
+      return this._graphs;
+    graph = this._termToNumericId(graph);
+    return { [graph]: this._graphs[graph] };
   }
 
   // ### `_uniqueEntities` returns a function that accepts an entity ID
@@ -290,12 +279,10 @@ export default class N3Store {
   // Returns if the quad index has changed, if the quad did not already exist.
   addQuad(subject, predicate, object, graph) {
     // Shift arguments if a quad object is given instead of components
-    if (!predicate)
-      graph = subject.graph, object = subject.object,
-        predicate = subject.predicate, subject = subject.subject;
-
+    if (!predicate) ({ subject, predicate, object, graph } = subject);
+  
     // Convert terms to internal string representation
-    graph = graph ? this._termToNewNumericId(graph) : 1;
+    graph = this._termToNewNumericId(graph || '');
 
     // Find the graph that will contain the triple
     let graphItem = this._graphs[graph];
@@ -313,6 +300,10 @@ export default class N3Store {
     subject   = this._termToNewNumericId(subject);
     predicate = this._termToNewNumericId(predicate);
     object    = this._termToNewNumericId(object);
+
+    const res = this._addToIndex(graphItem.subjects,   subject,   predicate, object);
+
+    console.log('about to add to index', subject, predicate, object, graph)
 
     if (!this._addToIndex(graphItem.subjects,   subject,   predicate, object))
       return false;
@@ -357,7 +348,7 @@ export default class N3Store {
       graph = subject.graph, object = subject.object,
         predicate = subject.predicate, subject = subject.subject;
     // Convert terms to internal string representation
-    graph = graph ? this._termToNumericId(graph) : 1;
+    graph = this._termToNumericId(graph || '');
 
     // Find internal identifiers for all components
     // and verify the quad exists.
