@@ -356,8 +356,7 @@ export default class N3Store {
   removeQuad(subject, predicate, object, graph) {
     // Shift arguments if a quad object is given instead of components
     if (!predicate)
-      graph = subject.graph, object = subject.object,
-        predicate = subject.predicate, subject = subject.subject;
+      ({ subject, predicate, object, graph } = subject);
     // Convert terms to internal string representation
     graph = graph ? this._termToNumericId(graph) : 1;
 
