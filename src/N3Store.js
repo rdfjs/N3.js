@@ -842,11 +842,11 @@ export default class N3Store {
       if (!(s1 = g1[graph])) return false;
       s1 = s1.subjects;
       for (const subject in (s2 = g2[graph].subjects)) {
-        if (!(p1 = s1[subject])) return false;
-        for (const predicate in (p2 = s2[subject])) {
-          if (!(o1 = p1[predicate])) return false;
-          for (const object in p2[predicate])
-            if (!(object in o1)) return false;
+        if (!(p1 = s1.get(subject))) return false;
+        for (const predicate in (p2 = s2.get(subject))) {
+          if (!(o1 = p1.get(predicate))) return false;
+          for (const object of p2.ge(predicate))
+            if (o1.has(object)) return false;
         }
       }
     }
