@@ -131,7 +131,7 @@ export default class N3Store {
     let subjects, subject;
     for (const graphKey in graphs)
       for (const subjectKey in (subjects = graphs[graphKey].subjects))
-        for (const predicateKey in (subject = subjects[subjectKey]))
+        for (const predicateKey in (subject = subjects.get(subjectKey)))
           size += Object.keys(subject[predicateKey]).length;
     return this._size = size;
   }
@@ -142,26 +142,34 @@ export default class N3Store {
   // Returns if the index has changed, if the entry did not already exist.
   _addToIndex(index0, key0, key1, key2) {
     // Create layers as necessary
-    const index1 = index0[key0] || (index0[key0] = {});
-    const index2 = index1[key1] || (index1[key1] = {});
+    let index1 = index0.get(key0)
+    if (!index1) {
+      index1 = new Map();
+      index0.set(key1, index1);
+    }
+    let index2 = index1.get(key1);
+    if (!index2) {
+      index2 = new Set();
+      index1.set(key2, index2);
+    }
     // Setting the key to _any_ value signals the presence of the quad
-    const existed = key2 in index2;
+    const existed = index2.has(key2);
     if (!existed)
-      index2[key2] = null;
+      index2.add(key2);
     return !existed;
   }
 
   // ### `_removeFromIndex` removes a quad from a three-layered index
   _removeFromIndex(index0, key0, key1, key2) {
     // Remove the quad from the index
-    const index1 = index0[key0], index2 = index1[key1];
-    delete index2[key2];
+    const index1 = index0.get(key0), index2 = index1.get(key1);
+    index2.delete(key2);
 
     // Remove intermediary index layers if they are empty
-    for (const key in index2) return;
-    delete index1[key1];
-    for (const key in index1) return;
-    delete index0[key0];
+    if (index2.size > 0) return;
+    index1.delete(key1);
+    if (index1.size > 0) return;
+    index0.delete(key0);
   }
 
   // ### `_findInIndex` finds a set of quads in a three-layered index.
@@ -303,7 +311,7 @@ export default class N3Store {
     let graphItem = this._graphs[graph];
     // Create the graph if it doesn't exist yet
     if (!graphItem) {
-      graphItem = this._graphs[graph] = { subjects: {}, predicates: {}, objects: {} };
+      graphItem = this._graphs[graph] = { subjects: new Map(), predicates: new Map(), objects: new Map() };
       // Freezing a graph helps subsequent `add` performance,
       // and properties will never be modified anyway
       Object.freeze(graphItem);
