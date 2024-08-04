@@ -8,11 +8,17 @@ import N3Writer from './N3Writer';
 const ITERATOR = Symbol('iter');
 
 function merge(target, source, depth = 4) {
-  if (depth === 0)
-    return Object.assign(target, source);
+  if (depth === 0) {
+    target ||= new Set();
+    for (const key of source)
+      target.add(key)
+    return target;
+  }
+
+  target ||= Object.create(null);
 
   for (const key in source)
-    target[key] = merge(target[key] || Object.create(null), source[key], depth - 1);
+    target[key] = merge(target[key], source[key], depth - 1);
 
   return target;
 }
@@ -132,7 +138,7 @@ export default class N3Store {
     for (const graphKey in graphs)
       for (const subjectKey in (subjects = graphs[graphKey].subjects))
         for (const predicateKey in (subject = subjects[subjectKey]))
-          size += Object.keys(subject[predicateKey]).length;
+          size += subject[predicateKey].size;
     return this._size = size;
   }
 
@@ -143,11 +149,11 @@ export default class N3Store {
   _addToIndex(index0, key0, key1, key2) {
     // Create layers as necessary
     const index1 = index0[key0] || (index0[key0] = {});
-    const index2 = index1[key1] || (index1[key1] = {});
+    const index2 = index1[key1] || (index1[key1] = new Set());
     // Setting the key to _any_ value signals the presence of the quad
-    const existed = key2 in index2;
+    const existed = index2.has(key2);
     if (!existed)
-      index2[key2] = null;
+      index2.add(key2);
     return !existed;
   }
 
@@ -155,10 +161,10 @@ export default class N3Store {
   _removeFromIndex(index0, key0, key1, key2) {
     // Remove the quad from the index
     const index1 = index0[key0], index2 = index1[key1];
-    delete index2[key2];
+    index2.delete(key2);
 
     // Remove intermediary index layers if they are empty
-    for (const key in index2) return;
+    if (index2.size > 0) return;
     delete index1[key1];
     for (const key in index1) return;
     delete index0[key0];
@@ -188,10 +194,10 @@ export default class N3Store {
           if (index2 = index1[value1]) {
             parts[name1] = this._termFromId(entityKeys[value1]);
             // If a key is specified, use only that part of index 2, if it exists.
-            const values = key2 ? (key2 in index2 ? [key2] : []) : Object.keys(index2);
+            const values = key2 ? (index2.has(key2) ? [key2] : []) : index2;
             // Create quads for all items found in index 2.
-            for (let l = 0; l < values.length; l++) {
-              parts[name2] = this._termFromId(entityKeys[values[l]]);
+            for (const o of values) {
+              parts[name2] = this._termFromId(entityKeys[o]);
               yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
             }
           }
@@ -229,7 +235,7 @@ export default class N3Store {
   _loopBy2Keys(index0, key0, key1, callback) {
     let index1, index2, key2;
     if ((index1 = index0[key0]) && (index2 = index1[key1])) {
-      for (key2 in index2)
+      for (key2 of index2)
         callback(key2);
     }
   }
@@ -249,9 +255,9 @@ export default class N3Store {
         for (const value1 in index1) {
           if (index2 = index1[value1]) {
             // If a key is specified, count the quad if it exists
-            if (key2) (key2 in index2) && count++;
+            if (key2) (index2.has(key2)) && count++;
             // Otherwise, count all quads
-            else count += Object.keys(index2).length;
+            else count += index2.size;
           }
         }
       }
