@@ -374,7 +374,7 @@ export default class N3Store {
         !(object     = object && this._termToNumericId(object))  || !(graphItem = graphs[graph])  ||
         !(subjects   = graphItem.subjects[subject]) ||
         !(predicates = subjects[predicate]) ||
-        !(object in predicates))
+        !predicates.has(object))
       return false;
 
     // Remove it from all indexes
@@ -840,12 +840,9 @@ export default class N3Store {
       s1 = s1.subjects;
       for (const subject in (s2 = g2[graph].subjects)) {
         if (!(p1 = s1[subject])) return false;
-        for (const predicate in (p2 = s2[subject])) {
-          if (!(o1 = p1[predicate])) return false;
-          for (const object in p2[predicate])
-            if (!(object in o1)) return false;
+        for (const predicate in (p2 = s2[subject]))
+          if (!(o1 = p1[predicate]) || !p2[predicate].isSubsetOf(o1)) return false;
         }
-      }
     }
     return true;
   }
