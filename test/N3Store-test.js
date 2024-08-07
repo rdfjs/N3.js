@@ -14,6 +14,14 @@ import { Readable } from 'readable-stream';
 import arrayifyStream from 'arrayify-stream';
 
 describe('Store', () => {
+  describe('A store w. one elemnt', () => {
+    it('should have size 0', () => {
+      const store = new Store();
+      expect(store.addQuad(new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')))).toBe(true);
+      expect(store.size).toEqual(1);
+    });
+  });
+
   describe('The Store export', () => {
     it('should be a function', () => {
       expect(Store).toBeInstanceOf(Function);
@@ -2021,6 +2029,9 @@ describe('Store', () => {
         store.add(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')));
         store.add(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4')));
         expect(m.next().value).toEqual(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o3')));
+        expect(m.next().value).toEqual(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o0')));
+        expect(m.next().value).toEqual(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')));
+        expect(m.next().value).toEqual(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4')));
         expect(m.next().done).toBe(true);
         expect([...store.match(null, null, null, null)]).toHaveLength(5);
       },
