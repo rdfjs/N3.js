@@ -1050,9 +1050,8 @@ export default class N3Parser {
     let processNextToken = (error, token) => {
       if (error !== null)
         this._callback(error), this._callback = noop;
-      else if (this._readCallback) {
+      else if (this._readCallback)
         this._readCallback = this._readCallback(token);
-      }
     };
 
     // Enable checking for comments on every token when a commentCallback has been set
@@ -1064,12 +1063,10 @@ export default class N3Parser {
         if (error !== null)
           this._callback(error), this._callback = noop;
         else if (this._readCallback) {
-          if (token.type === 'comment') {
+          if (token.type === 'comment')
             onComment(token.value);
-          }
-          else {
+          else
             this._readCallback = this._readCallback(token);
-          }
         }
       };
     }
