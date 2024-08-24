@@ -50,7 +50,7 @@ describe('Parser', () => {
     );
 
     it(
-      'should callback comments when a comment allback is set',
+      'should callback comments when a comment callback is set',
       shouldCallbackComments('#comment1\n<a> <b> #comment2\n <c> . \n<d> <e> <f>.\n<g> <h> <i>.',
                   'comment1', 'comment2'),
     );
