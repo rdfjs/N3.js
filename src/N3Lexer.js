@@ -68,7 +68,7 @@ export default class N3Lexer {
       this._n3Mode = options.n3 !== false;
     }
     // Don't output comment tokens by default
-    this._comments = !!options.comments;
+    this.comments = !!options.comments;
     // Cache the last tested closing position of long literals
     this._literalClosingPos = 0;
   }
@@ -85,7 +85,7 @@ export default class N3Lexer {
       let whiteSpaceMatch, comment;
       while (whiteSpaceMatch = this._newline.exec(input)) {
         // Try to find a comment
-        if (this._comments && (comment = this._comment.exec(whiteSpaceMatch[0])))
+        if (this.comments && (comment = this._comment.exec(whiteSpaceMatch[0])))
           emitToken('comment', comment[1], '', this._line, whiteSpaceMatch[0].length);
         // Advance the input
         input = input.substr(whiteSpaceMatch[0].length, input.length);
@@ -101,7 +101,7 @@ export default class N3Lexer {
         // If the input is finished, emit EOF
         if (inputFinished) {
           // Try to find a final comment
-          if (this._comments && (comment = this._comment.exec(input)))
+          if (this.comments && (comment = this._comment.exec(input)))
             emitToken('comment', comment[1], '', this._line, input.length);
           input = null;
           emitToken('eof', '', '', this._line, 0);
@@ -462,11 +462,6 @@ export default class N3Lexer {
   }
 
   // ## Public methods
-
-  // ### `setComments` enables or disables creating a token per comment using a boolean.
-  setComments(enable) {
-    this._comments = enable;
-  }
 
   // ### `tokenize` starts the transformation of an N3 document into an array of tokens.
   // The input can be a string or a stream.

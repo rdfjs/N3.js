@@ -1057,7 +1057,7 @@ export default class N3Parser {
     // Enable checking for comments on every token when a commentCallback has been set
     if (onComment) {
       // Enable the lexer to return comments as tokens first (disabled by default)
-      this._lexer.setComments(true);
+      this._lexer.comments = true;
       // Patch the processNextToken function
       processNextToken = (error, token) => {
         if (error !== null)
