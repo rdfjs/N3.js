@@ -64,6 +64,16 @@ describe('StreamParser', () => {
                          { a: new NamedNode('http://a.org/#'), b: new NamedNode('http://b.org/#') }),
     );
 
+    it(
+      'parses two triples with comments',
+      shouldParse(['#comment1\n<a> <b> #comment2\n#comment3\n <c>. <d> <e> <f>.'], 2),
+    );
+
+    it(
+      'emits "comment" events',
+      shouldEmitComments(['#comment1\n<a> <b> #comment2\n#comment3\n <c>. <d> <e> <f>.'], ['comment1', 'comment2', 'comment3']),
+    );
+
     it('passes an error', () => {
       const input = new Readable(), parser = new StreamParser();
       let error = null;
@@ -121,6 +131,22 @@ function shouldEmitPrefixes(chunks, expectedPrefixes) {
     parser.on('error', done);
     parser.on('end', error => {
       expect(prefixes).toEqual(expectedPrefixes);
+      done(error);
+    });
+  };
+}
+
+function shouldEmitComments(chunks, expectedComments) {
+  return function (done) {
+    const comments = [],
+        parser = new StreamParser(),
+        inputStream = new ArrayReader(chunks);
+    inputStream.pipe(parser);
+    parser.on('data', () => {});
+    parser.on('comment', comment => { comments.push(comment); });
+    parser.on('error', done);
+    parser.on('end', error => {
+      expect(comments).toEqual(expectedComments);
       done(error);
     });
   };
