@@ -463,6 +463,11 @@ export default class N3Lexer {
 
   // ## Public methods
 
+  // ### `setComments` enables or disables creating a token per comment using a boolean.
+  setComments(enable) {
+    this._comments = enable;
+  }
+
   // ### `tokenize` starts the transformation of an N3 document into an array of tokens.
   // The input can be a string or a stream.
   tokenize(input, callback) {

@@ -1023,8 +1023,8 @@ export default class N3Parser {
     this._inversePredicate = false;
     this._quantified = Object.create(null);
 
-    // If the parser is requested to provide comments through a callback, override the current lexer’s configuration parameter to emit comments
-    if (commentCallback) this._lexer._comments = true;
+    // If the parser is requested to provide comments through a callback, ask the lexer to return comments as tokens as well (disabled by default)
+    if (commentCallback) this._lexer.setComments(true);
 
     // Parse synchronously if no quad callback is given
     if (!quadCallback) {
