@@ -3070,13 +3070,16 @@ function shouldCallbackComments(parser, input) {
   return function (done) {
     const items = expected;
     const comments = [];
-    new parser({ baseIRI: BASE_IRI }).parse(input, (error, triple) => {
-      if (!triple) {
-        // Marks the end
-        expect(JSON.stringify(comments)).toBe(JSON.stringify(items));
-        done();
-      }
-    }, null, comment => { comments.push(comment); });
+    new parser({ baseIRI: BASE_IRI }).parse(input, {
+      onQuad: (error, triple) => {
+        if (!triple) {
+          // Marks the end
+          expect(JSON.stringify(comments)).toBe(JSON.stringify(items));
+          done();
+        }
+      },
+      onComment: comment => { comments.push(comment); },
+    });
   };
 }
 
@@ -3130,21 +3133,21 @@ function shouldNotParseWithComments(parser, input, expectedError, expectedContex
     expectedContext = expectedError, expectedError = input, input = parser, parser = Parser;
 
   return function (done) {
-    new parser({ baseIRI: BASE_IRI }).parse(input, (error, triple) => {
-      if (error) {
-        expect(triple).toBeFalsy();
-        expect(error).toBeInstanceOf(Error);
-        expect(error.message).toEqual(expectedError);
-        if (expectedContext) expect(error.context).toEqual(expectedContext);
-        done();
-      }
-      else if (!triple)
-        done(new Error(`Expected error ${expectedError}`));
-    },
-    null,
-    // Enables comment mode
-    () => {},
-    );
+    new parser({ baseIRI: BASE_IRI }).parse(input, {
+      onQuad: (error, triple) => {
+        if (error) {
+          expect(triple).toBeFalsy();
+          expect(error).toBeInstanceOf(Error);
+          expect(error.message).toEqual(expectedError);
+          if (expectedContext) expect(error.context).toEqual(expectedContext);
+          done();
+        }
+        else if (!triple)
+          done(new Error(`Expected error ${expectedError}`));
+      },
+      // Enables comment mode
+      onComment: () => {},
+    });
   };
 }
 
