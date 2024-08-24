@@ -74,6 +74,11 @@ describe('StreamParser', () => {
       shouldEmitComments(['#comment1\n<a> <b> #comment2\n#comment3\n <c>. <d> <e> <f>.'], ['comment1', 'comment2', 'comment3']),
     );
 
+    it(
+      'emits "comment" events',
+      shouldNotEmitCommentsWhenNotEnabled(['#comment1\n<a> <b> #comment2\n#comment3\n <c>. <d> <e> <f>.'], ['comment1', 'comment2', 'comment3']),
+    );
+
     it('passes an error', () => {
       const input = new Readable(), parser = new StreamParser();
       let error = null;
@@ -139,7 +144,7 @@ function shouldEmitPrefixes(chunks, expectedPrefixes) {
 function shouldEmitComments(chunks, expectedComments) {
   return function (done) {
     const comments = [],
-        parser = new StreamParser(),
+        parser = new StreamParser({ comments: true }),
         inputStream = new ArrayReader(chunks);
     inputStream.pipe(parser);
     parser.on('data', () => {});
@@ -148,6 +153,20 @@ function shouldEmitComments(chunks, expectedComments) {
     parser.on('end', error => {
       expect(comments).toEqual(expectedComments);
       done(error);
+    });
+  };
+}
+
+function shouldNotEmitCommentsWhenNotEnabled(chunks, expectedComments) {
+  return function (done) {
+    const parser = new StreamParser(),
+        inputStream = new ArrayReader(chunks);
+    inputStream.pipe(parser);
+    parser.on('data', () => {});
+    parser.on('comment', comment => { done(new Error('Should not emit comments but it did')); });
+    parser.on('error', done);
+    parser.on('end', error => {
+      done();
     });
   };
 }
