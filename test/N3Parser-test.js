@@ -1646,6 +1646,12 @@ describe('Parser', () => {
       shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
         'Expected >> to follow "_:b0_b" on line 1.'),
     );
+
+    it(
+      'should not parse nested quads with comments',
+      shouldNotParseWithComments(parser, '#comment1\n<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
+        'Expected >> to follow "_:b0_b" on line 2.'),
+    );
   });
 
   describe('A Parser instance for the TriG format', () => {
@@ -3115,6 +3121,30 @@ function shouldNotParse(parser, input, expectedError, expectedContext) {
       else if (!triple)
         done(new Error(`Expected error ${expectedError}`));
     });
+  };
+}
+
+function shouldNotParseWithComments(parser, input, expectedError, expectedContext) {
+  // Shift parameters if necessary
+  if (!parser.call)
+    expectedContext = expectedError, expectedError = input, input = parser, parser = Parser;
+
+  return function (done) {
+    new parser({ baseIRI: BASE_IRI }).parse(input, (error, triple) => {
+      if (error) {
+        expect(triple).toBeFalsy();
+        expect(error).toBeInstanceOf(Error);
+        expect(error.message).toEqual(expectedError);
+        if (expectedContext) expect(error.context).toEqual(expectedContext);
+        done();
+      }
+      else if (!triple)
+        done(new Error(`Expected error ${expectedError}`));
+    },
+    null,
+    // Enables comment mode
+    () => {},
+    );
   };
 }
 

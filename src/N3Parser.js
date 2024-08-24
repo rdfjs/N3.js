@@ -1023,9 +1023,6 @@ export default class N3Parser {
     this._inversePredicate = false;
     this._quantified = Object.create(null);
 
-    // If the parser is requested to provide comments through a callback, ask the lexer to return comments as tokens as well (disabled by default)
-    if (commentCallback) this._lexer.setComments(true);
-
     // Parse synchronously if no quad callback is given
     if (!quadCallback) {
       const quads = [];
@@ -1038,22 +1035,36 @@ export default class N3Parser {
       return quads;
     }
 
-    // Parse asynchronously otherwise, executing the read callback when a token arrives
-    this._callback = quadCallback;
-    this._lexer.tokenize(input, (error, token) => {
+    let processNextToken = (error, token) => {
       if (error !== null)
         this._callback(error), this._callback = noop;
       else if (this._readCallback) {
-        if (token.type === 'comment') {
-          // A comment token can only happen when the commentCallback is set, so checking whether commentCallback is set would be redundant
-          // if (commentCallback)
-          commentCallback(token.value);
-        }
-        else {
-          this._readCallback = this._readCallback(token);
-        }
+        this._readCallback = this._readCallback(token);
       }
-    });
+    };
+
+    // Enable checking for comments on every token when a commentCallback has been set
+    if (commentCallback) {
+      // Enable the lexer to return comments as tokens first (disabled by default)
+      this._lexer.setComments(true);
+      // Patch the processNextToken function
+      processNextToken = (error, token) => {
+        if (error !== null)
+          this._callback(error), this._callback = noop;
+        else if (this._readCallback) {
+          if (token.type === 'comment') {
+            commentCallback(token.value);
+          }
+          else {
+            this._readCallback = this._readCallback(token);
+          }
+        }
+      };
+    }
+
+    // Parse asynchronously otherwise, executing the read callback when a token arrives
+    this._callback = quadCallback;
+    this._lexer.tokenize(input, processNextToken);
   }
 }
 
