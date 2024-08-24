@@ -1010,8 +1010,8 @@ export default class N3Parser {
 
   // ## Public methods
 
-  // ### `parse` parses the N3 input and emits each parsed quad through the callback
-  parse(input, quadCallback, prefixCallback) {
+  // ### `parse` parses the N3 input and emits each parsed quad through the callback. Optionally you can set a prefixCallback and a commentCallback
+  parse(input, quadCallback, prefixCallback, commentCallback) {
     // The read callback is the next function to be executed when a token arrives.
     // We start reading in the top context.
     this._readCallback = this._readInTopContext;
@@ -1022,6 +1022,9 @@ export default class N3Parser {
     this._prefixCallback = prefixCallback || noop;
     this._inversePredicate = false;
     this._quantified = Object.create(null);
+
+    // If the parser is requested to provide comments through a callback, override the current lexer’s configuration parameter to emit comments
+    if (commentCallback) this._lexer._comments = true;
 
     // Parse synchronously if no quad callback is given
     if (!quadCallback) {
@@ -1040,8 +1043,16 @@ export default class N3Parser {
     this._lexer.tokenize(input, (error, token) => {
       if (error !== null)
         this._callback(error), this._callback = noop;
-      else if (this._readCallback)
-        this._readCallback = this._readCallback(token);
+      else if (this._readCallback) {
+        if (token.type === 'comment') {
+          // A comment token can only happen when the commentCallback is set, so checking whether commentCallback is set would be redundant
+          // if (commentCallback)
+          commentCallback(token.value);
+        }
+        else {
+          this._readCallback = this._readCallback(token);
+        }
+      }
     });
   }
 }

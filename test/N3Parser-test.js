@@ -41,6 +41,20 @@ describe('Parser', () => {
                   ['g', 'h', 'i']),
     );
 
+    it(
+      'should parse three triples with comments if no comment callback is set',
+      shouldParse('<a> <b> #comment2\n <c> . \n<d> <e> <f>.\n<g> <h> <i>.',
+                  ['a', 'b', 'c'],
+                  ['d', 'e', 'f'],
+                  ['g', 'h', 'i']),
+    );
+
+    it(
+      'should callback comments when a comment allback is set',
+      shouldCallbackComments('#comment1\n<a> <b> #comment2\n <c> . \n<d> <e> <f>.\n<g> <h> <i>.',
+                  'comment1', 'comment2'),
+    );
+
     it('should parse a triple with a literal', shouldParse('<a> <b> "string".',
                 ['a', 'b', '"string"']));
 
@@ -3035,6 +3049,28 @@ function shouldParse(parser, input) {
       else
         expect(toSortedJSON(results)).toBe(toSortedJSON(items)), done();
     });
+  };
+}
+
+
+function shouldCallbackComments(parser, input) {
+  const expected = Array.prototype.slice.call(arguments, 1);
+  // Shift parameters as necessary
+  if (parser.call)
+    expected.shift();
+  else
+    input = parser, parser = Parser;
+
+  return function (done) {
+    const items = expected;
+    const comments = [];
+    new parser({ baseIRI: BASE_IRI }).parse(input, (error, triple) => {
+      if (!triple) {
+        // Marks the end
+        expect(JSON.stringify(comments)).toBe(JSON.stringify(items));
+        done();
+      }
+    }, null, comment => { comments.push(comment); });
   };
 }
 
