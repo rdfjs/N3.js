@@ -54,6 +54,12 @@ describe('StreamParser', () => {
     );
 
     it(
+      "doesn't parse an invalid stream with comments",
+      shouldNotParseWithComments(['z.'], 'Unexpected "z." on line 1.'),
+      { token: undefined, line: 1, previousToken: undefined },
+    );
+
+    it(
       'Should Not parse Bom in middle stream',
       shouldNotParse(['<a> <b>', '\ufeff', '<c>.'], 'Unexpected "" on line 1.'),
     );
@@ -65,8 +71,13 @@ describe('StreamParser', () => {
     );
 
     it(
-      'parses two triples with comments',
+      'parses two triples with comments when comments not enabled',
       shouldParse(['#comment1\n<a> <b> #comment2\n#comment3\n <c>. <d> <e> <f>.'], 2),
+    );
+
+    it(
+      'parses two triples with comments when comments enabled',
+      shouldParseWithCommentsEnabled(['#comment1\n<a> <b> #comment2\n#comment3\n <c>. <d> <e> <f>.'], 2),
     );
 
     it(
@@ -109,10 +120,44 @@ function shouldParse(chunks, expectedLength, validateTriples) {
   };
 }
 
+function shouldParseWithCommentsEnabled(chunks, expectedLength, validateTriples) {
+  return function (done) {
+    const triples = [],
+        inputStream = new ArrayReader(chunks),
+        parser = new StreamParser({ comments: true }),
+        outputStream = new ArrayWriter(triples);
+    expect(parser.import(inputStream)).toBe(parser);
+    parser.pipe(outputStream);
+    parser.on('comment', () => {});
+    parser.on('error', done);
+    parser.on('end', () => {
+      expect(triples).toHaveLength(expectedLength);
+      if (validateTriples) validateTriples(triples);
+      done();
+    });
+  };
+}
+
 function shouldNotParse(chunks, expectedMessage, expectedContext) {
   return function (done) {
     const inputStream = new ArrayReader(chunks),
         parser = new StreamParser(),
+        outputStream = new ArrayWriter([]);
+    inputStream.pipe(parser);
+    parser.pipe(outputStream);
+    parser.on('error', error => {
+      expect(error).toBeInstanceOf(Error);
+      expect(error.message).toBe(expectedMessage);
+      if (expectedContext) expect(error.context).toEqual(expectedContext);
+      done();
+    });
+  };
+}
+
+function shouldNotParseWithComments(chunks, expectedMessage, expectedContext) {
+  return function (done) {
+    const inputStream = new ArrayReader(chunks),
+        parser = new StreamParser({ comments: true }),
         outputStream = new ArrayWriter([]);
     inputStream.pipe(parser);
     parser.pipe(outputStream);

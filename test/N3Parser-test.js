@@ -50,6 +50,14 @@ describe('Parser', () => {
     );
 
     it(
+      'should parse three triples with comments when comment callback is set',
+      shouldParseWithCommentsEnabled('<a> <b> #comment2\n <c> . \n<d> <e> <f>.\n<g> <h> <i>.',
+                  ['a', 'b', 'c'],
+                  ['d', 'e', 'f'],
+                  ['g', 'h', 'i']),
+    );
+
+    it(
       'should callback comments when a comment callback is set',
       shouldCallbackComments('#comment1\n<a> <b> #comment2\n <c> . \n<d> <e> <f>.\n<g> <h> <i>.',
                   'comment1', 'comment2'),
@@ -215,6 +223,12 @@ describe('Parser', () => {
       'should not parse undefined prefix in datatype',
       shouldNotParse('<a> <b> "c"^^d:e ',
                      'Undefined prefix "d:" on line 1.'),
+    );
+
+    it(
+      'should not parse undefined prefix in datatype with comments enabled',
+      shouldNotParseWithComments('#comment\n<a> <b> "c"^^d:e ',
+                     'Undefined prefix "d:" on line 2.'),
     );
 
     it(
@@ -1612,6 +1626,12 @@ describe('Parser', () => {
     it(
       'should not parse a literal as subject',
       shouldNotParse(parser, '1 <a> <b>.',
+        'Unexpected literal on line 1.'),
+    );
+
+    it(
+      'should not parse a literal as subject',
+      shouldNotParseWithComments(parser, '1 <a> <b>.',
         'Unexpected literal on line 1.'),
     );
 
@@ -3058,6 +3078,32 @@ function shouldParse(parser, input) {
   };
 }
 
+function shouldParseWithCommentsEnabled(parser, input) {
+  const expected = Array.prototype.slice.call(arguments, 1);
+  // Shift parameters as necessary
+  if (parser.call)
+    expected.shift();
+  else
+    input = parser, parser = Parser;
+
+  return function (done) {
+    const results = [];
+    const items = expected.map(mapToQuad);
+    new parser({ baseIRI: BASE_IRI }).parse(input, {
+      onQuad: (error, triple) => {
+        expect(error).toBeFalsy();
+        if (triple)
+          results.push(triple);
+        else
+          expect(toSortedJSON(results)).toBe(toSortedJSON(items)), done();
+      },
+      onComment: comment => {
+        expect(comment).toBeDefined();
+      },
+    });
+  };
+}
+
 
 function shouldCallbackComments(parser, input) {
   const expected = Array.prototype.slice.call(arguments, 1);
@@ -3146,7 +3192,9 @@ function shouldNotParseWithComments(parser, input, expectedError, expectedContex
           done(new Error(`Expected error ${expectedError}`));
       },
       // Enables comment mode
-      onComment: () => {},
+      onComment: comment => {
+        expect(comment).toBeDefined();
+      },
     });
   };
 }
