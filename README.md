@@ -89,19 +89,22 @@ parser.parse(
    c:Tom a c:Cat.
    c:Jerry a c:Mouse;
            c:smarterThan c:Tom.`,
-  (error, quad, prefixes) => {
+  (error, quad) => {
     if (quad)
       console.log(quad);
     else
-      console.log("# That's all, folks!", prefixes);
+      console.log("# That's all, folks!");
   });
 ```
 The callback's first argument is an optional error value, the second is a quad.
 If there are no more quads,
-the callback is invoked one last time with `null` for `quad`
-and a hash of prefixes as third argument.
+the callback is invoked one last time with `null` for `quad`.
 <br>
-Pass a second callback to `parse` to retrieve prefixes as they are read.
+In case you would also like to process prefixes, you can instead pass an object containing multiple callbacks.
+The callback to retrieve the quads is called `onQuad`.
+The callback to also retrieve prefixes as they are read is called `onPrefix`.
+The first argument is the prefix, the second is the IRI.
+There is also a third callback called `onComment` taking only one `comment` argument.
 <br>
 If no callbacks are provided, parsing happens synchronously.
 
@@ -168,6 +171,8 @@ function SlowConsumer() {
 ```
 
 A dedicated `prefix` event signals every prefix with `prefix` and `term` arguments.
+
+Also a `comment` event can be enabled through the options object of the N3.StreamParser constructor using: `comments: true`.
 
 ## Writing
 
