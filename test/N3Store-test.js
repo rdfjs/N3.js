@@ -11,7 +11,7 @@ import {
 } from '../src/N3DataFactory';
 import namespaces from '../src/IRIs';
 import { Readable } from 'readable-stream';
-import arrayifyStream from 'arrayify-stream';
+import { arrayifyStream } from 'arrayify-stream';
 
 describe('Store', () => {
   describe('The Store export', () => {
