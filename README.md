@@ -89,16 +89,17 @@ parser.parse(
    c:Tom a c:Cat.
    c:Jerry a c:Mouse;
            c:smarterThan c:Tom.`,
-  (error, quad) => {
+  (error, quad, prefixes) => {
     if (quad)
       console.log(quad);
     else
-      console.log("# That's all, folks!");
+      console.log("# That's all, folks!", prefixes);
   });
 ```
 The callback's first argument is an optional error value, the second is a quad.
 If there are no more quads,
-the callback is invoked one last time with `null` for `quad`.
+the callback is invoked one last time with `null` for `quad`
+and a hash of prefixes as third argument.
 <br>
 In case you would also like to process prefixes, you can instead pass an object containing multiple callbacks.
 The callback to retrieve the quads is called `onQuad`.
