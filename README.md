@@ -83,12 +83,15 @@ we assume that a quad is simply a triple in a named or default graph.
 
 `N3.Parser` transforms Turtle, TriG, N-Triples, or N-Quads document into quads through a callback:
 ```JavaScript
+const tomAndJerry = `PREFIX c: <http://example.org/cartoons#>
+  # Tom is a cat
+  c:Tom a c:Cat.
+  c:Jerry a c:Mouse;
+    c:smarterThan c:Tom.`
+
 const parser = new N3.Parser();
-parser.parse(
-  `PREFIX c: <http://example.org/cartoons#>
-   c:Tom a c:Cat.
-   c:Jerry a c:Mouse;
-           c:smarterThan c:Tom.`,
+
+parser.parse(tomAndJerry,
   (error, quad, prefixes) => {
     if (quad)
       console.log(quad);
@@ -101,9 +104,30 @@ If there are no more quads,
 the callback is invoked one last time with `null` for `quad`
 and a hash of prefixes as third argument.
 <br>
-Pass a second callback to `parse` to retrieve prefixes as they are read.
+
+Alternatively, an object can be supplied, where `onQuad`, `onPrefix` and `onComment` are used to listen for `quads`, `prefixes` and `comments` as follows:
+```JavaScript
+const parser = new N3.Parser();
+
+parser.parse(tomAndJerry, {
+  // onQuad (required) accepts a listener of type (quad: RDF.Quad) => void
+  onQuad: (err, quad) => { console.log(quad); },
+  // onPrefix (optional) accepts a listener of type (prefix: string, iri: NamedNode) => void
+  onPrefix: (prefix, iri) => { console.log(prefix, 'expands to', iri.value); },
+  // onComment (optional) accepts a listener of type (comment: string) => void
+  onComment: (comment) => { console.log('#', comment); },
+});
+```
+
 <br>
-If no callbacks are provided, parsing happens synchronously.
+If no callbacks are provided, parsing happens synchronously returning an array of quads.
+
+```JavaScript
+const parser = new N3.Parser();
+
+// An array of resultant Quads
+const quadArray = parser.parse(tomAndJerry);
+```
 
 By default, `N3.Parser` parses a permissive superset of Turtle, TriG, N-Triples, and N-Quads.
 <br>
@@ -168,6 +192,8 @@ function SlowConsumer() {
 ```
 
 A dedicated `prefix` event signals every prefix with `prefix` and `term` arguments.
+
+A dedicated `comment` event can be enabled by setting `comments: true` in the N3.StreamParser constructor.
 
 ## Writing
 

@@ -54,6 +54,12 @@ describe('StreamParser', () => {
     );
 
     it(
+      "doesn't parse an invalid stream with comments",
+      shouldNotParseWithComments(['z.'], 'Unexpected "z." on line 1.'),
+      { token: undefined, line: 1, previousToken: undefined },
+    );
+
+    it(
       'Should Not parse Bom in middle stream',
       shouldNotParse(['<a> <b>', '\ufeff', '<c>.'], 'Unexpected "" on line 1.'),
     );
@@ -62,6 +68,26 @@ describe('StreamParser', () => {
       'emits "prefix" events',
       shouldEmitPrefixes(['@prefix a: <http://a.org/#>. a:a a:b a:c. @prefix b: <http://b.org/#>.'],
                          { a: new NamedNode('http://a.org/#'), b: new NamedNode('http://b.org/#') }),
+    );
+
+    it(
+      'parses two triples with comments when comments not enabled',
+      shouldParse(['#comment1\n<a> <b> #comment2\n#comment3\n <c>. <d> <e> <f>.'], 2),
+    );
+
+    it(
+      'parses two triples with comments when comments enabled',
+      shouldParseWithCommentsEnabled(['#comment1\n<a> <b> #comment2\n#comment3\n <c>. <d> <e> <f>.'], 2),
+    );
+
+    it(
+      'emits "comment" events',
+      shouldEmitComments(['#comment1\n<a> <b> #comment2\n#comment3\n <c>. <d> <e> <f>.'], ['comment1', 'comment2', 'comment3']),
+    );
+
+    it(
+      'emits "comment" events',
+      shouldNotEmitCommentsWhenNotEnabled(['#comment1\n<a> <b> #comment2\n#comment3\n <c>. <d> <e> <f>.'], ['comment1', 'comment2', 'comment3']),
     );
 
     it('passes an error', () => {
@@ -94,10 +120,44 @@ function shouldParse(chunks, expectedLength, validateTriples) {
   };
 }
 
+function shouldParseWithCommentsEnabled(chunks, expectedLength, validateTriples) {
+  return function (done) {
+    const triples = [],
+        inputStream = new ArrayReader(chunks),
+        parser = new StreamParser({ comments: true }),
+        outputStream = new ArrayWriter(triples);
+    expect(parser.import(inputStream)).toBe(parser);
+    parser.pipe(outputStream);
+    parser.on('comment', () => {});
+    parser.on('error', done);
+    parser.on('end', () => {
+      expect(triples).toHaveLength(expectedLength);
+      if (validateTriples) validateTriples(triples);
+      done();
+    });
+  };
+}
+
 function shouldNotParse(chunks, expectedMessage, expectedContext) {
   return function (done) {
     const inputStream = new ArrayReader(chunks),
         parser = new StreamParser(),
+        outputStream = new ArrayWriter([]);
+    inputStream.pipe(parser);
+    parser.pipe(outputStream);
+    parser.on('error', error => {
+      expect(error).toBeInstanceOf(Error);
+      expect(error.message).toBe(expectedMessage);
+      if (expectedContext) expect(error.context).toEqual(expectedContext);
+      done();
+    });
+  };
+}
+
+function shouldNotParseWithComments(chunks, expectedMessage, expectedContext) {
+  return function (done) {
+    const inputStream = new ArrayReader(chunks),
+        parser = new StreamParser({ comments: true }),
         outputStream = new ArrayWriter([]);
     inputStream.pipe(parser);
     parser.pipe(outputStream);
@@ -122,6 +182,36 @@ function shouldEmitPrefixes(chunks, expectedPrefixes) {
     parser.on('end', error => {
       expect(prefixes).toEqual(expectedPrefixes);
       done(error);
+    });
+  };
+}
+
+function shouldEmitComments(chunks, expectedComments) {
+  return function (done) {
+    const comments = [],
+        parser = new StreamParser({ comments: true }),
+        inputStream = new ArrayReader(chunks);
+    inputStream.pipe(parser);
+    parser.on('data', () => {});
+    parser.on('comment', comment => { comments.push(comment); });
+    parser.on('error', done);
+    parser.on('end', error => {
+      expect(comments).toEqual(expectedComments);
+      done(error);
+    });
+  };
+}
+
+function shouldNotEmitCommentsWhenNotEnabled(chunks, expectedComments) {
+  return function (done) {
+    const parser = new StreamParser(),
+        inputStream = new ArrayReader(chunks);
+    inputStream.pipe(parser);
+    parser.on('data', () => {});
+    parser.on('comment', comment => { done(new Error('Should not emit comments but it did')); });
+    parser.on('error', done);
+    parser.on('end', error => {
+      done();
     });
   };
 }

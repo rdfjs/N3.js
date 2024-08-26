@@ -1010,8 +1010,20 @@ export default class N3Parser {
 
   // ## Public methods
 
-  // ### `parse` parses the N3 input and emits each parsed quad through the callback
+  // ### `parse` parses the N3 input and emits each parsed quad through the onQuad callback.
   parse(input, quadCallback, prefixCallback) {
+    // The second parameter accepts an object { onQuad: ..., onPrefix: ..., onComment: ...}
+    // As a second and third parameter it still accepts a separate quadCallback and prefixCallback for backward compatibility as well
+    let onQuad, onPrefix, onComment;
+    if (quadCallback && (quadCallback.onQuad || quadCallback.onPrefix || quadCallback.onComment)) {
+      onQuad = quadCallback.onQuad;
+      onPrefix = quadCallback.onPrefix;
+      onComment = quadCallback.onComment;
+    }
+    else {
+      onQuad = quadCallback;
+      onPrefix = prefixCallback;
+    }
     // The read callback is the next function to be executed when a token arrives.
     // We start reading in the top context.
     this._readCallback = this._readInTopContext;
@@ -1019,12 +1031,12 @@ export default class N3Parser {
     this._prefixes = Object.create(null);
     this._prefixes._ = this._blankNodePrefix ? this._blankNodePrefix.substr(2)
                                              : `b${blankNodePrefix++}_`;
-    this._prefixCallback = prefixCallback || noop;
+    this._prefixCallback = onPrefix || noop;
     this._inversePredicate = false;
     this._quantified = Object.create(null);
 
     // Parse synchronously if no quad callback is given
-    if (!quadCallback) {
+    if (!onQuad) {
       const quads = [];
       let error;
       this._callback = (e, t) => { e ? (error = e) : t && quads.push(t); };
@@ -1035,14 +1047,33 @@ export default class N3Parser {
       return quads;
     }
 
-    // Parse asynchronously otherwise, executing the read callback when a token arrives
-    this._callback = quadCallback;
-    this._lexer.tokenize(input, (error, token) => {
+    let processNextToken = (error, token) => {
       if (error !== null)
         this._callback(error), this._callback = noop;
       else if (this._readCallback)
         this._readCallback = this._readCallback(token);
-    });
+    };
+
+    // Enable checking for comments on every token when a commentCallback has been set
+    if (onComment) {
+      // Enable the lexer to return comments as tokens first (disabled by default)
+      this._lexer.comments = true;
+      // Patch the processNextToken function
+      processNextToken = (error, token) => {
+        if (error !== null)
+          this._callback(error), this._callback = noop;
+        else if (this._readCallback) {
+          if (token.type === 'comment')
+            onComment(token.value);
+          else
+            this._readCallback = this._readCallback(token);
+        }
+      };
+    }
+
+    // Parse asynchronously otherwise, executing the read callback when a token arrives
+    this._callback = onQuad;
+    this._lexer.tokenize(input, processNextToken);
   }
 }
 

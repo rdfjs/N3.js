@@ -41,6 +41,28 @@ describe('Parser', () => {
                   ['g', 'h', 'i']),
     );
 
+    it(
+      'should parse three triples with comments if no comment callback is set',
+      shouldParse('<a> <b> #comment2\n <c> . \n<d> <e> <f>.\n<g> <h> <i>.',
+                  ['a', 'b', 'c'],
+                  ['d', 'e', 'f'],
+                  ['g', 'h', 'i']),
+    );
+
+    it(
+      'should parse three triples with comments when comment callback is set',
+      shouldParseWithCommentsEnabled('<a> <b> #comment2\n <c> . \n<d> <e> <f>.\n<g> <h> <i>.',
+                  ['a', 'b', 'c'],
+                  ['d', 'e', 'f'],
+                  ['g', 'h', 'i']),
+    );
+
+    it(
+      'should callback comments when a comment callback is set',
+      shouldCallbackComments('#comment1\n<a> <b> #comment2\n <c> . \n<d> <e> <f>.\n<g> <h> <i>.',
+                  'comment1', 'comment2'),
+    );
+
     it('should parse a triple with a literal', shouldParse('<a> <b> "string".',
                 ['a', 'b', '"string"']));
 
@@ -201,6 +223,12 @@ describe('Parser', () => {
       'should not parse undefined prefix in datatype',
       shouldNotParse('<a> <b> "c"^^d:e ',
                      'Undefined prefix "d:" on line 1.'),
+    );
+
+    it(
+      'should not parse undefined prefix in datatype with comments enabled',
+      shouldNotParseWithComments('#comment\n<a> <b> "c"^^d:e ',
+                     'Undefined prefix "d:" on line 2.'),
     );
 
     it(
@@ -1602,6 +1630,12 @@ describe('Parser', () => {
     );
 
     it(
+      'should not parse a literal as subject',
+      shouldNotParseWithComments(parser, '1 <a> <b>.',
+        'Unexpected literal on line 1.'),
+    );
+
+    it(
       'should not parse RDF-star in the subject position',
       shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
         'Unexpected RDF-star syntax on line 1.'),
@@ -1631,6 +1665,12 @@ describe('Parser', () => {
       'should not parse nested quads',
       shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
         'Expected >> to follow "_:b0_b" on line 1.'),
+    );
+
+    it(
+      'should not parse nested quads with comments',
+      shouldNotParseWithComments(parser, '#comment1\n<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
+        'Expected >> to follow "_:b0_b" on line 2.'),
     );
   });
 
@@ -3038,6 +3078,57 @@ function shouldParse(parser, input) {
   };
 }
 
+function shouldParseWithCommentsEnabled(parser, input) {
+  const expected = Array.prototype.slice.call(arguments, 1);
+  // Shift parameters as necessary
+  if (parser.call)
+    expected.shift();
+  else
+    input = parser, parser = Parser;
+
+  return function (done) {
+    const results = [];
+    const items = expected.map(mapToQuad);
+    new parser({ baseIRI: BASE_IRI }).parse(input, {
+      onQuad: (error, triple) => {
+        expect(error).toBeFalsy();
+        if (triple)
+          results.push(triple);
+        else
+          expect(toSortedJSON(results)).toBe(toSortedJSON(items)), done();
+      },
+      onComment: comment => {
+        expect(comment).toBeDefined();
+      },
+    });
+  };
+}
+
+
+function shouldCallbackComments(parser, input) {
+  const expected = Array.prototype.slice.call(arguments, 1);
+  // Shift parameters as necessary
+  if (parser.call)
+    expected.shift();
+  else
+    input = parser, parser = Parser;
+
+  return function (done) {
+    const items = expected;
+    const comments = [];
+    new parser({ baseIRI: BASE_IRI }).parse(input, {
+      onQuad: (error, triple) => {
+        if (!triple) {
+          // Marks the end
+          expect(JSON.stringify(comments)).toBe(JSON.stringify(items));
+          done();
+        }
+      },
+      onComment: comment => { comments.push(comment); },
+    });
+  };
+}
+
 function mapToQuad(item) {
   item = item.map(t => {
     // don't touch if it's already an object
@@ -3078,6 +3169,32 @@ function shouldNotParse(parser, input, expectedError, expectedContext) {
       }
       else if (!triple)
         done(new Error(`Expected error ${expectedError}`));
+    });
+  };
+}
+
+function shouldNotParseWithComments(parser, input, expectedError, expectedContext) {
+  // Shift parameters if necessary
+  if (!parser.call)
+    expectedContext = expectedError, expectedError = input, input = parser, parser = Parser;
+
+  return function (done) {
+    new parser({ baseIRI: BASE_IRI }).parse(input, {
+      onQuad: (error, triple) => {
+        if (error) {
+          expect(triple).toBeFalsy();
+          expect(error).toBeInstanceOf(Error);
+          expect(error.message).toEqual(expectedError);
+          if (expectedContext) expect(error.context).toEqual(expectedContext);
+          done();
+        }
+        else if (!triple)
+          done(new Error(`Expected error ${expectedError}`));
+      },
+      // Enables comment mode
+      onComment: comment => {
+        expect(comment).toBeDefined();
+      },
     });
   };
 }

@@ -11,6 +11,17 @@ export default class N3StreamParser extends Transform {
     // Set up parser with dummy stream to obtain `data` and `end` callbacks
     const parser = new N3Parser(options);
     let onData, onEnd;
+
+    const callbacks = {
+        // Handle quads by pushing them down the pipeline
+      onQuad: (error, quad) => { error && this.emit('error', error) || quad && this.push(quad); },
+        // Emit prefixes through the `prefix` event
+      onPrefix: (prefix, uri) => { this.emit('prefix', prefix, uri); },
+    };
+
+    if (options && options.comments)
+      callbacks.onComment = comment => { this.emit('comment', comment); };
+
     parser.parse({
       on: (event, callback) => {
         switch (event) {
@@ -18,12 +29,7 @@ export default class N3StreamParser extends Transform {
         case 'end':   onEnd = callback; break;
         }
       },
-    },
-      // Handle quads by pushing them down the pipeline
-      (error, quad) => { error && this.emit('error', error) || quad && this.push(quad); },
-      // Emit prefixes through the `prefix` event
-      (prefix, uri) => { this.emit('prefix', prefix, uri); },
-    );
+    }, callbacks);
 
     // Implement Transform methods through parser callbacks
     this._transform = (chunk, encoding, done) => { onData(chunk); done(); };
