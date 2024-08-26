@@ -119,8 +119,7 @@ parser.parse(tomAndJerry, {
 });
 ```
 
-<br>
-If no callbacks are provided, parsing happens synchronously returning an array of quads.
+If no callbacks are provided, parsing happens synchronously returning an array of quads:
 
 ```JavaScript
 const parser = new N3.Parser();
@@ -192,7 +191,6 @@ function SlowConsumer() {
 ```
 
 A dedicated `prefix` event signals every prefix with `prefix` and `term` arguments.
-
 A dedicated `comment` event can be enabled by setting `comments: true` in the N3.StreamParser constructor.
 
 ## Writing
