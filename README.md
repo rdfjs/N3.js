@@ -105,7 +105,7 @@ the callback is invoked one last time with `null` for `quad`
 and a hash of prefixes as third argument.
 <br>
 
-Alternatively, an object may be supplied, where `onQuad`, `onPrefix` and `onComment` may be used to listen for `quads`, `prefixes` and `comments` as follows:
+Alternatively, an object can be supplied, where `onQuad`, `onPrefix` and `onComment` are used to listen for `quads`, `prefixes` and `comments` as follows:
 ```JavaScript
 const parser = new N3.Parser();
 
@@ -113,14 +113,14 @@ parser.parse(tomAndJerry, {
   // onQuad (required) accepts a listener of type (quad: RDF.Quad) => void
   onQuad: (err, quad) => { console.log(quad); },
   // onPrefix (optional) accepts a listener of type (prefix: string, iri: NamedNode) => void
-  onPrefix: (prefix, iri) => { console.log(prefix, 'expands to', iri); },
+  onPrefix: (prefix, iri) => { console.log(prefix, 'expands to', iri.value); },
   // onComment (optional) accepts a listener of type (comment: string) => void
   onComment: (comment) => { console.log('#', comment); },
 });
 ```
 
 <br>
-If no callbacks are provided, parsing happens synchronously returning an array of parsed quads.
+If no callbacks are provided, parsing happens synchronously returning an array of quads.
 
 ```JavaScript
 const parser = new N3.Parser();
@@ -193,7 +193,7 @@ function SlowConsumer() {
 
 A dedicated `prefix` event signals every prefix with `prefix` and `term` arguments.
 
-A dedicated `comment` event may be enabled by setting `comments: true` in the N3.StreamParser constructor.
+A dedicated `comment` event can be enabled by setting `comments: true` in the N3.StreamParser constructor.
 
 ## Writing
 
