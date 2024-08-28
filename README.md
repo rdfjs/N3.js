@@ -198,11 +198,11 @@ A dedicated `comment` event can be enabled by setting `comments: true` in the N3
 ### From quads to a string
 
 `N3.Writer` serializes quads as an RDF document.
-Write quads through `add`.
+Write quads through `addQuad`.
 
 ```JavaScript
 const writer = new N3.Writer({ prefixes: { c: 'http://example.org/cartoons#' } }); // Create a writer which uses `c` as a prefix for the namespace `http://example.org/cartoons#`
-writer.add(quad(
+writer.addQuad(quad(
   namedNode('http://example.org/cartoons#Tom'),   // Subject
   namedNode('http://example.org/cartoons#name'),  // Predicate
   literal('Tom')                                  // Object
