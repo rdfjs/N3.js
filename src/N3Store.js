@@ -29,7 +29,7 @@ function intersect(s1, s2, depth = 4) {
           continue;
       }
 
-      target ||= Object.create(null);
+      target = target || Object.create(null);
       target[key] = intersection;
     }
   }
