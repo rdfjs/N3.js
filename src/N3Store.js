@@ -18,19 +18,15 @@ function merge(target, source, depth = 4) {
 }
 
 function intersect(s1, s2, depth = 4) {
-  let target = null;
+  let target = false;
 
   for (const key in s1) {
     if (key in s2) {
-      let intersection = null;
-      if (depth > 0) {
-        intersection = intersect(s1[key], s2[key], depth - 1);
-        if (intersection === null)
-          continue;
+      const intersection = depth === 0 ? null : intersect(s1[key], s2[key], depth - 1);
+      if (intersection !== false) {
+        target = target || Object.create(null);
+        target[key] = intersection;
       }
-
-      target = target || Object.create(null);
-      target[key] = intersection;
     }
   }
 
@@ -922,7 +918,8 @@ export default class N3Store {
       store._graphs = merge(Object.create(null), this._graphs);
       store._size = this._size;
       return store;
-    } else if ((other instanceof N3Store) && this._entityIndex === other._entityIndex) {
+    }
+    else if ((other instanceof N3Store) && this._entityIndex === other._entityIndex) {
       const store = new N3Store({ entityIndex: this._entityIndex });
       store._graphs = intersect(other._graphs, this._graphs);
       store._size = null;
