@@ -2137,8 +2137,32 @@ describe('Store', () => {
         expect(store2.size).toEqual(2);
         expect(store.size).toEqual(1);
 
+        const stores = [store, store1, store2, store3, storeb, storeg, empty];
+        for (const s1 of stores) {
+          for (const s2 of stores) {
+            expect(s1.intersection(s2).size).toBeLessThanOrEqual(s1.size);
+            expect(s1.intersection(s2).size).toBeLessThanOrEqual(s2.size);
+            expect(s1.intersection(s2).equals(s2.intersection(s1)));
+            expect(s1.union(s2).intersection(s1).equals(s1));
+            expect(s1.intersection(s2).union(s1).equals(s1));
+          }
+        }
+
         expect(store.intersection(store).size).toEqual(1);
         expect(store2.intersection(store2).size).toEqual(2);
+        expect(storeg.intersection(store).size).toBe(0);
+        expect(store.intersection(storeg).size).toBe(0);
+        expect(storeg.intersection(storeb).size).toBe(1);
+        expect(store.intersection(storeb).size).toBe(1);
+        expect(store.intersection(store1).size).toBe(1);
+        expect(store.intersection(store3).size).toBe(1);
+        expect(store.intersection(store2).size).toBe(1);
+        expect(empty.intersection(store1).size).toBe(0);
+        expect(empty.intersection(store2).size).toBe(0);
+        expect(store2.intersection(store1).size).toBe(1);
+        expect(store1.intersection(store2).size).toBe(1);
+        expect(store1.intersection(storeb).size).toBe(1);
+        expect(storeb.intersection(store1).size).toBe(1);
       });
     });
 
