@@ -16,56 +16,45 @@ const escapeReplacements = {
 };
 const illegalIriChars = /[\x00-\x20<>\\"\{\}\|\^\`]/;
 
-const lineModeRegExps = {
-  _iri: true,
-  _unescapedIri: true,
-  _simpleQuotedString: true,
-  _langcode: true,
-  _blank: true,
-  _newline: true,
-  _comment: true,
-  _whitespace: true,
-  _endOfFile: true,
-};
 const invalidRegExp = /$0^/;
+const blank = /^_:((?:[0-9A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?:[ \t]+|(?=\.?[,;:\s#()\[\]\{\}"'<>]))/;
+const variable = /^\?(?:(?:[A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:[\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?=[.,;!\^\s#()\[\]\{\}"'<>])/;
+
+const _prefix = /^((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:(?=[#\s<])/;
+const _prefixed = /^((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:((?:(?:[0-:A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])(?:(?:[\.\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])*(?:[\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~]))?)?)(?:[ \t]+|(?=\.?[,;!\^\s#()\[\]\{\}"'<>]))/;
+const _number = /^[\-+]?(?:(\d+\.\d*|\.?\d+)[eE][\-+]?|\d*(\.)?)\d+(?=\.?[,;:\s#()\[\]\{\}"'<>])/;
+const _boolean = /^(?:true|false)(?=[.,;\s#()\[\]\{\}"'<>])/;
+const _keyword = /^@[a-z]+(?=[\s#<:])/i;
+const _sparqlKeyword = /^(?:PREFIX|BASE|GRAPH)(?=[\s#<])/i;
+const _shortPredicates = /^a(?=[\s#()\[\]\{\}"'<>])/;
 
 // ## Constructor
 export default class N3Lexer {
   constructor(options) {
-    // ## Regular expressions
-    // It's slightly faster to have these as properties than as in-scope variables
-    this._iri = /^<((?:[^ <>{}\\]|\\[uU])+)>[ \t]*/; // IRI with escape sequences; needs sanity check after unescaping
-    this._unescapedIri = /^<([^\x00-\x20<>\\"\{\}\|\^\`]*)>[ \t]*/; // IRI without escape sequences; no unescaping
-    this._simpleQuotedString = /^"([^"\\\r\n]*)"(?=[^"])/; // string without escape sequences
-    this._simpleApostropheString = /^'([^'\\\r\n]*)'(?=[^'])/;
-    this._langcode = /^@([a-z]+(?:-[a-z0-9]+)*)(?=[^a-z0-9\-])/i;
-    this._prefix = /^((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:(?=[#\s<])/;
-    this._prefixed = /^((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:((?:(?:[0-:A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])(?:(?:[\.\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])*(?:[\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~]))?)?)(?:[ \t]+|(?=\.?[,;!\^\s#()\[\]\{\}"'<>]))/;
-    this._variable = /^\?(?:(?:[A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:[\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?=[.,;!\^\s#()\[\]\{\}"'<>])/;
-    this._blank = /^_:((?:[0-9A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?:[ \t]+|(?=\.?[,;:\s#()\[\]\{\}"'<>]))/;
-    this._number = /^[\-+]?(?:(\d+\.\d*|\.?\d+)[eE][\-+]?|\d*(\.)?)\d+(?=\.?[,;:\s#()\[\]\{\}"'<>])/;
-    this._boolean = /^(?:true|false)(?=[.,;\s#()\[\]\{\}"'<>])/;
-    this._keyword = /^@[a-z]+(?=[\s#<:])/i;
-    this._sparqlKeyword = /^(?:PREFIX|BASE|GRAPH)(?=[\s#<])/i;
-    this._shortPredicates = /^a(?=[\s#()\[\]\{\}"'<>])/;
-    this._newline = /^[ \t]*(?:#[^\n\r]*)?(?:\r\n|\n|\r)[ \t]*/;
-    this._comment = /#([^\n\r]*)/;
-    this._whitespace = /^[ \t]+/;
-    this._endOfFile = /^(?:#[^\n\r]*)?$/;
     options = options || {};
+
 
     // In line mode (N-Triples or N-Quads), only simple features may be parsed
     if (this._lineMode = !!options.lineMode) {
       this._n3Mode = false;
-      // Don't tokenize special literals
-      for (const key in this) {
-        if (!(key in lineModeRegExps) && this[key] instanceof RegExp)
-          this[key] = invalidRegExp;
-      }
+      this._prefix = invalidRegExp;
+      this._prefixed = invalidRegExp;
+      this._number = invalidRegExp;
+      this._boolean = invalidRegExp;
+      this._keyword = invalidRegExp;
+      this._boolean = invalidRegExp;
+      this._keyword = invalidRegExp;
     }
     // When not in line mode, enable N3 functionality by default
     else {
       this._n3Mode = options.n3 !== false;
+      this._prefix = _prefix;
+      this._prefixed = _prefixed;
+      this._number = _number;
+      this._boolean = _boolean;
+      this._keyword = _keyword;
+      this._boolean = _sparqlKeyword;
+      this._keyword = _shortPredicates;
     }
     // Don't output comment tokens by default
     this.comments = !!options.comments;
@@ -83,9 +72,9 @@ export default class N3Lexer {
     while (true) {
       // Count and skip whitespace lines
       let whiteSpaceMatch, comment;
-      while (whiteSpaceMatch = this._newline.exec(input)) {
+      while (whiteSpaceMatch = /^[ \t]*(?:#[^\n\r]*)?(?:\r\n|\n|\r)[ \t]*/.exec(input)) {
         // Try to find a comment
-        if (this.comments && (comment = this._comment.exec(whiteSpaceMatch[0])))
+        if (this.comments && (comment = comment.exec(whiteSpaceMatch[0])))
           emitToken('comment', comment[1], '', this._line, whiteSpaceMatch[0].length);
         // Advance the input
         input = input.substr(whiteSpaceMatch[0].length, input.length);
@@ -93,15 +82,15 @@ export default class N3Lexer {
         this._line++;
       }
       // Skip whitespace on current line
-      if (!whiteSpaceMatch && (whiteSpaceMatch = this._whitespace.exec(input)))
+      if (!whiteSpaceMatch && (whiteSpaceMatch = /^[ \t]+/.exec(input)))
         input = input.substr(whiteSpaceMatch[0].length, input.length);
 
       // Stop for now if we're at the end
-      if (this._endOfFile.test(input)) {
+      if (/^(?:#[^\n\r]*)?$/.test(input)) {
         // If the input is finished, emit EOF
         if (inputFinished) {
           // Try to find a final comment
-          if (this.comments && (comment = this._comment.exec(input)))
+          if (this.comments && (comment = comment.exec(input)))
             emitToken('comment', comment[1], '', this._line, input.length);
           input = null;
           emitToken('eof', '', '', this._line, 0);
@@ -139,10 +128,10 @@ export default class N3Lexer {
         // Fall through in case the type is an IRI
       case '<':
         // Try to find a full IRI without escape sequences
-        if (match = this._unescapedIri.exec(input))
+        if (match =  /^<([^\x00-\x20<>\\"\{\}\|\^\`]*)>[ \t]*/.exec(input))
           type = 'IRI', value = match[1];
         // Try to find a full IRI with escape sequences
-        else if (match = this._iri.exec(input)) {
+        else if (match = /^<((?:[^ <>{}\\]|\\[uU])+)>[ \t]*/.exec(input)) {
           value = this._unescape(match[1]);
           if (value === null || illegalIriChars.test(value))
             return reportSyntaxError(this);
@@ -165,14 +154,14 @@ export default class N3Lexer {
         // Try to find a blank node. Since it can contain (but not end with) a dot,
         // we always need a non-dot character before deciding it is a blank node.
         // Therefore, try inserting a space if we're at the end of the input.
-        if ((match = this._blank.exec(input)) ||
-            inputFinished && (match = this._blank.exec(`${input} `)))
+        if ((match = blank.exec(input)) ||
+            inputFinished && (match = blank.exec(`${input} `)))
           type = 'blank', prefix = '_', value = match[1];
         break;
 
       case '"':
         // Try to find a literal without escape sequences
-        if (match = this._simpleQuotedString.exec(input))
+        if (match = /^"([^"\\\r\n]*)"(?=[^"])/.exec(input))
           value = match[1];
         // Try to find a literal wrapped in three pairs of quotes
         else {
@@ -189,7 +178,7 @@ export default class N3Lexer {
       case "'":
         if (!this._lineMode) {
           // Try to find a literal without escape sequences
-          if (match = this._simpleApostropheString.exec(input))
+          if (match = /^'([^'\\\r\n]*)'(?=[^'])/.exec(input))
             value = match[1];
           // Try to find a literal wrapped in three pairs of quotes
           else {
@@ -206,13 +195,13 @@ export default class N3Lexer {
 
       case '?':
         // Try to find a variable
-        if (this._n3Mode && (match = this._variable.exec(input)))
+        if (this._n3Mode && (match = variable.exec(input)))
           type = 'var', value = match[0];
         break;
 
       case '@':
         // Try to find a language code
-        if (this._previousMarker === 'literal' && (match = this._langcode.exec(input)))
+        if (this._previousMarker === 'literal' && (match = /^@([a-z]+(?:-[a-z0-9]+)*)(?=[^a-z0-9\-])/i.exec(input)))
           type = 'langcode', value = match[1];
         // Try to find a keyword
         else if (match = this._keyword.exec(input))
