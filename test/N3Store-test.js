@@ -2,6 +2,7 @@ import {
   Store,
   termFromId, termToId,
   EntityIndex,
+  DataFactory,
 } from '../src';
 import {
   NamedNode,
@@ -12,6 +13,8 @@ import {
 import namespaces from '../src/IRIs';
 import { Readable } from 'readable-stream';
 import { arrayifyStream } from 'arrayify-stream';
+
+const { namedNode } = DataFactory;
 
 describe('Store', () => {
   describe('The Store export', () => {
@@ -695,6 +698,9 @@ describe('Store', () => {
 
           expect(nextDataset.has(new Quad('s2', 'p1', 'o1'))).toBe(true);
           expect(nextDataset.has(new Quad('s2', 'p2', 'o2'))).toBe(true);
+          expect(nextDataset.match(namedNode('s2'), null, null).has(new Quad('s2', 'p2', 'o2'))).toBe(true);
+          expect(nextDataset.match(null, namedNode('p2'), null).has(new Quad('s2', 'p2', 'o2'))).toBe(true);
+          expect(nextDataset.match(null, null, namedNode('o2')).has(new Quad('s2', 'p2', 'o2'))).toBe(true);
 
           nextDataset.delete(new Quad('s2', 'p1', 'o1'));
           nextDataset.delete(new Quad('s2', 'p2', 'o2'));
