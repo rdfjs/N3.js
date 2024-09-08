@@ -20,7 +20,7 @@ function merge(target, source, depth = 4) {
 /**
  * Determines the intersection of the `_graphs` index s1 and s2.
  * s1 and s2 *must* belong to Stores that share an `_entityIndex`.
- * 
+ *
  * False is returned when there is no intersection; this should
  * *not* be set as the value for an index.
  */
