@@ -1027,7 +1027,12 @@ export default class N3Store {
 }
 
 /**
- * Performs matching over the store indexes
+ * Returns a subset of the `index` with that part of the index
+ * matching the `ids` array. `ids` contains 3 elements that are
+ * either numerical ids; or `null`.
+ *
+ * `false` is returned when there are no matching indices; this should
+ * *not* be set as the value for an index.
  */
 function indexMatch(index, ids, depth = 0) {
   const ind = ids[depth];
