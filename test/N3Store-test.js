@@ -2030,7 +2030,7 @@ describe('Store', () => {
   const matrix = [true, false, 'instantiated'].flatMap(match => [true, false].map(share => [match, share]));
 
   describe.each(matrix)('RDF/JS Dataset Methods [DatasetCoreAndReadableStream: %s] [sharedIndex: %s]', (match, shareIndex) => {
-    let q, store, store1, store2, store3, storeg, storeb, empty, options;
+    let q, store, store1, store2, store3, store4, storeg, storeb, empty, options;
 
     beforeEach(() => {
       options = shareIndex ? { entityIndex: new EntityIndex() } : {};
@@ -2046,6 +2046,7 @@ describe('Store', () => {
       store1 = new Store([q[0], q[1]], options);
       store2 = new Store([q[0], q[2]], options);
       store3 = new Store([q[0], q[3]], options);
+      store4 = new Store([new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))], options);
 
       if (match) {
         empty = store2.match(new NamedNode('sn'));
@@ -2137,7 +2138,7 @@ describe('Store', () => {
         expect(store2.size).toEqual(2);
         expect(store.size).toEqual(1);
 
-        const stores = [store, store1, store2, store3, storeb, storeg, empty];
+        const stores = [store, store1, store2, store3, store4, storeb, storeg, empty];
         for (const s1 of stores) {
           for (const s2 of stores) {
             expect(s1.intersection(s2).size).toBeLessThanOrEqual(s1.size);

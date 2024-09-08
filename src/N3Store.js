@@ -34,6 +34,11 @@ function intersect(s1, s2, depth = 4) {
         target = target || Object.create(null);
         target[key] = intersection;
       }
+      // Depth 3 is the 'subjects', 'predicates' and 'objects' keys.
+      // If the 'subjects' index is empty, so will the 'predicates' and 'objects' index.
+      else if (depth === 3) {
+        return false;
+      }
     }
   }
 
