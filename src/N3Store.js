@@ -17,6 +17,34 @@ function merge(target, source, depth = 4) {
   return target;
 }
 
+/**
+ * Determines the intersection of the `_graphs` index s1 and s2.
+ * s1 and s2 *must* belong to Stores that share an `_entityIndex`.
+ *
+ * False is returned when there is no intersection; this should
+ * *not* be set as the value for an index.
+ */
+function intersect(s1, s2, depth = 4) {
+  let target = false;
+
+  for (const key in s1) {
+    if (key in s2) {
+      const intersection = depth === 0 ? null : intersect(s1[key], s2[key], depth - 1);
+      if (intersection !== false) {
+        target = target || Object.create(null);
+        target[key] = intersection;
+      }
+      // Depth 3 is the 'subjects', 'predicates' and 'objects' keys.
+      // If the 'subjects' index is empty, so will the 'predicates' and 'objects' index.
+      else if (depth === 3) {
+        return false;
+      }
+    }
+  }
+
+  return target;
+}
+
 // ## Constructor
 export class N3EntityIndex {
   constructor(options = {}) {
@@ -901,7 +929,18 @@ export default class N3Store {
       const store = new N3Store({ entityIndex: this._entityIndex });
       store._graphs = merge(Object.create(null), this._graphs);
       store._size = this._size;
+      return store;
     }
+    else if ((other instanceof N3Store) && this._entityIndex === other._entityIndex) {
+      const store = new N3Store({ entityIndex: this._entityIndex });
+      const graphs = intersect(other._graphs, this._graphs);
+      if (graphs) {
+        store._graphs = graphs;
+        store._size = null;
+      }
+      return store;
+    }
+
     return this.filter(quad => other.has(quad));
   }
 
