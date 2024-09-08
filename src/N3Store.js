@@ -921,8 +921,11 @@ export default class N3Store {
     }
     else if ((other instanceof N3Store) && this._entityIndex === other._entityIndex) {
       const store = new N3Store({ entityIndex: this._entityIndex });
-      store._graphs = intersect(other._graphs, this._graphs);
-      store._size = null;
+      const graphs = intersect(other._graphs, this._graphs);
+      if (graphs) {
+        store._graphs = graphs;
+        store._size = null;
+      }
       return store;
     }
 

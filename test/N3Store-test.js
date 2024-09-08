@@ -2145,6 +2145,13 @@ describe('Store', () => {
             expect(s1.intersection(s2).equals(s2.intersection(s1)));
             expect(s1.union(s2).intersection(s1).equals(s1));
             expect(s1.intersection(s2).union(s1).equals(s1));
+            expect(new Store([...s1.union(s2).intersection(s1)]).equals(new Store([...s1])));
+            expect(new Store([...s1.intersection(s2).union(s1)]).equals(new Store([...s2])));
+
+            const newStore = s1.intersection(s2);
+            const size = newStore.size;
+            newStore.add(new Quad(new NamedNode('mys1'), new NamedNode('myp1'), new NamedNode('myo1')));
+            expect(newStore.size).toBe(size + 1);
           }
         }
 
