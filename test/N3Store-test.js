@@ -2142,6 +2142,7 @@ describe('Store', () => {
           for (const s2 of stores) {
             expect(s1.intersection(s2).size).toBeLessThanOrEqual(s1.size);
             expect(s1.intersection(s2).size).toBeLessThanOrEqual(s2.size);
+            expect(s1.intersection(s2)._graphs).toBeTruthy();
             expect(s1.intersection(s2).equals(s2.intersection(s1)));
             expect(s1.union(s2).intersection(s1).equals(s1));
             expect(s1.intersection(s2).union(s1).equals(s1));
