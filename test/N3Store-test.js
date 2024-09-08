@@ -701,6 +701,11 @@ describe('Store', () => {
           expect(nextDataset.match(namedNode('s2'), null, null).has(new Quad('s2', 'p2', 'o2'))).toBe(true);
           expect(nextDataset.match(null, namedNode('p2'), null).has(new Quad('s2', 'p2', 'o2'))).toBe(true);
           expect(nextDataset.match(null, null, namedNode('o2')).has(new Quad('s2', 'p2', 'o2'))).toBe(true);
+          expect(nextDataset.size).toBe(2);
+          nextDataset.add(new Quad('s2', 'p1', 'onew'));
+          expect(nextDataset.size).toBe(3);
+          nextDataset.add(new Quad('s2', 'p1', 'onew'));
+          expect(nextDataset.size).toBe(3);
 
           nextDataset.delete(new Quad('s2', 'p1', 'o1'));
           nextDataset.delete(new Quad('s2', 'p2', 'o2'));
