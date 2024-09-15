@@ -430,7 +430,7 @@ export default class N3Store {
 
     const iterable = this.readQuads(subject, predicate, object, graph);
     stream._read = size => {
-      while (size-- > 0) {
+      while (--size >= 0) {
         const { done, value } = iterable.next();
         if (done) {
           stream.push(null);
@@ -1053,7 +1053,7 @@ class DatasetCoreAndReadableStream extends Readable {
     if (size > 0 && !this[ITERATOR])
       this[ITERATOR] = this[Symbol.iterator]();
     const iterable = this[ITERATOR];
-    while (size-- > 0) {
+    while (--size >= 0) {
       const { done, value } = iterable.next();
       if (done) {
         this.push(null);
