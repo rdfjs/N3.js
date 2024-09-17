@@ -1027,6 +1027,31 @@ export default class N3Store {
 }
 
 /**
+ * Returns a subset of the `index` with that part of the index
+ * matching the `ids` array. `ids` contains 3 elements that are
+ * either numerical ids; or `null`.
+ *
+ * `false` is returned when there are no matching indices; this should
+ * *not* be set as the value for an index.
+ */
+function indexMatch(index, ids, depth = 0) {
+  const ind = ids[depth];
+  if (ind && !(ind in index))
+    return false;
+
+  let target = false;
+  for (const key in (ind ? { [ind]: index[ind] } : index)) {
+    const result = depth === 2 ? null : indexMatch(index[key], ids, depth + 1);
+
+    if (result !== false) {
+      target = target || Object.create(null);
+      target[key] = result;
+    }
+  }
+  return target;
+}
+
+/**
  * A class that implements both DatasetCore and Readable.
  */
 class DatasetCoreAndReadableStream extends Readable {
@@ -1039,8 +1064,27 @@ class DatasetCoreAndReadableStream extends Readable {
     if (!this._filtered) {
       const { n3Store, graph, object, predicate, subject } = this;
       const newStore = this._filtered = new N3Store({ factory: n3Store._factory, entityIndex: this.options.entityIndex });
-      for (const quad of n3Store.readQuads(subject, predicate, object, graph))
-        newStore.addQuad(quad);
+      const graphs = n3Store._getGraphs(graph);
+
+      let subjectId, predicateId, objectId;
+
+      // Translate IRIs to internal index keys.
+      if (subject   && !(subjectId   = newStore._termToNumericId(subject))   ||
+          predicate && !(predicateId = newStore._termToNumericId(predicate)) ||
+          object    && !(objectId    = newStore._termToNumericId(object)))
+        return newStore;
+
+      for (const graph in graphs) {
+        const subjects = indexMatch(graphs[graph].subjects, [subjectId, predicateId, objectId]);
+        if (subjects) {
+          newStore._graphs[graph] = {
+            subjects,
+            predicates: indexMatch(graphs[graph].predicates, [predicateId, objectId, subjectId]),
+            objects: indexMatch(graphs[graph].objects, [objectId, subjectId, predicateId]),
+          };
+        }
+      }
+      newStore._size = null;
     }
     return this._filtered;
   }
