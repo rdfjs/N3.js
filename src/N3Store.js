@@ -17,6 +17,34 @@ function merge(target, source, depth = 4) {
   return target;
 }
 
+/**
+ * Determines the intersection of the `_graphs` index s1 and s2.
+ * s1 and s2 *must* belong to Stores that share an `_entityIndex`.
+ *
+ * False is returned when there is no intersection; this should
+ * *not* be set as the value for an index.
+ */
+function intersect(s1, s2, depth = 4) {
+  let target = false;
+
+  for (const key in s1) {
+    if (key in s2) {
+      const intersection = depth === 0 ? null : intersect(s1[key], s2[key], depth - 1);
+      if (intersection !== false) {
+        target = target || Object.create(null);
+        target[key] = intersection;
+      }
+      // Depth 3 is the 'subjects', 'predicates' and 'objects' keys.
+      // If the 'subjects' index is empty, so will the 'predicates' and 'objects' index.
+      else if (depth === 3) {
+        return false;
+      }
+    }
+  }
+
+  return target;
+}
+
 // ## Constructor
 export class N3EntityIndex {
   constructor(options = {}) {
@@ -402,7 +430,7 @@ export default class N3Store {
 
     const iterable = this.readQuads(subject, predicate, object, graph);
     stream._read = size => {
-      while (size-- > 0) {
+      while (--size >= 0) {
         const { done, value } = iterable.next();
         if (done) {
           stream.push(null);
@@ -901,7 +929,18 @@ export default class N3Store {
       const store = new N3Store({ entityIndex: this._entityIndex });
       store._graphs = merge(Object.create(null), this._graphs);
       store._size = this._size;
+      return store;
     }
+    else if ((other instanceof N3Store) && this._entityIndex === other._entityIndex) {
+      const store = new N3Store({ entityIndex: this._entityIndex });
+      const graphs = intersect(other._graphs, this._graphs);
+      if (graphs) {
+        store._graphs = graphs;
+        store._size = null;
+      }
+      return store;
+    }
+
     return this.filter(quad => other.has(quad));
   }
 
@@ -988,6 +1027,31 @@ export default class N3Store {
 }
 
 /**
+ * Returns a subset of the `index` with that part of the index
+ * matching the `ids` array. `ids` contains 3 elements that are
+ * either numerical ids; or `null`.
+ *
+ * `false` is returned when there are no matching indices; this should
+ * *not* be set as the value for an index.
+ */
+function indexMatch(index, ids, depth = 0) {
+  const ind = ids[depth];
+  if (ind && !(ind in index))
+    return false;
+
+  let target = false;
+  for (const key in (ind ? { [ind]: index[ind] } : index)) {
+    const result = depth === 2 ? null : indexMatch(index[key], ids, depth + 1);
+
+    if (result !== false) {
+      target = target || Object.create(null);
+      target[key] = result;
+    }
+  }
+  return target;
+}
+
+/**
  * A class that implements both DatasetCore and Readable.
  */
 class DatasetCoreAndReadableStream extends Readable {
@@ -1000,8 +1064,27 @@ class DatasetCoreAndReadableStream extends Readable {
     if (!this._filtered) {
       const { n3Store, graph, object, predicate, subject } = this;
       const newStore = this._filtered = new N3Store({ factory: n3Store._factory, entityIndex: this.options.entityIndex });
-      for (const quad of n3Store.readQuads(subject, predicate, object, graph))
-        newStore.addQuad(quad);
+      const graphs = n3Store._getGraphs(graph);
+
+      let subjectId, predicateId, objectId;
+
+      // Translate IRIs to internal index keys.
+      if (subject   && !(subjectId   = newStore._termToNumericId(subject))   ||
+          predicate && !(predicateId = newStore._termToNumericId(predicate)) ||
+          object    && !(objectId    = newStore._termToNumericId(object)))
+        return newStore;
+
+      for (const graph in graphs) {
+        const subjects = indexMatch(graphs[graph].subjects, [subjectId, predicateId, objectId]);
+        if (subjects) {
+          newStore._graphs[graph] = {
+            subjects,
+            predicates: indexMatch(graphs[graph].predicates, [predicateId, objectId, subjectId]),
+            objects: indexMatch(graphs[graph].objects, [objectId, subjectId, predicateId]),
+          };
+        }
+      }
+      newStore._size = null;
     }
     return this._filtered;
   }
@@ -1014,7 +1097,7 @@ class DatasetCoreAndReadableStream extends Readable {
     if (size > 0 && !this[ITERATOR])
       this[ITERATOR] = this[Symbol.iterator]();
     const iterable = this[ITERATOR];
-    while (size-- > 0) {
+    while (--size >= 0) {
       const { done, value } = iterable.next();
       if (done) {
         this.push(null);
