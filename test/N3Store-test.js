@@ -2,6 +2,7 @@ import {
   Store,
   termFromId, termToId,
   EntityIndex,
+  DataFactory,
 } from '../src';
 import {
   NamedNode,
@@ -12,6 +13,8 @@ import {
 import namespaces from '../src/IRIs';
 import { Readable } from 'readable-stream';
 import { arrayifyStream } from 'arrayify-stream';
+
+const { namedNode } = DataFactory;
 
 describe('Store', () => {
   describe('The Store export', () => {
@@ -695,6 +698,14 @@ describe('Store', () => {
 
           expect(nextDataset.has(new Quad('s2', 'p1', 'o1'))).toBe(true);
           expect(nextDataset.has(new Quad('s2', 'p2', 'o2'))).toBe(true);
+          expect(nextDataset.match(namedNode('s2'), null, null).has(new Quad('s2', 'p2', 'o2'))).toBe(true);
+          expect(nextDataset.match(null, namedNode('p2'), null).has(new Quad('s2', 'p2', 'o2'))).toBe(true);
+          expect(nextDataset.match(null, null, namedNode('o2')).has(new Quad('s2', 'p2', 'o2'))).toBe(true);
+          expect(nextDataset.size).toBe(2);
+          nextDataset.add(new Quad('s2', 'p1', 'onew'));
+          expect(nextDataset.size).toBe(3);
+          nextDataset.add(new Quad('s2', 'p1', 'onew'));
+          expect(nextDataset.size).toBe(3);
 
           nextDataset.delete(new Quad('s2', 'p1', 'o1'));
           nextDataset.delete(new Quad('s2', 'p2', 'o2'));
@@ -2030,7 +2041,7 @@ describe('Store', () => {
   const matrix = [true, false, 'instantiated'].flatMap(match => [true, false].map(share => [match, share]));
 
   describe.each(matrix)('RDF/JS Dataset Methods [DatasetCoreAndReadableStream: %s] [sharedIndex: %s]', (match, shareIndex) => {
-    let q, store, store1, store2, store3, storeg, storeb, empty, options;
+    let q, store, store1, store2, store3, store4, storeg, storeb, empty, options;
 
     beforeEach(() => {
       options = shareIndex ? { entityIndex: new EntityIndex() } : {};
@@ -2046,6 +2057,7 @@ describe('Store', () => {
       store1 = new Store([q[0], q[1]], options);
       store2 = new Store([q[0], q[2]], options);
       store3 = new Store([q[0], q[3]], options);
+      store4 = new Store([new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))], options);
 
       if (match) {
         empty = store2.match(new NamedNode('sn'));
@@ -2137,8 +2149,40 @@ describe('Store', () => {
         expect(store2.size).toEqual(2);
         expect(store.size).toEqual(1);
 
+        const stores = [store, store1, store2, store3, store4, storeb, storeg, empty];
+        for (const s1 of stores) {
+          for (const s2 of stores) {
+            expect(s1.intersection(s2).size).toBeLessThanOrEqual(s1.size);
+            expect(s1.intersection(s2).size).toBeLessThanOrEqual(s2.size);
+            expect(s1.intersection(s2)._graphs).toBeTruthy();
+            expect(s1.intersection(s2).equals(s2.intersection(s1)));
+            expect(s1.union(s2).intersection(s1).equals(s1));
+            expect(s1.intersection(s2).union(s1).equals(s1));
+            expect(new Store([...s1.union(s2).intersection(s1)]).equals(new Store([...s1])));
+            expect(new Store([...s1.intersection(s2).union(s1)]).equals(new Store([...s2])));
+
+            const newStore = s1.intersection(s2);
+            const size = newStore.size;
+            newStore.add(new Quad(new NamedNode('mys1'), new NamedNode('myp1'), new NamedNode('myo1')));
+            expect(newStore.size).toBe(size + 1);
+          }
+        }
+
         expect(store.intersection(store).size).toEqual(1);
         expect(store2.intersection(store2).size).toEqual(2);
+        expect(storeg.intersection(store).size).toBe(0);
+        expect(store.intersection(storeg).size).toBe(0);
+        expect(storeg.intersection(storeb).size).toBe(1);
+        expect(store.intersection(storeb).size).toBe(1);
+        expect(store.intersection(store1).size).toBe(1);
+        expect(store.intersection(store3).size).toBe(1);
+        expect(store.intersection(store2).size).toBe(1);
+        expect(empty.intersection(store1).size).toBe(0);
+        expect(empty.intersection(store2).size).toBe(0);
+        expect(store2.intersection(store1).size).toBe(1);
+        expect(store1.intersection(store2).size).toBe(1);
+        expect(store1.intersection(storeb).size).toBe(1);
+        expect(storeb.intersection(store1).size).toBe(1);
       });
     });
 
