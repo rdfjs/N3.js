@@ -20,6 +20,8 @@ const DataFactory = {
   defaultGraph,
   quad,
   triple: quad,
+  fromTerm,
+  fromQuad,
 };
 export default DataFactory;
 
@@ -385,4 +387,30 @@ function defaultGraph() {
 // ### Creates a quad
 function quad(subject, predicate, object, graph) {
   return new Quad(subject, predicate, object, graph);
+}
+
+export function fromTerm(term) {
+  if (term instanceof Term)
+    return term;
+
+  // Term instantiated with another library
+  switch (term.termType) {
+  case 'NamedNode':    return namedNode(term.value);
+  case 'BlankNode':    return blankNode(term.value);
+  case 'Variable':     return variable(term.value);
+  case 'DefaultGraph': return DEFAULTGRAPH;
+  case 'Literal':      return literal(term.value, term.language || term.datatype);
+  case 'Quad':         return fromQuad(term);
+  default:             throw new Error(`Unexpected termType: ${term.termType}`);
+  }
+}
+
+export function fromQuad(inQuad) {
+  if (inQuad instanceof Quad)
+    return inQuad;
+
+  if (inQuad.termType !== 'Quad')
+    throw new Error(`Unexpected termType: ${inQuad.termType}`);
+
+  return quad(fromTerm(inQuad.subject), fromTerm(inQuad.predicate), fromTerm(inQuad.object), fromTerm(inQuad.graph));
 }
