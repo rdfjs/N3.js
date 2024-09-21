@@ -1831,7 +1831,7 @@ describe('Store', () => {
     ).toBe(true);
 
     it('extractLists throws an error', () => {
-      expect(() => store.extractLists()).toThrowError('b0 has no list head');
+      expect(() => store.extractLists()).toThrow('b0 has no list head');
     });
   });
 
@@ -1843,7 +1843,7 @@ describe('Store', () => {
     ).toBe(true);
 
     it('extractLists throws an error', () => {
-      expect(() => store.extractLists()).toThrowError('b2 has multiple rdf:first arcs');
+      expect(() => store.extractLists()).toThrow('b2 has multiple rdf:first arcs');
     });
   });
 
@@ -1855,7 +1855,7 @@ describe('Store', () => {
     ).toBe(true);
 
     it('extractLists throws an error', () => {
-      expect(() => store.extractLists()).toThrowError('b3 has multiple rdf:first arcs');
+      expect(() => store.extractLists()).toThrow('b3 has multiple rdf:first arcs');
     });
   });
 
@@ -1867,7 +1867,7 @@ describe('Store', () => {
     ).toBe(true);
 
     it('extractLists throws an error', () => {
-      expect(() => store.extractLists()).toThrowError('b2 has multiple rdf:rest arcs');
+      expect(() => store.extractLists()).toThrow('b2 has multiple rdf:rest arcs');
     });
   });
 
@@ -1879,7 +1879,7 @@ describe('Store', () => {
     ).toBe(true);
 
     it('extractLists throws an error', () => {
-      expect(() => store.extractLists()).toThrowError('b3 has multiple rdf:rest arcs');
+      expect(() => store.extractLists()).toThrow('b3 has multiple rdf:rest arcs');
     });
   });
 
@@ -1891,7 +1891,7 @@ describe('Store', () => {
     ).toBe(true);
 
     it('extractLists throws an error', () => {
-      expect(() => store.extractLists()).toThrowError('b4 can\'t be subject and object');
+      expect(() => store.extractLists()).toThrow('b4 can\'t be subject and object');
     });
   });
 
@@ -1903,7 +1903,7 @@ describe('Store', () => {
     ).toBe(true);
 
     it('extractLists throws an error', () => {
-      expect(() => store.extractLists()).toThrowError('b4 has incoming rdf:rest arcs');
+      expect(() => store.extractLists()).toThrow('b4 has incoming rdf:rest arcs');
     });
   });
 
@@ -1914,7 +1914,7 @@ describe('Store', () => {
     expect(store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o2'))).toBe(true);
 
     it('extractLists throws an error', () => {
-      expect(() => store.extractLists()).toThrowError('b3 has non-list arcs out');
+      expect(() => store.extractLists()).toThrow('b3 has non-list arcs out');
     });
   });
 
@@ -1928,7 +1928,7 @@ describe('Store', () => {
     expect(store.addQuad(new NamedNode('s2'), new NamedNode('p1'), listElements[0])).toBe(true);
 
     it('extractLists throws an error', () => {
-      expect(() => store.extractLists()).toThrowError('b3 can\'t have coreferences');
+      expect(() => store.extractLists()).toThrow('b3 can\'t have coreferences');
     });
   });
 
@@ -1956,7 +1956,7 @@ describe('Store', () => {
 
     describe('extractLists without ignoreErrors', () => {
       it('extractLists throws an error', () => {
-        expect(() => store.extractLists()).toThrowError('b0 not confined to single graph');
+        expect(() => store.extractLists()).toThrow('b0 not confined to single graph');
       });
     });
 
@@ -2174,11 +2174,11 @@ describe('Store', () => {
             expect(s1.intersection(s2).size).toBeLessThanOrEqual(s1.size);
             expect(s1.intersection(s2).size).toBeLessThanOrEqual(s2.size);
             expect(s1.intersection(s2)._graphs).toBeTruthy();
-            expect(s1.intersection(s2).equals(s2.intersection(s1)));
-            expect(s1.union(s2).intersection(s1).equals(s1));
-            expect(s1.intersection(s2).union(s1).equals(s1));
-            expect(new Store([...s1.union(s2).intersection(s1)]).equals(new Store([...s1])));
-            expect(new Store([...s1.intersection(s2).union(s1)]).equals(new Store([...s2])));
+            expect(s1.intersection(s2).equals(s2.intersection(s1))).toBe(true);
+            expect(s1.union(s2).intersection(s1).equals(s1)).toBe(true);
+            expect(s1.intersection(s2).union(s1).equals(s1)).toBe(true);
+            expect(new Store([...s1.union(s2).intersection(s1)]).equals(new Store([...s1]))).toBe(true);
+            expect(new Store([...s1.intersection(s2).union(s1)]).equals(new Store([...s1]))).toBe(true);
 
             const newStore = s1.intersection(s2);
             const size = newStore.size;
@@ -2237,8 +2237,8 @@ describe('Store', () => {
       it('should map over quads', () => {
         const quads = store1.map(quad => quad);
         expect(quads.size).toEqual(2);
-        expect(quads.contains(store1));
-        expect(store1.contains(quads));
+        expect(quads.contains(store1)).toBe(true);
+        expect(store1.contains(quads)).toBe(true);
       });
     });
 
@@ -2261,11 +2261,11 @@ describe('Store', () => {
     });
 
     describe('#toStream', () => {
-      it('should convert to a stream', () => {
-        expect(arrayifyStream(store2.toStream())).resolves.toEqual([q[0], q[2]]);
-        expect(arrayifyStream(store1.toStream())).resolves.toEqual([q[0], q[1]]);
-        expect(arrayifyStream(store.toStream())).resolves.toEqual([q[0]]);
-        expect(arrayifyStream(empty.toStream())).resolves.toEqual([]);
+      it('should convert to a stream', async () => {
+        await expect(arrayifyStream(store2.toStream())).resolves.toEqual([q[0], q[2]]);
+        await expect(arrayifyStream(store1.toStream())).resolves.toEqual([q[0], q[1]]);
+        await expect(arrayifyStream(store.toStream())).resolves.toEqual([q[0]]);
+        await expect(arrayifyStream(empty.toStream())).resolves.toEqual([]);
       });
     });
 
@@ -2277,7 +2277,7 @@ describe('Store', () => {
 
     describe('#toCanonical', () => {
       it('should convert to a canonical string', () => {
-        expect(() => store1.toCanonical()).toThrowError('not implemented');
+        expect(() => store1.toCanonical()).toThrow('not implemented');
       });
     });
 

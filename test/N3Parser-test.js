@@ -983,7 +983,7 @@ describe('Parser', () => {
     it('should not parse a single opening brace', shouldNotParse('{',
                    'Unexpected "{" on line 1.'));
 
-    it('should not parse a superfluous closing brace ', shouldNotParse('{}}',
+    it('should not parse a superfluous closing brace', shouldNotParse('{}}',
                    'Unexpected graph closing on line 1.'));
 
     it('should not parse a graph with only a dot', shouldNotParse('{.}',
@@ -1188,7 +1188,7 @@ describe('Parser', () => {
     });
 
     it('should throw on syntax errors if no callback is given', () => {
-      expect((() => { new Parser().parse('<a> bar <c>'); })).toThrowError('Unexpected "bar" on line 1.');
+      expect((() => { new Parser().parse('<a> bar <c>'); })).toThrow('Unexpected "bar" on line 1.');
     });
 
     it('should throw on grammar errors if no callback is given', () => {
