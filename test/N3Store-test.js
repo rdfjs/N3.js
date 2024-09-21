@@ -2178,7 +2178,7 @@ describe('Store', () => {
             expect(s1.union(s2).intersection(s1).equals(s1)).toBe(true);
             expect(s1.intersection(s2).union(s1).equals(s1)).toBe(true);
             expect(new Store([...s1.union(s2).intersection(s1)]).equals(new Store([...s1]))).toBe(true);
-            expect(new Store([...s1.intersection(s2).union(s1)]).equals(new Store([...s2]))).toBe(true);
+            expect(new Store([...s1.intersection(s2).union(s1)]).equals(new Store([...s1]))).toBe(true);
 
             const newStore = s1.intersection(s2);
             const size = newStore.size;
