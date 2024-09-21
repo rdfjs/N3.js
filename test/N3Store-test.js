@@ -2147,10 +2147,10 @@ describe('Store', () => {
           for (const s2 of stores) {
             expect(s1.difference(s2).size).toBeLessThanOrEqual(s1.size);
             expect(s1.difference(s2)._graphs).toBeTruthy();
-            expect(s1.union(s2).difference(s1).equals(s2.difference(s1)));
-            expect(s1.difference(s2).union(s1).equals(s1));
-            expect(new Store([...s1.union(s2).difference(s1)]).equals(new Store([...s2.difference(s1)])));
-            expect(new Store([...s1.difference(s2).union(s1)]).equals(new Store([...s1])));
+            expect(s1.union(s2).difference(s1).equals(s2.difference(s1))).toBe(true);
+            expect(s1.difference(s2).union(s1).equals(s1)).toBe(true);
+            expect(new Store([...s1.union(s2).difference(s1)]).equals(new Store([...s2.difference(s1)]))).toBe(true);
+            expect(new Store([...s1.difference(s2).union(s1)]).equals(new Store([...s1]))).toBe(true);
 
             const newStore = s1.difference(s2);
             const size = newStore.size;
