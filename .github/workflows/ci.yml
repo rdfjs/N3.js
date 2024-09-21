@@ -17,9 +17,24 @@ jobs:
       - uses: actions/checkout@v4
       - run: npm ci --ignore-scripts
       - run: npm run build
-      - run: npm run lint
       - run: npm run test
-
+  
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22.x]
+    steps:
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - uses: actions/checkout@v4
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npm run lint
+    
   spec:
     runs-on: ubuntu-latest
     strategy:
@@ -60,6 +75,7 @@ jobs:
       - test
       - spec
       - docs
+      - lint
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
