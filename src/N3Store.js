@@ -56,6 +56,8 @@ function difference(s1, s2, depth = 4) {
   let target = false;
 
   for (const key in s1) {
+    // When the key is not in the index, then none of the triples defined by s1[key] are
+    // in s2 and so we want to copy them over to the resultant store.
     if (!(key in s2)) {
       target = target || Object.create(null);
       target[key] = depth === 0 ? null : merge({}, s1[key], depth - 1);
