@@ -2139,6 +2139,25 @@ describe('Store', () => {
 
         expect(store.difference(store).size).toEqual(0);
         expect(store2.difference(store2).size).toEqual(0);
+        expect(store.difference(new Store([...store])).size).toEqual(0);
+        expect(store2.difference(new Store([...store2])).size).toEqual(0);
+
+        const stores = [store, store1, store2, store3, store4, storeb, storeg, empty];
+        for (const s1 of stores) {
+          for (const s2 of stores) {
+            expect(s1.difference(s2).size).toBeLessThanOrEqual(s1.size);
+            expect(s1.difference(s2)._graphs).toBeTruthy();
+            expect(s1.union(s2).difference(s1).equals(s2.difference(s1)));
+            expect(s1.difference(s2).union(s1).equals(s1));
+            expect(new Store([...s1.union(s2).difference(s1)]).equals(new Store([...s2.difference(s1)])));
+            expect(new Store([...s1.difference(s2).union(s1)]).equals(new Store([...s1])));
+
+            const newStore = s1.difference(s2);
+            const size = newStore.size;
+            newStore.add(new Quad(new NamedNode('mys1'), new NamedNode('myp1'), new NamedNode('myo1')));
+            expect(newStore.size).toBe(size + 1);
+          }
+        }
       });
     });
 
