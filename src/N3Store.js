@@ -45,6 +45,38 @@ function intersect(s1, s2, depth = 4) {
   return target;
 }
 
+/**
+ * Determines the difference of the `_graphs` index s1 and s2.
+ * s1 and s2 *must* belong to Stores that share an `_entityIndex`.
+ *
+ * False is returned when there is no difference; this should
+ * *not* be set as the value for an index.
+ */
+function difference(s1, s2, depth = 4) {
+  let target = false;
+
+  for (const key in s1) {
+    if (!(key in s2)) {
+      target = target || Object.create(null);
+      target[key] = depth === 0 ? null : merge({}, s1[key], depth - 1);
+    }
+    else if (depth !== 0) {
+      const diff = difference(s1[key], s2[key], depth - 1);
+      if (diff !== false) {
+        target = target || Object.create(null);
+        target[key] = diff;
+      }
+      // Depth 3 is the 'subjects', 'predicates' and 'objects' keys.
+      // If the 'subjects' index is empty, so will the 'predicates' and 'objects' index.
+      else if (depth === 3) {
+        return false;
+      }
+    }
+  }
+
+  return target;
+}
+
 // ## Constructor
 export class N3EntityIndex {
   constructor(options = {}) {
@@ -895,6 +927,16 @@ export default class N3Store {
   difference(other) {
     if (other === this)
       return new N3Store({ entityIndex: this._entityIndex });
+
+    if ((other instanceof N3Store) && other._entityIndex === this._entityIndex) {
+      const store = new N3Store({ entityIndex: this._entityIndex });
+      const graphs = difference(this._graphs, other._graphs);
+      if (graphs) {
+        store._graphs = graphs;
+        store._size = null;
+      }
+      return store;
+    }
 
     return this.filter(quad => !other.has(quad));
   }
