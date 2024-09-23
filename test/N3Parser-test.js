@@ -1128,11 +1128,13 @@ describe('Parser', () => {
       function tripleCallback(error, triple) {
         expect(error).toBeFalsy();
         if (!triple) {
+          /* eslint-disable jest/no-conditional-expect */
           expect(Object.keys(prefixes)).toHaveLength(2);
           expect(prefixes).toHaveProperty('a');
           expect(prefixes.a).toEqual(new NamedNode('http://a.org/#'));
           expect(prefixes).toHaveProperty('b');
           expect(prefixes.b).toEqual(new NamedNode('http://b.org/#'));
+          /* eslint-enable jest/no-conditional-expect */
           done();
         }
       }
@@ -1167,6 +1169,7 @@ describe('Parser', () => {
 
       function tripleCallback(error, triple, prefixes) {
         expect(error).toBeFalsy();
+        /* eslint-disable jest/no-conditional-expect */
         if (triple)
           expect(prefixes).toBeFalsy();
         else {
@@ -1176,6 +1179,7 @@ describe('Parser', () => {
           expect(prefixes).toHaveProperty('b', 'http://example.org/IRIb');
           done();
         }
+        /* eslint-enable jest/no-conditional-expect */
       }
     });
 
