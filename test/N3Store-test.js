@@ -2407,6 +2407,23 @@ describe('Store', () => {
         expect(empty.some(quad => true)).toBe(false);
       });
     });
+
+    describe('#every', () => {
+      it('should return true if every quad passes the test', () => {
+        expect(store1.every(quad => quad.subject.value === 's1')).toBe(true);
+        expect(store1.every(quad => quad.subject.value === 's2')).toBe(false);
+        expect(store1.every(quad => quad.object.value === 'o1')).toBe(false);
+        expect(store1.every(quad => quad.subject.termType === 'NamedNode')).toBe(true);
+      });
+
+      it('should return false if no quad passes the test', () => {
+        expect(store1.every(quad => quad.subject.value === 's2')).toBe(false);
+      });
+
+      it('should return true on the empty set', () => {
+        expect(empty.every(quad => true)).toBe(true);
+      });
+    });
   });
 });
 

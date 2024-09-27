@@ -861,6 +861,9 @@ export default class N3Store {
    * Blank Nodes will be normalized.
    */
   addAll(quads) {
+    if (quads instanceof DatasetCoreAndReadableStream)
+      quads = quads.filtered;
+
     if (Array.isArray(quads))
       this.addQuads(quads);
     else if (quads instanceof N3Store && quads._entityIndex === this._entityIndex) {
@@ -883,6 +886,9 @@ export default class N3Store {
    * Blank Nodes will be normalized.
    */
   contains(other) {
+    if (other instanceof DatasetCoreAndReadableStream)
+      other = other.filtered;
+
     if (other === this)
       return true;
 
@@ -927,6 +933,9 @@ export default class N3Store {
    * Returns a new dataset that contains all quads from the current dataset that are not included in the given dataset.
    */
   difference(other) {
+    if (other && other instanceof DatasetCoreAndReadableStream)
+      other = other.filtered;
+
     if (other === this)
       return new N3Store({ entityIndex: this._entityIndex });
 
@@ -949,6 +958,9 @@ export default class N3Store {
    * Blank Nodes will be normalized.
    */
   equals(other) {
+    if (other instanceof DatasetCoreAndReadableStream)
+      other = other.filtered;
+
     return other === this || (this.size === other.size && this.contains(other));
   }
 
@@ -969,6 +981,9 @@ export default class N3Store {
    * Returns a new dataset containing all quads from the current dataset that are also included in the given dataset.
    */
   intersection(other) {
+    if (other instanceof DatasetCoreAndReadableStream)
+      other = other.filtered;
+
     if (other === this) {
       const store = new N3Store({ entityIndex: this._entityIndex });
       store._graphs = merge(Object.create(null), this._graphs);
