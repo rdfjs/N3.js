@@ -2000,6 +2000,33 @@ describe('Store', () => {
     );
 
     it(
+      'should include added elements in match if iteration has not yet started (deeply nested)',
+      () => {
+        const m = store.match(null, null, null, null);
+        store.add(new Quad(
+          new NamedNode('s1'),
+          new NamedNode('p1'),
+          new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o3')),
+          ),
+        );
+        store.add(new Quad(
+          new NamedNode('s1'),
+          new NamedNode('p1'),
+          new Quad(
+            new NamedNode('s1'),
+            new NamedNode('p1'),
+            new Quad(
+              new NamedNode('s1'),
+              new NamedNode('p1'),
+              new NamedNode('o3'),
+              ),
+            ),
+          ));
+        expect([...m]).toHaveLength(4);
+        expect([...store.match(null, null, null, null)]).toHaveLength(4);
+      });
+
+    it(
       'perform matches on an range of defined and undefined elements',
       () => {
         const m = new Store();
