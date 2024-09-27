@@ -14,7 +14,7 @@ import namespaces from '../src/IRIs';
 import { Readable } from 'readable-stream';
 import { arrayifyStream } from 'arrayify-stream';
 
-const { namedNode } = DataFactory;
+const { namedNode, quad } = DataFactory;
 
 describe('Store', () => {
   describe('The Store export', () => {
@@ -1991,35 +1991,84 @@ describe('Store', () => {
         store.add(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')));
         expect([...m]).toHaveLength(3);
         expect([...store.match(null, null, null, null)]).toHaveLength(3);
+        expect(store.match(null, null, null, null).equals(new Store([
+          quad(namedNode('s1'), namedNode('p1'), namedNode('o1')),
+          quad(namedNode('s1'), namedNode('p1'), namedNode('o3')),
+          quad(namedNode('s1'), namedNode('p1'), namedNode('o2')),
+        ]))).toBe(true);
       },
     );
 
     it(
-      'should include added elements in match if iteration has not yet started (deeply nested)',
+      'perform matches on an range of defined and undefined elements',
       () => {
-        const m = store.match(null, null, null, null);
-        store.add(new Quad(
-          new NamedNode('s1'),
-          new NamedNode('p1'),
-          new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o3')),
-          ),
-        );
-        store.add(new Quad(
-          new NamedNode('s1'),
-          new NamedNode('p1'),
-          new Quad(
-            new NamedNode('s1'),
-            new NamedNode('p1'),
-            new Quad(
-              new NamedNode('s1'),
-              new NamedNode('p1'),
-              new NamedNode('o3'),
-              ),
-            ),
-          ),
-        );
-        expect([...m]).toHaveLength(4);
-        expect([...store.match(null, null, null, null)]).toHaveLength(4);
+        const m = new Store();
+        const s1 = new Store();
+        const p1 = new Store();
+        const o1 = new Store();
+
+        for (const s of ['s1', 's2', 's3']) {
+          for (const p of ['p1', 'p2', 'p3']) {
+            for (const o of ['o1', 'o2', 'o3']) {
+              for (const g of [namedNode('g1'), namedNode('g2'), namedNode('g3'), new DefaultGraph()]) {
+                if (s === 's1')
+                  s1.add(new Quad(new NamedNode(s), new NamedNode(p), new NamedNode(o), g));
+
+                if (p === 'p1')
+                  p1.add(new Quad(new NamedNode(s), new NamedNode(p), new NamedNode(o), g));
+
+                if (o === 'o1')
+                  o1.add(new Quad(new NamedNode(s), new NamedNode(p), new NamedNode(o), g));
+
+                m.add(new Quad(new NamedNode(s), new NamedNode(p), new NamedNode(o), g));
+              }
+            }
+          }
+        }
+
+        expect(m.size).toBe(108);
+        expect(s1.size).toBe(36);
+        expect(p1.size).toBe(36);
+        expect(o1.size).toBe(36);
+
+        expect(m.match(namedNode('s1'), null, null).size).toBe(36);
+        expect(m.match(null, namedNode('p1'), null).size).toBe(36);
+        expect(m.match(null, null, namedNode('o1')).size).toBe(36);
+
+        expect(m.match(namedNode('s1'), null, null).equals(s1)).toBe(true);
+        expect(m.match(null, namedNode('p1'), null).equals(p1)).toBe(true);
+        expect(m.match(null, null, namedNode('o1')).equals(o1)).toBe(true);
+
+        expect(m.match(namedNode('s1'), namedNode('p1'), null).equals(s1.intersection(p1))).toBe(true);
+        expect(m.match(null, namedNode('p1'), namedNode('o1')).equals(p1.intersection(o1))).toBe(true);
+        expect(m.match(namedNode('s1'), null, namedNode('o1')).equals(o1.intersection(s1))).toBe(true);
+
+        expect(m.match(namedNode('sa1'), null, null).equals(new Store())).toBe(true);
+        expect(m.match(null, namedNode('pa1'), null).equals(new Store())).toBe(true);
+        expect(m.match(null, null, namedNode('oa1')).equals(new Store())).toBe(true);
+
+        expect(m.match(namedNode('p1'), null, null).equals(new Store())).toBe(true);
+        expect(m.match(null, namedNode('o1'), null).equals(new Store())).toBe(true);
+        expect(m.match(null, null, namedNode('s1')).equals(new Store())).toBe(true);
+
+        expect(m.match(namedNode('sa1'), namedNode('pa1'), null).equals(new Store())).toBe(true);
+        expect(m.match(null, namedNode('pa1'), namedNode('oa1')).equals(new Store())).toBe(true);
+        expect(m.match(namedNode('sa1'), null, namedNode('oa1')).equals(new Store())).toBe(true);
+
+        expect(m.match(namedNode('p1'), namedNode('o1'), null).equals(new Store())).toBe(true);
+        expect(m.match(null, namedNode('o1'), namedNode('s1')).equals(new Store())).toBe(true);
+        expect(m.match(namedNode('o1'), null, namedNode('s1')).equals(new Store())).toBe(true);
+
+        expect(m.match(namedNode('sa1'), namedNode('pa1'), namedNode('oa1')).equals(new Store())).toBe(true);
+        expect(m.match(namedNode('o1'), namedNode('s1'), namedNode('p1')).equals(new Store())).toBe(true);
+
+        expect(m.match(namedNode('s1'), namedNode('pa1'), null).equals(new Store())).toBe(true);
+        expect(m.match(null, namedNode('p1'), namedNode('oa1')).equals(new Store())).toBe(true);
+        expect(m.match(namedNode('s1'), null, namedNode('oa1')).equals(new Store())).toBe(true);
+
+        expect(m.match(namedNode('sa1'), namedNode('p1'), null).equals(new Store())).toBe(true);
+        expect(m.match(null, namedNode('pa1'), namedNode('o1')).equals(new Store())).toBe(true);
+        expect(m.match(namedNode('sa1'), null, namedNode('o1')).equals(new Store())).toBe(true);
       },
     );
 

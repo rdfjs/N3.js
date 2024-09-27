@@ -1108,7 +1108,6 @@ class DatasetCoreAndReadableStream extends Readable {
     if (!this._filtered) {
       const { n3Store, graph, object, predicate, subject } = this;
       const newStore = this._filtered = new N3Store({ factory: n3Store._factory, entityIndex: this.options.entityIndex });
-      const graphs = n3Store._getGraphs(graph);
 
       let subjectId, predicateId, objectId;
 
@@ -1118,15 +1117,29 @@ class DatasetCoreAndReadableStream extends Readable {
           object    && !(objectId    = newStore._termToNumericId(object)))
         return newStore;
 
+      const graphs = n3Store._getGraphs(graph);
       for (const graph in graphs) {
-        const subjects = indexMatch(graphs[graph].subjects, [subjectId, predicateId, objectId]);
-        if (subjects) {
-          newStore._graphs[graph] = {
-            subjects,
-            predicates: indexMatch(graphs[graph].predicates, [predicateId, objectId, subjectId]),
-            objects: indexMatch(graphs[graph].objects, [objectId, subjectId, predicateId]),
-          };
+        let subjects, predicates, objects;
+
+        if (!subjectId && predicateId) {
+          if (predicates = indexMatch(graphs[graph].predicates, [predicateId, objectId, subjectId])) {
+            subjects = indexMatch(graphs[graph].subjects, [subjectId, predicateId, objectId]);
+            objects = indexMatch(graphs[graph].objects, [objectId, subjectId, predicateId]);
+          }
         }
+        else if (objectId) {
+          if (objects = indexMatch(graphs[graph].objects, [objectId, subjectId, predicateId])) {
+            subjects = indexMatch(graphs[graph].subjects, [subjectId, predicateId, objectId]);
+            predicates = indexMatch(graphs[graph].predicates, [predicateId, objectId, subjectId]);
+          }
+        }
+        else if (subjects = indexMatch(graphs[graph].subjects, [subjectId, predicateId, objectId])) {
+          predicates = indexMatch(graphs[graph].predicates, [predicateId, objectId, subjectId]);
+          objects = indexMatch(graphs[graph].objects, [objectId, subjectId, predicateId]);
+        }
+
+        if (subjects)
+          newStore._graphs[graph] = { subjects, predicates, objects };
       }
       newStore._size = null;
     }
