@@ -1083,12 +1083,12 @@ function noop() {}
 // Initializes the parser with the given data factory
 function initDataFactory(parser, factory) {
   // Set factory methods
-  const namedNode = factory.namedNode;
+  const namedNode = factory.namedNode.bind(factory);
   parser._namedNode   = namedNode;
-  parser._blankNode   = factory.blankNode;
-  parser._literal     = factory.literal;
-  parser._variable    = factory.variable;
-  parser._quad        = factory.quad;
+  parser._blankNode   = factory.blankNode.bind(factory);
+  parser._literal     = factory.literal.bind(factory);
+  parser._variable    = factory.variable.bind(factory);
+  parser._quad        = factory.quad.bind(factory);
   parser.DEFAULTGRAPH = factory.defaultGraph();
 
   // Set common named nodes

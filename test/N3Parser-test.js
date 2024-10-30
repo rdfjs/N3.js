@@ -2592,6 +2592,49 @@ describe('Parser', () => {
         ),
       ])).toBe(true);
     });
+
+    it('should use the internal `this` state', () => {
+      const customFactory = {
+        blankI: 0,
+        ...rdfDataModel,
+        blankNode: function () {
+          return DF.blankNode(`b-custom-${this.blankI++}`);
+        },
+      };
+
+      const parser = new Parser({
+        baseIRI: BASE_IRI,
+        format: 'n3',
+        factory: customFactory,
+      });
+
+      const quads = parser.parse(`
+        @prefix : <http://example.com/> .
+        [ :friend [
+            :name "Thomas" ;
+            ] 
+        ] .
+      `);
+
+      expect(quads.length).toBeGreaterThan(0);
+
+      // The blank node should be named b-custom-0 and b-custom-1
+      const bnode1 = DF.blankNode('b-custom-0');
+      const bnode2 = DF.blankNode('b-custom-1');
+
+      expect(isomorphic(quads, [
+        DF.quad(
+          bnode1,
+          DF.namedNode('http://example.com/friend'),
+          bnode2,
+        ),
+        DF.quad(
+          bnode2,
+          DF.namedNode('http://example.com/name'),
+          DF.literal('Thomas'),
+        ),
+      ])).toBe(true);
+    });
   });
 
   describe('A turtle parser instance with external data factory', () => {
