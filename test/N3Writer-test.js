@@ -271,7 +271,7 @@ describe('Writer', () => {
                       '@prefix c: <http://a.org/b>.\n\n' +
                       'a:bc b:ef a:bhi.\n' +
                       '<http://a.org/bc/de> <http://a.org/b#e#f> <http://a.org/b#x/t>.\n' +
-                      '<http://a.org/3a> <http://a.org/b#3a> b:a3.\n'),
+                      'a:3a b:3a b:a3.\n'),
     );
 
     it(
@@ -902,6 +902,7 @@ describe('Writer', () => {
         writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g'))),
       ).toBe('<a> <b> <<<a> <b> <c> <g>>> .\n');
     });
+
   });
 });
 
