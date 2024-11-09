@@ -902,7 +902,6 @@ describe('Writer', () => {
         writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g'))),
       ).toBe('<a> <b> <<<a> <b> <c> <g>>> .\n');
     });
-
   });
 });
 
