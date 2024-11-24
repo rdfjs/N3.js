@@ -10,7 +10,7 @@ beforeEach(() => {
   blankId = 0; // reset per-node ID
   Parser._resetBlankNodePrefix(); // reset per-parser ID
 });
-Parser.prototype._blankNode = name => new BlankNode(name || `b${blankId++}`);
+Parser.prototype._factory.blankNode = name => new BlankNode(name || `b${blankId++}`);
 
 describe('Parser', () => {
   describe('The Parser export', () => {
