@@ -1083,8 +1083,10 @@ function noop() {}
 // Initializes the parser with the given data factory
 function initDataFactory(parser, factory) {
   parser._factory = factory;
-  // Set common named nodes
+
   parser.DEFAULTGRAPH = factory.defaultGraph();
+
+  // Set common named nodes
   parser.RDF_FIRST  = factory.namedNode(namespaces.rdf.first);
   parser.RDF_REST   = factory.namedNode(namespaces.rdf.rest);
   parser.RDF_NIL    = factory.namedNode(namespaces.rdf.nil);
