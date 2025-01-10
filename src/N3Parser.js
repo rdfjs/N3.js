@@ -522,9 +522,10 @@ export default class N3Parser {
   }
 
   // ### `_completeLiteral` completes a literal with an optional datatype or language
-  _completeLiteral(token) {
+  _completeLiteral(token, component) {
     // Create a simple string literal by default
     let literal = this._factory.literal(this._literalValue);
+    let readCb;
 
     switch (token.type) {
     // Create a datatyped literal
@@ -538,37 +539,71 @@ export default class N3Parser {
     // Create a language-tagged string
     case 'langcode':
       literal = this._factory.literal(this._literalValue, token.value);
+      this._literalLanguage = token.value;
       token = null;
+      readCb = this._readDirCode.bind(this, component);
       break;
     }
 
-    return { token, literal };
+    return { token, literal, readCb };
+  }
+
+  _readDirCode(component, listItem, token) {
+    // Attempt to read a dircode
+    if (token.type === 'dircode') {
+      const term = this._factory.literal(this._literalValue, { language: this._literalLanguage, direction: token.value });
+      if (component === 'subject')
+        this._subject = term;
+      else
+        this._object = term;
+      this._literalLanguage = undefined;
+      token = null;
+    }
+
+    if (component === 'subject')
+      return token === null ? this._readPredicateOrNamedGraph : this._readPredicateOrNamedGraph(token);
+    return this._completeObjectLiteralPost(token, listItem);
   }
 
   // Completes a literal in subject position
   _completeSubjectLiteral(token) {
-    this._subject = this._completeLiteral(token).literal;
+    const completed = this._completeLiteral(token, 'subject');
+    this._subject = completed.literal;
+
+    // Postpone completion if the literal is only partially completed (such as lang+dir).
+    if (completed.readCb)
+      return completed.readCb.bind(this, false);
+
     return this._readPredicateOrNamedGraph;
   }
 
   // Completes a literal in object position
   _completeObjectLiteral(token, listItem) {
-    const completed = this._completeLiteral(token);
+    const completed = this._completeLiteral(token, 'object');
     if (!completed)
       return;
+
     this._object = completed.literal;
 
+    // Postpone completion if the literal is only partially completed (such as lang+dir).
+    if (completed.readCb)
+      return completed.readCb.bind(this, listItem);
+
+    return this._completeObjectLiteralPost(completed.token, listItem);
+  }
+
+  _completeObjectLiteralPost(token, listItem) {
     // If this literal was part of a list, write the item
     // (we could also check the context stack, but passing in a flag is faster)
     if (listItem)
       this._emit(this._subject, this.RDF_FIRST, this._object, this._graph);
     // If the token was consumed, continue with the rest of the input
-    if (completed.token === null)
+    if (token === null)
       return this._getContextEndReader();
     // Otherwise, consume the token now
     else {
       this._readCallback = this._getContextEndReader();
-      return this._readCallback(completed.token);
+      return this._readCallback(token);
     }
   }
 
