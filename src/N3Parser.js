@@ -27,8 +27,6 @@ export default class N3Parser {
       this._readPredicateOrNamedGraph = this._readPredicate;
     // Support triples in other graphs
     this._supportsQuads = !(isTurtle || isTriG || isNTriples || isN3);
-    // Support nesting of triples
-    this._supportsRDFStar = format === '' || /star|\*$/.test(format);
     // Disable relative IRIs in N-Triples or N-Quads mode
     if (isLineMode)
       this._resolveRelativeIRI = iri => { return null; };
@@ -197,6 +195,10 @@ export default class N3Parser {
                         this._subject = this._factory.blankNode(), null, null);
       return this._readBlankNodeHead;
     case '(':
+      const stack = this._contextStack, parent = stack.length && stack[stack.length - 1];
+      if (parent.type === '<<') {
+        return this._error('Unexpected list in reified triple', token);
+      }
       // Start a new list
       this._saveContext('list', this._graph, this.RDF_NIL, null, null);
       this._subject = null;
@@ -237,9 +239,13 @@ export default class N3Parser {
         this._subject = this._factory.literal(token.value, this._factory.namedNode(token.prefix));
 
       break;
+    case '<<(':
+      if (!this._n3Mode)
+        return this._error('Disallowed triple term as subject', token);
+      this._saveContext('<<(', this._graph, null, null, null);
+      this._graph = null;
+      return this._readSubject;
     case '<<':
-      if (!this._supportsRDFStar)
-        return this._error('Unexpected RDF-star syntax', token);
       this._saveContext('<<', this._graph, null, null, null);
       this._graph = null;
       return this._readSubject;
@@ -269,6 +275,7 @@ export default class N3Parser {
     case '.':
     case ']':
     case '}':
+    case '|}':
       // Expected predicate didn't come, must have been trailing semicolon
       if (this._predicate === null)
         return this._error(`Unexpected ${type}`, token);
@@ -315,6 +322,10 @@ export default class N3Parser {
                         this._subject = this._factory.blankNode());
       return this._readBlankNodeHead;
     case '(':
+      const stack = this._contextStack, parent = stack.length && stack[stack.length - 1];
+      if (parent.type === '<<') {
+        return this._error('Unexpected list in reified triple', token);
+      }
       // Start a new list
       this._saveContext('list', this._graph, this._subject, this._predicate, this.RDF_NIL);
       this._subject = null;
@@ -326,9 +337,11 @@ export default class N3Parser {
       this._saveContext('formula', this._graph, this._subject, this._predicate,
                         this._graph = this._factory.blankNode());
       return this._readSubject;
+    case '<<(':
+      this._saveContext('<<(', this._graph, this._subject, this._predicate, null);
+      this._graph = null;
+      return this._readSubject;
     case '<<':
-      if (!this._supportsRDFStar)
-        return this._error('Unexpected RDF-star syntax', token);
       this._saveContext('<<', this._graph, this._subject, this._predicate, null);
       this._graph = null;
       return this._readSubject;
@@ -364,6 +377,10 @@ export default class N3Parser {
       return this._readBlankNodeTail(token);
     }
     else {
+      const stack = this._contextStack, parentParent = stack.length > 1 && stack[stack.length - 2];
+      if (parentParent.type === '<<') {
+        return this._error('Unexpected compound blank node expression in reified triple', token);
+      }
       this._predicate = null;
       return this._readPredicate(token);
     }
@@ -473,6 +490,11 @@ export default class N3Parser {
       this._saveContext('formula', this._graph, this._subject, this._predicate,
                         this._graph = this._factory.blankNode());
       return this._readSubject;
+    case '<<':
+      this._saveContext('<<', this._graph, null, null, null);
+      this._graph = null;
+      next = this._readSubject;
+      break;
     default:
       if ((item = this._readEntity(token)) === undefined)
         return;
@@ -481,6 +503,10 @@ export default class N3Parser {
      // Create a new blank node if no item head was assigned yet
     if (list === null)
       this._subject = list = this._factory.blankNode();
+
+    // When reading a reified triple, store the list as subject in the stack, as this will be overridden when reading the triple.
+    if (token.type === '<<')
+      stack[stack.length - 1].subject = this._subject;
 
     // Is this the first element of the list?
     if (previousList === null) {
@@ -625,7 +651,7 @@ export default class N3Parser {
 
   // ### `_readPunctuation` reads punctuation between quads or quad parts
   _readPunctuation(token) {
-    let next, graph = this._graph;
+    let next, graph = this._graph, startingAnnotation = false;
     const subject = this._subject, inversePredicate = this._inversePredicate;
     switch (token.type) {
     // A closing brace ends a graph
@@ -638,6 +664,7 @@ export default class N3Parser {
     // A dot just ends the statement, without sharing anything with the next
     case '.':
       this._subject = null;
+      this._tripleTerm = null;
       next = this._contextStack.length ? this._readSubject : this._readInTopContext;
       if (inversePredicate) this._inversePredicate = false;
       break;
@@ -649,20 +676,24 @@ export default class N3Parser {
     case ',':
       next = this._readObject;
       break;
+    // ~ is allowed in the annotation syntax
+    case '~':
+      next = this._readReifierInAnnotation;
+      startingAnnotation = true;
+      break;
     // {| means that the current triple is annotated with predicate-object pairs.
     case '{|':
-      if (!this._supportsRDFStar)
-        return this._error('Unexpected RDF-star syntax', token);
-      // Continue using the last triple as quoted triple subject for the predicate-object pairs.
-      const predicate = this._predicate, object = this._object;
-      this._subject = this._factory.quad(subject, predicate, object, this.DEFAULTGRAPH);
+      // Continue using the last triple as reified triple subject for the predicate-object pairs.
+      this._subject = this._readTripleTerm();
+      startingAnnotation = true;
       next = this._readPredicate;
       break;
-    // |} means that the current quoted triple in annotation syntax is finalized.
+    // |} means that the current reified triple in annotation syntax is finalized.
     case '|}':
-      if (this._subject.termType !== 'Quad')
-        return this._error('Unexpected asserted triple closing', token);
+      if (!this._annotation)
+        return this._error('Unexpected annotation syntax closing', token);
       this._subject = null;
+      this._annotation = false;
       next = this._readPunctuation;
       break;
     default:
@@ -674,12 +705,15 @@ export default class N3Parser {
       return this._error(`Expected punctuation to follow "${this._object.id}"`, token);
     }
     // A quad has been completed now, so return it
-    if (subject !== null) {
+    if (subject !== null && (!startingAnnotation || (startingAnnotation && !this._annotation))) {
       const predicate = this._predicate, object = this._object;
       if (!inversePredicate)
         this._emit(subject, predicate, object,  graph);
       else
         this._emit(object,  predicate, subject, graph);
+    }
+    if (startingAnnotation) {
+      this._annotation = true;
     }
     return next;
   }
@@ -886,25 +920,15 @@ export default class N3Parser {
     return this._readPath;
   }
 
-  // ### `_readRDFStarTailOrGraph` reads the graph of a nested RDF-star quad or the end of a nested RDF-star triple
-  _readRDFStarTailOrGraph(token) {
-    if (token.type !== '>>') {
-      // An entity means this is a quad (only allowed if not already inside a graph)
-      if (this._supportsQuads && this._graph === null && (this._graph = this._readEntity(token)) !== undefined)
-        return this._readRDFStarTail;
-      return this._error(`Expected >> to follow "${this._object.id}"`, token);
-    }
-    return this._readRDFStarTail(token);
-  }
-
-  // ### `_readRDFStarTail` reads the end of a nested RDF-star triple
-  _readRDFStarTail(token) {
-    if (token.type !== '>>')
-      return this._error(`Expected >> but got ${token.type}`, token);
+// ### `_readTripleTermTail` reads the end of a triple term
+  _readTripleTermTail(token) {
+    if (token.type !== ')>>')
+      return this._error(`Expected )>> but got ${token.type}`, token);
     // Read the quad and restore the previous context
     const quad = this._factory.quad(this._subject, this._predicate, this._object,
-      this._graph || this.DEFAULTGRAPH);
-    this._restoreContext('<<', token);
+        this._graph || this.DEFAULTGRAPH);
+    this._restoreContext('<<(', token);
+
     // If the triple was the subject, continue by reading the predicate.
     if (this._subject === null) {
       this._subject = quad;
@@ -915,6 +939,70 @@ export default class N3Parser {
       this._object = quad;
       return this._getContextEndReader();
     }
+  }
+
+  // ### `_readReifiedTripleTailOrReifier` reads a reifier or the end of a nested reified triple
+  _readReifiedTripleTailOrReifier(token) {
+    if (token.type === '~') {
+      return this._readReifier;
+    }
+    return this._readReifiedTripleTail(token);
+  }
+
+  // ### `_readReifiedTripleTail` reads the end of a nested reified triple
+  _readReifiedTripleTail(token) {
+    if (token.type !== '>>')
+      return this._error(`Expected >> but got ${token.type}`, token);
+    // Read the triple term and restore the previous context
+    this._tripleTerm = null;
+    const reifier = this._readTripleTerm();
+    this._restoreContext('<<', token);
+
+    // // If we're in a list, continue processing that list
+    const stack = this._contextStack, parent = stack.length && stack[stack.length - 1];
+    if (parent && parent.type === 'list') {
+      this._emit(this._subject, this.RDF_FIRST, reifier, this._graph);
+      return this._getContextEndReader();
+    }
+    // If the triple was the subject, continue by reading the predicate.
+    else if (this._subject === null) {
+      this._subject = reifier;
+      return this._readPredicateOrReifierTripleEnd;
+    }
+    // If the triple was the object, read context end.
+    else {
+      this._object = reifier;
+      return this._getContextEndReader();
+    }
+  }
+
+  _readPredicateOrReifierTripleEnd(token) {
+    if (token.type === '.') {
+      this._subject = null;
+      return this._readPunctuation(token);
+    }
+    return this._readPredicate(token);
+  }
+
+  // ### `_readReifier` reads the triple term identifier after a tilde when in a reifying triple.
+  _readReifier(token) {
+    this._reifier = this._readEntity(token);
+    return this._readReifiedTripleTail;
+  }
+
+  // ### `_readReifier` reads the triple term identifier after a tilde when in annotation syntax.
+  _readReifierInAnnotation(token) {
+    this._reifier = this._readEntity(token);
+    return this._readPunctuation;
+  }
+
+  _readTripleTerm() {
+    const reifier = this._reifier || this._factory.blankNode();
+    this._reifier = null;
+    this._tripleTerm = this._tripleTerm || this._factory.quad(this._subject, this._predicate, this._object,
+        this._graph || this.DEFAULTGRAPH);
+    this._emit(reifier, this.RDF_REIFIES, this._tripleTerm);
+    return reifier;
   }
 
   // ### `_getContextEndReader` gets the next reader function at the end of a context
@@ -930,8 +1018,10 @@ export default class N3Parser {
       return this._readListItem;
     case 'formula':
       return this._readFormulaTail;
+    case '<<(':
+      return this._readTripleTermTail;
     case '<<':
-      return this._readRDFStarTailOrGraph;
+      return this._readReifiedTripleTailOrReifier;
     }
   }
 
@@ -1122,11 +1212,12 @@ function initDataFactory(parser, factory) {
   parser.DEFAULTGRAPH = factory.defaultGraph();
 
   // Set common named nodes
-  parser.RDF_FIRST  = factory.namedNode(namespaces.rdf.first);
-  parser.RDF_REST   = factory.namedNode(namespaces.rdf.rest);
-  parser.RDF_NIL    = factory.namedNode(namespaces.rdf.nil);
-  parser.N3_FORALL  = factory.namedNode(namespaces.r.forAll);
-  parser.N3_FORSOME = factory.namedNode(namespaces.r.forSome);
+  parser.RDF_FIRST   = factory.namedNode(namespaces.rdf.first);
+  parser.RDF_REST    = factory.namedNode(namespaces.rdf.rest);
+  parser.RDF_NIL     = factory.namedNode(namespaces.rdf.nil);
+  parser.RDF_REIFIES = factory.namedNode(namespaces.rdf.reifies);
+  parser.N3_FORALL   = factory.namedNode(namespaces.r.forAll);
+  parser.N3_FORSOME  = factory.namedNode(namespaces.r.forSome);
   parser.ABBREVIATIONS = {
     'a': factory.namedNode(namespaces.rdf.type),
     '=': factory.namedNode(namespaces.owl.sameAs),

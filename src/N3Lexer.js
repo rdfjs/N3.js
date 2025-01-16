@@ -150,8 +150,11 @@ export default class N3Lexer {
             return reportSyntaxError(this);
           type = 'IRI';
         }
-        // Try to find a nested triple
-        else if (input.length > 1 && input[1] === '<')
+        // Try to find a triple term
+        else if (input.length > 2 && input[1] === '<' && input[2] === '(')
+          type = '<<(', matchLength = 3;
+        // Try to find a reified triple
+        else if (!this._lineMode && input.length > (inputFinished ? 1 : 2) && input[1] === '<')
           type = '<<', matchLength = 2;
         // Try to find a backwards implication arrow
         else if (this._n3Mode && input.length > 1 && input[1] === '=')
@@ -159,6 +162,7 @@ export default class N3Lexer {
         break;
 
       case '>':
+        // Try to find a reified triple
         if (input.length > 1 && input[1] === '>')
           type = '>>', matchLength = 2;
         break;
@@ -304,13 +308,23 @@ export default class N3Lexer {
       case '!':
         if (!this._n3Mode)
           break;
+      case ')':
+        if (!inputFinished && (input.length === 1 || (input.length === 2 && input[1] === '>'))) {
+          // Don't consume yet, as it *could* become a triple term end.
+          break;
+        }
+        // Try to find a triple term
+        if (input.length > 2 && input[1] === '>' && input[2] === '>') {
+          type = ')>>', matchLength = 3;
+          break;
+        }
       case ',':
       case ';':
       case '[':
       case ']':
       case '(':
-      case ')':
       case '}':
+      case '~':
         if (!this._lineMode) {
           matchLength = 1;
           type = firstChar;
