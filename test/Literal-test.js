@@ -39,6 +39,10 @@ describe('Literal', () => {
       expect(literal).toHaveProperty('language', '');
     });
 
+    it('should have the empty string as direction', () => {
+      expect(literal).toHaveProperty('direction', '');
+    });
+
     it('should have xsd:string as datatype', () => {
       expect(literal).toHaveProperty('datatype');
       expect(literal.datatype).toBeInstanceOf(NamedNode);
@@ -123,6 +127,7 @@ describe('Literal', () => {
         termType: 'Literal',
         value: '',
         language: '',
+        direction: '',
         datatype: {
           termType: 'NamedNode',
           value: 'http://www.w3.org/2001/XMLSchema#string',
@@ -239,6 +244,7 @@ describe('Literal', () => {
         termType: 'Literal',
         value: 'my @^^ string',
         language: '',
+        direction: '',
         datatype: {
           termType: 'NamedNode',
           value: 'http://www.w3.org/2001/XMLSchema#string',
@@ -269,6 +275,10 @@ describe('Literal', () => {
 
     it('should have the language tag as language', () => {
       expect(literal).toHaveProperty('language', 'en-us');
+    });
+
+    it('should have the empty string as direction', () => {
+      expect(literal).toHaveProperty('direction', '');
     });
 
     it('should have rdf:langString as datatype', () => {
@@ -355,9 +365,136 @@ describe('Literal', () => {
         termType: 'Literal',
         value: '',
         language: 'en-us',
+        direction: '',
         datatype: {
           termType: 'NamedNode',
           value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString',
+        },
+      });
+    });
+  });
+
+  describe('A Literal instance created from the empty string with a language and direction', () => {
+    let literal;
+    beforeAll(() => { literal = new Literal('""@en-us--rtl'); });
+
+    it('should be a Literal', () => {
+      expect(literal).toBeInstanceOf(Literal);
+    });
+
+    it('should be a Term', () => {
+      expect(literal).toBeInstanceOf(Term);
+    });
+
+    it('should have term type "Literal"', () => {
+      expect(literal.termType).toBe('Literal');
+    });
+
+    it('should have the empty string as value', () => {
+      expect(literal).toHaveProperty('value', '');
+    });
+
+    it('should have the language tag as language', () => {
+      expect(literal).toHaveProperty('language', 'en-us');
+    });
+
+    it('should have the direction as direction', () => {
+      expect(literal).toHaveProperty('direction', 'rtl');
+    });
+
+    it('should have rdf:langString as datatype', () => {
+      expect(literal).toHaveProperty('datatype');
+      expect(literal.datatype).toBeInstanceOf(NamedNode);
+      expect(literal.datatype.value).toBe('http://www.w3.org/1999/02/22-rdf-syntax-ns#dirLangString');
+    });
+
+    it('should have the quoted empty string as id', () => {
+      expect(literal).toHaveProperty('id', '""@en-us--rtl');
+    });
+
+    it('should equal a Literal instance with the same value', () => {
+      expect(literal.equals(new Literal('""@en-us--rtl'))).toBe(true);
+    });
+
+    it(
+        'should equal an object with the same term type, value, language, and datatype',
+        () => {
+          expect(literal.equals({
+            termType: 'Literal',
+            value: '',
+            language: 'en-us',
+            direction: 'rtl',
+            datatype: { value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#dirLangString', termType: 'NamedNode' },
+          })).toBe(true);
+        },
+    );
+
+    it('should not equal a falsy object', () => {
+      expect(literal.equals(null)).toBe(false);
+    });
+
+    it('should not equal a Literal instance with a non-empty value', () => {
+      expect(literal.equals(new Literal('"x"'))).toBe(false);
+    });
+
+    it(
+        'should not equal an object with the same term type but a different value',
+        () => {
+          expect(literal.equals({
+            termType: 'Literal',
+            value: 'x',
+            language: 'en-us',
+            direction: 'rtl',
+            datatype: { value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#dirLangString', termType: 'NamedNode' },
+          })).toBe(false);
+        },
+    );
+
+    it(
+        'should not equal an object with the same term type but a different language',
+        () => {
+          expect(literal.equals({
+            termType: 'Literal',
+            value: '',
+            language: '',
+            direction: 'rtl',
+            datatype: { value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#dirLangString', termType: 'NamedNode' },
+          })).toBe(false);
+        },
+    );
+
+    it(
+        'should not equal an object with the same term type but a different datatype',
+        () => {
+          expect(literal.equals({
+            termType: 'Literal',
+            value: '',
+            language: 'en-us',
+            direction: 'rtl',
+            datatype: { value: 'other', termType: 'NamedNode' },
+          })).toBe(false);
+        },
+    );
+
+    it('should not equal an object with a different term type', () => {
+      expect(literal.equals({
+        termType: 'NamedNode',
+        value: '',
+        language: 'en-us',
+        direction: 'rtl',
+        datatype: { value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString', termType: 'NamedNode' },
+      })).toBe(false);
+    });
+
+    it('should provide a JSON representation', () => {
+      expect(literal.toJSON()).toEqual({
+        termType: 'Literal',
+        value: '',
+        language: 'en-us',
+        direction: 'rtl',
+        datatype: {
+          termType: 'NamedNode',
+          value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#dirLangString',
         },
       });
     });
@@ -385,6 +522,10 @@ describe('Literal', () => {
 
     it('should have the language tag as language', () => {
       expect(literal).toHaveProperty('language', 'en-us');
+    });
+
+    it('should have the empty string as direction', () => {
+      expect(literal).toHaveProperty('direction', '');
     });
 
     it('should have rdf:langString as datatype', () => {
@@ -471,6 +612,7 @@ describe('Literal', () => {
         termType: 'Literal',
         value: 'my @^^ string',
         language: 'en-us',
+        direction: '',
         datatype: {
           termType: 'NamedNode',
           value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString',
@@ -501,6 +643,10 @@ describe('Literal', () => {
 
     it('should have the empty string as language', () => {
       expect(literal).toHaveProperty('language', '');
+    });
+
+    it('should have the empty string as direction', () => {
+      expect(literal).toHaveProperty('direction', '');
     });
 
     it('should have the datatype', () => {
@@ -587,6 +733,7 @@ describe('Literal', () => {
         termType: 'Literal',
         value: '',
         language: '',
+        direction: '',
         datatype: {
           termType: 'NamedNode',
           value: 'http://example.org/types#type',
@@ -619,6 +766,10 @@ describe('Literal', () => {
 
     it('should have the empty string as language', () => {
       expect(literal).toHaveProperty('language', '');
+    });
+
+    it('should have the empty string as direction', () => {
+      expect(literal).toHaveProperty('direction', '');
     });
 
     it('should have the datatype', () => {
@@ -709,6 +860,7 @@ describe('Literal', () => {
         termType: 'Literal',
         value: 'my @^^ string',
         language: '',
+        direction: '',
         datatype: {
           termType: 'NamedNode',
           value: 'http://example.org/types#type',

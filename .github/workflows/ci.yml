@@ -18,7 +18,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run build
       - run: npm run test
-  
+
   lint:
     runs-on: ubuntu-latest
     strategy:
@@ -34,7 +34,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run build
       - run: npm run lint
-    
+
   spec:
     runs-on: ubuntu-latest
     strategy:
@@ -48,10 +48,14 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - uses: actions/checkout@v4
       - run: npm ci
-      - run: npm run spec-turtle
-      - run: npm run spec-ntriples
-      - run: npm run spec-nquads
-      - run: npm run spec-trig
+      - run: npm run spec-1-1-turtle
+      - run: npm run spec-1-1-ntriples
+      - run: npm run spec-1-1-nquads
+      - run: npm run spec-1-1-trig
+      - run: npm run spec-1-2-turtle
+      - run: npm run spec-1-2-ntriples
+      - run: npm run spec-1-2-nquads
+      - run: npm run spec-1-2-trig
 
   docs:
     runs-on: ubuntu-latest
