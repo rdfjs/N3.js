@@ -1032,6 +1032,13 @@ describe('Parser', () => {
                   ['\ud835\udC00', '\ud835\udc00', '"\ud835\udc00"^^http://example.org/\ud835\udc00', '\ud835\udc00']),
     );
 
+    it(
+        'should parse a a reified triple inside a GRAPH',
+        shouldParse('GRAPH <g> {<< <a> <b> <c> >> <q> <z> }',
+            ['_:b0', 'q', 'z', 'g'],
+            ['_:b0', reifies, ['a', 'b', 'c'], 'g']),
+    );
+
     it('should not parse a single closing brace', shouldNotParse('}',
                    'Unexpected graph closing on line 1.'));
 
