@@ -21,6 +21,7 @@ const lineModeRegExps = {
   _unescapedIri: true,
   _simpleQuotedString: true,
   _langcode: true,
+  _dircode: true,
   _blank: true,
   _newline: true,
   _comment: true,
@@ -38,7 +39,8 @@ export default class N3Lexer {
     this._unescapedIri = /^<([^\x00-\x20<>\\"\{\}\|\^\`]*)>[ \t]*/; // IRI without escape sequences; no unescaping
     this._simpleQuotedString = /^"([^"\\\r\n]*)"(?=[^"])/; // string without escape sequences
     this._simpleApostropheString = /^'([^'\\\r\n]*)'(?=[^'])/;
-    this._langcode = /^@([a-z]+(?:-[a-z0-9]+)*)(?=[^a-z0-9\-])/i;
+    this._langcode = /^@([a-z]+(?:-[a-z0-9]+)*)(?=[^a-z0-9])/i;
+    this._dircode = /^--(ltr)|(rtl)/;
     this._prefix = /^((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:(?=[#\s<])/;
     this._prefixed = /^((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:((?:(?:[0-:A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])(?:(?:[\.\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])*(?:[\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~]))?)?)(?:[ \t]+|(?=\.?[,;!\^\s#()\[\]\{\}"'<>]))/;
     this._variable = /^\?(?:(?:[A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:[\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?=[.,;!\^\s#()\[\]\{\}"'<>])/;
@@ -148,8 +150,11 @@ export default class N3Lexer {
             return reportSyntaxError(this);
           type = 'IRI';
         }
-        // Try to find a nested triple
-        else if (input.length > 1 && input[1] === '<')
+        // Try to find a triple term
+        else if (input.length > 2 && input[1] === '<' && input[2] === '(')
+          type = '<<(', matchLength = 3;
+        // Try to find a reified triple
+        else if (!this._lineMode && input.length > (inputFinished ? 1 : 2) && input[1] === '<')
           type = '<<', matchLength = 2;
         // Try to find a backwards implication arrow
         else if (this._n3Mode && input.length > 1 && input[1] === '=')
@@ -157,6 +162,7 @@ export default class N3Lexer {
         break;
 
       case '>':
+        // Try to find a reified triple
         if (input.length > 1 && input[1] === '>')
           type = '>>', matchLength = 2;
         break;
@@ -240,6 +246,13 @@ export default class N3Lexer {
       case '9':
       case '+':
       case '-':
+        if (input[1] === '-') {
+          // Try to find a direction code
+          if (this._previousMarker === 'langcode' && (match = this._dircode.exec(input)))
+            type = 'dircode', matchLength = 2, value = (match[1] || match[2]), matchLength = value.length + 2;
+          break;
+        }
+
         // Try to find a number. Since it can contain (but not end with) a dot,
         // we always need a non-dot character before deciding it is a number.
         // Therefore, try inserting a space if we're at the end of the input.
@@ -295,13 +308,23 @@ export default class N3Lexer {
       case '!':
         if (!this._n3Mode)
           break;
+      case ')':
+        if (!inputFinished && (input.length === 1 || (input.length === 2 && input[1] === '>'))) {
+          // Don't consume yet, as it *could* become a triple term end.
+          break;
+        }
+        // Try to find a triple term
+        if (input.length > 2 && input[1] === '>' && input[2] === '>') {
+          type = ')>>', matchLength = 3;
+          break;
+        }
       case ',':
       case ';':
       case '[':
       case ']':
       case '(':
-      case ')':
       case '}':
+      case '~':
         if (!this._lineMode) {
           matchLength = 1;
           type = firstChar;
