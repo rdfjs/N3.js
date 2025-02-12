@@ -172,8 +172,9 @@ export default class N3Writer {
       value = value.replace(escapeAll, characterReplacer);
 
     // Write a language-tagged literal
+    const direction = literal.direction ? `--${literal.direction}` : '';
     if (literal.language)
-      return `"${value}"@${literal.language}`;
+      return `"${value}"@${literal.language}${direction}`;
 
     // Write dedicated literals per data type
     if (this._lineMode) {

@@ -88,8 +88,17 @@ export class Literal extends Term {
     // Find the last quotation mark (e.g., '"abc"@en-us')
     const id = this.id;
     let atPos = id.lastIndexOf('"') + 1;
+    const dirPos = id.lastIndexOf('--');
     // If "@" it follows, return the remaining substring; empty otherwise
-    return atPos < id.length && id[atPos++] === '@' ? id.substr(atPos).toLowerCase() : '';
+    return atPos < id.length && id[atPos++] === '@' ? (dirPos > atPos ? id.substr(0, dirPos) : id).substr(atPos).toLowerCase() : '';
+  }
+
+  // ### The direction of this literal
+  get direction() {
+    // Find the last double dash (e.g., '"abc"@en-us--ltr')
+    const id = this.id;
+    const atPos = id.lastIndexOf('--') + 2;
+    return atPos > 1 && atPos < id.length ? id.substr(atPos).toLowerCase() : '';
   }
 
   // ### The datatype IRI of this literal
@@ -104,8 +113,8 @@ export class Literal extends Term {
     const char = dtPos < id.length ? id[dtPos] : '';
     // If "^" it follows, return the remaining substring
     return char === '^' ? id.substr(dtPos + 2) :
-           // If "@" follows, return rdf:langString; xsd:string otherwise
-           (char !== '@' ? xsd.string : rdf.langString);
+           // If "@" follows, return rdf:langString or rdf:dirLangString; xsd:string otherwise
+           (char !== '@' ? xsd.string : (id.indexOf('--', dtPos) > 0 ? rdf.dirLangString : rdf.langString));
   }
 
   // ### Returns whether this object represents the same term as the other
@@ -119,14 +128,16 @@ export class Literal extends Term {
                       this.termType === other.termType &&
                       this.value    === other.value    &&
                       this.language === other.language &&
+                      ((this.direction === other.direction) || (this.direction === '' && !other.direction)) &&
                       this.datatype.value === other.datatype.value;
   }
 
   toJSON() {
     return {
-      termType: this.termType,
-      value:    this.value,
-      language: this.language,
+      termType:  this.termType,
+      value:     this.value,
+      language:  this.language,
+      direction: this.direction,
       datatype: { termType: 'NamedNode', value: this.datatypeString },
     };
   }
@@ -216,9 +227,22 @@ export function termFromId(id, factory, nested) {
       return factory.literal(id.substr(1, id.length - 2));
     // Literal with datatype or language
     const endPos = id.lastIndexOf('"', id.length - 1);
+    let languageOrDatatype;
+    if (id[endPos + 1] === '@') {
+      languageOrDatatype = id.substr(endPos + 2);
+      const dashDashIndex = languageOrDatatype.lastIndexOf('--');
+      if (dashDashIndex > 0 && dashDashIndex < languageOrDatatype.length) {
+        languageOrDatatype = {
+          language: languageOrDatatype.substr(0, dashDashIndex),
+          direction: languageOrDatatype.substr(dashDashIndex + 2),
+        };
+      }
+    }
+    else {
+      languageOrDatatype = factory.namedNode(id.substr(endPos + 3));
+    }
     return factory.literal(id.substr(1, endPos - 1),
-            id[endPos + 1] === '@' ? id.substr(endPos + 2)
-                                   : factory.namedNode(id.substr(endPos + 3)));
+            languageOrDatatype);
   case '[':
     id = JSON.parse(id);
     break;
@@ -255,7 +279,7 @@ export function termToId(term, nested) {
   case 'Variable':     return `?${term.value}`;
   case 'DefaultGraph': return '';
   case 'Literal':      return `"${term.value}"${
-    term.language ? `@${term.language}` :
+    term.language ? `@${term.language}${term.direction ? `--${term.direction}` : ''}` :
       (term.datatype && term.datatype.value !== xsd.string ? `^^${term.datatype.value}` : '')}`;
   case 'Quad':
     const res = [
@@ -349,6 +373,11 @@ function literal(value, languageOrDataType) {
   // Create a language-tagged string
   if (typeof languageOrDataType === 'string')
     return new Literal(`"${value}"@${languageOrDataType.toLowerCase()}`);
+
+  // Create a language-tagged string with base direction
+  if (languageOrDataType !== undefined && !('termType' in languageOrDataType)) {
+    return new Literal(`"${value}"@${languageOrDataType.language.toLowerCase()}--${languageOrDataType.direction.toLowerCase()}`);
+  }
 
   // Automatically determine datatype for booleans and numbers
   let datatype = languageOrDataType ? languageOrDataType.value : '';

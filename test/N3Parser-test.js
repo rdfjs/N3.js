@@ -100,6 +100,28 @@ describe('Parser', () => {
     );
 
     it(
+        'should parse a triple with a literal with directional language code',
+        shouldParse('<a> <b> "string"@en--rtl.',
+            ['a', 'b', '"string"@en--rtl']),
+    );
+
+    it(
+        'should error on a triple with a literal with direction but without language code',
+        shouldNotParse('<a> <b> "string"--rtl.',
+            'Unexpected "--rtl." on line 1.', {
+              line: 1,
+              previousToken: {
+                line: 1,
+                type: 'literal',
+                value: 'string',
+                prefix: '',
+                start: 8,
+                end: 16,
+              },
+            }),
+    );
+
+    it(
       'should parse a triple with a literal and an IRI type',
       shouldParse('<a> <b> "string"^^<type>.',
                   ['a', 'b', '"string"^^http://example.org/type']),
@@ -565,6 +587,14 @@ describe('Parser', () => {
                   ['a', 'b', '_:b0'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"x"@en-gb'],
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+    );
+
+    it(
+        'should parse a list with a directional language-tagged literal',
+        shouldParse('<a> <b> ("x"@en-GB--ltr).',
+            ['a', 'b', '_:b0'],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"x"@en-gb--ltr'],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     );
 
     it(
@@ -2426,6 +2456,14 @@ describe('Parser', () => {
           ['a', 'b', '_:b0'],
           ['"bonjour"@fr', 'sameAs', '"hello"@en', '_:b0'],
       ),
+    );
+
+    it(
+        'should parse literals with language and direction as subject',
+        shouldParse(parser, '<a> <b> {"bonjour"@fr--ltr <sameAs> "hello"@en--rtl}.',
+            ['a', 'b', '_:b0'],
+            ['"bonjour"@fr--ltr', 'sameAs', '"hello"@en--rtl', '_:b0'],
+        ),
     );
 
     it(

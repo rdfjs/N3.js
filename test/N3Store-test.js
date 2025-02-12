@@ -1722,7 +1722,7 @@ describe('Store', () => {
       b0: [
         { termType: 'NamedNode', value: 'element1' },
         { termType: 'Literal', value: 'element2',
-          language: '', datatype: { termType: 'NamedNode', value: namespaces.xsd.string } },
+          language: '', direction: '', datatype: { termType: 'NamedNode', value: namespaces.xsd.string } },
       ],
     };
 
@@ -1761,7 +1761,7 @@ describe('Store', () => {
       b0: [
         { termType: 'NamedNode', value: 'element1' },
         { termType: 'Literal', value: 'element2',
-          language: '', datatype: { termType: 'NamedNode', value: namespaces.xsd.string } },
+          language: '', direction: '', datatype: { termType: 'NamedNode', value: namespaces.xsd.string } },
       ],
     };
 
