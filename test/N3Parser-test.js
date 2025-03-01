@@ -3,6 +3,7 @@ import rdfDataModel from '@rdfjs/data-model';
 import { isomorphic } from 'rdf-isomorphic';
 
 const BASE_IRI = 'http://example.org/';
+const reifies = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#reifies';
 
 // Reset blank node identifiers between tests
 let blankId;
@@ -97,6 +98,28 @@ describe('Parser', () => {
       'should normalize language codes to lowercase',
       shouldParse('<a> <b> "string"@EN.',
                   ['a', 'b', '"string"@en']),
+    );
+
+    it(
+        'should parse a triple with a literal with directional language code',
+        shouldParse('<a> <b> "string"@en--rtl.',
+            ['a', 'b', '"string"@en--rtl']),
+    );
+
+    it(
+        'should error on a triple with a literal with direction but without language code',
+        shouldNotParse('<a> <b> "string"--rtl.',
+            'Unexpected "--rtl." on line 1.', {
+              line: 1,
+              previousToken: {
+                line: 1,
+                type: 'literal',
+                value: 'string',
+                prefix: '',
+                start: 8,
+                end: 16,
+              },
+            }),
     );
 
     it(
@@ -568,6 +591,14 @@ describe('Parser', () => {
     );
 
     it(
+        'should parse a list with a directional language-tagged literal',
+        shouldParse('<a> <b> ("x"@en-GB--ltr).',
+            ['a', 'b', '_:b0'],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"x"@en-gb--ltr'],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+    );
+
+    it(
       'should parse statements with a multi-element list in the subject',
       shouldParse('(<x> <y>) <a> <b>.',
                   ['_:b0', 'a', 'b'],
@@ -675,6 +706,30 @@ describe('Parser', () => {
                   ['_:b0', 'a', '_:b1'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'b'],
                   ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+    );
+
+    it(
+        'should parse statements with a subject list containing reified triples',
+        shouldParse('(<< <a1> <b1> <c1> >> << <a2> <b2> <c2> >>) <a> <b>.',
+            ['_:b0', 'a', 'b'],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2'],
+            ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3'],
+            ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+            ['_:b1', reifies, ['a1', 'b1', 'c1']],
+            ['_:b3', reifies, ['a2', 'b2', 'c2']]),
+    );
+
+    it(
+        'should parse statements with an object list containing reified triples',
+        shouldParse('<a> <b> (<< <a1> <b1> <c1> >> << <a2> <b2> <c2> >>).',
+            ['a', 'b', '_:b0'],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2'],
+            ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3'],
+            ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+            ['_:b1', reifies, ['a1', 'b1', 'c1']],
+            ['_:b3', reifies, ['a2', 'b2', 'c2']]),
     );
 
     it('should not parse an invalid list', shouldNotParse('<a> <b> (]).',
@@ -977,6 +1032,13 @@ describe('Parser', () => {
                   ['\ud835\udC00', '\ud835\udc00', '"\ud835\udc00"^^http://example.org/\ud835\udc00', '\ud835\udc00']),
     );
 
+    it(
+        'should parse a a reified triple inside a GRAPH',
+        shouldParse('GRAPH <g> {<< <a> <b> <c> >> <q> <z> }',
+            ['_:b0', 'q', 'z', 'g'],
+            ['_:b0', reifies, ['a', 'b', 'c'], 'g']),
+    );
+
     it('should not parse a single closing brace', shouldNotParse('}',
                    'Unexpected graph closing on line 1.'));
 
@@ -1199,220 +1261,470 @@ describe('Parser', () => {
       expect((() => { new Parser().parse('<a> <b> <c>'); })).toThrow('Expected entity but got eof on line 1');
     });
 
+    it('should throw on a triple term with iris as subject correctly', () => {
+      expect((() => { new Parser().parse('<<(<a> <b> <c>)>> <b> <c>.'); })).toThrow('Disallowed triple term as subject on line 1.');
+    });
+
     it(
-      'should parse an RDF-star triple with a triple with iris as subject correctly',
-      () => {
-        shouldParse('<<<a> <b> <c>>> <b> <c>.',
-          [['a', 'b', 'c'], 'b', 'c']);
-      },
+        'should parse a standalone reified triple',
+        shouldParse('<<<a> <b> <c>>>.',
+            ['_:b0', reifies, ['a', 'b', 'c']],
+        ),
     );
 
     it(
-      'should not parse an RDF-star triple with a triple as predicate',
+        'should parse a triple and a standalone reified triple',
+        shouldParse('<a> <b> <c> . <<<a> <b> <c>>> .',
+            ['a', 'b', 'c'],
+            ['_:b0', reifies, ['a', 'b', 'c']],
+        ),
+    );
+
+    it(
+        'should parse a standalone reified triple and triple',
+        shouldParse('<<<a> <b> <c>>>. <a> <b> <c>.',
+            ['_:b0', reifies, ['a', 'b', 'c']],
+            ['a', 'b', 'c'],
+        ),
+    );
+
+    it(
+      'should parse a reified triple with a triple with iris as subject correctly',
+      shouldParse('<<<a> <b> <c>>> <b> <c>.',
+          ['_:b0', 'b', 'c'],
+          ['_:b0', reifies, ['a', 'b', 'c']],
+          ),
+    );
+
+    it(
+      'should not parse a reified triple with a triple as predicate',
       shouldNotParse('<a> <<<b> <c> <d>>> <e>',
         'Expected entity but got << on line 1.'),
     );
 
     it(
-      'should parse an RDF-star triple with a triple with blanknodes as subject correctly',
+        'should not parse a triple term with a triple with blanknodes as subject',
+        shouldNotParse('<<(_:a <b> _:c)>> <b> <c>.',
+            'Disallowed triple term as subject on line 1.'),
+    );
+
+    it(
+      'should parse a reified triple with a triple with blanknodes as subject correctly',
       shouldParse('<<_:a <b> _:c>> <b> <c>.',
-        [['_:b0_a', 'b', '_:b0_c'], 'b', 'c']),
+        ['_:b0', 'b', 'c'],
+          ['_:b0', reifies, ['_:b0_a', 'b', '_:b0_c']]),
     );
 
     it(
-      'should parse an RDF-star triple with a triple with blanknodes and literals as subject correctly',
-      shouldParse('<<_:a <b> "c"^^<d>>> <b> <c>.',
-        [['_:b0_a', 'b', '"c"^^http://example.org/d'], 'b', 'c']),
+        'should parse a reified triple with a triple with blanknodes and literals as subject correctly',
+        shouldParse('<<_:a <b> "c"^^<d>>> <b> <c>.',
+            ['_:b0', 'b', 'c'],
+            ['_:b0', reifies, ['_:b0_a', 'b', '"c"^^http://example.org/d']]),
     );
 
     it(
-      'should parse an RDF-star triple with a triple as object correctly',
-      shouldParse('<a> <b> <<<a> <b> <c>>>.',
+        'should parse a reified triple with iri reifier in subject',
+        shouldParse('<<<a> <b> <c> ~ <iri>>> <b> <c>.',
+            ['iri', 'b', 'c'],
+            ['iri', reifies, ['a', 'b', 'c']],
+        ),
+    );
+
+    it(
+        'should parse a reified triple with blank node reifier in subject',
+        shouldParse('<<<a> <b> <c> ~ _:b1>> <b> <c>.',
+            ['_:b0_b1', 'b', 'c'],
+            ['_:b0_b1', reifies, ['a', 'b', 'c']],
+        ),
+    );
+
+    it(
+        'should parse a reified triple with iri reifier in object',
+        shouldParse('<a> <b> <<<a> <b> <c> ~ <iri>>>.',
+            ['a', 'b', 'iri'],
+            ['iri', reifies, ['a', 'b', 'c']],
+        ),
+    );
+
+    it(
+        'should parse a reified triple with blank node reifier in object',
+        shouldParse('<a> <b> <<<a> <b> <c> ~ _:b1>>.',
+            ['a', 'b', '_:b0_b1'],
+            ['_:b0_b1', reifies, ['a', 'b', 'c']],
+        ),
+    );
+
+    it(
+      'should parse a triple term with a triple as object correctly',
+      shouldParse('<a> <b> <<(<a> <b> <c>)>>.',
         ['a', 'b', ['a', 'b', 'c']]),
     );
 
     it(
-      'should parse an RDF-star triple with a triple as object correctly',
-      shouldParse('<a> <b> <<_:a <b> _:c>>.',
+        'should parse a reified triple with a triple as object correctly',
+        shouldParse('<a> <b> <<<a> <b> <c>>>.',
+            ['a', 'b', '_:b0'],
+            ['_:b0', reifies, ['a', 'b', 'c']]),
+    );
+
+    it(
+      'should parse a triple term with a triple as object with blank node correctly',
+      shouldParse('<a> <b> <<(_:a <b> _:c)>>.',
         ['a', 'b', ['_:b0_a', 'b', '_:b0_c']]),
     );
 
     it(
-      'should parse an RDF-star triple with a triple as object correctly',
-      shouldParse('<a> <b> <<_:a <b> "c"^^<d>>>.',
+        'should parse a reified triple with a triple as object with blank node correctly',
+        shouldParse('<a> <b> <<_:a <b> _:c>>.',
+            ['a', 'b', '_:b0'],
+            ['_:b0', reifies, ['_:b0_a', 'b', '_:b0_c']]),
+    );
+
+    it(
+      'should parse a triple term with a triple as object with literal correctly',
+      shouldParse('<a> <b> <<(_:a <b> "c"^^<d>)>>.',
         ['a', 'b', ['_:b0_a', 'b', '"c"^^http://example.org/d']]),
     );
 
     it(
-      'should parse nested triples correctly',
-      shouldParse('<<<<<a> <b> <c>>> <f> <g>>> <d> <e>.',
-        [[['a', 'b', 'c'], 'f', 'g'], 'd', 'e']),
+        'should parse a reified triple with a triple as object with literal correctly',
+        shouldParse('<a> <b> <<_:a <b> "c"^^<d>>>.',
+            ['a', 'b', '_:b0'],
+            ['_:b0', reifies, ['_:b0_a', 'b', '"c"^^http://example.org/d']]),
     );
+
+    it('should throw on nested triple terms in subject', () => {
+      expect((() => { new Parser().parse('<<(<<(<a> <b> <c>)>> <f> <g>)>> <d> <e>.'); })).toThrow('Disallowed triple term as subject on line 1.');
+    });
+
     it(
-      'should parse nested triples correctly',
-      shouldParse('<d> <e> <<<f> <g> <<<a> <b> <c>>>>>.',
+        'should parse nested reified triples in subject correctly',
+        shouldParse('<<<<<a> <b> <c>>> <f> <g>>> <d> <e>.',
+            ['_:b1', 'd', 'e'],
+            ['_:b0', reifies, ['a', 'b', 'c']],
+            ['_:b1', reifies, ['_:b0', 'f', 'g']]),
+    );
+
+    it(
+      'should parse nested triple terms in object correctly',
+      shouldParse('<d> <e> <<(<f> <g> <<(<a> <b> <c>)>>)>>.',
         ['d', 'e', ['f', 'g', ['a', 'b', 'c']]]),
     );
+
     it(
-      'should parse nested triples correctly',
-      shouldParse('<<<f> <g> <<<a> <b> <c>>>>> <d> <e>.',
-        [['f', 'g', ['a', 'b', 'c']], 'd', 'e']),
-    );
-    it(
-      'should parse nested triples correctly',
-      shouldParse('<d> <e> <<<<<a> <b> <c>>> <f> <g>>>.',
-        ['d', 'e', [['a', 'b', 'c'], 'f', 'g']]),
+        'should parse nested reified triples in object correctly',
+        shouldParse('<d> <e> <<<f> <g> <<<a> <b> <c>>>>>.',
+            ['d', 'e', '_:b1'],
+            ['_:b0', reifies, ['a', 'b', 'c']],
+            ['_:b1', reifies, ['f', 'g', '_:b0']]),
     );
 
     it(
-      'should not parse nested RDF-star statements that are partially closed',
-      shouldNotParse('<d> <e> <<<<<a> <b> <c>>> <f> <g>.',
-        'Expected entity but got . on line 1.',
+        'should parse nested reified triples in subject and object correctly',
+        shouldParse('<<<f> <g> <<<a> <b> <c>>>>> <d> <e>.',
+            ['_:b1', 'd', 'e'],
+            ['_:b0', reifies, ['a', 'b', 'c']],
+            ['_:b1', reifies, ['f', 'g', '_:b0']]),
+    );
+
+    it(
+        'should parse nested reified triples in object and subject correctly',
+        shouldParse('<d> <e> <<<<<a> <b> <c>>> <f> <g>>>.',
+            ['d', 'e', '_:b1'],
+            ['_:b0', reifies, ['a', 'b', 'c']],
+            ['_:b1', reifies, ['_:b0', 'f', 'g']]),
+    );
+
+    it(
+      'should not parse nested triple terms that are partially closed',
+      shouldNotParse('<d> <e> <<(<<(<a> <b> <c>)>> <f> <g>.',
+        'Disallowed triple term as subject on line 1.',
       ),
     );
 
     it(
-      'should not parse partially closed nested RDF-star statements',
-      shouldNotParse('<d> <e> <<<<<a> <b> <c> <f> <g>>>.',
-        'Expected >> but got IRI on line 1.',
+        'should not parse nested reified triples that are partially closed',
+        shouldNotParse('<d> <e> <<<<<a> <b> <c>>> <f> <g>.',
+            'Expected >> but got . on line 1.',
+        ),
+    );
+
+    it(
+        'should not parse partially closed nested triple terms',
+        shouldNotParse('<d> <e> <<(<<(<a> <b> <c> <f> <g>)>>.',
+            'Disallowed triple term as subject on line 1.',
+        ),
+    );
+
+    it(
+        'should not parse partially closed nested reified triples',
+        shouldNotParse('<d> <e> <<<<<a> <b> <c> <f> <g>>>.',
+            'Expected >> but got IRI on line 1.',
+        ),
+    );
+
+    it(
+      'should not parse nested triple terms with too many closing tags',
+      shouldNotParse('<d> <e> <<(<<(<a> <b> <c>)>>)>> <f> <g>)>>.',
+        'Disallowed triple term as subject on line 1.',
       ),
     );
 
     it(
-      'should not parse nested RDF-star statements with too many closing tags',
-      shouldNotParse('<d> <e> <<<<<a> <b> <c>>>>> <f> <g>>>.',
-        'Expected entity but got >> on line 1.',
+        'should not parse nested reified triples with too many closing tags',
+        shouldNotParse('<d> <e> <<<<<a> <b> <c>>>>> <f> <g>>>.',
+            'Expected entity but got >> on line 1.',
+        ),
+    );
+
+    it(
+      'should not parse nested triple terms with too many closing tags',
+      shouldNotParse('<d> <e> <<(<<(<a> <b> <c>)>> <f> <g>)>>)>>.',
+        'Disallowed triple term as subject on line 1.',
       ),
     );
 
     it(
-      'should not parse nested RDF-star statements with too many closing tags',
-      shouldNotParse('<d> <e> <<<<<a> <b> <c>>> <f> <g>>>>>.',
-        'Expected entity but got >> on line 1.',
+        'should not parse nested reified triples with too many closing tags',
+        shouldNotParse('<d> <e> <<<<<a> <b> <c>>> <f> <g>>>>>.',
+            'Expected entity but got >> on line 1.',
+        ),
+    );
+
+    it(
+      'should not parse triple terms with too many closing tags',
+      shouldNotParse('<a> <b> <c>)>>.',
+        'Expected entity but got )>> on line 1.',
       ),
     );
 
     it(
-      'should not parse RDF-star statements with too many closing tags',
-      shouldNotParse('<a> <b> <c>>>.',
-        'Expected entity but got >> on line 1.',
+        'should not parse reified triples with too many closing tags',
+        shouldNotParse('<a> <b> <c>>>.',
+            'Expected entity but got >> on line 1.',
+        ),
+    );
+
+    it(
+      'should not parse incomplete triple terms in object',
+      shouldNotParse('<d> <e> <<(<a> <b>)>>.',
+        'Expected entity but got )>> on line 1.',
       ),
     );
 
     it(
-      'should not parse incomplete RDF-star statements',
-      shouldNotParse('<d> <e> <<<a> <b>>>.',
-        'Expected entity but got >> on line 1.',
+        'should not parse incomplete reified triples in object',
+        shouldNotParse('<d> <e> <<<a> <b>>>.',
+            'Expected entity but got >> on line 1.',
+        ),
+    );
+
+    it(
+      'should not parse incomplete triple terms in subject',
+      shouldNotParse('<<(<a> <b>)>> <d> <e>.',
+        'Disallowed triple term as subject on line 1.',
       ),
     );
 
     it(
-      'should not parse incomplete RDF-star statements',
-      shouldNotParse('<<<a> <b>>> <d> <e>.',
-        'Expected entity but got >> on line 1.',
+        'should not parse incomplete reified triples in subject',
+        shouldNotParse('<<<a> <b>>> <d> <e>.',
+            'Expected entity but got >> on line 1.',
+        ),
+    );
+
+    it(
+      'should not parse incorrectly nested triple terms',
+      shouldNotParse(')>> <<(',
+        'Expected entity but got )>> on line 1.',
       ),
     );
 
     it(
-      'should not parse incorrectly nested RDF-star statements',
-      shouldNotParse('>> <<',
-        'Expected entity but got >> on line 1.',
+        'should not parse incorrectly nested reified triples',
+        shouldNotParse('>> <<',
+            'Expected entity but got >> on line 1.',
+        ),
+    );
+
+    it(
+      'should not parse a triple term on its own',
+      shouldNotParse('<<(<a> <b> <c>)>>.',
+        'Disallowed triple term as subject on line 1.',
       ),
     );
 
     it(
-      'should not parse a nested triple on its own',
-      shouldNotParse('<<<a> <b> <c>>>.',
-        'Unexpected . on line 1.',
-      ),
-    );
-
-    it('should parse an RDF-star quad', shouldParse('<<<a> <b> <c> <d>>> <a> <b> .',
-      [['a', 'b', 'c', 'd'], 'a', 'b']));
-
-    it(
-      'should not parse a malformed RDF-star quad',
+      'should not parse a reified quad',
       shouldNotParse('<<<a> <b> <c> <d> <e>>> <a> <b> .',
         'Expected >> but got IRI on line 1.'),
     );
 
     it(
-      'should parse statements with a shared RDF-star subject',
+      'should parse statements with a shared reified triple subject',
       shouldParse('<<<a> <b> <c>>> <b> <c>;\n<d> <c>.',
-        [['a', 'b', 'c'], 'b', 'c'],
-        [['a', 'b', 'c'], 'd', 'c']),
+        ['_:b0', 'b', 'c'],
+        ['_:b0', reifies, ['a', 'b', 'c']],
+        ['_:b0', 'd', 'c']),
     );
 
     it(
-      'should parse statements with a shared RDF-star subject',
-      shouldParse('<<<a> <b> <c>>> <b> <c>;\n<d> <<<a> <b> <c>>>.',
-        [['a', 'b', 'c'], 'b', 'c'],
-        [['a', 'b', 'c'], 'd', ['a', 'b', 'c']]),
+        'should parse statements with a shared reified triple subject and reified object',
+        shouldParse('<<<a> <b> <c>>> <b> <c>;\n<d> <<<a> <b> <c>>>.',
+            ['_:b0', 'b', 'c'],
+            ['_:b0', reifies, ['a', 'b', 'c']],
+            ['_:b0', 'd', '_:b1'],
+            ['_:b1', reifies, ['a', 'b', 'c']]),
     );
 
     it(
-      'should put nested triples in the default graph',
-      shouldParse('<a> <b> <c> <g>.\n<<<a> <b> <c>>> <d> <e>.',
-          ['a', 'b', 'c', 'g'],
-          [['a', 'b', 'c'], 'd', 'e']),
+        'should put nested reified triples in the default graph',
+        shouldParse('<a> <b> <c> <g>.\n<<<a> <b> <c>>> <d> <e>.',
+            ['a', 'b', 'c', 'g'],
+            ['_:b0', 'd', 'e'],
+            ['_:b0', reifies, ['a', 'b', 'c']]),
     );
 
     it(
-      'should parse an RDF-star triple using annotation syntax with one predicate-object',
-      shouldParse('<a> <b> <c> {| <b> <c> |}.',
-          ['a', 'b', 'c'], [['a', 'b', 'c'], 'b', 'c']),
+        'should parse a reified triple using annotation syntax with one predicate-object',
+        shouldParse('<a> <b> <c> {| <b> <c> |}.',
+            ['a', 'b', 'c'],
+            ['_:b0', 'b', 'c'],
+            ['_:b0', reifies, ['a', 'b', 'c']]),
     );
 
     it(
-      'should parse an RDF-star triple using annotation syntax with two predicate-objects',
+      'should parse a reified triple using annotation syntax with reifier and one predicate-object',
+      shouldParse('<a> <b> <c> ~ <iri> {| <b> <c> |}.',
+          ['a', 'b', 'c'],
+          ['iri', 'b', 'c'],
+          ['iri', reifies, ['a', 'b', 'c']]),
+    );
+
+    it(
+        'should parse two reified triples using annotation syntax with one predicate-object',
+        shouldParse('<a> <b> <c> {| <b> <c> |}. <a2> <b2> <c2> {| <b2> <c2> |}.',
+            ['a', 'b', 'c'],
+            ['_:b0', 'b', 'c'],
+            ['_:b0', reifies, ['a', 'b', 'c']],
+            ['a2', 'b2', 'c2'],
+            ['_:b1', 'b2', 'c2'],
+            ['_:b1', reifies, ['a2', 'b2', 'c2']]),
+    );
+
+    it(
+      'should parse a reified triple using annotation syntax with two predicate-objects',
       shouldParse('<a> <b> <c> {| <b1> <c1>; <b2> <c2> |}.',
-          ['a', 'b', 'c'], [['a', 'b', 'c'], 'b1', 'c1'], [['a', 'b', 'c'], 'b2', 'c2']),
+          ['a', 'b', 'c'],
+          ['_:b0', 'b1', 'c1'],
+          ['_:b0', 'b2', 'c2'],
+          ['_:b0', reifies, ['a', 'b', 'c']]),
     );
 
     it(
-      'should parse an RDF-star triple using annotation syntax with one predicate-object followed by regular triples',
+        'should parse a reified triple using annotation syntax with reifier and with two predicate-objects',
+        shouldParse('<a> <b> <c> ~ <iri> {| <b1> <c1>; <b2> <c2> |}.',
+            ['a', 'b', 'c'],
+            ['iri', 'b1', 'c1'],
+            ['iri', 'b2', 'c2'],
+            ['iri', reifies, ['a', 'b', 'c']]),
+    );
+
+    it(
+        'should parse a reified triple using annotation syntax with reifier and with two predicate-objects with trailing ;',
+        shouldParse('<a> <b> <c> ~ <iri> {| <b1> <c1>; <b2> <c2> ; |}.',
+            ['a', 'b', 'c'],
+            ['iri', 'b1', 'c1'],
+            ['iri', 'b2', 'c2'],
+            ['iri', reifies, ['a', 'b', 'c']]),
+    );
+
+    it(
+      'should parse a reified triple using annotation syntax with one predicate-object followed by regular triples',
       shouldParse('<a> <b> <c> {| <b> <c> |}.\n<a2> <b2> <c2>.',
-          ['a', 'b', 'c'], [['a', 'b', 'c'], 'b', 'c'], ['a2', 'b2', 'c2']),
+          ['a', 'b', 'c'],
+          ['_:b0', 'b', 'c'],
+          ['_:b0', reifies, ['a', 'b', 'c']],
+          ['a2', 'b2', 'c2']),
     );
 
     it(
-      'should not parse an RDF-star triple using annotation syntax with zero predicate-objects',
+        'should parse a reified triple using annotation syntax with reifier and with one predicate-object followed by regular triples',
+        shouldParse('<a> <b> <c> ~ <iri> {| <b> <c> |}.\n<a2> <b2> <c2>.',
+            ['a', 'b', 'c'],
+            ['iri', 'b', 'c'],
+            ['iri', reifies, ['a', 'b', 'c']],
+            ['a2', 'b2', 'c2']),
+    );
+
+    it(
+        'should parse a reified triple using multiple annotation syntax blocks',
+        shouldParse('<a> <b> <c> {| <b1> <c1> |} {| <b2> <c2> |}.',
+            ['a', 'b', 'c'],
+            ['_:b0', 'b1', 'c1'],
+            ['_:b0', reifies, ['a', 'b', 'c']],
+            ['_:b1', 'b2', 'c2'],
+            ['_:b1', reifies, ['a', 'b', 'c']]),
+    );
+
+    it(
+        'should parse a reified triple using multiple annotation syntax blocks with reifiers',
+        shouldParse('<a> <b> <c> ~ <iri1> {| <b1> <c1> |} ~ <iri2> {| <b2> <c2> |}.',
+            ['a', 'b', 'c'],
+            ['iri1', 'b1', 'c1'],
+            ['iri1', reifies, ['a', 'b', 'c']],
+            ['iri2', 'b2', 'c2'],
+            ['iri2', reifies, ['a', 'b', 'c']]),
+    );
+
+    it(
+        'should parse a reified triple using multiple annotation syntax blocks with reifier for the first',
+        shouldParse('<a> <b> <c> ~ <iri1> {| <b1> <c1> |} {| <b2> <c2> |}.',
+            ['a', 'b', 'c'],
+            ['iri1', 'b1', 'c1'],
+            ['iri1', reifies, ['a', 'b', 'c']],
+            ['_:b0', 'b2', 'c2'],
+            ['_:b0', reifies, ['a', 'b', 'c']]),
+    );
+
+    it(
+      'should not parse a reified triple using annotation syntax with zero predicate-objects',
       shouldNotParse('<a> <b> <c> {| |}',
-          'Expected entity but got |} on line 1.'),
+          'Expected entity but got eof on line 1.'),
     );
 
     it(
-      'should not parse an RDF-star triple using an incomplete annotation syntax',
+      'should not parse a reified triple using an incomplete annotation syntax',
       shouldNotParse('<a> <b> <c> {| <b> |}',
           'Expected entity but got |} on line 1.'),
     );
 
     it(
-      'should not parse an RDF-star triple using an incomplete annotation syntax after a semicolon',
+      'should not parse a reified triple using an incomplete annotation syntax after a semicolon',
       shouldNotParse('<a> <b> <c> {| <b1> <c1>; |}',
-          'Expected entity but got |} on line 1.'),
+          'Expected entity but got eof on line 1.'),
     );
 
     it(
-      'should not parse an RDF-star triple using an incomplete annotation syntax after a semicolon and entity',
+      'should not parse a reified triple using an incomplete annotation syntax after a semicolon and entity',
       shouldNotParse('<a> <b> <c> {| <b1> <c1>; <b2> |}',
           'Expected entity but got |} on line 1.'),
     );
 
     it(
-      'should not parse an RDF-star triple using an incomplete annotation syntax that misses |}',
+      'should not parse a reified triple using an incomplete annotation syntax that misses |}',
       shouldNotParse('<a> <b> <c> {| <b1> <c1>',
           'Expected entity but got eof on line 1.'),
     );
 
     it(
-      'should not parse an RDF-star triple using an incomplete annotation syntax that misses |} and starts a new subject',
+      'should not parse a reified triple using an incomplete annotation syntax that misses |} and starts a new subject',
       shouldNotParse('<a> <b> <c> {| <b1> <c1>. <a2> <b2> <c2>',
           'Expected entity but got eof on line 1.'),
     );
 
     it('should not parse an out of place |}', shouldNotParse('<a> <b> <c> |}',
-        'Unexpected asserted triple closing on line 1.'));
+        'Unexpected annotation syntax closing on line 1.'));
   });
 
   describe('An Parser instance without document IRI', () => {
@@ -1639,42 +1951,48 @@ describe('Parser', () => {
         'Unexpected literal on line 1.'),
     );
 
+    it('should parse a triple term', shouldParse(parser, '<a> <b> <<(<a> <b> <c>)>>.',
+        ['a', 'b', ['a', 'b', 'c']]));
+
+    it('should parse a reified triple', shouldParse(parser,
+        '<<<a> <b> <c>>> <b> <c> .',
+        ['_:b0', 'b', 'c'],
+        ['_:b0', reifies, ['a', 'b', 'c']]));
+
     it(
-      'should not parse RDF-star in the subject position',
-      shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
-        'Unexpected RDF-star syntax on line 1.'),
+        'should not parse nested quads',
+        shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
+            'Expected >> but got IRI on line 1.'),
     );
 
     it(
-      'should not parse RDF-star in the object position',
-      shouldNotParse(parser, '<a> <b> <<a> <b> <c>>>.',
-        'Unexpected RDF-star syntax on line 1.'),
+        'should not parse nested quads with comments',
+        shouldNotParseWithComments(parser, '#comment1\n<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
+            'Expected >> but got IRI on line 2.'),
     );
 
     it(
-      'should not parse RDF-star with annotated syntax',
-      shouldNotParse(parser, '<a> <b> <c> {| <b> <c> |}.',
-          'Unexpected RDF-star syntax on line 1.'),
-    );
-  });
-
-  describe('A Parser instance for the TurtleStar format', () => {
-    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'TurtleStar' }); }
-
-    it('should parse RDF-star', shouldParse(parser,
-      '<<<a> <b> <c>>> <b> <c> .',
-      [['a', 'b', 'c'], 'b', 'c']));
-
-    it(
-      'should not parse nested quads',
-      shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
-        'Expected >> to follow "_:b0_b" on line 1.'),
+        'should not parse a reified triple with list object',
+        shouldNotParse(parser, '<<<s> <p> ("abc") >> <q> 123 .',
+            'Unexpected list in reified triple on line 1.'),
     );
 
     it(
-      'should not parse nested quads with comments',
-      shouldNotParseWithComments(parser, '#comment1\n<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
-        'Expected >> to follow "_:b0_b" on line 2.'),
+        'should not parse a reified triple with list subject',
+        shouldNotParse(parser, '<< ("abc") <p> <o>>> <q> 123 .',
+            'Unexpected list in reified triple on line 1.'),
+    );
+
+    it(
+        'should not parse a reified triple with compound blank node expression in object',
+        shouldNotParse(parser, '<<<s> <p> [ <p1> <o1> ]  >> <q> 123 .',
+            'Unexpected compound blank node expression in reified triple on line 1.'),
+    );
+
+    it(
+        'should not parse a reified triple with compound blank node expression in subject',
+        shouldNotParse(parser, '<< [ <p1> <o1> ] <p> <o>>> <q> 123 .',
+            'Unexpected compound blank node expression in reified triple on line 1.'),
     );
   });
 
@@ -1735,35 +2053,18 @@ describe('Parser', () => {
       shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'),
     );
 
-    it(
-      'should not parse RDF-star in the subject position',
-      shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
-        'Unexpected RDF-star syntax on line 1.'),
-    );
+    it('should parse a triple term', shouldParse(parser, '<a> <b> <<(<a> <b> <c>)>>.',
+        ['a', 'b', ['a', 'b', 'c']]));
+
+    it('should parse a reified triple', shouldParse(parser,
+        '<<<a> <b> <c>>> <b> <c> .',
+        ['_:b0', 'b', 'c'],
+        ['_:b0', reifies, ['a', 'b', 'c']]));
 
     it(
-      'should not parse RDF-star in the object position',
-      shouldNotParse(parser, '<a> <b> <<<a> <b> <c>>>.',
-        'Unexpected RDF-star syntax on line 1.'),
-    );
-
-    it(
-      'should not parse RDF-star with annotated syntax',
-      shouldNotParse(parser, '<a> <b> <c> {| <b> <c> |}.',
-          'Unexpected RDF-star syntax on line 1.'),
-    );
-  });
-
-  describe('A Parser instance for the TriGStar format', () => {
-    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'TriGStar' }); }
-
-    it('should parse RDF-star', shouldParse(parser, '<<<a> <b> <c>>> <a> <b> .',
-      [['a', 'b', 'c'], 'a', 'b']));
-
-    it(
-      'should not parse nested quads',
-      shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
-        'Expected >> to follow "_:b0_b" on line 1.'),
+        'should not parse nested quads',
+        shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
+            'Expected >> but got IRI on line 1.'),
     );
   });
 
@@ -1857,38 +2158,25 @@ describe('Parser', () => {
       shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'),
     );
 
+    it('should parse a triple term', shouldParse(parser, '<http://example.org/a> <http://example.org/b> <<(<http://example.org/a> <http://example.org/b> <http://example.org/c>)>>.',
+        ['a', 'b', ['a', 'b', 'c']]));
+
     it(
-      'should not parse RDF-star in the subject position',
-      shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
-        'Unexpected RDF-star syntax on line 1.'),
+        'should not parse a reified triple',
+        shouldNotParse(parser, '<<_:a <http://example.org/b> _:c>> <http://example.org/a> _:b .',
+            'Unexpected "<<_:a" on line 1.'),
     );
 
     it(
-      'should not parse RDF-star in the object position',
-      shouldNotParse(parser, '<http://ex.org/a> <http://ex.org/b> <<<a> <b> <c>>>.',
-        'Unexpected RDF-star syntax on line 1.'),
-    );
-  });
-
-  describe('A Parser instance for the N-TriplesStar format', () => {
-    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N-TriplesStar' }); }
-
-    it(
-      'should parse RDF-star',
-      shouldParse(parser, '<<_:a <http://example.org/b> _:c>> <http://example.org/a> _:b .',
-        [['_:b0_a', 'b', '_:b0_c'], 'a', '_:b0_b']),
+        'should not parse nested quads',
+        shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
+            'Unexpected "<<_:a" on line 1.'),
     );
 
     it(
-      'should not parse nested quads',
-      shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
-        'Expected >> to follow "_:b0_b" on line 1.'),
-    );
-
-    it(
-      'should not parse annotated triples',
-      shouldNotParse(parser, '_:a <http://ex.org/b> _:c {| <http://ex.org/b1> "c1" |} .',
-          'Unexpected "{|" on line 1.'),
+        'should not parse annotated triples',
+        shouldNotParse(parser, '_:a <http://ex.org/b> _:c {| <http://ex.org/b1> "c1" |} .',
+            'Unexpected "{|" on line 1.'),
     );
   });
 
@@ -1952,32 +2240,19 @@ describe('Parser', () => {
       shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'),
     );
 
+    it('should parse a triple term', shouldParse(parser, '<http://example.org/a> <http://example.org/b> <<(<http://example.org/a> <http://example.org/b> <http://example.org/c>)>>.',
+        ['a', 'b', ['a', 'b', 'c']]));
+
     it(
-      'should not parse RDF-star in the subject position',
-      shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
-        'Unexpected RDF-star syntax on line 1.'),
+        'should not parse a reified triple',
+        shouldNotParse(parser, '<<_:a <http://example.org/b> _:c>> <http://example.org/a> _:b .',
+            'Unexpected "<<_:a" on line 1.'),
     );
 
     it(
-      'should not parse RDF-star in the object position',
-      shouldNotParse(parser, '_:a <http://ex.org/b> <<<a> <b> <c>>>.',
-        'Unexpected RDF-star syntax on line 1.'),
-    );
-  });
-
-  describe('A Parser instance for the N-QuadsStar format', () => {
-    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N-QuadsStar' }); }
-
-    it(
-      'should parse RDF-star',
-      shouldParse(parser, '<<_:a <http://example.org/b> _:c>> <http://example.org/a> _:c .',
-        [['_:b0_a', 'b', '_:b0_c'], 'a', '_:b0_c']),
-    );
-
-    it(
-      'should not parse annotated triples',
-      shouldNotParse(parser, '_:a <http://ex.org/b> _:c {| <http://ex.org/b1> "c1" |} .',
-          'Unexpected "{|" on line 1.'),
+        'should not parse annotated triples',
+        shouldNotParse(parser, '_:a <http://ex.org/b> _:c {| <http://ex.org/b1> "c1" |} .',
+            'Unexpected "{|" on line 1.'),
     );
   });
 
@@ -2429,34 +2704,71 @@ describe('Parser', () => {
     );
 
     it(
-      'should not parse RDF-star in the subject position',
-      shouldNotParse(parser, '<<<a> <b> <c>>> <a> <b> .',
-        'Unexpected RDF-star syntax on line 1.'),
+        'should parse literals with language and direction as subject',
+        shouldParse(parser, '<a> <b> {"bonjour"@fr--ltr <sameAs> "hello"@en--rtl}.',
+            ['a', 'b', '_:b0'],
+            ['"bonjour"@fr--ltr', 'sameAs', '"hello"@en--rtl', '_:b0'],
+        ),
     );
 
     it(
-      'should not parse RDF-star in the object position',
-      shouldNotParse(parser, '<a> <b> <<<a> <b> <c>>>.',
-        'Unexpected RDF-star syntax on line 1.'),
+        'should parse a triple term with iris as subject correctly',
+        shouldParse(parser, '<<(<a> <b> <c>)>> <b> <c>.',
+            [['a', 'b', 'c'], 'b', 'c']),
     );
 
     it(
-      'should not parse RDF-star with annotated syntax',
-      shouldNotParse(parser, '<a> <b> <c> {| <b> <c> |}.',
-          'Unexpected RDF-star syntax on line 1.'),
+        'should parse nested triple terms in subject correctly',
+        shouldParse(parser, '<<(<<(<a> <b> <c>)>> <f> <g>)>> <d> <e>.',
+            [[['a', 'b', 'c'], 'f', 'g'], 'd', 'e']),
     );
+
+    it(
+        'should parse nested triple terms in subject and object correctly',
+        shouldParse(parser, '<<(<f> <g> <<(<a> <b> <c>)>>)>> <d> <e>.',
+            [['f', 'g', ['a', 'b', 'c']], 'd', 'e']),
+    );
+
+    it(
+        'should parse nested triple terms in object and subject correctly',
+        shouldParse(parser, '<d> <e> <<(<<(<a> <b> <c>)>> <f> <g>)>>.',
+            ['d', 'e', [['a', 'b', 'c'], 'f', 'g']]),
+    );
+
+    it(
+        'should parse statements with a shared triple term subject',
+        shouldParse(parser, '<<(<a> <b> <c>)>> <b> <c>;\n<d> <c>.',
+            [['a', 'b', 'c'], 'b', 'c'],
+            [['a', 'b', 'c'], 'd', 'c']),
+    );
+
+    it(
+        'should parse statements with a shared triple term subject and triple term object',
+        shouldParse(parser, '<<(<a> <b> <c>)>> <b> <c>;\n<d> <<(<a> <b> <c>)>>.',
+            [['a', 'b', 'c'], 'b', 'c'],
+            [['a', 'b', 'c'], 'd', ['a', 'b', 'c']]),
+    );
+
+    it('should throw when a triple term does not terminate correctly', () => {
+      expect((() => { new Parser().parse('<a> <b> <<( <c> <d> <e>.'); })).toThrow('Expected )>> but got . on line 1.');
+    });
   });
 
   describe('A Parser instance for the N3Star format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3Star' }); }
 
-    it('should parse RDF-star', shouldParse(parser, '<<<a> <b> <c>>> <a> <b> .',
-      [['a', 'b', 'c'], 'a', 'b']));
+    it('should parse a triple term', shouldParse(parser, '<a> <b> <<(<a> <b> <c>)>>.',
+        ['a', 'b', ['a', 'b', 'c']]));
+
+    it('should parse a reified triple', shouldParse(parser,
+        '<<<a> <b> <c>>> <b> <c> .',
+        ['_:b0', 'b', 'c'],
+        ['_:b0', reifies, ['a', 'b', 'c']]));
 
     it(
       'should not parse nested quads',
       shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
-        'Expected >> to follow "_:.b" on line 1.'),
+        'Expected >> but got IRI on line 1.'),
     );
   });
 

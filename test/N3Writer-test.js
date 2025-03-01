@@ -76,6 +76,12 @@ describe('Writer', () => {
                       '<a> <b> "cde"@en-us.\n'),
     );
 
+    it(
+        'should serialize a literal with a language and direction',
+        shouldSerialize(['a', 'b', '"cde"@en-us--ltr'],
+            '<a> <b> "cde"@en-us--ltr.\n'),
+    );
+
     // e.g. http://vocab.getty.edu/aat/300264727.ttl
     it(
       'should serialize a literal with an artificial language',
