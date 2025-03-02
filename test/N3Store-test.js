@@ -150,6 +150,17 @@ describe('Store', () => {
 
     it('should have size 5', () => {
       expect(store.size).toEqual(5);
+
+      expect(store.match(namedNode('s2'), namedNode('p2'), namedNode('o2'), namedNode('g1')).size).toEqual(1);
+      expect(store.match(null, namedNode('p2'), namedNode('o2'), namedNode('g1')).size).toEqual(1);
+      expect(store.match(namedNode('s2'), null, namedNode('o2'), namedNode('g1')).size).toEqual(1);
+      expect(store.match(namedNode('s2'), namedNode('p2'), null, namedNode('g1')).size).toEqual(1);
+      expect(store.match(namedNode('s2'), namedNode('p2'), namedNode('o2'), null).size).toEqual(1);
+
+      expect(store.match(namedNode('s2'), namedNode('p2'), namedNode('o2'), namedNode('g2')).size).toEqual(0);
+      expect(store.match(null, namedNode('p2'), namedNode('o2'), namedNode('g2')).size).toEqual(0);
+      expect(store.match(namedNode('s2'), null, namedNode('o2'), namedNode('g2')).size).toEqual(0);
+      expect(store.match(namedNode('s2'), namedNode('p2'), null, namedNode('g2')).size).toEqual(0);
     });
 
     describe('adding a triple that already exists', () => {
