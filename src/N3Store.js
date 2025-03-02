@@ -1134,27 +1134,28 @@ class DatasetCoreAndReadableStream extends Readable {
 
       const graphs = n3Store._getGraphs(graph);
       for (const graphKey in graphs) {
-        let subjects, predicates, objects;
-
-        if (!subjectId && predicateId) {
-          if (predicates = indexMatch(graphs[graphKey].predicates, [predicateId, objectId, subjectId])) {
-            subjects = indexMatch(graphs[graphKey].subjects, [subjectId, predicateId, objectId]);
-            objects = indexMatch(graphs[graphKey].objects, [objectId, subjectId, predicateId]);
+        let subjects, predicates, objects, content;
+        if (content = graphs[graphKey]) {
+          if (!subjectId && predicateId) {
+            if (predicates = indexMatch(content.predicates, [predicateId, objectId, subjectId])) {
+              subjects = indexMatch(content.subjects, [subjectId, predicateId, objectId]);
+              objects = indexMatch(content.objects, [objectId, subjectId, predicateId]);
+            }
           }
-        }
-        else if (objectId) {
-          if (objects = indexMatch(graphs[graphKey].objects, [objectId, subjectId, predicateId])) {
-            subjects = indexMatch(graphs[graphKey].subjects, [subjectId, predicateId, objectId]);
-            predicates = indexMatch(graphs[graphKey].predicates, [predicateId, objectId, subjectId]);
+          else if (objectId) {
+            if (objects = indexMatch(content.objects, [objectId, subjectId, predicateId])) {
+              subjects = indexMatch(content.subjects, [subjectId, predicateId, objectId]);
+              predicates = indexMatch(content.predicates, [predicateId, objectId, subjectId]);
+            }
           }
-        }
-        else if (subjects = indexMatch(graphs[graphKey].subjects, [subjectId, predicateId, objectId])) {
-          predicates = indexMatch(graphs[graphKey].predicates, [predicateId, objectId, subjectId]);
-          objects = indexMatch(graphs[graphKey].objects, [objectId, subjectId, predicateId]);
-        }
+          else if (subjects = indexMatch(content.subjects, [subjectId, predicateId, objectId])) {
+            predicates = indexMatch(content.predicates, [predicateId, objectId, subjectId]);
+            objects = indexMatch(content.objects, [objectId, subjectId, predicateId]);
+          }
 
-        if (subjects)
-          newStore._graphs[graphKey] = { subjects, predicates, objects };
+          if (subjects)
+            newStore._graphs[graphKey] = { subjects, predicates, objects };
+        }
       }
       newStore._size = null;
     }
