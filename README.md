@@ -159,6 +159,13 @@ prefix or, if set to an empty string, completely disable prefixing:
 const parser = new N3.Parser({ blankNodePrefix: '' });
 ```
 
+By default, `N3.Parser` does not use the `log:isImpliedBy` predicate when parsing
+backwards chaining rules in Notation3. To enable parsing with this predicate use 
+the `isImpliedBy` parameter.
+```JavaScript
+const parser = new N3.Parser({ isImpliedBy: true });
+```
+
 ### From an RDF stream to quads
 
 `N3.Parser` can parse [Node.js streams](http://nodejs.org/api/stream.html) as they grow,
