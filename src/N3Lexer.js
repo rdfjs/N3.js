@@ -54,6 +54,9 @@ export default class N3Lexer {
     this._endOfFile = /^(?:#[^\n\r]*)?$/;
     options = options || {};
 
+    // Whether the log:isImpliedBy predicate is supported
+    this._isImpliedBy = options.isImpliedBy;
+
     // In line mode (N-Triples or N-Quads), only simple features may be parsed
     if (this._lineMode = !!options.lineMode) {
       this._n3Mode = false;
@@ -152,8 +155,11 @@ export default class N3Lexer {
         else if (input.length > 1 && input[1] === '<')
           type = '<<', matchLength = 2;
         // Try to find a backwards implication arrow
-        else if (this._n3Mode && input.length > 1 && input[1] === '=')
-          type = 'inverse', matchLength = 2, value = '>';
+        else if (this._n3Mode && input.length > 1 && input[1] === '=') {
+          matchLength = 2;
+          if (this._isImpliedBy) type = 'abbreviation', value = '<';
+          else type = 'inverse', value = '>';
+        }
         break;
 
       case '>':
