@@ -160,7 +160,7 @@ const parser = new N3.Parser({ blankNodePrefix: '' });
 ```
 
 By default, `N3.Parser` does not use the `log:isImpliedBy` predicate when parsing
-backwards chaining rules in Notation3. To enable parsing with this predicate use 
+backwards chaining rules in Notation3. To enable parsing with this predicate, use 
 the `isImpliedBy` parameter.
 ```JavaScript
 const parser = new N3.Parser({ isImpliedBy: true });
