@@ -1983,7 +1983,7 @@ describe('Parser', () => {
 
   describe('A Parser instance for the N3 format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3' }); }
-    function parserIsImpledBy() { return new Parser({ baseIRI: BASE_IRI, format: 'N3', isImpliedBy: true }); }
+    function parserIsImpliedBy() { return new Parser({ baseIRI: BASE_IRI, format: 'N3', isImpliedBy: true }); }
 
     it(
       'should parse a single triple',
@@ -2049,7 +2049,7 @@ describe('Parser', () => {
 
     it(
       'should parse a simple left implication',
-      shouldParse(parserIsImpledBy, '<a> <= <b>.',
+      shouldParse(parserIsImpliedBy, '<a> <= <b>.',
                   ['a', 'http://www.w3.org/2000/10/swap/log#isImpliedBy', 'b']),
     );
 
@@ -2063,7 +2063,7 @@ describe('Parser', () => {
 
     it(
       'should parse a right implication between one-triple graphs',
-      shouldParse(parserIsImpledBy, '{ ?a ?b <c>. } => { <d> <e> ?a }.',
+      shouldParse(parserIsImpliedBy, '{ ?a ?b <c>. } => { <d> <e> ?a }.',
                   ['_:b0', 'http://www.w3.org/2000/10/swap/log#implies', '_:b1'],
                   ['?a', '?b', 'c',  '_:b0'],
                   ['d',  'e',  '?a', '_:b1']),
@@ -2089,7 +2089,7 @@ describe('Parser', () => {
 
     it(
       'should parse a left implication between one-triple graphs',
-      shouldParse(parserIsImpledBy, '{ ?a ?b <c>. } <= { <d> <e> ?a }.',
+      shouldParse(parserIsImpliedBy, '{ ?a ?b <c>. } <= { <d> <e> ?a }.',
                   ['_:b0', 'http://www.w3.org/2000/10/swap/log#isImpliedBy', '_:b1'],
                   ['?a', '?b', 'c',  '_:b0'],
                   ['d',  'e',  '?a', '_:b1']),
