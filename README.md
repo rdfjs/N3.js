@@ -159,6 +159,13 @@ prefix or, if set to an empty string, completely disable prefixing:
 const parser = new N3.Parser({ blankNodePrefix: '' });
 ```
 
+The parser can output a backwards chaining rule such as `_:q <= _:p.` in two ways:
+- as `_:p log:implies _:q.` (default)
+- as `_:q log:isImpliedBy _:p.` (when the `isImpliedBy` flag is set to `true`)
+```JavaScript
+const parser = new N3.Parser({ isImpliedBy: true });
+```
+
 ### From an RDF stream to quads
 
 `N3.Parser` can parse [Node.js streams](http://nodejs.org/api/stream.html) as they grow,
