@@ -159,9 +159,9 @@ prefix or, if set to an empty string, completely disable prefixing:
 const parser = new N3.Parser({ blankNodePrefix: '' });
 ```
 
-By default, `N3.Parser` does not use the `log:isImpliedBy` predicate when parsing
-backwards chaining rules in Notation3. To enable parsing with this predicate, use 
-the `isImpliedBy` parameter.
+The parser can output a backwards chaining rule such as `_:q <= _:p.` in two ways:
+- as `_:p log:implies _:q.` (default)
+- as `_:q log:isImpliedBy _:p.` (when the `isImpliedBy` flag is set to `true`)
 ```JavaScript
 const parser = new N3.Parser({ isImpliedBy: true });
 ```
