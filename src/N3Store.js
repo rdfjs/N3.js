@@ -4,6 +4,7 @@ import { default as N3DataFactory, termToId, termFromId } from './N3DataFactory'
 import namespaces from './IRIs';
 import { isDefaultGraph } from './N3Util';
 import N3Writer from './N3Writer';
+import EventEmitter from 'events';
 
 const ITERATOR = Symbol('iter');
 
@@ -410,8 +411,55 @@ export default class N3Store {
 
   // ### `import` adds a stream of quads to the store
   import(stream) {
+    // Add quads to the store as they arrive
     stream.on('data', quad => { this.addQuad(quad); });
-    return stream;
+    
+    // Create a promise that resolves when the stream ends
+    let promise;
+    const store = this;
+    
+    // Return a proxy that acts as both stream and promise without mutating the stream object
+    return new Proxy(stream, {
+      get(target, prop) {
+      // Forward Promise methods to the promise object
+      if (prop === 'then' || prop === 'catch' || prop === 'finally') {
+        promise ||= new Promise((resolve, reject) => {
+          // Create proxy that combines N3Store with EventEmitter capabilities
+          const storeProxy = new Proxy(store, {
+            get(target, prop, receiver) {
+              if (prop in EventEmitter.prototype) {
+                return Reflect.get(stream, prop, receiver);
+              }
+              return Reflect.get(target, prop, receiver);
+            }
+          });
+          
+          // Check if stream is already closed/ended
+          if (stream.readableEnded || stream.destroyed || stream.readable === false) {
+            // Resolve immediately if stream is already closed
+            resolve(storeProxy);
+          } else {
+            // Otherwise, wait for end/error events
+            const onEnd = () => {
+              stream.removeListener('error', onError);
+              resolve(storeProxy);
+            };
+            
+            const onError = (err) => {
+              stream.removeListener('end', onEnd);
+              reject(err);
+            };
+            
+            stream.once('end', onEnd);
+            stream.once('error', onError);
+          }
+        });
+        return promise[prop].bind(promise);
+      }
+      // All other properties and methods are from the stream
+      return target[prop];
+      }
+    });
   }
 
   // ### `removeQuad` removes a quad from the store if it exists

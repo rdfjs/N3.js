@@ -13,6 +13,7 @@ import {
 import namespaces from '../src/IRIs';
 import { Readable } from 'readable-stream';
 import { arrayifyStream } from 'arrayify-stream';
+import { EventEmitter } from 'events';
 
 const { namedNode, quad } = DataFactory;
 
@@ -2395,6 +2396,116 @@ describe('Store', () => {
       });
 
       it('should have size 2', () => { expect(empty.size).toEqual(2); });
+    });
+
+    describe('#import promise', () => {
+      it('should have size 2', async () => {
+        const stream = new ArrayReader([
+          new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
+          new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+        ]);
+
+        expect((await new Store().import(stream)).size).toEqual(2);
+      });
+    });
+
+    describe('N3Store import', () => {
+      it('should not add "end" or "error" listeners until await is called', async () => {
+        const stream = new ArrayReader([
+          new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
+          new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+        ]);
+        const store = new Store();
+        const importPromise = store.import(stream);
+
+        const newListners = [];
+        stream.on('newListener', (event, listener) => { newListners.push({ event, listener }); });
+
+        expect(stream.listenerCount('end')).toEqual(0);
+        expect(stream.listenerCount('error')).toEqual(0);
+
+        expect(newListners).toEqual([]);
+
+        await importPromise;
+
+        expect(stream.listenerCount('end')).toEqual(0);
+        expect(stream.listenerCount('error')).toEqual(0);
+
+        // Checking that 'end' and 'error' listeners were added and then removed in importing
+        expect(newListners).toEqual([
+          { event: 'end', listener: expect.any(Function) },
+          { event: 'error', listener: expect.any(Function) },
+        ]);
+      });
+
+      it('should still be a functional event emitter before and after awaiting', async () => {
+        const stream = new ArrayReader([
+          new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
+          new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+        ]);
+        const store = new Store();
+        const importPromise = store.import(stream);
+
+        let receivedPreAwait = false;
+        stream.on('testEvent', data => {
+          receivedPreAwait = true;
+          expect(data).toBe('testData');
+        });
+        stream.emit('testEvent', 'testData');
+        expect(receivedPreAwait).toBe(true);
+
+        await importPromise;
+
+        let receivedPostAwait = false;
+        stream.on('testEvent2', data => {
+          receivedPostAwait = true;
+          expect(data).toBe('testDataAfterAwait');
+        });
+        stream.emit('testEvent2', 'testDataAfterAwait');
+        expect(receivedPostAwait).toBe(true);
+      });
+
+      it('should not add store attributes to the stream and vice-versa; pre and post import', async () => {
+        const stream = new ArrayReader([
+          new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
+          new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+        ]);
+        const store = new Store();
+        const importPromise = store.import(stream);
+
+        expect(stream.addQuad).toBeUndefined();
+        expect(store.addQuad).not.toBeUndefined();
+
+        expect(store.on).toBeUndefined();
+        expect(stream.on).not.toBeUndefined();
+
+        const res = await importPromise;
+
+        expect(stream.addQuad).toBeUndefined();
+        expect(store.addQuad).not.toBeUndefined();
+        expect(res.addQuad).not.toBeUndefined();
+        expect(importPromise.addQuad).toBeUndefined();
+
+        expect(store.on).toBeUndefined();
+        expect(stream.on).not.toBeUndefined();
+        expect(res.on).not.toBeUndefined();
+      });
+
+      it('should resolve the promise if importing a completed stream', async () => {
+        const stream = new ArrayReader([]);
+        const store = new Store();
+
+        stream.on('data', () => {});
+
+        await new Promise(resolve => {
+          stream.on('end', resolve);
+          stream.on('error', resolve);
+        });
+
+        const importResult = await store.import(stream);
+
+        expect(importResult).toBeTruthy();
+      });
     });
 
     describe('#forEach', () => {
