@@ -2415,15 +2415,20 @@ describe('Store', () => {
           new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
         ]);
         const store = new Store();
-        const importPromise = store.import(stream);
 
         const newListners = [];
         stream.on('newListener', (event, listener) => { newListners.push({ event, listener }); });
 
-        expect(stream.listenerCount('end')).toEqual(0);
-        expect(stream.listenerCount('error')).toEqual(0);
+        const importPromise = store.import(stream);
 
-        expect(newListners).toEqual([]);
+        expect(stream.listenerCount('end')).toEqual(1);
+        expect(stream.listenerCount('error')).toEqual(1);
+
+        expect(newListners).toEqual([
+          { event: 'data', listener: expect.any(Function) },
+          { event: 'end', listener: expect.any(Function) },
+          { event: 'error', listener: expect.any(Function) },
+        ]);
 
         await importPromise;
 
@@ -2432,6 +2437,7 @@ describe('Store', () => {
 
         // Checking that 'end' and 'error' listeners were added and then removed in importing
         expect(newListners).toEqual([
+          { event: 'data', listener: expect.any(Function) },
           { event: 'end', listener: expect.any(Function) },
           { event: 'error', listener: expect.any(Function) },
         ]);
@@ -2504,6 +2510,15 @@ describe('Store', () => {
         const importResult = await store.import(stream);
 
         expect(importResult).toBeTruthy();
+      });
+
+      it('should reject if there is an error in the stream', async () => {
+        const stream = new ArrayReader([]);
+        const store = new Store();
+        const imported = store.import(stream);
+        stream.emit('error', 'Test error');
+
+        await expect(imported).rejects.toEqual('Test error');
       });
     });
 

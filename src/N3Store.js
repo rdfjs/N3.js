@@ -415,49 +415,47 @@ export default class N3Store {
     stream.on('data', quad => { this.addQuad(quad); });
 
     // Create a promise that resolves when the stream ends
-    let promise;
-    const store = this;
+    const promise = new Promise((resolve, reject) => {
+      // Create proxy that combines N3Store with EventEmitter capabilities
+      const storeProxy = new Proxy(this, {
+        get(target, prop, receiver) {
+          if (prop in EventEmitter.prototype) {
+            return Reflect.get(stream, prop, receiver);
+          }
+          return Reflect.get(target, prop, receiver);
+        },
+      });
+
+      // Check if stream is already closed/ended
+      if (stream.readableEnded || stream.destroyed || stream.readable === false || stream.closed || stream.ended) {
+        // Resolve immediately if stream is already closed
+        resolve(storeProxy);
+      }
+      else {
+          // Otherwise, wait for end/error events
+          // eslint-disable-next-line func-style
+        const onEnd = () => {
+            // eslint-disable-next-line no-use-before-define
+          stream.removeListener('error', onError);
+          resolve(storeProxy);
+        };
+
+          // eslint-disable-next-line func-style
+        const onError = err => {
+          stream.removeListener('end', onEnd);
+          reject(err);
+        };
+
+        stream.once('end', onEnd);
+        stream.once('error', onError);
+      }
+    });
 
     // Return a proxy that acts as both stream and promise without mutating the stream object
     return new Proxy(stream, {
       get(target, prop) {
       // Forward Promise methods to the promise object
         if (prop === 'then' || prop === 'catch' || prop === 'finally') {
-          promise = promise || new Promise((resolve, reject) => {
-          // Create proxy that combines N3Store with EventEmitter capabilities
-            const storeProxy = new Proxy(store, {
-              get(target, prop, receiver) {
-                if (prop in EventEmitter.prototype) {
-                  return Reflect.get(stream, prop, receiver);
-                }
-                return Reflect.get(target, prop, receiver);
-              },
-            });
-
-          // Check if stream is already closed/ended
-            if (stream.readableEnded || stream.destroyed || stream.readable === false) {
-            // Resolve immediately if stream is already closed
-              resolve(storeProxy);
-            }
-            else {
-              // Otherwise, wait for end/error events
-              // eslint-disable-next-line func-style
-              const onEnd = () => {
-                // eslint-disable-next-line no-use-before-define
-                stream.removeListener('error', onError);
-                resolve(storeProxy);
-              };
-
-              // eslint-disable-next-line func-style
-              const onError = err => {
-                stream.removeListener('end', onEnd);
-                reject(err);
-              };
-
-              stream.once('end', onEnd);
-              stream.once('error', onError);
-            }
-          });
           return promise[prop].bind(promise);
         }
       // All other properties and methods are from the stream
