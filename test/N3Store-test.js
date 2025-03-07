@@ -2444,6 +2444,18 @@ describe('Store', () => {
       it('should return false on the empty set', () => {
         expect(empty.some(quad => true)).toBe(false);
       });
+
+      it('should return true if any quad passes the test with a graph', () => {
+        expect(storeb.some(quad => quad.subject.value === 's1')).toBe(true);
+        expect(storeb.some(quad => quad.subject.value === 's2')).toBe(false);
+      });
+
+      it('should have the store as the second argument of the callback', () => {
+        expect(store1.some((_, store) => {
+          expect(store.equals(store1)).toBe(true);
+          return true;
+        })).toBe(true);
+      });
     });
 
     describe('#every', () => {
