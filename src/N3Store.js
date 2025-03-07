@@ -174,9 +174,8 @@ export default class N3Store {
     this._termToNewNumericId = this._entityIndex._termToNewNumericId.bind(this._entityIndex);
 
     // Add quads if passed
-    if (quads) {
+    if (quads)
       this.addAll(quads);
-    }
   }
 
   // ## Public properties
