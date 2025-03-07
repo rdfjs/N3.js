@@ -2463,6 +2463,16 @@ describe('Store', () => {
       });
     });
   });
+
+  it('should initialize the store correctly with a another store', () => {
+    const quads = new Store([
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
+    ]);
+    const store = new Store(quads);
+    expect(store.size).toEqual(2);
+    expect(store.getQuads()).toHaveLength(2);
+  });
 });
 
 describe('EntityIndex', () => {
