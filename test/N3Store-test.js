@@ -13,7 +13,6 @@ import {
 import namespaces from '../src/IRIs';
 import { Readable } from 'readable-stream';
 import { arrayifyStream } from 'arrayify-stream';
-import { EventEmitter } from 'events';
 
 const { namedNode, quad } = DataFactory;
 
