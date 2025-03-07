@@ -175,14 +175,7 @@ export default class N3Store {
 
     // Add quads if passed
     if (quads) {
-      if (Array.isArray(quads)) {
-        this.addQuads(quads);
-      }
-      else {
-        for (const quad of quads) {
-          this.addQuad(quad);
-        }
-      }
+      this.addAll(quads);
     }
   }
 
