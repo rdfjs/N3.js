@@ -601,7 +601,7 @@ export default class N3Store {
   // Setting any field to `undefined` or `null` indicates a wildcard.
   some(callback, subject, predicate, object, graph) {
     for (const quad of this.readQuads(subject, predicate, object, graph))
-      if (callback(quad))
+      if (callback(quad, this))
         return true;
     return false;
   }
