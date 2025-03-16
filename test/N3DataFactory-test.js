@@ -52,6 +52,10 @@ describe('DataFactory', () => {
       expect(DataFactory.literal('abc', 'en-GB')).toEqual(new Literal('"abc"@en-gb'));
     });
 
+    it('converts a non-empty string with a language and direction', () => {
+      expect(DataFactory.literal('abc', { language: 'en-GB', direction: 'rtl' })).toEqual(new Literal('"abc"@en-gb--rtl'));
+    });
+
     it('converts a non-empty string with a named node type', () => {
       expect(DataFactory.literal('abc', new NamedNode('http://ex.org/type'))).toEqual(new Literal('"abc"^^http://ex.org/type'));
     });
