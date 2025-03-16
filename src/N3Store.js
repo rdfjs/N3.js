@@ -419,10 +419,7 @@ export default class N3Store {
       // Create proxy that combines N3Store with EventEmitter capabilities
       const storeProxy = new Proxy(this, {
         get(target, prop, receiver) {
-          if (prop in EventEmitter.prototype) {
-            return Reflect.get(stream, prop, receiver);
-          }
-          return Reflect.get(target, prop, receiver);
+          return Reflect.get(prop in EventEmitter.prototype ? stream : target, prop, receiver);
         },
       });
 
