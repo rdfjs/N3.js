@@ -409,7 +409,12 @@ export default class N3Store {
     return !this.readQuads(subjectOrQuad, predicate, object, graph).next().done;
   }
 
-  // ### `import` adds a stream of quads to the store
+  /**
+   * `import` adds a stream of quads to the store
+   * 
+   * @returns {EventEmitter & Promise<Store & EventEmitter>} A proxy object that acts as both an EventEmitter 
+   * (for backward compatibility) and a Promise that resolves to the store when the stream is complete.
+   */
   import(stream) {
     // Add quads to the store as they arrive
     stream.on('data', quad => { this.addQuad(quad); });
