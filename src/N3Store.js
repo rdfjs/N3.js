@@ -163,7 +163,7 @@ export default class N3Store {
     this._graphs = Object.create(null);
 
     // Shift parameters if `quads` is not given
-    if (!options && quads && !quads[0])
+    if (!options && quads && !quads[0] && !(typeof quads.match === 'function'))
       options = quads, quads = null;
     options = options || {};
     this._factory = options.factory || N3DataFactory;
@@ -175,7 +175,7 @@ export default class N3Store {
 
     // Add quads if passed
     if (quads)
-      this.addQuads(quads);
+      this.addAll(quads);
   }
 
   // ## Public properties
