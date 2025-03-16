@@ -411,8 +411,8 @@ export default class N3Store {
 
   /**
    * `import` adds a stream of quads to the store
-   * 
-   * @returns {EventEmitter & Promise<Store & EventEmitter>} A proxy object that acts as both an EventEmitter 
+   *
+   * @returns {EventEmitter & Promise<Store & EventEmitter>} A proxy object that acts as both an EventEmitter
    * (for backward compatibility) and a Promise that resolves to the store when the stream is complete.
    */
   import(stream) {
