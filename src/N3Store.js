@@ -1,4 +1,5 @@
 // **N3Store** objects store N3 quads by graph in memory.
+import EventEmitter from 'events';
 import { Readable } from 'readable-stream';
 import { default as N3DataFactory, termToId, termFromId } from './N3DataFactory';
 import namespaces from './IRIs';
@@ -408,10 +409,61 @@ export default class N3Store {
     return !this.readQuads(subjectOrQuad, predicate, object, graph).next().done;
   }
 
-  // ### `import` adds a stream of quads to the store
+  /**
+   * `import` adds a stream of quads to the store
+   *
+   * @returns {EventEmitter & Promise<Store & EventEmitter>} A proxy object that acts as both an EventEmitter
+   * (for backward compatibility) and a Promise that resolves to the store when the stream is complete.
+   */
   import(stream) {
+    // Add quads to the store as they arrive
     stream.on('data', quad => { this.addQuad(quad); });
-    return stream;
+
+    // Create a promise that resolves when the stream ends
+    const promise = new Promise((resolve, reject) => {
+      // Create proxy that combines N3Store with EventEmitter capabilities
+      const storeProxy = new Proxy(this, {
+        get(target, prop, receiver) {
+          return Reflect.get(prop in EventEmitter.prototype ? stream : target, prop, receiver);
+        },
+      });
+
+      // Check if stream is already closed/ended
+      if (stream.readableEnded || stream.destroyed || stream.readable === false || stream.closed || stream.ended) {
+        // Resolve immediately if stream is already closed
+        resolve(storeProxy);
+      }
+      else {
+          // Otherwise, wait for end/error events
+          // eslint-disable-next-line func-style
+        const onEnd = () => {
+            // eslint-disable-next-line no-use-before-define
+          stream.removeListener('error', onError);
+          resolve(storeProxy);
+        };
+
+          // eslint-disable-next-line func-style
+        const onError = err => {
+          stream.removeListener('end', onEnd);
+          reject(err);
+        };
+
+        stream.once('end', onEnd);
+        stream.once('error', onError);
+      }
+    });
+
+    // Return a proxy that acts as both stream and promise without mutating the stream object
+    return new Proxy(stream, {
+      get(target, prop) {
+      // Forward Promise methods to the promise object
+        if (prop === 'then' || prop === 'catch' || prop === 'finally') {
+          return promise[prop].bind(promise);
+        }
+      // All other properties and methods are from the stream
+        return target[prop];
+      },
+    });
   }
 
   // ### `removeQuad` removes a quad from the store if it exists
