@@ -232,7 +232,7 @@
     'import/first': 2,
     'import/group-exports': 0,
     'import/imports-first': 2,
-    'import/max-dependencies': 2,
+    'import/max-dependencies': [2, {"max":  15}],
     'import/newline-after-import': 2,
     'import/no-anonymous-default-export': 0,
     'import/no-default-export': 0,

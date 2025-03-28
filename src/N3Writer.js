@@ -2,6 +2,7 @@
 import namespaces from './IRIs';
 import { default as N3DataFactory, Term } from './N3DataFactory';
 import { isDefaultGraph } from './N3Util';
+import BaseIRI from './BaseIRI';
 
 const DEFAULTGRAPH = N3DataFactory.defaultGraph();
 
@@ -58,9 +59,7 @@ export default class N3Writer {
       this._prefixIRIs = Object.create(null);
       options.prefixes && this.addPrefixes(options.prefixes);
       if (options.baseIRI) {
-        this._baseMatcher = new RegExp(`^${escapeRegex(options.baseIRI)
-            }${options.baseIRI.endsWith('/') ? '' : '[#?]'}`);
-        this._baseLength = options.baseIRI.length;
+        this._baseIri = new BaseIRI(options.baseIRI);
       }
     }
     else {
@@ -153,8 +152,9 @@ export default class N3Writer {
     }
     let iri = entity.value;
     // Use relative IRIs if requested and possible
-    if (this._baseMatcher && this._baseMatcher.test(iri))
-      iri = iri.substr(this._baseLength);
+    if (this._baseIri) {
+      iri = this._baseIri.toRelative(iri);
+    }
     // Escape special characters
     if (escape.test(iri))
       iri = iri.replace(escapeAll, characterReplacer);
