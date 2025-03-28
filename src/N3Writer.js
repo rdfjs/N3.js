@@ -58,9 +58,30 @@ export default class N3Writer {
       this._prefixIRIs = Object.create(null);
       options.prefixes && this.addPrefixes(options.prefixes);
       if (options.baseIRI) {
-        this._baseMatcher = new RegExp(`^${escapeRegex(options.baseIRI)
-            }${options.baseIRI.endsWith('/') ? '' : '[#?]'}`);
+        const escapedBaseIRI = escapeRegex(options.baseIRI) + (options.baseIRI.endsWith('/') ? '' : '[#?]');
+        const escapedSchemeDelimiter = escapeRegex('://');
+        // We only want to make optional groups for the path fragments, not the host, so ignore the scheme delimiter ://
+        let postDelimiterIndex = escapedBaseIRI.indexOf(escapedSchemeDelimiter);
+        postDelimiterIndex = postDelimiterIndex >= 0 ? postDelimiterIndex + escapedSchemeDelimiter.length : 0;
+        // Make the path fragments optional by replacing (unescaped example) http://example.org/foo/bar/ with http://example.org/(foo(/bar/)?)?
+        let postDelimiter = escapedBaseIRI.substring(postDelimiterIndex);
+        while (postDelimiter.match(/\/[^()]+[^(]*$/)) {
+          postDelimiter = postDelimiter.replace(/\/([^()]+[^(]*)$/, '/($1)?');
+        }
+        this._baseMatcher = new RegExp(`^${escapedBaseIRI.substring(0, postDelimiterIndex)}${postDelimiter}`);
         this._baseLength = options.baseIRI.length;
+        // Find position of all slashes in the base IRI which are not part of :// and precalculate the substitution
+        this._baseSubstitutions = {};
+        let stopIndex = options.baseIRI.indexOf('://');
+        if (stopIndex >= 0) {
+          stopIndex += 2;
+        }
+        let count = 0;
+        for (let i = this._baseLength - 1; i > stopIndex; i--) {
+          if (options.baseIRI[i] === '/') {
+            this._baseSubstitutions[i] = '../'.repeat(count++);
+          }
+        }
       }
     }
     else {
@@ -153,8 +174,20 @@ export default class N3Writer {
     }
     let iri = entity.value;
     // Use relative IRIs if requested and possible
-    if (this._baseMatcher && this._baseMatcher.test(iri))
-      iri = iri.substr(this._baseLength);
+    if (this._baseMatcher) {
+      const match = this._baseMatcher.exec(iri);
+      if (match) {
+        const length = match[0].length;
+        const substitution = this._baseSubstitutions[length - 1];
+        if (substitution !== undefined) {
+          iri = this._baseSubstitutions[length - 1] + iri.substring(length);
+        }
+        else {
+          // Last character is ? or #, so use relative IRI using that character
+          iri = iri.substring(length - 1);
+        }
+      }
+    }
     // Escape special characters
     if (escape.test(iri))
       iri = iri.replace(escapeAll, characterReplacer);

@@ -451,16 +451,92 @@ describe('Writer', () => {
       });
     });
 
-    it('does not use partially match base IRIs', done => {
+    it('uses partially match base IRIs', done => {
       const writer = new Writer({ baseIRI: 'https://pod.example/profile/card' });
       writer.addQuad(new Quad(
-        new NamedNode('https://pod.example/profile/card#me'),
-        new NamedNode('http://www.w3.org/2002/07/owl#sameAs'),
-        new NamedNode('https://pod.example/profile/card-1234.ttl')));
+          new NamedNode('https://pod.example/profile/card#me'),
+          new NamedNode('http://www.w3.org/2002/07/owl#sameAs'),
+          new NamedNode('https://pod.example/profile/card-1234.ttl')));
       writer.end((error, output) => {
         expect(output).toBe(
-          '<#me> <http://www.w3.org/2002/07/owl#sameAs> <https://pod.example/profile/card-1234.ttl>.\n',
+            '<#me> <http://www.w3.org/2002/07/owl#sameAs> <card-1234.ttl>.\n',
         );
+        done(error);
+      });
+    });
+
+    it('uses partially match base IRIs with ../', done => {
+      const writer = new Writer({ baseIRI: 'https://pod.example/public/folder/card' });
+      writer.addQuad(new Quad(
+          new NamedNode('https://pod.example/profile/card#me'),
+          new NamedNode('http://www.w3.org/2002/07/owl#sameAs'),
+          new NamedNode('https://pod.example/public/card-1234.ttl')));
+      writer.end((error, output) => {
+        expect(output).toBe(
+            '<../../profile/card#me> <http://www.w3.org/2002/07/owl#sameAs> <../card-1234.ttl>.\n',
+        );
+        done(error);
+      });
+    });
+
+    it('uses partially match base IRIs with more complex ../', done => {
+      const writer = new Writer({ baseIRI: 'https://pod.example/profile/public/folder/card' });
+      writer.addQuad(new Quad(
+          new NamedNode('https://pod.example/profile/card#me'),
+          new NamedNode('http://www.w3.org/2002/07/owl#sameAs'),
+          new NamedNode('https://pod.example/profile/private/card-1234.ttl')));
+      writer.end((error, output) => {
+        expect(output).toBe(
+            '<../../card#me> <http://www.w3.org/2002/07/owl#sameAs> <../../private/card-1234.ttl>.\n',
+        );
+        done(error);
+      });
+    });
+
+    it('should not relativize IRIs when only one contains an explicit port', done => {
+      const writer = new Writer({ baseIRI: 'http://example.org/foo/' });
+      writer.addQuad(new Quad(
+            new NamedNode('http://example.org:80/foo/'),
+            new NamedNode('http://www.w3.org/2002/07/owl#sameAs'),
+            new NamedNode('http://example.org/foo/')));
+      writer.end((error, output) => {
+        expect(output).toBe('<http://example.org:80/foo/> <http://www.w3.org/2002/07/owl#sameAs> <>.\n');
+        done(error);
+      });
+    });
+
+    it('should not relativize IRIs when there is no trailing slash and the host is different', done => {
+      const writer = new Writer({ baseIRI: 'http://example.be' });
+      writer.addQuad(new Quad(
+          new NamedNode('http://example.be.com'),
+          new NamedNode('http://www.w3.org/2002/07/owl#sameAs'),
+          new NamedNode('http://example.org/foo/')));
+      writer.end((error, output) => {
+        expect(output).toBe('<http://example.be.com> <http://www.w3.org/2002/07/owl#sameAs> <http://example.org/foo/>.\n');
+        done(error);
+      });
+    });
+
+    it('should not relativize IRIs when there is no trailing slash and the host is different with path', done => {
+      const writer = new Writer({ baseIRI: 'http://example.be' });
+      writer.addQuad(new Quad(
+          new NamedNode('http://example.be.com/foo'),
+          new NamedNode('http://www.w3.org/2002/07/owl#sameAs'),
+          new NamedNode('http://example.org/foo/')));
+      writer.end((error, output) => {
+        expect(output).toBe('<http://example.be.com/foo> <http://www.w3.org/2002/07/owl#sameAs> <http://example.org/foo/>.\n');
+        done(error);
+      });
+    });
+
+    it('relativizes IRIs when the base IRI contains no scheme', done => {
+      const writer = new Writer({ baseIRI: 'example.org/foo/' });
+      writer.addQuad(new Quad(
+            new NamedNode('example.org/foo/bar'),
+            new NamedNode('http://www.w3.org/2002/07/owl#sameAs'),
+            new NamedNode('example.org/foo/')));
+      writer.end((error, output) => {
+        expect(output).toBe('<bar> <http://www.w3.org/2002/07/owl#sameAs> <>.\n');
         done(error);
       });
     });
