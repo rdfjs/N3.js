@@ -25,7 +25,6 @@
   ],
   "dependencies": {
     "buffer": "^6.0.3",
-    "queue-microtask": "^1.1.2",
     "readable-stream": "^4.0.0"
   },
   "devDependencies": {
