@@ -3084,6 +3084,12 @@ describe('Parser', () => {
     });
 
     describe('additional cases', () => {
+      // base path ending in hash
+      itShouldResolve('http://abc/xyz#',    '',       'http://abc/xyz');
+
+      // base path ending in question mark
+      itShouldResolve('http://abc/xyz?',    '',       'http://abc/xyz?');
+
       // relative paths ending with '.'
       itShouldResolve('http://abc/',        '.',      'http://abc/');
       itShouldResolve('http://abc/def/ghi', '.',      'http://abc/def/');
