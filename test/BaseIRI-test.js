@@ -57,121 +57,92 @@ describe('BaseIRI', () => {
   });
 
   describe('A BaseIRI instance', () => {
-    it('should relativize http://', () => {
-      const baseIri = new BaseIRI('http://example.org/foo/');
+    relativizes('an HTTP URL', 'http://example.org/foo/',
+      'http://example.org/foo/baz', 'baz');
 
-      const iri = `${baseIri.base}baz`;
-      const relativized = baseIri.toRelative(iri);
+    relativizes('an HTTPS URL', 'https://example.org/foo/',
+      'https://example.org/foo/baz', 'baz');
 
-      expect(relativized).toBe('baz');
-    });
+    relativizes('a file URL', 'file:///tmp/foo/bar',
+      'file:///tmp/foo/bar/baz');
 
-    it('should relativize https://', () => {
-      const baseIri = new BaseIRI('https://example.org/foo/');
+    relativizes('a base IRI without scheme', '/tmp/foo/bar',
+      '/tmp/foo/bar/baz');
 
-      const iri = `${baseIri.base}baz`;
-      const relativized = baseIri.toRelative(iri);
+    relativizes('a base IRI containing //', 'http://example.org/foo//bar',
+      'http://example.org/foo//bar/baz');
 
-      expect(relativized).toBe('baz');
-    });
+    relativizes('a base IRI containing ./', 'http://example.org/foo/./bar',
+      'http://example.org/foo/./bar/baz');
 
-    it('should not relativize a base IRI with a file scheme', () => {
-      const baseIri = new BaseIRI('file:///tmp/foo/bar');
+    relativizes('a base IRI containing ../', 'http://example.org/foo/../bar',
+      'http://example.org/foo/../bar/baz');
 
-      const iri = `${baseIri.base}/baz`;
-      const relativized = baseIri.toRelative(iri);
+    relativizes('a base IRI ending in //', 'http://example.org/foo//',
+      'http://example.org/foo//baz');
 
-      expect(relativized).toBe(iri);
-    });
+    relativizes('a base IRI ending in ./', 'http://example.org/foo/.',
+      'http://example.org/foo/./baz');
 
-    it('should not relativize a base IRI without scheme', () => {
-      const baseIri = new BaseIRI('/tmp/foo/bar');
+    relativizes('a base IRI ending in ../', 'http://example.org/foo/..',
+      'http://example.org/foo/../baz');
 
-      const iri = `${baseIri.base}/baz`;
-      const relativized = baseIri.toRelative(iri);
+    relativizes('an IRI ending in //', 'http://example.org/foo/',
+      'http://example.org/foo//');
 
-      expect(relativized).toBe(iri);
-    });
+    relativizes('an IRI ending in /.', 'http://example.org/foo/',
+      'http://example.org/foo/.');
 
-    it('should not relativize a base IRI containing `//`', () => {
-      const baseIri = new BaseIRI('http://example.org/foo//bar');
+    relativizes('an IRI ending in /..', 'http://example.org/foo/',
+      'http://example.org/foo/..');
 
-      const iri = `${baseIri.base}/baz`;
-      const relativized = baseIri.toRelative(iri);
+    relativizes('an IRI ending in /./', 'http://example.org/foo/',
+      'http://example.org/foo/./');
 
-      expect(relativized).toBe(iri);
-    });
+    relativizes('an IRI ending in /../', 'http://example.org/foo/',
+      'http://example.org/foo/../');
 
-    it('should not relativize a base IRI containing `/./`', () => {
-      const baseIri = new BaseIRI('http://example.org/foo/./bar');
+    relativizes('an IRI containing // at the matching position', 'http://example.org/foo/',
+      'http://example.org/foo//baz');
 
-      const iri = `${baseIri.base}/baz`;
-      const relativized = baseIri.toRelative(iri);
+    relativizes('an IRI containing ./ at the matching position', 'http://example.org/foo/',
+      'http://example.org/foo/./baz');
 
-      expect(relativized).toBe(iri);
-    });
+    relativizes('an IRI containing ../ at the matching position', 'http://example.org/foo/',
+      'http://example.org/foo/../baz');
 
-    it('should not relativize a base IRI containing `/../`', () => {
-      const baseIri = new BaseIRI('http://example.org/foo/../bar');
+    relativizes('an IRI containing //', 'http://example.org/foo/',
+      'http://example.org/foo/bar//baz');
 
-      const iri = `${baseIri.base}/baz`;
-      const relativized = baseIri.toRelative(iri);
+    relativizes('an IRI containing ./', 'http://example.org/foo/',
+      'http://example.org/foo/bar/./baz');
 
-      expect(relativized).toBe(iri);
-    });
+    relativizes('an IRI containing ../', 'http://example.org/foo/',
+      'http://example.org/foo/bar/../baz');
 
-    it('should not relativize a base IRI ending in `/.`', () => {
-      const baseIri = new BaseIRI('http://example.org/foo/.');
+    relativizes('an IRI containing // in its query string', 'http://example.org/foo/',
+      'http://example.org/foo/baz?bar//baz', 'baz?bar//baz');
 
-      const iri = `${baseIri.base}/baz`;
-      const relativized = baseIri.toRelative(iri);
+    relativizes('an IRI containing ./ in its query string', 'http://example.org/foo/',
+      'http://example.org/foo/baz?bar/./baz', 'baz?bar/./baz');
 
-      expect(relativized).toBe(iri);
-    });
+    relativizes('an IRI containing ../ in its query string', 'http://example.org/foo/',
+      'http://example.org/foo/baz?bar/../baz', 'baz?bar/../baz');
 
-    it('should not relativize a base IRI ending in `/..`', () => {
-      const baseIri = new BaseIRI('http://example.org/foo/..');
+    relativizes('an IRI containing // in its fragment', 'http://example.org/foo/',
+      'http://example.org/foo/baz#bar//baz', 'baz#bar//baz');
 
-      const iri = `${baseIri.base}/baz`;
-      const relativized = baseIri.toRelative(iri);
+    relativizes('an IRI containing ./ in its fragment', 'http://example.org/foo/',
+      'http://example.org/foo/baz#bar/./baz', 'baz#bar/./baz');
 
-      expect(relativized).toBe(iri);
-    });
-
-    it('should not relativize an IRI with file scheme', () => {
-      const baseIri = new BaseIRI('http://example.org/foo/');
-
-      const iri = 'file:///tmp/foo/bar';
-      const relativized = baseIri.toRelative(iri);
-
-      expect(relativized).toBe(iri);
-    });
-
-    it('should not relativize an IRI containing `//`', () => {
-      const baseIri = new BaseIRI('http://example.org/foo/');
-
-      const iri = 'http://example.org/foo//bar';
-      const relativized = baseIri.toRelative(iri);
-
-      expect(relativized).toBe(iri);
-    });
-
-    it('should not relativize an IRI containing `/./`', () => {
-      const baseIri = new BaseIRI('http://example.org/foo/');
-
-      const iri = 'http://example.org/foo/./bar';
-      const relativized = baseIri.toRelative(iri);
-
-      expect(relativized).toBe(iri);
-    });
-
-    it('should not relativize an IRI containing `/../`', () => {
-      const baseIri = new BaseIRI('http://example.org/foo/');
-
-      const iri = 'http://example.org/foo/../bar';
-      const relativized = baseIri.toRelative(iri);
-
-      expect(relativized).toBe(iri);
-    });
+    relativizes('an IRI containing ../ in its fragment', 'http://example.org/foo/',
+      'http://example.org/foo/baz#bar/../baz', 'baz#bar/../baz');
   });
 });
+
+function relativizes(description, base, absolute, relative) {
+  it(`${relative ? 'relativizes' : 'does not relativize'} ${description}`, () => {
+    const baseIri = new BaseIRI(base);
+    expect(baseIri.toRelative(absolute)).toBe(relative || absolute);
+  });
+}

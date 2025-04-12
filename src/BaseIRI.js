@@ -4,136 +4,99 @@ import { escapeRegex } from './Util';
 // - file: IRIs (which could also use backslashes)
 // - IRIs containing /. or /.. or //
 const INVALID_OR_UNSUPPORTED = /^:?[^:?#]*(?:[?#]|$)|^file:|^[^:]*:\/*[^?#]+?\/(?:\.\.?(?:\/|$)|\/)/i;
+const CURRENT = './';
+const PARENT = '../';
+const QUERY = '?';
+const FRAGMENT = '#';
 
 export default class BaseIRI {
   constructor(base) {
     this.base = base;
-    this._initialized = false;
     this._baseLength = 0;
     this._baseMatcher = null;
-    this._pathReplacements = {};
+    this._pathReplacements = new Array(base.length + 1);
   }
 
   static supports(base) {
     return !INVALID_OR_UNSUPPORTED.test(base);
   }
 
-  _init() {
-    if (this._initialized)
-      return this.baseMatcher !== null;
-    this._initialized = true;
-
+  _getBaseMatcher() {
+    if (this._baseMatcher)
+      return this._baseMatcher;
     if (!BaseIRI.supports(this.base))
-      return false;
+      return this._baseMatcher = /.^/;
 
-    // Generate regex for baseIRI with optional groups for segments
-    let baseIRIRegex = '';
-    let segmentsCount = 0;
-    let stage = 0;
-    const slashPositions = [];
-    let i = 0;
-    let containsQuery = false;
-
-    // Stage 0: extract the scheme
+    // Extract the scheme
     const scheme = /^[^:]*:\/*/.exec(this.base)[0];
-    baseIRIRegex += escapeRegex(scheme);
-    i = scheme.length;
-    stage = 1;
+    const regexHead = ['^', escapeRegex(scheme)];
+    const regexTail = [];
 
-    // Stage 1: find the next segment until reaching ? or #
-    let end = this.base.length;
-    while (stage === 1 && i < end) {
-      const match = /[/?#]/.exec(this.base.substring(i));
-      if (match) {
-        if (match[0] === '#') {
-          // Stop at this hash.
-          end = i + match.index;
-          stage = 3;
-        }
+    // Generate a regex for every path segment
+    const segments = [], segmenter = /[^/?#]*([/?#])/y;
+    let segment, query = 0, fragment = 0, last = segmenter.lastIndex = scheme.length;
+    while (!query && !fragment && (segment = segmenter.exec(this.base))) {
+      // Truncate base resolution path at fragment start
+      if (segment[1] === FRAGMENT)
+        fragment = segmenter.lastIndex - 1;
+      else {
+        // Create regex that matches the segment
+        regexHead.push(escapeRegex(segment[0]), '(?:');
+        regexTail.push(')?');
+
+        // Create dedicated query string replacement
+        if (segment[1] !== QUERY)
+          segments.push(last = segmenter.lastIndex);
         else {
-          baseIRIRegex += escapeRegex(this.base.substring(i, i + match.index + 1));
-          baseIRIRegex += '(';
-          segmentsCount++;
-          if (match[0] === '/') {
-            slashPositions.push(i + match.index);
-          }
-          else {
-            this._pathReplacements[i + match.index] = '?';
-            containsQuery = true;
-            stage = 2;
-          }
-          i += match.index + 1;
+          query = last = segmenter.lastIndex;
+          fragment = this.base.indexOf(FRAGMENT, query);
+          this._pathReplacements[query] = QUERY;
         }
       }
-      else {
-        stage = 3;
-      }
     }
 
-    // Stage 2: find any fragment
-    if (stage === 2) {
-      const match = /#/.exec(this.base.substring(i));
-      if (match) {
-        // Stop at this hash.
-        end = i + match.index;
-      }
-      stage = 3;
-    }
+    // Precalculate parent path substitutions
+    for (let i = 0; i < segments.length; i++)
+      this._pathReplacements[segments[i]] = PARENT.repeat(segments.length - i - 1);
+    this._pathReplacements[segments[segments.length - 1]] = CURRENT;
 
-    // Stage 3: parse the remainder of the base IRI
-    if (stage === 3) {
-      baseIRIRegex += escapeRegex(this.base.substring(i, end));
-      if (containsQuery) {
-        baseIRIRegex += '(#|$)';
-      }
-      else {
-        baseIRIRegex += '([?#]|$)';
-      }
-      i = end;
-    }
-
-    // Complete the optional groups for the segments
-    baseIRIRegex += ')?'.repeat(segmentsCount);
-
-    // Precalculate the rest of the substitutions
-    if (this._pathReplacements[end - 1] === undefined) {
-      this._pathReplacements[end - 1] = '';
-    }
-    for (let i = 0; i < slashPositions.length; i++) {
-      this._pathReplacements[slashPositions[i]] = '../'.repeat(slashPositions.length - i - 1);
-    }
-    this._pathReplacements[slashPositions[slashPositions.length - 1]] = './';
-
-    // Set the baseMatcher
-    this._baseMatcher = new RegExp(baseIRIRegex);
-    this._baseLength = end;
-    return true;
+    // Add the remainder of the base IRI (without fragment) to the regex
+    this._baseLength = fragment > 0 ? fragment : this.base.length;
+    regexHead.push(
+      escapeRegex(this.base.substring(last, this._baseLength)),
+      query ? '(?:#|$)' : '(?:[?#]|$)',
+    );
+    return this._baseMatcher = new RegExp([...regexHead, ...regexTail].join(''));
   }
 
   toRelative(iri) {
-    if (!this._init())
+    // Unsupported or non-matching base IRI
+    const match = this._getBaseMatcher().exec(iri);
+    if (!match)
       return iri;
-    const delimiterMatch = /:\/{0,2}/.exec(iri);
-    if (!delimiterMatch || /\/\.{0,2}\//.test(iri.substring(delimiterMatch.index + delimiterMatch[0].length))) {
-      return iri;
-    }
-    const match = this._baseMatcher.exec(iri);
-    if (!match) {
-      return iri;
-    }
+
+    // Exact base IRI match
     const length = match[0].length;
-    if (length === this._baseLength && length === iri.length) {
+    if (length === this._baseLength && length === iri.length)
       return '';
+
+    // Parent path match
+    const parentPath = this._pathReplacements[length];
+    if (parentPath) {
+      const suffix = iri.substring(length);
+      // Don't abbreviate unsupported path
+      if (parentPath !== QUERY &&
+        /(?:^|\/)(?:\/|..?(?:[/#?]|$))/.test(suffix) && // fast test
+        /^(?:[^#?]*?\/)?(?:\/|\.\.?(?:[/#?]|$))/.test(suffix)) // rigorous test
+        return iri;
+      // Omit ./ with fragment or query string
+      if (parentPath === CURRENT && /^[^?#]/.test(suffix))
+        return suffix;
+      // Append suffix to relative parent path
+      return parentPath + suffix;
     }
-    let substitution = this._pathReplacements[length - 1];
-    if (substitution !== undefined) {
-      const substr = iri.substring(length);
-      if (substitution === './' && substr && ((!substr.startsWith('#') && !substr.startsWith('?')) || length === this._baseLength)) {
-        substitution = '';
-      }
-      return substitution + substr;
-    }
-    // Matched the [?#], so make sure to add the delimiter
+
+    // Fragment or query string, so include delimiter
     return iri.substring(length - 1);
   }
 }
