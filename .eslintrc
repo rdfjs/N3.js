@@ -242,6 +242,6 @@
     'import/no-namespace': 0,
     'import/no-unassigned-import': 2,
     'import/order': 2,
-    'import/prefer-default-export': 2,
+    'import/prefer-default-export': 0,
   },
 }

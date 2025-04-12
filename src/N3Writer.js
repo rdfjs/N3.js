@@ -3,6 +3,7 @@ import namespaces from './IRIs';
 import { default as N3DataFactory, Term } from './N3DataFactory';
 import { isDefaultGraph } from './N3Util';
 import BaseIRI from './BaseIRI';
+import { escapeRegex } from './Util';
 
 const DEFAULTGRAPH = N3DataFactory.defaultGraph();
 
@@ -393,8 +394,4 @@ function characterReplacer(character) {
     }
   }
   return result;
-}
-
-function escapeRegex(regex) {
-  return regex.replace(/[\]\/\(\)\*\+\?\.\\\$]/g, '\\$&');
 }
