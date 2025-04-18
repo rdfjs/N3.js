@@ -3,7 +3,8 @@ import { escapeRegex } from './Util';
 // Do not handle base IRIs without scheme, and currently unsupported cases:
 // - file: IRIs (which could also use backslashes)
 // - IRIs containing /. or /.. or //
-const INVALID_OR_UNSUPPORTED = /^:?[^:?#]*(?:[?#]|$)|^file:|^[^:]*:\/*[^?#]+?\/(?:\.\.?(?:\/|$)|\/)/i;
+const BASE_UNSUPPORTED = /^:?[^:?#]*(?:[?#]|$)|^file:|^[^:]*:\/*[^?#]+?\/(?:\.\.?(?:\/|$)|\/)/i;
+const SUFFIX_SUPPORTED = /^(?:(?:[^/?#]{3,}|\.?[^/?#.]\.?)(?:\/[^/?#]{3,}|\.?[^/?#.]\.?)*\/?)?(?:[?#]|$)/;
 const CURRENT = './';
 const PARENT = '../';
 const QUERY = '?';
@@ -18,7 +19,7 @@ export default class BaseIRI {
   }
 
   static supports(base) {
-    return !INVALID_OR_UNSUPPORTED.test(base);
+    return !BASE_UNSUPPORTED.test(base);
   }
 
   _getBaseMatcher() {
@@ -85,9 +86,7 @@ export default class BaseIRI {
     if (parentPath) {
       const suffix = iri.substring(length);
       // Don't abbreviate unsupported path
-      if (parentPath !== QUERY &&
-        /(?:^|\/)(?:\/|..?(?:[/#?]|$))/.test(suffix) && // fast test
-        /^(?:[^#?]*?\/)?(?:\/|\.\.?(?:[/#?]|$))/.test(suffix)) // rigorous test
+      if (parentPath !== QUERY && !SUFFIX_SUPPORTED.test(suffix))
         return iri;
       // Omit ./ with fragment or query string
       if (parentPath === CURRENT && /^[^?#]/.test(suffix))
