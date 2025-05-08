@@ -711,11 +711,12 @@ describe('Lexer', () => {
 
     it(
       'should tokenize @ keywords',
-      shouldTokenize('@prefix @base @forSome @forAll ',
+      shouldTokenize('@prefix @base @forSome @forAll @version ',
                      { type: '@prefix',  line: 1 },
                      { type: '@base',    line: 1 },
                      { type: '@forSome', line: 1 },
                      { type: '@forAll',  line: 1 },
+                     { type: '@version',  line: 1 },
                      { type: 'eof',      line: 1 }),
     );
 
@@ -756,6 +757,31 @@ describe('Lexer', () => {
     );
 
     it(
+        'should tokenize @version declarations',
+        shouldTokenize('@version "1.2".\n@version \'1.2-basic\'.',
+            { type: '@version', line: 1 },
+            { type: 'literal', value: '1.2', line: 1 },
+            { type: '.', line: 1 },
+            { type: '@version', line: 2 },
+            { type: 'literal', value: '1.2-basic', line: 2 },
+            { type: '.', line: 2 },
+            { type: 'eof', line: 2 }),
+    );
+
+    it(
+        'should tokenize mixed VERSION @version declarations',
+        shouldTokenize('VERSION "1.2"\nversion "1.2"\n@version "1.2" .',
+            { type: 'VERSION', line: 1 },
+            { type: 'literal', value: '1.2', line: 1 },
+            { type: 'VERSION', line: 2 },
+            { type: 'literal', value: '1.2', line: 2 },
+            { type: '@version', line: 3 },
+            { type: 'literal', value: '1.2', line: 3 },
+            { type: '.', line: 3 },
+            { type: 'eof', line: 3 }),
+    );
+
+    it(
       'should tokenize PREFIX declarations',
       shouldTokenize('PREFIX : <http://iri.org/#>\npreFiX abc: <http://iri.org/#>',
                      { type: 'PREFIX', line: 1 },
@@ -775,6 +801,16 @@ describe('Lexer', () => {
                      { type: 'BASE', line: 2 },
                      { type: 'IRI', value: 'http://iri.org/#', line: 2 },
                      { type: 'eof', line: 2 }),
+    );
+
+    it(
+        'should tokenize VERSION declarations',
+        shouldTokenize('VERSION "1.2"\nVERSION \'1.2-basic\'',
+            { type: 'VERSION', line: 1 },
+            { type: 'literal', value: '1.2', line: 1 },
+            { type: 'VERSION', line: 2 },
+            { type: 'literal', value: '1.2-basic', line: 2 },
+            { type: 'eof', line: 2 }),
     );
 
     it(

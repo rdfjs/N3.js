@@ -48,7 +48,7 @@ export default class N3Lexer {
     this._number = /^[\-+]?(?:(\d+\.\d*|\.?\d+)[eE][\-+]?|\d*(\.)?)\d+(?=\.?[,;:\s#()\[\]\{\}"'<>])/;
     this._boolean = /^(?:true|false)(?=[.,;\s#()\[\]\{\}"'<>])/;
     this._keyword = /^@[a-z]+(?=[\s#<:])/i;
-    this._sparqlKeyword = /^(?:PREFIX|BASE|GRAPH)(?=[\s#<])/i;
+    this._sparqlKeyword = /^(?:PREFIX|BASE|VERSION|GRAPH)(?=[\s#<])/i;
     this._shortPredicates = /^a(?=[\s#()\[\]\{\}"'<>])/;
     this._newline = /^[ \t]*(?:#[^\n\r]*)?(?:\r\n|\n|\r)[ \t]*/;
     this._comment = /#([^\n\r]*)/;
@@ -218,7 +218,7 @@ export default class N3Lexer {
 
       case '@':
         // Try to find a language code
-        if (this._previousMarker === 'literal' && (match = this._langcode.exec(input)))
+        if (this._previousMarker === 'literal' && (match = this._langcode.exec(input)) && match[1] !== 'version')
           type = 'langcode', value = match[1];
         // Try to find a keyword
         else if (match = this._keyword.exec(input))
@@ -270,6 +270,8 @@ export default class N3Lexer {
       case 'P':
       case 'G':
       case 'g':
+      case 'V':
+      case 'v':
         // Try to find a SPARQL-style keyword
         if (match = this._sparqlKeyword.exec(input))
           type = match[0].toUpperCase();

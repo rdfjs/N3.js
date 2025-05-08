@@ -131,6 +131,11 @@ export default class N3Parser {
       this._sparqlStyle = true;
     case '@base':
       return this._readBaseIRI;
+    // It could be a version declaration
+    case 'VERSION':
+      this._sparqlStyle = true;
+    case '@version':
+      return this._readVersion;
     // It could be a graph
     case '{':
       if (this._supportsNamedGraphs) {
@@ -772,6 +777,16 @@ export default class N3Parser {
     return this._readDeclarationPunctuation;
   }
 
+  // ### `_readVersion` reads version string declaration
+  _readVersion(token) {
+    if (token.type !== 'literal')
+      return this._error('Expected literal to follow version declaration', token);
+    if ((token.end - token.start) !== token.value.length + 2)
+      return this._error('Version declarations must use single quotes', token);
+    this._prefixCallback(token.value);
+    return this._readDeclarationPunctuation;
+  }
+
   // ### `_readNamedGraphLabel` reads the label of a named graph
   _readNamedGraphLabel(token) {
     switch (token.type) {
@@ -1137,18 +1152,20 @@ export default class N3Parser {
   // ## Public methods
 
   // ### `parse` parses the N3 input and emits each parsed quad through the onQuad callback.
-  parse(input, quadCallback, prefixCallback) {
+  parse(input, quadCallback, prefixCallback, versionCallback) {
     // The second parameter accepts an object { onQuad: ..., onPrefix: ..., onComment: ...}
     // As a second and third parameter it still accepts a separate quadCallback and prefixCallback for backward compatibility as well
-    let onQuad, onPrefix, onComment;
-    if (quadCallback && (quadCallback.onQuad || quadCallback.onPrefix || quadCallback.onComment)) {
+    let onQuad, onPrefix, onComment, onVersion;
+    if (quadCallback && (quadCallback.onQuad || quadCallback.onPrefix || quadCallback.onComment || quadCallback.onVersion)) {
       onQuad = quadCallback.onQuad;
       onPrefix = quadCallback.onPrefix;
       onComment = quadCallback.onComment;
+      onVersion = quadCallback.onVersion;
     }
     else {
       onQuad = quadCallback;
       onPrefix = prefixCallback;
+      onVersion = versionCallback;
     }
     // The read callback is the next function to be executed when a token arrives.
     // We start reading in the top context.
@@ -1158,6 +1175,7 @@ export default class N3Parser {
     this._prefixes._ = this._blankNodePrefix ? this._blankNodePrefix.substr(2)
                                              : `b${blankNodePrefix++}_`;
     this._prefixCallback = onPrefix || noop;
+    this._versionCallback = onVersion || noop;
     this._inversePredicate = false;
     this._quantified = Object.create(null);
 

@@ -838,6 +838,50 @@ describe('Parser', () => {
                   ['http://ex.org/a/bb/ccc/../a', 'http://ex.org/a/bb/ccc/../b', 'http://ex.org/a/bb/ccc/../c']),
     );
 
+    it(
+        'should handle VERSION',
+        shouldParse('VERSION "1.2"'),
+    );
+
+    it(
+        'should handle @version',
+        shouldParse('@version "1.2".'),
+    );
+
+    it(
+        'should handle multiple version declarations',
+        shouldParse('VERSION "1.2"\n' +
+            'version "1.2"\n' +
+            '@version "1.2" .'),
+    );
+
+    it(
+        'should handle multiple version declarations followed by a triple',
+        shouldParse('VERSION "1.2"\n' +
+            'version "1.2"\n' +
+            '@version "1.2" .\n' +
+            '<ex:a> <ex:b> <ex:c> .',
+            ['ex:a', 'ex:b', 'ex:c']),
+    );
+
+    it(
+        'should not allow VERSION with an IRI',
+        shouldNotParse('VERSION <ex:abc>',
+            'Expected literal to follow version declaration on line 1.'),
+    );
+
+    it(
+        'should not allow VERSION with a non-string',
+        shouldNotParse('VERSION 1.2',
+            'Version declarations must use single quotes on line 1.'),
+    );
+
+    it(
+        'should not allow VERSION with a long string',
+        shouldNotParse('VERSION """1.2"""',
+            'Version declarations must use single quotes on line 1.'),
+    );
+
     it('should parse an empty default graph', shouldParse('{}'));
 
     it(
