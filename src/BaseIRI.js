@@ -6,6 +6,7 @@ import { escapeRegex } from './Util';
 const BASE_UNSUPPORTED = /^:?[^:?#]*(?:[?#]|$)|^file:|^[^:]*:\/*[^?#]+?\/(?:\.\.?(?:\/|$)|\/)/i;
 const SUFFIX_SUPPORTED = /^(?:(?:[^/?#]{3,}|\.?[^/?#.]\.?)(?:\/[^/?#]{3,}|\.?[^/?#.]\.?)*\/?)?(?:[?#]|$)/;
 const CURRENT = './';
+const ORIGIN = '/';
 const PARENT = '../';
 const QUERY = '?';
 const FRAGMENT = '#';
@@ -57,8 +58,17 @@ export default class BaseIRI {
     }
 
     // Precalculate parent path substitutions
-    for (let i = 0; i < segments.length; i++)
-      this._pathReplacements[segments[i]] = PARENT.repeat(segments.length - i - 1);
+    for (let i = 0; i < segments.length; i++) {
+      const parentLength = 3 * (segments.length - i - 1);
+      const baseLength = segments[i] - segments[0];
+
+      if (parentLength < baseLength) {
+        this._pathReplacements[segments[i]] = PARENT.repeat(segments.length - i - 1);
+      }
+      else {
+        this._pathReplacements[segments[i]] = ORIGIN + this.base.slice(segments[0], segments[i]);
+      }
+    }
     this._pathReplacements[segments[segments.length - 1]] = CURRENT;
 
     // Add the remainder of the base IRI (without fragment) to the regex
