@@ -138,9 +138,6 @@ describe('BaseIRI', () => {
     relativizes('an IRI containing ../ in its fragment', 'http://example.org/foo/',
       'http://example.org/foo/baz#bar/../baz', 'baz#bar/../baz');
 
-    // relativizes('an IRI directly relative to the base with two sub paths', 'http://example.org/a/b/c/d/e/f/',
-    //   'http://example.org/a/b/c/d/h/i/', '../../h/i/');
-
     relativizes('an IRI directly relative to the base', 'http://example.org/foo/',
       'http://example.org/foo/baz', 'baz');
 
@@ -149,9 +146,6 @@ describe('BaseIRI', () => {
 
     relativizes('an IRI where it is better to use a / path [/x/y]', 'http://example.org/x/q/r/n/m/',
       'http://example.org/x/y', '/x/y');
-
-    // relativizes('an IRI where it is better to use a / path [/x/y/z]', 'http://example.org/x/q/r/n/m/',
-    //   'http://example.org/x/y/z', '/x/y/z');
   });
 });
 
