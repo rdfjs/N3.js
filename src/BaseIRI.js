@@ -62,7 +62,7 @@ export default class BaseIRI {
       const parentLength = 3 * (segments.length - i - 1);
       const baseLength = segments[i] - segments[0];
 
-      if (parentLength < baseLength) {
+      if (parentLength <= baseLength) {
         this._pathReplacements[segments[i]] = PARENT.repeat(segments.length - i - 1);
       }
       else {
