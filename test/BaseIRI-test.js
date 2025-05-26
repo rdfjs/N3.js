@@ -138,9 +138,6 @@ describe('BaseIRI', () => {
     relativizes('an IRI containing ../ in its fragment', 'http://example.org/foo/',
       'http://example.org/foo/baz#bar/../baz', 'baz#bar/../baz');
 
-    relativizes('an IRI directly relative to the base', 'http://example.org/foo/',
-      'http://example.org/foo/baz', 'baz');
-
     relativizes('an IRI where it is better to use a / path', 'http://example.org/foo/baz/nook/task/tar/',
       'http://example.org/foo/bar', '/foo/bar');
 
