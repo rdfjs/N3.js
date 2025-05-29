@@ -139,16 +139,28 @@ describe('BaseIRI', () => {
       'http://example.org/foo/baz#bar/../baz', 'baz#bar/../baz');
 
     relativizes('an IRI where it is better to use a / path', 'http://example.org/foo/baz/nook/task/tar/',
-      'http://example.org/foo/bar', '/foo/bar');
+      'http://example.org/foo/bar', '../../../../bar');
+
+    relativizes('an IRI where it is better to use a / path', 'http://example.org/foo/baz/nook/task/tar/',
+      'http://example.org/foo/bar', '/foo/bar', true);
 
     relativizes('an IRI where it is better to use a / path [/x/y]', 'http://example.org/x/q/r/n/m/',
-      'http://example.org/x/y', '/x/y');
+      'http://example.org/x/y', '../../../../y');
+
+    relativizes('an IRI where it is better to use a / path [/x/y]', 'http://example.org/x/q/r/n/m/',
+      'http://example.org/x/y', '/x/y', true);
   });
 });
 
-function relativizes(description, base, absolute, relative) {
-  it(`${relative ? 'relativizes' : 'does not relativize'} ${description}`, () => {
-    const baseIri = new BaseIRI(base);
+function relativizes(description, base, absolute, relative, absoluteIris = false) {
+  it(`${relative ? 'relativizes' : 'does not relativize'} ${description} [absoluteIris: ${absoluteIris}]`, () => {
+    const baseIri = new BaseIRI(base, { absoluteIris });
     expect(baseIri.toRelative(absolute)).toBe(relative || absolute);
   });
+  if (!absoluteIris) {
+    it(`${relative ? 'relativizes' : 'does not relativize'} ${description}`, () => {
+      const baseIri = new BaseIRI(base);
+      expect(baseIri.toRelative(absolute)).toBe(relative || absolute);
+    });
+  }
 }

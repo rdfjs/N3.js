@@ -12,11 +12,12 @@ const QUERY = '?';
 const FRAGMENT = '#';
 
 export default class BaseIRI {
-  constructor(base) {
+  constructor(base, options = {}) {
     this.base = base;
     this._baseLength = 0;
     this._baseMatcher = null;
     this._pathReplacements = new Array(base.length + 1);
+    this._options = options;
   }
 
   static supports(base) {
@@ -59,10 +60,7 @@ export default class BaseIRI {
 
     // Precalculate parent path substitutions
     for (let i = 0; i < segments.length; i++) {
-      const parentLength = 3 * (segments.length - i - 1);
-      const baseLength = segments[i] - segments[0];
-
-      if (parentLength <= baseLength) {
+      if (!this._options.absoluteIris || (3 * (segments.length - i - 1)) <= (segments[i] - segments[0])) {
         this._pathReplacements[segments[i]] = PARENT.repeat(segments.length - i - 1);
       }
       else {
