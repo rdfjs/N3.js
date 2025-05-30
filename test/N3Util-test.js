@@ -119,7 +119,7 @@ describe('Util', () => {
     });
 
     it('does not match a blank node', () => {
-      expect(Util.isNamedNode(blankNode('x'))).toBe(false);
+      expect(Util.isVariable(blankNode('x'))).toBe(false);
     });
 
     it('does not match null', () => {
@@ -145,11 +145,11 @@ describe('Util', () => {
     });
 
     it('does not match null', () => {
-      expect(Util.isVariable(null)).toBe(false);
+      expect(Util.isDefaultGraph(null)).toBe(false);
     });
 
     it('does not match undefined', () => {
-      expect(Util.isVariable(undefined)).toBe(false);
+      expect(Util.isDefaultGraph(undefined)).toBe(false);
     });
   });
 
