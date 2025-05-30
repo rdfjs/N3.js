@@ -131,6 +131,36 @@ describe('Util', () => {
     });
   });
 
+  describe('isQuad', () => {
+    it('matches a quad', () => {
+      expect(Util.isQuad(quad(null, null, null, null))).toBe(true);
+    });
+
+    it('does not match an IRI', () => {
+      expect(Util.isQuad(namedNode('http://example.org/'))).toBe(false);
+    });
+
+    it('does not match a literal', () => {
+      expect(Util.isQuad(literal('http://example.org/'))).toBe(false);
+    });
+
+    it('does not match a blank node', () => {
+      expect(Util.isQuad(blankNode('x'))).toBe(false);
+    });
+
+    it('does not match a variable', () => {
+      expect(Util.isQuad(variable('x'))).toBe(false);
+    });
+
+    it('does not match null', () => {
+      expect(Util.isQuad(null)).toBe(false);
+    });
+
+    it('does not match undefined', () => {
+      expect(Util.isQuad(undefined)).toBe(false);
+    });
+  });
+
   describe('isDefaultGraph', () => {
     it('does not match a blank node', () => {
       expect(Util.isDefaultGraph(blankNode('x'))).toBe(false);
