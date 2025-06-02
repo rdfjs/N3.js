@@ -136,6 +136,15 @@ describe('Util', () => {
       expect(Util.isQuad(quad(null, null, null, null))).toBe(true);
     });
 
+    it('matches a quad with iri content', () => {
+      expect(Util.isQuad(quad(
+        namedNode('http://example.org/'),
+        namedNode('http://example.org/'),
+        namedNode('http://example.org/'),
+        namedNode('http://example.org/'),
+      ))).toBe(true);
+    });
+
     it('does not match an IRI', () => {
       expect(Util.isQuad(namedNode('http://example.org/'))).toBe(false);
     });
