@@ -60,7 +60,7 @@ export default class N3Writer {
       this._prefixIRIs = Object.create(null);
       options.prefixes && this.addPrefixes(options.prefixes);
       if (options.baseIRI) {
-        this._baseIri = new BaseIRI(options.baseIRI);
+        this._baseIri = new BaseIRI(options.baseIRI, { absoluteIris: options.absoluteIris });
       }
     }
     else {
