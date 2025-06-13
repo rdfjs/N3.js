@@ -39,7 +39,7 @@ export default class N3Reasoner {
           if (index2 = index1[value]) {
             if (v1) val1.value = Number(value);
             v2 = !(value = val2.value);
-            for (value in v2 ? index2 : { [value]: index2[value] }) {
+            for (value of (v2 ? index2 : [value])) {
               if (v2) val2.value = Number(value);
 
               if (i === rule.premise.length - 1)
