@@ -6,16 +6,18 @@ import { escapeRegex } from './Util';
 const BASE_UNSUPPORTED = /^:?[^:?#]*(?:[?#]|$)|^file:|^[^:]*:\/*[^?#]+?\/(?:\.\.?(?:\/|$)|\/)/i;
 const SUFFIX_SUPPORTED = /^(?:(?:[^/?#]{3,}|\.?[^/?#.]\.?)(?:\/[^/?#]{3,}|\.?[^/?#.]\.?)*\/?)?(?:[?#]|$)/;
 const CURRENT = './';
+const ORIGIN = '/';
 const PARENT = '../';
 const QUERY = '?';
 const FRAGMENT = '#';
 
 export default class BaseIRI {
-  constructor(base) {
+  constructor(base, options = {}) {
     this.base = base;
     this._baseLength = 0;
     this._baseMatcher = null;
     this._pathReplacements = new Array(base.length + 1);
+    this._options = options;
   }
 
   static supports(base) {
@@ -57,8 +59,14 @@ export default class BaseIRI {
     }
 
     // Precalculate parent path substitutions
-    for (let i = 0; i < segments.length; i++)
-      this._pathReplacements[segments[i]] = PARENT.repeat(segments.length - i - 1);
+    for (let i = 0; i < segments.length; i++) {
+      if (!this._options.absoluteIris || (3 * (segments.length - i - 1)) <= (segments[i] - segments[0])) {
+        this._pathReplacements[segments[i]] = PARENT.repeat(segments.length - i - 1);
+      }
+      else {
+        this._pathReplacements[segments[i]] = ORIGIN + this.base.slice(segments[0], segments[i]);
+      }
+    }
     this._pathReplacements[segments[segments.length - 1]] = CURRENT;
 
     // Add the remainder of the base IRI (without fragment) to the regex
