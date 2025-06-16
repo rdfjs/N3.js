@@ -128,12 +128,29 @@ describe('Term', () => {
           termType: 'Literal',
           value: 'abc',
           language: 'en-us',
+          direction: '',
           datatype: {
             termType: 'NamedNode',
             value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString',
           },
         });
       },
+    );
+
+    it(
+        /**/'should create a Literal from a string that starts with a quotation mark and has a direction',
+        () => {
+          expect(termFromId('"abc"@en-us--rtl').toJSON()).toEqual({
+            termType: 'Literal',
+            value: 'abc',
+            language: 'en-us',
+            direction: 'rtl',
+            datatype: {
+              termType: 'NamedNode',
+              value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#dirLangString',
+            },
+          });
+        },
     );
 
     it(
@@ -277,6 +294,10 @@ describe('Term', () => {
         expect(termFromId('"abc"@en-us', factory)).toEqual(['l', 'abc', 'en-us']);
       });
 
+      it('should create a Literal with a language and direction', () => {
+        expect(termFromId('"abc"@en-us--rtl', factory)).toEqual(['l', 'abc', { language: 'en-us', direction: 'rtl' }]);
+      });
+
       it('should create a Literal with a datatype', () => {
         expect(termFromId('"abc"^^https://ex.org/type', factory)).toEqual(['l', 'abc', ['n', 'https://ex.org/type']]);
       });
@@ -349,10 +370,25 @@ describe('Term', () => {
     );
 
     it(
+        'should create an id that starts with a quotation mark and language tag from a Literal with a language and direction',
+        () => {
+          expect(termToId(new Literal('"abc"@en-us--rtl'))).toBe('"abc"@en-us--rtl');
+          expect(termToId(new Literal('"abc"@en-us--rtl').toJSON())).toBe('"abc"@en-us--rtl');
+        },
+    );
+
+    it(
       'should create an id that starts with a quotation mark and language tag from a Literal string with a language',
       () => {
         expect(termToId('"abc"@en-us')).toBe('"abc"@en-us');
       },
+    );
+
+    it(
+        'should create an id that starts with a quotation mark and language tag from a Literal string with a language and direction',
+        () => {
+          expect(termToId('"abc"@en-us--rtl')).toBe('"abc"@en-us--rtl');
+        },
     );
 
     it(

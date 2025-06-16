@@ -414,6 +414,27 @@ describe('Lexer', () => {
     );
 
     it(
+        'should tokenize a quoted string literal with directional language code',
+        shouldTokenize('"string"@en--rtl "string"@nl-be--ltr "string"@EN--rtl ',
+            { type: 'literal', value: 'string', line: 1 },
+            { type: 'langcode', value: 'en', line: 1 },
+            { type: 'dircode', value: 'rtl', line: 1 },
+            { type: 'literal', value: 'string', line: 1 },
+            { type: 'langcode', value: 'nl-be', line: 1 },
+            { type: 'dircode', value: 'ltr', line: 1 },
+            { type: 'literal', value: 'string', line: 1 },
+            { type: 'langcode', value: 'EN', line: 1 },
+            { type: 'dircode', value: 'rtl', line: 1 },
+            { type: 'eof', line: 1 }),
+    );
+
+    it('should not tokenize an invalid direction', shouldNotTokenize('"string"@en--unk',
+        'Unexpected "--unk" on line 1.'));
+
+    it('should not tokenize a direction in uppercase', shouldNotTokenize('"string"@en--LTR',
+        'Unexpected "--LTR" on line 1.'));
+
+    it(
       'should tokenize a quoted string literal with type',
       shouldTokenize('"stringA"^^<type> "stringB"^^ns:mytype ',
                      { type: 'literal', value: 'stringA', line: 1 },
