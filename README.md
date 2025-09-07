@@ -402,7 +402,7 @@ const dataset = new Store(/* Dataset */)
 
 // Applies the rules to the store; mutating it
 const reasoner = new Reasoner(store);
-reasoner.reason(rules);
+reasoner.reason(rulesDataset);
 ```
 
 **Note**: N3.js currently only supports rules with [Basic Graph Patterns](https://www.w3.org/TR/sparql11-query/#BasicGraphPattern) in the premise and conclusion. Built-ins and backward-chaining are *not* supported. For an RDF/JS reasoner that supports all Notation3 reasoning features, see [eye-js](https://github.com/eyereasoner/eye-js/).
