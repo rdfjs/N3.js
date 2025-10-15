@@ -1005,10 +1005,17 @@ export default class N3Parser {
     return this._readReifiedTripleTail;
   }
 
-  // ### `_readReifier` reads the triple term identifier after a tilde when in annotation syntax.
+  // ### `_readReifier` reads the optional triple term identifier after a tilde when in annotation syntax.
   _readReifierInAnnotation(token) {
-    this._reifier = this._readEntity(token);
-    return this._readPunctuation;
+    // If next token is a reifier, read it as such.
+    if (token.type === 'IRI' || token.type === 'typeIRI' || token.type === 'type' || token.type === 'prefixed' || token.type === 'blank' || token.type === 'var') {
+      this._reifier = this._readEntity(token);
+      return this._readPunctuation;
+    }
+    // Otherwise, emit and assert triple term.
+    this._readTripleTerm();
+    this._subject = null;
+    return this._readPunctuation(token);
   }
 
   _readTripleTerm() {

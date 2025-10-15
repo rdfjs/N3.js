@@ -1638,6 +1638,13 @@ describe('Parser', () => {
     );
 
     it(
+        'should parse a reified triple using annotation syntax without reifier',
+        shouldParse('<a> <b> <c> ~ .',
+            ['a', 'b', 'c'],
+            ['_:b0', reifies, ['a', 'b', 'c']]),
+    );
+
+    it(
       'should parse a reified triple using annotation syntax with reifier and one predicate-object',
       shouldParse('<a> <b> <c> ~ <iri> {| <b> <c> |}.',
           ['a', 'b', 'c'],
