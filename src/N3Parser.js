@@ -572,6 +572,8 @@ export default class N3Parser {
       break;
     // Create a language-tagged string
     case 'langcode':
+      if (token.value.length > 8)
+        return this._error('Detected language tag of length larger than 8', token);
       literal = this._factory.literal(this._literalValue, token.value);
       this._literalLanguage = token.value;
       token = null;

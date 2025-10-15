@@ -171,6 +171,30 @@ describe('Parser', () => {
     );
 
     it(
+        'should error on a triple with a literal with language tag of length > 8',
+        shouldNotParse('<a> <b> "Hello"@cantbethislong.',
+            'Detected language tag of length larger than 8 on line 1.', {
+              line: 1,
+              previousToken: {
+                line: 1,
+                type: 'literal',
+                value: 'Hello',
+                prefix: '',
+                start: 8,
+                end: 15,
+              },
+              token: {
+                end: 30,
+                line: 1,
+                prefix: '',
+                start: 15,
+                type: 'langcode',
+                value: 'cantbethislong',
+              },
+            }),
+    );
+
+    it(
       'should parse a triple with a literal and an IRI type',
       shouldParse('<a> <b> "string"^^<type>.',
                   ['a', 'b', '"string"^^http://example.org/type']),
