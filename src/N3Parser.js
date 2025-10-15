@@ -564,6 +564,9 @@ export default class N3Parser {
     case 'typeIRI':
       const datatype = this._readEntity(token);
       if (datatype === undefined) return; // No datatype means an error occurred
+      if (datatype.value === namespaces.rdf.langString || datatype.value === namespaces.rdf.dirLangString) {
+        return this._error('Detected illegal (directional) languaged-tagged string with explicit datatype', token);
+      }
       literal = this._factory.literal(this._literalValue, datatype);
       token = null;
       break;

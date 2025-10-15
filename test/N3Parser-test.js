@@ -123,6 +123,54 @@ describe('Parser', () => {
     );
 
     it(
+        'should error on a triple with a literal with langstring datatype and no language tag',
+        shouldNotParse('<a> <b> "Hello"^^<http://www.w3.org/1999/02/22-rdf-syntax-ns#langString>.',
+            'Detected illegal (directional) languaged-tagged string with explicit datatype on line 1.', {
+              line: 1,
+              previousToken: {
+                line: 1,
+                type: 'literal',
+                value: 'Hello',
+                prefix: '',
+                start: 8,
+                end: 15,
+              },
+              token: {
+                end: 72,
+                line: 1,
+                prefix: '',
+                start: 17,
+                type: 'typeIRI',
+                value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString',
+              },
+            }),
+    );
+
+    it(
+        'should error on a triple with a literal with dirlangstring datatype and no language tag',
+        shouldNotParse('<a> <b> "Hello"^^<http://www.w3.org/1999/02/22-rdf-syntax-ns#dirLangString>.',
+            'Detected illegal (directional) languaged-tagged string with explicit datatype on line 1.', {
+              line: 1,
+              previousToken: {
+                line: 1,
+                type: 'literal',
+                value: 'Hello',
+                prefix: '',
+                start: 8,
+                end: 15,
+              },
+              token: {
+                end: 75,
+                line: 1,
+                prefix: '',
+                start: 17,
+                type: 'typeIRI',
+                value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#dirLangString',
+              },
+            }),
+    );
+
+    it(
       'should parse a triple with a literal and an IRI type',
       shouldParse('<a> <b> "string"^^<type>.',
                   ['a', 'b', '"string"^^http://example.org/type']),
