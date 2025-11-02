@@ -35,6 +35,9 @@ export default class N3Parser {
     this._lexer = options.lexer || new N3Lexer({ lineMode: isLineMode, n3: isN3 });
     // Disable explicit quantifiers by default
     this._explicitQuantifiers = !!options.explicitQuantifiers;
+    // Disable parsing of unsupported versions by default
+    this._parseUnsupportedVersions = !!options.parseUnsupportedVersions;
+    this._version = options.version;
   }
 
   // ## Static class methods
@@ -110,6 +113,13 @@ export default class N3Parser {
       this._prefixes._ = context.blankPrefix;
       this._quantified = context.quantified;
     }
+  }
+
+  // ### `_readBeforeTopContext` is called once only at the start of parsing.
+  _readBeforeTopContext(token) {
+    if (this._version && !this._isValidVersion(this._version))
+      return this._error(`Detected unsupported version as media type parameter: "${this._version}"`, token);
+    return this._readInTopContext(token);
   }
 
   // ### `_readInTopContext` reads a token when in the top context
@@ -782,13 +792,20 @@ export default class N3Parser {
     return this._readDeclarationPunctuation;
   }
 
+  // ### `_isValidVersion` checks if the given version is valid for this parser to handle.
+  _isValidVersion(version) {
+    return this._parseUnsupportedVersions || N3Parser.SUPPORTED_VERSIONS.includes(version);
+  }
+
   // ### `_readVersion` reads version string declaration
   _readVersion(token) {
     if (token.type !== 'literal')
       return this._error('Expected literal to follow version declaration', token);
     if ((token.end - token.start) !== token.value.length + 2)
       return this._error('Version declarations must use single quotes', token);
-    this._prefixCallback(token.value);
+    this._versionCallback(token.value);
+    if (!this._isValidVersion(token.value))
+      return this._error(`Detected unsupported version: "${token.value}"`, token);
     return this._readDeclarationPunctuation;
   }
 
@@ -1181,7 +1198,7 @@ export default class N3Parser {
     }
     // The read callback is the next function to be executed when a token arrives.
     // We start reading in the top context.
-    this._readCallback = this._readInTopContext;
+    this._readCallback = this._readBeforeTopContext;
     this._sparqlStyle = false;
     this._prefixes = Object.create(null);
     this._prefixes._ = this._blankNodePrefix ? this._blankNodePrefix.substr(2)
@@ -1256,4 +1273,9 @@ function initDataFactory(parser, factory) {
   };
   parser.QUANTIFIERS_GRAPH = factory.namedNode('urn:n3:quantifiers');
 }
+N3Parser.SUPPORTED_VERSIONS = [
+  '1.2',
+  '1.2-basic',
+  '1.1',
+];
 initDataFactory(N3Parser.prototype, N3DataFactory);

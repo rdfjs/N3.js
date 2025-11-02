@@ -954,6 +954,26 @@ describe('Parser', () => {
             'Version declarations must use single quotes on line 1.'),
     );
 
+    it(
+        'should not allow unsupported VERSIONs',
+        shouldNotParse('VERSION "1.2-unknown"',
+            'Detected unsupported version: "1.2-unknown" on line 1.'),
+    );
+
+    function lenientParser() { return new Parser({ parseUnsupportedVersions: true }); }
+    it(
+        'should handle unsupported VERSIONs when parseUnsupportedVersions is true',
+        shouldParse(lenientParser, 'VERSION "1.2-unknown"'),
+    );
+
+    it(
+        'should not allow unsupported versions passed through the constructor',
+        () => {
+          expect((() => { new Parser({ version: '1.2-unknown' }).parse('<a> <b> <c>'); }))
+          .toThrow('Detected unsupported version as media type parameter: "1.2-unknown" on line 1.');
+        },
+    );
+
     it('should parse an empty default graph', shouldParse('{}'));
 
     it(
