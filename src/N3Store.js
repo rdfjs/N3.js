@@ -163,7 +163,7 @@ export default class N3Store {
     this._graphs = Object.create(null);
 
     // Shift parameters if `quads` is not given
-    if (!options && quads && !quads[0])
+    if (!options && quads && !quads[0] && !(typeof quads.match === 'function'))
       options = quads, quads = null;
     options = options || {};
     this._factory = options.factory || N3DataFactory;
@@ -175,7 +175,7 @@ export default class N3Store {
 
     // Add quads if passed
     if (quads)
-      this.addQuads(quads);
+      this.addAll(quads);
   }
 
   // ## Public properties
@@ -601,7 +601,7 @@ export default class N3Store {
   // Setting any field to `undefined` or `null` indicates a wildcard.
   some(callback, subject, predicate, object, graph) {
     for (const quad of this.readQuads(subject, predicate, object, graph))
-      if (callback(quad))
+      if (callback(quad, this))
         return true;
     return false;
   }
@@ -1134,27 +1134,28 @@ class DatasetCoreAndReadableStream extends Readable {
 
       const graphs = n3Store._getGraphs(graph);
       for (const graphKey in graphs) {
-        let subjects, predicates, objects;
-
-        if (!subjectId && predicateId) {
-          if (predicates = indexMatch(graphs[graphKey].predicates, [predicateId, objectId, subjectId])) {
-            subjects = indexMatch(graphs[graphKey].subjects, [subjectId, predicateId, objectId]);
-            objects = indexMatch(graphs[graphKey].objects, [objectId, subjectId, predicateId]);
+        let subjects, predicates, objects, content;
+        if (content = graphs[graphKey]) {
+          if (!subjectId && predicateId) {
+            if (predicates = indexMatch(content.predicates, [predicateId, objectId, subjectId])) {
+              subjects = indexMatch(content.subjects, [subjectId, predicateId, objectId]);
+              objects = indexMatch(content.objects, [objectId, subjectId, predicateId]);
+            }
           }
-        }
-        else if (objectId) {
-          if (objects = indexMatch(graphs[graphKey].objects, [objectId, subjectId, predicateId])) {
-            subjects = indexMatch(graphs[graphKey].subjects, [subjectId, predicateId, objectId]);
-            predicates = indexMatch(graphs[graphKey].predicates, [predicateId, objectId, subjectId]);
+          else if (objectId) {
+            if (objects = indexMatch(content.objects, [objectId, subjectId, predicateId])) {
+              subjects = indexMatch(content.subjects, [subjectId, predicateId, objectId]);
+              predicates = indexMatch(content.predicates, [predicateId, objectId, subjectId]);
+            }
           }
-        }
-        else if (subjects = indexMatch(graphs[graphKey].subjects, [subjectId, predicateId, objectId])) {
-          predicates = indexMatch(graphs[graphKey].predicates, [predicateId, objectId, subjectId]);
-          objects = indexMatch(graphs[graphKey].objects, [objectId, subjectId, predicateId]);
-        }
+          else if (subjects = indexMatch(content.subjects, [subjectId, predicateId, objectId])) {
+            predicates = indexMatch(content.predicates, [predicateId, objectId, subjectId]);
+            objects = indexMatch(content.objects, [objectId, subjectId, predicateId]);
+          }
 
-        if (subjects)
-          newStore._graphs[graphKey] = { subjects, predicates, objects };
+          if (subjects)
+            newStore._graphs[graphKey] = { subjects, predicates, objects };
+        }
       }
       newStore._size = null;
     }

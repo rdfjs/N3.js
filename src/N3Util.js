@@ -22,6 +22,11 @@ export function isVariable(term) {
   return !!term && term.termType === 'Variable';
 }
 
+// Tests whether the given term represents a quad
+export function isQuad(term) {
+  return !!term && term.termType === 'Quad';
+}
+
 // Tests whether the given term represents the default graph
 export function isDefaultGraph(term) {
   return !!term && term.termType === 'DefaultGraph';

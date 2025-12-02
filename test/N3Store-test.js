@@ -150,6 +150,17 @@ describe('Store', () => {
 
     it('should have size 5', () => {
       expect(store.size).toEqual(5);
+
+      expect(store.match(namedNode('s2'), namedNode('p2'), namedNode('o2'), namedNode('g1')).size).toEqual(1);
+      expect(store.match(null, namedNode('p2'), namedNode('o2'), namedNode('g1')).size).toEqual(1);
+      expect(store.match(namedNode('s2'), null, namedNode('o2'), namedNode('g1')).size).toEqual(1);
+      expect(store.match(namedNode('s2'), namedNode('p2'), null, namedNode('g1')).size).toEqual(1);
+      expect(store.match(namedNode('s2'), namedNode('p2'), namedNode('o2'), null).size).toEqual(1);
+
+      expect(store.match(namedNode('s2'), namedNode('p2'), namedNode('o2'), namedNode('g2')).size).toEqual(0);
+      expect(store.match(null, namedNode('p2'), namedNode('o2'), namedNode('g2')).size).toEqual(0);
+      expect(store.match(namedNode('s2'), null, namedNode('o2'), namedNode('g2')).size).toEqual(0);
+      expect(store.match(namedNode('s2'), namedNode('p2'), null, namedNode('g2')).size).toEqual(0);
     });
 
     describe('adding a triple that already exists', () => {
@@ -2433,6 +2444,18 @@ describe('Store', () => {
       it('should return false on the empty set', () => {
         expect(empty.some(quad => true)).toBe(false);
       });
+
+      it('should return true if any quad passes the test with a graph', () => {
+        expect(storeb.some(quad => quad.subject.value === 's1')).toBe(true);
+        expect(storeb.some(quad => quad.subject.value === 's2')).toBe(false);
+      });
+
+      it('should have the store as the second argument of the callback', () => {
+        expect(store1.some((_, store) => {
+          expect(store.equals(store1)).toBe(true);
+          return true;
+        })).toBe(true);
+      });
     });
 
     describe('#every', () => {
@@ -2451,6 +2474,16 @@ describe('Store', () => {
         expect(empty.every(quad => true)).toBe(true);
       });
     });
+  });
+
+  it('should initialize the store correctly with a another store', () => {
+    const quads = new Store([
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
+    ]);
+    const store = new Store(quads);
+    expect(store.size).toEqual(2);
+    expect(store.getQuads()).toHaveLength(2);
   });
 });
 

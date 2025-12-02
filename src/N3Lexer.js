@@ -1,6 +1,5 @@
 // **N3Lexer** tokenizes N3 documents.
 import { Buffer } from 'buffer';
-import queueMicrotask from 'queue-microtask';
 import namespaces from './IRIs';
 
 const { xsd } = namespaces;
@@ -55,6 +54,9 @@ export default class N3Lexer {
     this._whitespace = /^[ \t]+/;
     this._endOfFile = /^(?:#[^\n\r]*)?$/;
     options = options || {};
+
+    // Whether the log:isImpliedBy predicate is supported
+    this._isImpliedBy = options.isImpliedBy;
 
     // In line mode (N-Triples or N-Quads), only simple features may be parsed
     if (this._lineMode = !!options.lineMode) {
@@ -157,8 +159,11 @@ export default class N3Lexer {
         else if (!this._lineMode && input.length > (inputFinished ? 1 : 2) && input[1] === '<')
           type = '<<', matchLength = 2;
         // Try to find a backwards implication arrow
-        else if (this._n3Mode && input.length > 1 && input[1] === '=')
-          type = 'inverse', matchLength = 2, value = '>';
+        else if (this._n3Mode && input.length > 1 && input[1] === '=') {
+          matchLength = 2;
+          if (this._isImpliedBy) type = 'abbreviation', value = '<';
+          else type = 'inverse', value = '>';
+        }
         break;
 
       case '>':
