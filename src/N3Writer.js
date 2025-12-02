@@ -229,11 +229,11 @@ export default class N3Writer {
 
   // ### `_encodeQuad` encodes an RDF-star quad
   _encodeQuad({ subject, predicate, object, graph }) {
-    return `<<${
+    return `<<(${
       this._encodeSubject(subject)} ${
       this._encodePredicate(predicate)} ${
       this._encodeObject(object)}${
-      isDefaultGraph(graph) ? '' : ` ${this._encodeIriOrBlank(graph)}`}>>`;
+      isDefaultGraph(graph) ? '' : ` ${this._encodeIriOrBlank(graph)}`})>>`;
   }
 
   // ### `_blockedWrite` replaces `_write` after the writer has been closed
