@@ -20,6 +20,11 @@
             <div id="jump_page">
               
                 
+                <a class="source" href="BaseIRI.html">
+                  BaseIRI.js
+                </a>
+              
+                
                 <a class="source" href="IRIs.html">
                   IRIs.js
                 </a>
@@ -40,8 +45,18 @@
                 </a>
               
                 
+                <a class="source" href="N3Reasoner.html">
+                  N3Reasoner.js
+                </a>
+              
+                
                 <a class="source" href="N3Store.html">
                   N3Store.js
+                </a>
+              
+                
+                <a class="source" href="N3StoreFactory.html">
+                  N3StoreFactory.js
                 </a>
               
                 
@@ -62,6 +77,11 @@
                 
                 <a class="source" href="N3Writer.html">
                   N3Writer.js
+                </a>
+              
+                
+                <a class="source" href="Util.html">
+                  Util.js
                 </a>
               
                 
@@ -174,6 +194,23 @@
               <div class="sswrap ">
                 <a class="ss" href="#section-6">&#x00a7;</a>
               </div>
+              <p>Tests whether the given term represents a quad</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">isQuad</span>(<span class="hljs-params">term</span>) {
+  <span class="hljs-keyword">return</span> !!term &amp;&amp; term.<span class="hljs-property">termType</span> === <span class="hljs-string">&#x27;Quad&#x27;</span>;
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-7">&#x00a7;</a>
+              </div>
               <p>Tests whether the given term represents the default graph</p>
 
             </div>
@@ -185,11 +222,11 @@
         </li>
         
         
-        <li id="section-7">
+        <li id="section-8">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-7">&#x00a7;</a>
+                <a class="ss" href="#section-8">&#x00a7;</a>
               </div>
               <p>Tests whether the given quad is in the default graph</p>
 
@@ -202,11 +239,11 @@
         </li>
         
         
-        <li id="section-8">
+        <li id="section-9">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-8">&#x00a7;</a>
+                <a class="ss" href="#section-9">&#x00a7;</a>
               </div>
               <p>Creates a function that prepends the given IRI to a local name</p>
 
@@ -219,11 +256,11 @@
         </li>
         
         
-        <li id="section-9">
+        <li id="section-10">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-9">&#x00a7;</a>
+                <a class="ss" href="#section-10">&#x00a7;</a>
               </div>
               <p>Creates a function that allows registering and expanding prefixes</p>
 
@@ -234,11 +271,11 @@
         </li>
         
         
-        <li id="section-10">
+        <li id="section-11">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-10">&#x00a7;</a>
+                <a class="ss" href="#section-11">&#x00a7;</a>
               </div>
               <p>Add all of the default prefixes</p>
 
@@ -251,11 +288,11 @@
         </li>
         
         
-        <li id="section-11">
+        <li id="section-12">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-11">&#x00a7;</a>
+                <a class="ss" href="#section-12">&#x00a7;</a>
               </div>
               <p>Set the default factory if none was specified</p>
 
@@ -266,11 +303,11 @@
         </li>
         
         
-        <li id="section-12">
+        <li id="section-13">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-12">&#x00a7;</a>
+                <a class="ss" href="#section-13">&#x00a7;</a>
               </div>
               <p>Registers a new prefix (if an IRI was specified)
 or retrieves a function that expands an existing prefix (if no IRI was specified)</p>
@@ -282,11 +319,11 @@ or retrieves a function that expands an existing prefix (if no IRI was specified
         </li>
         
         
-        <li id="section-13">
+        <li id="section-14">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-13">&#x00a7;</a>
+                <a class="ss" href="#section-14">&#x00a7;</a>
               </div>
               <p>Create a new prefix if an IRI is specified or the prefix doesn’t exist</p>
 
@@ -297,11 +334,11 @@ or retrieves a function that expands an existing prefix (if no IRI was specified
         </li>
         
         
-        <li id="section-14">
+        <li id="section-15">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-14">&#x00a7;</a>
+                <a class="ss" href="#section-15">&#x00a7;</a>
               </div>
               <p>Create a function that expands the prefix</p>
 

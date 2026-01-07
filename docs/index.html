@@ -20,6 +20,11 @@
             <div id="jump_page">
               
                 
+                <a class="source" href="BaseIRI.html">
+                  BaseIRI.js
+                </a>
+              
+                
                 <a class="source" href="IRIs.html">
                   IRIs.js
                 </a>
@@ -40,8 +45,18 @@
                 </a>
               
                 
+                <a class="source" href="N3Reasoner.html">
+                  N3Reasoner.js
+                </a>
+              
+                
                 <a class="source" href="N3Store.html">
                   N3Store.js
+                </a>
+              
+                
+                <a class="source" href="N3StoreFactory.html">
+                  N3StoreFactory.js
                 </a>
               
                 
@@ -62,6 +77,11 @@
                 
                 <a class="source" href="N3Writer.html">
                   N3Writer.js
+                </a>
+              
+                
+                <a class="source" href="Util.html">
+                  Util.js
                 </a>
               
                 
@@ -96,10 +116,13 @@
             <div class="content"><div class='highlight'><pre><span class="hljs-keyword">import</span> <span class="hljs-title class_">Lexer</span> <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3Lexer&#x27;</span>;
 <span class="hljs-keyword">import</span> <span class="hljs-title class_">Parser</span> <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3Parser&#x27;</span>;
 <span class="hljs-keyword">import</span> <span class="hljs-title class_">Writer</span> <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3Writer&#x27;</span>;
-<span class="hljs-keyword">import</span> <span class="hljs-title class_">Store</span> <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3Store&#x27;</span>;
+<span class="hljs-keyword">import</span> <span class="hljs-title class_">Store</span>, { N3EntityIndex <span class="hljs-keyword">as</span> <span class="hljs-title class_">EntityIndex</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3Store&#x27;</span>;
+<span class="hljs-keyword">import</span> <span class="hljs-title class_">StoreFactory</span> <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3StoreFactory&#x27;</span>;
+<span class="hljs-keyword">import</span> <span class="hljs-title class_">Reasoner</span>, { getRulesFromDataset } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3Reasoner&#x27;</span>;
 <span class="hljs-keyword">import</span> <span class="hljs-title class_">StreamParser</span> <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3StreamParser&#x27;</span>;
 <span class="hljs-keyword">import</span> <span class="hljs-title class_">StreamWriter</span> <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3StreamWriter&#x27;</span>;
 <span class="hljs-keyword">import</span> * <span class="hljs-keyword">as</span> <span class="hljs-title class_">Util</span> <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3Util&#x27;</span>;
+<span class="hljs-keyword">import</span> <span class="hljs-title class_">Base</span>IRI <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./BaseIRI&#x27;</span>;
 
 <span class="hljs-keyword">import</span> {
   <span class="hljs-keyword">default</span> <span class="hljs-keyword">as</span> <span class="hljs-title class_">DataFactory</span>,
@@ -135,9 +158,13 @@
   <span class="hljs-title class_">Parser</span>,
   <span class="hljs-title class_">Writer</span>,
   <span class="hljs-title class_">Store</span>,
+  <span class="hljs-title class_">StoreFactory</span>,
+  <span class="hljs-title class_">EntityIndex</span>,
   <span class="hljs-title class_">StreamParser</span>,
   <span class="hljs-title class_">StreamWriter</span>,
   <span class="hljs-title class_">Util</span>,
+  <span class="hljs-title class_">Reasoner</span>,
+  <span class="hljs-title class_">Base</span>IRI,
 
   <span class="hljs-title class_">DataFactory</span>,
 
@@ -152,6 +179,7 @@
 
   termFromId,
   termToId,
+  getRulesFromDataset,
 };</pre></div></div>
             
         </li>
@@ -172,9 +200,13 @@
   <span class="hljs-title class_">Parser</span>,
   <span class="hljs-title class_">Writer</span>,
   <span class="hljs-title class_">Store</span>,
+  <span class="hljs-title class_">StoreFactory</span>,
+  <span class="hljs-title class_">EntityIndex</span>,
   <span class="hljs-title class_">StreamParser</span>,
   <span class="hljs-title class_">StreamWriter</span>,
   <span class="hljs-title class_">Util</span>,
+  <span class="hljs-title class_">Reasoner</span>,
+  <span class="hljs-title class_">Base</span>IRI,
 
   <span class="hljs-title class_">DataFactory</span>,
 

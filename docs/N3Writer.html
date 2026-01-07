@@ -20,6 +20,11 @@
             <div id="jump_page">
               
                 
+                <a class="source" href="BaseIRI.html">
+                  BaseIRI.js
+                </a>
+              
+                
                 <a class="source" href="IRIs.html">
                   IRIs.js
                 </a>
@@ -40,8 +45,18 @@
                 </a>
               
                 
+                <a class="source" href="N3Reasoner.html">
+                  N3Reasoner.js
+                </a>
+              
+                
                 <a class="source" href="N3Store.html">
                   N3Store.js
+                </a>
+              
+                
+                <a class="source" href="N3StoreFactory.html">
+                  N3StoreFactory.js
                 </a>
               
                 
@@ -62,6 +77,11 @@
                 
                 <a class="source" href="N3Writer.html">
                   N3Writer.js
+                </a>
+              
+                
+                <a class="source" href="Util.html">
+                  Util.js
                 </a>
               
                 
@@ -97,6 +117,8 @@
             <div class="content"><div class='highlight'><pre><span class="hljs-keyword">import</span> namespaces <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./IRIs&#x27;</span>;
 <span class="hljs-keyword">import</span> { <span class="hljs-keyword">default</span> <span class="hljs-keyword">as</span> N3DataFactory, <span class="hljs-title class_">Term</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3DataFactory&#x27;</span>;
 <span class="hljs-keyword">import</span> { isDefaultGraph } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3Util&#x27;</span>;
+<span class="hljs-keyword">import</span> <span class="hljs-title class_">Base</span>IRI <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./BaseIRI&#x27;</span>;
+<span class="hljs-keyword">import</span> { escapeRegex } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./Util&#x27;</span>;
 
 <span class="hljs-keyword">const</span> <span class="hljs-variable constant_">DEFAULTGRAPH</span> = N3DataFactory.<span class="hljs-title function_">defaultGraph</span>();
 
@@ -251,9 +273,7 @@
       <span class="hljs-variable language_">this</span>.<span class="hljs-property">_prefixIRIs</span> = <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">create</span>(<span class="hljs-literal">null</span>);
       options.<span class="hljs-property">prefixes</span> &amp;&amp; <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">addPrefixes</span>(options.<span class="hljs-property">prefixes</span>);
       <span class="hljs-keyword">if</span> (options.<span class="hljs-property">baseIRI</span>) {
-        <span class="hljs-variable language_">this</span>.<span class="hljs-property">_baseMatcher</span> = <span class="hljs-keyword">new</span> <span class="hljs-title class_">RegExp</span>(<span class="hljs-string">`^<span class="hljs-subst">${escapeRegex(options.baseIRI)
-            }</span><span class="hljs-subst">${options.baseIRI.endsWith(<span class="hljs-string">&#x27;/&#x27;</span>) ? <span class="hljs-string">&#x27;&#x27;</span> : <span class="hljs-string">&#x27;[#?]&#x27;</span>}</span>`</span>);
-        <span class="hljs-variable language_">this</span>.<span class="hljs-property">_baseLength</span> = options.<span class="hljs-property">baseIRI</span>.<span class="hljs-property">length</span>;
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">_baseIri</span> = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Base</span>IRI(options.<span class="hljs-property">baseIRI</span>);
       }
     }
     <span class="hljs-keyword">else</span> {
@@ -497,9 +517,10 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">quadsToString</span>(<span class="hljs-params">quads</span>) {
-    <span class="hljs-keyword">return</span> quads.<span class="hljs-title function_">map</span>(<span class="hljs-function"><span class="hljs-params">t</span> =&gt;</span> {
-      <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">quadToString</span>(t.<span class="hljs-property">subject</span>, t.<span class="hljs-property">predicate</span>, t.<span class="hljs-property">object</span>, t.<span class="hljs-property">graph</span>);
-    }).<span class="hljs-title function_">join</span>(<span class="hljs-string">&#x27;&#x27;</span>);
+    <span class="hljs-keyword">let</span> quadsString = <span class="hljs-string">&#x27;&#x27;</span>;
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> quad <span class="hljs-keyword">of</span> quads)
+      quadsString += <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">quadToString</span>(quad.<span class="hljs-property">subject</span>, quad.<span class="hljs-property">predicate</span>, quad.<span class="hljs-property">object</span>, quad.<span class="hljs-property">graph</span>);
+    <span class="hljs-keyword">return</span> quadsString;
   }</pre></div></div>
             
         </li>
@@ -582,8 +603,9 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_baseMatcher</span> &amp;&amp; <span class="hljs-variable language_">this</span>.<span class="hljs-property">_baseMatcher</span>.<span class="hljs-title function_">test</span>(iri))
-      iri = iri.<span class="hljs-title function_">substr</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">_baseLength</span>);</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_baseIri</span>) {
+      iri = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_baseIri</span>.<span class="hljs-title function_">toRelative</span>(iri);
+    }</pre></div></div>
             
         </li>
         
@@ -664,8 +686,9 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (literal.<span class="hljs-property">language</span>)
-      <span class="hljs-keyword">return</span> <span class="hljs-string">`&quot;<span class="hljs-subst">${value}</span>&quot;@<span class="hljs-subst">${literal.language}</span>`</span>;</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">const</span> direction = literal.<span class="hljs-property">direction</span> ? <span class="hljs-string">`--<span class="hljs-subst">${literal.direction}</span>`</span> : <span class="hljs-string">&#x27;&#x27;</span>;
+    <span class="hljs-keyword">if</span> (literal.<span class="hljs-property">language</span>)
+      <span class="hljs-keyword">return</span> <span class="hljs-string">`&quot;<span class="hljs-subst">${value}</span>&quot;@<span class="hljs-subst">${literal.language}</span><span class="hljs-subst">${direction}</span>`</span>;</pre></div></div>
             
         </li>
         
@@ -801,16 +824,16 @@
               <div class="sswrap ">
                 <a class="ss" href="#section-40">&#x00a7;</a>
               </div>
-              <h3 id="_encodequad-encodes-an-rdf-quad"><code>_encodeQuad</code> encodes an RDF* quad</h3>
+              <h3 id="_encodequad-encodes-an-rdf-star-quad"><code>_encodeQuad</code> encodes an RDF-star quad</h3>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">_encodeQuad</span>(<span class="hljs-params">{ subject, predicate, object, graph }</span>) {
-    <span class="hljs-keyword">return</span> <span class="hljs-string">`&lt;&lt;<span class="hljs-subst">${
+    <span class="hljs-keyword">return</span> <span class="hljs-string">`&lt;&lt;(<span class="hljs-subst">${
       <span class="hljs-variable language_">this</span>._encodeSubject(subject)}</span> <span class="hljs-subst">${
       <span class="hljs-variable language_">this</span>._encodePredicate(predicate)}</span> <span class="hljs-subst">${
       <span class="hljs-variable language_">this</span>._encodeObject(object)}</span><span class="hljs-subst">${
-      isDefaultGraph(graph) ? <span class="hljs-string">&#x27;&#x27;</span> : <span class="hljs-string">` <span class="hljs-subst">${<span class="hljs-variable language_">this</span>._encodeIriOrBlank(graph)}</span>`</span>}</span>&gt;&gt;`</span>;
+      isDefaultGraph(graph) ? <span class="hljs-string">&#x27;&#x27;</span> : <span class="hljs-string">` <span class="hljs-subst">${<span class="hljs-variable language_">this</span>._encodeIriOrBlank(graph)}</span>`</span>}</span>)&gt;&gt;`</span>;
   }</pre></div></div>
             
         </li>
@@ -1038,7 +1061,7 @@
       }
       <span class="hljs-title class_">IRIlist</span> = escapeRegex(<span class="hljs-title class_">IRIlist</span>, <span class="hljs-regexp">/[\]\/\(\)\*\+\?\.\\\$]/g</span>, <span class="hljs-string">&#x27;\\$&amp;&#x27;</span>);
       <span class="hljs-variable language_">this</span>.<span class="hljs-property">_prefixRegex</span> = <span class="hljs-keyword">new</span> <span class="hljs-title class_">RegExp</span>(<span class="hljs-string">`^(?:<span class="hljs-subst">${prefixList}</span>)[^\/]*$|`</span> +
-                                     <span class="hljs-string">`^(<span class="hljs-subst">${IRIlist}</span>)([_a-zA-Z][\\-_a-zA-Z0-9]*)$`</span>);
+                                     <span class="hljs-string">`^(<span class="hljs-subst">${IRIlist}</span>)([_a-zA-Z0-9][\\-_a-zA-Z0-9]*)$`</span>);
     }</pre></div></div>
             
         </li>
@@ -1389,10 +1412,6 @@
     }
   }
   <span class="hljs-keyword">return</span> result;
-}
-
-<span class="hljs-keyword">function</span> <span class="hljs-title function_">escapeRegex</span>(<span class="hljs-params">regex</span>) {
-  <span class="hljs-keyword">return</span> regex.<span class="hljs-title function_">replace</span>(<span class="hljs-regexp">/[\]\/\(\)\*\+\?\.\\\$]/g</span>, <span class="hljs-string">&#x27;\\$&amp;&#x27;</span>);
 }</pre></div></div>
             
         </li>

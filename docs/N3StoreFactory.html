@@ -2,7 +2,7 @@
 
 <html>
 <head>
-  <title>IRIs.js</title>
+  <title>N3StoreFactory.js</title>
   <meta http-equiv="content-type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
   <link rel="stylesheet" media="all" href="docco.css" />
@@ -98,7 +98,7 @@
         
           <li id="title">
               <div class="annotation">
-                  <h1>IRIs.js</h1>
+                  <h1>N3StoreFactory.js</h1>
               </div>
           </li>
         
@@ -113,39 +113,13 @@
               
             </div>
             
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">const</span> <span class="hljs-variable constant_">RDF</span>  = <span class="hljs-string">&#x27;http://www.w3.org/1999/02/22-rdf-syntax-ns#&#x27;</span>,
-    <span class="hljs-variable constant_">XSD</span>  = <span class="hljs-string">&#x27;http://www.w3.org/2001/XMLSchema#&#x27;</span>,
-    <span class="hljs-variable constant_">SWAP</span> = <span class="hljs-string">&#x27;http://www.w3.org/2000/10/swap/&#x27;</span>;
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">import</span> N3Store <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3Store&#x27;</span>;
 
-<span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> {
-  <span class="hljs-attr">xsd</span>: {
-    <span class="hljs-attr">decimal</span>: <span class="hljs-string">`<span class="hljs-subst">${XSD}</span>decimal`</span>,
-    <span class="hljs-attr">boolean</span>: <span class="hljs-string">`<span class="hljs-subst">${XSD}</span>boolean`</span>,
-    <span class="hljs-attr">double</span>:  <span class="hljs-string">`<span class="hljs-subst">${XSD}</span>double`</span>,
-    <span class="hljs-attr">integer</span>: <span class="hljs-string">`<span class="hljs-subst">${XSD}</span>integer`</span>,
-    <span class="hljs-attr">string</span>:  <span class="hljs-string">`<span class="hljs-subst">${XSD}</span>string`</span>,
-  },
-  <span class="hljs-attr">rdf</span>: {
-    <span class="hljs-attr">type</span>:          <span class="hljs-string">`<span class="hljs-subst">${RDF}</span>type`</span>,
-    <span class="hljs-attr">nil</span>:           <span class="hljs-string">`<span class="hljs-subst">${RDF}</span>nil`</span>,
-    <span class="hljs-attr">first</span>:         <span class="hljs-string">`<span class="hljs-subst">${RDF}</span>first`</span>,
-    <span class="hljs-attr">rest</span>:          <span class="hljs-string">`<span class="hljs-subst">${RDF}</span>rest`</span>,
-    <span class="hljs-attr">langString</span>:    <span class="hljs-string">`<span class="hljs-subst">${RDF}</span>langString`</span>,
-    <span class="hljs-attr">dirLangString</span>: <span class="hljs-string">`<span class="hljs-subst">${RDF}</span>dirLangString`</span>,
-    <span class="hljs-attr">reifies</span>:       <span class="hljs-string">`<span class="hljs-subst">${RDF}</span>reifies`</span>,
-  },
-  <span class="hljs-attr">owl</span>: {
-    <span class="hljs-attr">sameAs</span>: <span class="hljs-string">&#x27;http://www.w3.org/2002/07/owl#sameAs&#x27;</span>,
-  },
-  <span class="hljs-attr">r</span>: {
-    <span class="hljs-attr">forSome</span>: <span class="hljs-string">`<span class="hljs-subst">${SWAP}</span>reify#forSome`</span>,
-    <span class="hljs-attr">forAll</span>:  <span class="hljs-string">`<span class="hljs-subst">${SWAP}</span>reify#forAll`</span>,
-  },
-  <span class="hljs-attr">log</span>: {
-    <span class="hljs-attr">implies</span>: <span class="hljs-string">`<span class="hljs-subst">${SWAP}</span>log#implies`</span>,
-    <span class="hljs-attr">isImpliedBy</span>: <span class="hljs-string">`<span class="hljs-subst">${SWAP}</span>log#isImpliedBy`</span>,
-  },
-};</pre></div></div>
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">N3DatasetCoreFactory</span> {
+  <span class="hljs-title function_">dataset</span>(<span class="hljs-params">quads</span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title function_">N3Store</span>(quads);
+  }
+}</pre></div></div>
             
         </li>
         

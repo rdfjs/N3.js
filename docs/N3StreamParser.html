@@ -20,6 +20,11 @@
             <div id="jump_page">
               
                 
+                <a class="source" href="BaseIRI.html">
+                  BaseIRI.js
+                </a>
+              
+                
                 <a class="source" href="IRIs.html">
                   IRIs.js
                 </a>
@@ -40,8 +45,18 @@
                 </a>
               
                 
+                <a class="source" href="N3Reasoner.html">
+                  N3Reasoner.js
+                </a>
+              
+                
                 <a class="source" href="N3Store.html">
                   N3Store.js
+                </a>
+              
+                
+                <a class="source" href="N3StoreFactory.html">
+                  N3StoreFactory.js
                 </a>
               
                 
@@ -62,6 +77,11 @@
                 
                 <a class="source" href="N3Writer.html">
                   N3Writer.js
+                </a>
+              
+                
+                <a class="source" href="Util.html">
+                  Util.js
                 </a>
               
                 
@@ -130,14 +150,8 @@
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">const</span> parser = <span class="hljs-keyword">new</span> <span class="hljs-title function_">N3Parser</span>(options);
     <span class="hljs-keyword">let</span> onData, onEnd;
-    parser.<span class="hljs-title function_">parse</span>({
-      <span class="hljs-attr">on</span>: <span class="hljs-function">(<span class="hljs-params">event, callback</span>) =&gt;</span> {
-        <span class="hljs-keyword">switch</span> (event) {
-        <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;data&#x27;</span>: onData = callback; <span class="hljs-keyword">break</span>;
-        <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;end&#x27;</span>:   onEnd = callback; <span class="hljs-keyword">break</span>;
-        }
-      },
-    },</pre></div></div>
+
+    <span class="hljs-keyword">const</span> callbacks = {</pre></div></div>
             
         </li>
         
@@ -152,7 +166,7 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      (error, quad) =&gt; { error &amp;&amp; <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">emit</span>(<span class="hljs-string">&#x27;error&#x27;</span>, error) || quad &amp;&amp; <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">push</span>(quad); },</pre></div></div>
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-attr">onQuad</span>: <span class="hljs-function">(<span class="hljs-params">error, quad</span>) =&gt;</span> { error &amp;&amp; <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">emit</span>(<span class="hljs-string">&#x27;error&#x27;</span>, error) || quad &amp;&amp; <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">push</span>(quad); },</pre></div></div>
             
         </li>
         
@@ -167,8 +181,20 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      (prefix, uri) =&gt; { <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">emit</span>(<span class="hljs-string">&#x27;prefix&#x27;</span>, prefix, uri); }
-    );</pre></div></div>
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-attr">onPrefix</span>: <span class="hljs-function">(<span class="hljs-params">prefix, uri</span>) =&gt;</span> { <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">emit</span>(<span class="hljs-string">&#x27;prefix&#x27;</span>, prefix, uri); },
+    };
+
+    <span class="hljs-keyword">if</span> (options &amp;&amp; options.<span class="hljs-property">comments</span>)
+      callbacks.<span class="hljs-property">onComment</span> = <span class="hljs-function"><span class="hljs-params">comment</span> =&gt;</span> { <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">emit</span>(<span class="hljs-string">&#x27;comment&#x27;</span>, comment); };
+
+    parser.<span class="hljs-title function_">parse</span>({
+      <span class="hljs-attr">on</span>: <span class="hljs-function">(<span class="hljs-params">event, callback</span>) =&gt;</span> {
+        <span class="hljs-keyword">switch</span> (event) {
+        <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;data&#x27;</span>: onData = callback; <span class="hljs-keyword">break</span>;
+        <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;end&#x27;</span>:   onEnd = callback; <span class="hljs-keyword">break</span>;
+        }
+      },
+    }, callbacks);</pre></div></div>
             
         </li>
         

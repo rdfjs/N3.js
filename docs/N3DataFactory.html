@@ -20,6 +20,11 @@
             <div id="jump_page">
               
                 
+                <a class="source" href="BaseIRI.html">
+                  BaseIRI.js
+                </a>
+              
+                
                 <a class="source" href="IRIs.html">
                   IRIs.js
                 </a>
@@ -40,8 +45,18 @@
                 </a>
               
                 
+                <a class="source" href="N3Reasoner.html">
+                  N3Reasoner.js
+                </a>
+              
+                
                 <a class="source" href="N3Store.html">
                   N3Store.js
+                </a>
+              
+                
+                <a class="source" href="N3StoreFactory.html">
+                  N3StoreFactory.js
                 </a>
               
                 
@@ -62,6 +77,11 @@
                 
                 <a class="source" href="N3Writer.html">
                   N3Writer.js
+                </a>
+              
+                
+                <a class="source" href="Util.html">
+                  Util.js
                 </a>
               
                 
@@ -91,7 +111,7 @@
                 <a class="ss" href="#section-1">&#x00a7;</a>
               </div>
               <p>N3.js implementations of the RDF/JS core data types
-See <a href="https://github.com/rdfjs/representation-task-force/blob/master/interface-spec.md">https://github.com/rdfjs/representation-task-force/blob/master/interface-spec.md</a></p>
+See <a href="http://rdf.js.org/data-model-spec/">http://rdf.js.org/data-model-spec/</a></p>
 
             </div>
             
@@ -139,6 +159,8 @@ See <a href="https://github.com/rdfjs/representation-task-force/blob/master/inte
   defaultGraph,
   quad,
   <span class="hljs-attr">triple</span>: quad,
+  fromTerm,
+  fromQuad,
 };
 <span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> <span class="hljs-title class_">DataFactory</span>;</pre></div></div>
             
@@ -376,7 +398,8 @@ equality can be computed through ids</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">const</span> id = <span class="hljs-variable language_">this</span>.<span class="hljs-property">id</span>;
-    <span class="hljs-keyword">let</span> atPos = id.<span class="hljs-title function_">lastIndexOf</span>(<span class="hljs-string">&#x27;&quot;&#x27;</span>) + <span class="hljs-number">1</span>;</pre></div></div>
+    <span class="hljs-keyword">let</span> atPos = id.<span class="hljs-title function_">lastIndexOf</span>(<span class="hljs-string">&#x27;&quot;&#x27;</span>) + <span class="hljs-number">1</span>;
+    <span class="hljs-keyword">const</span> dirPos = id.<span class="hljs-title function_">lastIndexOf</span>(<span class="hljs-string">&#x27;--&#x27;</span>);</pre></div></div>
             
         </li>
         
@@ -391,7 +414,7 @@ equality can be computed through ids</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">return</span> atPos &lt; id.<span class="hljs-property">length</span> &amp;&amp; id[atPos++] === <span class="hljs-string">&#x27;@&#x27;</span> ? id.<span class="hljs-title function_">substr</span>(atPos).<span class="hljs-title function_">toLowerCase</span>() : <span class="hljs-string">&#x27;&#x27;</span>;
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">return</span> atPos &lt; id.<span class="hljs-property">length</span> &amp;&amp; id[atPos++] === <span class="hljs-string">&#x27;@&#x27;</span> ? (dirPos &gt; atPos ? id.<span class="hljs-title function_">substr</span>(<span class="hljs-number">0</span>, dirPos) : id).<span class="hljs-title function_">substr</span>(atPos).<span class="hljs-title function_">toLowerCase</span>() : <span class="hljs-string">&#x27;&#x27;</span>;
   }</pre></div></div>
             
         </li>
@@ -402,6 +425,39 @@ equality can be computed through ids</p>
               
               <div class="sswrap ">
                 <a class="ss" href="#section-19">&#x00a7;</a>
+              </div>
+              <h3 id="the-direction-of-this-literal">The direction of this literal</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">get</span> <span class="hljs-title function_">direction</span>() {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-20">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-20">&#x00a7;</a>
+              </div>
+              <p>Find the last double dash (e.g., ‘“abc”@en-us–ltr’)</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">const</span> id = <span class="hljs-variable language_">this</span>.<span class="hljs-property">id</span>;
+    <span class="hljs-keyword">const</span> atPos = id.<span class="hljs-title function_">lastIndexOf</span>(<span class="hljs-string">&#x27;--&#x27;</span>) + <span class="hljs-number">2</span>;
+    <span class="hljs-keyword">return</span> atPos &gt; <span class="hljs-number">1</span> &amp;&amp; atPos &lt; id.<span class="hljs-property">length</span> ? id.<span class="hljs-title function_">substr</span>(atPos).<span class="hljs-title function_">toLowerCase</span>() : <span class="hljs-string">&#x27;&#x27;</span>;
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-21">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-21">&#x00a7;</a>
               </div>
               <h3 id="the-datatype-iri-of-this-literal">The datatype IRI of this literal</h3>
 
@@ -414,11 +470,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-20">
+        <li id="section-22">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-20">&#x00a7;</a>
+                <a class="ss" href="#section-22">&#x00a7;</a>
               </div>
               <h3 id="the-datatype-string-of-this-literal">The datatype string of this literal</h3>
 
@@ -429,11 +485,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-21">
+        <li id="section-23">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-21">&#x00a7;</a>
+                <a class="ss" href="#section-23">&#x00a7;</a>
               </div>
               <p>Find the last quotation mark (e.g., ‘“abc”^^<a href="http://ex.org/types#t&#39;">http://ex.org/types#t&#39;</a>)</p>
 
@@ -445,11 +501,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-22">
+        <li id="section-24">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-22">&#x00a7;</a>
+                <a class="ss" href="#section-24">&#x00a7;</a>
               </div>
               <p>If “^” it follows, return the remaining substring</p>
 
@@ -460,27 +516,27 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-23">
+        <li id="section-25">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-23">&#x00a7;</a>
+                <a class="ss" href="#section-25">&#x00a7;</a>
               </div>
-              <p>If “@” follows, return rdf:langString; xsd:string otherwise</p>
+              <p>If “@” follows, return rdf:langString or rdf:dirLangString; xsd:string otherwise</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>           (char !== <span class="hljs-string">&#x27;@&#x27;</span> ? xsd.<span class="hljs-property">string</span> : rdf.<span class="hljs-property">langString</span>);
+            <div class="content"><div class='highlight'><pre>           (char !== <span class="hljs-string">&#x27;@&#x27;</span> ? xsd.<span class="hljs-property">string</span> : (id.<span class="hljs-title function_">indexOf</span>(<span class="hljs-string">&#x27;--&#x27;</span>, dtPos) &gt; <span class="hljs-number">0</span> ? rdf.<span class="hljs-property">dirLangString</span> : rdf.<span class="hljs-property">langString</span>));
   }</pre></div></div>
             
         </li>
         
         
-        <li id="section-24">
+        <li id="section-26">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-24">&#x00a7;</a>
+                <a class="ss" href="#section-26">&#x00a7;</a>
               </div>
               <h3 id="returns-whether-this-object-represents-the-same-term-as-the-other">Returns whether this object represents the same term as the other</h3>
 
@@ -491,11 +547,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-25">
+        <li id="section-27">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-25">&#x00a7;</a>
+                <a class="ss" href="#section-27">&#x00a7;</a>
               </div>
               <p>If both literals were created by this library,
 equality can be computed through ids</p>
@@ -508,11 +564,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-26">
+        <li id="section-28">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-26">&#x00a7;</a>
+                <a class="ss" href="#section-28">&#x00a7;</a>
               </div>
               <p>Otherwise, compare term type, value, language, and datatype</p>
 
@@ -522,14 +578,16 @@ equality can be computed through ids</p>
                       <span class="hljs-variable language_">this</span>.<span class="hljs-property">termType</span> === other.<span class="hljs-property">termType</span> &amp;&amp;
                       <span class="hljs-variable language_">this</span>.<span class="hljs-property">value</span>    === other.<span class="hljs-property">value</span>    &amp;&amp;
                       <span class="hljs-variable language_">this</span>.<span class="hljs-property">language</span> === other.<span class="hljs-property">language</span> &amp;&amp;
+                      ((<span class="hljs-variable language_">this</span>.<span class="hljs-property">direction</span> === other.<span class="hljs-property">direction</span>) || (<span class="hljs-variable language_">this</span>.<span class="hljs-property">direction</span> === <span class="hljs-string">&#x27;&#x27;</span> &amp;&amp; !other.<span class="hljs-property">direction</span>)) &amp;&amp;
                       <span class="hljs-variable language_">this</span>.<span class="hljs-property">datatype</span>.<span class="hljs-property">value</span> === other.<span class="hljs-property">datatype</span>.<span class="hljs-property">value</span>;
   }
 
   <span class="hljs-title function_">toJSON</span>(<span class="hljs-params"></span>) {
     <span class="hljs-keyword">return</span> {
-      <span class="hljs-attr">termType</span>: <span class="hljs-variable language_">this</span>.<span class="hljs-property">termType</span>,
-      <span class="hljs-attr">value</span>:    <span class="hljs-variable language_">this</span>.<span class="hljs-property">value</span>,
-      <span class="hljs-attr">language</span>: <span class="hljs-variable language_">this</span>.<span class="hljs-property">language</span>,
+      <span class="hljs-attr">termType</span>:  <span class="hljs-variable language_">this</span>.<span class="hljs-property">termType</span>,
+      <span class="hljs-attr">value</span>:     <span class="hljs-variable language_">this</span>.<span class="hljs-property">value</span>,
+      <span class="hljs-attr">language</span>:  <span class="hljs-variable language_">this</span>.<span class="hljs-property">language</span>,
+      <span class="hljs-attr">direction</span>: <span class="hljs-variable language_">this</span>.<span class="hljs-property">direction</span>,
       <span class="hljs-attr">datatype</span>: { <span class="hljs-attr">termType</span>: <span class="hljs-string">&#x27;NamedNode&#x27;</span>, <span class="hljs-attr">value</span>: <span class="hljs-variable language_">this</span>.<span class="hljs-property">datatypeString</span> },
     };
   }
@@ -538,11 +596,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-27">
+        <li id="section-29">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-27">&#x00a7;</a>
+                <a class="ss" href="#section-29">&#x00a7;</a>
               </div>
               <h2 id="blanknode-constructor">BlankNode constructor</h2>
 
@@ -556,11 +614,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-28">
+        <li id="section-30">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-28">&#x00a7;</a>
+                <a class="ss" href="#section-30">&#x00a7;</a>
               </div>
               <h3 id="the-term-type-of-this-term">The term type of this term</h3>
 
@@ -573,11 +631,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-29">
+        <li id="section-31">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-29">&#x00a7;</a>
+                <a class="ss" href="#section-31">&#x00a7;</a>
               </div>
               <h3 id="the-name-of-this-blank-node">The name of this blank node</h3>
 
@@ -596,11 +654,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-30">
+        <li id="section-32">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-30">&#x00a7;</a>
+                <a class="ss" href="#section-32">&#x00a7;</a>
               </div>
               <h3 id="the-term-type-of-this-term">The term type of this term</h3>
 
@@ -613,11 +671,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-31">
+        <li id="section-33">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-31">&#x00a7;</a>
+                <a class="ss" href="#section-33">&#x00a7;</a>
               </div>
               <h3 id="the-name-of-this-variable">The name of this variable</h3>
 
@@ -631,11 +689,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-32">
+        <li id="section-34">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-32">&#x00a7;</a>
+                <a class="ss" href="#section-34">&#x00a7;</a>
               </div>
               <h2 id="defaultgraph-constructor">DefaultGraph constructor</h2>
 
@@ -650,11 +708,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-33">
+        <li id="section-35">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-33">&#x00a7;</a>
+                <a class="ss" href="#section-35">&#x00a7;</a>
               </div>
               <h3 id="the-term-type-of-this-term">The term type of this term</h3>
 
@@ -667,11 +725,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-34">
+        <li id="section-36">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-34">&#x00a7;</a>
+                <a class="ss" href="#section-36">&#x00a7;</a>
               </div>
               <h3 id="returns-whether-this-object-represents-the-same-term-as-the-other">Returns whether this object represents the same term as the other</h3>
 
@@ -682,11 +740,11 @@ equality can be computed through ids</p>
         </li>
         
         
-        <li id="section-35">
+        <li id="section-37">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-35">&#x00a7;</a>
+                <a class="ss" href="#section-37">&#x00a7;</a>
               </div>
               <p>If both terms were created by this library,
 equality can be computed through strict equality;
@@ -701,11 +759,11 @@ otherwise, compare term types.</p>
         </li>
         
         
-        <li id="section-36">
+        <li id="section-38">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-36">&#x00a7;</a>
+                <a class="ss" href="#section-38">&#x00a7;</a>
               </div>
               <h2 id="defaultgraph-singleton">DefaultGraph singleton</h2>
 
@@ -716,11 +774,11 @@ otherwise, compare term types.</p>
         </li>
         
         
-        <li id="section-37">
+        <li id="section-39">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-37">&#x00a7;</a>
+                <a class="ss" href="#section-39">&#x00a7;</a>
               </div>
               <h3 id="constructs-a-term-from-the-given-internal-string-id">Constructs a term from the given internal string ID</h3>
 <p>The third ‘nested’ parameter of this function is to aid
@@ -736,11 +794,11 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
         </li>
         
         
-        <li id="section-38">
+        <li id="section-40">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-38">&#x00a7;</a>
+                <a class="ss" href="#section-40">&#x00a7;</a>
               </div>
               <p>Falsy value or empty string indicate the default graph</p>
 
@@ -752,11 +810,11 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
         </li>
         
         
-        <li id="section-39">
+        <li id="section-41">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-39">&#x00a7;</a>
+                <a class="ss" href="#section-41">&#x00a7;</a>
               </div>
               <p>Identify the term type based on the first character</p>
 
@@ -772,11 +830,11 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
         </li>
         
         
-        <li id="section-40">
+        <li id="section-42">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-40">&#x00a7;</a>
+                <a class="ss" href="#section-42">&#x00a7;</a>
               </div>
               <p>Shortcut for internal literals</p>
 
@@ -788,11 +846,11 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
         </li>
         
         
-        <li id="section-41">
+        <li id="section-43">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-41">&#x00a7;</a>
+                <a class="ss" href="#section-43">&#x00a7;</a>
               </div>
               <p>Literal without datatype or language</p>
 
@@ -804,20 +862,33 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
         </li>
         
         
-        <li id="section-42">
+        <li id="section-44">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-42">&#x00a7;</a>
+                <a class="ss" href="#section-44">&#x00a7;</a>
               </div>
               <p>Literal with datatype or language</p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">const</span> endPos = id.<span class="hljs-title function_">lastIndexOf</span>(<span class="hljs-string">&#x27;&quot;&#x27;</span>, id.<span class="hljs-property">length</span> - <span class="hljs-number">1</span>);
+    <span class="hljs-keyword">let</span> languageOrDatatype;
+    <span class="hljs-keyword">if</span> (id[endPos + <span class="hljs-number">1</span>] === <span class="hljs-string">&#x27;@&#x27;</span>) {
+      languageOrDatatype = id.<span class="hljs-title function_">substr</span>(endPos + <span class="hljs-number">2</span>);
+      <span class="hljs-keyword">const</span> dashDashIndex = languageOrDatatype.<span class="hljs-title function_">lastIndexOf</span>(<span class="hljs-string">&#x27;--&#x27;</span>);
+      <span class="hljs-keyword">if</span> (dashDashIndex &gt; <span class="hljs-number">0</span> &amp;&amp; dashDashIndex &lt; languageOrDatatype.<span class="hljs-property">length</span>) {
+        languageOrDatatype = {
+          <span class="hljs-attr">language</span>: languageOrDatatype.<span class="hljs-title function_">substr</span>(<span class="hljs-number">0</span>, dashDashIndex),
+          <span class="hljs-attr">direction</span>: languageOrDatatype.<span class="hljs-title function_">substr</span>(dashDashIndex + <span class="hljs-number">2</span>),
+        };
+      }
+    }
+    <span class="hljs-keyword">else</span> {
+      languageOrDatatype = factory.<span class="hljs-title function_">namedNode</span>(id.<span class="hljs-title function_">substr</span>(endPos + <span class="hljs-number">3</span>));
+    }
     <span class="hljs-keyword">return</span> factory.<span class="hljs-title function_">literal</span>(id.<span class="hljs-title function_">substr</span>(<span class="hljs-number">1</span>, endPos - <span class="hljs-number">1</span>),
-            id[endPos + <span class="hljs-number">1</span>] === <span class="hljs-string">&#x27;@&#x27;</span> ? id.<span class="hljs-title function_">substr</span>(endPos + <span class="hljs-number">2</span>)
-                                   : factory.<span class="hljs-title function_">namedNode</span>(id.<span class="hljs-title function_">substr</span>(endPos + <span class="hljs-number">3</span>)));
+            languageOrDatatype);
   <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;[&#x27;</span>:
     id = <span class="hljs-title class_">JSON</span>.<span class="hljs-title function_">parse</span>(id);
     <span class="hljs-keyword">break</span>;
@@ -830,18 +901,18 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
     <span class="hljs-title function_">termFromId</span>(id[<span class="hljs-number">0</span>], factory, <span class="hljs-literal">true</span>),
     <span class="hljs-title function_">termFromId</span>(id[<span class="hljs-number">1</span>], factory, <span class="hljs-literal">true</span>),
     <span class="hljs-title function_">termFromId</span>(id[<span class="hljs-number">2</span>], factory, <span class="hljs-literal">true</span>),
-    id[<span class="hljs-number">3</span>] &amp;&amp; <span class="hljs-title function_">termFromId</span>(id[<span class="hljs-number">3</span>], factory, <span class="hljs-literal">true</span>)
+    id[<span class="hljs-number">3</span>] &amp;&amp; <span class="hljs-title function_">termFromId</span>(id[<span class="hljs-number">3</span>], factory, <span class="hljs-literal">true</span>),
   );
 }</pre></div></div>
             
         </li>
         
         
-        <li id="section-43">
+        <li id="section-45">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-43">&#x00a7;</a>
+                <a class="ss" href="#section-45">&#x00a7;</a>
               </div>
               <h3 id="constructs-an-internal-string-id-from-the-given-term-or-id-string">Constructs an internal string ID from the given term or ID string</h3>
 <p>The third ‘nested’ parameter of this function is to aid
@@ -862,11 +933,11 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
         </li>
         
         
-        <li id="section-44">
+        <li id="section-46">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-44">&#x00a7;</a>
+                <a class="ss" href="#section-46">&#x00a7;</a>
               </div>
               <p>Term instantiated with another library</p>
 
@@ -878,7 +949,7 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
   <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;Variable&#x27;</span>:     <span class="hljs-keyword">return</span> <span class="hljs-string">`?<span class="hljs-subst">${term.value}</span>`</span>;
   <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;DefaultGraph&#x27;</span>: <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;&#x27;</span>;
   <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;Literal&#x27;</span>:      <span class="hljs-keyword">return</span> <span class="hljs-string">`&quot;<span class="hljs-subst">${term.value}</span>&quot;<span class="hljs-subst">${
-    term.language ? <span class="hljs-string">`@<span class="hljs-subst">${term.language}</span>`</span> :
+    term.language ? <span class="hljs-string">`@<span class="hljs-subst">${term.language}</span><span class="hljs-subst">${term.direction ? <span class="hljs-string">`--<span class="hljs-subst">${term.direction}</span>`</span> : <span class="hljs-string">&#x27;&#x27;</span>}</span>`</span> :
       (term.datatype &amp;&amp; term.datatype.value !== xsd.string ? <span class="hljs-string">`^^<span class="hljs-subst">${term.datatype.value}</span>`</span> : <span class="hljs-string">&#x27;&#x27;</span>)}</span>`</span>;
   <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;Quad&#x27;</span>:
     <span class="hljs-keyword">const</span> res = [
@@ -897,11 +968,11 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
         </li>
         
         
-        <li id="section-45">
+        <li id="section-47">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-45">&#x00a7;</a>
+                <a class="ss" href="#section-47">&#x00a7;</a>
               </div>
               <h2 id="quad-constructor">Quad constructor</h2>
 
@@ -919,11 +990,11 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
         </li>
         
         
-        <li id="section-46">
+        <li id="section-48">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-46">&#x00a7;</a>
+                <a class="ss" href="#section-48">&#x00a7;</a>
               </div>
               <h3 id="the-term-type-of-this-term">The term type of this term</h3>
 
@@ -952,11 +1023,11 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
         </li>
         
         
-        <li id="section-47">
+        <li id="section-49">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-47">&#x00a7;</a>
+                <a class="ss" href="#section-49">&#x00a7;</a>
               </div>
               <h3 id="returns-a-plain-object-representation-of-this-quad">Returns a plain object representation of this quad</h3>
 
@@ -975,11 +1046,11 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
         </li>
         
         
-        <li id="section-48">
+        <li id="section-50">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-48">&#x00a7;</a>
+                <a class="ss" href="#section-50">&#x00a7;</a>
               </div>
               <h3 id="returns-whether-this-object-represents-the-same-quad-as-the-other">Returns whether this object represents the same quad as the other</h3>
 
@@ -997,11 +1068,11 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
         </li>
         
         
-        <li id="section-49">
+        <li id="section-51">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-49">&#x00a7;</a>
+                <a class="ss" href="#section-51">&#x00a7;</a>
               </div>
               <h3 id="escapes-the-quotes-within-the-given-literal">Escapes the quotes within the given literal</h3>
 
@@ -1016,11 +1087,11 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
         </li>
         
         
-        <li id="section-50">
+        <li id="section-52">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-50">&#x00a7;</a>
+                <a class="ss" href="#section-52">&#x00a7;</a>
               </div>
               <h3 id="unescapes-the-quotes-within-the-given-literal">Unescapes the quotes within the given literal</h3>
 
@@ -1033,11 +1104,11 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
         </li>
         
         
-        <li id="section-51">
+        <li id="section-53">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-51">&#x00a7;</a>
+                <a class="ss" href="#section-53">&#x00a7;</a>
               </div>
               <h3 id="creates-an-iri">Creates an IRI</h3>
 
@@ -1050,11 +1121,11 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
         </li>
         
         
-        <li id="section-52">
+        <li id="section-54">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-52">&#x00a7;</a>
+                <a class="ss" href="#section-54">&#x00a7;</a>
               </div>
               <h3 id="creates-a-blank-node">Creates a blank node</h3>
 
@@ -1067,11 +1138,11 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
         </li>
         
         
-        <li id="section-53">
+        <li id="section-55">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-53">&#x00a7;</a>
+                <a class="ss" href="#section-55">&#x00a7;</a>
               </div>
               <h3 id="creates-a-literal">Creates a literal</h3>
 
@@ -1082,11 +1153,11 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
         </li>
         
         
-        <li id="section-54">
+        <li id="section-56">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-54">&#x00a7;</a>
+                <a class="ss" href="#section-56">&#x00a7;</a>
               </div>
               <p>Create a language-tagged string</p>
 
@@ -1098,11 +1169,28 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
         </li>
         
         
-        <li id="section-55">
+        <li id="section-57">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-55">&#x00a7;</a>
+                <a class="ss" href="#section-57">&#x00a7;</a>
+              </div>
+              <p>Create a language-tagged string with base direction</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">if</span> (languageOrDataType !== <span class="hljs-literal">undefined</span> &amp;&amp; !(<span class="hljs-string">&#x27;termType&#x27;</span> <span class="hljs-keyword">in</span> languageOrDataType)) {
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Literal</span>(<span class="hljs-string">`&quot;<span class="hljs-subst">${value}</span>&quot;@<span class="hljs-subst">${languageOrDataType.language.toLowerCase()}</span>--<span class="hljs-subst">${languageOrDataType.direction.toLowerCase()}</span>`</span>);
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-58">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-58">&#x00a7;</a>
               </div>
               <p>Automatically determine datatype for booleans and numbers</p>
 
@@ -1114,11 +1202,11 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
         </li>
         
         
-        <li id="section-56">
+        <li id="section-59">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-56">&#x00a7;</a>
+                <a class="ss" href="#section-59">&#x00a7;</a>
               </div>
               <p>Convert a boolean</p>
 
@@ -1130,11 +1218,11 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
         </li>
         
         
-        <li id="section-57">
+        <li id="section-60">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-57">&#x00a7;</a>
+                <a class="ss" href="#section-60">&#x00a7;</a>
               </div>
               <p>Convert an integer or double</p>
 
@@ -1154,11 +1242,11 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
         </li>
         
         
-        <li id="section-58">
+        <li id="section-61">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-58">&#x00a7;</a>
+                <a class="ss" href="#section-61">&#x00a7;</a>
               </div>
               <p>Create a datatyped literal</p>
 
@@ -1172,11 +1260,11 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
         </li>
         
         
-        <li id="section-59">
+        <li id="section-62">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-59">&#x00a7;</a>
+                <a class="ss" href="#section-62">&#x00a7;</a>
               </div>
               <h3 id="creates-a-variable">Creates a variable</h3>
 
@@ -1189,11 +1277,11 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
         </li>
         
         
-        <li id="section-60">
+        <li id="section-63">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-60">&#x00a7;</a>
+                <a class="ss" href="#section-63">&#x00a7;</a>
               </div>
               <h3 id="returns-the-default-graph">Returns the default graph</h3>
 
@@ -1206,11 +1294,11 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
         </li>
         
         
-        <li id="section-61">
+        <li id="section-64">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-61">&#x00a7;</a>
+                <a class="ss" href="#section-64">&#x00a7;</a>
               </div>
               <h3 id="creates-a-quad">Creates a quad</h3>
 
@@ -1218,6 +1306,44 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
             
             <div class="content"><div class='highlight'><pre><span class="hljs-keyword">function</span> <span class="hljs-title function_">quad</span>(<span class="hljs-params">subject, predicate, object, graph</span>) {
   <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Quad</span>(subject, predicate, object, graph);
+}
+
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">fromTerm</span>(<span class="hljs-params">term</span>) {
+  <span class="hljs-keyword">if</span> (term <span class="hljs-keyword">instanceof</span> <span class="hljs-title class_">Term</span>)
+    <span class="hljs-keyword">return</span> term;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-65">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-65">&#x00a7;</a>
+              </div>
+              <p>Term instantiated with another library</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">switch</span> (term.<span class="hljs-property">termType</span>) {
+  <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;NamedNode&#x27;</span>:    <span class="hljs-keyword">return</span> <span class="hljs-title function_">namedNode</span>(term.<span class="hljs-property">value</span>);
+  <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;BlankNode&#x27;</span>:    <span class="hljs-keyword">return</span> <span class="hljs-title function_">blankNode</span>(term.<span class="hljs-property">value</span>);
+  <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;Variable&#x27;</span>:     <span class="hljs-keyword">return</span> <span class="hljs-title function_">variable</span>(term.<span class="hljs-property">value</span>);
+  <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;DefaultGraph&#x27;</span>: <span class="hljs-keyword">return</span> <span class="hljs-variable constant_">DEFAULTGRAPH</span>;
+  <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;Literal&#x27;</span>:      <span class="hljs-keyword">return</span> <span class="hljs-title function_">literal</span>(term.<span class="hljs-property">value</span>, term.<span class="hljs-property">language</span> || term.<span class="hljs-property">datatype</span>);
+  <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;Quad&#x27;</span>:         <span class="hljs-keyword">return</span> <span class="hljs-title function_">fromQuad</span>(term);
+  <span class="hljs-attr">default</span>:             <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Error</span>(<span class="hljs-string">`Unexpected termType: <span class="hljs-subst">${term.termType}</span>`</span>);
+  }
+}
+
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">fromQuad</span>(<span class="hljs-params">inQuad</span>) {
+  <span class="hljs-keyword">if</span> (inQuad <span class="hljs-keyword">instanceof</span> <span class="hljs-title class_">Quad</span>)
+    <span class="hljs-keyword">return</span> inQuad;
+
+  <span class="hljs-keyword">if</span> (inQuad.<span class="hljs-property">termType</span> !== <span class="hljs-string">&#x27;Quad&#x27;</span>)
+    <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Error</span>(<span class="hljs-string">`Unexpected termType: <span class="hljs-subst">${inQuad.termType}</span>`</span>);
+
+  <span class="hljs-keyword">return</span> <span class="hljs-title function_">quad</span>(<span class="hljs-title function_">fromTerm</span>(inQuad.<span class="hljs-property">subject</span>), <span class="hljs-title function_">fromTerm</span>(inQuad.<span class="hljs-property">predicate</span>), <span class="hljs-title function_">fromTerm</span>(inQuad.<span class="hljs-property">object</span>), <span class="hljs-title function_">fromTerm</span>(inQuad.<span class="hljs-property">graph</span>));
 }</pre></div></div>
             
         </li>

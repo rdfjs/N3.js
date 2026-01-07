@@ -20,6 +20,11 @@
             <div id="jump_page">
               
                 
+                <a class="source" href="BaseIRI.html">
+                  BaseIRI.js
+                </a>
+              
+                
                 <a class="source" href="IRIs.html">
                   IRIs.js
                 </a>
@@ -40,8 +45,18 @@
                 </a>
               
                 
+                <a class="source" href="N3Reasoner.html">
+                  N3Reasoner.js
+                </a>
+              
+                
                 <a class="source" href="N3Store.html">
                   N3Store.js
+                </a>
+              
+                
+                <a class="source" href="N3StoreFactory.html">
+                  N3StoreFactory.js
                 </a>
               
                 
@@ -62,6 +77,11 @@
                 
                 <a class="source" href="N3Writer.html">
                   N3Writer.js
+                </a>
+              
+                
+                <a class="source" href="Util.html">
+                  Util.js
                 </a>
               
                 
@@ -97,7 +117,38 @@
             <div class="content"><div class='highlight'><pre><span class="hljs-keyword">import</span> { <span class="hljs-title class_">Readable</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;readable-stream&#x27;</span>;
 <span class="hljs-keyword">import</span> { <span class="hljs-keyword">default</span> <span class="hljs-keyword">as</span> N3DataFactory, termToId, termFromId } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3DataFactory&#x27;</span>;
 <span class="hljs-keyword">import</span> namespaces <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./IRIs&#x27;</span>;
-<span class="hljs-keyword">import</span> { isDefaultGraph } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3Util&#x27;</span>;</pre></div></div>
+<span class="hljs-keyword">import</span> { isDefaultGraph } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3Util&#x27;</span>;
+<span class="hljs-keyword">import</span> N3Writer <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./N3Writer&#x27;</span>;
+
+<span class="hljs-keyword">const</span> <span class="hljs-variable constant_">ITERATOR</span> = <span class="hljs-title class_">Symbol</span>(<span class="hljs-string">&#x27;iter&#x27;</span>);
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">merge</span>(<span class="hljs-params">target, source, depth = <span class="hljs-number">4</span></span>) {
+  <span class="hljs-keyword">if</span> (depth === <span class="hljs-number">0</span>)
+    <span class="hljs-keyword">return</span> <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">assign</span>(target, source);
+
+  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> key <span class="hljs-keyword">in</span> source)
+    target[key] = <span class="hljs-title function_">merge</span>(target[key] || <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">create</span>(<span class="hljs-literal">null</span>), source[key], depth - <span class="hljs-number">1</span>);
+
+  <span class="hljs-keyword">return</span> target;
+}
+
+<span class="hljs-comment">/**
+ * Determines the intersection of the `_graphs` index s1 and s2.
+ * s1 and s2 *must* belong to Stores that share an `_entityIndex`.
+ *
+ * False is returned when there is no intersection; this should
+ * *not* be set as the value for an index.
+ */</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">intersect</span>(<span class="hljs-params">s1, s2, depth = <span class="hljs-number">4</span></span>) {
+  <span class="hljs-keyword">let</span> target = <span class="hljs-literal">false</span>;
+
+  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> key <span class="hljs-keyword">in</span> s1) {
+    <span class="hljs-keyword">if</span> (key <span class="hljs-keyword">in</span> s2) {
+      <span class="hljs-keyword">const</span> intersection = depth === <span class="hljs-number">0</span> ? <span class="hljs-literal">null</span> : <span class="hljs-title function_">intersect</span>(s1[key], s2[key], depth - <span class="hljs-number">1</span>);
+      <span class="hljs-keyword">if</span> (intersection !== <span class="hljs-literal">false</span>) {
+        target = target || <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">create</span>(<span class="hljs-literal">null</span>);
+        target[key] = intersection;
+      }</pre></div></div>
             
         </li>
         
@@ -108,12 +159,31 @@
               <div class="sswrap ">
                 <a class="ss" href="#section-2">&#x00a7;</a>
               </div>
-              <h2 id="constructor">Constructor</h2>
+              <p>Depth 3 is the ‘subjects’, ‘predicates’ and ‘objects’ keys.
+If the ‘subjects’ index is empty, so will the ‘predicates’ and ‘objects’ index.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">N3Store</span> {
-  <span class="hljs-title function_">constructor</span>(<span class="hljs-params">quads, options</span>) {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (depth === <span class="hljs-number">3</span>) {
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+      }
+    }
+  }
+
+  <span class="hljs-keyword">return</span> target;
+}
+
+<span class="hljs-comment">/**
+ * Determines the difference of the `_graphs` index s1 and s2.
+ * s1 and s2 *must* belong to Stores that share an `_entityIndex`.
+ *
+ * False is returned when there is no difference; this should
+ * *not* be set as the value for an index.
+ */</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">difference</span>(<span class="hljs-params">s1, s2, depth = <span class="hljs-number">4</span></span>) {
+  <span class="hljs-keyword">let</span> target = <span class="hljs-literal">false</span>;
+
+  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> key <span class="hljs-keyword">in</span> s1) {</pre></div></div>
             
         </li>
         
@@ -124,11 +194,21 @@
               <div class="sswrap ">
                 <a class="ss" href="#section-3">&#x00a7;</a>
               </div>
-              <p>The number of quads is initially zero</p>
+              <p>When the key is not in the index, then none of the triples defined by s1[key] are
+in s2 and so we want to copy them over to the resultant store.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_size</span> = <span class="hljs-number">0</span>;</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (!(key <span class="hljs-keyword">in</span> s2)) {
+      target = target || <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">create</span>(<span class="hljs-literal">null</span>);
+      target[key] = depth === <span class="hljs-number">0</span> ? <span class="hljs-literal">null</span> : <span class="hljs-title function_">merge</span>({}, s1[key], depth - <span class="hljs-number">1</span>);
+    }
+    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (depth !== <span class="hljs-number">0</span>) {
+      <span class="hljs-keyword">const</span> diff = <span class="hljs-title function_">difference</span>(s1[key], s2[key], depth - <span class="hljs-number">1</span>);
+      <span class="hljs-keyword">if</span> (diff !== <span class="hljs-literal">false</span>) {
+        target = target || <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">create</span>(<span class="hljs-literal">null</span>);
+        target[key] = diff;
+      }</pre></div></div>
             
         </li>
         
@@ -139,11 +219,19 @@
               <div class="sswrap ">
                 <a class="ss" href="#section-4">&#x00a7;</a>
               </div>
-              <p><code>_graphs</code> contains subject, predicate, and object indexes per graph</p>
+              <p>Depth 3 is the ‘subjects’, ‘predicates’ and ‘objects’ keys.
+If the ‘subjects’ index is empty, so will the ‘predicates’ and ‘objects’ index.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_graphs</span> = <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">create</span>(<span class="hljs-literal">null</span>);</pre></div></div>
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (depth === <span class="hljs-number">3</span>) {
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+      }
+    }
+  }
+
+  <span class="hljs-keyword">return</span> target;
+}</pre></div></div>
             
         </li>
         
@@ -154,14 +242,13 @@
               <div class="sswrap ">
                 <a class="ss" href="#section-5">&#x00a7;</a>
               </div>
-              <p><code>_ids</code> maps entities such as <code>http://xmlns.com/foaf/0.1/name</code> to numbers,
-saving memory by using only numbers as keys in <code>_graphs</code></p>
+              <h2 id="constructor">Constructor</h2>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_id</span> = <span class="hljs-number">0</span>;
-    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_ids</span> = <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">create</span>(<span class="hljs-literal">null</span>);
-    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entities</span> = <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">create</span>(<span class="hljs-literal">null</span>); <span class="hljs-comment">// inverse of `_ids`</span></pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">N3EntityIndex</span> {
+  <span class="hljs-title function_">constructor</span>(<span class="hljs-params">options = {}</span>) {
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_id</span> = <span class="hljs-number">1</span>;</pre></div></div>
             
         </li>
         
@@ -172,11 +259,13 @@ saving memory by using only numbers as keys in <code>_graphs</code></p>
               <div class="sswrap ">
                 <a class="ss" href="#section-6">&#x00a7;</a>
               </div>
-              <p><code>_blankNodeIndex</code> is the index of the last automatically named blank node</p>
+              <p><code>_ids</code> maps entities such as <code>http://xmlns.com/foaf/0.1/name</code> to numbers,
+saving memory by using only numbers as keys in <code>_graphs</code></p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_blankNodeIndex</span> = <span class="hljs-number">0</span>;</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_ids</span> = <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">create</span>(<span class="hljs-literal">null</span>);
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_ids</span>[<span class="hljs-string">&#x27;&#x27;</span>] = <span class="hljs-number">1</span>;</pre></div></div>
             
         </li>
         
@@ -187,14 +276,12 @@ saving memory by using only numbers as keys in <code>_graphs</code></p>
               <div class="sswrap ">
                 <a class="ss" href="#section-7">&#x00a7;</a>
               </div>
-              <p>Shift parameters if <code>quads</code> is not given</p>
+              <p>inverse of <code>_ids</code></p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (!options &amp;&amp; quads &amp;&amp; !quads[<span class="hljs-number">0</span>])
-      options = quads, quads = <span class="hljs-literal">null</span>;
-    options = options || {};
-    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_factory</span> = options.<span class="hljs-property">factory</span> || N3DataFactory;</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entities</span> = <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">create</span>(<span class="hljs-literal">null</span>);
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entities</span>[<span class="hljs-number">1</span>] = <span class="hljs-string">&#x27;&#x27;</span>;</pre></div></div>
             
         </li>
         
@@ -205,15 +292,15 @@ saving memory by using only numbers as keys in <code>_graphs</code></p>
               <div class="sswrap ">
                 <a class="ss" href="#section-8">&#x00a7;</a>
               </div>
-              <p>Add quads if passed</p>
+              <p><code>_blankNodeIndex</code> is the index of the last automatically named blank node</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (quads)
-      <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">addQuads</span>(quads);
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_blankNodeIndex</span> = <span class="hljs-number">0</span>;
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_factory</span> = options.<span class="hljs-property">factory</span> || N3DataFactory;
   }
 
-  <span class="hljs-title function_">_termFromId</span>(<span class="hljs-params">id, factory</span>) {
+  <span class="hljs-title function_">_termFromId</span>(<span class="hljs-params">id</span>) {
     <span class="hljs-keyword">if</span> (id[<span class="hljs-number">0</span>] === <span class="hljs-string">&#x27;.&#x27;</span>) {
       <span class="hljs-keyword">const</span> entities = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entities</span>;
       <span class="hljs-keyword">const</span> terms = id.<span class="hljs-title function_">split</span>(<span class="hljs-string">&#x27;.&#x27;</span>);
@@ -221,11 +308,11 @@ saving memory by using only numbers as keys in <code>_graphs</code></p>
         <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_termFromId</span>(entities[terms[<span class="hljs-number">1</span>]]),
         <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_termFromId</span>(entities[terms[<span class="hljs-number">2</span>]]),
         <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_termFromId</span>(entities[terms[<span class="hljs-number">3</span>]]),
-        terms[<span class="hljs-number">4</span>] &amp;&amp; <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_termFromId</span>(entities[terms[<span class="hljs-number">4</span>]])
+        terms[<span class="hljs-number">4</span>] &amp;&amp; <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_termFromId</span>(entities[terms[<span class="hljs-number">4</span>]]),
       );
       <span class="hljs-keyword">return</span> q;
     }
-    <span class="hljs-keyword">return</span> <span class="hljs-title function_">termFromId</span>(id, factory);
+    <span class="hljs-keyword">return</span> <span class="hljs-title function_">termFromId</span>(id, <span class="hljs-variable language_">this</span>.<span class="hljs-property">_factory</span>);
   }
 
   <span class="hljs-title function_">_termToNumericId</span>(<span class="hljs-params">term</span>) {
@@ -263,7 +350,10 @@ saving memory by using only numbers as keys in <code>_graphs</code></p>
       : <span class="hljs-title function_">termToId</span>(term);
 
     <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">_ids</span>[str] || (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_ids</span>[<span class="hljs-variable language_">this</span>.<span class="hljs-property">_entities</span>[++<span class="hljs-variable language_">this</span>.<span class="hljs-property">_id</span>] = str] = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_id</span>);
-  }</pre></div></div>
+  }
+
+  <span class="hljs-title function_">createBlankNode</span>(<span class="hljs-params">suggestedName</span>) {
+    <span class="hljs-keyword">let</span> name, index;</pre></div></div>
             
         </li>
         
@@ -274,9 +364,15 @@ saving memory by using only numbers as keys in <code>_graphs</code></p>
               <div class="sswrap ">
                 <a class="ss" href="#section-10">&#x00a7;</a>
               </div>
-              <h2 id="public-properties">Public properties</h2>
+              <p>Generate a name based on the suggested name</p>
 
             </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (suggestedName) {
+      name = suggestedName = <span class="hljs-string">`_:<span class="hljs-subst">${suggestedName}</span>`</span>, index = <span class="hljs-number">1</span>;
+      <span class="hljs-keyword">while</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_ids</span>[name])
+        name = suggestedName + index++;
+    }</pre></div></div>
             
         </li>
         
@@ -287,11 +383,14 @@ saving memory by using only numbers as keys in <code>_graphs</code></p>
               <div class="sswrap ">
                 <a class="ss" href="#section-11">&#x00a7;</a>
               </div>
-              <h3 id="size-returns-the-number-of-quads-in-the-store"><code>size</code> returns the number of quads in the store</h3>
+              <p>Generate a generic blank node name</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">get</span> <span class="hljs-title function_">size</span>() {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">else</span> {
+      <span class="hljs-keyword">do</span> { name = <span class="hljs-string">`_:b<span class="hljs-subst">${<span class="hljs-variable language_">this</span>._blankNodeIndex++}</span>`</span>; }
+      <span class="hljs-keyword">while</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_ids</span>[name]);
+    }</pre></div></div>
             
         </li>
         
@@ -301,6 +400,139 @@ saving memory by using only numbers as keys in <code>_graphs</code></p>
               
               <div class="sswrap ">
                 <a class="ss" href="#section-12">&#x00a7;</a>
+              </div>
+              <p>Add the blank node to the entities, avoiding the generation of duplicates</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_ids</span>[name] = ++<span class="hljs-variable language_">this</span>.<span class="hljs-property">_id</span>;
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entities</span>[<span class="hljs-variable language_">this</span>.<span class="hljs-property">_id</span>] = name;
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">_factory</span>.<span class="hljs-title function_">blankNode</span>(name.<span class="hljs-title function_">substr</span>(<span class="hljs-number">2</span>));
+  }
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-13">&#x00a7;</a>
+              </div>
+              <h2 id="constructor">Constructor</h2>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">N3Store</span> {
+  <span class="hljs-title function_">constructor</span>(<span class="hljs-params">quads, options</span>) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-14">&#x00a7;</a>
+              </div>
+              <p>The number of quads is initially zero</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_size</span> = <span class="hljs-number">0</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-15">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-15">&#x00a7;</a>
+              </div>
+              <p><code>_graphs</code> contains subject, predicate, and object indexes per graph</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_graphs</span> = <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">create</span>(<span class="hljs-literal">null</span>);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-16">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-16">&#x00a7;</a>
+              </div>
+              <p>Shift parameters if <code>quads</code> is not given</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (!options &amp;&amp; quads &amp;&amp; !quads[<span class="hljs-number">0</span>] &amp;&amp; !(<span class="hljs-keyword">typeof</span> quads.<span class="hljs-property">match</span> === <span class="hljs-string">&#x27;function&#x27;</span>))
+      options = quads, quads = <span class="hljs-literal">null</span>;
+    options = options || {};
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_factory</span> = options.<span class="hljs-property">factory</span> || N3DataFactory;
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entityIndex</span> = options.<span class="hljs-property">entityIndex</span> || <span class="hljs-keyword">new</span> <span class="hljs-title function_">N3EntityIndex</span>({ <span class="hljs-attr">factory</span>: <span class="hljs-variable language_">this</span>.<span class="hljs-property">_factory</span> });
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entities</span> = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entityIndex</span>.<span class="hljs-property">_entities</span>;
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_termFromId</span> = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entityIndex</span>.<span class="hljs-property">_termFromId</span>.<span class="hljs-title function_">bind</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">_entityIndex</span>);
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_termToNumericId</span> = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entityIndex</span>.<span class="hljs-property">_termToNumericId</span>.<span class="hljs-title function_">bind</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">_entityIndex</span>);
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_termToNewNumericId</span> = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entityIndex</span>.<span class="hljs-property">_termToNewNumericId</span>.<span class="hljs-title function_">bind</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">_entityIndex</span>);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-17">&#x00a7;</a>
+              </div>
+              <p>Add quads if passed</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (quads)
+      <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">addAll</span>(quads);
+  }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-18">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-18">&#x00a7;</a>
+              </div>
+              <h2 id="public-properties">Public properties</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-19">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-19">&#x00a7;</a>
+              </div>
+              <h3 id="size-returns-the-number-of-quads-in-the-store"><code>size</code> returns the number of quads in the store</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">get</span> <span class="hljs-title function_">size</span>() {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-20">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-20">&#x00a7;</a>
               </div>
               <p>Return the quad count if if was cached</p>
 
@@ -313,11 +545,11 @@ saving memory by using only numbers as keys in <code>_graphs</code></p>
         </li>
         
         
-        <li id="section-13">
+        <li id="section-21">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-13">&#x00a7;</a>
+                <a class="ss" href="#section-21">&#x00a7;</a>
               </div>
               <p>Calculate the number of quads by counting to the deepest level</p>
 
@@ -336,11 +568,11 @@ saving memory by using only numbers as keys in <code>_graphs</code></p>
         </li>
         
         
-        <li id="section-14">
+        <li id="section-22">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-14">&#x00a7;</a>
+                <a class="ss" href="#section-22">&#x00a7;</a>
               </div>
               <h2 id="private-methods">Private methods</h2>
 
@@ -349,11 +581,11 @@ saving memory by using only numbers as keys in <code>_graphs</code></p>
         </li>
         
         
-        <li id="section-15">
+        <li id="section-23">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-15">&#x00a7;</a>
+                <a class="ss" href="#section-23">&#x00a7;</a>
               </div>
               <h3 id="_addtoindex-adds-a-quad-to-a-three-layered-index"><code>_addToIndex</code> adds a quad to a three-layered index.</h3>
 <p>Returns if the index has changed, if the entry did not already exist.</p>
@@ -365,11 +597,11 @@ saving memory by using only numbers as keys in <code>_graphs</code></p>
         </li>
         
         
-        <li id="section-16">
+        <li id="section-24">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-16">&#x00a7;</a>
+                <a class="ss" href="#section-24">&#x00a7;</a>
               </div>
               <p>Create layers as necessary</p>
 
@@ -381,11 +613,11 @@ saving memory by using only numbers as keys in <code>_graphs</code></p>
         </li>
         
         
-        <li id="section-17">
+        <li id="section-25">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-17">&#x00a7;</a>
+                <a class="ss" href="#section-25">&#x00a7;</a>
               </div>
               <p>Setting the key to <em>any</em> value signals the presence of the quad</p>
 
@@ -400,11 +632,11 @@ saving memory by using only numbers as keys in <code>_graphs</code></p>
         </li>
         
         
-        <li id="section-18">
+        <li id="section-26">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-18">&#x00a7;</a>
+                <a class="ss" href="#section-26">&#x00a7;</a>
               </div>
               <h3 id="_removefromindex-removes-a-quad-from-a-three-layered-index"><code>_removeFromIndex</code> removes a quad from a three-layered index</h3>
 
@@ -415,11 +647,11 @@ saving memory by using only numbers as keys in <code>_graphs</code></p>
         </li>
         
         
-        <li id="section-19">
+        <li id="section-27">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-19">&#x00a7;</a>
+                <a class="ss" href="#section-27">&#x00a7;</a>
               </div>
               <p>Remove the quad from the index</p>
 
@@ -431,11 +663,11 @@ saving memory by using only numbers as keys in <code>_graphs</code></p>
         </li>
         
         
-        <li id="section-20">
+        <li id="section-28">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-20">&#x00a7;</a>
+                <a class="ss" href="#section-28">&#x00a7;</a>
               </div>
               <p>Remove intermediary index layers if they are empty</p>
 
@@ -450,11 +682,11 @@ saving memory by using only numbers as keys in <code>_graphs</code></p>
         </li>
         
         
-        <li id="section-21">
+        <li id="section-29">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-21">&#x00a7;</a>
+                <a class="ss" href="#section-29">&#x00a7;</a>
               </div>
               <h3 id="_findinindex-finds-a-set-of-quads-in-a-three-layered-index"><code>_findInIndex</code> finds a set of quads in a three-layered index.</h3>
 <p>The index base is <code>index0</code> and the keys at each level are <code>key0</code>, <code>key1</code>, and <code>key2</code>.
@@ -469,17 +701,17 @@ Finally, <code>graphId</code> will be the graph of the created quads.</p>
             <div class="content"><div class='highlight'><pre>  *<span class="hljs-title function_">_findInIndex</span>(<span class="hljs-params">index0, key0, key1, key2, name0, name1, name2, graphId</span>) {
     <span class="hljs-keyword">let</span> tmp, index1, index2;
     <span class="hljs-keyword">const</span> entityKeys = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entities</span>;
-    <span class="hljs-keyword">const</span> graph = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_termFromId</span>(graphId, <span class="hljs-variable language_">this</span>.<span class="hljs-property">_factory</span>);
+    <span class="hljs-keyword">const</span> graph = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_termFromId</span>(entityKeys[graphId]);
     <span class="hljs-keyword">const</span> parts = { <span class="hljs-attr">subject</span>: <span class="hljs-literal">null</span>, <span class="hljs-attr">predicate</span>: <span class="hljs-literal">null</span>, <span class="hljs-attr">object</span>: <span class="hljs-literal">null</span> };</pre></div></div>
             
         </li>
         
         
-        <li id="section-22">
+        <li id="section-30">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-22">&#x00a7;</a>
+                <a class="ss" href="#section-30">&#x00a7;</a>
               </div>
               <p>If a key is specified, use only that part of index 0.</p>
 
@@ -488,16 +720,16 @@ Finally, <code>graphId</code> will be the graph of the created quads.</p>
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
     <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> value0 <span class="hljs-keyword">in</span> index0) {
       <span class="hljs-keyword">if</span> (index1 = index0[value0]) {
-        parts[name0] = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_termFromId</span>(entityKeys[value0], <span class="hljs-variable language_">this</span>.<span class="hljs-property">_factory</span>);</pre></div></div>
+        parts[name0] = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_termFromId</span>(entityKeys[value0]);</pre></div></div>
             
         </li>
         
         
-        <li id="section-23">
+        <li id="section-31">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-23">&#x00a7;</a>
+                <a class="ss" href="#section-31">&#x00a7;</a>
               </div>
               <p>If a key is specified, use only that part of index 1.</p>
 
@@ -506,16 +738,16 @@ Finally, <code>graphId</code> will be the graph of the created quads.</p>
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
         <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> value1 <span class="hljs-keyword">in</span> index1) {
           <span class="hljs-keyword">if</span> (index2 = index1[value1]) {
-            parts[name1] = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_termFromId</span>(entityKeys[value1], <span class="hljs-variable language_">this</span>.<span class="hljs-property">_factory</span>);</pre></div></div>
+            parts[name1] = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_termFromId</span>(entityKeys[value1]);</pre></div></div>
             
         </li>
         
         
-        <li id="section-24">
+        <li id="section-32">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-24">&#x00a7;</a>
+                <a class="ss" href="#section-32">&#x00a7;</a>
               </div>
               <p>If a key is specified, use only that part of index 2, if it exists.</p>
 
@@ -526,18 +758,18 @@ Finally, <code>graphId</code> will be the graph of the created quads.</p>
         </li>
         
         
-        <li id="section-25">
+        <li id="section-33">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-25">&#x00a7;</a>
+                <a class="ss" href="#section-33">&#x00a7;</a>
               </div>
               <p>Create quads for all items found in index 2.</p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> l = <span class="hljs-number">0</span>; l &lt; values.<span class="hljs-property">length</span>; l++) {
-              parts[name2] = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_termFromId</span>(entityKeys[values[l]], <span class="hljs-variable language_">this</span>.<span class="hljs-property">_factory</span>);
+              parts[name2] = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_termFromId</span>(entityKeys[values[l]]);
               <span class="hljs-keyword">yield</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">_factory</span>.<span class="hljs-title function_">quad</span>(parts.<span class="hljs-property">subject</span>, parts.<span class="hljs-property">predicate</span>, parts.<span class="hljs-property">object</span>, graph);
             }
           }
@@ -549,11 +781,11 @@ Finally, <code>graphId</code> will be the graph of the created quads.</p>
         </li>
         
         
-        <li id="section-26">
+        <li id="section-34">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-26">&#x00a7;</a>
+                <a class="ss" href="#section-34">&#x00a7;</a>
               </div>
               <h3 id="_loop-executes-the-callback-on-all-keys-of-index-0"><code>_loop</code> executes the callback on all keys of index 0</h3>
 
@@ -567,11 +799,11 @@ Finally, <code>graphId</code> will be the graph of the created quads.</p>
         </li>
         
         
-        <li id="section-27">
+        <li id="section-35">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-27">&#x00a7;</a>
+                <a class="ss" href="#section-35">&#x00a7;</a>
               </div>
               <h3 id="_loopbykey0-executes-the-callback-on-all-keys-of-a-certain-entry-in-index-0"><code>_loopByKey0</code> executes the callback on all keys of a certain entry in index 0</h3>
 
@@ -588,11 +820,11 @@ Finally, <code>graphId</code> will be the graph of the created quads.</p>
         </li>
         
         
-        <li id="section-28">
+        <li id="section-36">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-28">&#x00a7;</a>
+                <a class="ss" href="#section-36">&#x00a7;</a>
               </div>
               <h3 id="_loopbykey1-executes-the-callback-on-given-keys-of-all-entries-in-index-0"><code>_loopByKey1</code> executes the callback on given keys of all entries in index 0</h3>
 
@@ -610,11 +842,11 @@ Finally, <code>graphId</code> will be the graph of the created quads.</p>
         </li>
         
         
-        <li id="section-29">
+        <li id="section-37">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-29">&#x00a7;</a>
+                <a class="ss" href="#section-37">&#x00a7;</a>
               </div>
               <h3 id="_loopby2keys-executes-the-callback-on-given-keys-of-certain-entries-in-index-2"><code>_loopBy2Keys</code> executes the callback on given keys of certain entries in index 2</h3>
 
@@ -631,11 +863,11 @@ Finally, <code>graphId</code> will be the graph of the created quads.</p>
         </li>
         
         
-        <li id="section-30">
+        <li id="section-38">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-30">&#x00a7;</a>
+                <a class="ss" href="#section-38">&#x00a7;</a>
               </div>
               <h3 id="_countinindex-counts-matching-quads-in-a-three-layered-index"><code>_countInIndex</code> counts matching quads in a three-layered index.</h3>
 <p>The index base is <code>index0</code> and the keys at each level are <code>key0</code>, <code>key1</code>, and <code>key2</code>.
@@ -649,11 +881,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-31">
+        <li id="section-39">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-31">&#x00a7;</a>
+                <a class="ss" href="#section-39">&#x00a7;</a>
               </div>
               <p>If a key is specified, count only that part of index 0</p>
 
@@ -666,11 +898,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-32">
+        <li id="section-40">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-32">&#x00a7;</a>
+                <a class="ss" href="#section-40">&#x00a7;</a>
               </div>
               <p>If a key is specified, count only that part of index 1</p>
 
@@ -683,11 +915,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-33">
+        <li id="section-41">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-33">&#x00a7;</a>
+                <a class="ss" href="#section-41">&#x00a7;</a>
               </div>
               <p>If a key is specified, count the quad if it exists</p>
 
@@ -698,11 +930,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-34">
+        <li id="section-42">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-34">&#x00a7;</a>
+                <a class="ss" href="#section-42">&#x00a7;</a>
               </div>
               <p>Otherwise, count all quads</p>
 
@@ -719,11 +951,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-35">
+        <li id="section-43">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-35">&#x00a7;</a>
+                <a class="ss" href="#section-43">&#x00a7;</a>
               </div>
               <h3 id="_getgraphs-returns-an-array-with-the-given-graph"><code>_getGraphs</code> returns an array with the given graph,</h3>
 <p>or all graphs if the argument is null or undefined.</p>
@@ -731,21 +963,18 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">_getGraphs</span>(<span class="hljs-params">graph</span>) {
-    <span class="hljs-keyword">if</span> (!<span class="hljs-title function_">isString</span>(graph))
-      <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">_graphs</span>;
-    <span class="hljs-keyword">const</span> graphs = {};
-    graphs[graph] = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_graphs</span>[graph];
-    <span class="hljs-keyword">return</span> graphs;
+    graph = graph === <span class="hljs-string">&#x27;&#x27;</span> ? <span class="hljs-number">1</span> : (graph &amp;&amp; (<span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_termToNumericId</span>(graph) || -<span class="hljs-number">1</span>));
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">typeof</span> graph !== <span class="hljs-string">&#x27;number&#x27;</span> ? <span class="hljs-variable language_">this</span>.<span class="hljs-property">_graphs</span> : { [graph]: <span class="hljs-variable language_">this</span>.<span class="hljs-property">_graphs</span>[graph] };
   }</pre></div></div>
             
         </li>
         
         
-        <li id="section-36">
+        <li id="section-44">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-36">&#x00a7;</a>
+                <a class="ss" href="#section-44">&#x00a7;</a>
               </div>
               <h3 id="_uniqueentities-returns-a-function-that-accepts-an-entity-id"><code>_uniqueEntities</code> returns a function that accepts an entity ID</h3>
 <p>and passes the corresponding entity to callback if it hasn’t occurred before.</p>
@@ -765,11 +994,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-37">
+        <li id="section-45">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-37">&#x00a7;</a>
+                <a class="ss" href="#section-45">&#x00a7;</a>
               </div>
               <h2 id="public-methods">Public methods</h2>
 
@@ -778,11 +1007,11 @@ Any of these keys can be undefined, which is interpreted as a wildcard.</p>
         </li>
         
         
-        <li id="section-38">
+        <li id="section-46">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-38">&#x00a7;</a>
+                <a class="ss" href="#section-46">&#x00a7;</a>
               </div>
               <h3 id="add-adds-the-specified-quad-to-the-dataset"><code>add</code> adds the specified quad to the dataset.</h3>
 <p>Returns the dataset instance it was called on.
@@ -798,11 +1027,11 @@ Existing quads, as defined in Quad.equals, will be ignored.</p>
         </li>
         
         
-        <li id="section-39">
+        <li id="section-47">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-39">&#x00a7;</a>
+                <a class="ss" href="#section-47">&#x00a7;</a>
               </div>
               <h3 id="addquad-adds-a-new-quad-to-the-store"><code>addQuad</code> adds a new quad to the store.</h3>
 <p>Returns if the quad index has changed, if the quad did not already exist.</p>
@@ -814,11 +1043,11 @@ Existing quads, as defined in Quad.equals, will be ignored.</p>
         </li>
         
         
-        <li id="section-40">
+        <li id="section-48">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-40">&#x00a7;</a>
+                <a class="ss" href="#section-48">&#x00a7;</a>
               </div>
               <p>Shift arguments if a quad object is given instead of components</p>
 
@@ -831,26 +1060,26 @@ Existing quads, as defined in Quad.equals, will be ignored.</p>
         </li>
         
         
-        <li id="section-41">
+        <li id="section-49">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-41">&#x00a7;</a>
+                <a class="ss" href="#section-49">&#x00a7;</a>
               </div>
               <p>Convert terms to internal string representation</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    graph = <span class="hljs-title function_">termToId</span>(graph);</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    graph = graph ? <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_termToNewNumericId</span>(graph) : <span class="hljs-number">1</span>;</pre></div></div>
             
         </li>
         
         
-        <li id="section-42">
+        <li id="section-50">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-42">&#x00a7;</a>
+                <a class="ss" href="#section-50">&#x00a7;</a>
               </div>
               <p>Find the graph that will contain the triple</p>
 
@@ -861,11 +1090,11 @@ Existing quads, as defined in Quad.equals, will be ignored.</p>
         </li>
         
         
-        <li id="section-43">
+        <li id="section-51">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-43">&#x00a7;</a>
+                <a class="ss" href="#section-51">&#x00a7;</a>
               </div>
               <p>Create the graph if it doesn’t exist yet</p>
 
@@ -877,11 +1106,11 @@ Existing quads, as defined in Quad.equals, will be ignored.</p>
         </li>
         
         
-        <li id="section-44">
+        <li id="section-52">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-44">&#x00a7;</a>
+                <a class="ss" href="#section-52">&#x00a7;</a>
               </div>
               <p>Freezing a graph helps subsequent <code>add</code> performance,
 and properties will never be modified anyway</p>
@@ -894,11 +1123,11 @@ and properties will never be modified anyway</p>
         </li>
         
         
-        <li id="section-45">
+        <li id="section-53">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-45">&#x00a7;</a>
+                <a class="ss" href="#section-53">&#x00a7;</a>
               </div>
               <p>Since entities can often be long IRIs, we avoid storing them in every index.
 Instead, we have a separate index that maps entities to numbers,
@@ -910,35 +1139,36 @@ which are then used as keys in the other indexes.</p>
     predicate = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_termToNewNumericId</span>(predicate);
     object    = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_termToNewNumericId</span>(object);
 
-    <span class="hljs-keyword">const</span> changed = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_addToIndex</span>(graphItem.<span class="hljs-property">subjects</span>,   subject,   predicate, object);
+    <span class="hljs-keyword">if</span> (!<span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_addToIndex</span>(graphItem.<span class="hljs-property">subjects</span>,   subject,   predicate, object))
+      <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
     <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_addToIndex</span>(graphItem.<span class="hljs-property">predicates</span>, predicate, object,    subject);
     <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_addToIndex</span>(graphItem.<span class="hljs-property">objects</span>,    object,    subject,   predicate);</pre></div></div>
             
         </li>
         
         
-        <li id="section-46">
+        <li id="section-54">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-46">&#x00a7;</a>
+                <a class="ss" href="#section-54">&#x00a7;</a>
               </div>
               <p>The cached quad count is now invalid</p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_size</span> = <span class="hljs-literal">null</span>;
-    <span class="hljs-keyword">return</span> changed;
+    <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
   }</pre></div></div>
             
         </li>
         
         
-        <li id="section-47">
+        <li id="section-55">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-47">&#x00a7;</a>
+                <a class="ss" href="#section-55">&#x00a7;</a>
               </div>
               <h3 id="addquads-adds-multiple-quads-to-the-store"><code>addQuads</code> adds multiple quads to the store</h3>
 
@@ -952,11 +1182,11 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-48">
+        <li id="section-56">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-48">&#x00a7;</a>
+                <a class="ss" href="#section-56">&#x00a7;</a>
               </div>
               <h3 id="delete-removes-the-specified-quad-from-the-dataset"><code>delete</code> removes the specified quad from the dataset.</h3>
 <p>Returns the dataset instance it was called on.</p>
@@ -971,11 +1201,11 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-49">
+        <li id="section-57">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-49">&#x00a7;</a>
+                <a class="ss" href="#section-57">&#x00a7;</a>
               </div>
               <h3 id="has-determines-whether-a-dataset-includes-a-certain-quad-or-quad-pattern"><code>has</code> determines whether a dataset includes a certain quad or quad pattern.</h3>
 
@@ -990,11 +1220,11 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-50">
+        <li id="section-58">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-50">&#x00a7;</a>
+                <a class="ss" href="#section-58">&#x00a7;</a>
               </div>
               <h3 id="import-adds-a-stream-of-quads-to-the-store"><code>import</code> adds a stream of quads to the store</h3>
 
@@ -1008,11 +1238,11 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-51">
+        <li id="section-59">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-51">&#x00a7;</a>
+                <a class="ss" href="#section-59">&#x00a7;</a>
               </div>
               <h3 id="removequad-removes-a-quad-from-the-store-if-it-exists"><code>removeQuad</code> removes a quad from the store if it exists</h3>
 
@@ -1023,43 +1253,42 @@ which are then used as keys in the other indexes.</p>
         </li>
         
         
-        <li id="section-52">
+        <li id="section-60">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-52">&#x00a7;</a>
+                <a class="ss" href="#section-60">&#x00a7;</a>
               </div>
               <p>Shift arguments if a quad object is given instead of components</p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (!predicate)
-      graph = subject.<span class="hljs-property">graph</span>, object = subject.<span class="hljs-property">object</span>,
-        predicate = subject.<span class="hljs-property">predicate</span>, subject = subject.<span class="hljs-property">subject</span>;</pre></div></div>
+      ({ subject, predicate, object, graph } = subject);</pre></div></div>
             
         </li>
         
         
-        <li id="section-53">
+        <li id="section-61">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-53">&#x00a7;</a>
+                <a class="ss" href="#section-61">&#x00a7;</a>
               </div>
               <p>Convert terms to internal string representation</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    graph = <span class="hljs-title function_">termToId</span>(graph);</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    graph = graph ? <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_termToNumericId</span>(graph) : <span class="hljs-number">1</span>;</pre></div></div>
             
         </li>
         
         
-        <li id="section-54">
+        <li id="section-62">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-54">&#x00a7;</a>
+                <a class="ss" href="#section-62">&#x00a7;</a>
               </div>
               <p>Find internal identifiers for all components
 and verify the quad exists.</p>
@@ -1078,11 +1307,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-55">
+        <li id="section-63">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-55">&#x00a7;</a>
+                <a class="ss" href="#section-63">&#x00a7;</a>
               </div>
               <p>Remove it from all indexes</p>
 
@@ -1096,11 +1325,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-56">
+        <li id="section-64">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-56">&#x00a7;</a>
+                <a class="ss" href="#section-64">&#x00a7;</a>
               </div>
               <p>Remove the graph if it is empty</p>
 
@@ -1114,11 +1343,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-57">
+        <li id="section-65">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-57">&#x00a7;</a>
+                <a class="ss" href="#section-65">&#x00a7;</a>
               </div>
               <h3 id="removequads-removes-multiple-quads-from-the-store"><code>removeQuads</code> removes multiple quads from the store</h3>
 
@@ -1132,11 +1361,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-58">
+        <li id="section-66">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-58">&#x00a7;</a>
+                <a class="ss" href="#section-66">&#x00a7;</a>
               </div>
               <h3 id="remove-removes-a-stream-of-quads-from-the-store"><code>remove</code> removes a stream of quads from the store</h3>
 
@@ -1150,11 +1379,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-59">
+        <li id="section-67">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-59">&#x00a7;</a>
+                <a class="ss" href="#section-67">&#x00a7;</a>
               </div>
               <h3 id="removematches-removes-all-matching-quads-from-the-store"><code>removeMatches</code> removes all matching quads from the store</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
@@ -1164,10 +1393,16 @@ and verify the quad exists.</p>
             <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">removeMatches</span>(<span class="hljs-params">subject, predicate, object, graph</span>) {
     <span class="hljs-keyword">const</span> stream = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Readable</span>({ <span class="hljs-attr">objectMode</span>: <span class="hljs-literal">true</span> });
 
-    stream.<span class="hljs-property">_read</span> = <span class="hljs-function">() =&gt;</span> {
-      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> quad <span class="hljs-keyword">of</span> <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">readQuads</span>(subject, predicate, object, graph))
-        stream.<span class="hljs-title function_">push</span>(quad);
-      stream.<span class="hljs-title function_">push</span>(<span class="hljs-literal">null</span>);
+    <span class="hljs-keyword">const</span> iterable = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">readQuads</span>(subject, predicate, object, graph);
+    stream.<span class="hljs-property">_read</span> = <span class="hljs-function"><span class="hljs-params">size</span> =&gt;</span> {
+      <span class="hljs-keyword">while</span> (--size &gt;= <span class="hljs-number">0</span>) {
+        <span class="hljs-keyword">const</span> { done, value } = iterable.<span class="hljs-title function_">next</span>();
+        <span class="hljs-keyword">if</span> (done) {
+          stream.<span class="hljs-title function_">push</span>(<span class="hljs-literal">null</span>);
+          <span class="hljs-keyword">return</span>;
+        }
+        stream.<span class="hljs-title function_">push</span>(value);
+      }
     };
 
     <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">remove</span>(stream);
@@ -1176,11 +1411,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-60">
+        <li id="section-68">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-60">&#x00a7;</a>
+                <a class="ss" href="#section-68">&#x00a7;</a>
               </div>
               <h3 id="deletegraph-removes-all-triples-with-the-given-graph-from-the-store"><code>deleteGraph</code> removes all triples with the given graph from the store</h3>
 
@@ -1193,11 +1428,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-61">
+        <li id="section-69">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-61">&#x00a7;</a>
+                <a class="ss" href="#section-69">&#x00a7;</a>
               </div>
               <h3 id="getquads-returns-an-array-of-quads-matching-a-pattern"><code>getQuads</code> returns an array of quads matching a pattern.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
@@ -1206,50 +1441,25 @@ and verify the quad exists.</p>
             
             <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">getQuads</span>(<span class="hljs-params">subject, predicate, object, graph</span>) {
     <span class="hljs-keyword">return</span> [...<span class="hljs-variable language_">this</span>.<span class="hljs-title function_">readQuads</span>(subject, predicate, object, graph)];
-  }</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-62">
-            <div class="annotation">
-              
-              <div class="sswrap ">
-                <a class="ss" href="#section-62">&#x00a7;</a>
-              </div>
-              <h3 id="readquads-returns-an-generator-of-quads-matching-a-pattern"><code>readQuads</code> returns an generator of quads matching a pattern.</h3>
-<p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
+  }
 
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>  *<span class="hljs-title function_">readQuads</span>(<span class="hljs-params">subject, predicate, object, graph</span>) {</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-63">
-            <div class="annotation">
-              
-              <div class="sswrap ">
-                <a class="ss" href="#section-63">&#x00a7;</a>
-              </div>
-              <p>Convert terms to internal string representation</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>    graph = graph &amp;&amp; <span class="hljs-title function_">termToId</span>(graph);
-
+  <span class="hljs-comment">/**
+   * `readQuads` returns a generator of quads matching a pattern.
+   * Setting any field to `undefined` or `null` indicates a wildcard.
+   * <span class="hljs-doctag">@deprecated</span> Use `match` instead.
+   */</span>
+  *<span class="hljs-title function_">readQuads</span>(<span class="hljs-params">subject, predicate, object, graph</span>) {
     <span class="hljs-keyword">const</span> graphs = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_getGraphs</span>(graph);
     <span class="hljs-keyword">let</span> content, subjectId, predicateId, objectId;</pre></div></div>
             
         </li>
         
         
-        <li id="section-64">
+        <li id="section-70">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-64">&#x00a7;</a>
+                <a class="ss" href="#section-70">&#x00a7;</a>
               </div>
               <p>Translate IRIs to internal index keys.</p>
 
@@ -1265,11 +1475,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-65">
+        <li id="section-71">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-65">&#x00a7;</a>
+                <a class="ss" href="#section-71">&#x00a7;</a>
               </div>
               <p>Only if the specified graph contains triples, there can be results</p>
 
@@ -1280,11 +1490,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-66">
+        <li id="section-72">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-66">&#x00a7;</a>
+                <a class="ss" href="#section-72">&#x00a7;</a>
               </div>
               <p>Choose the optimal index, based on what fields are present</p>
 
@@ -1296,11 +1506,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-67">
+        <li id="section-73">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-67">&#x00a7;</a>
+                <a class="ss" href="#section-73">&#x00a7;</a>
               </div>
               <p>If subject and object are given, the object index will be the fastest</p>
 
@@ -1313,11 +1523,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-68">
+        <li id="section-74">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-68">&#x00a7;</a>
+                <a class="ss" href="#section-74">&#x00a7;</a>
               </div>
               <p>If only subject and possibly predicate are given, the subject index will be the fastest</p>
 
@@ -1331,11 +1541,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-69">
+        <li id="section-75">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-69">&#x00a7;</a>
+                <a class="ss" href="#section-75">&#x00a7;</a>
               </div>
               <p>If only predicate and possibly object are given, the predicate index will be the fastest</p>
 
@@ -1348,11 +1558,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-70">
+        <li id="section-76">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-70">&#x00a7;</a>
+                <a class="ss" href="#section-76">&#x00a7;</a>
               </div>
               <p>If only object is given, the object index will be the fastest</p>
 
@@ -1365,11 +1575,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-71">
+        <li id="section-77">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-71">&#x00a7;</a>
+                <a class="ss" href="#section-77">&#x00a7;</a>
               </div>
               <p>If nothing is given, iterate subjects and predicates first</p>
 
@@ -1384,11 +1594,11 @@ and verify the quad exists.</p>
         </li>
         
         
-        <li id="section-72">
+        <li id="section-78">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-72">&#x00a7;</a>
+                <a class="ss" href="#section-78">&#x00a7;</a>
               </div>
               <h3 id="match-returns-a-new-dataset-that-is-comprised-of-all-quads-in-the-current-instance-matching-the-given-arguments"><code>match</code> returns a new dataset that is comprised of all quads in the current instance matching the given arguments.</h3>
 <p>The logic described in Quad Matching is applied for each quad in this dataset to check if it should be included in the output dataset.
@@ -1400,51 +1610,35 @@ For backwards compatibility, the object return also implements the Readable stre
             </div>
             
             <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">match</span>(<span class="hljs-params">subject, predicate, object, graph</span>) {
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">DatasetCoreAndReadableStream</span>(<span class="hljs-variable language_">this</span>, subject, predicate, object, graph);
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">DatasetCoreAndReadableStream</span>(<span class="hljs-variable language_">this</span>, subject, predicate, object, graph, { <span class="hljs-attr">entityIndex</span>: <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entityIndex</span> });
   }</pre></div></div>
             
         </li>
         
         
-        <li id="section-73">
+        <li id="section-79">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-73">&#x00a7;</a>
+                <a class="ss" href="#section-79">&#x00a7;</a>
               </div>
               <h3 id="countquads-returns-the-number-of-quads-matching-a-pattern"><code>countQuads</code> returns the number of quads matching a pattern.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">countQuads</span>(<span class="hljs-params">subject, predicate, object, graph</span>) {</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-74">
-            <div class="annotation">
-              
-              <div class="sswrap ">
-                <a class="ss" href="#section-74">&#x00a7;</a>
-              </div>
-              <p>Convert terms to internal string representation</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>    graph = graph &amp;&amp; <span class="hljs-title function_">termToId</span>(graph);
-
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">countQuads</span>(<span class="hljs-params">subject, predicate, object, graph</span>) {
     <span class="hljs-keyword">const</span> graphs = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_getGraphs</span>(graph);
     <span class="hljs-keyword">let</span> count = <span class="hljs-number">0</span>, content, subjectId, predicateId, objectId;</pre></div></div>
             
         </li>
         
         
-        <li id="section-75">
+        <li id="section-80">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-75">&#x00a7;</a>
+                <a class="ss" href="#section-80">&#x00a7;</a>
               </div>
               <p>Translate IRIs to internal index keys.</p>
 
@@ -1460,11 +1654,11 @@ For backwards compatibility, the object return also implements the Readable stre
         </li>
         
         
-        <li id="section-76">
+        <li id="section-81">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-76">&#x00a7;</a>
+                <a class="ss" href="#section-81">&#x00a7;</a>
               </div>
               <p>Only if the specified graph contains triples, there can be results</p>
 
@@ -1475,11 +1669,11 @@ For backwards compatibility, the object return also implements the Readable stre
         </li>
         
         
-        <li id="section-77">
+        <li id="section-82">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-77">&#x00a7;</a>
+                <a class="ss" href="#section-82">&#x00a7;</a>
               </div>
               <p>Choose the optimal index, based on what fields are present</p>
 
@@ -1491,11 +1685,11 @@ For backwards compatibility, the object return also implements the Readable stre
         </li>
         
         
-        <li id="section-78">
+        <li id="section-83">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-78">&#x00a7;</a>
+                <a class="ss" href="#section-83">&#x00a7;</a>
               </div>
               <p>If subject and object are given, the object index will be the fastest</p>
 
@@ -1507,11 +1701,11 @@ For backwards compatibility, the object return also implements the Readable stre
         </li>
         
         
-        <li id="section-79">
+        <li id="section-84">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-79">&#x00a7;</a>
+                <a class="ss" href="#section-84">&#x00a7;</a>
               </div>
               <p>If only subject and possibly predicate are given, the subject index will be the fastest</p>
 
@@ -1524,11 +1718,11 @@ For backwards compatibility, the object return also implements the Readable stre
         </li>
         
         
-        <li id="section-80">
+        <li id="section-85">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-80">&#x00a7;</a>
+                <a class="ss" href="#section-85">&#x00a7;</a>
               </div>
               <p>If only predicate and possibly object are given, the predicate index will be the fastest</p>
 
@@ -1541,11 +1735,11 @@ For backwards compatibility, the object return also implements the Readable stre
         </li>
         
         
-        <li id="section-81">
+        <li id="section-86">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-81">&#x00a7;</a>
+                <a class="ss" href="#section-86">&#x00a7;</a>
               </div>
               <p>If only object is possibly given, the object index will be the fastest</p>
 
@@ -1561,11 +1755,11 @@ For backwards compatibility, the object return also implements the Readable stre
         </li>
         
         
-        <li id="section-82">
+        <li id="section-87">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-82">&#x00a7;</a>
+                <a class="ss" href="#section-87">&#x00a7;</a>
               </div>
               <h3 id="foreach-executes-the-callback-on-all-quads"><code>forEach</code> executes the callback on all quads.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
@@ -1574,7 +1768,7 @@ For backwards compatibility, the object return also implements the Readable stre
             
             <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">forEach</span>(<span class="hljs-params">callback, subject, predicate, object, graph</span>) {
     <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">some</span>(<span class="hljs-function"><span class="hljs-params">quad</span> =&gt;</span> {
-      <span class="hljs-title function_">callback</span>(quad);
+      <span class="hljs-title function_">callback</span>(quad, <span class="hljs-variable language_">this</span>);
       <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
     }, subject, predicate, object, graph);
   }</pre></div></div>
@@ -1582,11 +1776,11 @@ For backwards compatibility, the object return also implements the Readable stre
         </li>
         
         
-        <li id="section-83">
+        <li id="section-88">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-83">&#x00a7;</a>
+                <a class="ss" href="#section-88">&#x00a7;</a>
               </div>
               <h3 id="every-executes-the-callback-on-all-quads"><code>every</code> executes the callback on all quads,</h3>
 <p>and returns <code>true</code> if it returns truthy for all them.
@@ -1595,22 +1789,17 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
             </div>
             
             <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">every</span>(<span class="hljs-params">callback, subject, predicate, object, graph</span>) {
-    <span class="hljs-keyword">let</span> some = <span class="hljs-literal">false</span>;
-    <span class="hljs-keyword">const</span> every = !<span class="hljs-variable language_">this</span>.<span class="hljs-title function_">some</span>(<span class="hljs-function"><span class="hljs-params">quad</span> =&gt;</span> {
-      some = <span class="hljs-literal">true</span>;
-      <span class="hljs-keyword">return</span> !<span class="hljs-title function_">callback</span>(quad);
-    }, subject, predicate, object, graph);
-    <span class="hljs-keyword">return</span> some &amp;&amp; every;
+    <span class="hljs-keyword">return</span> !<span class="hljs-variable language_">this</span>.<span class="hljs-title function_">some</span>(<span class="hljs-function"><span class="hljs-params">quad</span> =&gt;</span> !<span class="hljs-title function_">callback</span>(quad, <span class="hljs-variable language_">this</span>), subject, predicate, object, graph);
   }</pre></div></div>
             
         </li>
         
         
-        <li id="section-84">
+        <li id="section-89">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-84">&#x00a7;</a>
+                <a class="ss" href="#section-89">&#x00a7;</a>
               </div>
               <h3 id="some-executes-the-callback-on-all-quads"><code>some</code> executes the callback on all quads,</h3>
 <p>and returns <code>true</code> if it returns truthy for any of them.
@@ -1620,7 +1809,7 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
             
             <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">some</span>(<span class="hljs-params">callback, subject, predicate, object, graph</span>) {
     <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> quad <span class="hljs-keyword">of</span> <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">readQuads</span>(subject, predicate, object, graph))
-      <span class="hljs-keyword">if</span> (<span class="hljs-title function_">callback</span>(quad))
+      <span class="hljs-keyword">if</span> (<span class="hljs-title function_">callback</span>(quad, <span class="hljs-variable language_">this</span>))
         <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
     <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
   }</pre></div></div>
@@ -1628,11 +1817,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-85">
+        <li id="section-90">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-85">&#x00a7;</a>
+                <a class="ss" href="#section-90">&#x00a7;</a>
               </div>
               <h3 id="getsubjects-returns-all-subjects-that-match-the-pattern"><code>getSubjects</code> returns all subjects that match the pattern.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
@@ -1648,34 +1837,18 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-86">
+        <li id="section-91">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-86">&#x00a7;</a>
+                <a class="ss" href="#section-91">&#x00a7;</a>
               </div>
               <h3 id="forsubjects-executes-the-callback-on-all-subjects-that-match-the-pattern"><code>forSubjects</code> executes the callback on all subjects that match the pattern.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">forSubjects</span>(<span class="hljs-params">callback, predicate, object, graph</span>) {</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-87">
-            <div class="annotation">
-              
-              <div class="sswrap ">
-                <a class="ss" href="#section-87">&#x00a7;</a>
-              </div>
-              <p>Convert terms to internal string representation</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>    graph = graph &amp;&amp; <span class="hljs-title function_">termToId</span>(graph);
-
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">forSubjects</span>(<span class="hljs-params">callback, predicate, object, graph</span>) {
     <span class="hljs-keyword">const</span> graphs = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_getGraphs</span>(graph);
     <span class="hljs-keyword">let</span> content, predicateId, objectId;
     callback = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_uniqueEntities</span>(callback);</pre></div></div>
@@ -1683,11 +1856,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-88">
+        <li id="section-92">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-88">&#x00a7;</a>
+                <a class="ss" href="#section-92">&#x00a7;</a>
               </div>
               <p>Translate IRIs to internal index keys.</p>
 
@@ -1702,11 +1875,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-89">
+        <li id="section-93">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-89">&#x00a7;</a>
+                <a class="ss" href="#section-93">&#x00a7;</a>
               </div>
               <p>Only if the specified graph contains triples, there can be results</p>
 
@@ -1717,11 +1890,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-90">
+        <li id="section-94">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-90">&#x00a7;</a>
+                <a class="ss" href="#section-94">&#x00a7;</a>
               </div>
               <p>Choose optimal index based on which fields are wildcards</p>
 
@@ -1733,11 +1906,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-91">
+        <li id="section-95">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-91">&#x00a7;</a>
+                <a class="ss" href="#section-95">&#x00a7;</a>
               </div>
               <p>If predicate and object are given, the POS index is best.</p>
 
@@ -1749,11 +1922,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-92">
+        <li id="section-96">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-92">&#x00a7;</a>
+                <a class="ss" href="#section-96">&#x00a7;</a>
               </div>
               <p>If only predicate is given, the SPO index is best.</p>
 
@@ -1766,11 +1939,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-93">
+        <li id="section-97">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-93">&#x00a7;</a>
+                <a class="ss" href="#section-97">&#x00a7;</a>
               </div>
               <p>If only object is given, the OSP index is best.</p>
 
@@ -1782,11 +1955,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-94">
+        <li id="section-98">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-94">&#x00a7;</a>
+                <a class="ss" href="#section-98">&#x00a7;</a>
               </div>
               <p>If no params given, iterate all the subjects</p>
 
@@ -1800,11 +1973,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-95">
+        <li id="section-99">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-95">&#x00a7;</a>
+                <a class="ss" href="#section-99">&#x00a7;</a>
               </div>
               <h3 id="getpredicates-returns-all-predicates-that-match-the-pattern"><code>getPredicates</code> returns all predicates that match the pattern.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
@@ -1820,34 +1993,18 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-96">
+        <li id="section-100">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-96">&#x00a7;</a>
+                <a class="ss" href="#section-100">&#x00a7;</a>
               </div>
               <h3 id="forpredicates-executes-the-callback-on-all-predicates-that-match-the-pattern"><code>forPredicates</code> executes the callback on all predicates that match the pattern.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">forPredicates</span>(<span class="hljs-params">callback, subject, object, graph</span>) {</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-97">
-            <div class="annotation">
-              
-              <div class="sswrap ">
-                <a class="ss" href="#section-97">&#x00a7;</a>
-              </div>
-              <p>Convert terms to internal string representation</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>    graph = graph &amp;&amp; <span class="hljs-title function_">termToId</span>(graph);
-
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">forPredicates</span>(<span class="hljs-params">callback, subject, object, graph</span>) {
     <span class="hljs-keyword">const</span> graphs = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_getGraphs</span>(graph);
     <span class="hljs-keyword">let</span> content, subjectId, objectId;
     callback = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_uniqueEntities</span>(callback);</pre></div></div>
@@ -1855,11 +2012,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-98">
+        <li id="section-101">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-98">&#x00a7;</a>
+                <a class="ss" href="#section-101">&#x00a7;</a>
               </div>
               <p>Translate IRIs to internal index keys.</p>
 
@@ -1874,11 +2031,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-99">
+        <li id="section-102">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-99">&#x00a7;</a>
+                <a class="ss" href="#section-102">&#x00a7;</a>
               </div>
               <p>Only if the specified graph contains triples, there can be results</p>
 
@@ -1889,11 +2046,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-100">
+        <li id="section-103">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-100">&#x00a7;</a>
+                <a class="ss" href="#section-103">&#x00a7;</a>
               </div>
               <p>Choose optimal index based on which fields are wildcards</p>
 
@@ -1905,11 +2062,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-101">
+        <li id="section-104">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-101">&#x00a7;</a>
+                <a class="ss" href="#section-104">&#x00a7;</a>
               </div>
               <p>If subject and object are given, the OSP index is best.</p>
 
@@ -1921,11 +2078,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-102">
+        <li id="section-105">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-102">&#x00a7;</a>
+                <a class="ss" href="#section-105">&#x00a7;</a>
               </div>
               <p>If only subject is given, the SPO index is best.</p>
 
@@ -1938,11 +2095,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-103">
+        <li id="section-106">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-103">&#x00a7;</a>
+                <a class="ss" href="#section-106">&#x00a7;</a>
               </div>
               <p>If only object is given, the POS index is best.</p>
 
@@ -1954,11 +2111,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-104">
+        <li id="section-107">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-104">&#x00a7;</a>
+                <a class="ss" href="#section-107">&#x00a7;</a>
               </div>
               <p>If no params given, iterate all the predicates.</p>
 
@@ -1972,11 +2129,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-105">
+        <li id="section-108">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-105">&#x00a7;</a>
+                <a class="ss" href="#section-108">&#x00a7;</a>
               </div>
               <h3 id="getobjects-returns-all-objects-that-match-the-pattern"><code>getObjects</code> returns all objects that match the pattern.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
@@ -1992,34 +2149,18 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-106">
+        <li id="section-109">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-106">&#x00a7;</a>
+                <a class="ss" href="#section-109">&#x00a7;</a>
               </div>
               <h3 id="forobjects-executes-the-callback-on-all-objects-that-match-the-pattern"><code>forObjects</code> executes the callback on all objects that match the pattern.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">forObjects</span>(<span class="hljs-params">callback, subject, predicate, graph</span>) {</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-107">
-            <div class="annotation">
-              
-              <div class="sswrap ">
-                <a class="ss" href="#section-107">&#x00a7;</a>
-              </div>
-              <p>Convert terms to internal string representation</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>    graph = graph &amp;&amp; <span class="hljs-title function_">termToId</span>(graph);
-
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">forObjects</span>(<span class="hljs-params">callback, subject, predicate, graph</span>) {
     <span class="hljs-keyword">const</span> graphs = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_getGraphs</span>(graph);
     <span class="hljs-keyword">let</span> content, subjectId, predicateId;
     callback = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_uniqueEntities</span>(callback);</pre></div></div>
@@ -2027,11 +2168,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-108">
+        <li id="section-110">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-108">&#x00a7;</a>
+                <a class="ss" href="#section-110">&#x00a7;</a>
               </div>
               <p>Translate IRIs to internal index keys.</p>
 
@@ -2046,11 +2187,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-109">
+        <li id="section-111">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-109">&#x00a7;</a>
+                <a class="ss" href="#section-111">&#x00a7;</a>
               </div>
               <p>Only if the specified graph contains triples, there can be results</p>
 
@@ -2061,11 +2202,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-110">
+        <li id="section-112">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-110">&#x00a7;</a>
+                <a class="ss" href="#section-112">&#x00a7;</a>
               </div>
               <p>Choose optimal index based on which fields are wildcards</p>
 
@@ -2077,11 +2218,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-111">
+        <li id="section-113">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-111">&#x00a7;</a>
+                <a class="ss" href="#section-113">&#x00a7;</a>
               </div>
               <p>If subject and predicate are given, the SPO index is best.</p>
 
@@ -2093,11 +2234,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-112">
+        <li id="section-114">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-112">&#x00a7;</a>
+                <a class="ss" href="#section-114">&#x00a7;</a>
               </div>
               <p>If only subject is given, the OSP index is best.</p>
 
@@ -2110,11 +2251,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-113">
+        <li id="section-115">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-113">&#x00a7;</a>
+                <a class="ss" href="#section-115">&#x00a7;</a>
               </div>
               <p>If only predicate is given, the POS index is best.</p>
 
@@ -2126,11 +2267,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-114">
+        <li id="section-116">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-114">&#x00a7;</a>
+                <a class="ss" href="#section-116">&#x00a7;</a>
               </div>
               <p>If no params given, iterate all the objects.</p>
 
@@ -2144,11 +2285,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-115">
+        <li id="section-117">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-115">&#x00a7;</a>
+                <a class="ss" href="#section-117">&#x00a7;</a>
               </div>
               <h3 id="getgraphs-returns-all-graphs-that-match-the-pattern"><code>getGraphs</code> returns all graphs that match the pattern.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
@@ -2164,11 +2305,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-116">
+        <li id="section-118">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-116">&#x00a7;</a>
+                <a class="ss" href="#section-118">&#x00a7;</a>
               </div>
               <h3 id="forgraphs-executes-the-callback-on-all-graphs-that-match-the-pattern"><code>forGraphs</code> executes the callback on all graphs that match the pattern.</h3>
 <p>Setting any field to <code>undefined</code> or <code>null</code> indicates a wildcard.</p>
@@ -2180,44 +2321,9 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
       <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">some</span>(<span class="hljs-function"><span class="hljs-params">quad</span> =&gt;</span> {
         <span class="hljs-title function_">callback</span>(quad.<span class="hljs-property">graph</span>);
         <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>; <span class="hljs-comment">// Halt iteration of some()</span>
-      }, subject, predicate, object, graph);
+      }, subject, predicate, object, <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">_termFromId</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">_entities</span>[graph]));
     }
   }</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-117">
-            <div class="annotation">
-              
-              <div class="sswrap ">
-                <a class="ss" href="#section-117">&#x00a7;</a>
-              </div>
-              <h3 id="createblanknode-creates-a-new-blank-node-returning-its-name"><code>createBlankNode</code> creates a new blank node, returning its name</h3>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">createBlankNode</span>(<span class="hljs-params">suggestedName</span>) {
-    <span class="hljs-keyword">let</span> name, index;</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-118">
-            <div class="annotation">
-              
-              <div class="sswrap ">
-                <a class="ss" href="#section-118">&#x00a7;</a>
-              </div>
-              <p>Generate a name based on the suggested name</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (suggestedName) {
-      name = suggestedName = <span class="hljs-string">`_:<span class="hljs-subst">${suggestedName}</span>`</span>, index = <span class="hljs-number">1</span>;
-      <span class="hljs-keyword">while</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_ids</span>[name])
-        name = suggestedName + index++;
-    }</pre></div></div>
             
         </li>
         
@@ -2228,14 +2334,13 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
               <div class="sswrap ">
                 <a class="ss" href="#section-119">&#x00a7;</a>
               </div>
-              <p>Generate a generic blank node name</p>
+              <h3 id="createblanknode-creates-a-new-blank-node-returning-its-name"><code>createBlankNode</code> creates a new blank node, returning its name</h3>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">else</span> {
-      <span class="hljs-keyword">do</span> { name = <span class="hljs-string">`_:b<span class="hljs-subst">${<span class="hljs-variable language_">this</span>._blankNodeIndex++}</span>`</span>; }
-      <span class="hljs-keyword">while</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_ids</span>[name]);
-    }</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  <span class="hljs-title function_">createBlankNode</span>(<span class="hljs-params">suggestedName</span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entityIndex</span>.<span class="hljs-title function_">createBlankNode</span>(suggestedName);
+  }</pre></div></div>
             
         </li>
         
@@ -2245,24 +2350,6 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
               
               <div class="sswrap ">
                 <a class="ss" href="#section-120">&#x00a7;</a>
-              </div>
-              <p>Add the blank node to the entities, avoiding the generation of duplicates</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_ids</span>[name] = ++<span class="hljs-variable language_">this</span>.<span class="hljs-property">_id</span>;
-    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entities</span>[<span class="hljs-variable language_">this</span>.<span class="hljs-property">_id</span>] = name;
-    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">_factory</span>.<span class="hljs-title function_">blankNode</span>(name.<span class="hljs-title function_">substr</span>(<span class="hljs-number">2</span>));
-  }</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-121">
-            <div class="annotation">
-              
-              <div class="sswrap ">
-                <a class="ss" href="#section-121">&#x00a7;</a>
               </div>
               <h3 id="extractlists-finds-and-removes-all-list-triples"><code>extractLists</code> finds and removes all list triples</h3>
 <p>and returns the items per list.</p>
@@ -2277,11 +2364,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-122">
+        <li id="section-121">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-122">&#x00a7;</a>
+                <a class="ss" href="#section-121">&#x00a7;</a>
               </div>
               <p>Traverse each list from its tail</p>
 
@@ -2299,11 +2386,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-123">
+        <li id="section-122">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-123">&#x00a7;</a>
+                <a class="ss" href="#section-122">&#x00a7;</a>
               </div>
               <p>Traverse the list from tail to end</p>
 
@@ -2318,11 +2405,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-124">
+        <li id="section-123">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-124">&#x00a7;</a>
+                <a class="ss" href="#section-123">&#x00a7;</a>
               </div>
               <p>Find the first and rest of this list node</p>
 
@@ -2338,11 +2425,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-125">
+        <li id="section-124">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-125">&#x00a7;</a>
+                <a class="ss" href="#section-124">&#x00a7;</a>
               </div>
               <p>one rdf:first</p>
 
@@ -2358,11 +2445,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-126">
+        <li id="section-125">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-126">&#x00a7;</a>
+                <a class="ss" href="#section-125">&#x00a7;</a>
               </div>
               <p>one rdf:rest</p>
 
@@ -2378,11 +2465,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-127">
+        <li id="section-126">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-127">&#x00a7;</a>
+                <a class="ss" href="#section-126">&#x00a7;</a>
               </div>
               <p>alien triple</p>
 
@@ -2399,11 +2486,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-128">
+        <li id="section-127">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-128">&#x00a7;</a>
+                <a class="ss" href="#section-127">&#x00a7;</a>
               </div>
               <p>{ :s :p (1 2) } arrives here with no head
 { (1 2) :p :o } arrives here with head set to the list.</p>
@@ -2418,11 +2505,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-129">
+        <li id="section-128">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-129">&#x00a7;</a>
+                <a class="ss" href="#section-128">&#x00a7;</a>
               </div>
               <p>one rdf:rest</p>
 
@@ -2443,11 +2530,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-130">
+        <li id="section-129">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-130">&#x00a7;</a>
+                <a class="ss" href="#section-129">&#x00a7;</a>
               </div>
               <p>Store the list item and continue with parent</p>
 
@@ -2463,11 +2550,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-131">
+        <li id="section-130">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-131">&#x00a7;</a>
+                <a class="ss" href="#section-130">&#x00a7;</a>
               </div>
               <p>Don’t remove any quads if the list is malformed</p>
 
@@ -2479,11 +2566,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-132">
+        <li id="section-131">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-132">&#x00a7;</a>
+                <a class="ss" href="#section-131">&#x00a7;</a>
               </div>
               <p>Store the list under the value of its head</p>
 
@@ -2496,11 +2583,11 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
         </li>
         
         
-        <li id="section-133">
+        <li id="section-132">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-133">&#x00a7;</a>
+                <a class="ss" href="#section-132">&#x00a7;</a>
               </div>
               <p>Remove list quads if requested</p>
 
@@ -2509,16 +2596,239 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (remove)
       <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">removeQuads</span>(toRemove);
     <span class="hljs-keyword">return</span> lists;
+  }
+
+  <span class="hljs-comment">/**
+   * Returns `true` if the current dataset is a superset of the given dataset; in other words, returns `true` if
+   * the given dataset is a subset of, i.e., is contained within, the current dataset.
+   *
+   * Blank Nodes will be normalized.
+   */</span>
+  <span class="hljs-title function_">addAll</span>(<span class="hljs-params">quads</span>) {
+    <span class="hljs-keyword">if</span> (quads <span class="hljs-keyword">instanceof</span> <span class="hljs-title class_">DatasetCoreAndReadableStream</span>)
+      quads = quads.<span class="hljs-property">filtered</span>;
+
+    <span class="hljs-keyword">if</span> (<span class="hljs-title class_">Array</span>.<span class="hljs-title function_">isArray</span>(quads))
+      <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">addQuads</span>(quads);
+    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (quads <span class="hljs-keyword">instanceof</span> N3Store &amp;&amp; quads.<span class="hljs-property">_entityIndex</span> === <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entityIndex</span>) {
+      <span class="hljs-keyword">if</span> (quads.<span class="hljs-property">_size</span> !== <span class="hljs-number">0</span>) {
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">_graphs</span> = <span class="hljs-title function_">merge</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">_graphs</span>, quads.<span class="hljs-property">_graphs</span>);
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">_size</span> = <span class="hljs-literal">null</span>; <span class="hljs-comment">// Invalidate the cached size</span>
+      }
+    }
+    <span class="hljs-keyword">else</span> {
+      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> quad <span class="hljs-keyword">of</span> quads)
+        <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">add</span>(quad);
+    }
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>;
+  }
+
+  <span class="hljs-comment">/**
+   * Returns `true` if the current dataset is a superset of the given dataset; in other words, returns `true` if
+   * the given dataset is a subset of, i.e., is contained within, the current dataset.
+   *
+   * Blank Nodes will be normalized.
+   */</span>
+  <span class="hljs-title function_">contains</span>(<span class="hljs-params">other</span>) {
+    <span class="hljs-keyword">if</span> (other <span class="hljs-keyword">instanceof</span> <span class="hljs-title class_">DatasetCoreAndReadableStream</span>)
+      other = other.<span class="hljs-property">filtered</span>;
+
+    <span class="hljs-keyword">if</span> (other === <span class="hljs-variable language_">this</span>)
+      <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-keyword">if</span> (!(other <span class="hljs-keyword">instanceof</span> N3Store) || <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entityIndex</span> !== other.<span class="hljs-property">_entityIndex</span>)
+      <span class="hljs-keyword">return</span> other.<span class="hljs-title function_">every</span>(<span class="hljs-function"><span class="hljs-params">quad</span> =&gt;</span> <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">has</span>(quad));
+
+    <span class="hljs-keyword">const</span> g1 = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_graphs</span>, g2 = other.<span class="hljs-property">_graphs</span>;
+    <span class="hljs-keyword">let</span> s1, s2, p1, p2, o1;
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> graph <span class="hljs-keyword">in</span> g2) {
+      <span class="hljs-keyword">if</span> (!(s1 = g1[graph])) <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+      s1 = s1.<span class="hljs-property">subjects</span>;
+      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> subject <span class="hljs-keyword">in</span> (s2 = g2[graph].<span class="hljs-property">subjects</span>)) {
+        <span class="hljs-keyword">if</span> (!(p1 = s1[subject])) <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> predicate <span class="hljs-keyword">in</span> (p2 = s2[subject])) {
+          <span class="hljs-keyword">if</span> (!(o1 = p1[predicate])) <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+          <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> object <span class="hljs-keyword">in</span> p2[predicate])
+            <span class="hljs-keyword">if</span> (!(object <span class="hljs-keyword">in</span> o1)) <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+        }
+      }
+    }
+    <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+  }
+
+  <span class="hljs-comment">/**
+   * This method removes the quads in the current dataset that match the given arguments.
+   *
+   * The logic described in {<span class="hljs-doctag">@link</span> https://rdf.js.org/dataset-spec/#quad-matching|Quad Matching} is applied for each
+   * quad in this dataset, to select the quads which will be deleted.
+   *
+   * <span class="hljs-doctag">@param</span> subject   The optional exact subject to match.
+   * <span class="hljs-doctag">@param</span> predicate The optional exact predicate to match.
+   * <span class="hljs-doctag">@param</span> object    The optional exact object to match.
+   * <span class="hljs-doctag">@param</span> graph     The optional exact graph to match.
+   */</span>
+  <span class="hljs-title function_">deleteMatches</span>(<span class="hljs-params">subject, predicate, object, graph</span>) {
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> quad <span class="hljs-keyword">of</span> <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">match</span>(subject, predicate, object, graph))
+      <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">removeQuad</span>(quad);
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>;
+  }
+
+  <span class="hljs-comment">/**
+   * Returns a new dataset that contains all quads from the current dataset that are not included in the given dataset.
+   */</span>
+  <span class="hljs-title function_">difference</span>(<span class="hljs-params">other</span>) {
+    <span class="hljs-keyword">if</span> (other &amp;&amp; other <span class="hljs-keyword">instanceof</span> <span class="hljs-title class_">DatasetCoreAndReadableStream</span>)
+      other = other.<span class="hljs-property">filtered</span>;
+
+    <span class="hljs-keyword">if</span> (other === <span class="hljs-variable language_">this</span>)
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title function_">N3Store</span>({ <span class="hljs-attr">entityIndex</span>: <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entityIndex</span> });
+
+    <span class="hljs-keyword">if</span> ((other <span class="hljs-keyword">instanceof</span> N3Store) &amp;&amp; other.<span class="hljs-property">_entityIndex</span> === <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entityIndex</span>) {
+      <span class="hljs-keyword">const</span> store = <span class="hljs-keyword">new</span> <span class="hljs-title function_">N3Store</span>({ <span class="hljs-attr">entityIndex</span>: <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entityIndex</span> });
+      <span class="hljs-keyword">const</span> graphs = <span class="hljs-title function_">difference</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">_graphs</span>, other.<span class="hljs-property">_graphs</span>);
+      <span class="hljs-keyword">if</span> (graphs) {
+        store.<span class="hljs-property">_graphs</span> = graphs;
+        store.<span class="hljs-property">_size</span> = <span class="hljs-literal">null</span>;
+      }
+      <span class="hljs-keyword">return</span> store;
+    }
+
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">filter</span>(<span class="hljs-function"><span class="hljs-params">quad</span> =&gt;</span> !other.<span class="hljs-title function_">has</span>(quad));
+  }
+
+  <span class="hljs-comment">/**
+   * Returns true if the current dataset contains the same graph structure as the given dataset.
+   *
+   * Blank Nodes will be normalized.
+   */</span>
+  <span class="hljs-title function_">equals</span>(<span class="hljs-params">other</span>) {
+    <span class="hljs-keyword">if</span> (other <span class="hljs-keyword">instanceof</span> <span class="hljs-title class_">DatasetCoreAndReadableStream</span>)
+      other = other.<span class="hljs-property">filtered</span>;
+
+    <span class="hljs-keyword">return</span> other === <span class="hljs-variable language_">this</span> || (<span class="hljs-variable language_">this</span>.<span class="hljs-property">size</span> === other.<span class="hljs-property">size</span> &amp;&amp; <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">contains</span>(other));
+  }
+
+  <span class="hljs-comment">/**
+   * Creates a new dataset with all the quads that pass the test implemented by the provided `iteratee`.
+   *
+   * This method is aligned with Array.prototype.filter() in ECMAScript-262.
+   */</span>
+  <span class="hljs-title function_">filter</span>(<span class="hljs-params">iteratee</span>) {
+    <span class="hljs-keyword">const</span> store = <span class="hljs-keyword">new</span> <span class="hljs-title function_">N3Store</span>({ <span class="hljs-attr">entityIndex</span>: <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entityIndex</span> });
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> quad <span class="hljs-keyword">of</span> <span class="hljs-variable language_">this</span>)
+      <span class="hljs-keyword">if</span> (<span class="hljs-title function_">iteratee</span>(quad, <span class="hljs-variable language_">this</span>))
+        store.<span class="hljs-title function_">add</span>(quad);
+    <span class="hljs-keyword">return</span> store;
+  }
+
+  <span class="hljs-comment">/**
+   * Returns a new dataset containing all quads from the current dataset that are also included in the given dataset.
+   */</span>
+  <span class="hljs-title function_">intersection</span>(<span class="hljs-params">other</span>) {
+    <span class="hljs-keyword">if</span> (other <span class="hljs-keyword">instanceof</span> <span class="hljs-title class_">DatasetCoreAndReadableStream</span>)
+      other = other.<span class="hljs-property">filtered</span>;
+
+    <span class="hljs-keyword">if</span> (other === <span class="hljs-variable language_">this</span>) {
+      <span class="hljs-keyword">const</span> store = <span class="hljs-keyword">new</span> <span class="hljs-title function_">N3Store</span>({ <span class="hljs-attr">entityIndex</span>: <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entityIndex</span> });
+      store.<span class="hljs-property">_graphs</span> = <span class="hljs-title function_">merge</span>(<span class="hljs-title class_">Object</span>.<span class="hljs-title function_">create</span>(<span class="hljs-literal">null</span>), <span class="hljs-variable language_">this</span>.<span class="hljs-property">_graphs</span>);
+      store.<span class="hljs-property">_size</span> = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_size</span>;
+      <span class="hljs-keyword">return</span> store;
+    }
+    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> ((other <span class="hljs-keyword">instanceof</span> N3Store) &amp;&amp; <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entityIndex</span> === other.<span class="hljs-property">_entityIndex</span>) {
+      <span class="hljs-keyword">const</span> store = <span class="hljs-keyword">new</span> <span class="hljs-title function_">N3Store</span>({ <span class="hljs-attr">entityIndex</span>: <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entityIndex</span> });
+      <span class="hljs-keyword">const</span> graphs = <span class="hljs-title function_">intersect</span>(other.<span class="hljs-property">_graphs</span>, <span class="hljs-variable language_">this</span>.<span class="hljs-property">_graphs</span>);
+      <span class="hljs-keyword">if</span> (graphs) {
+        store.<span class="hljs-property">_graphs</span> = graphs;
+        store.<span class="hljs-property">_size</span> = <span class="hljs-literal">null</span>;
+      }
+      <span class="hljs-keyword">return</span> store;
+    }
+
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">filter</span>(<span class="hljs-function"><span class="hljs-params">quad</span> =&gt;</span> other.<span class="hljs-title function_">has</span>(quad));
+  }
+
+  <span class="hljs-comment">/**
+   * Returns a new dataset containing all quads returned by applying `iteratee` to each quad in the current dataset.
+   */</span>
+  <span class="hljs-title function_">map</span>(<span class="hljs-params">iteratee</span>) {
+    <span class="hljs-keyword">const</span> store = <span class="hljs-keyword">new</span> <span class="hljs-title function_">N3Store</span>({ <span class="hljs-attr">entityIndex</span>: <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entityIndex</span> });
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> quad <span class="hljs-keyword">of</span> <span class="hljs-variable language_">this</span>)
+      store.<span class="hljs-title function_">add</span>(<span class="hljs-title function_">iteratee</span>(quad, <span class="hljs-variable language_">this</span>));
+    <span class="hljs-keyword">return</span> store;
+  }
+
+  <span class="hljs-comment">/**
+   * This method calls the `iteratee` method on each `quad` of the `Dataset`. The first time the `iteratee` method
+   * is called, the `accumulator` value is the `initialValue`, or, if not given, equals the first quad of the `Dataset`.
+   * The return value of each call to the `iteratee` method is used as the `accumulator` value for the next call.
+   *
+   * This method returns the return value of the last `iteratee` call.
+   *
+   * This method is aligned with `Array.prototype.reduce()` in ECMAScript-262.
+   */</span>
+  <span class="hljs-title function_">reduce</span>(<span class="hljs-params">callback, initialValue</span>) {
+    <span class="hljs-keyword">const</span> iter = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">readQuads</span>();
+    <span class="hljs-keyword">let</span> accumulator = initialValue === <span class="hljs-literal">undefined</span> ? iter.<span class="hljs-title function_">next</span>().<span class="hljs-property">value</span> : initialValue;
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> quad <span class="hljs-keyword">of</span> iter)
+      accumulator = <span class="hljs-title function_">callback</span>(accumulator, quad, <span class="hljs-variable language_">this</span>);
+    <span class="hljs-keyword">return</span> accumulator;
+  }
+
+  <span class="hljs-comment">/**
+   * Returns the set of quads within the dataset as a host-language-native sequence, for example an `Array` in
+   * ECMAScript-262.
+   *
+   * Since a `Dataset` is an unordered set, the order of the quads within the returned sequence is arbitrary.
+   */</span>
+  <span class="hljs-title function_">toArray</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">getQuads</span>();
+  }
+
+  <span class="hljs-comment">/**
+   * Returns an N-Quads string representation of the dataset, preprocessed with the
+   * {<span class="hljs-doctag">@link</span> https://json-ld.github.io/normalization/spec/|RDF Dataset Normalization} algorithm.
+   */</span>
+  <span class="hljs-title function_">toCanonical</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Error</span>(<span class="hljs-string">&#x27;not implemented&#x27;</span>);
+  }
+
+  <span class="hljs-comment">/**
+   * Returns a stream that contains all quads of the dataset.
+   */</span>
+  <span class="hljs-title function_">toStream</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">match</span>();
+  }
+
+  <span class="hljs-comment">/**
+   * Returns an N-Quads string representation of the dataset.
+   *
+   * No prior normalization is required, therefore the results for the same quads may vary depending on the `Dataset`
+   * implementation.
+   */</span>
+  <span class="hljs-title function_">toString</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">return</span> (<span class="hljs-keyword">new</span> <span class="hljs-title function_">N3Writer</span>()).<span class="hljs-title function_">quadsToString</span>(<span class="hljs-variable language_">this</span>);
+  }
+
+  <span class="hljs-comment">/**
+   * Returns a new `Dataset` that is a concatenation of this dataset and the quads given as an argument.
+   */</span>
+  <span class="hljs-title function_">union</span>(<span class="hljs-params">quads</span>) {
+    <span class="hljs-keyword">const</span> store = <span class="hljs-keyword">new</span> <span class="hljs-title function_">N3Store</span>({ <span class="hljs-attr">entityIndex</span>: <span class="hljs-variable language_">this</span>.<span class="hljs-property">_entityIndex</span> });
+    store.<span class="hljs-property">_graphs</span> = <span class="hljs-title function_">merge</span>(<span class="hljs-title class_">Object</span>.<span class="hljs-title function_">create</span>(<span class="hljs-literal">null</span>), <span class="hljs-variable language_">this</span>.<span class="hljs-property">_graphs</span>);
+    store.<span class="hljs-property">_size</span> = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_size</span>;
+
+    store.<span class="hljs-title function_">addAll</span>(quads);
+    <span class="hljs-keyword">return</span> store;
   }</pre></div></div>
             
         </li>
         
         
-        <li id="section-134">
+        <li id="section-133">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-134">&#x00a7;</a>
+                <a class="ss" href="#section-133">&#x00a7;</a>
               </div>
               <h3 id="store-is-an-iterable">Store is an iterable.</h3>
 <p>Can be used where iterables are expected: for…of loops, array spread operator,
@@ -2529,40 +2839,93 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
             <div class="content"><div class='highlight'><pre>  *[<span class="hljs-title class_">Symbol</span>.<span class="hljs-property">iterator</span>]() {
     <span class="hljs-keyword">yield</span>* <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">readQuads</span>();
   }
-}</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-135">
-            <div class="annotation">
-              
-              <div class="sswrap ">
-                <a class="ss" href="#section-135">&#x00a7;</a>
-              </div>
-              <p>Determines whether the argument is a string</p>
+}
 
-            </div>
-            
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">function</span> <span class="hljs-title function_">isString</span>(<span class="hljs-params">s</span>) {
-  <span class="hljs-keyword">return</span> <span class="hljs-keyword">typeof</span> s === <span class="hljs-string">&#x27;string&#x27;</span> || s <span class="hljs-keyword">instanceof</span> <span class="hljs-title class_">String</span>;
+<span class="hljs-comment">/**
+ * Returns a subset of the `index` with that part of the index
+ * matching the `ids` array. `ids` contains 3 elements that are
+ * either numerical ids; or `null`.
+ *
+ * `false` is returned when there are no matching indices; this should
+ * *not* be set as the value for an index.
+ */</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">indexMatch</span>(<span class="hljs-params">index, ids, depth = <span class="hljs-number">0</span></span>) {
+  <span class="hljs-keyword">const</span> ind = ids[depth];
+  <span class="hljs-keyword">if</span> (ind &amp;&amp; !(ind <span class="hljs-keyword">in</span> index))
+    <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+
+  <span class="hljs-keyword">let</span> target = <span class="hljs-literal">false</span>;
+  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> key <span class="hljs-keyword">in</span> (ind ? { [ind]: index[ind] } : index)) {
+    <span class="hljs-keyword">const</span> result = depth === <span class="hljs-number">2</span> ? <span class="hljs-literal">null</span> : <span class="hljs-title function_">indexMatch</span>(index[key], ids, depth + <span class="hljs-number">1</span>);
+
+    <span class="hljs-keyword">if</span> (result !== <span class="hljs-literal">false</span>) {
+      target = target || <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">create</span>(<span class="hljs-literal">null</span>);
+      target[key] = result;
+    }
+  }
+  <span class="hljs-keyword">return</span> target;
 }
 
 <span class="hljs-comment">/**
  * A class that implements both DatasetCore and Readable.
  */</span>
 <span class="hljs-keyword">class</span> <span class="hljs-title class_">DatasetCoreAndReadableStream</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_ inherited__">Readable</span> {
-  <span class="hljs-title function_">constructor</span>(<span class="hljs-params">n3Store, subject, predicate, object, graph</span>) {
+  <span class="hljs-title function_">constructor</span>(<span class="hljs-params">n3Store, subject, predicate, object, graph, options</span>) {
     <span class="hljs-variable language_">super</span>({ <span class="hljs-attr">objectMode</span>: <span class="hljs-literal">true</span> });
-    <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">assign</span>(<span class="hljs-variable language_">this</span>, { n3Store, subject, predicate, object, graph });
+    <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">assign</span>(<span class="hljs-variable language_">this</span>, { n3Store, subject, predicate, object, graph, options });
   }
 
   <span class="hljs-keyword">get</span> <span class="hljs-title function_">filtered</span>() {
     <span class="hljs-keyword">if</span> (!<span class="hljs-variable language_">this</span>.<span class="hljs-property">_filtered</span>) {
       <span class="hljs-keyword">const</span> { n3Store, graph, object, predicate, subject } = <span class="hljs-variable language_">this</span>;
-      <span class="hljs-keyword">const</span> newStore = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_filtered</span> = <span class="hljs-keyword">new</span> <span class="hljs-title function_">N3Store</span>({ <span class="hljs-attr">factory</span>: n3Store.<span class="hljs-property">_factory</span> });
-      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> quad <span class="hljs-keyword">of</span> n3Store.<span class="hljs-title function_">readQuads</span>(subject, predicate, object, graph))
-        newStore.<span class="hljs-title function_">addQuad</span>(quad);
+      <span class="hljs-keyword">const</span> newStore = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_filtered</span> = <span class="hljs-keyword">new</span> <span class="hljs-title function_">N3Store</span>({ <span class="hljs-attr">factory</span>: n3Store.<span class="hljs-property">_factory</span>, <span class="hljs-attr">entityIndex</span>: <span class="hljs-variable language_">this</span>.<span class="hljs-property">options</span>.<span class="hljs-property">entityIndex</span> });
+
+      <span class="hljs-keyword">let</span> subjectId, predicateId, objectId;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-134">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-134">&#x00a7;</a>
+              </div>
+              <p>Translate IRIs to internal index keys.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="hljs-keyword">if</span> (subject   &amp;&amp; !(subjectId   = newStore.<span class="hljs-title function_">_termToNumericId</span>(subject))   ||
+          predicate &amp;&amp; !(predicateId = newStore.<span class="hljs-title function_">_termToNumericId</span>(predicate)) ||
+          object    &amp;&amp; !(objectId    = newStore.<span class="hljs-title function_">_termToNumericId</span>(object)))
+        <span class="hljs-keyword">return</span> newStore;
+
+      <span class="hljs-keyword">const</span> graphs = n3Store.<span class="hljs-title function_">_getGraphs</span>(graph);
+      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> graphKey <span class="hljs-keyword">in</span> graphs) {
+        <span class="hljs-keyword">let</span> subjects, predicates, objects, content;
+        <span class="hljs-keyword">if</span> (content = graphs[graphKey]) {
+          <span class="hljs-keyword">if</span> (!subjectId &amp;&amp; predicateId) {
+            <span class="hljs-keyword">if</span> (predicates = <span class="hljs-title function_">indexMatch</span>(content.<span class="hljs-property">predicates</span>, [predicateId, objectId, subjectId])) {
+              subjects = <span class="hljs-title function_">indexMatch</span>(content.<span class="hljs-property">subjects</span>, [subjectId, predicateId, objectId]);
+              objects = <span class="hljs-title function_">indexMatch</span>(content.<span class="hljs-property">objects</span>, [objectId, subjectId, predicateId]);
+            }
+          }
+          <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (objectId) {
+            <span class="hljs-keyword">if</span> (objects = <span class="hljs-title function_">indexMatch</span>(content.<span class="hljs-property">objects</span>, [objectId, subjectId, predicateId])) {
+              subjects = <span class="hljs-title function_">indexMatch</span>(content.<span class="hljs-property">subjects</span>, [subjectId, predicateId, objectId]);
+              predicates = <span class="hljs-title function_">indexMatch</span>(content.<span class="hljs-property">predicates</span>, [predicateId, objectId, subjectId]);
+            }
+          }
+          <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (subjects = <span class="hljs-title function_">indexMatch</span>(content.<span class="hljs-property">subjects</span>, [subjectId, predicateId, objectId])) {
+            predicates = <span class="hljs-title function_">indexMatch</span>(content.<span class="hljs-property">predicates</span>, [predicateId, objectId, subjectId]);
+            objects = <span class="hljs-title function_">indexMatch</span>(content.<span class="hljs-property">objects</span>, [objectId, subjectId, predicateId]);
+          }
+
+          <span class="hljs-keyword">if</span> (subjects)
+            newStore.<span class="hljs-property">_graphs</span>[graphKey] = { subjects, predicates, objects };
+        }
+      }
+      newStore.<span class="hljs-property">_size</span> = <span class="hljs-literal">null</span>;
     }
     <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">_filtered</span>;
   }
@@ -2571,10 +2934,94 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
     <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">filtered</span>.<span class="hljs-property">size</span>;
   }
 
-  <span class="hljs-title function_">_read</span>(<span class="hljs-params"></span>) {
-    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> quad <span class="hljs-keyword">of</span> <span class="hljs-variable language_">this</span>)
-      <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">push</span>(quad);
-    <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">push</span>(<span class="hljs-literal">null</span>);
+  <span class="hljs-title function_">_read</span>(<span class="hljs-params">size</span>) {
+    <span class="hljs-keyword">if</span> (size &gt; <span class="hljs-number">0</span> &amp;&amp; !<span class="hljs-variable language_">this</span>[<span class="hljs-variable constant_">ITERATOR</span>])
+      <span class="hljs-variable language_">this</span>[<span class="hljs-variable constant_">ITERATOR</span>] = <span class="hljs-variable language_">this</span>[<span class="hljs-title class_">Symbol</span>.<span class="hljs-property">iterator</span>]();
+    <span class="hljs-keyword">const</span> iterable = <span class="hljs-variable language_">this</span>[<span class="hljs-variable constant_">ITERATOR</span>];
+    <span class="hljs-keyword">while</span> (--size &gt;= <span class="hljs-number">0</span>) {
+      <span class="hljs-keyword">const</span> { done, value } = iterable.<span class="hljs-title function_">next</span>();
+      <span class="hljs-keyword">if</span> (done) {
+        <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">push</span>(<span class="hljs-literal">null</span>);
+        <span class="hljs-keyword">return</span>;
+      }
+      <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">push</span>(value);
+    }
+  }
+
+  <span class="hljs-title function_">addAll</span>(<span class="hljs-params">quads</span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">filtered</span>.<span class="hljs-title function_">addAll</span>(quads);
+  }
+
+  <span class="hljs-title function_">contains</span>(<span class="hljs-params">other</span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">filtered</span>.<span class="hljs-title function_">contains</span>(other);
+  }
+
+  <span class="hljs-title function_">deleteMatches</span>(<span class="hljs-params">subject, predicate, object, graph</span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">filtered</span>.<span class="hljs-title function_">deleteMatches</span>(subject, predicate, object, graph);
+  }
+
+  <span class="hljs-title function_">difference</span>(<span class="hljs-params">other</span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">filtered</span>.<span class="hljs-title function_">difference</span>(other);
+  }
+
+  <span class="hljs-title function_">equals</span>(<span class="hljs-params">other</span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">filtered</span>.<span class="hljs-title function_">equals</span>(other);
+  }
+
+  <span class="hljs-title function_">every</span>(<span class="hljs-params">callback, subject, predicate, object, graph</span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">filtered</span>.<span class="hljs-title function_">every</span>(callback, subject, predicate, object, graph);
+  }
+
+  <span class="hljs-title function_">filter</span>(<span class="hljs-params">iteratee</span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">filtered</span>.<span class="hljs-title function_">filter</span>(iteratee);
+  }
+
+  <span class="hljs-title function_">forEach</span>(<span class="hljs-params">callback, subject, predicate, object, graph</span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">filtered</span>.<span class="hljs-title function_">forEach</span>(callback, subject, predicate, object, graph);
+  }
+
+  <span class="hljs-title function_">import</span>(<span class="hljs-params">stream</span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">filtered</span>.<span class="hljs-title function_">import</span>(stream);
+  }
+
+  <span class="hljs-title function_">intersection</span>(<span class="hljs-params">other</span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">filtered</span>.<span class="hljs-title function_">intersection</span>(other);
+  }
+
+  <span class="hljs-title function_">map</span>(<span class="hljs-params">iteratee</span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">filtered</span>.<span class="hljs-title function_">map</span>(iteratee);
+  }
+
+  <span class="hljs-title function_">some</span>(<span class="hljs-params">callback, subject, predicate, object, graph</span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">filtered</span>.<span class="hljs-title function_">some</span>(callback, subject, predicate, object, graph);
+  }
+
+  <span class="hljs-title function_">toCanonical</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">filtered</span>.<span class="hljs-title function_">toCanonical</span>();
+  }
+
+  <span class="hljs-title function_">toStream</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">_filtered</span> ?
+      <span class="hljs-variable language_">this</span>.<span class="hljs-property">_filtered</span>.<span class="hljs-title function_">toStream</span>()
+      : <span class="hljs-variable language_">this</span>.<span class="hljs-property">n3Store</span>.<span class="hljs-title function_">match</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">subject</span>, <span class="hljs-variable language_">this</span>.<span class="hljs-property">predicate</span>, <span class="hljs-variable language_">this</span>.<span class="hljs-property">object</span>, <span class="hljs-variable language_">this</span>.<span class="hljs-property">graph</span>);
+  }
+
+  <span class="hljs-title function_">union</span>(<span class="hljs-params">quads</span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">_filtered</span> ?
+      <span class="hljs-variable language_">this</span>.<span class="hljs-property">_filtered</span>.<span class="hljs-title function_">union</span>(quads)
+      : <span class="hljs-variable language_">this</span>.<span class="hljs-property">n3Store</span>.<span class="hljs-title function_">match</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">subject</span>, <span class="hljs-variable language_">this</span>.<span class="hljs-property">predicate</span>, <span class="hljs-variable language_">this</span>.<span class="hljs-property">object</span>, <span class="hljs-variable language_">this</span>.<span class="hljs-property">graph</span>).<span class="hljs-title function_">addAll</span>(quads);
+  }
+
+  <span class="hljs-title function_">toArray</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">_filtered</span> ? <span class="hljs-variable language_">this</span>.<span class="hljs-property">_filtered</span>.<span class="hljs-title function_">toArray</span>() : <span class="hljs-variable language_">this</span>.<span class="hljs-property">n3Store</span>.<span class="hljs-title function_">getQuads</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">subject</span>, <span class="hljs-variable language_">this</span>.<span class="hljs-property">predicate</span>, <span class="hljs-variable language_">this</span>.<span class="hljs-property">object</span>, <span class="hljs-variable language_">this</span>.<span class="hljs-property">graph</span>);
+  }
+
+  <span class="hljs-title function_">reduce</span>(<span class="hljs-params">callback, initialValue</span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">filtered</span>.<span class="hljs-title function_">reduce</span>(callback, initialValue);
+  }
+
+  <span class="hljs-title function_">toString</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">return</span> (<span class="hljs-keyword">new</span> <span class="hljs-title function_">N3Writer</span>()).<span class="hljs-title function_">quadsToString</span>(<span class="hljs-variable language_">this</span>);
   }
 
   <span class="hljs-title function_">add</span>(<span class="hljs-params">quad</span>) {
@@ -2590,7 +3037,7 @@ Setting any field to <code>undefined</code> or <code>null</code> indicates a wil
   }
 
   <span class="hljs-title function_">match</span>(<span class="hljs-params">subject, predicate, object, graph</span>) {
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">DatasetCoreAndReadableStream</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">filtered</span>, subject, predicate, object, graph);
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">DatasetCoreAndReadableStream</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">filtered</span>, subject, predicate, object, graph, <span class="hljs-variable language_">this</span>.<span class="hljs-property">options</span>);
   }
 
   *[<span class="hljs-title class_">Symbol</span>.<span class="hljs-property">iterator</span>]() {

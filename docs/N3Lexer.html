@@ -20,6 +20,11 @@
             <div id="jump_page">
               
                 
+                <a class="source" href="BaseIRI.html">
+                  BaseIRI.js
+                </a>
+              
+                
                 <a class="source" href="IRIs.html">
                   IRIs.js
                 </a>
@@ -40,8 +45,18 @@
                 </a>
               
                 
+                <a class="source" href="N3Reasoner.html">
+                  N3Reasoner.js
+                </a>
+              
+                
                 <a class="source" href="N3Store.html">
                   N3Store.js
+                </a>
+              
+                
+                <a class="source" href="N3StoreFactory.html">
+                  N3StoreFactory.js
                 </a>
               
                 
@@ -62,6 +77,11 @@
                 
                 <a class="source" href="N3Writer.html">
                   N3Writer.js
+                </a>
+              
+                
+                <a class="source" href="Util.html">
+                  Util.js
                 </a>
               
                 
@@ -94,7 +114,7 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">import</span> queueMicrotask <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;queue-microtask&#x27;</span>;
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">import</span> { <span class="hljs-title class_">Buffer</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;buffer&#x27;</span>;
 <span class="hljs-keyword">import</span> namespaces <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./IRIs&#x27;</span>;
 
 <span class="hljs-keyword">const</span> { xsd } = namespaces;</pre></div></div>
@@ -127,6 +147,7 @@
   <span class="hljs-attr">_unescapedIri</span>: <span class="hljs-literal">true</span>,
   <span class="hljs-attr">_simpleQuotedString</span>: <span class="hljs-literal">true</span>,
   <span class="hljs-attr">_langcode</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">_dircode</span>: <span class="hljs-literal">true</span>,
   <span class="hljs-attr">_blank</span>: <span class="hljs-literal">true</span>,
   <span class="hljs-attr">_newline</span>: <span class="hljs-literal">true</span>,
   <span class="hljs-attr">_comment</span>: <span class="hljs-literal">true</span>,
@@ -169,15 +190,16 @@
     <span class="hljs-variable language_">this</span>.<span class="hljs-property">_unescapedIri</span> = <span class="hljs-regexp">/^&lt;([^\x00-\x20&lt;&gt;\\&quot;\{\}\|\^\`]*)&gt;[ \t]*/</span>; <span class="hljs-comment">// IRI without escape sequences; no unescaping</span>
     <span class="hljs-variable language_">this</span>.<span class="hljs-property">_simpleQuotedString</span> = <span class="hljs-regexp">/^&quot;([^&quot;\\\r\n]*)&quot;(?=[^&quot;])/</span>; <span class="hljs-comment">// string without escape sequences</span>
     <span class="hljs-variable language_">this</span>.<span class="hljs-property">_simpleApostropheString</span> = <span class="hljs-regexp">/^&#x27;([^&#x27;\\\r\n]*)&#x27;(?=[^&#x27;])/</span>;
-    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_langcode</span> = <span class="hljs-regexp">/^@([a-z]+(?:-[a-z0-9]+)*)(?=[^a-z0-9\-])/i</span>;
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_langcode</span> = <span class="hljs-regexp">/^@([a-z]+(?:-[a-z0-9]+)*)(?=[^a-z0-9])/i</span>;
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_dircode</span> = <span class="hljs-regexp">/^--(ltr)|(rtl)/</span>;
     <span class="hljs-variable language_">this</span>.<span class="hljs-property">_prefix</span> = <span class="hljs-regexp">/^((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:(?=[#\s&lt;])/</span>;
     <span class="hljs-variable language_">this</span>.<span class="hljs-property">_prefixed</span> = <span class="hljs-regexp">/^((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:((?:(?:[0-:A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])(?:(?:[\.\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])*(?:[\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~]))?)?)(?:[ \t]+|(?=\.?[,;!\^\s#()\[\]\{\}&quot;&#x27;&lt;&gt;]))/</span>;
     <span class="hljs-variable language_">this</span>.<span class="hljs-property">_variable</span> = <span class="hljs-regexp">/^\?(?:(?:[A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:[\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?=[.,;!\^\s#()\[\]\{\}&quot;&#x27;&lt;&gt;])/</span>;
     <span class="hljs-variable language_">this</span>.<span class="hljs-property">_blank</span> = <span class="hljs-regexp">/^_:((?:[0-9A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?:[ \t]+|(?=\.?[,;:\s#()\[\]\{\}&quot;&#x27;&lt;&gt;]))/</span>;
     <span class="hljs-variable language_">this</span>.<span class="hljs-property">_number</span> = <span class="hljs-regexp">/^[\-+]?(?:(\d+\.\d*|\.?\d+)[eE][\-+]?|\d*(\.)?)\d+(?=\.?[,;:\s#()\[\]\{\}&quot;&#x27;&lt;&gt;])/</span>;
     <span class="hljs-variable language_">this</span>.<span class="hljs-property">_boolean</span> = <span class="hljs-regexp">/^(?:true|false)(?=[.,;\s#()\[\]\{\}&quot;&#x27;&lt;&gt;])/</span>;
-    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_keyword</span> = <span class="hljs-regexp">/^@[a-z]+(?=[\s#&lt;:])/i</span>;
-    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_sparqlKeyword</span> = <span class="hljs-regexp">/^(?:PREFIX|BASE|GRAPH)(?=[\s#&lt;])/i</span>;
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_atKeyword</span> = <span class="hljs-regexp">/^@[a-z]+(?=[\s#&lt;:])/i</span>;
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_keyword</span> = <span class="hljs-regexp">/^(?:PREFIX|BASE|VERSION|GRAPH)(?=[\s#&lt;])/i</span>;
     <span class="hljs-variable language_">this</span>.<span class="hljs-property">_shortPredicates</span> = <span class="hljs-regexp">/^a(?=[\s#()\[\]\{\}&quot;&#x27;&lt;&gt;])/</span>;
     <span class="hljs-variable language_">this</span>.<span class="hljs-property">_newline</span> = <span class="hljs-regexp">/^[ \t]*(?:#[^\n\r]*)?(?:\r\n|\n|\r)[ \t]*/</span>;
     <span class="hljs-variable language_">this</span>.<span class="hljs-property">_comment</span> = <span class="hljs-regexp">/#([^\n\r]*)/</span>;
@@ -194,6 +216,21 @@
               <div class="sswrap ">
                 <a class="ss" href="#section-5">&#x00a7;</a>
               </div>
+              <p>Whether the log:isImpliedBy predicate is supported</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_isImpliedBy</span> = options.<span class="hljs-property">isImpliedBy</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-6">&#x00a7;</a>
+              </div>
               <p>In line mode (N-Triples or N-Quads), only simple features may be parsed</p>
 
             </div>
@@ -204,11 +241,11 @@
         </li>
         
         
-        <li id="section-6">
+        <li id="section-7">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-6">&#x00a7;</a>
+                <a class="ss" href="#section-7">&#x00a7;</a>
               </div>
               <p>Don’t tokenize special literals</p>
 
@@ -223,11 +260,11 @@
         </li>
         
         
-        <li id="section-7">
+        <li id="section-8">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-7">&#x00a7;</a>
+                <a class="ss" href="#section-8">&#x00a7;</a>
               </div>
               <p>When not in line mode, enable N3 functionality by default</p>
 
@@ -240,26 +277,26 @@
         </li>
         
         
-        <li id="section-8">
-            <div class="annotation">
-              
-              <div class="sswrap ">
-                <a class="ss" href="#section-8">&#x00a7;</a>
-              </div>
-              <p>Don’t output comment tokens by default</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-variable language_">this</span>.<span class="hljs-property">_comments</span> = !!options.<span class="hljs-property">comments</span>;</pre></div></div>
-            
-        </li>
-        
-        
         <li id="section-9">
             <div class="annotation">
               
               <div class="sswrap ">
                 <a class="ss" href="#section-9">&#x00a7;</a>
+              </div>
+              <p>Don’t output comment tokens by default</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-variable language_">this</span>.<span class="hljs-property">comments</span> = !!options.<span class="hljs-property">comments</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-10">&#x00a7;</a>
               </div>
               <p>Cache the last tested closing position of long literals</p>
 
@@ -271,11 +308,11 @@
         </li>
         
         
-        <li id="section-10">
+        <li id="section-11">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-10">&#x00a7;</a>
+                <a class="ss" href="#section-11">&#x00a7;</a>
               </div>
               <h2 id="private-methods">Private methods</h2>
 
@@ -284,11 +321,11 @@
         </li>
         
         
-        <li id="section-11">
+        <li id="section-12">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-11">&#x00a7;</a>
+                <a class="ss" href="#section-12">&#x00a7;</a>
               </div>
               <h3 id="_tokenizetoend-tokenizes-as-for-as-possible-emitting-tokens-through-the-callback"><code>_tokenizeToEnd</code> tokenizes as for as possible, emitting tokens through the callback</h3>
 
@@ -299,11 +336,11 @@
         </li>
         
         
-        <li id="section-12">
+        <li id="section-13">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-12">&#x00a7;</a>
+                <a class="ss" href="#section-13">&#x00a7;</a>
               </div>
               <p>Continue parsing as far as possible; the loop will return eventually</p>
 
@@ -316,11 +353,11 @@
         </li>
         
         
-        <li id="section-13">
+        <li id="section-14">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-13">&#x00a7;</a>
+                <a class="ss" href="#section-14">&#x00a7;</a>
               </div>
               <p>Count and skip whitespace lines</p>
 
@@ -332,27 +369,27 @@
         </li>
         
         
-        <li id="section-14">
-            <div class="annotation">
-              
-              <div class="sswrap ">
-                <a class="ss" href="#section-14">&#x00a7;</a>
-              </div>
-              <p>Try to find a comment</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_comments</span> &amp;&amp; (comment = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_comment</span>.<span class="hljs-title function_">exec</span>(whiteSpaceMatch[<span class="hljs-number">0</span>])))
-          <span class="hljs-title function_">emitToken</span>(<span class="hljs-string">&#x27;comment&#x27;</span>, comment[<span class="hljs-number">1</span>], <span class="hljs-string">&#x27;&#x27;</span>, <span class="hljs-variable language_">this</span>.<span class="hljs-property">_line</span>, whiteSpaceMatch[<span class="hljs-number">0</span>].<span class="hljs-property">length</span>);</pre></div></div>
-            
-        </li>
-        
-        
         <li id="section-15">
             <div class="annotation">
               
               <div class="sswrap ">
                 <a class="ss" href="#section-15">&#x00a7;</a>
+              </div>
+              <p>Try to find a comment</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">comments</span> &amp;&amp; (comment = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_comment</span>.<span class="hljs-title function_">exec</span>(whiteSpaceMatch[<span class="hljs-number">0</span>])))
+          <span class="hljs-title function_">emitToken</span>(<span class="hljs-string">&#x27;comment&#x27;</span>, comment[<span class="hljs-number">1</span>], <span class="hljs-string">&#x27;&#x27;</span>, <span class="hljs-variable language_">this</span>.<span class="hljs-property">_line</span>, whiteSpaceMatch[<span class="hljs-number">0</span>].<span class="hljs-property">length</span>);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-16">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-16">&#x00a7;</a>
               </div>
               <p>Advance the input</p>
 
@@ -366,11 +403,11 @@
         </li>
         
         
-        <li id="section-16">
+        <li id="section-17">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-16">&#x00a7;</a>
+                <a class="ss" href="#section-17">&#x00a7;</a>
               </div>
               <p>Skip whitespace on current line</p>
 
@@ -382,11 +419,11 @@
         </li>
         
         
-        <li id="section-17">
+        <li id="section-18">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-17">&#x00a7;</a>
+                <a class="ss" href="#section-18">&#x00a7;</a>
               </div>
               <p>Stop for now if we’re at the end</p>
 
@@ -397,11 +434,11 @@
         </li>
         
         
-        <li id="section-18">
+        <li id="section-19">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-18">&#x00a7;</a>
+                <a class="ss" href="#section-19">&#x00a7;</a>
               </div>
               <p>If the input is finished, emit EOF</p>
 
@@ -412,17 +449,17 @@
         </li>
         
         
-        <li id="section-19">
+        <li id="section-20">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-19">&#x00a7;</a>
+                <a class="ss" href="#section-20">&#x00a7;</a>
               </div>
               <p>Try to find a final comment</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_comments</span> &amp;&amp; (comment = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_comment</span>.<span class="hljs-title function_">exec</span>(input)))
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">comments</span> &amp;&amp; (comment = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_comment</span>.<span class="hljs-title function_">exec</span>(input)))
             <span class="hljs-title function_">emitToken</span>(<span class="hljs-string">&#x27;comment&#x27;</span>, comment[<span class="hljs-number">1</span>], <span class="hljs-string">&#x27;&#x27;</span>, <span class="hljs-variable language_">this</span>.<span class="hljs-property">_line</span>, input.<span class="hljs-property">length</span>);
           input = <span class="hljs-literal">null</span>;
           <span class="hljs-title function_">emitToken</span>(<span class="hljs-string">&#x27;eof&#x27;</span>, <span class="hljs-string">&#x27;&#x27;</span>, <span class="hljs-string">&#x27;&#x27;</span>, <span class="hljs-variable language_">this</span>.<span class="hljs-property">_line</span>, <span class="hljs-number">0</span>);
@@ -433,11 +470,11 @@
         </li>
         
         
-        <li id="section-20">
+        <li id="section-21">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-20">&#x00a7;</a>
+                <a class="ss" href="#section-21">&#x00a7;</a>
               </div>
               <p>Look for specific token types based on the first character</p>
 
@@ -452,11 +489,11 @@
         </li>
         
         
-        <li id="section-21">
+        <li id="section-22">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-21">&#x00a7;</a>
+                <a class="ss" href="#section-22">&#x00a7;</a>
               </div>
               <p>We need at least 3 tokens lookahead to distinguish ^^<IRI> and ^^pre:fixed</p>
 
@@ -468,11 +505,11 @@
         </li>
         
         
-        <li id="section-22">
+        <li id="section-23">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-22">&#x00a7;</a>
+                <a class="ss" href="#section-23">&#x00a7;</a>
               </div>
               <p>Try to match a type</p>
 
@@ -484,11 +521,11 @@
         </li>
         
         
-        <li id="section-23">
+        <li id="section-24">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-23">&#x00a7;</a>
+                <a class="ss" href="#section-24">&#x00a7;</a>
               </div>
               <p>Move to type IRI or prefixed name</p>
 
@@ -504,11 +541,11 @@
         </li>
         
         
-        <li id="section-24">
+        <li id="section-25">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-24">&#x00a7;</a>
+                <a class="ss" href="#section-25">&#x00a7;</a>
               </div>
               <p>If no type, it must be a path expression</p>
 
@@ -525,11 +562,11 @@
         </li>
         
         
-        <li id="section-25">
+        <li id="section-26">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-25">&#x00a7;</a>
+                <a class="ss" href="#section-26">&#x00a7;</a>
               </div>
               <p>Fall through in case the type is an IRI</p>
 
@@ -540,11 +577,11 @@
         </li>
         
         
-        <li id="section-26">
+        <li id="section-27">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-26">&#x00a7;</a>
+                <a class="ss" href="#section-27">&#x00a7;</a>
               </div>
               <p>Try to find a full IRI without escape sequences</p>
 
@@ -556,11 +593,11 @@
         </li>
         
         
-        <li id="section-27">
+        <li id="section-28">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-27">&#x00a7;</a>
+                <a class="ss" href="#section-28">&#x00a7;</a>
               </div>
               <p>Try to find a full IRI with escape sequences</p>
 
@@ -576,42 +613,18 @@
         </li>
         
         
-        <li id="section-28">
-            <div class="annotation">
-              
-              <div class="sswrap ">
-                <a class="ss" href="#section-28">&#x00a7;</a>
-              </div>
-              <p>Try to find a nested triple</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (input.<span class="hljs-property">length</span> &gt; <span class="hljs-number">1</span> &amp;&amp; input[<span class="hljs-number">1</span>] === <span class="hljs-string">&#x27;&lt;&#x27;</span>)
-          type = <span class="hljs-string">&#x27;&lt;&lt;&#x27;</span>, matchLength = <span class="hljs-number">2</span>;</pre></div></div>
-            
-        </li>
-        
-        
         <li id="section-29">
             <div class="annotation">
               
               <div class="sswrap ">
                 <a class="ss" href="#section-29">&#x00a7;</a>
               </div>
-              <p>Try to find a backwards implication arrow</p>
+              <p>Try to find a triple term</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_n3Mode</span> &amp;&amp; input.<span class="hljs-property">length</span> &gt; <span class="hljs-number">1</span> &amp;&amp; input[<span class="hljs-number">1</span>] === <span class="hljs-string">&#x27;=&#x27;</span>)
-          type = <span class="hljs-string">&#x27;inverse&#x27;</span>, matchLength = <span class="hljs-number">2</span>, value = <span class="hljs-string">&#x27;&gt;&#x27;</span>;
-        <span class="hljs-keyword">break</span>;
-
-      <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;&gt;&#x27;</span>:
-        <span class="hljs-keyword">if</span> (input.<span class="hljs-property">length</span> &gt; <span class="hljs-number">1</span> &amp;&amp; input[<span class="hljs-number">1</span>] === <span class="hljs-string">&#x27;&gt;&#x27;</span>)
-          type = <span class="hljs-string">&#x27;&gt;&gt;&#x27;</span>, matchLength = <span class="hljs-number">2</span>;
-        <span class="hljs-keyword">break</span>;
-
-      <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;_&#x27;</span>:</pre></div></div>
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (input.<span class="hljs-property">length</span> &gt; <span class="hljs-number">2</span> &amp;&amp; input[<span class="hljs-number">1</span>] === <span class="hljs-string">&#x27;&lt;&#x27;</span> &amp;&amp; input[<span class="hljs-number">2</span>] === <span class="hljs-string">&#x27;(&#x27;</span>)
+          type = <span class="hljs-string">&#x27;&lt;&lt;(&#x27;</span>, matchLength = <span class="hljs-number">3</span>;</pre></div></div>
             
         </li>
         
@@ -621,6 +634,63 @@
               
               <div class="sswrap ">
                 <a class="ss" href="#section-30">&#x00a7;</a>
+              </div>
+              <p>Try to find a reified triple</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (!<span class="hljs-variable language_">this</span>.<span class="hljs-property">_lineMode</span> &amp;&amp; input.<span class="hljs-property">length</span> &gt; (inputFinished ? <span class="hljs-number">1</span> : <span class="hljs-number">2</span>) &amp;&amp; input[<span class="hljs-number">1</span>] === <span class="hljs-string">&#x27;&lt;&#x27;</span>)
+          type = <span class="hljs-string">&#x27;&lt;&lt;&#x27;</span>, matchLength = <span class="hljs-number">2</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-31">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-31">&#x00a7;</a>
+              </div>
+              <p>Try to find a backwards implication arrow</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_n3Mode</span> &amp;&amp; input.<span class="hljs-property">length</span> &gt; <span class="hljs-number">1</span> &amp;&amp; input[<span class="hljs-number">1</span>] === <span class="hljs-string">&#x27;=&#x27;</span>) {
+          matchLength = <span class="hljs-number">2</span>;
+          <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_isImpliedBy</span>) type = <span class="hljs-string">&#x27;abbreviation&#x27;</span>, value = <span class="hljs-string">&#x27;&lt;&#x27;</span>;
+          <span class="hljs-keyword">else</span> type = <span class="hljs-string">&#x27;inverse&#x27;</span>, value = <span class="hljs-string">&#x27;&gt;&#x27;</span>;
+        }
+        <span class="hljs-keyword">break</span>;
+
+      <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;&gt;&#x27;</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-32">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-32">&#x00a7;</a>
+              </div>
+              <p>Try to find a reified triple</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (input.<span class="hljs-property">length</span> &gt; <span class="hljs-number">1</span> &amp;&amp; input[<span class="hljs-number">1</span>] === <span class="hljs-string">&#x27;&gt;&#x27;</span>)
+          type = <span class="hljs-string">&#x27;&gt;&gt;&#x27;</span>, matchLength = <span class="hljs-number">2</span>;
+        <span class="hljs-keyword">break</span>;
+
+      <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;_&#x27;</span>:</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-33">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-33">&#x00a7;</a>
               </div>
               <p>Try to find a blank node. Since it can contain (but not end with) a dot,
 we always need a non-dot character before deciding it is a blank node.
@@ -638,11 +708,11 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
         </li>
         
         
-        <li id="section-31">
+        <li id="section-34">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-31">&#x00a7;</a>
+                <a class="ss" href="#section-34">&#x00a7;</a>
               </div>
               <p>Try to find a literal without escape sequences</p>
 
@@ -654,11 +724,11 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
         </li>
         
         
-        <li id="section-32">
+        <li id="section-35">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-32">&#x00a7;</a>
+                <a class="ss" href="#section-35">&#x00a7;</a>
               </div>
               <p>Try to find a literal wrapped in three pairs of quotes</p>
 
@@ -681,11 +751,11 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
         </li>
         
         
-        <li id="section-33">
+        <li id="section-36">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-33">&#x00a7;</a>
+                <a class="ss" href="#section-36">&#x00a7;</a>
               </div>
               <p>Try to find a literal without escape sequences</p>
 
@@ -697,11 +767,11 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
         </li>
         
         
-        <li id="section-34">
+        <li id="section-37">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-34">&#x00a7;</a>
+                <a class="ss" href="#section-37">&#x00a7;</a>
               </div>
               <p>Try to find a literal wrapped in three pairs of quotes</p>
 
@@ -724,11 +794,11 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
         </li>
         
         
-        <li id="section-35">
+        <li id="section-38">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-35">&#x00a7;</a>
+                <a class="ss" href="#section-38">&#x00a7;</a>
               </div>
               <p>Try to find a variable</p>
 
@@ -743,33 +813,33 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
         </li>
         
         
-        <li id="section-36">
+        <li id="section-39">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-36">&#x00a7;</a>
+                <a class="ss" href="#section-39">&#x00a7;</a>
               </div>
               <p>Try to find a language code</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_previousMarker</span> === <span class="hljs-string">&#x27;literal&#x27;</span> &amp;&amp; (match = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_langcode</span>.<span class="hljs-title function_">exec</span>(input)))
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_previousMarker</span> === <span class="hljs-string">&#x27;literal&#x27;</span> &amp;&amp; (match = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_langcode</span>.<span class="hljs-title function_">exec</span>(input)) &amp;&amp; match[<span class="hljs-number">1</span>] !== <span class="hljs-string">&#x27;version&#x27;</span>)
           type = <span class="hljs-string">&#x27;langcode&#x27;</span>, value = match[<span class="hljs-number">1</span>];</pre></div></div>
             
         </li>
         
         
-        <li id="section-37">
+        <li id="section-40">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-37">&#x00a7;</a>
+                <a class="ss" href="#section-40">&#x00a7;</a>
               </div>
               <p>Try to find a keyword</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (match = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_keyword</span>.<span class="hljs-title function_">exec</span>(input))
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (match = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_atKeyword</span>.<span class="hljs-title function_">exec</span>(input))
           type = match[<span class="hljs-number">0</span>];
         <span class="hljs-keyword">break</span>;
 
@@ -778,11 +848,11 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
         </li>
         
         
-        <li id="section-38">
+        <li id="section-41">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-38">&#x00a7;</a>
+                <a class="ss" href="#section-41">&#x00a7;</a>
               </div>
               <p>Try to find a dot as punctuation</p>
 
@@ -797,11 +867,11 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
         </li>
         
         
-        <li id="section-39">
+        <li id="section-42">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-39">&#x00a7;</a>
+                <a class="ss" href="#section-42">&#x00a7;</a>
               </div>
               <p>Fall through to numerical case (could be a decimal dot)</p>
 
@@ -819,16 +889,35 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
       <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;8&#x27;</span>:
       <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;9&#x27;</span>:
       <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;+&#x27;</span>:
-      <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;-&#x27;</span>:</pre></div></div>
+      <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;-&#x27;</span>:
+        <span class="hljs-keyword">if</span> (input[<span class="hljs-number">1</span>] === <span class="hljs-string">&#x27;-&#x27;</span>) {</pre></div></div>
             
         </li>
         
         
-        <li id="section-40">
+        <li id="section-43">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-40">&#x00a7;</a>
+                <a class="ss" href="#section-43">&#x00a7;</a>
+              </div>
+              <p>Try to find a direction code</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">_previousMarker</span> === <span class="hljs-string">&#x27;langcode&#x27;</span> &amp;&amp; (match = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_dircode</span>.<span class="hljs-title function_">exec</span>(input)))
+            type = <span class="hljs-string">&#x27;dircode&#x27;</span>, matchLength = <span class="hljs-number">2</span>, value = (match[<span class="hljs-number">1</span>] || match[<span class="hljs-number">2</span>]), matchLength = value.<span class="hljs-property">length</span> + <span class="hljs-number">2</span>;
+          <span class="hljs-keyword">break</span>;
+        }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-44">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-44">&#x00a7;</a>
               </div>
               <p>Try to find a number. Since it can contain (but not end with) a dot,
 we always need a non-dot character before deciding it is a number.
@@ -849,22 +938,24 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
       <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;p&#x27;</span>:
       <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;P&#x27;</span>:
       <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;G&#x27;</span>:
-      <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;g&#x27;</span>:</pre></div></div>
+      <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;g&#x27;</span>:
+      <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;V&#x27;</span>:
+      <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;v&#x27;</span>:</pre></div></div>
             
         </li>
         
         
-        <li id="section-41">
+        <li id="section-45">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-41">&#x00a7;</a>
+                <a class="ss" href="#section-45">&#x00a7;</a>
               </div>
               <p>Try to find a SPARQL-style keyword</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (match = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_sparqlKeyword</span>.<span class="hljs-title function_">exec</span>(input))
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (match = <span class="hljs-variable language_">this</span>.<span class="hljs-property">_keyword</span>.<span class="hljs-title function_">exec</span>(input))
           type = match[<span class="hljs-number">0</span>].<span class="hljs-title function_">toUpperCase</span>();
         <span class="hljs-keyword">else</span>
           inconclusive = <span class="hljs-literal">true</span>;
@@ -876,11 +967,11 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
         </li>
         
         
-        <li id="section-42">
+        <li id="section-46">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-42">&#x00a7;</a>
+                <a class="ss" href="#section-46">&#x00a7;</a>
               </div>
               <p>Try to match a boolean</p>
 
@@ -897,11 +988,11 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
         </li>
         
         
-        <li id="section-43">
+        <li id="section-47">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-43">&#x00a7;</a>
+                <a class="ss" href="#section-47">&#x00a7;</a>
               </div>
               <p>Try to find an abbreviated predicate</p>
 
@@ -918,11 +1009,11 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
         </li>
         
         
-        <li id="section-44">
+        <li id="section-48">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-44">&#x00a7;</a>
+                <a class="ss" href="#section-48">&#x00a7;</a>
               </div>
               <p>Try to find an implication arrow or equals sign</p>
 
@@ -940,13 +1031,49 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
       <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;!&#x27;</span>:
         <span class="hljs-keyword">if</span> (!<span class="hljs-variable language_">this</span>.<span class="hljs-property">_n3Mode</span>)
           <span class="hljs-keyword">break</span>;
+      <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;)&#x27;</span>:
+        <span class="hljs-keyword">if</span> (!inputFinished &amp;&amp; (input.<span class="hljs-property">length</span> === <span class="hljs-number">1</span> || (input.<span class="hljs-property">length</span> === <span class="hljs-number">2</span> &amp;&amp; input[<span class="hljs-number">1</span>] === <span class="hljs-string">&#x27;&gt;&#x27;</span>))) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-49">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-49">&#x00a7;</a>
+              </div>
+              <p>Don’t consume yet, as it <em>could</em> become a triple term end.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>          <span class="hljs-keyword">break</span>;
+        }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-50">
+            <div class="annotation">
+              
+              <div class="sswrap ">
+                <a class="ss" href="#section-50">&#x00a7;</a>
+              </div>
+              <p>Try to find a triple term</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (input.<span class="hljs-property">length</span> &gt; <span class="hljs-number">2</span> &amp;&amp; input[<span class="hljs-number">1</span>] === <span class="hljs-string">&#x27;&gt;&#x27;</span> &amp;&amp; input[<span class="hljs-number">2</span>] === <span class="hljs-string">&#x27;&gt;&#x27;</span>) {
+          type = <span class="hljs-string">&#x27;)&gt;&gt;&#x27;</span>, matchLength = <span class="hljs-number">3</span>;
+          <span class="hljs-keyword">break</span>;
+        }
       <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;,&#x27;</span>:
       <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;;&#x27;</span>:
       <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;[&#x27;</span>:
       <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;]&#x27;</span>:
       <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;(&#x27;</span>:
-      <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;)&#x27;</span>:
       <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;}&#x27;</span>:
+      <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;~&#x27;</span>:
         <span class="hljs-keyword">if</span> (!<span class="hljs-variable language_">this</span>.<span class="hljs-property">_lineMode</span>) {
           matchLength = <span class="hljs-number">1</span>;
           type = firstChar;
@@ -957,11 +1084,11 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
         </li>
         
         
-        <li id="section-45">
+        <li id="section-51">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-45">&#x00a7;</a>
+                <a class="ss" href="#section-51">&#x00a7;</a>
               </div>
               <p>We need at least 2 tokens lookahead to distinguish “{|” and “{ “</p>
 
@@ -972,11 +1099,11 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
         </li>
         
         
-        <li id="section-46">
+        <li id="section-52">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-46">&#x00a7;</a>
+                <a class="ss" href="#section-52">&#x00a7;</a>
               </div>
               <p>Try to find a quoted triple annotation start</p>
 
@@ -993,11 +1120,11 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
         </li>
         
         
-        <li id="section-47">
+        <li id="section-53">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-47">&#x00a7;</a>
+                <a class="ss" href="#section-53">&#x00a7;</a>
               </div>
               <p>We need 2 tokens lookahead to parse “|}”
 Try to find a quoted triple annotation end</p>
@@ -1015,11 +1142,11 @@ Try to find a quoted triple annotation end</p>
         </li>
         
         
-        <li id="section-48">
+        <li id="section-54">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-48">&#x00a7;</a>
+                <a class="ss" href="#section-54">&#x00a7;</a>
               </div>
               <p>Some first characters do not allow an immediate decision, so inspect more</p>
 
@@ -1030,11 +1157,11 @@ Try to find a quoted triple annotation end</p>
         </li>
         
         
-        <li id="section-49">
+        <li id="section-55">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-49">&#x00a7;</a>
+                <a class="ss" href="#section-55">&#x00a7;</a>
               </div>
               <p>Try to find a prefix</p>
 
@@ -1047,11 +1174,11 @@ Try to find a quoted triple annotation end</p>
         </li>
         
         
-        <li id="section-50">
+        <li id="section-56">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-50">&#x00a7;</a>
+                <a class="ss" href="#section-56">&#x00a7;</a>
               </div>
               <p>Try to find a prefixed name. Since it can contain (but not end with) a dot,
 we always need a non-dot character before deciding it is a prefixed name.
@@ -1067,11 +1194,11 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
         </li>
         
         
-        <li id="section-51">
+        <li id="section-57">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-51">&#x00a7;</a>
+                <a class="ss" href="#section-57">&#x00a7;</a>
               </div>
               <p>A type token is special: it can only be emitted after an IRI or prefixed name is read</p>
 
@@ -1088,11 +1215,11 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
         </li>
         
         
-        <li id="section-52">
+        <li id="section-58">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-52">&#x00a7;</a>
+                <a class="ss" href="#section-58">&#x00a7;</a>
               </div>
               <p>What if nothing of the above was found?</p>
 
@@ -1103,11 +1230,11 @@ Therefore, try inserting a space if we’re at the end of the input.</p>
         </li>
         
         
-        <li id="section-53">
+        <li id="section-59">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-53">&#x00a7;</a>
+                <a class="ss" href="#section-59">&#x00a7;</a>
               </div>
               <p>We could be in streaming mode, and then we just wait for more input to arrive.
 Otherwise, a syntax error has occurred in the input.
@@ -1124,11 +1251,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-54">
+        <li id="section-60">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-54">&#x00a7;</a>
+                <a class="ss" href="#section-60">&#x00a7;</a>
               </div>
               <p>Emit the parsed token</p>
 
@@ -1142,11 +1269,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-55">
+        <li id="section-61">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-55">&#x00a7;</a>
+                <a class="ss" href="#section-61">&#x00a7;</a>
               </div>
               <p>Advance to next part to tokenize</p>
 
@@ -1158,11 +1285,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-56">
+        <li id="section-62">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-56">&#x00a7;</a>
+                <a class="ss" href="#section-62">&#x00a7;</a>
               </div>
               <p>Emits the token through the callback</p>
 
@@ -1179,11 +1306,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-57">
+        <li id="section-63">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-57">&#x00a7;</a>
+                <a class="ss" href="#section-63">&#x00a7;</a>
               </div>
               <p>Signals the syntax error through the callback</p>
 
@@ -1195,11 +1322,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-58">
+        <li id="section-64">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-58">&#x00a7;</a>
+                <a class="ss" href="#section-64">&#x00a7;</a>
               </div>
               <h3 id="_unescape-replaces-n3-escape-codes-by-their-corresponding-characters"><code>_unescape</code> replaces N3 escape codes by their corresponding characters</h3>
 
@@ -1212,11 +1339,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-59">
+        <li id="section-65">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-59">&#x00a7;</a>
+                <a class="ss" href="#section-65">&#x00a7;</a>
               </div>
               <p>4-digit unicode character</p>
 
@@ -1228,11 +1355,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-60">
+        <li id="section-66">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-60">&#x00a7;</a>
+                <a class="ss" href="#section-66">&#x00a7;</a>
               </div>
               <p>8-digit unicode character</p>
 
@@ -1247,11 +1374,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-61">
+        <li id="section-67">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-61">&#x00a7;</a>
+                <a class="ss" href="#section-67">&#x00a7;</a>
               </div>
               <p>fixed escape sequence</p>
 
@@ -1263,11 +1390,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-62">
+        <li id="section-68">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-62">&#x00a7;</a>
+                <a class="ss" href="#section-68">&#x00a7;</a>
               </div>
               <p>invalid escape sequence</p>
 
@@ -1282,11 +1409,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-63">
+        <li id="section-69">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-63">&#x00a7;</a>
+                <a class="ss" href="#section-69">&#x00a7;</a>
               </div>
               <h3 id="_parseliteral-parses-a-literal-into-an-unescaped-value"><code>_parseLiteral</code> parses a literal into an unescaped value</h3>
 
@@ -1297,11 +1424,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-64">
+        <li id="section-70">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-64">&#x00a7;</a>
+                <a class="ss" href="#section-70">&#x00a7;</a>
               </div>
               <p>Ensure we have enough lookahead to identify triple-quoted strings</p>
 
@@ -1312,11 +1439,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-65">
+        <li id="section-71">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-65">&#x00a7;</a>
+                <a class="ss" href="#section-71">&#x00a7;</a>
               </div>
               <p>Identify the opening quote(s)</p>
 
@@ -1328,11 +1455,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-66">
+        <li id="section-72">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-66">&#x00a7;</a>
+                <a class="ss" href="#section-72">&#x00a7;</a>
               </div>
               <p>Find the next candidate closing quotes</p>
 
@@ -1344,11 +1471,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-67">
+        <li id="section-73">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-67">&#x00a7;</a>
+                <a class="ss" href="#section-73">&#x00a7;</a>
               </div>
               <p>Count backslashes right before the closing quotes</p>
 
@@ -1361,11 +1488,11 @@ One exception: error on an unaccounted linebreak (= not inside a triple-quoted l
         </li>
         
         
-        <li id="section-68">
+        <li id="section-74">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-68">&#x00a7;</a>
+                <a class="ss" href="#section-74">&#x00a7;</a>
               </div>
               <p>An even number of backslashes (in particular 0)
 means these are actual, non-escaped closing quotes</p>
@@ -1377,11 +1504,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-69">
+        <li id="section-75">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-69">&#x00a7;</a>
+                <a class="ss" href="#section-75">&#x00a7;</a>
               </div>
               <p>Extract and unescape the value</p>
 
@@ -1394,11 +1521,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-70">
+        <li id="section-76">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-70">&#x00a7;</a>
+                <a class="ss" href="#section-76">&#x00a7;</a>
               </div>
               <p>Only triple-quoted strings can be multi-line</p>
 
@@ -1420,11 +1547,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-71">
+        <li id="section-77">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-71">&#x00a7;</a>
+                <a class="ss" href="#section-77">&#x00a7;</a>
               </div>
               <h3 id="_syntaxerror-creates-a-syntax-error-for-the-given-issue"><code>_syntaxError</code> creates a syntax error for the given issue</h3>
 
@@ -1444,11 +1571,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-72">
+        <li id="section-78">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-72">&#x00a7;</a>
+                <a class="ss" href="#section-78">&#x00a7;</a>
               </div>
               <h3 id="strips-off-any-starting-utf-bom-mark">Strips off any starting UTF BOM mark.</h3>
 
@@ -1461,11 +1588,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-73">
+        <li id="section-79">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-73">&#x00a7;</a>
+                <a class="ss" href="#section-79">&#x00a7;</a>
               </div>
               <h2 id="public-methods">Public methods</h2>
 
@@ -1474,11 +1601,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-74">
+        <li id="section-80">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-74">&#x00a7;</a>
+                <a class="ss" href="#section-80">&#x00a7;</a>
               </div>
               <h3 id="tokenize-starts-the-transformation-of-an-n3-document-into-an-array-of-tokens"><code>tokenize</code> starts the transformation of an N3 document into an array of tokens.</h3>
 <p>The input can be a string or a stream.</p>
@@ -1491,11 +1618,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-75">
+        <li id="section-81">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-75">&#x00a7;</a>
+                <a class="ss" href="#section-81">&#x00a7;</a>
               </div>
               <p>If the input is a string, continuously emit tokens through the callback until the end</p>
 
@@ -1507,11 +1634,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-76">
+        <li id="section-82">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-76">&#x00a7;</a>
+                <a class="ss" href="#section-82">&#x00a7;</a>
               </div>
               <p>If a callback was passed, asynchronously call it</p>
 
@@ -1523,11 +1650,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-77">
+        <li id="section-83">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-77">&#x00a7;</a>
+                <a class="ss" href="#section-83">&#x00a7;</a>
               </div>
               <p>If no callback was passed, tokenize synchronously and return</p>
 
@@ -1545,11 +1672,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-78">
+        <li id="section-84">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-78">&#x00a7;</a>
+                <a class="ss" href="#section-84">&#x00a7;</a>
               </div>
               <p>Otherwise, the input must be a stream</p>
 
@@ -1563,11 +1690,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-79">
+        <li id="section-85">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-79">&#x00a7;</a>
+                <a class="ss" href="#section-85">&#x00a7;</a>
               </div>
               <p>Adds the data chunk to the buffer and parses as far as possible</p>
 
@@ -1579,11 +1706,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-80">
+        <li id="section-86">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-80">&#x00a7;</a>
+                <a class="ss" href="#section-86">&#x00a7;</a>
               </div>
               <p>Prepend any previous pending writes</p>
 
@@ -1597,11 +1724,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-81">
+        <li id="section-87">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-81">&#x00a7;</a>
+                <a class="ss" href="#section-87">&#x00a7;</a>
               </div>
               <p>Hold if the buffer ends in an incomplete unicode sequence</p>
 
@@ -1614,11 +1741,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-82">
+        <li id="section-88">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-82">&#x00a7;</a>
+                <a class="ss" href="#section-88">&#x00a7;</a>
               </div>
               <p>Otherwise, tokenize as far as possible</p>
 
@@ -1629,11 +1756,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-83">
+        <li id="section-89">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-83">&#x00a7;</a>
+                <a class="ss" href="#section-89">&#x00a7;</a>
               </div>
               <p>Only read a BOM at the start</p>
 
@@ -1651,11 +1778,11 @@ means these are actual, non-escaped closing quotes</p>
         </li>
         
         
-        <li id="section-84">
+        <li id="section-90">
             <div class="annotation">
               
               <div class="sswrap ">
-                <a class="ss" href="#section-84">&#x00a7;</a>
+                <a class="ss" href="#section-90">&#x00a7;</a>
               </div>
               <p>Parses until the end</p>
 
