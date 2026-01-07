@@ -1821,6 +1821,14 @@ describe('Parser', () => {
     );
 
     it(
+        'should parse a reified triple in a graph using annotation syntax with one predicate-object',
+        shouldParse('<G> { <a> <b> <c> {| <b> <c> |}. }',
+            ['a', 'b', 'c', 'G'],
+            ['_:b0', 'b', 'c', 'G'],
+            ['_:b0', reifies, ['a', 'b', 'c']]),
+    );
+
+    it(
         'should parse a reified triple using multiple annotation syntax blocks with reifier for the first',
         shouldParse('<a> <b> <c> ~ <iri1> {| <b1> <c1> |} {| <b2> <c2> |}.',
             ['a', 'b', 'c'],
@@ -1833,7 +1841,13 @@ describe('Parser', () => {
     it(
       'should not parse a reified triple using annotation syntax with zero predicate-objects',
       shouldNotParse('<a> <b> <c> {| |}',
-          'Expected entity but got eof on line 1.'),
+          'Annotation block can not be empty on line 1.'),
+    );
+
+    it(
+        'should not parse a reified triple using annotation syntax with zero predicate-objects ending with .',
+        shouldNotParse('<a> <b> <c> {| |} .',
+            'Annotation block can not be empty on line 1.'),
     );
 
     it(
@@ -2208,6 +2222,30 @@ describe('Parser', () => {
         'should not parse nested quads',
         shouldNotParse(parser, '<<_:a <http://ex.org/b> _:b <http://ex.org/b>>> <http://ex.org/b> "c" .',
             'Expected >> but got IRI on line 1.'),
+    );
+
+    it(
+        'should not parse a reified triple using annotation syntax with zero predicate-objects',
+        shouldNotParse('<a> <b> <c> {| |}',
+            'Annotation block can not be empty on line 1.'),
+    );
+
+    it(
+        'should not parse a reified triple using annotation syntax with zero predicate-objects ending in .',
+        shouldNotParse('<a> <b> <c> {| |} .',
+            'Annotation block can not be empty on line 1.'),
+    );
+
+    it(
+        'should not parse a reified triple in a graph using annotation syntax with zero predicate-objects',
+        shouldNotParse('<G> { <a> <b> <c> {|  |}}',
+            'Annotation block can not be empty on line 1.'),
+    );
+
+    it(
+        'should not parse a reified triple in a graph using annotation syntax with zero predicate-objects ending in .',
+        shouldNotParse('<G> { <a> <b> <c> {|  |} .}',
+            'Annotation block can not be empty on line 1.'),
     );
   });
 

@@ -316,6 +316,7 @@ export default class N3Parser {
       if ((this._predicate = this._readEntity(token)) === undefined)
         return;
     }
+    this._validAnnotation = true;
     // The next token must be an object
     return this._readObject;
   }
@@ -707,6 +708,7 @@ export default class N3Parser {
     case '{|':
       // Continue using the last triple as reified triple subject for the predicate-object pairs.
       this._subject = this._readTripleTerm();
+      this._validAnnotation = false;
       startingAnnotation = true;
       next = this._readPredicate;
       break;
@@ -714,6 +716,8 @@ export default class N3Parser {
     case '|}':
       if (!this._annotation)
         return this._error('Unexpected annotation syntax closing', token);
+      if (!this._validAnnotation)
+        return this._error('Annotation block can not be empty', token);
       this._subject = null;
       this._annotation = false;
       next = this._readPunctuation;
