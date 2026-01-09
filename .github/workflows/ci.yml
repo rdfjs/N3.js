@@ -94,6 +94,7 @@ jobs:
       packages: write
       issues: write
       pull-requests: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -103,6 +104,5 @@ jobs:
       - run: npm run build
       - name: Release
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
-        run: npx semantic-release@22
+        run: npx semantic-release@25
