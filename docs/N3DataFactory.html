@@ -1180,7 +1180,7 @@ See <a href="https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725">htt
             </div>
             
             <div class="content"><div class='highlight'><pre>  <span class="hljs-keyword">if</span> (languageOrDataType !== <span class="hljs-literal">undefined</span> &amp;&amp; !(<span class="hljs-string">&#x27;termType&#x27;</span> <span class="hljs-keyword">in</span> languageOrDataType)) {
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Literal</span>(<span class="hljs-string">`&quot;<span class="hljs-subst">${value}</span>&quot;@<span class="hljs-subst">${languageOrDataType.language.toLowerCase()}</span>--<span class="hljs-subst">${languageOrDataType.direction.toLowerCase()}</span>`</span>);
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Literal</span>(<span class="hljs-string">`&quot;<span class="hljs-subst">${value}</span>&quot;@<span class="hljs-subst">${languageOrDataType.language.toLowerCase()}</span><span class="hljs-subst">${languageOrDataType.direction ? <span class="hljs-string">`--<span class="hljs-subst">${languageOrDataType.direction.toLowerCase()}</span>`</span> : <span class="hljs-string">&#x27;&#x27;</span>}</span>`</span>);
   }</pre></div></div>
             
         </li>
