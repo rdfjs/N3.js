@@ -621,6 +621,48 @@ describe('Literal', () => {
     });
   });
 
+  describe('A Literal instance created from a string containing "--" with a language tag', () => {
+    let literal;
+    beforeAll(() => { literal = new Literal('"bla bla -- more bla bla"@en'); });
+
+    it('should have the text value as value', () => {
+      expect(literal).toHaveProperty('value', 'bla bla -- more bla bla');
+    });
+
+    it('should have the language tag as language', () => {
+      expect(literal).toHaveProperty('language', 'en');
+    });
+
+    it('should have the empty string as direction', () => {
+      expect(literal).toHaveProperty('direction', '');
+    });
+
+    it('should have rdf:langString as datatype', () => {
+      expect(literal.datatype.value).toBe('http://www.w3.org/1999/02/22-rdf-syntax-ns#langString');
+    });
+  });
+
+  describe('A Literal instance created from a string containing "--" with a language tag and direction', () => {
+    let literal;
+    beforeAll(() => { literal = new Literal('"bla bla -- more bla bla"@en--ltr'); });
+
+    it('should have the text value as value', () => {
+      expect(literal).toHaveProperty('value', 'bla bla -- more bla bla');
+    });
+
+    it('should have the language tag as language', () => {
+      expect(literal).toHaveProperty('language', 'en');
+    });
+
+    it('should have the direction as direction', () => {
+      expect(literal).toHaveProperty('direction', 'ltr');
+    });
+
+    it('should have rdf:dirLangString as datatype', () => {
+      expect(literal.datatype.value).toBe('http://www.w3.org/1999/02/22-rdf-syntax-ns#dirLangString');
+    });
+  });
+
   describe('A Literal instance created from the empty string with a datatype', () => {
     let literal;
     beforeAll(() => { literal = new Literal('""^^http://example.org/types#type'); });
