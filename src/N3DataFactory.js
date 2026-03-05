@@ -80,14 +80,14 @@ export class Literal extends Term {
 
   // ### The text value of this literal
   get value() {
-    return this.id.substring(1, this.id.lastIndexOf('"'));
+    return this.id.substring(1, this.id.lastIndexOf(this.id[0]));
   }
 
   // ### The language of this literal
   get language() {
-    // Find the last quotation mark (e.g., '"abc"@en-us')
+    // Find the last quotation mark (e.g., '"abc"@en-us' or "'abc'@en-us")
     const id = this.id;
-    let atPos = id.lastIndexOf('"') + 1;
+    let atPos = id.lastIndexOf(id[0]) + 1;
     const dirPos = id.lastIndexOf('--');
     // If "@" it follows, return the remaining substring; empty otherwise
     return atPos < id.length && id[atPos++] === '@' ? (dirPos > atPos ? id.substr(0, dirPos) : id).substr(atPos).toLowerCase() : '';
@@ -95,10 +95,11 @@ export class Literal extends Term {
 
   // ### The direction of this literal
   get direction() {
-    // Find the last double dash (e.g., '"abc"@en-us--ltr')
+    // Find the last double dash after the closing quote (e.g., '"abc"@en-us--ltr')
     const id = this.id;
-    const atPos = id.lastIndexOf('--') + 2;
-    return atPos > 1 && atPos < id.length ? id.substr(atPos).toLowerCase() : '';
+    const endPos = id.lastIndexOf(id[0]);
+    const dirPos = id.lastIndexOf('--');
+    return dirPos > endPos && dirPos + 2 < id.length ? id.substr(dirPos + 2).toLowerCase() : '';
   }
 
   // ### The datatype IRI of this literal
@@ -108,8 +109,8 @@ export class Literal extends Term {
 
   // ### The datatype string of this literal
   get datatypeString() {
-    // Find the last quotation mark (e.g., '"abc"^^http://ex.org/types#t')
-    const id = this.id, dtPos = id.lastIndexOf('"') + 1;
+    // Find the last quotation mark (e.g., '"abc"^^http://ex.org/types#t' or "'abc'^^http://ex.org/types#t")
+    const id = this.id, dtPos = id.lastIndexOf(id[0]) + 1;
     const char = dtPos < id.length ? id[dtPos] : '';
     // If "^" it follows, return the remaining substring
     return char === '^' ? id.substr(dtPos + 2) :
