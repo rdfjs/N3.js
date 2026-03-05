@@ -172,9 +172,9 @@ describe('Parser', () => {
 
     const validLanguageTags = ['en', 'en-US', 'be-tarask'];
     it.each(validLanguageTags)(
-      'should parse a triple with a valid language tag (%s)', tag => {
-        shouldParse(`<a> <b> "Hello"@${tag}.`,
-          ['a', 'b', `"Hello"@${tag}`]);
+      'should parse a triple with a valid language tag (%s)', (tag, done) => {
+        return shouldParse(`<a> <b> "Hello"@${tag}.`,
+          ['a', 'b', `"Hello"@${tag}`])(done);
       });
 
     it(
