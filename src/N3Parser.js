@@ -586,7 +586,8 @@ export default class N3Parser {
     // Create a language-tagged string
     case 'langcode':
       if (token.value.split('-').some(t => t.length > 8))
-        return this._error('Detected language tag with subtag longer than 8 characters', token);      literal = this._factory.literal(this._literalValue, token.value);
+        return this._error('Detected language tag with subtag longer than 8 characters', token);
+      literal = this._factory.literal(this._literalValue, token.value);
       this._literalLanguage = token.value;
       token = null;
       readCb = this._readDirCode.bind(this, component);
