@@ -83,6 +83,12 @@ describe('Writer', () => {
             '<a> <b> "cde"@en-us--ltr.\n'),
     );
 
+    it(
+        'should serialize a literal containing "--" with a language',
+        shouldSerialize(['a', 'b', '"bla bla -- more bla bla"@en'],
+            '<a> <b> "bla bla -- more bla bla"@en.\n'),
+    );
+
     // e.g. http://vocab.getty.edu/aat/300264727.ttl
     it(
       'should serialize a literal with an artificial language',

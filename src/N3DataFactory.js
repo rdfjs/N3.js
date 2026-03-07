@@ -95,10 +95,11 @@ export class Literal extends Term {
 
   // ### The direction of this literal
   get direction() {
-    // Find the last double dash (e.g., '"abc"@en-us--ltr')
+    // Find the last double dash after the closing quote (e.g., '"abc"@en-us--ltr')
     const id = this.id;
-    const atPos = id.lastIndexOf('--') + 2;
-    return atPos > 1 && atPos < id.length ? id.substr(atPos).toLowerCase() : '';
+    const endPos = id.lastIndexOf('"');
+    const dirPos = id.lastIndexOf('--');
+    return dirPos > endPos && dirPos + 2 < id.length ? id.substr(dirPos + 2).toLowerCase() : '';
   }
 
   // ### The datatype IRI of this literal
