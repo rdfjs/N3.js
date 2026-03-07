@@ -414,6 +414,27 @@ describe('Lexer', () => {
     );
 
     it(
+        'should tokenize a quoted string literal with directional language code',
+        shouldTokenize('"string"@en--rtl "string"@nl-be--ltr "string"@EN--rtl ',
+            { type: 'literal', value: 'string', line: 1 },
+            { type: 'langcode', value: 'en', line: 1 },
+            { type: 'dircode', value: 'rtl', line: 1 },
+            { type: 'literal', value: 'string', line: 1 },
+            { type: 'langcode', value: 'nl-be', line: 1 },
+            { type: 'dircode', value: 'ltr', line: 1 },
+            { type: 'literal', value: 'string', line: 1 },
+            { type: 'langcode', value: 'EN', line: 1 },
+            { type: 'dircode', value: 'rtl', line: 1 },
+            { type: 'eof', line: 1 }),
+    );
+
+    it('should not tokenize an invalid direction', shouldNotTokenize('"string"@en--unk',
+        'Unexpected "--unk" on line 1.'));
+
+    it('should not tokenize a direction in uppercase', shouldNotTokenize('"string"@en--LTR',
+        'Unexpected "--LTR" on line 1.'));
+
+    it(
       'should tokenize a quoted string literal with type',
       shouldTokenize('"stringA"^^<type> "stringB"^^ns:mytype ',
                      { type: 'literal', value: 'stringA', line: 1 },
@@ -689,11 +710,12 @@ describe('Lexer', () => {
 
     it(
       'should tokenize @ keywords',
-      shouldTokenize('@prefix @base @forSome @forAll ',
+      shouldTokenize('@prefix @base @forSome @forAll @version ',
                      { type: '@prefix',  line: 1 },
                      { type: '@base',    line: 1 },
                      { type: '@forSome', line: 1 },
                      { type: '@forAll',  line: 1 },
+                     { type: '@version',  line: 1 },
                      { type: 'eof',      line: 1 }),
     );
 
@@ -734,6 +756,31 @@ describe('Lexer', () => {
     );
 
     it(
+        'should tokenize @version declarations',
+        shouldTokenize('@version "1.2".\n@version \'1.2-basic\'.',
+            { type: '@version', line: 1 },
+            { type: 'literal', value: '1.2', line: 1 },
+            { type: '.', line: 1 },
+            { type: '@version', line: 2 },
+            { type: 'literal', value: '1.2-basic', line: 2 },
+            { type: '.', line: 2 },
+            { type: 'eof', line: 2 }),
+    );
+
+    it(
+        'should tokenize mixed VERSION @version declarations',
+        shouldTokenize('VERSION "1.2"\nversion "1.2"\n@version "1.2" .',
+            { type: 'VERSION', line: 1 },
+            { type: 'literal', value: '1.2', line: 1 },
+            { type: 'VERSION', line: 2 },
+            { type: 'literal', value: '1.2', line: 2 },
+            { type: '@version', line: 3 },
+            { type: 'literal', value: '1.2', line: 3 },
+            { type: '.', line: 3 },
+            { type: 'eof', line: 3 }),
+    );
+
+    it(
       'should tokenize PREFIX declarations',
       shouldTokenize('PREFIX : <http://iri.org/#>\npreFiX abc: <http://iri.org/#>',
                      { type: 'PREFIX', line: 1 },
@@ -753,6 +800,16 @@ describe('Lexer', () => {
                      { type: 'BASE', line: 2 },
                      { type: 'IRI', value: 'http://iri.org/#', line: 2 },
                      { type: 'eof', line: 2 }),
+    );
+
+    it(
+        'should tokenize VERSION declarations',
+        shouldTokenize('VERSION "1.2"\nVERSION \'1.2-basic\'',
+            { type: 'VERSION', line: 1 },
+            { type: 'literal', value: '1.2', line: 1 },
+            { type: 'VERSION', line: 2 },
+            { type: 'literal', value: '1.2-basic', line: 2 },
+            { type: 'eof', line: 2 }),
     );
 
     it(
@@ -1022,25 +1079,77 @@ describe('Lexer', () => {
       new Lexer().tokenize({ on: function () {} });
     });
 
-    it('should tokenize an Quadterm start', shouldTokenize('<<',
-      { type: '<<', line: 1 }, { type: 'eof', line: 1 }));
+    it('should tokenize an TripleTerm start', shouldTokenize('<<(',
+        { type: '<<(', line: 1 }, { type: 'eof', line: 1 }));
 
     it(
-      'should tokenize a split Quadterm start',
+        'should tokenize a split TripleTerm start',
+        shouldTokenize(streamOf('<', '<', '('),
+            { type: '<<(', line: 1 }, { type: 'eof', line: 1 }),
+    );
+
+    it('should tokenize an TripleTerm end', shouldTokenize(')>>',
+        { type: ')>>', line: 1 }, { type: 'eof', line: 1 }));
+
+    it(
+        'should tokenize a split TripleTerm end',
+        shouldTokenize(streamOf(')', '>', '>'),
+            { type: ')>>', line: 1 }, { type: 'eof', line: 1 }),
+    );
+
+    it('should tokenize an empty TripleTerm', shouldTokenize('<<( )>>',
+        { type: '<<(', line: 1 },
+        { type: ')>>', line: 1 },
+        { type: 'eof', line: 1 }));
+
+    it('should tokenize an ReifiedTriple start', shouldTokenize('<<',
+      { type: '<<', line: 1 }, { type: 'eof', line: 1 }));
+
+    it('should not tokenize an ReifiedTriple start in line mode',
+        shouldNotTokenize(new Lexer({ lineMode: true }), '<<',
+            'Unexpected "<<" on line 1.'));
+
+    it(
+      'should tokenize a split ReifiedTriple start',
       shouldTokenize(streamOf('<', '<'),
         { type: '<<', line: 1 }, { type: 'eof', line: 1 }),
     );
 
-    it('should tokenize an Quadterm end', shouldTokenize('>>',
+    it('should tokenize an ReifiedTriple end', shouldTokenize('>>',
       { type: '>>', line: 1 }, { type: 'eof', line: 1 }));
 
-    it('should tokenize an empty Quadterm', shouldTokenize('<< >>',
+    it(
+        'should tokenize a split ReifiedTriple end',
+        shouldTokenize(streamOf('>', '>'),
+            { type: '>>', line: 1 }, { type: 'eof', line: 1 }),
+    );
+
+    it('should tokenize an empty ReifiedTriple', shouldTokenize('<< >>',
       { type: '<<', line: 1 },
       { type: '>>', line: 1 },
       { type: 'eof', line: 1 }));
 
+    it('should tokenize tilde', shouldTokenize('~',
+        { type: '~', line: 1 }, { type: 'eof', line: 1 }));
+
     it(
-      'should tokenize an RDF-star statement with IRIs',
+        'should tokenize an reified triple with simplified IRIs and variable',
+        shouldTokenize('<<<a> <b> <c> ~ ?reifier>> <b> <c>.',
+            { type: '<<', line: 1 },
+            { type: 'IRI', value: 'a', line: 1 },
+            { type: 'IRI', value: 'b', line: 1 },
+            { type: 'IRI', value: 'c', line: 1 },
+            { type: '~', line: 1 },
+            { type: 'var', value: '?reifier', line: 1 },
+            { type: '>>', line: 1 },
+            { type: 'IRI', value: 'b', line: 1 },
+            { type: 'IRI', value: 'c', line: 1 },
+            { type: '.', line: 1 },
+            { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should tokenize an reified triple with IRIs',
       shouldTokenize('<<<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo>>> .',
         { type: '<<', line: 1 },
         { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
@@ -1051,7 +1160,47 @@ describe('Lexer', () => {
         { type: 'eof', line: 3 }),
     );
 
-    it('should tokenize an RDF-star annotated statement',
+    it(
+        'should tokenize an reified triple with IRIs and IRI reifier',
+        shouldTokenize('<<<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo> ~ <http://ex.org/?bla#ba>>> .',
+            { type: '<<', line: 1 },
+            { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
+            { type: 'IRI', value: 'http://ex.org/?bla#bar', line: 2 },
+            { type: 'IRI', value: 'http://ex.org/?bla#boo', line: 3 },
+            { type: '~', line: 3 },
+            { type: 'IRI', value: 'http://ex.org/?bla#ba', line: 3 },
+            { type: '>>', line: 3 },
+            { type: '.', line: 3 },
+            { type: 'eof', line: 3 }),
+    );
+
+    it(
+        'should tokenize an reified triple with IRIs and blank node reifier',
+        shouldTokenize('<<<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo> ~ _:ba>> .',
+            { type: '<<', line: 1 },
+            { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
+            { type: 'IRI', value: 'http://ex.org/?bla#bar', line: 2 },
+            { type: 'IRI', value: 'http://ex.org/?bla#boo', line: 3 },
+            { type: '~', line: 3 },
+            { type: 'blank', prefix: '_', value: 'ba', line: 3 },
+            { type: '>>', line: 3 },
+            { type: '.', line: 3 },
+            { type: 'eof', line: 3 }),
+    );
+
+    it(
+        'should tokenize an triple term with IRIs',
+        shouldTokenize('<<(<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo>)>> .',
+            { type: '<<(', line: 1 },
+            { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
+            { type: 'IRI', value: 'http://ex.org/?bla#bar', line: 2 },
+            { type: 'IRI', value: 'http://ex.org/?bla#boo', line: 3 },
+            { type: ')>>', line: 3 },
+            { type: '.', line: 3 },
+            { type: 'eof', line: 3 }),
+    );
+
+    it('should tokenize an reified annotated statement',
     shouldTokenize('<a> <b> <c> {| <d> <e> |}',
       { type: 'IRI', value: 'a', line: 1 },
       { type: 'IRI', value: 'b', line: 1 },
@@ -1062,7 +1211,7 @@ describe('Lexer', () => {
       { type: '|}', line: 1 },
       { type: 'eof', line: 1 }));
 
-    it('should tokenize an RDF-star annotated statement with multiple annotations',
+    it('should tokenize an reified annotated statement with multiple annotations',
     shouldTokenize('<a> <b> <c> {| <d> <e>; <f> <g> |}',
       { type: 'IRI', value: 'a', line: 1 },
       { type: 'IRI', value: 'b', line: 1 },
@@ -1076,7 +1225,7 @@ describe('Lexer', () => {
       { type: '|}', line: 1 },
       { type: 'eof', line: 1 }));
 
-    it('should tokenize an RDF-star annotated statement with multiple annotations, one containing a blank node',
+    it('should tokenize an reified annotated statement with multiple annotations, one containing a blank node',
     shouldTokenize('<a> <b> <c> {| <d> [ <e> "f" ]; <f> <g> |}',
       { type: 'IRI', value: 'a', line: 1 },
       { type: 'IRI', value: 'b', line: 1 },
@@ -1098,13 +1247,31 @@ describe('Lexer', () => {
       'Unexpected "|" on line 1.'));
 
     it(
-      'should not tokenize a wrongly closed RDF-star statement with IRIs',
+      'should not tokenize a wrongly closed reified triple with IRIs',
       shouldNotTokenize('<<<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo>> .',
         'Unexpected ">" on line 3.'),
     );
 
     it(
-      'should tokenize a split RDF-star statement with IRIs',
+        'should not tokenize a wrongly closed triple term with IRIs',
+        shouldNotTokenize('<<(<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo>)> .',
+            'Unexpected ">" on line 3.'),
+    );
+
+    it(
+        'should tokenize a split reified triple with IRIs',
+        shouldTokenize(streamOf('<', '<(<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo>)>> .'),
+            { type: '<<(', line: 1 },
+            { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
+            { type: 'IRI', value: 'http://ex.org/?bla#bar', line: 2 },
+            { type: 'IRI', value: 'http://ex.org/?bla#boo', line: 3 },
+            { type: ')>>', line: 3 },
+            { type: '.', line: 3 },
+            { type: 'eof', line: 3 }),
+    );
+
+    it(
+      'should tokenize a split triple term with IRIs',
       shouldTokenize(streamOf('<', '<<http://ex.org/?bla#foo> \n\t<http://ex.org/?bla#bar> \n\t<http://ex.org/?bla#boo>>> .'),
         { type: '<<', line: 1 },
         { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
@@ -1116,7 +1283,7 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize an RDF-star statement with string literals',
+      'should tokenize an reified triple with string literals',
       shouldTokenize('<<"string"@en "string"@nl-be "string"@EN>> .',
         { type: '<<', line: 1 },
         { type: 'literal', value: 'string', line: 1 },
@@ -1131,7 +1298,22 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize an RDF-star statement with integers',
+        'should tokenize an triple term with string literals',
+        shouldTokenize('<<("string"@en "string"@nl-be "string"@EN)>> .',
+            { type: '<<(', line: 1 },
+            { type: 'literal', value: 'string', line: 1 },
+            { type: 'langcode', value: 'en', line: 1 },
+            { type: 'literal', value: 'string', line: 1 },
+            { type: 'langcode', value: 'nl-be', line: 1 },
+            { type: 'literal', value: 'string', line: 1 },
+            { type: 'langcode', value: 'EN', line: 1 },
+            { type: ')>>', line: 1 },
+            { type: '.', line: 1 },
+            { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should tokenize an reified triple with integers',
       shouldTokenize('<<1 2 3>>.',
         { type: '<<', line: 1 },
         { type: 'literal', value: '1', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
@@ -1143,7 +1325,19 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize an RDF-star statement with decimals',
+        'should tokenize an triple term with integers',
+        shouldTokenize('<<(1 2 3)>>.',
+            { type: '<<(', line: 1 },
+            { type: 'literal', value: '1', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+            { type: 'literal', value: '2', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+            { type: 'literal', value: '3', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+            { type: ')>>', line: 1 },
+            { type: '.', line: 1 },
+            { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should tokenize an reified triple with decimals',
       shouldTokenize('<<1.2 3.4 5.6>>.',
         { type: '<<', line: 1 },
         { type: 'literal', value: '1.2', prefix: 'http://www.w3.org/2001/XMLSchema#decimal', line: 1 },
@@ -1155,7 +1349,7 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize an RDF-star statement with booleans',
+      'should tokenize an reified triple with booleans',
       shouldTokenize('<<true false true>>.',
         { type: '<<', line: 1 },
         { type: 'literal', value: 'true',  prefix: 'http://www.w3.org/2001/XMLSchema#boolean', line: 1 },
@@ -1167,7 +1361,7 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize a prefixed iri followed by the end of a QuadTerm',
+      'should tokenize a prefixed iri followed by the end of a ReifiedTriple',
       shouldTokenize('c:c>> .',
         { type: 'prefixed', prefix: 'c', value: 'c', line: 1 },
         { type: '>>', line: 1 },
@@ -1176,7 +1370,7 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize an RDF-star statement with prefixed names',
+      'should tokenize a reified triple with prefixed names',
       shouldTokenize('<<a:a b:b c:c>> .',
         { type: '<<', line: 1 },
         { type: 'prefixed', prefix: 'a', value: 'a', line: 1 },
@@ -1188,7 +1382,7 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize an RDF-star statement with blank nodes',
+      'should tokenize a reified triple with blank nodes',
       shouldTokenize('<<_:a _:b _:c>> .',
         { type: '<<', line: 1 },
         { type: 'blank', prefix: '_', value: 'a', line: 1 },
@@ -1200,7 +1394,7 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize an RDF-star statement with variables',
+      'should tokenize a reified triple with variables',
       shouldTokenize('<<?a ?b ?c>> .',
         { type: '<<', line: 1 },
         { type: 'var', value: '?a', line: 1 },
@@ -1212,7 +1406,7 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize an RDF-star statement with mixed types',
+      'should tokenize a reified triple with mixed types',
       shouldTokenize('<<<http://ex.org/?bla#foo> "string"@nl-be c:c>> .',
         { type: '<<', line: 1 },
         { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
@@ -1225,7 +1419,7 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize an RDF-star statement with mixed types',
+      'should tokenize a reified triple with mixed types',
       shouldTokenize('<<_:a a:a "string"@EN>> .',
         { type: '<<', line: 1 },
         { type: 'blank', prefix: '_', value: 'a', line: 1 },
@@ -1238,7 +1432,7 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize an RDF-star statement with mixed types',
+      'should tokenize a reified triple with mixed types',
       shouldTokenize('<<"literal"@AU <http://ex.org/?bla#foo> _:a>> .',
         { type: '<<', line: 1 },
         { type: 'literal', value: 'literal', line: 1 },
@@ -1251,7 +1445,7 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize RDF-star statements with shared subjects',
+      'should tokenize reified triples with shared subjects',
       shouldTokenize('<<<a> <b> <c>;\n<d> <e>>>.',
         { type: '<<', line: 1 },
         { type: 'IRI', value: 'a', line: 1 },
@@ -1266,7 +1460,7 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize RDF-star statements with shared subjects and predicates',
+      'should tokenize reified triples with shared subjects and predicates',
       shouldTokenize('<<<a> <b> <c>,\n<d>>>.',
         { type: '<<', line: 1 },
         { type: 'IRI', value: 'a', line: 1 },
@@ -1280,7 +1474,7 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize an RDF-star statement with shared subjects and predicates and prefixed names',
+      'should tokenize an reified triples with shared subjects and predicates and prefixed names',
       shouldTokenize('<<a:a b:b c:c;d:d e:e,f:f>> .',
         { type: '<<', line: 1 },
         { type: 'prefixed', prefix: 'a', value: 'a', line: 1 },
@@ -1297,7 +1491,7 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize a QuadTerm followed by other tokens',
+      'should tokenize a ReifiedTriple followed by other tokens',
       shouldTokenize('<<_:a <b> "lit"@EN>> _:a b:b.',
         { type: '<<', line: 1 },
         { type: 'blank', prefix: '_', value: 'a', line: 1 },
@@ -1312,7 +1506,7 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize a QuadTerm preceded by other tokens',
+      'should tokenize a ReifiedTriple preceded by other tokens',
       shouldTokenize('"lit"@DE _:b <<_:a b:b "lit"@EN>>.',
         { type: 'literal', value: 'lit', line: 1 },
         { type: 'langcode', value: 'DE', line: 1 },
@@ -1328,7 +1522,7 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize a nested QuadTerm as subject in a statement',
+      'should tokenize a nested ReifiedTriple as subject in a statement',
       shouldTokenize('<<<<_:b <b> "lit"@DE>> <a> "lit"@EN>>.',
         { type: '<<', line: 1 },
         { type: '<<', line: 1 },
@@ -1346,7 +1540,7 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize a nested QuadTerm as object in a statement',
+      'should tokenize a nested ReifiedTriple as object in a statement',
       shouldTokenize('<<a:a _:a <<_:b <b> "lit"@DE>>>>.',
         { type: '<<', line: 1 },
         { type: 'prefixed', prefix: 'a', value: 'a', line: 1 },

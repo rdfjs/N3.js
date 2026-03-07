@@ -173,8 +173,9 @@ export default class N3Writer {
       value = value.replace(escapeAll, characterReplacer);
 
     // Write a language-tagged literal
+    const direction = literal.direction ? `--${literal.direction}` : '';
     if (literal.language)
-      return `"${value}"@${literal.language}`;
+      return `"${value}"@${literal.language}${direction}`;
 
     // Write dedicated literals per data type
     if (this._lineMode) {
@@ -229,11 +230,11 @@ export default class N3Writer {
 
   // ### `_encodeQuad` encodes an RDF-star quad
   _encodeQuad({ subject, predicate, object, graph }) {
-    return `<<${
+    return `<<(${
       this._encodeSubject(subject)} ${
       this._encodePredicate(predicate)} ${
       this._encodeObject(object)}${
-      isDefaultGraph(graph) ? '' : ` ${this._encodeIriOrBlank(graph)}`}>>`;
+      isDefaultGraph(graph) ? '' : ` ${this._encodeIriOrBlank(graph)}`})>>`;
   }
 
   // ### `_blockedWrite` replaces `_write` after the writer has been closed

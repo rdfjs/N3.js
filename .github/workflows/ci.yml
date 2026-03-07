@@ -1,6 +1,10 @@
 name: CI
 
-on: [push]
+on:
+  push:
+    branches:
+    - main
+  pull_request:
 
 jobs:
   test:
@@ -8,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [14.x, 16.x, 18.x, 20.x, 22.x]
+        node-version: [14.x, 16.x, 18.x, 20.x, 22.x, 24.x]
     steps:
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
@@ -18,13 +22,13 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run build
       - run: npm run test
-  
+
   lint:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        node-version: [22.x]
+        node-version: [24.x]
     steps:
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
@@ -34,13 +38,14 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run build
       - run: npm run lint
-    
+
   spec:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        node-version: [12.x, 14.x, 16.x, 18.x, 20.x, 22.x]
+        node-version: [12.x, 14.x, 16.x, 18.x, 20.x, 22.x, 24.x]
+        spec: [1-1-turtle, 1-1-ntriples, 1-1-nquads, 1-1-trig, 1-2-turtle, 1-2-ntriples, 1-2-nquads, 1-2-trig]
     steps:
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
@@ -48,10 +53,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - uses: actions/checkout@v6
       - run: npm ci
-      - run: npm run spec-turtle
-      - run: npm run spec-ntriples
-      - run: npm run spec-nquads
-      - run: npm run spec-trig
+      - run: npm run spec-${{ matrix.spec }}
 
   docs:
     runs-on: ubuntu-latest
@@ -59,7 +61,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
-          node-version: 14.x
+          node-version: 24.x
       - run: npm ci --ignore-scripts
       - run: npm run docs
       - uses: actions/upload-artifact@v4
@@ -96,15 +98,15 @@ jobs:
       packages: write
       issues: write
       pull-requests: write
+      id-token: write
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
-          node-version: 22.x
+          node-version: 24.x
       - run: npm ci
       - run: npm run build
       - name: Release
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
-        run: npx semantic-release@22
+        run: npx semantic-release@25
