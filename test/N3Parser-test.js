@@ -170,10 +170,17 @@ describe('Parser', () => {
             }),
     );
 
+    const validLanguageTags = ['en', 'en-US', 'be-tarask'];
+    it.each(validLanguageTags)(
+      'should parse a triple with a valid language tag (%s)', (tag, done) => {
+        return shouldParse(`<a> <b> "Hello"@${tag}.`,
+          ['a', 'b', `"Hello"@${tag}`])(done);
+      });
+
     it(
-        'should error on a triple with a literal with language tag of length > 8',
-        shouldNotParse('<a> <b> "Hello"@cantbethislong.',
-            'Detected language tag of length larger than 8 on line 1.', {
+      'should error on a triple where a literal has a language subtag longer than 8 characters (single subtag)',
+      shouldNotParse('<a> <b> "Hello"@cantbethislong.',
+            'Detected language tag with subtag longer than 8 characters on line 1.', {
               line: 1,
               previousToken: {
                 line: 1,
@@ -3128,7 +3135,7 @@ describe('Parser', () => {
         @prefix : <http://example.com/> .
         [ :friend [
             :name "Thomas" ;
-            ] 
+            ]
         ] .
       `);
 
