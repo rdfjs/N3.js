@@ -72,7 +72,7 @@ jobs:
             docs
           retention-days: 1
 
-  CI:
+  summary:
     # Summary job that can be used as a single required check in branch protection
     if: always()
     needs:
