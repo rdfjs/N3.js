@@ -18,7 +18,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: npm ci --ignore-scripts
       - run: npm run build
       - run: npm run test
@@ -34,7 +34,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: npm ci --ignore-scripts
       - run: npm run build
       - run: npm run lint
@@ -51,14 +51,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: npm ci
       - run: npm run spec-${{ matrix.spec }}
 
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 24.x
@@ -116,7 +116,7 @@ jobs:
       pull-requests: write
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 24.x
