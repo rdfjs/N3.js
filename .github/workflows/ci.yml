@@ -15,7 +15,7 @@ jobs:
         node-version: [14.x, 16.x, 18.x, 20.x, 22.x, 24.x]
     steps:
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
       - uses: actions/checkout@v6
@@ -31,7 +31,7 @@ jobs:
         node-version: [24.x]
     steps:
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
       - uses: actions/checkout@v6
@@ -48,7 +48,7 @@ jobs:
         spec: [1-1-turtle, 1-1-ntriples, 1-1-nquads, 1-1-trig, 1-2-turtle, 1-2-ntriples, 1-2-nquads, 1-2-trig]
     steps:
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
       - uses: actions/checkout@v6
@@ -59,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 24.x
       - run: npm ci --ignore-scripts
@@ -117,7 +117,7 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 24.x
       - run: npm ci
