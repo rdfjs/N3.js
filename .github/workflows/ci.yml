@@ -64,7 +64,7 @@ jobs:
           node-version: 24.x
       - run: npm ci --ignore-scripts
       - run: npm run docs
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: docs
           path: |
