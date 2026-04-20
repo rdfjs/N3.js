@@ -37,6 +37,9 @@ export default class N3Writer {
       options = outputStream, outputStream = null;
     options = options || {};
     this._lists = options.lists;
+    this._keepGraphs = !options.graphs || options.graphs === 'keep';
+    this._errorOnGraphs = options.graphs === 'error';
+
 
     // If no output stream given, send the output as string through the end callback
     if (!outputStream) {
@@ -84,8 +87,11 @@ export default class N3Writer {
   // ### `_writeQuad` writes the quad to the output stream
   _writeQuad(subject, predicate, object, graph, done) {
     try {
+      if (this._errorOnGraphs && !DEFAULTGRAPH.equals(graph)) {
+        done(new Error('The chosen serialization settings do not support triples in a non-default graph.'));
+      }
       // Write the graph's label if it has changed
-      if (!graph.equals(this._graph)) {
+      if (this._keepGraphs && !graph.equals(this._graph)) {
         // Close the previous graph and start the new one
         this._write((this._subject === null ? '' : (this._inDefaultGraph ? '.\n' : '\n}\n')) +
                     (DEFAULTGRAPH.equals(graph) ? '' : `${this._encodeIriOrBlank(graph)} {\n`));
@@ -117,15 +123,20 @@ export default class N3Writer {
   _writeQuadLine(subject, predicate, object, graph, done) {
     // Write the quad without prefixes
     delete this._prefixMatch;
-    this._write(this.quadToString(subject, predicate, object, graph), done);
+    this._write(this.quadToString(subject, predicate, object, graph, done), done);
   }
 
   // ### `quadToString` serializes a quad as a string
-  quadToString(subject, predicate, object, graph) {
+  quadToString(subject, predicate, object, graph, done) {
+    if (this._errorOnGraphs && !DEFAULTGRAPH.equals(graph)) {
+      const error = new Error('The chosen serialization settings do not support triples in a non-default graph.');
+      if (done) return done(error);
+      throw error;
+    }
     return  `${this._encodeSubject(subject)} ${
             this._encodeIriOrBlank(predicate)} ${
             this._encodeObject(object)
-            }${graph && graph.value ? ` ${this._encodeIriOrBlank(graph)} .\n` : ' .\n'}`;
+          }${this._keepGraphs && graph && graph.value ? ` ${this._encodeIriOrBlank(graph)} .\n` : ' .\n'}`;
   }
 
   // ### `quadsToString` serializes an array of quads as a string
