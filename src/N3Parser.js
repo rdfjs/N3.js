@@ -819,8 +819,10 @@ export default class N3Parser {
     if ((token.end - token.start) !== token.value.length + 2)
       return this._error('Version declarations must use single quotes', token);
     this._versionCallback(token.value);
-    if (/-messages$/.test(token.value))
+    if (/-messages$/.test(token.value) && !this._messageMode) {
       this._messageMode = true;
+      this._resetMessageBlankNodePrefix();
+    }
     if (!this._isValidVersion(token.value))
       return this._error(`Detected unsupported version: "${token.value}"`, token);
     return this._readDeclarationPunctuation;
@@ -1123,7 +1125,13 @@ export default class N3Parser {
       this._messageOpen = false;
     }
     if (this._messageMode)
-      this._prefixes._ = `b${blankNodePrefix++}_`;
+      this._resetMessageBlankNodePrefix();
+  }
+
+  // ### `_resetMessageBlankNodePrefix` scopes blank node labels to the current RDF message
+  _resetMessageBlankNodePrefix() {
+    const prefix = this._blankNodePrefix ? this._blankNodePrefix.substr(2) : 'b';
+    this._prefixes._ = `${prefix}${blankNodePrefix++}_`;
   }
 
   // ### `_error` emits an error message through the callback
@@ -1254,8 +1262,11 @@ export default class N3Parser {
     this._readCallback = this._readBeforeTopContext;
     this._sparqlStyle = false;
     this._prefixes = Object.create(null);
-    this._prefixes._ = this._blankNodePrefix ? this._blankNodePrefix.substr(2)
-                                             : `b${blankNodePrefix++}_`;
+    if (this._messageMode)
+      this._resetMessageBlankNodePrefix();
+    else
+      this._prefixes._ = this._blankNodePrefix ? this._blankNodePrefix.substr(2)
+                                               : `b${blankNodePrefix++}_`;
     this._prefixCallback = onPrefix || noop;
     this._versionCallback = onVersion || noop;
     this._messageCallback = onMessage || noop;

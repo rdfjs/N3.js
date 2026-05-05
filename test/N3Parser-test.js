@@ -1129,6 +1129,8 @@ describe('Parser', () => {
             expect(error).toBeFalsy();
             if (quad) return;
             expect(messages).toHaveLength(2);
+            expect(messages[0][0].subject.value).toMatch(/^fixed/);
+            expect(messages[1][0].subject.value).toMatch(/^fixed/);
             expect(messages[0][0].subject.value).not.toBe(messages[1][0].subject.value);
             done();
           },
