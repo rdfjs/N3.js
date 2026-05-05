@@ -278,7 +278,7 @@ export default class N3Writer {
       this._write(this._inDefaultGraph ? '.\n' : '\n}\n');
       this._subject = null;
     }
-    this._write(this._lineMode ? 'MESSAGE\n' : '@message .\n');
+    this._write('@message .\n');
   }
 
   // ### `addPrefix` adds the prefix to the output stream

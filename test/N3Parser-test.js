@@ -1054,6 +1054,33 @@ describe('Parser', () => {
       );
     });
 
+    it('should parse RDF messages with default graph and named graph quads', done => {
+      const messages = [];
+      new Parser({ messages: true, baseIRI: BASE_IRI }).parse(
+        'PREFIX ex: <http://example.org/>\n' +
+        'ex:s1 ex:p ex:o1.\n' +
+        'ex:g { ex:s2 ex:p ex:o2. ex:s3 ex:p ex:o3. }\n' +
+        '@message .\n' +
+        'ex:s4 ex:p ex:o4.',
+        {
+          onQuad: (error, quad) => {
+            expect(error).toBeFalsy();
+            if (quad) return;
+            expect(messages.map(message => toSortedJSON(message))).toEqual([
+              toSortedJSON([
+                mapToQuad(['s1', 'p', 'o1']),
+                mapToQuad(['s2', 'p', 'o2', 'g']),
+                mapToQuad(['s3', 'p', 'o3', 'g']),
+              ]),
+              toSortedJSON([mapToQuad(['s4', 'p', 'o4'])]),
+            ]);
+            done();
+          },
+          onMessage: message => { messages.push(message); },
+        },
+      );
+    });
+
     it('should scope blank node labels to RDF messages', done => {
       const messages = [];
       new Parser({ messages: true }).parse(

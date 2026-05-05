@@ -226,7 +226,7 @@ streamParser.on('message', quads => { console.log('message', quads); });
 ```
 
 To serialize messages, call `addMessage` with the quads of one message.
-For Turtle and TriG, N3.js writes the old-style `@message .` delimiter; for N-Triples and N-Quads, it writes `MESSAGE`.
+N3.js always writes the Turtle-style `@message .` delimiter for message boundaries.
 
 ```JavaScript
 const writer = new N3.Writer({ prefixes: { ex: 'http://example.org/' } });
