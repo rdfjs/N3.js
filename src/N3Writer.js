@@ -54,6 +54,7 @@ export default class N3Writer {
 
     // Initialize writer, depending on the format
     this._subject = null;
+    this._messageStarted = false;
     if (!(/triple|quad/i).test(options.format)) {
       this._lineMode = false;
       this._graph = DEFAULTGRAPH;
@@ -259,6 +260,25 @@ export default class N3Writer {
   addQuads(quads) {
     for (let i = 0; i < quads.length; i++)
       this.addQuad(quads[i]);
+  }
+
+  // ### `addMessage` adds the quads of an RDF message to the output stream
+  addMessage(quads, done) {
+    if (this._messageStarted)
+      this._writeMessageDelimiter();
+    else
+      this._messageStarted = true;
+    this.addQuads(quads || []);
+    done && done();
+  }
+
+  // ### `_writeMessageDelimiter` starts the next RDF message
+  _writeMessageDelimiter() {
+    if (this._subject !== null) {
+      this._write(this._inDefaultGraph ? '.\n' : '\n}\n');
+      this._subject = null;
+    }
+    this._write(this._lineMode ? 'MESSAGE\n' : '@message .\n');
   }
 
   // ### `addPrefix` adds the prefix to the output stream

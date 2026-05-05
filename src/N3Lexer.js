@@ -26,6 +26,7 @@ const lineModeRegExps = {
   _comment: true,
   _whitespace: true,
   _endOfFile: true,
+  _keyword: true,
 };
 const invalidRegExp = /$0^/;
 
@@ -47,7 +48,7 @@ export default class N3Lexer {
     this._number = /^[\-+]?(?:(\d+\.\d*|\.?\d+)[eE][\-+]?|\d*(\.)?)\d+(?=\.?[,;:\s#()\[\]\{\}"'<>])/;
     this._boolean = /^(?:true|false)(?=[.,;\s#()\[\]\{\}"'<>])/;
     this._atKeyword = /^@[a-z]+(?=[\s#<:])/i;
-    this._keyword = /^(?:PREFIX|BASE|VERSION|GRAPH)(?=[\s#<])/i;
+    this._keyword = /^(?:PREFIX|BASE|VERSION|GRAPH|MESSAGE)(?=$|[\s#<])/i;
     this._shortPredicates = /^a(?=[\s#()\[\]\{\}"'<>])/;
     this._newline = /^[ \t]*(?:#[^\n\r]*)?(?:\r\n|\n|\r)[ \t]*/;
     this._comment = /#([^\n\r]*)/;
@@ -277,6 +278,8 @@ export default class N3Lexer {
       case 'g':
       case 'V':
       case 'v':
+      case 'M':
+      case 'm':
         // Try to find a SPARQL-style keyword
         if (match = this._keyword.exec(input))
           type = match[0].toUpperCase();
