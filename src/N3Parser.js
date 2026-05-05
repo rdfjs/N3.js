@@ -1122,7 +1122,7 @@ export default class N3Parser {
       this._messageQuads = [];
       this._messageOpen = false;
     }
-    if (this._messageMode && !this._blankNodePrefix)
+    if (this._messageMode)
       this._prefixes._ = `b${blankNodePrefix++}_`;
   }
 

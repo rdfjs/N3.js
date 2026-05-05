@@ -1118,6 +1118,25 @@ describe('Parser', () => {
       );
     });
 
+    it('should scope blank node labels to RDF messages with a configured blank node prefix', done => {
+      const messages = [];
+      new Parser({ messages: true, blankNodePrefix: '_:fixed' }).parse(
+        '_:b0 <http://example.org/p> <http://example.org/o1>.\n' +
+        '@message .\n' +
+        '_:b0 <http://example.org/p> <http://example.org/o2>.',
+        {
+          onQuad: (error, quad) => {
+            expect(error).toBeFalsy();
+            if (quad) return;
+            expect(messages).toHaveLength(2);
+            expect(messages[0][0].subject.value).not.toBe(messages[1][0].subject.value);
+            done();
+          },
+          onMessage: message => { messages.push(message); },
+        },
+      );
+    });
+
     it(
         'should not handle RDF message delimiters outside message mode',
         shouldNotParse('MESSAGE',

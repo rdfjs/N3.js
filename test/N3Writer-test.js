@@ -56,6 +56,24 @@ describe('Writer', () => {
       });
     });
 
+    it('should callback after flushing an RDF message', done => {
+      let flushed = false;
+      const outputStream = {
+            write(chunk, encoding, callback) {
+              setImmediate(() => {
+                flushed = true;
+                callback && callback();
+              });
+            },
+          },
+          writer = new Writer(outputStream, { end: false });
+      writer.addMessage([new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))], error => {
+        expect(error).toBeFalsy();
+        expect(flushed).toBe(true);
+        done();
+      });
+    });
+
     it('should callback after adding an empty RDF message', done => {
       const writer = new Writer();
       writer.addMessage(undefined, error => {
@@ -70,12 +88,48 @@ describe('Writer', () => {
 
     it('should close a named graph before serializing an RDF message delimiter', done => {
       const writer = new Writer();
-      writer.addMessage([new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g'))]);
-      writer.addMessage([new Quad(new NamedNode('d'), new NamedNode('e'), new NamedNode('f'))]);
-      writer.end((error, output) => {
+      writer.addMessage([new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g'))], error => {
         expect(error).toBeFalsy();
-        expect(output).toBe('<g> {\n<a> <b> <c>\n}\n@message .\n<d> <e> <f>.\n');
-        done();
+        writer.addMessage([new Quad(new NamedNode('d'), new NamedNode('e'), new NamedNode('f'))], error => {
+          expect(error).toBeFalsy();
+          writer.end((error, output) => {
+            expect(error).toBeFalsy();
+            expect(output).toBe('<g> {\n<a> <b> <c>\n}\n@message .\n<d> <e> <f>.\n');
+            done();
+          });
+        });
+      });
+    });
+
+    it('should reopen a named graph after serializing an RDF message delimiter', done => {
+      const writer = new Writer();
+      writer.addMessage([new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g'))], error => {
+        expect(error).toBeFalsy();
+        writer.addMessage([new Quad(new NamedNode('d'), new NamedNode('e'), new NamedNode('f'), new NamedNode('g'))], error => {
+          expect(error).toBeFalsy();
+          writer.end((error, output) => {
+            expect(error).toBeFalsy();
+            expect(output).toBe('<g> {\n<a> <b> <c>\n}\n@message .\n<g> {\n<d> <e> <f>\n}\n');
+            done();
+          });
+        });
+      });
+    });
+
+    it('should callback with errors when closing a graph before an RDF message delimiter fails', done => {
+      const expectedError = new Error('close failed'),
+          outputStream = {
+            write(chunk, encoding, callback) {
+              callback && callback(chunk === '\n}\n' ? expectedError : undefined);
+            },
+          },
+          writer = new Writer(outputStream, { end: false });
+      writer.addMessage([new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g'))], error => {
+        expect(error).toBeFalsy();
+        writer.addMessage([], error => {
+          expect(error).toBe(expectedError);
+          done();
+        });
       });
     });
 

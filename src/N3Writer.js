@@ -264,21 +264,36 @@ export default class N3Writer {
 
   // ### `addMessage` adds the quads of an RDF message to the output stream
   addMessage(quads, done) {
+    quads = quads || [];
+    let index = 0;
+    const writeNextQuad = error => {
+      if (error || index === quads.length)
+        return done && done(error);
+      this.addQuad(quads[index++], writeNextQuad);
+    };
     if (this._messageStarted)
-      this._writeMessageDelimiter();
-    else
+      this._writeMessageDelimiter(writeNextQuad);
+    else {
       this._messageStarted = true;
-    this.addQuads(quads || []);
-    done && done();
+      writeNextQuad();
+    }
   }
 
   // ### `_writeMessageDelimiter` starts the next RDF message
-  _writeMessageDelimiter() {
+  _writeMessageDelimiter(done) {
+    const writeDelimiter = error => {
+      if (error)
+        return done && done(error);
+      this._write('@message .\n', done);
+    };
     if (this._subject !== null) {
-      this._write(this._inDefaultGraph ? '.\n' : '\n}\n');
+      const closeGraph = this._inDefaultGraph ? '.\n' : '\n}\n';
       this._subject = null;
+      this._graph = null;
+      this._write(closeGraph, writeDelimiter);
     }
-    this._write('@message .\n');
+    else
+      writeDelimiter();
   }
 
   // ### `addPrefix` adds the prefix to the output stream
