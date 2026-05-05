@@ -1160,6 +1160,17 @@ describe('Parser', () => {
     );
 
     it(
+        'should not handle RDF message delimiters inside an open graph',
+        shouldNotParse('VERSION "1.2-messages"\n' +
+            '<g> {\n' +
+            '   <a> <b> <c> .\n' +
+            '@message\n' +
+            '   <d> <e> <f> .\n' +
+            '}',
+        'Expected dot to follow @message on line 5.'),
+    );
+
+    it(
         'should not allow unsupported versions passed through the constructor',
         () => {
           expect((() => { new Parser({ version: '1.2-unknown' }).parse('<a> <b> <c>'); }))
