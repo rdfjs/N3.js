@@ -35,7 +35,8 @@ export default class N3Parser {
     this._blankNodePrefix = typeof options.blankNodePrefix !== 'string' ? '' :
                               options.blankNodePrefix.replace(/^(?!_:)/, '_:');
     this._lexer = options.lexer || new N3Lexer({ lineMode: isLineMode, n3: isN3, isImpliedBy: this._isImpliedBy });
-    this._messageMode = !!options.messages || /-messages$/.test(options.version || '');
+    this._defaultMessageMode = !!options.messages || /-messages$/.test(options.version || '');
+    this._messageMode = this._defaultMessageMode;
     // Disable explicit quantifiers by default
     this._explicitQuantifiers = !!options.explicitQuantifiers;
     // Disable parsing of unsupported versions by default
@@ -1241,6 +1242,7 @@ export default class N3Parser {
 
   // ### `parse` parses the N3 input and emits each parsed quad through the onQuad callback.
   parse(input, quadCallback, prefixCallback, versionCallback) {
+    this._messageMode = this._defaultMessageMode;
     // The second parameter accepts an object { onQuad: ..., onPrefix: ..., onComment: ..., onMessage: ...}
     // As a second and third parameter it still accepts a separate quadCallback and prefixCallback for backward compatibility as well
     let onQuad, onPrefix, onComment, onVersion, onMessage;
