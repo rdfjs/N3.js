@@ -198,6 +198,47 @@ function SlowConsumer() {
 A dedicated `prefix` event signals every prefix with `prefix` and `term` arguments.
 A dedicated `comment` event can be enabled by setting `comments: true` in the N3.StreamParser constructor.
 
+### RDF Messages
+
+N3.js can parse and write [RDF Message Logs](https://w3c-cg.github.io/rsp/spec/messages) for Turtle, TriG, N-Triples, and N-Quads.
+Enable message parsing with `messages: true`, or use a `-messages` version label such as `VERSION "1.2-messages"`.
+The parser still emits every quad through `onQuad`, and additionally calls `onMessage` with the quads of each completed message.
+
+```JavaScript
+const messageLog = `VERSION "1.2-messages"
+PREFIX ex: <http://example.org/>
+ex:message1 ex:text "Hello" .
+@message .
+ex:message2 ex:text "Goodbye" .`;
+
+const parser = new N3.Parser();
+parser.parse(messageLog, {
+  onQuad: (error, quad) => { if (quad) console.log('quad', quad); },
+  onMessage: quads => { console.log('message with', quads.length, 'quads'); },
+});
+```
+
+`N3.StreamParser` emits a `message` event for the same purpose:
+
+```JavaScript
+const streamParser = new N3.StreamParser({ messages: true });
+streamParser.on('message', quads => { console.log('message', quads); });
+```
+
+To serialize messages, call `addMessage` with the quads of one message.
+N3.js always writes the Turtle-style `@message .` delimiter for message boundaries.
+
+```JavaScript
+const writer = new N3.Writer({ prefixes: { ex: 'http://example.org/' } });
+writer.addMessage([
+  quad(namedNode('http://example.org/radio1'), namedNode('http://example.org/plays'), literal('Never Gonna Give You Up')),
+]);
+writer.addMessage([
+  quad(namedNode('http://example.org/radio1'), namedNode('http://example.org/plays'), literal('My Way')),
+]);
+writer.end((error, result) => { console.log(result); });
+```
+
 ## Writing
 
 ### From quads to a string

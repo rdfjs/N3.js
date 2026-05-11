@@ -44,6 +44,118 @@ describe('Writer', () => {
       expect(writer.quadsToString(triples)).toBe('<a> <b> <c> .\n<d> <e> <f> .\n');
     });
 
+    it('should serialize RDF messages with @message delimiters', done => {
+      const writer = new Writer();
+      writer.addMessage([new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))]);
+      writer.addMessage([]);
+      writer.addMessage([new Quad(new NamedNode('d'), new NamedNode('e'), new NamedNode('f'))]);
+      writer.end((error, output) => {
+        expect(error).toBeFalsy();
+        expect(output).toBe('<a> <b> <c>.\n@message .\n@message .\n<d> <e> <f>.\n');
+        done();
+      });
+    });
+
+    it('should callback after flushing an RDF message', done => {
+      let flushed = false;
+      const outputStream = {
+            write(chunk, encoding, callback) {
+              setImmediate(() => {
+                flushed = true;
+                callback && callback();
+              });
+            },
+          },
+          writer = new Writer(outputStream, { end: false });
+      writer.addMessage([new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))], error => {
+        expect(error).toBeFalsy();
+        expect(flushed).toBe(true);
+        done();
+      });
+    });
+
+    it('should callback after adding an empty RDF message', done => {
+      const writer = new Writer();
+      writer.addMessage(undefined, error => {
+        expect(error).toBeFalsy();
+        writer.end((endError, output) => {
+          expect(endError).toBeFalsy();
+          expect(output).toBe('');
+          done();
+        });
+      });
+    });
+
+    it('should close a named graph before serializing an RDF message delimiter', done => {
+      const writer = new Writer();
+      writer.addMessage([new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g'))], error => {
+        expect(error).toBeFalsy();
+        writer.addMessage([new Quad(new NamedNode('d'), new NamedNode('e'), new NamedNode('f'))], error => {
+          expect(error).toBeFalsy();
+          writer.end((error, output) => {
+            expect(error).toBeFalsy();
+            expect(output).toBe('<g> {\n<a> <b> <c>\n}\n@message .\n<d> <e> <f>.\n');
+            done();
+          });
+        });
+      });
+    });
+
+    it('should reopen a named graph after serializing an RDF message delimiter', done => {
+      const writer = new Writer();
+      writer.addMessage([new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g'))], error => {
+        expect(error).toBeFalsy();
+        writer.addMessage([new Quad(new NamedNode('d'), new NamedNode('e'), new NamedNode('f'), new NamedNode('g'))], error => {
+          expect(error).toBeFalsy();
+          writer.end((error, output) => {
+            expect(error).toBeFalsy();
+            expect(output).toBe('<g> {\n<a> <b> <c>\n}\n@message .\n<g> {\n<d> <e> <f>\n}\n');
+            done();
+          });
+        });
+      });
+    });
+
+    it('should callback with errors when closing a graph before an RDF message delimiter fails', done => {
+      const expectedError = new Error('close failed'),
+          outputStream = {
+            write(chunk, encoding, callback) {
+              callback && callback(chunk === '\n}\n' ? expectedError : undefined);
+            },
+          },
+          writer = new Writer(outputStream, { end: false });
+      writer.addMessage([new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g'))], error => {
+        expect(error).toBeFalsy();
+        writer.addMessage([], error => {
+          expect(error).toBe(expectedError);
+          done();
+        });
+      });
+    });
+
+    it('should serialize N-Triples RDF messages with @message delimiters', done => {
+      const writer = new Writer({ format: 'N-Triples' });
+      writer.addMessage([new Quad(new NamedNode('http://a'), new NamedNode('http://b'), new NamedNode('http://c'))]);
+      writer.addMessage([new Quad(new NamedNode('http://d'), new NamedNode('http://e'), new NamedNode('http://f'))]);
+      writer.end((error, output) => {
+        expect(error).toBeFalsy();
+        expect(output).toBe('<http://a> <http://b> <http://c> .\n@message .\n' +
+                            '<http://d> <http://e> <http://f> .\n');
+        done();
+      });
+    });
+
+    it('should serialize N-Quads RDF messages with @message delimiters', done => {
+      const writer = new Writer({ format: 'N-Quads' });
+      writer.addMessage([new Quad(new NamedNode('http://a'), new NamedNode('http://b'), new NamedNode('http://c'), new NamedNode('http://g'))]);
+      writer.addMessage([new Quad(new NamedNode('http://d'), new NamedNode('http://e'), new NamedNode('http://f'), new NamedNode('http://h'))]);
+      writer.end((error, output) => {
+        expect(error).toBeFalsy();
+        expect(output).toBe('<http://a> <http://b> <http://c> <http://g> .\n@message .\n' +
+                            '<http://d> <http://e> <http://f> <http://h> .\n');
+        done();
+      });
+    });
 
     it('should serialize 0 triples', shouldSerialize(''));
 

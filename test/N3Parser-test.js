@@ -923,6 +923,13 @@ describe('Parser', () => {
     );
 
     it(
+        'should handle RDF Messages VERSION labels',
+        shouldParse('VERSION "1.2-messages"\n' +
+            '<ex:a> <ex:b> <ex:c> .',
+            ['ex:a', 'ex:b', 'ex:c']),
+    );
+
+    it(
         'should handle @version',
         shouldParse('@version "1.2".'),
     );
@@ -971,6 +978,196 @@ describe('Parser', () => {
     it(
         'should handle unsupported VERSIONs when parseUnsupportedVersions is true',
         shouldParse(lenientParser, 'VERSION "1.2-unknown"'),
+    );
+
+    it('should parse RDF messages as a regular quad stream', shouldParse(class MessageParser extends Parser {
+      constructor() { super({ messages: true, baseIRI: BASE_IRI }); }
+    },
+                '<a> <b> <c>.\n@message .\n<d> <e> <f>.',
+                ['a', 'b', 'c'],
+                ['d', 'e', 'f']));
+
+    it('should parse SPARQL-style RDF message delimiters', shouldParse(class MessageParser extends Parser {
+      constructor() { super({ messages: true, baseIRI: BASE_IRI }); }
+    },
+                '<a> <b> <c>.\nMESSAGE\n<d> <e> <f>.',
+                ['a', 'b', 'c'],
+                ['d', 'e', 'f']));
+
+    it('should callback RDF messages at delimiters and EOF', done => {
+      const messages = [];
+      new Parser({ messages: true, baseIRI: BASE_IRI }).parse(
+        '@message .\n<a> <b> <c>.\n@message .\n@message .\n<d> <e> <f>.',
+        {
+          onQuad: (error, quad) => {
+            expect(error).toBeFalsy();
+            if (quad) return;
+            expect(messages.map(message => toSortedJSON(message))).toEqual([
+              toSortedJSON([]),
+              toSortedJSON([mapToQuad(['a', 'b', 'c'])]),
+              toSortedJSON([]),
+              toSortedJSON([mapToQuad(['d', 'e', 'f'])]),
+            ]);
+            done();
+          },
+          onMessage: message => { messages.push(message); },
+        },
+      );
+    });
+
+    it('should infer RDF message mode from a version declaration', done => {
+      const messages = [];
+      new Parser({ baseIRI: BASE_IRI }).parse(
+        'VERSION "1.2-messages"\n<a> <b> <c>.\nMESSAGE\n<d> <e> <f>.',
+        {
+          onQuad: (error, quad) => {
+            expect(error).toBeFalsy();
+            if (quad) return;
+            expect(messages.map(message => toSortedJSON(message))).toEqual([
+              toSortedJSON([mapToQuad(['a', 'b', 'c'])]),
+              toSortedJSON([mapToQuad(['d', 'e', 'f'])]),
+            ]);
+            done();
+          },
+          onMessage: message => { messages.push(message); },
+        },
+      );
+    });
+
+    it('should parse N-Quads RDF message delimiters', done => {
+      const messages = [];
+      new Parser({ format: 'N-Quads', version: '1.2-messages' }).parse(
+        '<http://a> <http://b> <http://c> <http://g> .\nMESSAGE\n' +
+        '<http://d> <http://e> <http://f> <http://h> .',
+        {
+          onQuad: (error, quad) => {
+            expect(error).toBeFalsy();
+            if (quad) return;
+            expect(messages.map(message => toSortedJSON(message))).toEqual([
+              toSortedJSON([mapToQuad(['http://a', 'http://b', 'http://c', 'http://g'])]),
+              toSortedJSON([mapToQuad(['http://d', 'http://e', 'http://f', 'http://h'])]),
+            ]);
+            done();
+          },
+          onMessage: message => { messages.push(message); },
+        },
+      );
+    });
+
+    it('should parse RDF messages with default graph and named graph quads', done => {
+      const messages = [];
+      new Parser({ messages: true, baseIRI: BASE_IRI }).parse(
+        'PREFIX ex: <http://example.org/>\n' +
+        'ex:s1 ex:p ex:o1.\n' +
+        'ex:g { ex:s2 ex:p ex:o2. ex:s3 ex:p ex:o3. }\n' +
+        '@message .\n' +
+        'ex:s4 ex:p ex:o4.',
+        {
+          onQuad: (error, quad) => {
+            expect(error).toBeFalsy();
+            if (quad) return;
+            expect(messages.map(message => toSortedJSON(message))).toEqual([
+              toSortedJSON([
+                mapToQuad(['s1', 'p', 'o1']),
+                mapToQuad(['s2', 'p', 'o2', 'g']),
+                mapToQuad(['s3', 'p', 'o3', 'g']),
+              ]),
+              toSortedJSON([mapToQuad(['s4', 'p', 'o4'])]),
+            ]);
+            done();
+          },
+          onMessage: message => { messages.push(message); },
+        },
+      );
+    });
+
+    it('should scope blank node labels to RDF messages', done => {
+      const messages = [];
+      new Parser({ messages: true }).parse(
+        '_:x <b> <c>.\nMESSAGE\n_:x <b> <d>.',
+        {
+          onQuad: (error, quad) => {
+            expect(error).toBeFalsy();
+            if (quad) return;
+            expect(messages[0][0].subject.equals(messages[1][0].subject)).toBe(false);
+            done();
+          },
+          onMessage: message => { messages.push(message); },
+        },
+      );
+    });
+
+    it('should scope the same blank node label in one string to different RDF messages', done => {
+      const messages = [];
+      new Parser({ messages: true }).parse(
+        '_:b0 <http://example.org/p> <http://example.org/o1>.\n' +
+        '@message .\n' +
+        '_:b0 <http://example.org/p> <http://example.org/o2>.',
+        {
+          onQuad: (error, quad) => {
+            expect(error).toBeFalsy();
+            if (quad) return;
+            expect(messages).toHaveLength(2);
+            expect(messages[0][0].subject.termType).toBe('BlankNode');
+            expect(messages[1][0].subject.termType).toBe('BlankNode');
+            expect(messages[0][0].subject.value).not.toBe(messages[1][0].subject.value);
+            done();
+          },
+          onMessage: message => { messages.push(message); },
+        },
+      );
+    });
+
+    it('should scope blank node labels to RDF messages with a configured blank node prefix', done => {
+      const messages = [];
+      new Parser({ messages: true, blankNodePrefix: '_:fixed' }).parse(
+        '_:b0 <http://example.org/p> <http://example.org/o1>.\n' +
+        '@message .\n' +
+        '_:b0 <http://example.org/p> <http://example.org/o2>.',
+        {
+          onQuad: (error, quad) => {
+            expect(error).toBeFalsy();
+            if (quad) return;
+            expect(messages).toHaveLength(2);
+            expect(messages[0][0].subject.value).toMatch(/^fixed/);
+            expect(messages[1][0].subject.value).toMatch(/^fixed/);
+            expect(messages[0][0].subject.value).not.toBe(messages[1][0].subject.value);
+            done();
+          },
+          onMessage: message => { messages.push(message); },
+        },
+      );
+    });
+
+    it(
+        'should not handle RDF message delimiters outside message mode',
+        shouldNotParse('MESSAGE',
+            'Unexpected MESSAGE on line 1.'),
+    );
+
+    it(
+        'should not handle old-style RDF message delimiters outside message mode',
+        shouldNotParse('@message .',
+            'Unexpected @message on line 1.'),
+    );
+
+    it(
+        'should not handle old-style RDF message delimiters without a dot',
+        shouldNotParse(class MessageParser extends Parser {
+          constructor() { super({ messages: true }); }
+        }, '@message <a>',
+            'Expected dot to follow @message on line 1.'),
+    );
+
+    it(
+        'should not handle RDF message delimiters inside an open graph',
+        shouldNotParse('VERSION "1.2-messages"\n' +
+            '<g> {\n' +
+            '   <a> <b> <c> .\n' +
+            '@message\n' +
+            '   <d> <e> <f> .\n' +
+            '}',
+        'Expected dot to follow @message on line 5.'),
     );
 
     it(

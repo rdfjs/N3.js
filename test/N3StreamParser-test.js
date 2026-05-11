@@ -90,6 +90,11 @@ describe('StreamParser', () => {
       shouldNotEmitCommentsWhenNotEnabled(['#comment1\n<a> <b> #comment2\n#comment3\n <c>. <d> <e> <f>.'], ['comment1', 'comment2', 'comment3']),
     );
 
+    it(
+      'emits "message" events',
+      shouldEmitMessages(['VERSION "1.2-messages"\n<a> <b>', ' <c>.\nMESSAGE\n<d> <e> <f>.'], [1, 1]),
+    );
+
     it('passes an error', () => {
       const input = new Readable(), parser = new StreamParser();
       let error = null;
@@ -212,6 +217,22 @@ function shouldNotEmitCommentsWhenNotEnabled(chunks, expectedComments) {
     parser.on('error', done);
     parser.on('end', error => {
       done();
+    });
+  };
+}
+
+function shouldEmitMessages(chunks, expectedLengths) {
+  return function (done) {
+    const messageLengths = [],
+        parser = new StreamParser(),
+        inputStream = new ArrayReader(chunks);
+    inputStream.pipe(parser);
+    parser.on('data', () => {});
+    parser.on('message', message => { messageLengths.push(message.length); });
+    parser.on('error', done);
+    parser.on('end', error => {
+      expect(messageLengths).toEqual(expectedLengths);
+      done(error);
     });
   };
 }
