@@ -446,9 +446,12 @@ export default class N3Store {
   }
 
   // ### `removeQuads` removes multiple quads from the store
+  // returns `true` if all quads were removed, `false` if some were not found
   removeQuads(quads) {
+    let removed = quads.length >= 0;
     for (let i = 0; i < quads.length; i++)
-      this.removeQuad(quads[i]);
+      removed = this.removeQuad(quads[i]) && removed;
+    return removed;
   }
 
   // ### `remove` removes a stream of quads from the store
