@@ -92,7 +92,11 @@ describe('StreamParser', () => {
 
     it(
       'emits "message" events',
-      shouldEmitMessages(['VERSION "1.2-messages"\n<a> <b>', ' <c>.\nMESSAGE\n<d> <e> <f>.'], [1, 1]),
+      shouldEmitMessages(
+        ['VERSION "1.2-messages"\n<a> <b>', ' <c>.\nMESSAGE\n<d> <e> <f>.'],
+        [1, 1],
+        [0, 1],
+      ),
     );
 
     it('passes an error', () => {
@@ -221,17 +225,23 @@ function shouldNotEmitCommentsWhenNotEnabled(chunks, expectedComments) {
   };
 }
 
-function shouldEmitMessages(chunks, expectedLengths) {
+function shouldEmitMessages(chunks, expectedLengths, expectedCounters) {
   return function (done) {
     const messageLengths = [],
+        messageCounters = [],
         parser = new StreamParser(),
         inputStream = new ArrayReader(chunks);
     inputStream.pipe(parser);
     parser.on('data', () => {});
-    parser.on('message', message => { messageLengths.push(message.length); });
+    parser.on('message', (message, messageCounter) => {
+      messageLengths.push(message.length);
+      messageCounters.push(messageCounter);
+    });
     parser.on('error', done);
     parser.on('end', error => {
       expect(messageLengths).toEqual(expectedLengths);
+      if (expectedCounters)
+        expect(messageCounters).toEqual(expectedCounters);
       done(error);
     });
   };

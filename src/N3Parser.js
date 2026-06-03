@@ -135,9 +135,8 @@ export default class N3Parser {
     case 'eof':
       if (this._graph !== null)
         return this._error('Unclosed graph', token);
-      this._endMessage();
       delete this._prefixes._;
-      return this._callback(null, null, this._prefixes);
+      return this._callback(null, null, this._prefixes, this._messageCounter);
     // It could be a prefix declaration
     case 'PREFIX':
       this._sparqlStyle = true;
@@ -822,6 +821,7 @@ export default class N3Parser {
     this._versionCallback(token.value);
     if (/-messages$/.test(token.value) && !this._messageMode) {
       this._messageMode = true;
+      this._messageCounter = 0;
       this._resetMessageBlankNodePrefix();
     }
     if (!this._isValidVersion(token.value))
@@ -833,7 +833,7 @@ export default class N3Parser {
   _readMessage(token) {
     if (!this._messageMode)
       return this._error('Unexpected MESSAGE', token);
-    this._endMessage(true);
+    this._advanceMessageCounter();
     return this._readInTopContext;
   }
 
@@ -843,7 +843,7 @@ export default class N3Parser {
       return this._error('Unexpected @message', token);
     if (token.type !== '.')
       return this._error('Expected dot to follow @message', token);
-    this._endMessage(true);
+    this._advanceMessageCounter();
     return this._readInTopContext;
   }
 
@@ -1111,22 +1111,13 @@ export default class N3Parser {
   // ### `_emit` sends a quad through the callback
   _emit(subject, predicate, object, graph) {
     const quad = this._factory.quad(subject, predicate, object, graph || this.DEFAULTGRAPH);
-    if (this._messageMode) {
-      this._messageOpen = true;
-      this._messageQuads.push(quad);
-    }
-    this._callback(null, quad);
+    this._callback(null, quad, null, this._messageCounter);
   }
 
-  // ### `_endMessage` sends the current RDF message through the message callback
-  _endMessage(force) {
-    if (this._messageMode && (force || this._messageOpen)) {
-      this._messageCallback(this._messageQuads);
-      this._messageQuads = [];
-      this._messageOpen = false;
-    }
-    if (this._messageMode)
-      this._resetMessageBlankNodePrefix();
+  // ### `_advanceMessageCounter` starts a new RDF message scope
+  _advanceMessageCounter() {
+    this._messageCounter++;
+    this._resetMessageBlankNodePrefix();
   }
 
   // ### `_resetMessageBlankNodePrefix` scopes blank node labels to the current RDF message
@@ -1271,9 +1262,7 @@ export default class N3Parser {
                                                : `b${blankNodePrefix++}_`;
     this._prefixCallback = onPrefix || noop;
     this._versionCallback = onVersion || noop;
-    this._messageCallback = onMessage || noop;
-    this._messageQuads = [];
-    this._messageOpen = false;
+    this._messageCounter = this._messageMode ? 0 : undefined;
     this._inversePredicate = false;
     this._quantified = Object.create(null);
 
@@ -1287,6 +1276,29 @@ export default class N3Parser {
       });
       if (error) throw error;
       return quads;
+    }
+
+    // `onMessage` is a convenience callback that groups `onQuad` data in memory.
+    if (onMessage) {
+      let currentMessageCounter;
+      let messageQuads = [];
+      const onQuadStream = onQuad;
+      onQuad = (error, quad, prefixes, messageCounter) => {
+        if (messageCounter !== undefined && currentMessageCounter === undefined)
+          currentMessageCounter = 0;
+        if (currentMessageCounter !== undefined) {
+          while (currentMessageCounter < messageCounter) {
+            onMessage(messageQuads, currentMessageCounter);
+            messageQuads = [];
+            currentMessageCounter++;
+          }
+          if (quad)
+            messageQuads.push(quad);
+          else
+            onMessage(messageQuads, currentMessageCounter);
+        }
+        onQuadStream(error, quad, prefixes, messageCounter);
+      };
     }
 
     let processNextToken = (error, token) => {

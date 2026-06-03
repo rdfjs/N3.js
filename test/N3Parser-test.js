@@ -996,12 +996,21 @@ describe('Parser', () => {
 
     it('should callback RDF messages at delimiters and EOF', done => {
       const messages = [];
+      const messageCounters = [];
+      const quadCounters = [];
       new Parser({ messages: true, baseIRI: BASE_IRI }).parse(
         '@message .\n<a> <b> <c>.\n@message .\n@message .\n<d> <e> <f>.',
         {
-          onQuad: (error, quad) => {
+          onQuad: (error, quad, prefixes, messageCounter) => {
             expect(error).toBeFalsy();
-            if (quad) return;
+            if (quad) {
+              quadCounters.push(messageCounter);
+              return;
+            }
+            expect(prefixes).toBeDefined();
+            expect(messageCounter).toEqual(3);
+            expect(quadCounters).toEqual([1, 3]);
+            expect(messageCounters).toEqual([0, 1, 2, 3]);
             expect(messages.map(message => toSortedJSON(message))).toEqual([
               toSortedJSON([]),
               toSortedJSON([mapToQuad(['a', 'b', 'c'])]),
@@ -1010,52 +1019,81 @@ describe('Parser', () => {
             ]);
             done();
           },
-          onMessage: message => { messages.push(message); },
+          onMessage: (message, messageCounter) => {
+            messages.push(message);
+            messageCounters.push(messageCounter);
+          },
         },
       );
     });
 
     it('should infer RDF message mode from a version declaration', done => {
       const messages = [];
+      const messageCounters = [];
+      const quadCounters = [];
       new Parser({ baseIRI: BASE_IRI }).parse(
         'VERSION "1.2-messages"\n<a> <b> <c>.\nMESSAGE\n<d> <e> <f>.',
         {
-          onQuad: (error, quad) => {
+          onQuad: (error, quad, prefixes, messageCounter) => {
             expect(error).toBeFalsy();
-            if (quad) return;
+            if (quad) {
+              quadCounters.push(messageCounter);
+              return;
+            }
+            expect(prefixes).toBeDefined();
+            expect(messageCounter).toEqual(1);
+            expect(quadCounters).toEqual([0, 1]);
+            expect(messageCounters).toEqual([0, 1]);
             expect(messages.map(message => toSortedJSON(message))).toEqual([
               toSortedJSON([mapToQuad(['a', 'b', 'c'])]),
               toSortedJSON([mapToQuad(['d', 'e', 'f'])]),
             ]);
             done();
           },
-          onMessage: message => { messages.push(message); },
+          onMessage: (message, messageCounter) => {
+            messages.push(message);
+            messageCounters.push(messageCounter);
+          },
         },
       );
     });
 
     it('should parse N-Quads RDF message delimiters', done => {
       const messages = [];
+      const messageCounters = [];
+      const quadCounters = [];
       new Parser({ format: 'N-Quads', version: '1.2-messages' }).parse(
         '<http://a> <http://b> <http://c> <http://g> .\nMESSAGE\n' +
         '<http://d> <http://e> <http://f> <http://h> .',
         {
-          onQuad: (error, quad) => {
+          onQuad: (error, quad, prefixes, messageCounter) => {
             expect(error).toBeFalsy();
-            if (quad) return;
+            if (quad) {
+              quadCounters.push(messageCounter);
+              return;
+            }
+            expect(prefixes).toBeDefined();
+            expect(messageCounter).toEqual(1);
+            expect(quadCounters).toEqual([0, 1]);
+            expect(messageCounters).toEqual([0, 1]);
             expect(messages.map(message => toSortedJSON(message))).toEqual([
               toSortedJSON([mapToQuad(['http://a', 'http://b', 'http://c', 'http://g'])]),
               toSortedJSON([mapToQuad(['http://d', 'http://e', 'http://f', 'http://h'])]),
             ]);
             done();
           },
-          onMessage: message => { messages.push(message); },
+          onMessage: (message, messageCounter) => {
+            messages.push(message);
+            messageCounters.push(messageCounter);
+          },
         },
       );
     });
 
     it('should parse RDF messages with default graph and named graph quads', done => {
       const messages = [];
+      const messageCounters = [];
+      const quadCounters = [];
       new Parser({ messages: true, baseIRI: BASE_IRI }).parse(
         'PREFIX ex: <http://example.org/>\n' +
         'ex:s1 ex:p ex:o1.\n' +
@@ -1063,9 +1101,16 @@ describe('Parser', () => {
         '@message .\n' +
         'ex:s4 ex:p ex:o4.',
         {
-          onQuad: (error, quad) => {
+          onQuad: (error, quad, prefixes, messageCounter) => {
             expect(error).toBeFalsy();
-            if (quad) return;
+            if (quad) {
+              quadCounters.push(messageCounter);
+              return;
+            }
+            expect(prefixes).toBeDefined();
+            expect(messageCounter).toEqual(1);
+            expect(quadCounters).toEqual([0, 0, 0, 1]);
+            expect(messageCounters).toEqual([0, 1]);
             expect(messages.map(message => toSortedJSON(message))).toEqual([
               toSortedJSON([
                 mapToQuad(['s1', 'p', 'o1']),
@@ -1076,19 +1121,29 @@ describe('Parser', () => {
             ]);
             done();
           },
-          onMessage: message => { messages.push(message); },
+          onMessage: (message, messageCounter) => {
+            messages.push(message);
+            messageCounters.push(messageCounter);
+          },
         },
       );
     });
 
     it('should scope blank node labels to RDF messages', done => {
       const messages = [];
+      const quadCounters = [];
       new Parser({ messages: true }).parse(
         '_:x <b> <c>.\nMESSAGE\n_:x <b> <d>.',
         {
-          onQuad: (error, quad) => {
+          onQuad: (error, quad, prefixes, messageCounter) => {
             expect(error).toBeFalsy();
-            if (quad) return;
+            if (quad) {
+              quadCounters.push(messageCounter);
+              return;
+            }
+            expect(prefixes).toBeDefined();
+            expect(messageCounter).toEqual(1);
+            expect(quadCounters).toEqual([0, 1]);
             expect(messages[0][0].subject.equals(messages[1][0].subject)).toBe(false);
             done();
           },
@@ -1099,14 +1154,21 @@ describe('Parser', () => {
 
     it('should scope the same blank node label in one string to different RDF messages', done => {
       const messages = [];
+      const quadCounters = [];
       new Parser({ messages: true }).parse(
         '_:b0 <http://example.org/p> <http://example.org/o1>.\n' +
         '@message .\n' +
         '_:b0 <http://example.org/p> <http://example.org/o2>.',
         {
-          onQuad: (error, quad) => {
+          onQuad: (error, quad, prefixes, messageCounter) => {
             expect(error).toBeFalsy();
-            if (quad) return;
+            if (quad) {
+              quadCounters.push(messageCounter);
+              return;
+            }
+            expect(prefixes).toBeDefined();
+            expect(messageCounter).toEqual(1);
+            expect(quadCounters).toEqual([0, 1]);
             expect(messages).toHaveLength(2);
             expect(messages[0][0].subject.termType).toBe('BlankNode');
             expect(messages[1][0].subject.termType).toBe('BlankNode');
@@ -1120,14 +1182,21 @@ describe('Parser', () => {
 
     it('should scope blank node labels to RDF messages with a configured blank node prefix', done => {
       const messages = [];
+      const quadCounters = [];
       new Parser({ messages: true, blankNodePrefix: '_:fixed' }).parse(
         '_:b0 <http://example.org/p> <http://example.org/o1>.\n' +
         '@message .\n' +
         '_:b0 <http://example.org/p> <http://example.org/o2>.',
         {
-          onQuad: (error, quad) => {
+          onQuad: (error, quad, prefixes, messageCounter) => {
             expect(error).toBeFalsy();
-            if (quad) return;
+            if (quad) {
+              quadCounters.push(messageCounter);
+              return;
+            }
+            expect(prefixes).toBeDefined();
+            expect(messageCounter).toEqual(1);
+            expect(quadCounters).toEqual([0, 1]);
             expect(messages).toHaveLength(2);
             expect(messages[0][0].subject.value).toMatch(/^fixed/);
             expect(messages[1][0].subject.value).toMatch(/^fixed/);
@@ -1135,6 +1204,26 @@ describe('Parser', () => {
             done();
           },
           onMessage: message => { messages.push(message); },
+        },
+      );
+    });
+
+    it('should keep messageCounter undefined outside message mode', done => {
+      const quadCounters = [];
+      new Parser({ baseIRI: BASE_IRI }).parse(
+        '<a> <b> <c>.\n<d> <e> <f>.',
+        {
+          onQuad: (error, quad, prefixes, messageCounter) => {
+            expect(error).toBeFalsy();
+            if (quad) {
+              quadCounters.push(messageCounter);
+              return;
+            }
+            expect(prefixes).toBeDefined();
+            expect(messageCounter).toEqual(undefined);
+            expect(quadCounters).toEqual([undefined, undefined]);
+            done();
+          },
         },
       );
     });

@@ -98,9 +98,11 @@ parser.parse(tomAndJerry,
   });
 ```
 The callback's first argument is an optional error value, the second is a quad.
+The fourth argument is an optional `messageCounter`, which is only defined when parsing in RDF message mode.
 If there are no more quads,
 the callback is invoked one last time with `null` for `quad`
 and a hash of prefixes as third argument.
+When parsing in RDF message mode, that final callback also receives the current `messageCounter`.
 <br>
 
 Alternatively, an object can be supplied, where `onQuad`, `onPrefix` and `onComment` are used to listen for `quads`, `prefixes` and `comments` as follows:
@@ -108,8 +110,9 @@ Alternatively, an object can be supplied, where `onQuad`, `onPrefix` and `onComm
 const parser = new N3.Parser();
 
 parser.parse(tomAndJerry, {
-  // onQuad (required) accepts a listener of type (quad: RDF.Quad) => void
-  onQuad: (err, quad) => { console.log(quad); },
+  // onQuad (required) accepts a listener of type
+  // (err: Error | null, quad: RDF.Quad | null, prefixes?: Record<string, string>, messageCounter?: number) => void
+  onQuad: (err, quad, prefixes, messageCounter) => { console.log(quad, prefixes, messageCounter); },
   // onPrefix (optional) accepts a listener of type (prefix: string, iri: NamedNode) => void
   onPrefix: (prefix, iri) => { console.log(prefix, 'expands to', iri.value); },
   // onComment (optional) accepts a listener of type (comment: string) => void
@@ -202,7 +205,11 @@ A dedicated `comment` event can be enabled by setting `comments: true` in the N3
 
 N3.js can parse and write [RDF Message Logs](https://w3c-cg.github.io/rsp/spec/messages) for Turtle, TriG, N-Triples, and N-Quads.
 Enable message parsing with `messages: true`, or use a `-messages` version label such as `VERSION "1.2-messages"`.
-The parser still emits every quad through `onQuad`, and additionally calls `onMessage` with the quads of each completed message.
+The parser emits every quad through `onQuad`, and in message mode each callback also receives a `messageCounter`.
+At EOF, `onQuad` is called once with `quad = null`, `prefixes`, and the final `messageCounter`, so empty trailing messages can be detected.
+
+`onMessage` is a convenience callback for consumers that can buffer quads in memory.
+Internally it listens to `onQuad` and groups quads by `messageCounter`.
 
 ```JavaScript
 const messageLog = `VERSION "1.2-messages"
@@ -213,8 +220,15 @@ ex:message2 ex:text "Goodbye" .`;
 
 const parser = new N3.Parser();
 parser.parse(messageLog, {
-  onQuad: (error, quad) => { if (quad) console.log('quad', quad); },
-  onMessage: quads => { console.log('message with', quads.length, 'quads'); },
+  onQuad: (error, quad, prefixes, messageCounter) => {
+    if (quad)
+      console.log('quad', messageCounter, quad);
+    else
+      console.log('end', messageCounter, prefixes);
+  },
+  onMessage: (quads, messageCounter) => {
+    console.log('message', messageCounter, 'with', quads.length, 'quads');
+  },
 });
 ```
 
