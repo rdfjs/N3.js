@@ -22,7 +22,7 @@ export default class N3Reasoner {
     this._maxPremiseDepth = options.maxPremiseDepth === undefined ? Infinity : options.maxPremiseDepth;
   }
 
-  _add(subject, predicate, object, graphItem, cb) {
+  _add(subject, predicate, object, graphItem, c, cb) {
     // Only add to the remaining indexes if there is not already a value in the index
     if (!this._store._addToIndex(graphItem.subjects,   subject,   predicate, object)) return;
     this._store._addToIndex(graphItem.predicates, predicate, object,    subject);
@@ -32,39 +32,86 @@ export default class N3Reasoner {
     // in a consistent state (the reasoning result is merely incomplete).
     if (++this._derivations > this._maxDerivations)
       throw new Error(`Reasoning exceeded the maximum of ${this._maxDerivations} derivations`);
-    cb();
+    cb(c);
   }
 
-  _evaluatePremise(rule, content, cb, i = 0) {
-    let v1, v2, value, index1, index2;
-    const [val0, val1, val2] = rule.premise[i].value, index = content[rule.premise[i].content];
-    const v0 = !(value = val0.value);
-    for (value in v0 ? index : { [value]: index[value] }) {
-      if (index1 = index[value]) {
-        if (v0) val0.value = Number(value);
-        v1 = !(value = val1.value);
-        for (value in v1 ? index1 : { [value]: index1[value] }) {
-          if (index2 = index1[value]) {
-            if (v1) val1.value = Number(value);
-            v2 = !(value = val2.value);
-            for (value in v2 ? index2 : { [value]: index2[value] }) {
-              if (v2) val2.value = Number(value);
-
-              if (i === rule.premise.length - 1)
-                rule.conclusion.forEach(c => {
-                  // eslint-disable-next-line max-nested-callbacks
-                  this._add(c.subject.value, c.predicate.value, c.object.value, content, () => { cb(c); });
-                });
-              else
-                this._evaluatePremise(rule, content, cb, i + 1);
-            }
-            if (v2) val2.value = null;
-          }
-        }
-        if (v1) val1.value = null;
-      }
+  // OPT-43: invoked once per fully-bound match; pulled out of _evaluatePremise so the
+  // hot loop no longer allocates a fresh callback closure per match.
+  _emit(rule, content, cb) {
+    const conclusion = rule.conclusion;
+    for (let k = 0; k < conclusion.length; k++) {
+      const c = conclusion[k];
+      this._add(c.subject.value, c.predicate.value, c.object.value, content, c, cb);
     }
-    if (v0) val0.value = null;
+  }
+
+  // OPT-16: at each of the three premise levels, when the variable is bound we do a
+  // direct index lookup instead of allocating a single-key `{ [value]: index[value] }`
+  // object purely to drive a for-in that only ever runs once. The unbound case still
+  // iterates every key of the index. for-in yields string keys and `index[value]`
+  // coerces a numeric `value` to string, so the lookups are identical; the
+  // `val.value = Number(value)` reconstruction (unbound only) and the truthiness guards
+  // are preserved exactly.
+  // OPT-43: conclusion emission is delegated to _emit (a method, not a fresh closure per
+  // match), preserving the cb(c) signalling protocol that drives the fixpoint loop.
+  _evaluatePremise(rule, content, cb, i = 0) {
+    let value, index1;
+    const [val0, val1, val2] = rule.premise[i].value, index = content[rule.premise[i].content];
+    const last = i === rule.premise.length - 1;
+    const v0 = !(value = val0.value);
+    if (v0) {
+      // Level 0 unbound: iterate every key. Every key of an intermediate index node maps
+      // to a non-empty `{}` (the store creates them on insert and prunes empty ones on
+      // remove), so `index[value]` is always truthy here — no guard needed (the original
+      // guard was only meaningful on the bound path below).
+      for (value in index) {
+        index1 = index[value];
+        val0.value = Number(value);
+        this._evaluateLevel1(rule, content, cb, i, last, val1, val2, index1);
+      }
+      val0.value = null;
+    }
+    // Level 0 bound: single guarded lookup (the guard the original applied at this level).
+    else if (index1 = index[value]) {
+      this._evaluateLevel1(rule, content, cb, i, last, val1, val2, index1);
+    }
+  }
+
+  _evaluateLevel1(rule, content, cb, i, last, val1, val2, index1) {
+    let value, index2;
+    const v1 = !(value = val1.value);
+    if (v1) {
+      // Level 1 unbound: iterate every key. As at level 0, an intermediate index node's
+      // keys always map to a non-empty `{}`, so `index1[value]` is always truthy here.
+      for (value in index1) {
+        index2 = index1[value];
+        val1.value = Number(value);
+        this._evaluateLevel2(rule, content, cb, i, last, val2, index2);
+      }
+      val1.value = null;
+    }
+    // Level 1 bound: single guarded lookup (the guard the original applied at this level).
+    else if (index2 = index1[value]) {
+      this._evaluateLevel2(rule, content, cb, i, last, val2, index2);
+    }
+  }
+
+  _evaluateLevel2(rule, content, cb, i, last, val2, index2) {
+    let value;
+    const v2 = !(value = val2.value);
+    if (v2) {
+      // Level 2 unbound: iterate every key, binding val2 to each.
+      for (value in index2) {
+        val2.value = Number(value);
+        if (last) this._emit(rule, content, cb);
+        else this._evaluatePremise(rule, content, cb, i + 1);
+      }
+      val2.value = null;
+    }
+    // Level 2 bound: the original iterated a single-key object with NO presence guard,
+    // so the body ran exactly once regardless of whether the key exists. Preserve that.
+    else if (last) this._emit(rule, content, cb);
+    else this._evaluatePremise(rule, content, cb, i + 1);
   }
 
   _evaluateRules(rules, content, cb) {
@@ -85,12 +132,14 @@ export default class N3Reasoner {
         });
     }
 
-    // eslint-disable-next-line func-style
+    // OPT-43: indexed loop + pass (c, addRule) through _add instead of allocating a fresh
+    // `() => addRule(c)` closure per conclusion. _add invokes cb(c) on a confirmed insert,
+    // preserving the original addRule(c) signalling.
     const addConclusions = conclusion => {
-      conclusion.forEach(c => {
-        // eslint-disable-next-line max-nested-callbacks
-        this._add(c.subject.value, c.predicate.value, c.object.value, content, () => { addRule(c); });
-      });
+      for (let k = 0; k < conclusion.length; k++) {
+        const c = conclusion[k];
+        this._add(c.subject.value, c.predicate.value, c.object.value, content, c, addRule);
+      }
     };
 
     this._evaluateRules(rules, content, addRule);
@@ -185,7 +234,8 @@ export default class N3Reasoner {
                 basePremise: p,
               });
             }
-            r2.variables.forEach(v => { v.value = null; });
+            // OPT-43: indexed loop instead of a fresh forEach callback per (r1, r2, i, c).
+            for (let k = 0; k < r2.variables.length; k++) r2.variables[k].value = null;
           }
         }
       }
