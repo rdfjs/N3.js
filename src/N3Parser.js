@@ -78,31 +78,30 @@ export default class N3Parser {
   // ### `_saveContext` stores the current parsing context
   // when entering a new scope (list, blank node, formula)
   _saveContext(type, graph, subject, predicate, object) {
-    const n3Mode = this._n3Mode;
+    // Only N3 contexts need the extra parser state.
+    if (!this._n3Mode) {
+      this._contextStack.push({ type, subject, predicate, object, graph });
+      return;
+    }
     this._contextStack.push({
       type,
       subject, predicate, object, graph,
-      inverse: n3Mode ? this._inversePredicate : false,
-      blankPrefix: n3Mode ? this._prefixes._ : '',
-      quantified: n3Mode ? this._quantified : null,
-      emptyFormula: n3Mode ? this._emptyFormula : false,
+      inverse: this._inversePredicate,
+      blankPrefix: this._prefixes._,
+      quantified: this._quantified,
+      emptyFormula: this._emptyFormula,
     });
-    // The settings below only apply to N3 streams
-    if (n3Mode) {
-      // Every new scope resets the predicate direction
-      this._inversePredicate = false;
-      // In N3, blank nodes are scoped to a formula
-      // (using a dot as separator, as a blank node label cannot start with it)
-      this._prefixes._ = (this._graph ? `${this._graph.value}.` : '.');
-      // Quantifiers are scoped to a formula
-      this._quantified = Object.create(this._quantified);
-      // A formula starts a new statement, so the subject of the
-      // enclosing statement must not leak into it,
-      // and it is empty until a statement has been read
-      if (type === 'formula') {
-        this._subject = null;
-        this._emptyFormula = true;
-      }
+    // Every new scope resets the predicate direction
+    this._inversePredicate = false;
+    // In N3, blank nodes are scoped to a formula
+    // (using a dot as separator, as a blank node label cannot start with it)
+    this._prefixes._ = (this._graph ? `${this._graph.value}.` : '.');
+    // Quantifiers are scoped to a formula
+    this._quantified = Object.create(this._quantified);
+    // A formula starts empty and must not inherit its parent's subject
+    if (type === 'formula') {
+      this._subject = null;
+      this._emptyFormula = true;
     }
   }
 
@@ -641,8 +640,9 @@ export default class N3Parser {
   }
 
   // ### `_completeLiteral` completes a literal with an optional datatype or language
+  // Defers possible direction tags without allocating bound callbacks.
   _completeLiteral(token, component) {
-    let literal, readCb;
+    let literal, readCb = false;
 
     switch (token.type) {
     // Create a datatyped literal
@@ -663,7 +663,9 @@ export default class N3Parser {
       literal = this._factory.literal(this._literalValue, token.value);
       this._literalLanguage = token.value;
       token = null;
-      readCb = this._readDirCode.bind(this, component);
+      // Save state for a possible direction tag
+      this._literalComponent = component;
+      readCb = true;
       break;
     // Create a simple string literal by default
     default:
@@ -673,7 +675,9 @@ export default class N3Parser {
     return { token, literal, readCb };
   }
 
-  _readDirCode(component, listItem, token) {
+  // ### `_readDirCode` reads an optional directional language tag
+  _readDirCode(token) {
+    const component = this._literalComponent, listItem = this._literalListItem;
     // Attempt to read a dircode
     if (token.type === 'dircode') {
       const term = this._factory.literal(this._literalValue, { language: this._literalLanguage, direction: token.value });
@@ -715,8 +719,10 @@ export default class N3Parser {
     }
 
     // Postpone completion if the literal is only partially completed (such as lang+dir).
-    if (completed.readCb)
-      return completed.readCb.bind(this, false);
+    if (completed.readCb) {
+      this._literalListItem = false;
+      return this._readDirCode;
+    }
 
     // A subject literal implies N3 mode, so it might start a path.
     if (component === 'subject') {
@@ -749,8 +755,10 @@ export default class N3Parser {
     this._object = completed.literal;
 
     // Postpone completion if the literal is only partially completed (such as lang+dir).
-    if (completed.readCb)
-      return completed.readCb.bind(this, listItem);
+    if (completed.readCb) {
+      this._literalListItem = listItem;
+      return this._readDirCode;
+    }
 
     return this._completeObjectLiteralPost(completed.token, listItem);
   }
