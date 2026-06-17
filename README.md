@@ -378,6 +378,44 @@ The store provides the following search methods
 - `getGraphs` returns an array of unique graphs occurring in matching quad
 - `forGraphs` executes a callback on unique graphs occurring in matching quads
 
+### Configuring `match()` semantics
+
+The dataset returned by `match()` is also a readable stream. By default it is
+*lazy*: it delegates live to the parent store until its first own mutation,
+which means parent mutations made before that point are reflected in the view.
+You can choose a different behavior with the `matchSemantics` option, either
+per call or as a store-wide default:
+
+```JavaScript
+import { Store, DataFactory } from 'n3';
+const { namedNode } = DataFactory;
+
+// Per call:
+const view = store.match(namedNode('s'), null, null, null, { matchSemantics: 'snapshot' });
+
+// Or as the default for every match() of a store:
+const store = new Store([], { matchSemantics: 'snapshot' });
+```
+
+Supported values:
+
+- `'lazy'` (default) — backwards-compatible behavior. The view reflects the
+  parent store until the view itself is first mutated, after which it is frozen
+  to a snapshot. Parent mutations made before that first mutation leak into the
+  view.
+- `'snapshot'` — the view reflects the parent contents *at the time of*
+  `match()`. Later parent mutations never affect it. This is the most
+  spec-correct interpretation of an RDF/JS dataset.
+- `'forwarded'` — the view always reflects the parent state: matching parent
+  mutations are forwarded to the view, and mutations on the view (`add`,
+  `delete`, `addAll`, `deleteMatches`) are written through to the parent.
+
+For `'snapshot'` and `'forwarded'`, an iteration (synchronous or via the
+stream) that is already in progress keeps a stable view of the quads as of when
+it started, even if a matching parent mutation lands mid-iteration. Views are
+maintained incrementally — they only do work when a parent mutation actually
+matches the view's pattern — so the common path stays fast.
+
 ## Reasoning
 
 N3.js supports reasoning as follows:
