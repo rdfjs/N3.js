@@ -79,6 +79,107 @@ function difference(s1, s2, depth = 4) {
   return target;
 }
 
+/**
+ * Builds a mapping from the numeric ids of the `source` entity index to those
+ * of the `target` entity index. Only entities present in both indices appear in
+ * the returned map.
+ *
+ * Quoted triples (RDF-star) are stored as composite ids of the form
+ * `.s.p.o[.g]` referencing other ids; these are remapped recursively. Because a
+ * composite is always interned *after* its components, iterating in ascending
+ * id order guarantees the components are already remapped when a composite is
+ * reached.
+ */
+function remapEntityIds(source, target) {
+  const entities = source._entities, targetIds = target._ids;
+  const remap = Object.create(null);
+  // The empty entity (default graph) is always id 1 in every index.
+  remap[1] = 1;
+  const ids = Object.keys(entities).map(Number).sort((a, b) => a - b);
+  for (const id of ids) {
+    const str = entities[id];
+    // The empty entity (id 1) is already mapped above.
+    if (str !== '') {
+      if (str[0] === '.') {
+        // Composite id `.s.p.o[.g]`: remap each component into the target id space.
+        const parts = str.split('.');
+        let mapped = '', resolved = true;
+        for (let i = 1; i < parts.length; i++) {
+          const component = remap[parts[i]];
+          if (component === undefined) {
+            resolved = false;
+            break;
+          }
+          mapped += `.${component}`;
+        }
+        if (resolved && mapped in targetIds)
+          remap[id] = targetIds[mapped];
+      }
+      else if (str in targetIds) {
+        remap[id] = targetIds[str];
+      }
+    }
+  }
+  return remap;
+}
+
+/**
+ * Performs a cross-entity-index intersection or difference: walks the `_graphs`
+ * index `g1` of one store (using its own numeric ids) and, for each quad, tests
+ * whether it is present in the `_graphs` index `g2` of another store (whose ids
+ * differ) via the precomputed `remap` (g1 ids -> g2 ids). Quads are kept when
+ * their presence in `g2` equals `keepIfPresent`.
+ *
+ * The result is a fresh three-layered index keyed by `g1`'s numeric ids; `false`
+ * is returned when the result is empty.
+ */
+function crossGraphsOp(g1, g2, remap, keepIfPresent) {
+  let result = false, size = 0;
+  for (const graph in g1) {
+    const subjects = g1[graph].subjects;
+    const mappedGraph = remap[graph];
+    const otherContent = mappedGraph === undefined ? undefined : g2[mappedGraph];
+    const otherSubjects = otherContent && otherContent.subjects;
+    let out = null;
+    for (const subject in subjects) {
+      const predicates = subjects[subject];
+      const ms = otherSubjects && remap[subject];
+      const otherPredicates = ms === undefined ? undefined : otherSubjects[ms];
+      for (const predicate in predicates) {
+        const objects = predicates[predicate];
+        const mp = otherPredicates && remap[predicate];
+        const otherObjects = mp === undefined ? undefined : otherPredicates[mp];
+        for (const object in objects) {
+          let present = false;
+          if (otherObjects) {
+            const mo = remap[object];
+            present = mo !== undefined && mo in otherObjects;
+          }
+          if (present === keepIfPresent) {
+            if (!out) {
+              result = result || Object.create(null);
+              out = result[graph] = {
+                subjects: Object.create(null),
+                predicates: Object.create(null),
+                objects: Object.create(null),
+              };
+            }
+            const s = out.subjects, p = out.predicates, o = out.objects;
+            ((s[subject] = s[subject] || Object.create(null))[predicate] =
+              s[subject][predicate] || Object.create(null))[object] = null;
+            ((p[predicate] = p[predicate] || Object.create(null))[object] =
+              p[predicate][object] || Object.create(null))[subject] = null;
+            ((o[object] = o[object] || Object.create(null))[subject] =
+              o[object][subject] || Object.create(null))[predicate] = null;
+            size++;
+          }
+        }
+      }
+    }
+  }
+  return { graphs: result, size };
+}
+
 // ## Constructor
 export class N3EntityIndex {
   constructor(options = {}) {
@@ -949,6 +1050,19 @@ export default class N3Store {
       return store;
     }
 
+    // Stores with distinct entity indices can still be compared on their indices
+    // by remapping `other`'s numeric ids, avoiding per-quad materialization.
+    if (other instanceof N3Store) {
+      const store = new N3Store({ entityIndex: this._entityIndex });
+      const remap = remapEntityIds(this._entityIndex, other._entityIndex);
+      const { graphs, size } = crossGraphsOp(this._graphs, other._graphs, remap, false);
+      if (graphs) {
+        store._graphs = graphs;
+        store._size = size;
+      }
+      return store;
+    }
+
     return this.filter(quad => !other.has(quad));
   }
 
@@ -996,6 +1110,19 @@ export default class N3Store {
       if (graphs) {
         store._graphs = graphs;
         store._size = null;
+      }
+      return store;
+    }
+
+    // Stores with distinct entity indices can still be compared on their indices
+    // by remapping `other`'s numeric ids, avoiding per-quad materialization.
+    else if (other instanceof N3Store) {
+      const store = new N3Store({ entityIndex: this._entityIndex });
+      const remap = remapEntityIds(this._entityIndex, other._entityIndex);
+      const { graphs, size } = crossGraphsOp(this._graphs, other._graphs, remap, true);
+      if (graphs) {
+        store._graphs = graphs;
+        store._size = size;
       }
       return store;
     }
