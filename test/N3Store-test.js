@@ -2476,6 +2476,84 @@ describe('Store', () => {
     });
   });
 
+  describe('cross-entity-index set operations', () => {
+    // A minimal non-N3Store dataset, to exercise the per-quad `filter`/`has`
+    // fall-back of `intersection`/`difference`.
+    class SimpleDataset {
+      constructor(quads) { this.quads = quads; }
+      has(quad) { return this.quads.some(q => q.equals(quad)); }
+      * [Symbol.iterator]() { yield* this.quads; }
+    }
+
+    const q = [
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
+      new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o3'), new NamedNode('g1')),
+    ];
+
+    it('intersection/difference match the per-quad result across distinct indices', () => {
+      const a = new Store([q[0], q[1], q[2]]);
+      // b has a distinct entity index and is shifted so the term ids differ.
+      const b = new Store([new Quad(new NamedNode('shift'), new NamedNode('shift'), new NamedNode('shift'))]);
+      b.addQuads([q[1], q[2]]);
+      expect(a._entityIndex).not.toBe(b._entityIndex);
+
+      const intersection = a.intersection(b);
+      expect(intersection.equals(new Store([q[1], q[2]]))).toBe(true);
+      // Result must be independent and writable.
+      intersection.add(new Quad(new NamedNode('x'), new NamedNode('y'), new NamedNode('z')));
+      expect(intersection.size).toBe(3);
+
+      const difference = a.difference(b);
+      expect(difference.equals(new Store([q[0]]))).toBe(true);
+    });
+
+    it('intersection/difference handle empty results and empty stores across distinct indices', () => {
+      const a = new Store([q[0]]);
+      const b = new Store([new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))]);
+      const empty = new Store();
+      expect(a.intersection(b).size).toBe(0);
+      expect(a.intersection(empty).size).toBe(0);
+      expect(empty.intersection(a).size).toBe(0);
+      expect(a.difference(b).equals(new Store([q[0]]))).toBe(true);
+      expect(a.difference(empty).equals(new Store([q[0]]))).toBe(true);
+      expect(empty.difference(a).size).toBe(0);
+    });
+
+    it('intersection/difference handle quoted triples across distinct indices', () => {
+      const inner = new Quad(new NamedNode('s'), new NamedNode('p'), new NamedNode('o'));
+      const star = new Quad(inner, new NamedNode('p2'), new NamedNode('o2'));
+      const a = new Store([star, q[0]]);
+      // Shift b's ids so the composite id of the quoted triple differs from a's.
+      const b = new Store([new Quad(new NamedNode('z1'), new NamedNode('z2'), new NamedNode('z3'))]);
+      b.addQuads([star]);
+      expect(a._entityIndex).not.toBe(b._entityIndex);
+
+      expect(a.intersection(b).equals(new Store([star]))).toBe(true);
+      expect(a.difference(b).equals(new Store([q[0]]))).toBe(true);
+    });
+
+    it('intersection/difference handle quoted triples whose components are absent from the other store', () => {
+      // `a`'s quoted triple references `oOnlyInA`, a term that does not occur in
+      // `b` at all, so the composite id cannot be remapped.
+      const inner = new Quad(new NamedNode('s'), new NamedNode('p'), new NamedNode('oOnlyInA'));
+      const star = new Quad(inner, new NamedNode('p2'), new NamedNode('o2'));
+      const a = new Store([star, q[0]]);
+      const b = new Store([q[0]]);
+      expect(a._entityIndex).not.toBe(b._entityIndex);
+
+      expect(a.intersection(b).equals(new Store([q[0]]))).toBe(true);
+      expect(a.difference(b).equals(new Store([star]))).toBe(true);
+    });
+
+    it('intersection/difference fall back to per-quad matching for non-N3Store datasets', () => {
+      const a = new Store([q[0], q[1], q[2]]);
+      const other = new SimpleDataset([q[1], q[2]]);
+      expect(a.intersection(other).equals(new Store([q[1], q[2]]))).toBe(true);
+      expect(a.difference(other).equals(new Store([q[0]]))).toBe(true);
+    });
+  });
+
   it('should initialize the store correctly with a another store', () => {
     const quads = new Store([
       new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
