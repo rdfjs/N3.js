@@ -356,6 +356,36 @@ describe('Lexer', () => {
     );
 
     it(
+      'should not tokenize a literal with a surrogate pair via unicode escapes',
+      shouldNotTokenize('"\\uD83C\\uDF00" ',
+                        'Unexpected ""\\uD83C\\uDF00"" on line 1.'),
+    );
+
+    it(
+      'should not tokenize a literal with a lone high surrogate unicode escape',
+      shouldNotTokenize('"\\uD800" ',
+                        'Unexpected ""\\uD800"" on line 1.'),
+    );
+
+    it(
+      'should not tokenize a literal with a lone low surrogate unicode escape',
+      shouldNotTokenize('"\\uDFFF" ',
+                        'Unexpected ""\\uDFFF"" on line 1.'),
+    );
+
+    it(
+      'should not tokenize a literal with a high surrogate 8-digit unicode escape',
+      shouldNotTokenize('"\\U0000D800" ',
+                        'Unexpected ""\\U0000D800"" on line 1.'),
+    );
+
+    it(
+      'should not tokenize a literal with a low surrogate 8-digit unicode escape',
+      shouldNotTokenize('"\\U0000DFFF" ',
+                        'Unexpected ""\\U0000DFFF"" on line 1.'),
+    );
+
+    it(
       'should not tokenize a double-quoted string ending with an escaped quote',
       shouldNotTokenize('"abc\\"',
                         'Unexpected ""abc\\"" on line 1.'),
