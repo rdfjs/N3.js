@@ -2546,6 +2546,24 @@ describe('Store', () => {
       expect(a.difference(b).equals(new Store([star]))).toBe(true);
     });
 
+    it('intersection/difference handle quoted triples whose components all exist in the other store but the composite does not', () => {
+      // Every component of `a`'s quoted triple occurs in `b`, but the *composite*
+      // (the quoted triple itself) does not, so the remapped composite id is not
+      // present in `b`'s entity index and the quad is treated as absent.
+      const inner = new Quad(new NamedNode('s'), new NamedNode('p'), new NamedNode('o'));
+      const star = new Quad(inner, new NamedNode('p2'), new NamedNode('o2'));
+      const a = new Store([star, q[0]]);
+      // `b` contains all of s, p, o, p2, o2 but never the quoted triple `star`.
+      const b = new Store([
+        new Quad(new NamedNode('s'), new NamedNode('p'), new NamedNode('o')),
+        new Quad(new NamedNode('p2'), new NamedNode('o2'), new NamedNode('x')),
+      ]);
+      expect(a._entityIndex).not.toBe(b._entityIndex);
+
+      expect(a.intersection(b).size).toBe(0);
+      expect(a.difference(b).equals(new Store([star, q[0]]))).toBe(true);
+    });
+
     it('intersection/difference fall back to per-quad matching for non-N3Store datasets', () => {
       const a = new Store([q[0], q[1], q[2]]);
       const other = new SimpleDataset([q[1], q[2]]);
@@ -2607,6 +2625,63 @@ describe('EntityIndex', () => {
     expect(entityIndex._ids).toEqual({
       ...index,
       o5: 8,
+    });
+  });
+
+  describe('_remapCompositeId', () => {
+    it('remaps a composite id whose components and composite all exist in the target', () => {
+      // `inner` is a quoted triple used as the subject of `star`, so `inner`
+      // gets a composite id `.s.p.o` in each entity index.
+      const inner = new Quad(new NamedNode('s'), new NamedNode('p'), new NamedNode('o'));
+      const star = new Quad(inner, new NamedNode('p2'), new NamedNode('o2'));
+      // `source` and `target` are distinct indices that both contain `star`.
+      const source = new EntityIndex();
+      const target = new EntityIndex();
+      const sourceStore = new Store([star], { entityIndex: source });
+      // Offset `target`'s ids (with an unrelated quad) so the composite
+      // component ids differ from those in `source`, then add `star`.
+      const targetStore = new Store(
+        [new Quad(new NamedNode('z'), new NamedNode('z'), new NamedNode('z'))],
+        { entityIndex: target },
+      );
+      targetStore.addQuad(star);
+
+      // The composite id string of the quoted triple `inner` within the source.
+      const compositeId = source._entities[source._termToNumericId(inner)];
+      expect(compositeId[0]).toBe('.');
+
+      // Build a remap from source component ids to target component ids.
+      const remap = Object.create(null);
+      remap[1] = 1;
+      for (const idStr of Object.keys(source._entities)) {
+        const str = source._entities[idStr];
+        if (str !== '' && str[0] !== '.' && str in target._ids)
+          remap[idStr] = target._ids[str];
+      }
+
+      const mapped = target._remapCompositeId(compositeId, remap);
+      expect(mapped).toBe(target._termToNumericId(inner));
+      expect(sourceStore.size).toBe(1);
+    });
+
+    it('returns undefined when a component cannot be remapped', () => {
+      const target = new EntityIndex();
+      // Composite `.2.3.4`; remap has no entry for component `4`.
+      const remap = Object.create(null);
+      remap[2] = 10;
+      remap[3] = 11;
+      expect(target._remapCompositeId('.2.3.4', remap)).toBeUndefined();
+    });
+
+    it('returns undefined when the remapped composite is absent from the target', () => {
+      const target = new EntityIndex();
+      // All components remap, but the resulting composite `.10.11.12` is not in
+      // the target index.
+      const remap = Object.create(null);
+      remap[2] = 10;
+      remap[3] = 11;
+      remap[4] = 12;
+      expect(target._remapCompositeId('.2.3.4', remap)).toBeUndefined();
     });
   });
 });

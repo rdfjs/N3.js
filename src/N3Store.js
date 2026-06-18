@@ -17,6 +17,24 @@ function merge(target, source, depth = 4) {
   return target;
 }
 
+// ### `addToIndex` adds a quad to a three-layered index, creating layers as
+// necessary. Returns whether the entry did not already exist (i.e. the index
+// changed). Uses no instance state, so it is shared by `N3Store#_addToIndex`
+// (and thus `addQuad`/`N3Reasoner`) and by `crossGraphsOp`'s leaf writes; this
+// is the canonical index writer, and keeping a single copy guarantees all three
+// sub-indices are built consistently (and with the same `{}` object shape used
+// elsewhere in the store).
+function addToIndex(index0, key0, key1, key2) {
+  // Create layers as necessary
+  const index1 = index0[key0] || (index0[key0] = {});
+  const index2 = index1[key1] || (index1[key1] = {});
+  // Setting the key to _any_ value signals the presence of the quad
+  const existed = key2 in index2;
+  if (!existed)
+    index2[key2] = null;
+  return !existed;
+}
+
 /**
  * Determines the intersection of the `_graphs` index s1 and s2.
  * s1 and s2 *must* belong to Stores that share an `_entityIndex`.
@@ -101,19 +119,11 @@ function remapEntityIds(source, target) {
     // The empty entity (id 1) is already mapped above.
     if (str !== '') {
       if (str[0] === '.') {
-        // Composite id `.s.p.o[.g]`: remap each component into the target id space.
-        const parts = str.split('.');
-        let mapped = '', resolved = true;
-        for (let i = 1; i < parts.length; i++) {
-          const component = remap[parts[i]];
-          if (component === undefined) {
-            resolved = false;
-            break;
-          }
-          mapped += `.${component}`;
-        }
-        if (resolved && mapped in targetIds)
-          remap[id] = targetIds[mapped];
+        // Composite id `.s.p.o[.g]`: remap each component into the target id
+        // space (parsing of the composite format lives on the entity index).
+        const mapped = target._remapCompositeId(str, remap);
+        if (mapped !== undefined)
+          remap[id] = mapped;
       }
       else if (str in targetIds) {
         remap[id] = targetIds[str];
@@ -132,6 +142,19 @@ function remapEntityIds(source, target) {
  *
  * The result is a fresh three-layered index keyed by `g1`'s numeric ids; `false`
  * is returned when the result is empty.
+ *
+ * NOTE: the graph -> subjects -> predicates -> objects descent below
+ * deliberately mirrors the same three-layered-index walk in `intersect`,
+ * `difference`, `_findInIndex` and `_countInIndex` rather than sharing a generic
+ * walker. It is kept hand-inlined on purpose: those are the library's hottest
+ * per-quad loops and stay monomorphic only because each is self-contained. This
+ * variant additionally threads a cross-index `remap` lookup at every level
+ * (hoisted out of the inner loops) and probes a *second* index, which the
+ * same-index siblings do not; a shared callback/generator walker would add an
+ * indirect call per quad and a remap-or-not branch to the same-index paths,
+ * erasing their measured gains. The leaf write *is* shared with `addQuad` via
+ * the module-level `addToIndex` (benchmarks showed this is faster than the
+ * previous hand-inlined writes, not slower) — only the descent stays inlined.
  */
 function crossGraphsOp(g1, g2, remap, keepIfPresent) {
   let result = false, size = 0;
@@ -158,19 +181,18 @@ function crossGraphsOp(g1, g2, remap, keepIfPresent) {
           if (present === keepIfPresent) {
             if (!out) {
               result = result || Object.create(null);
-              out = result[graph] = {
-                subjects: Object.create(null),
-                predicates: Object.create(null),
-                objects: Object.create(null),
-              };
+              out = result[graph] = { subjects: {}, predicates: {}, objects: {} };
             }
-            const s = out.subjects, p = out.predicates, o = out.objects;
-            ((s[subject] = s[subject] || Object.create(null))[predicate] =
-              s[subject][predicate] || Object.create(null))[object] = null;
-            ((p[predicate] = p[predicate] || Object.create(null))[object] =
-              p[predicate][object] || Object.create(null))[subject] = null;
-            ((o[object] = o[object] || Object.create(null))[subject] =
-              o[object][subject] || Object.create(null))[predicate] = null;
+            // Reuse the canonical `addToIndex` writer (as `addQuad` does). The
+            // (s,p,o) walked from `g1` is unique per graph, so the existence
+            // check is always false here, but benchmarks (perf/N3StoreSetOps)
+            // show this is *faster* than the previous hand-inlined writes —
+            // `addToIndex` uses `{}` leaves (a fast V8 object shape) and caches
+            // each layer in a local, which the inlined `Object.create(null)`
+            // idiom did not.
+            addToIndex(out.subjects, subject, predicate, object);
+            addToIndex(out.predicates, predicate, object, subject);
+            addToIndex(out.objects, object, subject, predicate);
             size++;
           }
         }
@@ -178,6 +200,26 @@ function crossGraphsOp(g1, g2, remap, keepIfPresent) {
     }
   }
   return { graphs: result, size };
+}
+
+/**
+ * Shared shell for the cross-entity-index branch of `intersection`
+ * (`keepIfPresent === true`) and `difference` (`keepIfPresent === false`).
+ *
+ * Both operations build a result store keyed by `self`'s entity index, remap
+ * `other`'s ids into `self`'s id space once, then run the same `crossGraphsOp`
+ * walk; they differ only in the `keepIfPresent` boolean. `crossGraphsOp`
+ * already returns `{ graphs, size }` precisely so this wrapper stays trivial.
+ */
+function crossIndexOp(self, other, keepIfPresent) {
+  const store = new N3Store({ entityIndex: self._entityIndex });
+  const remap = remapEntityIds(self._entityIndex, other._entityIndex);
+  const { graphs, size } = crossGraphsOp(self._graphs, other._graphs, remap, keepIfPresent);
+  if (graphs) {
+    store._graphs = graphs;
+    store._size = size;
+  }
+  return store;
 }
 
 // ## Constructor
@@ -209,6 +251,25 @@ export class N3EntityIndex {
       return q;
     }
     return termFromId(id, this._factory);
+  }
+
+  // ### `_remapCompositeId` translates a composite (RDF-star) id `.s.p.o[.g]`
+  // from another entity index into this index's id space, using `remap`
+  // (other-component-id -> this-component-id), and returns the numeric id of
+  // the resulting composite in this index, or `undefined` when any component
+  // cannot be remapped or the composite is absent here. This keeps knowledge of
+  // the `.`-delimited composite-id wire format in a single place alongside
+  // `_termFromId` / `_termToNumericId`.
+  _remapCompositeId(id, remap) {
+    const parts = id.split('.');
+    let mapped = '';
+    for (let i = 1; i < parts.length; i++) {
+      const component = remap[parts[i]];
+      if (component === undefined)
+        return undefined;
+      mapped += `.${component}`;
+    }
+    return this._ids[mapped];
   }
 
   _termToNumericId(term) {
@@ -303,15 +364,10 @@ export default class N3Store {
 
   // ### `_addToIndex` adds a quad to a three-layered index.
   // Returns if the index has changed, if the entry did not already exist.
+  // Thin instance wrapper over the module-level `addToIndex` (kept on the
+  // prototype because `addQuad` and `N3Reasoner` call it as a method).
   _addToIndex(index0, key0, key1, key2) {
-    // Create layers as necessary
-    const index1 = index0[key0] || (index0[key0] = {});
-    const index2 = index1[key1] || (index1[key1] = {});
-    // Setting the key to _any_ value signals the presence of the quad
-    const existed = key2 in index2;
-    if (!existed)
-      index2[key2] = null;
-    return !existed;
+    return addToIndex(index0, key0, key1, key2);
   }
 
   // ### `_removeFromIndex` removes a quad from a three-layered index
@@ -1052,16 +1108,8 @@ export default class N3Store {
 
     // Stores with distinct entity indices can still be compared on their indices
     // by remapping `other`'s numeric ids, avoiding per-quad materialization.
-    if (other instanceof N3Store) {
-      const store = new N3Store({ entityIndex: this._entityIndex });
-      const remap = remapEntityIds(this._entityIndex, other._entityIndex);
-      const { graphs, size } = crossGraphsOp(this._graphs, other._graphs, remap, false);
-      if (graphs) {
-        store._graphs = graphs;
-        store._size = size;
-      }
-      return store;
-    }
+    if (other instanceof N3Store)
+      return crossIndexOp(this, other, false);
 
     return this.filter(quad => !other.has(quad));
   }
@@ -1116,16 +1164,8 @@ export default class N3Store {
 
     // Stores with distinct entity indices can still be compared on their indices
     // by remapping `other`'s numeric ids, avoiding per-quad materialization.
-    else if (other instanceof N3Store) {
-      const store = new N3Store({ entityIndex: this._entityIndex });
-      const remap = remapEntityIds(this._entityIndex, other._entityIndex);
-      const { graphs, size } = crossGraphsOp(this._graphs, other._graphs, remap, true);
-      if (graphs) {
-        store._graphs = graphs;
-        store._size = size;
-      }
-      return store;
-    }
+    else if (other instanceof N3Store)
+      return crossIndexOp(this, other, true);
 
     return this.filter(quad => other.has(quad));
   }
