@@ -444,6 +444,22 @@ describe('Lexer', () => {
     );
 
     it(
+      'should tokenize a language code with a subtag split across chunks',
+      shouldTokenize(streamOf('"string"@nl-', 'nl '),
+                     { type: 'literal', value: 'string', line: 1 },
+                     { type: 'langcode', value: 'nl-nl', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should tokenize a language code whose subtag boundary aligns with a chunk boundary',
+      shouldTokenize(streamOf('"string"@nl-nl', ' '),
+                     { type: 'literal', value: 'string', line: 1 },
+                     { type: 'langcode', value: 'nl-nl', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
         'should tokenize a quoted string literal with directional language code',
         shouldTokenize('"string"@en--rtl "string"@nl-be--ltr "string"@EN--rtl ',
             { type: 'literal', value: 'string', line: 1 },
