@@ -380,11 +380,11 @@ The store provides the following search methods
 
 ### Configuring `match()` semantics
 
-The dataset returned by `match()` is also a readable stream. By default it is
-*lazy*: it delegates live to the parent store until its first own mutation,
+The dataset returned by `match()` is also a readable stream. By default, it is
+*lazy*: it delegates live to the parent store until its own first mutation,
 which means parent mutations made before that point are reflected in the view.
 You can choose a different behavior with the `matchSemantics` option, either
-per call or as a store-wide default:
+per-call or as a store-wide default:
 
 ```JavaScript
 import { Store, DataFactory } from 'n3';
