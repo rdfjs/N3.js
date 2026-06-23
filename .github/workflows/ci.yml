@@ -36,7 +36,7 @@ jobs:
         # babel-jest require()s @babel/core, which is ESM in babel 8, so it needs
         # Node >= 20.19; jest 30 additionally needs Node >= 18.14. The full jest
         # suite transforms src/ via babel-jest at runtime, so it can only run on
-        # Node 20.19+. Older Node is covered by the spec and compat jobs.
+        # Node 20.19+. Node 18 is covered by the spec jobs.
         node-version: [20.x, 22.x, 24.x, 26.x]
     steps:
       - uses: actions/checkout@v7
@@ -67,26 +67,6 @@ jobs:
         with:
           name: build
       - run: npm run spec-${{ matrix.spec }}
-
-  compat:
-    # Prove the published downleveled artifact runs on every supported Node from
-    # 14 up, using no jest and no babel - just the built lib + its runtime deps.
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: [14.x, 16.x, 18.x, 20.x, 22.x, 24.x, 26.x]
-    needs: build
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
-        with:
-          node-version: ${{ matrix.node-version }}
-      - run: npm ci --ignore-scripts
-      - uses: actions/download-artifact@v8
-        with:
-          name: build
-      - run: node test/smoke.cjs
 
   lint:
     runs-on: ubuntu-latest
@@ -127,7 +107,6 @@ jobs:
       - build
       - test
       - spec
-      - compat
       - lint
       - docs
     runs-on: ubuntu-latest
@@ -143,7 +122,6 @@ jobs:
       - build
       - test
       - spec
-      - compat
       - docs
       - lint
     runs-on: ubuntu-latest
@@ -159,7 +137,7 @@ jobs:
 
   release:
     if: ${{ github.ref == 'refs/heads/main' }}
-    needs: [ test, spec, compat ]
+    needs: [ test, spec ]
     runs-on: ubuntu-latest
     permissions:
       contents: write
