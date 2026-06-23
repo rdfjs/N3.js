@@ -7,39 +7,44 @@ on:
   pull_request:
 
 jobs:
+  build:
+    # Build once on an LTS-class Node. babel 8's CLI build (@babel/code-frame ->
+    # util.styleText) requires Node >= 20.12, and the resulting CJS lib/ +
+    # browser bundle is downleveled, so it runs everywhere. Every other job
+    # consumes this artifact instead of rebuilding.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: build
+          path: |
+            lib
+            browser
+          retention-days: 1
+
   test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # jest 30 requires Node >= 18.14 (it calls os.availableParallelism).
-        # The library still runs on older Node; only the test suite cannot.
-        node-version: [18.x, 20.x, 22.x, 24.x, 26.x]
+        # babel-jest require()s @babel/core, which is ESM in babel 8, so it needs
+        # Node >= 20.19; jest 30 additionally needs Node >= 18.14. The full jest
+        # suite transforms src/ via babel-jest at runtime, so it can only run on
+        # Node 20.19+. Node 18 is covered by the spec jobs.
+        node-version: [20.x, 22.x, 24.x, 26.x]
     steps:
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
-      - uses: actions/checkout@v7
       - run: npm ci --ignore-scripts
-      - run: npm run build
       - run: npm run test
-
-  lint:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: [24.x]
-    steps:
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ matrix.node-version }}
-      - uses: actions/checkout@v7
-      - run: npm ci --ignore-scripts
-      - run: npm run build
-      - run: npm run lint
 
   spec:
     runs-on: ubuntu-latest
@@ -48,14 +53,35 @@ jobs:
       matrix:
         node-version: [18.x, 20.x, 22.x, 24.x, 26.x]
         spec: [1-1-turtle, 1-1-ntriples, 1-1-nquads, 1-1-trig, 1-2-turtle, 1-2-ntriples, 1-2-nquads, 1-2-trig]
+    needs: build
     steps:
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
-      - uses: actions/checkout@v7
-      - run: npm ci
+      - run: npm ci --ignore-scripts
+      # Do not rebuild: the babel CLI build crashes on Node 18. spec/parser.js
+      # does require('..') -> the built CJS lib/, so the downloaded artifact is
+      # exactly what it needs.
+      - uses: actions/download-artifact@v8
+        with:
+          name: build
       - run: npm run spec-${{ matrix.spec }}
+
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [24.x]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npm run lint
 
   docs:
     runs-on: ubuntu-latest
@@ -78,9 +104,10 @@ jobs:
     # Summary job that can be used as a single required check in branch protection
     if: always()
     needs:
+      - build
       - test
-      - lint
       - spec
+      - lint
       - docs
     runs-on: ubuntu-latest
     permissions: {}
@@ -92,6 +119,7 @@ jobs:
 
   gh-pages:
     needs:
+      - build
       - test
       - spec
       - docs
