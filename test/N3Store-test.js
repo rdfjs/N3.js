@@ -788,8 +788,7 @@ describe('Store', () => {
         // Two snapshot views observe the store concurrently.
         const a = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'snapshot' });
         const b = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'snapshot' });
-        // The first matching mutation materializes (and detaches) view `a`'s
-        // observer, while view `b`'s observer is still registered.
+        // Materialize (and detach) view `a`'s observer while view `b`'s remains registered
         a.size; // eslint-disable-line no-unused-expressions
         store.addQuad(q('s1', 'p1', 'oNEW'));
         expect([...a]).toHaveLength(5);
@@ -1028,8 +1027,7 @@ describe('Store', () => {
           const seen = [];
           for (const quad of view) {
             seen.push(quad.object.value);
-            // Mutate only while processing the final matching quad, so the
-            // source iterator is exhausted on the very next step.
+            // Mutate while processing the final quad, so the source is exhausted on the next step
             if (seen.length === 5)
               store.addQuad(q('s1', 'p1', 'oNEW'));
           }
@@ -1109,9 +1107,7 @@ describe('Store', () => {
           for (const a of view) {
             outer.push(a.object.value);
             if (outer.length === 1) {
-              // Run a nested (concurrent) iteration to completion; its finally
-              // block decrements `_activeIterators` while the outer one is still
-              // active, then mutate to exercise the still-running outer iterator.
+              // Run a nested iteration to completion (dropping `_activeIterators` to 1), then mutate
               for (const b of view)
                 inner.push(b.object.value);
               store.addQuad(q('s1', 'p1', 'oNEW'));
