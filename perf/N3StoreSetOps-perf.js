@@ -11,11 +11,8 @@ const size = Number.parseInt(process.argv[2], 10) || 200000;
 // Number of repetitions; the best (fastest) run is reported.
 const reps = Number.parseInt(process.argv[3], 10) || 5;
 
-// Build a store of `count` quads, offset so that two stores can be made to
-// overlap by a controllable amount. `entityIndex` lets callers share an index.
-// Quads are spread across multiple subjects, predicates and graphs so that the
-// three-layered index has realistic depth (a single-predicate store collapses
-// into one wide leaf and hides the index-merge cost).
+// Build a store of `count` quads, offset to control overlap between two stores.
+// Quads are spread across subjects, predicates and graphs for realistic index depth.
 function buildStore(count, offset, entityIndex) {
   const store = new N3.Store(null, entityIndex ? { entityIndex } : undefined);
   for (let i = 0; i < count; i++) {
