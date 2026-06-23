@@ -34,7 +34,6 @@
     "@babel/register": "^7.16.0",
     "@rdfjs/data-model": "^1",
     "arrayify-stream": "^3.0.0",
-    "browserify": "^17.0.0",
     "deep-taxonomy-benchmark": "^2.0.0",
     "docco": "^0.9.1",
     "esbuild": "^0.28.1",
@@ -46,14 +45,16 @@
     "pre-commit": "^2.0.0",
     "rdf-isomorphic": "^2.0.0",
     "rdf-test-suite": "^2.1.4",
-    "streamify-string": "^1.0.1",
-    "uglify-js": "^3.14.3"
+    "streamify-string": "^1.0.1"
+  },
+  "overrides": {
+    "js-yaml": "^4.2.0"
   },
   "scripts": {
     "build": "npm run build:node && npm run build:browser",
     "build:node": "babel src -d lib",
     "build:browser": "rm -rf browser && mkdir browser && npm run build:browser:umd && npm run build:browser:esm",
-    "build:browser:umd": "browserify -s N3 lib/index.js | uglifyjs > browser/n3.min.js",
+    "build:browser:umd": "node scripts/build-umd.js",
     "build:browser:esm": "node scripts/build-esm.js",
     "test": "jest",
     "lint": "eslint src perf test spec",
