@@ -302,7 +302,7 @@ describe('Reasoner', () => {
 
   it('Should correctly apply the deep taxonomy benchmark', async () => {
     for (let i = 0; i < 5; i++) {
-      const store = generateDeepTaxonomy(10 ** i);
+      const store = new Store([...generateDeepTaxonomy(10 ** i)]);
 
       new Reasoner(store).reason(SUBCLASS_RULE);
 
