@@ -347,8 +347,8 @@ export default class N3Store {
 
   // ### `_notifyObservers` invokes all observers with the ids of a mutated quad.
   _notifyObservers(subjectId, predicateId, objectId, graphId, added) {
-    // Iterate over a copy so observers may unregister themselves while reacting
-    for (const observer of [...this._observers])
+    // Observers only ever unregister themselves, which is safe mid-iteration of a Set
+    for (const observer of this._observers)
       observer(subjectId, predicateId, objectId, graphId, added);
   }
 
