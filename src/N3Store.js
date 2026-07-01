@@ -968,7 +968,8 @@ export default class N3Store {
    * @param graph     The optional exact graph to match.
    */
   deleteMatches(subject, predicate, object, graph) {
-    for (const quad of this.match(subject, predicate, object, graph))
+    // Internal matching is explicitly `lazy`: a non-`lazy` view would register an observer that is never released
+    for (const quad of this.match(subject, predicate, object, graph, { matchSemantics: 'lazy' }))
       this.removeQuad(quad);
     return this;
   }
@@ -1094,9 +1095,10 @@ export default class N3Store {
 
   /**
    * Returns a stream that contains all quads of the dataset.
+   * The stream is explicitly `lazy`: a non-`lazy` view would register an observer that is never released.
    */
   toStream() {
-    return this.match();
+    return this.match(null, null, null, null, { matchSemantics: 'lazy' });
   }
 
   /**
@@ -1362,9 +1364,10 @@ class DatasetCoreAndReadableStream extends Readable {
     // For non-`lazy` semantics, route through the snapshot rather than the live parent
     if (this._semantics !== 'lazy')
       return this.filtered.toStream();
+    // The internal view is explicitly `lazy`, so a non-`lazy` store default cannot leak an observer
     return this._filtered ?
       this._filtered.toStream()
-      : this.n3Store.match(this.subject, this.predicate, this.object, this.graph);
+      : this.n3Store.match(this.subject, this.predicate, this.object, this.graph, { matchSemantics: 'lazy' });
   }
 
   union(quads) {

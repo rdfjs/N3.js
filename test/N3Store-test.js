@@ -783,6 +783,24 @@ describe('Store', () => {
         expect(values(view)).not.toContain('oNEW');
       });
 
+      it('keeps internal match() calls lazy under a non-lazy store default', async () => {
+        for (const matchSemantics of ['snapshot', 'forwarded']) {
+          const store = buildStore({ matchSemantics });
+          store.deleteMatches(namedNode('s2'), null, null);
+          expect(store.size).toBe(5);
+          expect(store._observers).toBe(null);
+          await expect(arrayifyStream(store.toStream())).resolves.toHaveLength(5);
+          expect(store._observers).toBe(null);
+        }
+      });
+
+      it('keeps toStream() on a lazy view lazy under a forwarded store default', async () => {
+        const store = buildStore({ matchSemantics: 'forwarded' });
+        const view = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'lazy' });
+        await expect(arrayifyStream(view.toStream())).resolves.toHaveLength(5);
+        expect(store._observers).toBe(null);
+      });
+
       it('does not write union() contents through to a store with a forwarded default', () => {
         const store = buildStore({ matchSemantics: 'forwarded' });
         const view = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'lazy' });
