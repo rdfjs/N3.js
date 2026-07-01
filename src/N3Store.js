@@ -1368,16 +1368,15 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   union(quads) {
-    if (this._semantics !== 'lazy')
-      return this.filtered.union(quads);
+    // An unmaterialized view has seen no matching mutation, so the parent holds its exact contents;
+    // the internal view is explicitly `lazy` so that `addAll` cannot write through to the parent
     return this._filtered ?
       this._filtered.union(quads)
-      : this.n3Store.match(this.subject, this.predicate, this.object, this.graph).addAll(quads);
+      : this.n3Store.match(this.subject, this.predicate, this.object, this.graph, { matchSemantics: 'lazy' }).addAll(quads);
   }
 
   toArray() {
-    if (this._semantics !== 'lazy')
-      return this.filtered.toArray();
+    // An unmaterialized view has seen no matching mutation, so the parent holds its exact contents
     return this._filtered ? this._filtered.toArray() : this.n3Store.getQuads(this.subject, this.predicate, this.object, this.graph);
   }
 

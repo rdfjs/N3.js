@@ -783,6 +783,16 @@ describe('Store', () => {
         expect(values(view)).not.toContain('oNEW');
       });
 
+      it('does not write union() contents through to a store with a forwarded default', () => {
+        const store = buildStore({ matchSemantics: 'forwarded' });
+        const view = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'lazy' });
+        const union = view.union([q('s1', 'p1', 'oU')]);
+        expect(union.size).toBe(6);
+        expect(union.has(q('s1', 'p1', 'oU'))).toBe(true);
+        expect(store.size).toBe(6);
+        expect(store.has(q('s1', 'p1', 'oU'))).toBe(false);
+      });
+
       it('detaches a single observer while another remains attached', () => {
         const store = buildStore();
         // Two snapshot views observe the store concurrently.
@@ -884,6 +894,24 @@ describe('Store', () => {
           expect(view.toArray()).toHaveLength(5);
           await expect(arrayifyStream(view.toStream())).resolves.toHaveLength(5);
           expect(view.union(new Store([q('s1', 'p1', 'oU')])).size).toBe(6);
+        });
+
+        it('freezes on a matching mutation before a first toArray', () => {
+          const store = buildStore();
+          const view = store.match(namedNode('s1'), null, null, null, opts);
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          expect(view.toArray()).toHaveLength(5);
+        });
+
+        it('does not mutate the parent through union', () => {
+          const store = buildStore();
+          const view = store.match(namedNode('s1'), null, null, null, opts);
+          const union = view.union([q('s1', 'p1', 'oU')]);
+          expect(union.size).toBe(6);
+          expect(store.has(q('s1', 'p1', 'oU'))).toBe(false);
+          // The union result is independent of later parent mutations
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          expect(union.size).toBe(6);
         });
       });
 
@@ -1034,6 +1062,15 @@ describe('Store', () => {
           expect(view.toArray()).toHaveLength(6);
           await expect(arrayifyStream(view.toStream())).resolves.toHaveLength(6);
           expect(view.union(new Store([q('s1', 'p1', 'oU')])).size).toBe(7);
+        });
+
+        it('does not mutate the parent through union', () => {
+          const store = buildStore();
+          const view = store.match(namedNode('s1'), null, null, null, opts);
+          const union = view.union([q('s1', 'p1', 'oU')]);
+          expect(union.size).toBe(6);
+          expect(store.has(q('s1', 'p1', 'oU'))).toBe(false);
+          expect(view.has(q('s1', 'p1', 'oU'))).toBe(false);
         });
 
         it('handles matching mutations in the default graph', () => {
