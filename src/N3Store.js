@@ -1303,6 +1303,15 @@ class DatasetCoreAndReadableStream extends Readable {
     }
   }
 
+  // ### `_destroy` closes the cached iterator, so a destroyed stream releases its iteration state.
+  _destroy(error, callback) {
+    if (this[ITERATOR]) {
+      this[ITERATOR].return();
+      this[ITERATOR] = null;
+    }
+    callback(error);
+  }
+
   addAll(quads) {
     if (this._semantics === 'forwarded') {
       this.n3Store.addAll(quads);

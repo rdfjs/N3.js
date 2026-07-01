@@ -1193,6 +1193,45 @@ describe('Store', () => {
           expect([...view]).toHaveLength(1);
         });
 
+        it('releases iteration state when its stream is destroyed mid-read', done => {
+          const store = new Store();
+          for (let i = 0; i < 20; i++)
+            store.addQuad(q('s1', 'p1', `o${i}`));
+          const view = store.match(namedNode('s1'), null, null, null, opts);
+          // A partial read leaves the internal iterator suspended
+          expect(view.read()).not.toBeNull();
+          expect(view._activeIterators).toBe(1);
+          view.once('close', () => {
+            expect(view._activeIterators).toBe(0);
+            // With no live iterators, this mutation must not freeze a baseline
+            store.addQuad(q('s1', 'p1', 'oNEW'));
+            // A later pass is still protected against mid-pass mutations
+            const seen = [];
+            let mutated = false;
+            for (const quad of view) {
+              seen.push(quad.object.value);
+              if (!mutated) {
+                mutated = true;
+                store.addQuad(q('s1', 'p1', 'oNEW2'));
+              }
+            }
+            expect(seen).toHaveLength(21);
+            done();
+          });
+          view.destroy();
+        });
+
+        it('supports destroying its stream before any read', done => {
+          const store = buildStore();
+          const view = store.match(namedNode('s1'), null, null, null, opts);
+          view.once('close', () => {
+            // The dataset side of the view remains usable
+            expect(view.size).toBe(5);
+            done();
+          });
+          view.destroy();
+        });
+
         it('keeps concurrent iterations stable', () => {
           const store = buildStore();
           const view = store.match(namedNode('s1'), null, null, null, opts);
