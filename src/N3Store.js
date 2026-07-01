@@ -96,16 +96,16 @@ function difference(s1, s2, depth = 4) {
  * Only entities present in both indices appear in the returned map.
  *
  * Composite (RDF-star) ids `.s.p.o[.g]` are remapped via their components.
- * Ascending id order guarantees a composite's components are already remapped
- * when it is reached, since a composite is interned after its components.
+ * A composite is interned after its components, so its components are always
+ * already remapped when it is reached: ids are integer-index keys below
+ * 2^32 - 1, which `Object.keys` enumerates in ascending numeric order.
  */
 function remapEntityIds(source, target) {
   const entities = source._entities, targetIds = target._ids;
   const remap = Object.create(null);
   // The empty entity (default graph) is always id 1 in every index.
   remap[1] = 1;
-  const ids = Object.keys(entities).map(Number).sort((a, b) => a - b);
-  for (const id of ids) {
+  for (const id of Object.keys(entities)) {
     const str = entities[id];
     if (str !== '') {
       if (str[0] === '.') {
@@ -113,8 +113,10 @@ function remapEntityIds(source, target) {
         if (mapped !== undefined)
           remap[id] = mapped;
       }
-      else if (str in targetIds) {
-        remap[id] = targetIds[str];
+      else {
+        const targetId = targetIds[str];
+        if (targetId !== undefined)
+          remap[id] = targetId;
       }
     }
   }
