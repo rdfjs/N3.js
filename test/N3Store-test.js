@@ -1098,6 +1098,19 @@ describe('Store', () => {
           expect([...view]).toHaveLength(2);
         });
 
+        it('treats an empty-string graph pattern as the default graph', () => {
+          const store = buildStore();
+          const view = store.match(null, null, null, '', opts);
+          expect([...view]).toHaveLength(6);
+          // A named-graph quad does not match a default-graph pattern
+          store.addQuad(q('s3', 'p1', 'oG', 'g1'));
+          expect([...view]).toHaveLength(6);
+          expect(view.has(q('s3', 'p1', 'oG', 'g1'))).toBe(false);
+          // A default-graph quad does match
+          store.addQuad(q('s3', 'p1', 'oD'));
+          expect([...view]).toHaveLength(7);
+        });
+
         it('stays stable when a parent mutation lands as the source is exhausted', () => {
           const store = buildStore();
           const view = store.match(namedNode('s1'), null, null, null, opts);

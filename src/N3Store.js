@@ -1179,7 +1179,8 @@ class DatasetCoreAndReadableStream extends Readable {
       this._observer = n3Store._addObserver(this._onParentMutation.bind(this));
   }
 
-  // ### `_matchesPattern` returns whether the quad ids fall within this view's pattern (absent term = wildcard).
+  // ### `_matchesPattern` returns whether the quad ids fall within this view's pattern
+  // (absent term = wildcard; the legacy `''` graph argument denotes the default graph, as in `_getGraphs`).
   // Term ids are cached upon resolution; a pattern term may still be absent from the entity index
   // (`_termToNumericId` then returns `undefined`, which never equals a quad id), so an
   // unresolved id is re-resolved on every call, as the term may be interned later on.
@@ -1188,7 +1189,8 @@ class DatasetCoreAndReadableStream extends Readable {
     return (!subject   || subjectId   === (this._subjectId   || (this._subjectId   = n3Store._termToNumericId(subject))))   &&
            (!predicate || predicateId === (this._predicateId || (this._predicateId = n3Store._termToNumericId(predicate)))) &&
            (!object    || objectId    === (this._objectId    || (this._objectId    = n3Store._termToNumericId(object))))    &&
-           (!graph     || graphId     === (this._graphId     || (this._graphId     = isDefaultGraph(graph) ? 1 : n3Store._termToNumericId(graph))));
+           (graph == null || graphId  === (this._graphId     || (this._graphId     =
+             graph === '' || isDefaultGraph(graph) ? 1 : n3Store._termToNumericId(graph))));
   }
 
   // ### `_onParentMutation` reacts to a parent mutation, invoked before the parent index changes.
