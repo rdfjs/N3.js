@@ -63,3 +63,14 @@ console.log(`\nDistinct entity index (fall-back path), ${size} quads/store, ${ov
   bestOf('intersection (distinct index)', () => a.intersection(b));
   bestOf('difference (distinct index)', () => a.difference(b));
 }
+
+// Intersection with a much smaller operand walks that operand instead.
+const smallSize = Math.max(Math.floor(size / 200), 1);
+console.log(`\nDistinct entity index, asymmetric, ${size} vs ${smallSize} quads:`);
+{
+  const a = buildStore(size, 0);
+  const b = buildStore(smallSize, size - Math.floor(smallSize / 2));
+  bestOf('intersection (small other)', () => a.intersection(b));
+  bestOf('intersection (small this)', () => b.intersection(a));
+  bestOf('difference (small other)', () => a.difference(b));
+}

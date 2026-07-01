@@ -2564,6 +2564,49 @@ describe('Store', () => {
       expect(a.difference(b).equals(new Store([star, q[0]]))).toBe(true);
     });
 
+    it('intersection walks the smaller operand when `other` is smaller', () => {
+      // Pad `a` so that `b` is the smaller store: the intersection then walks
+      // `b` and probes `a`, emitting the kept quads in `a`'s id space.
+      const padding = [];
+      for (let i = 0; i < 10; i++)
+        padding.push(new Quad(new NamedNode(`fs${i}`), new NamedNode(`fp${i}`), new NamedNode(`fo${i}`)));
+      const a = new Store([q[0], q[1], q[2], ...padding]);
+      const b = new Store([new Quad(new NamedNode('shift'), new NamedNode('shift'), new NamedNode('shift'))]);
+      b.addQuads([q[0], q[1], q[2]]);
+      expect(a._entityIndex).not.toBe(b._entityIndex);
+      expect(b.size).toBeLessThan(a.size);
+
+      const intersection = a.intersection(b);
+      expect(intersection.equals(new Store([q[0], q[1], q[2]]))).toBe(true);
+      // Result must be independent and writable.
+      intersection.add(new Quad(new NamedNode('x'), new NamedNode('y'), new NamedNode('z')));
+      expect(intersection.size).toBe(4);
+    });
+
+    it('intersection walking the smaller operand skips quads absent from the larger store', () => {
+      const padding = [];
+      for (let i = 0; i < 10; i++)
+        padding.push(new Quad(new NamedNode(`fs${i}`), new NamedNode(`fp${i}`), new NamedNode(`fo${i}`)));
+      const a = new Store([q[0], q[1], q[2], ...padding]);
+      // Each of `b`'s quads misses `a` at a different level of the walk:
+      // an unknown term (absent from `a`'s entity index) or a known term
+      // under which `a` holds no quads at that level.
+      const b = new Store([
+        new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('onlyB')),
+        new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o3')),
+        new Quad(new NamedNode('s1'), new NamedNode('onlyB'), new NamedNode('o1')),
+        new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o1')),
+        new Quad(new NamedNode('onlyB'), new NamedNode('p1'), new NamedNode('o1')),
+        new Quad(new NamedNode('o3'), new NamedNode('p1'), new NamedNode('o1')),
+        new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('onlyB')),
+        new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('o3')),
+      ]);
+      expect(a._entityIndex).not.toBe(b._entityIndex);
+      expect(b.size).toBeLessThan(a.size);
+
+      expect(a.intersection(b).size).toBe(0);
+    });
+
     it('intersection/difference fall back to per-quad matching for non-N3Store datasets', () => {
       const a = new Store([q[0], q[1], q[2]]);
       const other = new SimpleDataset([q[1], q[2]]);

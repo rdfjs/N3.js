@@ -177,6 +177,56 @@ function crossGraphsOp(g1, g2, remap, keepIfPresent) {
 }
 
 /**
+ * Cross-entity-index intersection that walks the smaller `_graphs` index `g1`
+ * while probing the larger `g2`: like `crossGraphsOp` with
+ * `keepIfPresent === true`, except that unmapped ids prune the walk, and kept
+ * quads are emitted under their remapped ids so the result lives in `g2`'s id
+ * space. This is only valid for intersection: `remap` is injective, so the
+ * remapped quads are still unique per graph, whereas difference must emit the
+ * unmappable quads of the walked index.
+ */
+function crossGraphsIntersect(g1, g2, remap) {
+  let target = false, size = 0;
+  for (const graph in g1) {
+    const mappedGraph = remap[graph];
+    const otherContent = mappedGraph === undefined ? undefined : g2[mappedGraph];
+    if (otherContent) {
+      const otherSubjects = otherContent.subjects;
+      const subjects = g1[graph].subjects;
+      let out = null;
+      for (const subject in subjects) {
+        const mappedSubject = remap[subject];
+        const otherPredicates = mappedSubject === undefined ? undefined : otherSubjects[mappedSubject];
+        if (otherPredicates) {
+          const predicates = subjects[subject];
+          for (const predicate in predicates) {
+            const mappedPredicate = remap[predicate];
+            const otherObjects = mappedPredicate === undefined ? undefined : otherPredicates[mappedPredicate];
+            if (otherObjects) {
+              const objects = predicates[predicate];
+              for (const object in objects) {
+                const mappedObject = remap[object];
+                if (mappedObject !== undefined && mappedObject in otherObjects) {
+                  if (!out) {
+                    target = target || Object.create(null);
+                    out = target[mappedGraph] = { subjects: {}, predicates: {}, objects: {} };
+                  }
+                  addToIndex(out.subjects, mappedSubject, mappedPredicate, mappedObject);
+                  addToIndex(out.predicates, mappedPredicate, mappedObject, mappedSubject);
+                  addToIndex(out.objects, mappedObject, mappedSubject, mappedPredicate);
+                  size++;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return { graphs: target, size };
+}
+
+/**
  * Shared shell for the cross-entity-index branch of `intersection`
  * (`keepIfPresent === true`) and `difference` (`keepIfPresent === false`):
  * builds a result store keyed by `self`'s entity index, remaps `other`'s ids
@@ -184,8 +234,15 @@ function crossGraphsOp(g1, g2, remap, keepIfPresent) {
  */
 function crossIndexOp(self, other, keepIfPresent) {
   const store = new N3Store({ entityIndex: self._entityIndex });
-  const remap = remapEntityIds(self._entityIndex, other._entityIndex);
-  const { graphs, size } = crossGraphsOp(self._graphs, other._graphs, remap, keepIfPresent);
+  // Intersection can walk either operand, as the result is bounded by the
+  // smaller one; difference must walk `self`.
+  const walkOther = keepIfPresent && other.size < self.size;
+  const remap = walkOther ?
+    remapEntityIds(other._entityIndex, self._entityIndex) :
+    remapEntityIds(self._entityIndex, other._entityIndex);
+  const { graphs, size } = walkOther ?
+    crossGraphsIntersect(other._graphs, self._graphs, remap) :
+    crossGraphsOp(self._graphs, other._graphs, remap, keepIfPresent);
   if (graphs) {
     store._graphs = graphs;
     store._size = size;
