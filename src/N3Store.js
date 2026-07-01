@@ -576,7 +576,8 @@ export default class N3Store {
   // For backwards compatibility, the object return also implements the Readable stream interface.
   // `options.matchSemantics` (defaulting to the store-level option, default `'lazy'`) sets
   // how the view reacts to later parent mutations:
-  //  - `'lazy'`: delegates live to the parent until its first own mutation (backwards-compatible).
+  //  - `'lazy'`: delegates live to the parent until its first mutation or materializing
+  //    read, such as `size` or `has` (backwards-compatible).
   //  - `'snapshot'`: reflects the parent contents at the time of `match()`.
   //  - `'forwarded'`: stays live; matching parent mutations are forwarded to it, and view
   //    mutations write through to the parent unrestricted by the pattern (so a

@@ -381,28 +381,29 @@ The store provides the following search methods
 ### Configuring `match()` semantics
 
 The dataset returned by `match()` is also a readable stream. By default, it is
-*lazy*: it delegates live to the parent store until its own first mutation,
-which means parent mutations made before that point are reflected in the view.
-You can choose a different behavior with the `matchSemantics` option, either
-per-call or as a store-wide default:
+*lazy*: it delegates live to the parent store until the first operation that
+materializes the view (a mutation, or a non-streaming read such as `size` or
+`has`), which means parent mutations made before that point are reflected in
+the view. You can choose a different behavior with the `matchSemantics` option,
+either as a store-wide default or per call:
 
 ```JavaScript
 import { Store, DataFactory } from 'n3';
 const { namedNode } = DataFactory;
 
-// Per call:
-const view = store.match(namedNode('s'), null, null, null, { matchSemantics: 'snapshot' });
-
-// Or as the default for every match() of a store:
+// As the default for every match() of a store:
 const store = new Store([], { matchSemantics: 'snapshot' });
+
+// Or per call:
+const view = store.match(namedNode('s'), null, null, null, { matchSemantics: 'snapshot' });
 ```
 
 Supported values:
 
 - `'lazy'` (default) — backwards-compatible behavior. The view reflects the
-  parent store until the view itself is first mutated, after which it is frozen
-  to a snapshot. Parent mutations made before that first mutation leak into the
-  view.
+  parent store until the first operation that materializes it (a mutation, or a
+  non-streaming read such as `size` or `has`), after which it is frozen to a
+  snapshot. Parent mutations made before that point leak into the view.
 - `'snapshot'` — the view reflects the parent contents *at the time of*
   `match()`. Later parent mutations never affect it. This is the most
   spec-correct interpretation of an RDF/JS dataset.
