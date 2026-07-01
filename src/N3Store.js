@@ -170,7 +170,7 @@ export default class N3Store {
     options = options || {};
     this._factory = options.factory || N3DataFactory;
     // Default `match()` semantics ('lazy', 'snapshot', or 'forwarded'); see `match()`
-    this._matchSemantics = options.matchSemantics || 'lazy';
+    this._matchSemantics = validateMatchSemantics(options.matchSemantics || 'lazy');
     this._entityIndex = options.entityIndex || new N3EntityIndex({ factory: this._factory });
     this._entities = this._entityIndex._entities;
     this._termFromId = this._entityIndex._termFromId.bind(this._entityIndex);
@@ -1159,6 +1159,16 @@ function indexMatch(index, ids, depth = 0) {
 }
 
 /**
+ * Returns `semantics` if it is a supported `matchSemantics` value,
+ * and throws otherwise, so misconfiguration fails at the call site.
+ */
+function validateMatchSemantics(semantics) {
+  if (semantics !== 'lazy' && semantics !== 'snapshot' && semantics !== 'forwarded')
+    throw new Error(`Unknown matchSemantics: ${semantics}`);
+  return semantics;
+}
+
+/**
  * A class that implements both DatasetCore and Readable.
  */
 class DatasetCoreAndReadableStream extends Readable {
@@ -1173,9 +1183,7 @@ class DatasetCoreAndReadableStream extends Readable {
     this._baselines = null;
     // Lazily cached numeric ids of the pattern terms (immutable once present in the entity index)
     this._subjectId = this._predicateId = this._objectId = this._graphId = undefined;
-    const semantics = this._semantics = options.matchSemantics;
-    if (semantics !== 'lazy' && semantics !== 'snapshot' && semantics !== 'forwarded')
-      throw new Error(`Unknown matchSemantics: ${semantics}`);
+    const semantics = this._semantics = validateMatchSemantics(options.matchSemantics);
     // For non-`lazy` semantics, observe parent mutations to keep the view consistent
     if (semantics !== 'lazy')
       this._observer = n3Store._addObserver(this._onParentMutation.bind(this));
