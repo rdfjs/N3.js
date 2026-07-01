@@ -945,6 +945,20 @@ describe('Store', () => {
           expect([...sub]).toHaveLength(5);
           expect(sub.has(q('s1', 'p1', 'oNEW'))).toBe(false);
         });
+
+        it('supports detach() before and after materialization', () => {
+          const store = buildStore();
+          const view = store.match(namedNode('s1'), null, null, null, opts);
+          view.detach();
+          expect(store._observers).toBe(null);
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          expect([...view]).toHaveLength(5);
+          // A view that has already materialized (removing its observer) can also detach
+          const other = store.match(namedNode('s1'), null, null, null, opts);
+          expect(other.size).toBe(6);
+          expect(other.detach().size).toBe(6);
+          expect(store._observers).toBe(null);
+        });
       });
 
       describe('forwarded', () => {
@@ -1103,6 +1117,23 @@ describe('Store', () => {
           expect(union.size).toBe(6);
           expect(store.has(q('s1', 'p1', 'oU'))).toBe(false);
           expect(view.has(q('s1', 'p1', 'oU'))).toBe(false);
+        });
+
+        it('stops observing the parent after detach()', () => {
+          const store = buildStore();
+          const view = store.match(namedNode('s1'), null, null, null, opts);
+          expect(view.detach()).toBe(view);
+          expect(store._observers).toBe(null);
+          // The view is frozen to its contents at detach time
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          expect([...view]).toHaveLength(5);
+          // Mutations now apply to the view only, not to the parent
+          view.add(q('s1', 'p1', 'oLOCAL'));
+          expect(view.has(q('s1', 'p1', 'oLOCAL'))).toBe(true);
+          expect(store.has(q('s1', 'p1', 'oLOCAL'))).toBe(false);
+          // `detach()` is idempotent
+          expect(view.detach()).toBe(view);
+          expect(view.size).toBe(6);
         });
 
         it('downgrades a nested match() to a snapshot of the view', () => {

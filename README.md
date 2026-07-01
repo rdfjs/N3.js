@@ -418,6 +418,14 @@ it started, even if a matching parent mutation lands mid-iteration. Views are
 maintained incrementally — they only do work when a parent mutation actually
 matches the view's pattern — so the common path stays fast.
 
+Such views observe the parent store: a `'snapshot'` view until its contents are
+first needed (its first matching parent mutation or first materializing read),
+a `'forwarded'` view for the lifetime of the store. The store holds a strong
+reference to each observing view — retaining it against garbage collection —
+and checks every mutation against each open view's pattern. Call
+`view.detach()` to release a view early: it is frozen to its contents at detach
+time and no longer taxes the store.
+
 ## Reasoning
 
 N3.js supports reasoning as follows:

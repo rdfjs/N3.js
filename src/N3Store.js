@@ -581,6 +581,10 @@ export default class N3Store {
   //  - `'forwarded'`: stays live; matching parent mutations are forwarded to it.
   // Calling `match()` on a view yields at most a `'snapshot'` sub-view:
   // nested views never write through to the root store.
+  // A non-`lazy` view observes the store — `'snapshot'` until it first materializes,
+  // `'forwarded'` for the store's lifetime or until `detach()` — so the store retains
+  // each observing view, checks every mutation against its pattern, and cannot use
+  // the same-index `addAll` fast path while any view observes.
   match(subject, predicate, object, graph, options) {
     return new DatasetCoreAndReadableStream(this, subject, predicate, object, graph, {
       entityIndex: this._entityIndex,
@@ -1323,6 +1327,20 @@ class DatasetCoreAndReadableStream extends Readable {
       this[ITERATOR] = null;
     }
     callback(error);
+  }
+
+  // ### `detach` freezes the view to its current contents and stops observing the parent,
+  // so the parent no longer retains the view nor checks mutations against its pattern.
+  detach() {
+    // Materializing a `snapshot` view removes its observer; remove a `forwarded` observer explicitly
+    this._filtered = this.filtered;
+    if (this._observer) {
+      this.n3Store._removeObserver(this._observer);
+      this._observer = null;
+    }
+    // Parent deltas are no longer forwarded, so subsequent view mutations apply locally
+    this._semantics = 'snapshot';
+    return this;
   }
 
   addAll(quads) {
