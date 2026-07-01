@@ -14,7 +14,7 @@ const reps = Number.parseInt(process.argv[3], 10) || 5;
 // Build a store of `count` quads, offset to control overlap between two stores.
 // Quads are spread across subjects, predicates and graphs for realistic index depth.
 function buildStore(count, offset, entityIndex) {
-  const store = new N3.Store(null, entityIndex ? { entityIndex } : undefined);
+  const store = new N3.Store(null, { entityIndex });
   for (let i = 0; i < count; i++) {
     const g = i % 4;
     store.addQuad(
@@ -33,6 +33,8 @@ function bestOf(label, fn) {
     const start = process.hrtime.bigint();
     const result = fn();
     const elapsed = Number(process.hrtime.bigint() - start) / 1e6;
+    // Force any lazily computed size and keep the result observable,
+    // outside of the timed window.
     assert(result.size >= 0);
     if (elapsed < best)
       best = elapsed;
