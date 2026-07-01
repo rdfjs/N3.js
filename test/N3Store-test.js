@@ -2476,6 +2476,172 @@ describe('Store', () => {
     });
   });
 
+  describe('cross-entity-index set operations', () => {
+    // A minimal non-N3Store dataset, to exercise the per-quad `filter`/`has`
+    // fall-back of `intersection`/`difference`.
+    class SimpleDataset {
+      constructor(quads) { this.quads = quads; }
+      has(quad) { return this.quads.some(q => q.equals(quad)); }
+      * [Symbol.iterator]() { yield* this.quads; }
+    }
+
+    const q = [
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
+      new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o3'), new NamedNode('g1')),
+    ];
+
+    it('intersection/difference match the per-quad result across distinct indices', () => {
+      const a = new Store([q[0], q[1], q[2]]);
+      // b has a distinct entity index and is shifted so the term ids differ.
+      const b = new Store([new Quad(new NamedNode('shift'), new NamedNode('shift'), new NamedNode('shift'))]);
+      b.addQuads([q[1], q[2]]);
+      expect(a._entityIndex).not.toBe(b._entityIndex);
+
+      const intersection = a.intersection(b);
+      expect(intersection.equals(new Store([q[1], q[2]]))).toBe(true);
+      // Result must be independent and writable.
+      intersection.add(new Quad(new NamedNode('x'), new NamedNode('y'), new NamedNode('z')));
+      expect(intersection.size).toBe(3);
+
+      const difference = a.difference(b);
+      expect(difference.equals(new Store([q[0]]))).toBe(true);
+    });
+
+    it('intersection/difference handle empty results and empty stores across distinct indices', () => {
+      const a = new Store([q[0]]);
+      const b = new Store([new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))]);
+      const empty = new Store();
+      expect(a.intersection(b).size).toBe(0);
+      expect(a.intersection(empty).size).toBe(0);
+      expect(empty.intersection(a).size).toBe(0);
+      expect(a.difference(b).equals(new Store([q[0]]))).toBe(true);
+      expect(a.difference(empty).equals(new Store([q[0]]))).toBe(true);
+      expect(empty.difference(a).size).toBe(0);
+    });
+
+    it('intersection/difference handle quads whose graph term is absent from the other store', () => {
+      // `a`'s only quad lives in a graph that `b`'s entity index has never
+      // seen, so the graph id cannot be remapped; its s/p/o all remap.
+      const g = new Quad(q[0].subject, q[0].predicate, q[0].object, new NamedNode('gOnlyInA'));
+      const a = new Store([g]);
+      const b = new Store([q[0]]);
+      expect(a._entityIndex).not.toBe(b._entityIndex);
+
+      expect(a.intersection(b).size).toBe(0);
+      expect(a.difference(b).equals(new Store([g]))).toBe(true);
+    });
+
+    it('intersection/difference handle quoted triples across distinct indices', () => {
+      const inner = new Quad(new NamedNode('s'), new NamedNode('p'), new NamedNode('o'));
+      const star = new Quad(inner, new NamedNode('p2'), new NamedNode('o2'));
+      const a = new Store([star, q[0]]);
+      // Shift b's ids so the composite id of the quoted triple differs from a's.
+      const b = new Store([new Quad(new NamedNode('z1'), new NamedNode('z2'), new NamedNode('z3'))]);
+      b.addQuads([star]);
+      expect(a._entityIndex).not.toBe(b._entityIndex);
+
+      expect(a.intersection(b).equals(new Store([star]))).toBe(true);
+      expect(a.difference(b).equals(new Store([q[0]]))).toBe(true);
+    });
+
+    it('intersection/difference handle quoted triples with a named graph across distinct indices', () => {
+      // The quoted triple carries a named graph, so it interns a four-part
+      // composite id `.s.p.o.g` that must remap across the indices.
+      const inner = new Quad(new NamedNode('s'), new NamedNode('p'), new NamedNode('o'), new NamedNode('g'));
+      const star = new Quad(inner, new NamedNode('p2'), new NamedNode('o2'));
+      const a = new Store([star, q[0]]);
+      // Shift b's ids so the composite id of the quoted triple differs from a's.
+      const b = new Store([new Quad(new NamedNode('z1'), new NamedNode('z2'), new NamedNode('z3'))]);
+      b.addQuad(star);
+      expect(a._entityIndex).not.toBe(b._entityIndex);
+
+      expect(a.intersection(b).equals(new Store([star]))).toBe(true);
+      expect(a.difference(b).equals(new Store([q[0]]))).toBe(true);
+    });
+
+    it('intersection/difference handle quoted triples whose components are absent from the other store', () => {
+      // `a`'s quoted triple references `oOnlyInA`, a term that does not occur in
+      // `b` at all, so the composite id cannot be remapped.
+      const inner = new Quad(new NamedNode('s'), new NamedNode('p'), new NamedNode('oOnlyInA'));
+      const star = new Quad(inner, new NamedNode('p2'), new NamedNode('o2'));
+      const a = new Store([star, q[0]]);
+      const b = new Store([q[0]]);
+      expect(a._entityIndex).not.toBe(b._entityIndex);
+
+      expect(a.intersection(b).equals(new Store([q[0]]))).toBe(true);
+      expect(a.difference(b).equals(new Store([star]))).toBe(true);
+    });
+
+    it('intersection/difference handle quoted triples whose components all exist in the other store but the composite does not', () => {
+      // Every component of `a`'s quoted triple occurs in `b`, but the *composite*
+      // (the quoted triple itself) does not, so the remapped composite id is not
+      // present in `b`'s entity index and the quad is treated as absent.
+      const inner = new Quad(new NamedNode('s'), new NamedNode('p'), new NamedNode('o'));
+      const star = new Quad(inner, new NamedNode('p2'), new NamedNode('o2'));
+      const a = new Store([star, q[0]]);
+      // `b` contains all of s, p, o, p2, o2 but never the quoted triple `star`.
+      const b = new Store([
+        new Quad(new NamedNode('s'), new NamedNode('p'), new NamedNode('o')),
+        new Quad(new NamedNode('p2'), new NamedNode('o2'), new NamedNode('x')),
+      ]);
+      expect(a._entityIndex).not.toBe(b._entityIndex);
+
+      expect(a.intersection(b).size).toBe(0);
+      expect(a.difference(b).equals(new Store([star, q[0]]))).toBe(true);
+    });
+
+    it('intersection walks the smaller operand when `other` is smaller', () => {
+      // Pad `a` so that `b` is the smaller store: the intersection then walks
+      // `b` and probes `a`, emitting the kept quads in `a`'s id space.
+      const padding = [];
+      for (let i = 0; i < 10; i++)
+        padding.push(new Quad(new NamedNode(`fs${i}`), new NamedNode(`fp${i}`), new NamedNode(`fo${i}`)));
+      const a = new Store([q[0], q[1], q[2], ...padding]);
+      const b = new Store([new Quad(new NamedNode('shift'), new NamedNode('shift'), new NamedNode('shift'))]);
+      b.addQuads([q[0], q[1], q[2]]);
+      expect(a._entityIndex).not.toBe(b._entityIndex);
+      expect(b.size).toBeLessThan(a.size);
+
+      const intersection = a.intersection(b);
+      expect(intersection.equals(new Store([q[0], q[1], q[2]]))).toBe(true);
+      // Result must be independent and writable.
+      intersection.add(new Quad(new NamedNode('x'), new NamedNode('y'), new NamedNode('z')));
+      expect(intersection.size).toBe(4);
+    });
+
+    it('intersection walking the smaller operand skips quads absent from the larger store', () => {
+      const padding = [];
+      for (let i = 0; i < 10; i++)
+        padding.push(new Quad(new NamedNode(`fs${i}`), new NamedNode(`fp${i}`), new NamedNode(`fo${i}`)));
+      const a = new Store([q[0], q[1], q[2], ...padding]);
+      // Each of `b`'s quads misses `a` at a different level of the walk:
+      // an unknown term (absent from `a`'s entity index) or a known term
+      // under which `a` holds no quads at that level.
+      const b = new Store([
+        new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('onlyB')),
+        new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o3')),
+        new Quad(new NamedNode('s1'), new NamedNode('onlyB'), new NamedNode('o1')),
+        new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o1')),
+        new Quad(new NamedNode('onlyB'), new NamedNode('p1'), new NamedNode('o1')),
+        new Quad(new NamedNode('o3'), new NamedNode('p1'), new NamedNode('o1')),
+        new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('onlyB')),
+        new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('o3')),
+      ]);
+      expect(a._entityIndex).not.toBe(b._entityIndex);
+      expect(b.size).toBeLessThan(a.size);
+
+      expect(a.intersection(b).size).toBe(0);
+    });
+
+    it('intersection/difference fall back to per-quad matching for non-N3Store datasets', () => {
+      const a = new Store([q[0], q[1], q[2]]);
+      const other = new SimpleDataset([q[1], q[2]]);
+      expect(a.intersection(other).equals(new Store([q[1], q[2]]))).toBe(true);
+      expect(a.difference(other).equals(new Store([q[0]]))).toBe(true);
+    });
+  });
+
   it('should initialize the store correctly with a another store', () => {
     const quads = new Store([
       new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
@@ -2529,6 +2695,64 @@ describe('EntityIndex', () => {
     expect(entityIndex._ids).toEqual({
       ...index,
       o5: 8,
+    });
+  });
+
+  describe('_remapCompositeId', () => {
+    it('remaps a composite id whose components and composite all exist in the target', () => {
+      // `inner` is a quoted triple used as the subject of `star`, so `inner`
+      // gets a composite id `.s.p.o` in each entity index.
+      const inner = new Quad(new NamedNode('s'), new NamedNode('p'), new NamedNode('o'));
+      const star = new Quad(inner, new NamedNode('p2'), new NamedNode('o2'));
+      // `source` and `target` are distinct indices: `source` contains `inner`
+      // and `target` contains `star`.
+      const source = new EntityIndex();
+      const target = new EntityIndex();
+      // Intern `inner`'s components and its composite id into `source`.
+      source._termToNewNumericId(inner);
+      // Offset `target`'s ids (with an unrelated quad) so the composite
+      // component ids differ from those in `source`, then add `star`.
+      const targetStore = new Store(
+        [new Quad(new NamedNode('z'), new NamedNode('z'), new NamedNode('z'))],
+        { entityIndex: target },
+      );
+      targetStore.addQuad(star);
+
+      // The composite id string of the quoted triple `inner` within the source.
+      const compositeId = source._entities[source._termToNumericId(inner)];
+      expect(compositeId[0]).toBe('.');
+
+      // Build a remap from source component ids to target component ids.
+      const remap = Object.create(null);
+      remap[1] = 1;
+      for (const idStr of Object.keys(source._entities)) {
+        const str = source._entities[idStr];
+        if (str !== '' && str[0] !== '.' && str in target._ids)
+          remap[idStr] = target._ids[str];
+      }
+
+      const mapped = target._remapCompositeId(compositeId, remap);
+      expect(mapped).toBe(target._termToNumericId(inner));
+    });
+
+    it('returns undefined when a component cannot be remapped', () => {
+      const target = new EntityIndex();
+      // Composite `.2.3.4`; remap has no entry for component `4`.
+      const remap = Object.create(null);
+      remap[2] = 10;
+      remap[3] = 11;
+      expect(target._remapCompositeId('.2.3.4', remap)).toBeUndefined();
+    });
+
+    it('returns undefined when the remapped composite is absent from the target', () => {
+      const target = new EntityIndex();
+      // All components remap, but the resulting composite `.10.11.12` is not in
+      // the target index.
+      const remap = Object.create(null);
+      remap[2] = 10;
+      remap[3] = 11;
+      remap[4] = 12;
+      expect(target._remapCompositeId('.2.3.4', remap)).toBeUndefined();
     });
   });
 });

@@ -18,6 +18,20 @@ function merge(target, source, depth = 4) {
 }
 
 /**
+ * Adds a quad to a three-layered index; returns whether the index changed.
+ */
+function addToIndex(index0, key0, key1, key2) {
+  // Create layers as necessary
+  const index1 = index0[key0] || (index0[key0] = {});
+  const index2 = index1[key1] || (index1[key1] = {});
+  // Setting the key to _any_ value signals the presence of the quad
+  const existed = key2 in index2;
+  if (!existed)
+    index2[key2] = null;
+  return !existed;
+}
+
+/**
  * Determines the intersection of the `_graphs` index s1 and s2.
  * s1 and s2 *must* belong to Stores that share an `_entityIndex`.
  *
@@ -79,6 +93,173 @@ function difference(s1, s2, depth = 4) {
   return target;
 }
 
+/**
+ * Maps the numeric ids of the `source` entity index to those of `target`.
+ * Only entities present in both indices appear in the returned map.
+ *
+ * Composite (RDF-star) ids `.s.p.o[.g]` are remapped via their components.
+ * A composite is interned after its components, so its components are always
+ * already remapped when it is reached: ids are integer-index keys below
+ * 2^32 - 1, which `Object.keys` enumerates in ascending numeric order.
+ */
+function remapEntityIds(source, target) {
+  const entities = source._entities, targetIds = target._ids;
+  const remap = Object.create(null);
+  // The empty entity (default graph) is always id 1 in every index.
+  remap[1] = 1;
+  for (const id of Object.keys(entities)) {
+    const str = entities[id];
+    if (str !== '') {
+      if (str[0] === '.') {
+        const mapped = target._remapCompositeId(str, remap);
+        if (mapped !== undefined)
+          remap[id] = mapped;
+      }
+      else {
+        const targetId = targetIds[str];
+        if (targetId !== undefined)
+          remap[id] = targetId;
+      }
+    }
+  }
+  return remap;
+}
+
+/**
+ * Performs a cross-entity-index intersection or difference: walks the `_graphs`
+ * index `g1` (using its own numeric ids) and, for each quad, tests whether it is
+ * present in the `_graphs` index `g2` (whose ids differ) via the precomputed
+ * `remap` (g1 ids -> g2 ids). Quads are kept when their presence in `g2` equals
+ * `keepIfPresent`. The result is returned as `{ graphs, size }`, where `graphs`
+ * is a fresh index keyed by `g1`'s ids, or `false` when the result is empty
+ * (like the return value of `intersect`/`difference`).
+ *
+ * Unmapped ids cannot prune the walk: this function is shared with difference,
+ * where quads whose graph/subject/predicate/object has no counterpart in
+ * `g2`'s index are exactly the ones to keep, so `undefined` is carried down
+ * through all four levels instead of skipping.
+ *
+ * NOTE: unlike the depth-recursive `intersect`/`difference`, the descent is
+ * hand-inlined (like the `size` getter, `_findInIndex` and `_countInIndex`)
+ * because each level must consult `remap`; sharing a generic walker with
+ * those hot monomorphic per-quad loops would slow them down.
+ */
+function crossGraphsOp(g1, g2, remap, keepIfPresent) {
+  let target = false, size = 0;
+  for (const graph in g1) {
+    const subjects = g1[graph].subjects;
+    const mappedGraph = remap[graph];
+    const otherContent = mappedGraph === undefined ? undefined : g2[mappedGraph];
+    const otherSubjects = otherContent && otherContent.subjects;
+    let out = null;
+    for (const subject in subjects) {
+      const predicates = subjects[subject];
+      const mappedSubject = otherSubjects && remap[subject];
+      const otherPredicates = mappedSubject === undefined ? undefined : otherSubjects[mappedSubject];
+      for (const predicate in predicates) {
+        const objects = predicates[predicate];
+        const mappedPredicate = otherPredicates && remap[predicate];
+        const otherObjects = mappedPredicate === undefined ? undefined : otherPredicates[mappedPredicate];
+        for (const object in objects) {
+          let present = false;
+          if (otherObjects) {
+            const mappedObject = remap[object];
+            present = mappedObject !== undefined && mappedObject in otherObjects;
+          }
+          if (present === keepIfPresent) {
+            if (!out) {
+              target = target || Object.create(null);
+              out = target[graph] = { subjects: {}, predicates: {}, objects: {} };
+            }
+            // Each (s,p,o) walked from `g1` is unique within its graph, so the
+            // quad is always new in `out` (`addToIndex` never finds it) and
+            // `size` can grow unconditionally.
+            addToIndex(out.subjects, subject, predicate, object);
+            addToIndex(out.predicates, predicate, object, subject);
+            addToIndex(out.objects, object, subject, predicate);
+            size++;
+          }
+        }
+      }
+    }
+  }
+  return { graphs: target, size };
+}
+
+/**
+ * Cross-entity-index intersection that walks the smaller `_graphs` index `g1`
+ * while probing the larger `g2`: like `crossGraphsOp` with
+ * `keepIfPresent === true`, except that unmapped ids prune the walk, and kept
+ * quads are emitted under their remapped ids so the returned `graphs` index is
+ * keyed by `g2`'s ids. This is only valid for intersection: `remap` is
+ * injective, so the remapped quads are still unique per graph, whereas
+ * difference must emit the unmappable quads of the walked index.
+ */
+function crossGraphsIntersect(g1, g2, remap) {
+  let target = false, size = 0;
+  for (const graph in g1) {
+    const mappedGraph = remap[graph];
+    const otherContent = mappedGraph === undefined ? undefined : g2[mappedGraph];
+    if (otherContent) {
+      const otherSubjects = otherContent.subjects;
+      const subjects = g1[graph].subjects;
+      let out = null;
+      for (const subject in subjects) {
+        const mappedSubject = remap[subject];
+        const otherPredicates = mappedSubject === undefined ? undefined : otherSubjects[mappedSubject];
+        if (otherPredicates) {
+          const predicates = subjects[subject];
+          for (const predicate in predicates) {
+            const mappedPredicate = remap[predicate];
+            const otherObjects = mappedPredicate === undefined ? undefined : otherPredicates[mappedPredicate];
+            if (otherObjects) {
+              const objects = predicates[predicate];
+              for (const object in objects) {
+                const mappedObject = remap[object];
+                if (mappedObject !== undefined && mappedObject in otherObjects) {
+                  if (!out) {
+                    target = target || Object.create(null);
+                    out = target[mappedGraph] = { subjects: {}, predicates: {}, objects: {} };
+                  }
+                  addToIndex(out.subjects, mappedSubject, mappedPredicate, mappedObject);
+                  addToIndex(out.predicates, mappedPredicate, mappedObject, mappedSubject);
+                  addToIndex(out.objects, mappedObject, mappedSubject, mappedPredicate);
+                  size++;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return { graphs: target, size };
+}
+
+/**
+ * Shared shell for the cross-entity-index branch of `intersection`
+ * (`keepIfPresent === true`) and `difference` (`keepIfPresent === false`):
+ * builds a result store keyed by `self`'s entity index, remapping the ids of
+ * the walked operand into the id space of the probed one.
+ */
+function crossIndexOp(self, other, keepIfPresent) {
+  const store = new N3Store({ entityIndex: self._entityIndex });
+  // Intersection can walk either operand, as the result is bounded by the
+  // smaller one; difference must walk `self`.
+  const walkOther = keepIfPresent && other.size < self.size;
+  const remap = walkOther ?
+    remapEntityIds(other._entityIndex, self._entityIndex) :
+    remapEntityIds(self._entityIndex, other._entityIndex);
+  const { graphs, size } = walkOther ?
+    crossGraphsIntersect(other._graphs, self._graphs, remap) :
+    crossGraphsOp(self._graphs, other._graphs, remap, keepIfPresent);
+  if (graphs) {
+    store._graphs = graphs;
+    store._size = size;
+  }
+  return store;
+}
+
 // ## Constructor
 export class N3EntityIndex {
   constructor(options = {}) {
@@ -108,6 +289,20 @@ export class N3EntityIndex {
       return q;
     }
     return termFromId(id, this._factory);
+  }
+
+  // ### `_remapCompositeId` translates a composite id `.s.p.o[.g]` into this
+  // index's id space via `remap`, returning its numeric id here or `undefined`.
+  _remapCompositeId(id, remap) {
+    const parts = id.split('.');
+    let mapped = '';
+    for (let i = 1; i < parts.length; i++) {
+      const component = remap[parts[i]];
+      if (component === undefined)
+        return undefined;
+      mapped += `.${component}`;
+    }
+    return this._ids[mapped];
   }
 
   _termToNumericId(term) {
@@ -202,15 +397,9 @@ export default class N3Store {
 
   // ### `_addToIndex` adds a quad to a three-layered index.
   // Returns if the index has changed, if the entry did not already exist.
+  // Method wrapper over `addToIndex`, called as a method by `addQuad`/`N3Reasoner`.
   _addToIndex(index0, key0, key1, key2) {
-    // Create layers as necessary
-    const index1 = index0[key0] || (index0[key0] = {});
-    const index2 = index1[key1] || (index1[key1] = {});
-    // Setting the key to _any_ value signals the presence of the quad
-    const existed = key2 in index2;
-    if (!existed)
-      index2[key2] = null;
-    return !existed;
+    return addToIndex(index0, key0, key1, key2);
   }
 
   // ### `_removeFromIndex` removes a quad from a three-layered index
@@ -949,6 +1138,10 @@ export default class N3Store {
       return store;
     }
 
+    // Distinct entity indices: compare on the indices by remapping the ids of one into the other.
+    if (other instanceof N3Store)
+      return crossIndexOp(this, other, false);
+
     return this.filter(quad => !other.has(quad));
   }
 
@@ -999,6 +1192,10 @@ export default class N3Store {
       }
       return store;
     }
+
+    // Distinct entity indices: compare on the indices by remapping the ids of one into the other.
+    else if (other instanceof N3Store)
+      return crossIndexOp(this, other, true);
 
     return this.filter(quad => other.has(quad));
   }
