@@ -1274,6 +1274,38 @@ describe('Store', () => {
           expect(inner).toHaveLength(5);
           expect(outer.sort()).toEqual(['o0', 'o1', 'o2', 'o3', 'o4']);
         });
+
+        it('keeps an overlapping iteration stable after a baseline freeze', () => {
+          const store = new Store();
+          // Spread the quads across predicate buckets, so deletions hit levels not yet iterated
+          for (let i = 0; i < 5; i++)
+            store.addQuad(q('s1', `p${i}`, 'o1'));
+          const view = store.match(namedNode('s1'), null, null, null, opts);
+          const outer = view[Symbol.iterator]();
+          expect(outer.next().done).toBe(false);
+          // This mutation freezes a baseline for the in-progress outer iteration
+          store.addQuad(q('s1', 'pNEW', 'o1'));
+          // An iteration starting now must also stay stable across further matching mutations
+          const seen = [];
+          let mutated = false;
+          for (const quad of view) {
+            seen.push(quad.predicate.value);
+            if (!mutated) {
+              mutated = true;
+              store.removeQuad(q('s1', 'p3', 'o1'));
+              store.removeQuad(q('s1', 'p4', 'o1'));
+            }
+          }
+          expect(seen).toHaveLength(6);
+          expect(seen).toEqual(expect.arrayContaining(['p3', 'p4', 'pNEW']));
+          // The outer iteration still yields the quads from its own start
+          const rest = [];
+          for (let next = outer.next(); !next.done; next = outer.next())
+            rest.push(next.value.predicate.value);
+          expect(rest).toHaveLength(4);
+          expect(rest).toEqual(expect.arrayContaining(['p3', 'p4']));
+          expect(rest).not.toContain('pNEW');
+        });
       });
     });
 

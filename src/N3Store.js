@@ -1165,12 +1165,12 @@ class DatasetCoreAndReadableStream extends Readable {
   constructor(n3Store, subject, predicate, object, graph, options) {
     super({ objectMode: true });
     Object.assign(this, { n3Store, subject, predicate, object, graph, options });
-    // Bumped when a matching parent mutation lands mid-iteration, signalling iterators to switch to `_baseline`
+    // Bumped when a matching parent mutation lands mid-iteration, signalling iterators to switch to their baseline
     this._generation = 0;
-    // Number of in-progress iterations; a baseline is only frozen on mutation while this is non-zero
+    // Number of in-progress iterations; baselines are only frozen on mutation while this is non-zero
     this._activeIterators = 0;
-    // Frozen array of matching quads at the start of in-progress iteration(s), to keep iterators stable
-    this._baseline = null;
+    // Frozen arrays of matching quads per generation, keeping in-progress iterations stable
+    this._baselines = null;
     // Lazily cached numeric ids of the pattern terms (immutable once present in the entity index)
     this._subjectId = this._predicateId = this._objectId = this._graphId = undefined;
     const semantics = this._semantics = options.matchSemantics;
@@ -1202,11 +1202,14 @@ class DatasetCoreAndReadableStream extends Readable {
     if (!this._matchesPattern(subjectId, predicateId, objectId, graphId))
       return;
 
-    // While iterating, freeze the pre-mutation matching quads so iterators keep a stable view
-    if (this._activeIterators > 0 && this._baseline === null) {
-      this._baseline = this._filtered ? [...this._filtered] :
-        this.n3Store.getQuads(this.subject, this.predicate, this.object, this.graph);
-      this._generation++;
+    // While iterating, freeze the pre-mutation matching quads under the current generation,
+    // so every iteration in progress (each started during some generation) keeps a stable view.
+    // This costs O(view size) per matching mutation for as long as any iteration remains open.
+    if (this._activeIterators > 0) {
+      if (!this._baselines)
+        this._baselines = new Map();
+      this._baselines.set(this._generation++, this._filtered ? [...this._filtered] :
+        this.n3Store.getQuads(this.subject, this.predicate, this.object, this.graph));
     }
 
     // `forwarded`: apply the delta only if the view has materialized; otherwise,
@@ -1443,8 +1446,8 @@ class DatasetCoreAndReadableStream extends Readable {
       return;
     }
 
-    // Non-`lazy`: iterate the current source, switching to the frozen `_baseline` (skipping
-    // already-yielded quads) if a matching parent mutation bumps `_generation` mid-iteration.
+    // Non-`lazy`: iterate the current source, switching to this iteration's frozen baseline
+    // if a matching parent mutation bumps `_generation` mid-iteration.
     const generation = this._generation;
     let yielded = 0;
     this._activeIterators++;
@@ -1453,28 +1456,23 @@ class DatasetCoreAndReadableStream extends Readable {
         this._filtered[Symbol.iterator]() :
         this.n3Store.readQuads(this.subject, this.predicate, this.object, this.graph);
       for (const quad of source) {
-        if (this._generation !== generation) {
-          yield* this._skip(this._baseline[Symbol.iterator](), yielded);
-          return;
-        }
+        if (this._generation !== generation)
+          break;
         yielded++;
         yield quad;
       }
-      // A mutation may have landed exactly when the source was exhausted
-      if (this._generation !== generation)
-        yield* this._skip(this._baseline[Symbol.iterator](), yielded);
+      // A matching mutation landed mid-iteration (possibly exactly as the source was exhausted):
+      // continue from the baseline frozen at this iteration's generation, skipping already-yielded quads
+      if (this._generation !== generation) {
+        const baseline = this._baselines.get(generation);
+        for (let i = yielded; i < baseline.length; i++)
+          yield baseline[i];
+      }
     }
     finally {
-      // Drop the frozen baseline once no iterations remain
+      // Drop the frozen baselines once no iterations remain
       if (--this._activeIterators === 0)
-        this._baseline = null;
+        this._baselines = null;
     }
-  }
-
-  // ### `_skip` advances `iterator` past `count` quads and yields the rest.
-  *_skip(iterator, count) {
-    while (count-- > 0)
-      iterator.next();
-    yield* iterator;
   }
 }
