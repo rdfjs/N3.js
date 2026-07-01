@@ -1189,8 +1189,9 @@ class DatasetCoreAndReadableStream extends Readable {
     return (!subject   || subjectId   === (this._subjectId   || (this._subjectId   = n3Store._termToNumericId(subject))))   &&
            (!predicate || predicateId === (this._predicateId || (this._predicateId = n3Store._termToNumericId(predicate)))) &&
            (!object    || objectId    === (this._objectId    || (this._objectId    = n3Store._termToNumericId(object))))    &&
-           (graph == null || graphId  === (this._graphId     || (this._graphId     =
-             graph === '' || isDefaultGraph(graph) ? 1 : n3Store._termToNumericId(graph))));
+           (graph === null || graph === undefined ||
+             graphId === (this._graphId || (this._graphId =
+               graph === '' || isDefaultGraph(graph) ? 1 : n3Store._termToNumericId(graph))));
   }
 
   // ### `_onParentMutation` reacts to a parent mutation, invoked before the parent index changes.
