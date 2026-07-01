@@ -409,6 +409,8 @@ Supported values:
 - `'forwarded'` — the view always reflects the parent state: matching parent
   mutations are forwarded to the view, and mutations on the view (`add`,
   `delete`, `addAll`, `deleteMatches`) are written through to the parent.
+  Calling `match()` on a `'forwarded'` view returns a `'snapshot'` sub-view:
+  nested views never write through to the root store.
 
 For `'snapshot'` and `'forwarded'`, an iteration (synchronous or via the
 stream) that is already in progress keeps a stable view of the quads as of when

@@ -579,6 +579,8 @@ export default class N3Store {
   //  - `'lazy'`: delegates live to the parent until its first own mutation (backwards-compatible).
   //  - `'snapshot'`: reflects the parent contents at the time of `match()`.
   //  - `'forwarded'`: stays live; matching parent mutations are forwarded to it.
+  // Calling `match()` on a view yields at most a `'snapshot'` sub-view:
+  // nested views never write through to the root store.
   match(subject, predicate, object, graph, options) {
     return new DatasetCoreAndReadableStream(this, subject, predicate, object, graph, {
       entityIndex: this._entityIndex,
@@ -1425,7 +1427,13 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   match(subject, predicate, object, graph) {
-    return new DatasetCoreAndReadableStream(this.filtered, subject, predicate, object, graph, this.options);
+    // A nested view is parented on the materialized contents, not on the root store,
+    // so `forwarded` is downgraded to `snapshot`: write-through would only reach
+    // the internal materialized store, silently desyncing this view from its parent
+    return new DatasetCoreAndReadableStream(this.filtered, subject, predicate, object, graph, {
+      entityIndex: this.options.entityIndex,
+      matchSemantics: this._semantics === 'forwarded' ? 'snapshot' : this._semantics,
+    });
   }
 
   *[Symbol.iterator]() {

@@ -931,6 +931,15 @@ describe('Store', () => {
           store.addQuad(q('s1', 'p1', 'oNEW'));
           expect(union.size).toBe(6);
         });
+
+        it('keeps a nested match() frozen at nesting time', () => {
+          const store = buildStore();
+          const view = store.match(namedNode('s1'), null, null, null, opts);
+          const sub = view.match(null, namedNode('p1'));
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          expect([...sub]).toHaveLength(5);
+          expect(sub.has(q('s1', 'p1', 'oNEW'))).toBe(false);
+        });
       });
 
       describe('forwarded', () => {
@@ -1089,6 +1098,22 @@ describe('Store', () => {
           expect(union.size).toBe(6);
           expect(store.has(q('s1', 'p1', 'oU'))).toBe(false);
           expect(view.has(q('s1', 'p1', 'oU'))).toBe(false);
+        });
+
+        it('downgrades a nested match() to a snapshot of the view', () => {
+          const store = buildStore();
+          const view = store.match(namedNode('s1'), null, null, null, opts);
+          const sub = view.match(null, namedNode('p1'));
+          expect([...sub]).toHaveLength(5);
+          // Later root mutations reach the outer view, but not the nested snapshot
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          expect(view.has(q('s1', 'p1', 'oNEW'))).toBe(true);
+          expect([...sub]).toHaveLength(5);
+          // Mutations on the sub-view reach neither the root store nor the outer view
+          sub.add(q('s1', 'p1', 'oSUB'));
+          expect(sub.has(q('s1', 'p1', 'oSUB'))).toBe(true);
+          expect(store.has(q('s1', 'p1', 'oSUB'))).toBe(false);
+          expect(view.has(q('s1', 'p1', 'oSUB'))).toBe(false);
         });
 
         it('handles matching mutations in the default graph', () => {
