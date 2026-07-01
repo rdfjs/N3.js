@@ -15,6 +15,10 @@ const escapeReplacements = {
 };
 const illegalIriChars = /[\x00-\x20<>\\"\{\}\|\^\`]/;
 
+function isSurrogateCodePoint(charCode) {
+  return charCode >= 0xD800 && charCode <= 0xDFFF;
+}
+
 const lineModeRegExps = {
   _iri: true,
   _unescapedIri: true,
@@ -419,11 +423,21 @@ export default class N3Lexer {
     let invalid = false;
     const replaced = item.replace(escapeSequence, (sequence, unicode4, unicode8, escapedChar) => {
       // 4-digit unicode character
-      if (typeof unicode4 === 'string')
-        return String.fromCharCode(Number.parseInt(unicode4, 16));
+      if (typeof unicode4 === 'string') {
+        const charCode = Number.parseInt(unicode4, 16);
+        if (isSurrogateCodePoint(charCode)) {
+          invalid = true;
+          return '';
+        }
+        return String.fromCharCode(charCode);
+      }
       // 8-digit unicode character
       if (typeof unicode8 === 'string') {
         let charCode = Number.parseInt(unicode8, 16);
+        if (isSurrogateCodePoint(charCode)) {
+          invalid = true;
+          return '';
+        }
         return charCode <= 0xFFFF ? String.fromCharCode(Number.parseInt(unicode8, 16)) :
           String.fromCharCode(0xD800 + ((charCode -= 0x10000) >> 10), 0xDC00 + (charCode & 0x3FF));
       }

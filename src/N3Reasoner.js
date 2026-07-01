@@ -26,7 +26,6 @@ export default class N3Reasoner {
     cb();
   }
 
-  // eslint-disable-next-line no-warning-comments
   _evaluatePremise(rule, content, cb, i = 0) {
     let v1, v2, value, index1, index2;
     const [val0, val1, val2] = rule.premise[i].value, index = content[rule.premise[i].content];
