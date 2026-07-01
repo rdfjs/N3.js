@@ -771,6 +771,11 @@ describe('Store', () => {
           .toThrow('Unknown matchSemantics: bogus');
       });
 
+      it('throws on an unknown store-level matchSemantics value', () => {
+        expect(() => new Store([], { matchSemantics: 'bogus' }))
+          .toThrow('Unknown matchSemantics: bogus');
+      });
+
       it('uses the store-level default matchSemantics', () => {
         const store = buildStore({ matchSemantics: 'snapshot' });
         const view = store.match(namedNode('s1'), null, null);
