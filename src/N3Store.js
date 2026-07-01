@@ -578,7 +578,9 @@ export default class N3Store {
   // how the view reacts to later parent mutations:
   //  - `'lazy'`: delegates live to the parent until its first own mutation (backwards-compatible).
   //  - `'snapshot'`: reflects the parent contents at the time of `match()`.
-  //  - `'forwarded'`: stays live; matching parent mutations are forwarded to it.
+  //  - `'forwarded'`: stays live; matching parent mutations are forwarded to it, and view
+  //    mutations write through to the parent unrestricted by the pattern (so a
+  //    non-matching `add` mutates the parent without appearing in the view).
   // Calling `match()` on a view yields at most a `'snapshot'` sub-view:
   // nested views never write through to the root store.
   // A non-`lazy` view observes the store — `'snapshot'` until it first materializes,

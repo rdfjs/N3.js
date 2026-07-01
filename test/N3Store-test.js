@@ -1070,6 +1070,23 @@ describe('Store', () => {
           expect(store.has(q('s1', 'p1', 'oA'))).toBe(false);
         });
 
+        it('writes non-matching mutations through to the parent unrestricted', () => {
+          const store = buildStore();
+          const view = store.match(namedNode('s1'), null, null, null, opts);
+          // A non-matching add mutates the parent but never appears in the view
+          view.add(q('s3', 'p1', 'oNM'));
+          expect(store.has(q('s3', 'p1', 'oNM'))).toBe(true);
+          expect(view.has(q('s3', 'p1', 'oNM'))).toBe(false);
+          // A non-matching addAll grows the parent, not the view
+          view.addAll([q('s3', 'p1', 'oNM2')]);
+          expect(store.has(q('s3', 'p1', 'oNM2'))).toBe(true);
+          expect(view.size).toBe(5);
+          // A deleteMatches wider than the pattern deletes parent quads outside the view
+          view.deleteMatches(namedNode('s2'), null, null);
+          expect(store.has(q('s2', 'p1', 'oX'))).toBe(false);
+          expect(view.size).toBe(5);
+        });
+
         it('defers materialization of an unread view across parent mutations', () => {
           const store = buildStore();
           const view = store.match(namedNode('s1'), null, null, null, opts);
