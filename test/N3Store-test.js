@@ -996,6 +996,28 @@ describe('Store', () => {
           expect(store.has(q('s1', 'p1', 'oA'))).toBe(false);
         });
 
+        it('defers materialization of an unread view across parent mutations', () => {
+          const store = buildStore();
+          const view = store.match(namedNode('s1'), null, null, null, opts);
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          store.removeQuad(q('s1', 'p1', 'o0'));
+          // Nothing has been read from the view, so it has not materialized
+          expect(view._filtered).toBeFalsy();
+          expect(values(view)).toEqual(['o1', 'o2', 'o3', 'o4', 'oNEW']);
+        });
+
+        it('applies parent mutations to an already-materialized view', () => {
+          const store = buildStore();
+          const view = store.match(namedNode('s1'), null, null, null, opts);
+          // Materialize the view before any parent mutation
+          expect(view.size).toBe(5);
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          store.removeQuad(q('s1', 'p1', 'o0'));
+          expect(view.has(q('s1', 'p1', 'oNEW'))).toBe(true);
+          expect(view.has(q('s1', 'p1', 'o0'))).toBe(false);
+          expect(view.size).toBe(5);
+        });
+
         it('forwards a Store addAll (bypassing the index-merge fast path) when observed', () => {
           const store = buildStore();
           const view = store.match(namedNode('s1'), null, null, null, opts);
@@ -1060,6 +1082,9 @@ describe('Store', () => {
           // The subject `s9` is not present when the view is created.
           const view = store.match(namedNode('s9'), null, null, null, opts);
           expect([...view]).toHaveLength(0);
+          // A mutation while `s9` is still absent cannot match the view
+          store.addQuad(q('sOther', 'p1', 'o1'));
+          expect([...view]).toHaveLength(0);
           store.addQuad(q('s9', 'p1', 'o1'));
           expect([...view]).toHaveLength(1);
           expect(view.has(q('s9', 'p1', 'o1'))).toBe(true);
@@ -1096,6 +1121,7 @@ describe('Store', () => {
           store.addQuad(new Quad(namedNode('s1'), namedNode('pX'), namedNode('o1'), namedNode('g1')));
           store.addQuad(new Quad(namedNode('s1'), namedNode('p1'), namedNode('oX'), namedNode('g1')));
           store.addQuad(new Quad(namedNode('s1'), namedNode('p1'), namedNode('o1'), namedNode('gX')));
+          store.addQuad(new Quad(namedNode('s1'), namedNode('p1'), namedNode('o1'), namedNode('gY')));
           expect([...view]).toHaveLength(1);
         });
 

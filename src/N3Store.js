@@ -1167,6 +1167,8 @@ class DatasetCoreAndReadableStream extends Readable {
     this._activeIterators = 0;
     // Frozen array of matching quads at the start of in-progress iteration(s), to keep iterators stable
     this._baseline = null;
+    // Lazily cached numeric ids of the pattern terms (immutable once present in the entity index)
+    this._subjectId = this._predicateId = this._objectId = this._graphId = undefined;
     const semantics = this._semantics = options.matchSemantics;
     if (semantics !== 'lazy' && semantics !== 'snapshot' && semantics !== 'forwarded')
       throw new Error(`Unknown matchSemantics: ${semantics}`);
@@ -1176,17 +1178,15 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   // ### `_matchesPattern` returns whether the quad ids fall within this view's pattern (absent term = wildcard).
+  // Term ids are cached upon resolution; a pattern term may still be absent from the entity index
+  // (`_termToNumericId` then returns `undefined`, which never equals a quad id), so an
+  // unresolved id is re-resolved on every call, as the term may be interned later on.
   _matchesPattern(subjectId, predicateId, objectId, graphId) {
-    const { subject, predicate, object, graph } = this;
-    return (!subject   || subjectId   === this._termId(subject))   &&
-           (!predicate || predicateId === this._termId(predicate)) &&
-           (!object    || objectId    === this._termId(object))    &&
-           (!graph     || graphId     === (isDefaultGraph(graph) ? 1 : this._termId(graph)));
-  }
-
-  // ### `_termId` returns the parent's numeric id for a term, or `undefined` if not present.
-  _termId(term) {
-    return this.n3Store._termToNumericId(term);
+    const { subject, predicate, object, graph, n3Store } = this;
+    return (!subject   || subjectId   === (this._subjectId   || (this._subjectId   = n3Store._termToNumericId(subject))))   &&
+           (!predicate || predicateId === (this._predicateId || (this._predicateId = n3Store._termToNumericId(predicate)))) &&
+           (!object    || objectId    === (this._objectId    || (this._objectId    = n3Store._termToNumericId(object))))    &&
+           (!graph     || graphId     === (this._graphId     || (this._graphId     = isDefaultGraph(graph) ? 1 : n3Store._termToNumericId(graph))));
   }
 
   // ### `_onParentMutation` reacts to a parent mutation, invoked before the parent index changes.
@@ -1202,28 +1202,32 @@ class DatasetCoreAndReadableStream extends Readable {
       this._generation++;
     }
 
-    // Materialize the pre-mutation snapshot if it does not exist yet
-    if (!this._filtered)
-      this._filtered = this.filtered;
-
-    // `forwarded`: apply the delta so the view tracks the parent (`snapshot` views are now frozen)
+    // `forwarded`: apply the delta only if the view has materialized; otherwise,
+    // the parent remains the source of truth, and a later read captures the current state
     if (this._semantics === 'forwarded') {
-      const quad = this._toQuad(subjectId, predicateId, objectId, graphId);
-      if (added)
-        this._filtered.addQuad(quad);
-      else
-        this._filtered.removeQuad(quad);
+      if (this._filtered) {
+        const quad = this._toQuad(subjectId, predicateId, objectId, graphId);
+        if (added)
+          this._filtered.addQuad(quad);
+        else
+          this._filtered.removeQuad(quad);
+      }
+      return;
     }
+
+    // `snapshot`: materialize the pre-mutation state
+    // (`_filtered` is always null here, as its getter unregisters this observer on build)
+    this._filtered = this.filtered;
   }
 
   // ### `_toQuad` builds a Quad from numeric ids in the parent's entity index.
   _toQuad(subjectId, predicateId, objectId, graphId) {
     const { n3Store } = this, entities = n3Store._entities;
     return n3Store._factory.quad(
-      n3Store._termFromId(entities[subjectId], n3Store._factory),
-      n3Store._termFromId(entities[predicateId], n3Store._factory),
-      n3Store._termFromId(entities[objectId], n3Store._factory),
-      n3Store._termFromId(entities[graphId], n3Store._factory),
+      n3Store._termFromId(entities[subjectId]),
+      n3Store._termFromId(entities[predicateId]),
+      n3Store._termFromId(entities[objectId]),
+      n3Store._termFromId(entities[graphId]),
     );
   }
 
