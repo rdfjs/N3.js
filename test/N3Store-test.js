@@ -2520,6 +2520,18 @@ describe('Store', () => {
       expect(empty.difference(a).size).toBe(0);
     });
 
+    it('intersection/difference handle quads whose graph term is absent from the other store', () => {
+      // `a`'s only quad lives in a graph that `b`'s entity index has never
+      // seen, so the graph id cannot be remapped; its s/p/o all remap.
+      const g = new Quad(q[0].subject, q[0].predicate, q[0].object, new NamedNode('gOnlyInA'));
+      const a = new Store([g]);
+      const b = new Store([q[0]]);
+      expect(a._entityIndex).not.toBe(b._entityIndex);
+
+      expect(a.intersection(b).size).toBe(0);
+      expect(a.difference(b).equals(new Store([g]))).toBe(true);
+    });
+
     it('intersection/difference handle quoted triples across distinct indices', () => {
       const inner = new Quad(new NamedNode('s'), new NamedNode('p'), new NamedNode('o'));
       const star = new Quad(inner, new NamedNode('p2'), new NamedNode('o2'));
@@ -2527,6 +2539,21 @@ describe('Store', () => {
       // Shift b's ids so the composite id of the quoted triple differs from a's.
       const b = new Store([new Quad(new NamedNode('z1'), new NamedNode('z2'), new NamedNode('z3'))]);
       b.addQuads([star]);
+      expect(a._entityIndex).not.toBe(b._entityIndex);
+
+      expect(a.intersection(b).equals(new Store([star]))).toBe(true);
+      expect(a.difference(b).equals(new Store([q[0]]))).toBe(true);
+    });
+
+    it('intersection/difference handle quoted triples with a named graph across distinct indices', () => {
+      // The quoted triple carries a named graph, so it interns a four-part
+      // composite id `.s.p.o.g` that must remap across the indices.
+      const inner = new Quad(new NamedNode('s'), new NamedNode('p'), new NamedNode('o'), new NamedNode('g'));
+      const star = new Quad(inner, new NamedNode('p2'), new NamedNode('o2'));
+      const a = new Store([star, q[0]]);
+      // Shift b's ids so the composite id of the quoted triple differs from a's.
+      const b = new Store([new Quad(new NamedNode('z1'), new NamedNode('z2'), new NamedNode('z3'))]);
+      b.addQuad(star);
       expect(a._entityIndex).not.toBe(b._entityIndex);
 
       expect(a.intersection(b).equals(new Store([star]))).toBe(true);
@@ -2677,10 +2704,12 @@ describe('EntityIndex', () => {
       // gets a composite id `.s.p.o` in each entity index.
       const inner = new Quad(new NamedNode('s'), new NamedNode('p'), new NamedNode('o'));
       const star = new Quad(inner, new NamedNode('p2'), new NamedNode('o2'));
-      // `source` and `target` are distinct indices that both contain `star`.
+      // `source` and `target` are distinct indices: `source` contains `inner`
+      // and `target` contains `star`.
       const source = new EntityIndex();
       const target = new EntityIndex();
-      const sourceStore = new Store([star], { entityIndex: source });
+      // Intern `inner`'s components and its composite id into `source`.
+      source._termToNewNumericId(inner);
       // Offset `target`'s ids (with an unrelated quad) so the composite
       // component ids differ from those in `source`, then add `star`.
       const targetStore = new Store(
@@ -2704,7 +2733,6 @@ describe('EntityIndex', () => {
 
       const mapped = target._remapCompositeId(compositeId, remap);
       expect(mapped).toBe(target._termToNumericId(inner));
-      expect(sourceStore.size).toBe(1);
     });
 
     it('returns undefined when a component cannot be remapped', () => {
