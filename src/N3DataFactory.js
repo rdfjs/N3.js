@@ -380,7 +380,7 @@ function literal(value, languageOrDataType) {
     return new Literal(`"${value}"@${languageOrDataType.language.toLowerCase()}${languageOrDataType.direction ? `--${languageOrDataType.direction.toLowerCase()}` : ''}`);
   }
 
-  // Automatically determine datatype for booleans and numbers
+  // Automatically determine datatype for booleans, numbers, and dates
   let datatype = languageOrDataType ? languageOrDataType.value : '';
   if (datatype === '') {
     // Convert a boolean
@@ -395,6 +395,11 @@ function literal(value, languageOrDataType) {
         if (!Number.isNaN(value))
           value = value > 0 ? 'INF' : '-INF';
       }
+    }
+    // Convert a date
+    else if (value instanceof Date) {
+      datatype = xsd.dateTime;
+      value = value.toISOString();
     }
   }
 
