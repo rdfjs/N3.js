@@ -69,6 +69,24 @@ jobs:
           name: build
       - run: npm run spec-${{ matrix.spec }}
 
+  browser:
+    # Runs the built browser bundles in real engines (Chromium, Firefox,
+    # WebKit) via test/browser/run.mjs. Deliberately outside the jest
+    # coverage gate: it exercises the build artifacts, not src/.
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+      - run: npm ci --ignore-scripts
+      - uses: actions/download-artifact@v8
+        with:
+          name: build
+      - run: npx playwright install --with-deps chromium firefox webkit
+      - run: node test/browser/run.mjs
+
   lint:
     runs-on: ubuntu-latest
     strategy:
@@ -108,6 +126,7 @@ jobs:
       - build
       - test
       - spec
+      - browser
       - lint
       - docs
     runs-on: ubuntu-latest
