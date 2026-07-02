@@ -9,6 +9,7 @@ import {
   Literal,
   DefaultGraph,
   Quad,
+  Variable,
 } from '../src/N3DataFactory';
 import namespaces from '../src/IRIs';
 import { Readable } from 'readable-stream';
@@ -589,6 +590,379 @@ describe('Store', () => {
         storeB.addQuad(new Quad(r, reifies, nestedTerm));
         expect(entityIndex._id).toBe(before);
         expect(storeB.getQuads(null, null, nestedTerm)).toHaveLength(1);
+      });
+    });
+
+    describe('matching Quad patterns containing Variables', () => {
+      const vs = new Variable('s'), vp = new Variable('p'),
+          vo = new Variable('o'), vg = new Variable('g');
+      const r2 = new NamedNode('r2'), o2 = new NamedNode('o2'), un = new NamedNode('un');
+      // A second triple term sharing only its subject with `inner`
+      const inner2 = new Quad(new NamedNode('a'), new NamedNode('b2'), new NamedNode('c2'));
+      let store;
+      beforeEach(() => {
+        store = new Store([
+          new Quad(r, reifies, defaultTerm), // <<( s p o )>>
+          new Quad(r, reifies, nestedTerm),  // <<( s p <<( a b c )>> )>>
+          new Quad(r, reifies, graphTerm),   // <<( s p o g )>> (API-only graph component)
+          new Quad(r2, reifies, defaultTerm),
+          new Quad(r, reifies, inner2),      // <<( a b2 c2 )>>
+          new Quad(s, p, o),                 // plain control
+        ]);
+      });
+
+      describe('in the object slot', () => {
+        it('matches triple terms structurally', () => {
+          // ?r ?? <<( s ?p ?o )>> — default-graph terms with subject `s`
+          const quads = store.getQuads(null, null, new Quad(s, vp, vo));
+          expect(quads).toHaveLength(3);
+          for (const quad of quads)
+            expect(quad.object.subject.equals(s)).toBe(true);
+        });
+
+        it('matches all triple terms through a fully variable pattern', () => {
+          // `inner` is interned (as a component) but is the object of no quad
+          expect(store.getQuads(null, null, new Quad(vs, vp, vo))).toHaveLength(4);
+        });
+
+        it('matches with a Variable at the second nesting level', () => {
+          const quads = store.getQuads(null, null, new Quad(s, p, new Quad(new NamedNode('a'), vp, new NamedNode('c'))));
+          expect(quads).toHaveLength(1);
+          expect(quads[0].object.equals(nestedTerm)).toBe(true);
+        });
+
+        it('matches with a Variable inside a nested-inside-nested term', () => {
+          const deepTerm = new Quad(s, p, new Quad(new NamedNode('a'), new NamedNode('b'), inner));
+          store.addQuad(new Quad(r, reifies, deepTerm));
+          const pattern = new Quad(s, p, new Quad(new NamedNode('a'), new NamedNode('b'),
+            new Quad(new NamedNode('a'), vp, new NamedNode('c'))));
+          const quads = store.getQuads(null, null, pattern);
+          expect(quads).toHaveLength(1);
+          expect(quads[0].object.equals(deepTerm)).toBe(true);
+        });
+
+        it('descends only into candidates present at the outer level', () => {
+          // Both `inner` and `inner2` match <<( a ?p ?o )>>,
+          // but only `inner` occurs as the object of a term with subject `s`
+          const quads = store.getQuads(null, null, new Quad(s, p, new Quad(new NamedNode('a'), vp, vo)));
+          expect(quads).toHaveLength(1);
+          expect(quads[0].object.equals(nestedTerm)).toBe(true);
+        });
+
+        it('matches a variable-free nested Quad component exactly', () => {
+          const quads = store.getQuads(null, null, new Quad(vs, p, inner));
+          expect(quads).toHaveLength(1);
+          expect(quads[0].object.equals(nestedTerm)).toBe(true);
+        });
+
+        it('combines with an exact subject', () => {
+          expect(store.getQuads(r2, null, new Quad(s, vp, vo))).toHaveLength(1);
+          expect(store.getQuads(un, null, new Quad(s, vp, vo))).toHaveLength(0);
+        });
+
+        it('combines with an exact predicate', () => {
+          expect(store.getQuads(null, reifies, new Quad(s, vp, vo))).toHaveLength(3);
+          expect(store.getQuads(null, un, new Quad(s, vp, vo))).toHaveLength(0);
+        });
+
+        it('returns nothing for a graph without quads', () => {
+          expect(store.getQuads(null, null, new Quad(s, vp, vo), un)).toHaveLength(0);
+        });
+      });
+
+      describe('in the subject slot', () => {
+        let subjectStore;
+        beforeEach(() => {
+          subjectStore = new Store([
+            new Quad(nestedTerm, p, o),
+            new Quad(defaultTerm, p, o2),
+            new Quad(s, p, o),
+          ]);
+        });
+
+        it('matches triple terms structurally', () => {
+          expect(subjectStore.getQuads(new Quad(s, vp, vo), null, null)).toHaveLength(2);
+          expect(subjectStore.countQuads(new Quad(s, vp, vo), null, null)).toBe(2);
+        });
+
+        it('combines with an exact object', () => {
+          const quads = subjectStore.getQuads(new Quad(s, vp, vo), null, o2);
+          expect(quads).toHaveLength(1);
+          expect(quads[0].subject.equals(defaultTerm)).toBe(true);
+          expect(subjectStore.countQuads(new Quad(s, vp, vo), null, o2)).toBe(1);
+        });
+
+        it('nests candidate loops when subject and object both contain Variables', () => {
+          subjectStore.addQuad(new Quad(defaultTerm, p, inner2));
+          const quads = subjectStore.getQuads(new Quad(s, vp, vo), null, new Quad(new NamedNode('a'), vp, vo));
+          expect(quads).toHaveLength(1);
+          expect(quads[0].subject.equals(defaultTerm)).toBe(true);
+          expect(quads[0].object.equals(inner2)).toBe(true);
+        });
+      });
+
+      describe('in the graph slot', () => {
+        let graphStore;
+        beforeEach(() => {
+          graphStore = new Store([
+            new Quad(s, p, o, defaultTerm),
+            new Quad(o2, p, o, nestedTerm),
+            new Quad(s, p, o, g),
+          ]);
+        });
+
+        it('matches triple terms structurally', () => {
+          const quads = graphStore.getQuads(null, null, null, new Quad(s, vp, vo));
+          expect(quads).toHaveLength(2);
+          expect(graphStore.countQuads(null, null, null, new Quad(s, vp, vo))).toBe(2);
+        });
+
+        it('combines with an exact subject', () => {
+          const quads = graphStore.getQuads(o2, null, null, new Quad(s, vp, vo));
+          expect(quads).toHaveLength(1);
+          expect(quads[0].graph.equals(nestedTerm)).toBe(true);
+        });
+
+        it('skips candidates that are not graphs of this store', () => {
+          // All candidate terms are interned, but none is used as a graph here
+          expect(store.getQuads(null, null, null, new Quad(s, vp, vo))).toHaveLength(0);
+          expect(store.countQuads(null, null, null, new Quad(s, vp, vo))).toBe(0);
+        });
+      });
+
+      describe('the graph component of a pattern', () => {
+        it('DefaultGraph matches only default-graph terms', () => {
+          const quads = store.getQuads(null, null, new Quad(s, vp, o));
+          expect(quads).toHaveLength(2);
+          for (const quad of quads)
+            expect(quad.object.graph.termType).toBe('DefaultGraph');
+        });
+
+        it('a Variable also matches graph-component terms', () => {
+          expect(store.getQuads(null, null, new Quad(s, vp, o, vg))).toHaveLength(3);
+        });
+
+        it('a concrete graph component matches only that graph', () => {
+          const quads = store.getQuads(null, null, new Quad(s, vp, o, g));
+          expect(quads).toHaveLength(1);
+          expect(quads[0].object.equals(graphTerm)).toBe(true);
+          // `g2` becomes interned, but no term has it as its graph component
+          store.addQuad(new Quad(s, p, o, g2));
+          expect(store.getQuads(null, null, new Quad(s, vp, o, g2))).toHaveLength(0);
+        });
+
+        it('does not match a graph-component term against a default-graph pattern', () => {
+          // Only <<( s p o g )>> exists at this slot: the spilled entry has no
+          // default-graph term
+          const spilled = new Store([new Quad(r, reifies, graphTerm)]);
+          expect(spilled.getQuads(null, null, new Quad(s, vp, o))).toHaveLength(0);
+          expect(spilled.getQuads(null, null, new Quad(s, vp, o, vg))).toHaveLength(1);
+        });
+
+        it('matches an unspilled slot only through DefaultGraph or a Variable', () => {
+          const unspilled = new Store([new Quad(r, reifies, defaultTerm), new Quad(s, p, o, g)]);
+          expect(unspilled.getQuads(null, null, new Quad(s, vp, o))).toHaveLength(1);
+          expect(unspilled.getQuads(null, null, new Quad(s, vp, o, vg))).toHaveLength(1);
+          // `g` is interned, but the only term at this slot has no graph component
+          expect(unspilled.getQuads(null, null, new Quad(s, vp, o, g))).toHaveLength(0);
+        });
+      });
+
+      describe('same Variable used twice', () => {
+        it('is an independent wildcard, not a join', () => {
+          // <<( ?x p ?x )>> matches <<( s p o )>> although s and o differ
+          // (aligned with rdf-stores.js; join semantics stay with #281)
+          const vx = new Variable('x');
+          expect(store.getQuads(null, null, new Quad(vx, p, vx))).toHaveLength(3);
+        });
+      });
+
+      describe('empty-candidate cases', () => {
+        it('returns nothing when no triple terms are interned', () => {
+          const plain = new Store([new Quad(s, p, o)]);
+          expect(plain.getQuads(null, null, new Quad(vs, vp, vo))).toHaveLength(0);
+          expect(plain.countQuads(null, null, new Quad(vs, vp, vo))).toBe(0);
+        });
+
+        it('returns nothing when the pattern subject is not interned', () => {
+          expect(store.getQuads(null, null, new Quad(un, vp, vo))).toHaveLength(0);
+        });
+
+        it('returns nothing when an interned component roots no triple term', () => {
+          // `o` is interned but no triple term has it as subject
+          expect(store.getQuads(null, null, new Quad(o, vp, vo))).toHaveLength(0);
+        });
+      });
+
+      describe('counting', () => {
+        it('counts wildcard matches in the object slot', () => {
+          expect(store.countQuads(null, null, new Quad(s, vp, vo))).toBe(3);
+          expect(store.countQuads(null, null, new Quad(vs, vp, vo))).toBe(4);
+        });
+
+        it('counts with an exact subject', () => {
+          expect(store.countQuads(r2, null, new Quad(s, vp, vo))).toBe(1);
+        });
+
+        it('counts with an exact predicate', () => {
+          expect(store.countQuads(null, reifies, new Quad(s, vp, vo))).toBe(3);
+          expect(store.countQuads(null, un, new Quad(s, vp, vo))).toBe(0);
+        });
+
+        it('counts nothing for a graph without quads', () => {
+          expect(store.countQuads(null, null, new Quad(s, vp, vo), un)).toBe(0);
+        });
+      });
+
+      describe('derived read methods', () => {
+        it('has() sees wildcard matches', () => {
+          expect(store.has(r, reifies, new Quad(s, vp, vo))).toBe(true);
+          expect(store.has(o2, reifies, new Quad(s, vp, vo))).toBe(false);
+        });
+
+        it('some() and every() see wildcard matches', () => {
+          expect(store.some(quad => quad.subject.equals(r2), null, null, new Quad(s, vp, vo))).toBe(true);
+          expect(store.every(quad => quad.predicate.equals(reifies), null, null, new Quad(s, vp, vo))).toBe(true);
+          expect(store.every(quad => quad.subject.equals(r2), null, null, new Quad(s, vp, vo))).toBe(false);
+        });
+
+        it('forEach() sees wildcard matches', () => {
+          const seen = [];
+          store.forEach(quad => { seen.push(quad); }, null, null, new Quad(s, vp, vo));
+          expect(seen).toHaveLength(3);
+        });
+
+        it('deleteMatches() removes wildcard matches', () => {
+          store.deleteMatches(null, null, new Quad(s, vp, vo));
+          expect(store.size).toBe(3);
+          expect(store.getQuads(null, null, new Quad(s, vp, vo))).toHaveLength(0);
+          // The graph-component term does not match the default-graph pattern
+          expect(store.has(r, reifies, graphTerm)).toBe(true);
+        });
+
+        it('removeMatches() removes wildcard matches', done => {
+          const stream = store.removeMatches(null, null, new Quad(s, vp, vo));
+          stream.on('end', () => {
+            expect(store.size).toBe(3);
+            done();
+          });
+        });
+      });
+
+      describe('match() views', () => {
+        it('exposes size, iteration and has()', () => {
+          const view = store.match(null, null, new Quad(s, vp, vo));
+          expect(view.size).toBe(3);
+          expect([...view]).toHaveLength(3);
+          expect(view.has(new Quad(r, reifies, defaultTerm))).toBe(true);
+          expect(view.has(new Quad(r, reifies, graphTerm))).toBe(false);
+        });
+
+        it('merges the results of multiple candidates', () => {
+          // r has three matching quads that only differ in the object candidate
+          const view = store.match(r, null, new Quad(vs, vp, vo));
+          expect(view.size).toBe(3);
+          expect([...view]).toHaveLength(3);
+        });
+
+        it('supports Quad patterns in the graph slot', () => {
+          const graphStore = new Store([
+            new Quad(s, p, o, defaultTerm),
+            new Quad(o2, p, o, nestedTerm),
+            new Quad(s, p, o, g),
+          ]);
+          const view = graphStore.match(null, null, null, new Quad(s, vp, vo));
+          expect(view.size).toBe(2);
+        });
+
+        it('is empty when other slots do not match', () => {
+          // `o` is interned but is the subject of no quad
+          expect(store.match(o, null, new Quad(s, vp, vo)).size).toBe(0);
+          expect(store.match(un, null, new Quad(s, vp, vo)).size).toBe(0);
+          expect(store.match(null, un, new Quad(s, vp, vo)).size).toBe(0);
+          expect(store.match(null, null, new Quad(s, vp, vo), un).size).toBe(0);
+        });
+
+        it('supports mutation of the materialized view', () => {
+          const view = store.match(null, null, new Quad(s, vp, vo));
+          view.add(new Quad(o2, p, o));
+          expect(view.size).toBe(4);
+          view.delete(new Quad(r, reifies, defaultTerm));
+          expect(view.size).toBe(3);
+          // The source store is unaffected
+          expect(store.size).toBe(6);
+          expect(store.has(new Quad(r, reifies, defaultTerm))).toBe(true);
+        });
+
+        it('supports wildcard patterns on a view of a view', () => {
+          const view = store.match(null, reifies, null);
+          expect(view.match(null, null, new Quad(s, vp, vo)).size).toBe(3);
+          view.deleteMatches(null, null, new Quad(s, vp, vo));
+          expect(view.size).toBe(2);
+        });
+      });
+
+      describe('with a shared entity index', () => {
+        it('does not return candidates absent from this store', () => {
+          const entityIndex = new EntityIndex();
+          const sharer = new Store([new Quad(r, reifies, defaultTerm)], { entityIndex });
+          const empty = new Store([new Quad(s, p, o)], { entityIndex });
+          // `defaultTerm` is interned in the shared index through `sharer`,
+          // but no quad of `empty` contains it
+          expect(sharer.getQuads(null, null, new Quad(s, vp, vo))).toHaveLength(1);
+          expect(empty.getQuads(null, null, new Quad(s, vp, vo))).toHaveLength(0);
+          expect(empty.countQuads(null, null, new Quad(s, vp, vo))).toBe(0);
+          expect(empty.match(null, null, new Quad(s, vp, vo)).size).toBe(0);
+        });
+      });
+
+      describe('scope boundaries', () => {
+        it('keeps top-level Variable arguments non-matching', () => {
+          // Top-level Variables are not wildcards (unlike null);
+          // see the design discussion in #633
+          expect(store.getQuads(vs, null, null)).toHaveLength(0);
+          expect(store.getQuads(null, vp, null)).toHaveLength(0);
+          expect(store.getQuads(null, null, vo)).toHaveLength(0);
+          expect(store.getQuads(null, null, null, vg)).toHaveLength(0);
+          expect(store.countQuads(vs, null, null)).toBe(0);
+          expect(store.match(null, null, vo).size).toBe(0);
+        });
+
+        it('does not expand Quad patterns in the predicate slot', () => {
+          // Only the subject, object and graph slots hold triple terms
+          expect(store.getQuads(null, new Quad(s, vp, vo), null)).toHaveLength(0);
+        });
+
+        it('does not expand Quad patterns in the entity loops', () => {
+          // forSubjects/forPredicates/forObjects match Quad patterns exactly only
+          expect(store.getSubjects(reifies, new Quad(s, vp, vo), null)).toHaveLength(0);
+          expect(store.getSubjects(reifies, defaultTerm, null)).toHaveLength(2);
+        });
+      });
+
+      describe('the structural per-id check `_quadIdMatches`', () => {
+        it('matches decomposed triple terms against patterns', () => {
+          const index = store._entityIndex;
+          const defaultId = index._termToNumericId(defaultTerm);
+          const graphId = index._termToNumericId(graphTerm);
+          const nestedId = index._termToNumericId(nestedTerm);
+          expect(index._quadIdMatches(defaultId, new Quad(s, vp, vo))).toBe(true);
+          expect(index._quadIdMatches(defaultId, new Quad(un, vp, vo))).toBe(false);
+          expect(index._quadIdMatches(defaultId, new Quad(s, o, vo))).toBe(false);
+          expect(index._quadIdMatches(defaultId, new Quad(s, p, vo))).toBe(true);
+          expect(index._quadIdMatches(defaultId, new Quad(s, p, s))).toBe(false);
+          // Ids of non-Quad entities never match
+          expect(index._quadIdMatches(index._termToNumericId(s), new Quad(vs, vp, vo))).toBe(false);
+          // The graph component distinguishes default-graph and graph-component terms
+          expect(index._quadIdMatches(graphId, new Quad(s, vp, o))).toBe(false);
+          expect(index._quadIdMatches(graphId, new Quad(s, vp, o, vg))).toBe(true);
+          expect(index._quadIdMatches(graphId, new Quad(s, vp, o, g))).toBe(true);
+          expect(index._quadIdMatches(defaultId, new Quad(s, vp, o, g))).toBe(false);
+          // Nested patterns recurse; variable-free nested Quads match exactly
+          expect(index._quadIdMatches(nestedId, new Quad(s, p, new Quad(vs, new NamedNode('b'), vo)))).toBe(true);
+          expect(index._quadIdMatches(nestedId, new Quad(s, p, new Quad(vs, new NamedNode('b2'), vo)))).toBe(false);
+          expect(index._quadIdMatches(nestedId, new Quad(vs, p, inner))).toBe(true);
+        });
       });
     });
   });
