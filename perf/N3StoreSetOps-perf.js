@@ -57,7 +57,7 @@ console.log(`\nShared entity index (fast path), ${size} quads/store, ${overlap} 
   bestOf('difference (shared index)', () => a.difference(b));
 }
 
-console.log(`\nDistinct entity index (fall-back path), ${size} quads/store, ${overlap} overlapping:`);
+console.log(`\nDistinct entity index (union: fall-back path; intersection/difference: cross-index path), ${size} quads/store, ${overlap} overlapping:`);
 {
   const a = buildStore(size, 0);
   const b = buildStore(size, size - overlap);
