@@ -2610,6 +2610,41 @@ describe('Parser', () => {
     );
 
     it(
+      'should parse a blank node in a list',
+      shouldParse(parser, '<s> <p> (_:a).',
+                  ['s', 'p', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b0_a'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+    );
+
+    it(
+      'should reuse identifiers of blank nodes within and outside of lists',
+      shouldParse(parser, '<s> <p> (_:a). _:a <b> <c>.',
+                  ['s', 'p', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b0_a'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b0_a', 'b', 'c']),
+    );
+
+    it(
+      'should reuse identifiers of blank nodes within and outside of blank node property lists',
+      shouldParse(parser, '_:a <p> [ <q> _:a ].',
+                  ['_:b0_a', 'p', '_:b0'],
+                  ['_:b0', 'q', '_:b0_a']),
+    );
+
+    it(
+      'should scope blank nodes in a list to the enclosing formula',
+      shouldParse(parser, '_:a <p> <o>. { <s> <q> (_:a). _:a <r> <o2>. } <d> <e>.',
+                  ['_:b0_a', 'p', 'o'],
+                  ['s', 'q', '_:b1', '_:b0'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b0.a', '_:b0'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b0'],
+                  ['_:b0.a', 'r', 'o2', '_:b0'],
+                  ['_:b0', 'd', 'e']),
+    );
+
+    it(
       'should parse a @forSome statement',
       shouldParse(parser, '@forSome <x>. <x> <x> <x>.',
                   ['_:b0', '_:b0', '_:b0']),

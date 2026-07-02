@@ -87,11 +87,14 @@ export default class N3Parser {
     if (n3Mode) {
       // Every new scope resets the predicate direction
       this._inversePredicate = false;
-      // In N3, blank nodes are scoped to a formula
-      // (using a dot as separator, as a blank node label cannot start with it)
-      this._prefixes._ = (this._graph ? `${this._graph.value}.` : '.');
-      // Quantifiers are scoped to a formula
-      this._quantified = Object.create(this._quantified);
+      // In N3, blank nodes and quantifiers are scoped to a formula;
+      // lists and blank node property lists share the enclosing scope
+      if (type === 'formula') {
+        // Label the scope with the formula's blank node
+        // (using a dot as separator, as a blank node label cannot start with it)
+        this._prefixes._ = `${this._graph.value}.`;
+        this._quantified = Object.create(this._quantified);
+      }
     }
   }
 

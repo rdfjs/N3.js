@@ -730,6 +730,17 @@ describe('Writer', () => {
       });
     });
 
+    it('should serialize a blank node in an N3 list with a valid label', done => {
+      const quads = new Parser({ format: 'text/n3' }).parse('<a> <b> (_:x). _:x <c> <d>.');
+      const writer = new Writer();
+      writer.addQuads(quads);
+      writer.end((error, output) => {
+        // A label such as `_:.x` would fail to reparse (#332)
+        expect(() => new Parser().parse(output)).not.toThrow();
+        done(error);
+      });
+    });
+
     it(
       'should serialize subject and object triples passed by options.listHeads',
       done => {
