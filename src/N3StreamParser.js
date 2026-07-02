@@ -1,6 +1,4 @@
 // **N3StreamParser** parses a text stream into a quad stream.
-// Because quads can remain buffered until the consumer reads them,
-// `prefix` and `comment` events are not synchronized with `data` events.
 import { Transform } from 'readable-stream';
 import N3Parser from './N3Parser';
 
