@@ -28,19 +28,21 @@
     "readable-stream": "^4.0.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.16.0",
-    "@babel/core": "^7.16.0",
-    "@babel/preset-env": "^7.16.0",
-    "@babel/register": "^7.16.0",
+    "@babel/cli": "^8.0.1",
+    "@babel/core": "^8.0.1",
+    "@babel/preset-env": "^8.0.2",
+    "@babel/register": "^8.0.1",
     "@rdfjs/data-model": "^1",
     "arrayify-stream": "^3.0.0",
     "browserify": "^17.0.0",
     "deep-taxonomy-benchmark": "^2.0.0",
     "docco": "^0.9.1",
-    "eslint": "^8.57.1",
-    "eslint-plugin-import": "^2.29.1",
+    "esbuild": "^0.28.1",
+    "eslint": "^10.4.1",
+    "eslint-plugin-import-x": "^4.16.2",
     "eslint-plugin-jest": "^29.15.0",
-    "jest": "^29.7.0",
+    "globals": "^17.6.0",
+    "jest": "^30.4.2",
     "pre-commit": "^2.0.0",
     "rdf-isomorphic": "^2.0.0",
     "rdf-test-suite": "^2.1.4",
@@ -50,7 +52,9 @@
   "scripts": {
     "build": "npm run build:node && npm run build:browser",
     "build:node": "babel src -d lib",
-    "build:browser": "rm -rf browser && mkdir browser && browserify -s N3 lib/index.js | uglifyjs > browser/n3.min.js",
+    "build:browser": "rm -rf browser && mkdir browser && npm run build:browser:umd && npm run build:browser:esm",
+    "build:browser:umd": "browserify -s N3 lib/index.js | uglifyjs > browser/n3.min.js",
+    "build:browser:esm": "node scripts/build-esm.js",
     "test": "jest",
     "lint": "eslint src perf test spec",
     "prepare": "npm run build",
@@ -94,6 +98,10 @@
       "**/test/*-test.js"
     ],
     "collectCoverage": true,
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "/browser/"
+    ],
     "coverageReporters": [
       "json-summary",
       "text",

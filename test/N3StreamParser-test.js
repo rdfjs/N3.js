@@ -100,7 +100,7 @@ describe('StreamParser', () => {
     );
 
     it(
-      'emits "comment" events',
+      'does not emit "comment" events when comments are not enabled',
       shouldNotEmitCommentsWhenNotEnabled(['#comment1\n<a> <b> #comment2\n#comment3\n <c>. <d> <e> <f>.'], ['comment1', 'comment2', 'comment3']),
     );
 
