@@ -58,7 +58,7 @@
     "test": "jest",
     "lint": "eslint src perf test spec",
     "prepare": "npm run build",
-    "spec": "npm run spec-1-1 && npm run spec-1-2",
+    "spec": "npm run spec-1-1 && npm run spec-1-2 && npm run spec-n3",
     "spec-1-1": "npm run spec-1-1-turtle && npm run spec-1-1-ntriples && npm run spec-1-1-nquads && npm run spec-1-1-trig",
     "spec-1-1-earl": "npm run spec-1-1-earl-turtle && npm run spec-1-1-earl-ntriples && npm run spec-1-1-earl-nquads && npm run spec-1-1-earl-trig",
     "spec-1-1-ntriples": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-n-triples/manifest.ttl -i '{ \"format\": \"n-triples\" }' -c .rdf-test-suite-cache/",
@@ -79,7 +79,11 @@
     "spec-1-2-earl-nquads": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-n-quads/syntax/manifest.ttl -i '{ \"format\": \"n-quads\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-nquads.ttl",
     "spec-1-2-earl-turtle": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-turtle/syntax/manifest.ttl -i '{ \"format\": \"turtle\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-turtle.ttl",
     "spec-1-2-earl-trig": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-trig/syntax/manifest.ttl -i '{ \"format\": \"trig\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-trig.ttl",
-    "spec-clean": "rm -r .rdf-test-suite-cache/",
+    "spec-n3": "npm run spec-n3-parser && npm run spec-n3-extended",
+    "spec-n3-fetch": "test -d .n3-tests || (git clone --quiet --depth 1 --filter=blob:none --sparse https://github.com/w3c-cg/N3.git .n3-tests && git -C .n3-tests sparse-checkout set --no-cone tests/N3Tests)",
+    "spec-n3-parser": "npm run spec-n3-fetch && rdf-test-suite spec/parser.js https://w3c-cg.github.io/N3/tests/N3Tests/manifest-parser.ttl -i '{ \"format\": \"text/n3\" }' -m 'https://w3c-cg.github.io/N3/tests/~.n3-tests/tests/' --skip \"$(node spec/n3-skips.js parser)\"",
+    "spec-n3-extended": "npm run spec-n3-fetch && rdf-test-suite spec/parser.js https://w3c-cg.github.io/N3/tests/N3Tests/manifest-extended.ttl -i '{ \"format\": \"text/n3\" }' -m 'https://w3c-cg.github.io/N3/tests/~.n3-tests/tests/' --skip \"$(node spec/n3-skips.js extended)\"",
+    "spec-clean": "rm -rf .rdf-test-suite-cache/ .n3-tests/",
     "docs": "cd src && docco *.js -o ../docs && cd .."
   },
   "repository": {
