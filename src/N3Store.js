@@ -97,7 +97,7 @@ function difference(s1, s2, depth = 4) {
  * Maps the numeric ids of the `source` entity index to those of `target`.
  * Only entities present in both indices appear in the returned map.
  *
- * Composite (RDF-star) ids `.s.p.o[.g]` are remapped via their components.
+ * Composite (triple term) ids are remapped via their component-id arrays.
  * A composite is interned after its components, so its components are always
  * already remapped when it is reached: ids are integer-index keys below
  * 2^32 - 1, which `Object.keys` enumerates in ascending numeric order.
@@ -108,18 +108,17 @@ function remapEntityIds(source, target) {
   // The empty entity (default graph) is always id 1 in every index.
   remap[1] = 1;
   for (const id of Object.keys(entities)) {
-    const str = entities[id];
-    if (str !== '') {
-      if (str[0] === '.') {
-        const mapped = target._remapCompositeId(str, remap);
-        if (mapped !== undefined)
-          remap[id] = mapped;
-      }
-      else {
-        const targetId = targetIds[str];
-        if (targetId !== undefined)
-          remap[id] = targetId;
-      }
+    const entry = entities[id];
+    // A non-string entry is the component-id array of a triple term.
+    if (typeof entry !== 'string') {
+      const mapped = target._remapCompositeId(entry, remap);
+      if (mapped !== undefined)
+        remap[id] = mapped;
+    }
+    else if (entry !== '') {
+      const targetId = targetIds[entry];
+      if (targetId !== undefined)
+        remap[id] = targetId;
     }
   }
   return remap;
@@ -273,61 +272,91 @@ export class N3EntityIndex {
      // inverse of `_ids`
     this._entities = Object.create(null);
     this._entities[1] = '';
+    // `_quadIds` maps triple terms to numeric ids through their components:
+    // `sId -> pId -> oId -> termId`. The object level holds the term id
+    // directly for a default-graph term (the only kind the parser produces)
+    // and spills to a graph sub-map `graphId -> termId` (with 1 for the
+    // default graph) once a graph-component term is interned for that triple
+    this._quadIds = Object.create(null);
     // `_blankNodeIndex` is the index of the last automatically named blank node
     this._blankNodeIndex = 0;
     this._factory = options.factory || N3DataFactory;
   }
 
   _termFromId(id) {
-    if (id[0] === '.') {
+    // A non-string entry is the component-id array of a triple term
+    if (typeof id !== 'string') {
       const entities = this._entities;
-      const terms = id.split('.');
-      const q = this._factory.quad(
-        this._termFromId(entities[terms[1]]),
-        this._termFromId(entities[terms[2]]),
-        this._termFromId(entities[terms[3]]),
-        terms[4] && this._termFromId(entities[terms[4]]),
+      return this._factory.quad(
+        this._termFromId(entities[id[0]]),
+        this._termFromId(entities[id[1]]),
+        this._termFromId(entities[id[2]]),
+        id.length > 3 ? this._termFromId(entities[id[3]]) : undefined,
       );
-      return q;
     }
     return termFromId(id, this._factory);
   }
 
-  // ### `_remapCompositeId` translates a composite id `.s.p.o[.g]` into this
-  // index's id space via `remap`, returning its numeric id here or `undefined`.
-  _remapCompositeId(id, remap) {
-    const parts = id.split('.');
-    let mapped = '';
-    for (let i = 1; i < parts.length; i++) {
-      const component = remap[parts[i]];
-      if (component === undefined)
-        return undefined;
-      mapped += `.${component}`;
-    }
-    return this._ids[mapped];
+  // ### `_remapCompositeId` translates a triple term's component-id array into
+  // this index's id space via `remap`, returning its numeric id here or `undefined`.
+  _remapCompositeId(components, remap) {
+    const s = remap[components[0]], p = remap[components[1]], o = remap[components[2]],
+        g = components.length > 3 ? remap[components[3]] : 1;
+    if (s === undefined || p === undefined || o === undefined || g === undefined)
+      return undefined;
+    const l1 = this._quadIds[s], l2 = l1 && l1[p], entry = l2 && l2[o];
+    // A spilled entry maps graph ids to term ids;
+    // a numeric entry is the default-graph term's own id
+    return typeof entry === 'object' ? entry[g] : g === 1 ? entry : undefined;
   }
 
   _termToNumericId(term) {
     if (term.termType === 'Quad') {
       const s = this._termToNumericId(term.subject),
-          p = this._termToNumericId(term.predicate),
-          o = this._termToNumericId(term.object);
-      let g;
-
-      return s && p && o && (isDefaultGraph(term.graph) || (g = this._termToNumericId(term.graph))) &&
-        this._ids[g ? `.${s}.${p}.${o}.${g}` : `.${s}.${p}.${o}`];
+          p = s && this._termToNumericId(term.predicate),
+          o = p && this._termToNumericId(term.object);
+      let g = 1;
+      if (!o || !isDefaultGraph(term.graph) && !(g = this._termToNumericId(term.graph)))
+        return undefined;
+      const l1 = this._quadIds[s], l2 = l1 && l1[p], entry = l2 && l2[o];
+      // A spilled entry maps graph ids to term ids;
+      // a numeric entry is the default-graph term's own id
+      return typeof entry === 'object' ? entry[g] : g === 1 ? entry : undefined;
     }
     return this._ids[termToId(term)];
   }
 
   _termToNewNumericId(term) {
-    // This assumes that no graph term is present - we may wish to error if there is one
-    const str = term && term.termType === 'Quad' ?
-      `.${this._termToNewNumericId(term.subject)}.${this._termToNewNumericId(term.predicate)}.${this._termToNewNumericId(term.object)}${
-        isDefaultGraph(term.graph) ? '' : `.${this._termToNewNumericId(term.graph)}`
-      }`
-      : termToId(term);
-
+    if (term && term.termType === 'Quad') {
+      const s = this._termToNewNumericId(term.subject),
+          p = this._termToNewNumericId(term.predicate),
+          o = this._termToNewNumericId(term.object),
+          g = isDefaultGraph(term.graph) ? 1 : this._termToNewNumericId(term.graph);
+      const l1 = this._quadIds[s] || (this._quadIds[s] = Object.create(null)),
+          l2 = l1[p] || (l1[p] = Object.create(null));
+      const entry = l2[o];
+      if (typeof entry !== 'object') {
+        // Default-graph terms store their id directly at the object level;
+        // the reverse entry in `_entities` is the component-id array
+        // (triple terms are deliberately absent from `_ids`)
+        if (g === 1) {
+          return entry !== undefined ? entry :
+            (this._entities[++this._id] = [s, p, o], l2[o] = this._id);
+        }
+        // First graph-component term for this s/p/o: spill to a graph
+        // sub-map, keeping any existing default-graph term under key 1
+        const spill = l2[o] = Object.create(null);
+        if (entry !== undefined)
+          spill[1] = entry;
+        this._entities[++this._id] = [s, p, o, g];
+        return (spill[g] = this._id);
+      }
+      return entry[g] || (
+        this._entities[++this._id] = g === 1 ? [s, p, o] : [s, p, o, g],
+        entry[g] = this._id
+      );
+    }
+    const str = termToId(term);
     return this._ids[str] || (this._ids[this._entities[++this._id] = str] = this._id);
   }
 
