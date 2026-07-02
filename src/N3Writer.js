@@ -38,6 +38,8 @@ export default class N3Writer {
     options = options || {};
     this._lists = options.lists;
     this._graphs = options.graphs || 'keep';
+    if (this._graphs !== 'keep' && this._graphs !== 'ignore' && this._graphs !== 'error')
+      throw new Error(`Unexpected "graphs" option value: ${this._graphs}`);
 
     // If no output stream given, send the output as string through the end callback
     if (!outputStream) {
@@ -85,9 +87,9 @@ export default class N3Writer {
   // ### `_writeQuad` writes the quad to the output stream
   _writeQuad(subject, predicate, object, graph, done) {
     try {
-      if (this._graphs === 'error' && !DEFAULTGRAPH.equals(graph)) {
-        done(new Error('Encountered graph name, this is forbidden.'));
-      }
+      // Refuse to write a quad in a named graph if the `graphs` option demands it
+      if (this._graphs === 'error' && !DEFAULTGRAPH.equals(graph))
+        throw new Error('The chosen serialization settings do not support triples in a non-default graph.');
       // Write the graph's label if it has changed
       if (this._graphs === 'keep' && !graph.equals(this._graph)) {
         // Close the previous graph and start the new one
@@ -121,16 +123,17 @@ export default class N3Writer {
   _writeQuadLine(subject, predicate, object, graph, done) {
     // Write the quad without prefixes
     delete this._prefixMatch;
-    this._write(this.quadToString(subject, predicate, object, graph, done), done);
+    try {
+      this._write(this.quadToString(subject, predicate, object, graph), done);
+    }
+    catch (error) { done && done(error); }
   }
 
   // ### `quadToString` serializes a quad as a string
-  quadToString(subject, predicate, object, graph, done) {
-    if (this._graphs === 'error' && !DEFAULTGRAPH.equals(graph)) {
-      const err = new Error('Encountered graph name, this is forbidden.');
-      if (done) return done(err);
-      throw err;
-    }
+  quadToString(subject, predicate, object, graph) {
+    // Refuse to serialize a quad in a named graph if the `graphs` option demands it
+    if (this._graphs === 'error' && graph && graph.value)
+      throw new Error('The chosen serialization settings do not support triples in a non-default graph.');
     return  `${this._encodeSubject(subject)} ${
             this._encodeIriOrBlank(predicate)} ${
             this._encodeObject(object)

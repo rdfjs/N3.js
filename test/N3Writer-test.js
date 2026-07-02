@@ -36,16 +36,18 @@ describe('Writer', () => {
         writer.quadToString(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')),
       ).toBe('<a> <b> <c> <g> .\n');
     });
-    it('should throw error when it\'s forbidden to pass graphname', done => {
+    it('should not serialize a single quad if the graphs option is set to error', () => {
       const writer = new Writer({ graphs: 'error' });
-      try {
-        writer.quadToString(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')).should.equal('<a> <b> <c> <g> .\n');
-      }
-      catch (error) {
-        error.should.be.an.instanceof(Error);
-        error.should.have.property('message', 'Encountered graph name, this is forbidden.');
-        done();
-      }
+      expect(
+        () => writer.quadToString(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')),
+      ).toThrow('The chosen serialization settings do not support triples in a non-default graph.');
+    });
+
+    it('should serialize a single triple if the graphs option is set to error', () => {
+      const writer = new Writer({ graphs: 'error' });
+      expect(
+        writer.quadToString(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')),
+      ).toBe('<a> <b> <c> .\n');
     });
 
     it('should serialize an array of triples', () => {
@@ -804,7 +806,25 @@ describe('Writer', () => {
       });
     });
 
-    it('ignores the graph name when needed in N-Quads mode', done => {
+    it('should throw when the graphs option has an unknown value', () => {
+      expect(() => new Writer({ graphs: 'drop' }))
+        .toThrow('Unexpected "graphs" option value: drop');
+    });
+
+    it('should write the graph name when the graphs option is set to keep', done => {
+      const writer = new Writer({ graphs: 'keep', format: 'n-quads' });
+      writer.addQuad(new Quad(
+        new NamedNode('a:a'),
+        new NamedNode('b:b'),
+        new NamedNode('c:c'),
+        new NamedNode('g:g')));
+      writer.end((error, output) => {
+        expect(output).toBe('<a:a> <b:b> <c:c> <g:g> .\n');
+        done(error);
+      });
+    });
+
+    it('should omit the graph name when the graphs option is set to ignore in N-Quads mode', done => {
       const writer = new Writer({ graphs: 'ignore', format: 'n-quads' });
       writer.addQuad(new Quad(
         new NamedNode('a:a'),
@@ -812,24 +832,57 @@ describe('Writer', () => {
         new NamedNode('c:c'),
         new NamedNode('g:g')));
       writer.end((error, output) => {
-        output.should.equal('<a:a> <b:b> <c:c> .\n');
+        expect(output).toBe('<a:a> <b:b> <c:c> .\n');
         done(error);
       });
     });
 
-    it('throws an graph-found error needed in N-Quads mode', done => {
+    it('should error exactly once and not write the quad when the graphs option is set to error in N-Quads mode', done => {
       const writer = new Writer({ graphs: 'error', format: 'n-quads' });
+      let errors = 0, lastError = null;
       writer.addQuad(new Quad(
         new NamedNode('a:a'),
         new NamedNode('b:b'),
         new NamedNode('c:c'),
         new NamedNode('g:g')), error => {
-        error.should.be.an.instanceof(Error);
-        error.should.have.property('message', 'Encountered graph name, this is forbidden.');
-        done();
+        errors++;
+        lastError = error;
+      });
+      writer.end((error, output) => {
+        expect(errors).toBe(1);
+        expect(lastError).toBeInstanceOf(Error);
+        expect(lastError).toHaveProperty('message', 'The chosen serialization settings do not support triples in a non-default graph.');
+        expect(output).toBe('');
+        done(error);
       });
     });
-    it('ignores the graph name when needed', done => {
+
+    it('should write a quad in the default graph when the graphs option is set to error in N-Triples mode', done => {
+      const writer = new Writer({ graphs: 'error', format: 'n-triples' });
+      writer.addQuad(new Quad(
+        new NamedNode('a:a'),
+        new NamedNode('b:b'),
+        new NamedNode('c:c')));
+      writer.end((error, output) => {
+        expect(output).toBe('<a:a> <b:b> <c:c> .\n');
+        done(error);
+      });
+    });
+
+    it('should not write the quad when the graphs option is set to error in N-Triples mode and no callback is given', done => {
+      const writer = new Writer({ graphs: 'error', format: 'n-triples' });
+      writer.addQuad(new Quad(
+        new NamedNode('a:a'),
+        new NamedNode('b:b'),
+        new NamedNode('c:c'),
+        new NamedNode('g:g')));
+      writer.end((error, output) => {
+        expect(output).toBe('');
+        done(error);
+      });
+    });
+
+    it('should omit the graph name when the graphs option is set to ignore', done => {
       const writer = new Writer({ graphs: 'ignore' });
       writer.addQuad(new Quad(
         new NamedNode('a:a'),
@@ -837,21 +890,50 @@ describe('Writer', () => {
         new NamedNode('c:c'),
         new NamedNode('g:g')));
       writer.end((error, output) => {
-        output.should.equal('<a:a> <b:b> <c:c>.\n');
+        expect(output).toBe('<a:a> <b:b> <c:c>.\n');
         done(error);
       });
     });
 
-    it('throws an graph-found error needed', done => {
+    it('should merge quads from different graphs when the graphs option is set to ignore in TriG mode', done => {
+      const writer = new Writer({ graphs: 'ignore', format: 'trig' });
+      writer.addQuad(new Quad(
+        new NamedNode('a:a'),
+        new NamedNode('b:b'),
+        new NamedNode('c:c'),
+        new NamedNode('g:g')));
+      writer.addQuad(new Quad(
+        new NamedNode('a:a'),
+        new NamedNode('b:b'),
+        new NamedNode('d:d'),
+        new NamedNode('h:h')));
+      writer.end((error, output) => {
+        expect(output).toBe('<a:a> <b:b> <c:c>, <d:d>.\n');
+        const quads = new Parser({ format: 'trig' }).parse(output);
+        expect(quads).toHaveLength(2);
+        for (const quad of quads)
+          expect(quad.graph.termType).toBe('DefaultGraph');
+        done(error);
+      });
+    });
+
+    it('should error exactly once and not write the quad when the graphs option is set to error', done => {
       const writer = new Writer({ graphs: 'error' });
+      let errors = 0, lastError = null;
       writer.addQuad(new Quad(
         new NamedNode('a:a'),
         new NamedNode('b:b'),
         new NamedNode('c:c'),
         new NamedNode('g:g')), error => {
-        error.should.be.an.instanceof(Error);
-        error.should.have.property('message', 'Encountered graph name, this is forbidden.');
-        done();
+        errors++;
+        lastError = error;
+      });
+      writer.end((error, output) => {
+        expect(errors).toBe(1);
+        expect(lastError).toBeInstanceOf(Error);
+        expect(lastError).toHaveProperty('message', 'The chosen serialization settings do not support triples in a non-default graph.');
+        expect(output).toBe('');
+        done(error);
       });
     });
 
