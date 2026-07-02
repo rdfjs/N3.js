@@ -45,7 +45,7 @@ or
 [_Introduction to browserify_](https://writingjavascript.org/posts/introduction-to-browserify).
 You will need to create a "UMD bundle" and supply a name (e.g. with the `-s N3` option in browserify).
 
-You can also load it via CDN, either as a UMD bundle that exposes a global `N3`:
+You can also load it via CDN, either as a classic script that exposes a global `N3`:
 ```html
 <script src="https://unpkg.com/n3/browser/n3.min.js"></script>
 ```
