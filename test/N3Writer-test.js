@@ -459,14 +459,56 @@ describe('Writer', () => {
         new NamedNode('http://example.org/foo/#b'),
         new NamedNode('http://example.org/foo/cdeFgh/ijk')));
       writer.end((error, output) => {
-        expect(output).toBe('@base <http://example.org/foo/>.\n' +
-                            '<> <#b> <cdeFgh/ijk>.\n');
+        expect(output).toBe('<> <#b> <cdeFgh/ijk>.\n');
         done(error);
       });
     });
 
     it('uses partially match base IRIs', done => {
       const writer = new Writer({ baseIRI: 'https://pod.example/profile/card' });
+      writer.addQuad(new Quad(
+          new NamedNode('https://pod.example/profile/card#me'),
+          new NamedNode('http://www.w3.org/2002/07/owl#sameAs'),
+          new NamedNode('https://pod.example/profile/card-1234.ttl')));
+      writer.end((error, output) => {
+        expect(output).toBe(
+            '<#me> <http://www.w3.org/2002/07/owl#sameAs> <card-1234.ttl>.\n',
+        );
+        done(error);
+      });
+    });
+
+    it('does not write a base directive by default', done => {
+      const writer = new Writer({
+        prefixes: { ex: 'http://other.example/ns#' },
+        baseIRI: 'http://example.org/foo/',
+      });
+      writer.addQuad(new Quad(
+        new NamedNode('http://example.org/foo/bar'),
+        new NamedNode('http://other.example/ns#p'),
+        new NamedNode('http://example.org/foo/baz')));
+      writer.end((error, output) => {
+        expect(output).toBe('@prefix ex: <http://other.example/ns#>.\n\n' +
+                            '<bar> ex:p <baz>.\n');
+        done(error);
+      });
+    });
+
+    it('writes a base directive with the writeBase option', done => {
+      const writer = new Writer({ baseIRI: 'http://example.org/foo/', writeBase: true });
+      writer.addQuad(new Quad(
+        new NamedNode('http://example.org/foo/'),
+        new NamedNode('http://example.org/foo/#b'),
+        new NamedNode('http://example.org/foo/cdeFgh/ijk')));
+      writer.end((error, output) => {
+        expect(output).toBe('@base <http://example.org/foo/>.\n' +
+                            '<> <#b> <cdeFgh/ijk>.\n');
+        done(error);
+      });
+    });
+
+    it('writes a base directive for a partially matching base IRI', done => {
+      const writer = new Writer({ baseIRI: 'https://pod.example/profile/card', writeBase: true });
       writer.addQuad(new Quad(
           new NamedNode('https://pod.example/profile/card#me'),
           new NamedNode('http://www.w3.org/2002/07/owl#sameAs'),
@@ -484,6 +526,7 @@ describe('Writer', () => {
       const writer = new Writer({
         prefixes: { ex: 'http://other.example/ns#' },
         baseIRI: 'http://example.org/foo/',
+        writeBase: true,
       });
       writer.addQuad(new Quad(
         new NamedNode('http://example.org/foo/bar'),
@@ -498,7 +541,7 @@ describe('Writer', () => {
     });
 
     it('should not write a base directive in N-Triples mode', done => {
-      const writer = new Writer({ format: 'N-Triples', baseIRI: 'http://example.org/foo/' });
+      const writer = new Writer({ format: 'N-Triples', baseIRI: 'http://example.org/foo/', writeBase: true });
       writer.addQuad(new NamedNode('http://example.org/foo/bar'), new NamedNode('http://example.org/foo/#b'), new Literal('"c"'));
       writer.end((error, output) => {
         expect(output).toBe('<http://example.org/foo/bar> <http://example.org/foo/#b> "c" .\n');
@@ -507,7 +550,7 @@ describe('Writer', () => {
     });
 
     it('should not write a base directive in N-Quads mode', done => {
-      const writer = new Writer({ format: 'N-Quads', baseIRI: 'http://example.org/foo/' });
+      const writer = new Writer({ format: 'N-Quads', baseIRI: 'http://example.org/foo/', writeBase: true });
       writer.addQuad(new NamedNode('http://example.org/foo/bar'), new NamedNode('http://example.org/foo/#b'), new Literal('"c"'), new NamedNode('http://example.org/foo/g'));
       writer.end((error, output) => {
         expect(output).toBe('<http://example.org/foo/bar> <http://example.org/foo/#b> "c" <http://example.org/foo/g> .\n');
@@ -5616,33 +5659,44 @@ describe('Writer', () => {
 
     function testRelativizes(baseIRI, ...cases) {
       describe(`baseIRI ${baseIRI}`, () => {
-        // The parser is given no base IRI on purpose:
-        // the base directive in the output must suffice to restore the IRIs
-        const parser = new Parser();
+        const parser = new Parser({ baseIRI });
+        // This parser is given no base IRI on purpose:
+        // the written base directive must suffice to restore the IRIs
+        const baselessParser = new Parser();
         for (const { input, expected } of cases) {
           const writer = new Writer({ baseIRI });
+          const baseWriter = new Writer({ baseIRI, writeBase: true });
           const quad = new Quad(new NamedNode('urn:ex:s'), new NamedNode('urn:ex:p'), new NamedNode(input));
           it(`relativizes <${input}> to <${expected}>`, async () => {
             writer.addQuad(quad);
+            baseWriter.addQuad(quad);
 
             const outputString = await new Promise(resolve => {
               writer.end((error, output) => {
                 resolve(output);
               });
             });
-
-            expect(outputString).toBe(`@base <${baseIRI}>.\n<urn:ex:s> <urn:ex:p> <${expected}>.\n`);
-
-            // Now parsing our resulting string, should give us our original quad.
-            const outputQuad = await new Promise(resolve => {
-              parser.parse(outputString, (error, quad) => {
-                if (quad) {
-                  resolve(quad);
-                }
+            const baseOutputString = await new Promise(resolve => {
+              baseWriter.end((error, output) => {
+                resolve(output);
               });
             });
 
-            expect(outputQuad).toStrictEqual(quad);
+            expect(outputString).toBe(`<urn:ex:s> <urn:ex:p> <${expected}>.\n`);
+            expect(baseOutputString).toBe(`@base <${baseIRI}>.\n${outputString}`);
+
+            // Now parsing our resulting strings, should give us our original quad.
+            for (const [outputParser, output] of [[parser, outputString], [baselessParser, baseOutputString]]) {
+              const outputQuad = await new Promise(resolve => {
+                outputParser.parse(output, (error, quad) => {
+                  if (quad) {
+                    resolve(quad);
+                  }
+                });
+              });
+
+              expect(outputQuad).toStrictEqual(quad);
+            }
           });
         }
       });

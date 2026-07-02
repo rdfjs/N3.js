@@ -60,9 +60,11 @@ export default class N3Writer {
       this._prefixIRIs = Object.create(null);
       if (options.baseIRI) {
         this._baseIri = new BaseIRI(options.baseIRI);
-        // Write the base as a directive, so relative IRIs
-        // resolve to the original IRIs regardless of document location
-        this._write(`@base <${options.baseIRI}>.\n`);
+        // With the `writeBase` option, write the base as a directive,
+        // so relative IRIs resolve to the original IRIs
+        // regardless of document location
+        if (options.writeBase)
+          this._write(`@base <${options.baseIRI}>.\n`);
       }
       options.prefixes && this.addPrefixes(options.prefixes);
     }
