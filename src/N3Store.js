@@ -1219,7 +1219,9 @@ class DatasetCoreAndReadableStream extends Readable {
 
     // While iterating, freeze the pre-mutation matching quads under the current generation,
     // so every iteration in progress (each started during some generation) keeps a stable view.
-    // This costs O(view size) per matching mutation for as long as any iteration remains open.
+    // While any iteration remains open, each matching mutation costs O(view size) and retains
+    // one frozen array (even for generations at which no iteration started); all baselines
+    // are released once the last iteration closes.
     if (this._activeIterators > 0) {
       if (!this._baselines)
         this._baselines = new Map();
@@ -1463,6 +1465,7 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   match(subject, predicate, object, graph) {
+    // Unlike the store's `match`, this takes no `options`: sub-views inherit these semantics.
     // A nested view is parented on the materialized contents, not on the root store,
     // so `forwarded` is downgraded to `snapshot`: write-through would only reach
     // the internal materialized store, silently desyncing this view from its parent

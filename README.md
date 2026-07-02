@@ -417,6 +417,9 @@ Supported values:
   Calling `match()` on a `'forwarded'` view returns a `'snapshot'` sub-view:
   nested views never write through to the root store.
 
+`match()` on a view takes no `matchSemantics` option: a sub-view inherits the
+view's semantics (with `'forwarded'` downgraded to `'snapshot'` as above).
+
 For `'snapshot'` and `'forwarded'`, an iteration (synchronous or via the
 stream) that is already in progress keeps a stable view of the quads as of when
 it started, even if a matching parent mutation lands mid-iteration. Views are
