@@ -1,4 +1,4 @@
-import { Parser, NamedNode, BlankNode, Quad, termFromId, DataFactory as DF } from '../src';
+import { Parser, Writer, NamedNode, BlankNode, Quad, termFromId, DataFactory as DF } from '../src';
 import rdfDataModel from '@rdfjs/data-model';
 import { isomorphic } from 'rdf-isomorphic';
 
@@ -3123,6 +3123,186 @@ describe('Parser', () => {
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
                   ['ex:joe', 'f:mother', '_:b1']),
     );
+
+    it(
+      'should parse nested lists in the subject, predicate, and object simultaneously',
+      // Subject ((<a>) (<b> (<c>))): _:b0 [_:b1 (a), _:b2 [_:b3 (b), _:b4 (_:b5 (c))]]
+      // Predicate ((<p>)): _:b6 (_:b7 (p)); object ((<x> (<y>))): _:b8 (_:b9 (x), _:b10 (_:b11 (y)))
+      shouldParse(parser, '((<a>) (<b> (<c>))) ((<p>)) ((<x> (<y>))).',
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'b'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b4'],
+                  ['_:b4', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b5'],
+                  ['_:b4', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b5', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'c'],
+                  ['_:b5', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b6', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b7'],
+                  ['_:b6', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b7', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'p'],
+                  ['_:b7', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b8', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b9'],
+                  ['_:b8', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b9', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
+                  ['_:b9', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b10'],
+                  ['_:b10', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b11'],
+                  ['_:b10', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b11', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
+                  ['_:b11', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b0', '_:b6', '_:b8']),
+    );
+
+    it(
+      'should parse a triple-nested list in the predicate',
+      shouldParse(parser, '<a> (((<p>))) <b>.',
+                  ['a', '_:b0', 'b'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'p'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+    );
+
+    it(
+      'should parse a nested list in the predicate within a formula',
+      // The list structure belongs to the formula's graph
+      shouldParse(parser, '<s> <p> { <a> ((<q>)) <b>. }.',
+                  ['s', 'p', '_:b0'],
+                  ['a', '_:b1', 'b', '_:b0'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2', '_:b0'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b0'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'q', '_:b0'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b0']),
+    );
+
+    it(
+      'should parse empty lists at each depth and position',
+      // An empty list is the IRI rdf:nil, so only non-empty enclosing lists produce cells
+      shouldParse(parser, '(()) (() ()) ((() ())).',
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b4'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b4', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b4', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b5'],
+                  ['_:b5', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b5', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b0', '_:b1', '_:b3']),
+    );
+
+    it(
+      'should parse lists in every position of a statement in a formula',
+      shouldParse(parser, '{ (<a>) (<p>) (<b>). } => { <x> <y> <z>. }.',
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a', '_:b0'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b0'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'p', '_:b0'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b0'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'b', '_:b0'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b0'],
+                  ['_:b1', '_:b2', '_:b3', '_:b0'],
+                  ['x', 'y', 'z', '_:b4'],
+                  ['_:b0', 'http://www.w3.org/2000/10/swap/log#implies', '_:b4']),
+    );
+
+    describe('nested lists across all positions', () => {
+      const RDF_FIRST = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first',
+          RDF_REST = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
+          RDF_NIL = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil';
+
+      // A term of depth 0 is a plain IRI;
+      // a term of depth n is a two-element list of an IRI and a term of depth n - 1,
+      // so a term of depth n contributes exactly 2n list cells (4n quads)
+      function nested(depth, name) {
+        return depth === 0 ? `<${name}>` : `(<${name}${depth}> ${nested(depth - 1, name)})`;
+      }
+
+      // Verifies that `term` is the well-formed list produced by `nested(depth, name)`:
+      // each cell has exactly one rdf:first and one rdf:rest arc,
+      // each chain terminates in rdf:nil, and no cell is shared
+      function verifyTerm(term, depth, firsts, rests, seen) {
+        if (depth === 0) {
+          expect(term.termType).toBe('NamedNode');
+          return;
+        }
+        expect(term.termType).toBe('BlankNode');
+        const head = term.value;
+        expect(seen).not.toContain(head);
+        seen.push(head);
+        expect(firsts[head].termType).toBe('NamedNode');
+        expect(firsts[head].value).not.toBe(RDF_NIL);
+        const tail = rests[head];
+        expect(tail.termType).toBe('BlankNode');
+        expect(seen).not.toContain(tail.value);
+        seen.push(tail.value);
+        verifyTerm(firsts[tail.value], depth - 1, firsts, rests, seen);
+        expect(rests[tail.value].value).toBe(RDF_NIL);
+      }
+
+      // Deterministically cover every combination of nesting depths 0-3
+      // across the subject, predicate, and object position
+      for (let subjectDepth = 0; subjectDepth < 4; subjectDepth++) {
+        for (let predicateDepth = 0; predicateDepth < 4; predicateDepth++) {
+          for (let objectDepth = subjectDepth || predicateDepth ? 0 : 1; objectDepth < 4; objectDepth++) {
+            it(`should parse lists of depths ${subjectDepth}, ${predicateDepth}, and ${objectDepth
+                } in the subject, predicate, and object`, done => {
+              const doc = `${nested(subjectDepth, 's')} ${nested(predicateDepth, 'p')} ${nested(objectDepth, 'o')}.`;
+              const quads = new Parser({ baseIRI: BASE_IRI, format: 'N3' }).parse(doc);
+
+              // Each nesting level contributes two cells of two quads each
+              const cells = 2 * (subjectDepth + predicateDepth + objectDepth);
+              expect(quads).toHaveLength(1 + 2 * cells);
+
+              // Everything lives in the default graph
+              expect(quads.every(quad => quad.graph.termType === 'DefaultGraph')).toBe(true);
+
+              // Index the list arcs by cell
+              const firsts = {}, rests = {}, statements = [];
+              let duplicateArcs = 0;
+              for (const quad of quads) {
+                const arcs = quad.predicate.value === RDF_FIRST ? firsts :
+                             quad.predicate.value === RDF_REST  ? rests : null;
+                if (arcs === null)
+                  statements.push(quad);
+                else if (quad.subject.value in arcs)
+                  duplicateArcs++;
+                else
+                  arcs[quad.subject.value] = quad.object;
+              }
+              // Every cell has exactly one rdf:first and one rdf:rest arc
+              expect(duplicateArcs).toBe(0);
+              expect(Object.keys(firsts).sort()).toEqual(Object.keys(rests).sort());
+              // Only the main statement is not part of a list structure
+              expect(statements).toHaveLength(1);
+
+              // Every cell is on a nil-terminated chain hanging off the main statement
+              const seen = [];
+              verifyTerm(statements[0].subject, subjectDepth, firsts, rests, seen);
+              verifyTerm(statements[0].predicate, predicateDepth, firsts, rests, seen);
+              verifyTerm(statements[0].object, objectDepth, firsts, rests, seen);
+              expect(seen).toHaveLength(cells);
+
+              // The parsed quads survive a round trip through the writer
+              const writer = new Writer({ format: 'text/n3' });
+              writer.addQuads(quads);
+              writer.end((error, output) => {
+                expect(error).toBeFalsy();
+                expect(isomorphic(new Parser({ baseIRI: BASE_IRI, format: 'N3' }).parse(output), quads)).toBe(true);
+                done();
+              });
+            });
+          }
+        }
+      }
+    });
 
     it(
       'should parse a ! path in a list as subject',
