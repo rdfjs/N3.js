@@ -1,0 +1,47 @@
+# The spec jobs in ci.yml cache the rdf-test-suite fixtures, and cache hits
+# are served without revalidation, so a saved cache never sees upstream
+# changes. This workflow watches the branch that actually serves the
+# manifests (w3c/rdf-tests@gh-pages, published at w3c.github.io/rdf-tests)
+# and, when the rdf11/rdf12 suites change, opens a PR that bumps
+# spec/cache-key.txt. Merging that PR rotates the CI cache key, so the spec
+# jobs refetch the suites cold (deliberately without seeding from the old
+# cache, which would shadow the updated fixtures).
+name: Refresh spec cache
+
+on:
+  schedule:
+    # Weekly; the RDF 1.2 suites still evolve while the WG is in flight.
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Pin the upstream test-suite revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for suite in rdf11 rdf12; do
+            sha=$(gh api "repos/w3c/rdf-tests/commits?sha=gh-pages&path=rdf/$suite&per_page=1" --jq '.[0].sha')
+            [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || { echo "Bad SHA for $suite: '$sha'" >&2; exit 1; }
+            echo "$suite $sha"
+          done > spec/cache-key.txt
+      - uses: peter-evans/create-pull-request@v8
+        with:
+          add-paths: spec/cache-key.txt
+          branch: ci/refresh-spec-cache
+          delete-branch: true
+          commit-message: 'chore(ci): refetch upstream spec suites'
+          title: 'chore(ci): refetch upstream spec suites'
+          body: >-
+            The w3c/rdf-tests suites changed upstream. Merging rotates the
+            spec jobs' fixture cache key so they refetch the suites cold.
+            Note: CI does not run automatically on workflow-created PRs;
+            close and reopen (or push) to trigger it.
