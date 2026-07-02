@@ -648,6 +648,12 @@ describe('Parser', () => {
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     );
 
+    it(
+      'should not parse statements with a list in the predicate',
+      shouldNotParse('<a> (<b>) <c>.',
+                     'Expected entity but got ( on line 1.'),
+    );
+
     it('should parse a list with a literal', shouldParse('<a> <b> ("x").',
                 ['a', 'b', '_:b0'],
                 ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"x"'],
@@ -2170,6 +2176,12 @@ describe('Parser', () => {
 
     it('should parse a default graph', shouldParse(parser, '{}'));
 
+    it(
+      'should not parse statements with a list in the predicate',
+      shouldNotParse(parser, '<a> (<b>) <c>.',
+                     'Expected entity but got ( on line 1.'),
+    );
+
     it('should parse a named graph', shouldParse(parser, '<g> {}'));
 
     it(
@@ -2809,6 +2821,71 @@ describe('Parser', () => {
                   ['x', 'is', '_:b0'],
                   ['_:b0', 'f:knows', '_:b1'],
                   ['_:b1', 'f:son', 'ex:joe']),
+    );
+
+    it(
+      'should parse statements with an empty list in the predicate',
+      shouldParse(parser, '<a> () <b>.',
+                  ['a', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'b']),
+    );
+
+    it(
+      'should parse statements with a single-element list in the predicate',
+      shouldParse(parser, '<a> (<p>) <b>.',
+                  ['a', '_:b0', 'b'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'p'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+    );
+
+    it(
+      'should parse statements with a multi-element list in the predicate',
+      shouldParse(parser, '<a> (<p> <q>) <b>.',
+                  ['a', '_:b0', 'b'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'p'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'q'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+    );
+
+    it(
+      'should parse statements with a nested list in the predicate',
+      shouldParse(parser, '<a> ((<p>) <q>) <b>.',
+                  ['a', '_:b0', 'b'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'p'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'q'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+    );
+
+    it(
+      'should parse statements after a list in the predicate',
+      shouldParse(parser, '<a> (<p>) <b>. <c> <d> <e>.',
+                  ['a', '_:b0', 'b'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'p'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['c', 'd', 'e']),
+    );
+
+    it(
+      'should parse a list in the predicate within a formula',
+      shouldParse(parser, '{ <a> (<p>) <b>. } => { <a> <b> <c>. }.',
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'p', '_:b0'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b0'],
+                  ['a', '_:b1', 'b', '_:b0'],
+                  ['a', 'b', 'c', '_:b2'],
+                  ['_:b0', 'http://www.w3.org/2000/10/swap/log#implies', '_:b2']),
+    );
+
+    it(
+      'should parse a ! path in a list as predicate',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
+                          '<l> (:joe!fam:mother) <m>.',
+                  ['l', '_:b0', 'm'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['ex:joe', 'f:mother', '_:b1']),
     );
 
     it(

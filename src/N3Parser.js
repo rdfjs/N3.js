@@ -202,6 +202,18 @@ export default class N3Parser {
     return value;
   }
 
+  // ### `_readList` starts reading a list in the subject, predicate, or object position
+  _readList(token, subject, predicate, object) {
+    const stack = this._contextStack, parent = stack.length && stack[stack.length - 1];
+    if (parent.type === '<<') {
+      return this._error('Unexpected list in reified triple', token);
+    }
+    // Start a new list
+    this._saveContext('list', this._graph, subject, predicate, object);
+    this._subject = null;
+    return this._readListItem;
+  }
+
   // ### `_readSubject` reads a quad's subject
   _readSubject(token) {
     this._predicate = null;
@@ -212,14 +224,7 @@ export default class N3Parser {
                         this._subject = this._factory.blankNode(), null, null);
       return this._readBlankNodeHead;
     case '(':
-      const stack = this._contextStack, parent = stack.length && stack[stack.length - 1];
-      if (parent.type === '<<') {
-        return this._error('Unexpected list in reified triple', token);
-      }
-      // Start a new list
-      this._saveContext('list', this._graph, this.RDF_NIL, null, null);
-      this._subject = null;
-      return this._readListItem;
+      return this._readList(token, this.RDF_NIL, null, null);
     case '{':
       // Start a new formula
       if (!this._n3Mode)
@@ -302,6 +307,11 @@ export default class N3Parser {
       // Additional semicolons can be safely ignored
       return this._predicate !== null ? this._readPredicate :
              this._error('Expected predicate but got ;', token);
+    case '(':
+      // In N3, a list can be a predicate
+      return this._n3Mode ?
+        this._readList(token, this._subject, this.RDF_NIL, null) :
+        this._error(`Expected entity but got ${type}`, token);
     case '[':
       if (this._n3Mode) {
         // Start a new quad with a new blank node as subject
@@ -340,14 +350,7 @@ export default class N3Parser {
                         this._subject = this._factory.blankNode());
       return this._readBlankNodeHead;
     case '(':
-      const stack = this._contextStack, parent = stack.length && stack[stack.length - 1];
-      if (parent.type === '<<') {
-        return this._error('Unexpected list in reified triple', token);
-      }
-      // Start a new list
-      this._saveContext('list', this._graph, this._subject, this._predicate, this.RDF_NIL);
-      this._subject = null;
-      return this._readListItem;
+      return this._readList(token, this._subject, this._predicate, this.RDF_NIL);
     case '{':
       // Start a new formula
       if (!this._n3Mode)
@@ -479,6 +482,14 @@ export default class N3Parser {
         if (this._subject === this.RDF_NIL)
           return next;
       }
+      // Was this list the parent's predicate?
+      else if (this._object === null) {
+        // The next token is the object
+        next = this._readObject;
+        // No list tail if this was an empty list
+        if (this._predicate === this.RDF_NIL)
+          return next;
+      }
       // The list was in the parent context's object
       else {
         next = this._getContextEndReader();
@@ -528,9 +539,13 @@ export default class N3Parser {
 
     // Is this the first element of the list?
     if (previousList === null) {
-      // This list is either the subject or the object of its parent
+      // The list is the subject of the parent
       if (parent.predicate === null)
         parent.subject = list;
+      // The list is the predicate of the parent
+      else if (parent.object === null)
+        parent.predicate = list;
+      // The list is the object of the parent
       else
         parent.object = list;
     }
