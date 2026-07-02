@@ -204,6 +204,30 @@ function SlowConsumer() {
 A dedicated `prefix` event signals every prefix with `prefix` and `term` arguments.
 A dedicated `comment` event can be enabled by setting `comments: true` in the N3.StreamParser constructor.
 
+### From a Web Stream to quads
+
+N3.js consumes [Node.js streams](http://nodejs.org/api/stream.html) natively,
+but sources such as `fetch` produce [Web Streams](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API).
+On Node.js 17 or higher, convert such a stream into a Node.js stream:
+
+```JavaScript
+const streamParser = new N3.StreamParser(),
+      { Readable } = require('stream');
+Readable.fromWeb(response.body).pipe(streamParser);
+```
+
+In browsers (or anywhere without Node.js streams),
+write the chunks to the parser directly,
+since `N3.StreamParser` exposes a standard writable stream interface:
+
+```JavaScript
+const streamParser = new N3.StreamParser(),
+      reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+for (let result; !(result = await reader.read()).done;)
+  streamParser.write(result.value);
+streamParser.end();
+```
+
 ## Writing
 
 ### From quads to a string
