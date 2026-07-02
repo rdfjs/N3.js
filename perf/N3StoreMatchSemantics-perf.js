@@ -101,8 +101,8 @@ function runMidStreamSwitch(label, options) {
     assert.equal(count, dim);
   }
   console.timeEnd(TEST);
-  // Untimed removal of the mid-stream quads; for `forwarded`,
-  // this also exercises delta removal on materialized views
+  // Untimed removal of the mid-stream quads; the `forwarded` views stay unmaterialized
+  // (iteration alone does not materialize), so this exercises the observers' no-op path
   for (let i = 0; i < dim; i++)
     store.removeQuad(namedNode(prefix + i), namedNode('p'), namedNode('mid'));
   assert.equal(store.size, total);
