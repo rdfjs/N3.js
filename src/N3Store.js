@@ -758,20 +758,26 @@ export default class N3Store {
 
   // ### `extractLists` finds and removes all list triples
   // and returns the items per list.
-  extractLists({ remove = false, ignoreErrors = false } = {}) {
+  // With `allowExtraArcs`, lists whose nodes carry arcs other than
+  // rdf:first/rdf:rest are returned as well,
+  // but left intact when `remove` is set.
+  extractLists({ remove = false, ignoreErrors = false, allowExtraArcs = false } = {}) {
     const lists = {}; // has scalar keys so could be a simple Object
     const onError = ignoreErrors ? (() => true) :
                   ((node, message) => { throw new Error(`${node.value} ${message}`); });
 
     // Traverse each list from its tail
     const tails = this.getQuads(null, namespaces.rdf.rest, namespaces.rdf.nil, null);
-    const toRemove = remove ? [...tails] : [];
+    const toRemove = [];
     tails.forEach(tailQuad => {
       const items = [];             // the members found as objects of rdf:first quads
       let malformed = false;      // signals whether the current list is malformed
+      let extraArcs = false;      // signals whether the current list has extra arcs
       let head;                   // the head of the list (_:b1 in above example)
       let headPos;                // set to subject or object when head is set
       const graph = tailQuad.graph; // make sure list is in exactly one graph
+      const removeStart = toRemove.length; // where this list's quads start in toRemove
+      toRemove.push(tailQuad);
 
       // Traverse the list from tail to end
       let current = tailQuad.subject;
@@ -805,8 +811,12 @@ export default class N3Store {
           }
 
           // alien triple
-          else if (objectQuads.length)
-            malformed = onError(current, 'can\'t be subject and object');
+          else if (objectQuads.length) {
+            if (allowExtraArcs)
+              extraArcs = true;
+            else
+              malformed = onError(current, `has non-list arc ${quad.predicate.value}`);
+          }
           else {
             head = quad; // e.g. { (1 2 3) :p :o }
             headPos = 'subject';
@@ -843,9 +853,14 @@ export default class N3Store {
       // Don't remove any quads if the list is malformed
       if (malformed)
         remove = false;
-      // Store the list under the value of its head
-      else if (head)
-        lists[head[headPos].value] = items;
+      else {
+        // Store the list under the value of its head
+        if (head)
+          lists[head[headPos].value] = items;
+        // Leave lists with extra arcs fully intact
+        if (extraArcs)
+          toRemove.length = removeStart;
+      }
     });
 
     // Remove list quads if requested
