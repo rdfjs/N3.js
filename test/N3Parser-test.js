@@ -2115,6 +2115,12 @@ describe('Parser', () => {
         'Unexpected literal on line 1.'),
     );
 
+    it(
+      'should not parse a literal as predicate',
+      shouldNotParse(parser, '<a> "1" <b>.',
+        'Unexpected literal on line 1.'),
+    );
+
     it('should parse a triple term', shouldParse(parser, '<a> <b> <<(<a> <b> <c>)>>.',
         ['a', 'b', ['a', 'b', 'c']]));
 
@@ -2215,6 +2221,16 @@ describe('Parser', () => {
     it(
       'should not parse @forAll',
       shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'),
+    );
+
+    it(
+      'should not parse a literal as subject',
+      shouldNotParse(parser, '"1" <a> <b>.', 'Unexpected literal on line 1.'),
+    );
+
+    it(
+      'should not parse a literal as predicate',
+      shouldNotParse(parser, '<a> "1" <b>.', 'Unexpected literal on line 1.'),
     );
 
     it('should parse a triple term', shouldParse(parser, '<a> <b> <<(<a> <b> <c>)>>.',
@@ -2920,6 +2936,101 @@ describe('Parser', () => {
             ['a', 'b', '_:b0'],
             ['"bonjour"@fr--ltr', 'sameAs', '"hello"@en--rtl', '_:b0'],
         ),
+    );
+
+    it(
+      'should parse an integer literal as subject',
+      shouldParse(parser, '1 <a> <b>.',
+          ['"1"^^http://www.w3.org/2001/XMLSchema#integer', 'a', 'b']),
+    );
+
+    it(
+      'should parse a string literal as subject',
+      shouldParse(parser, '"1" <a> <b>.',
+          ['"1"', 'a', 'b']),
+    );
+
+    it(
+      'should parse a string literal as subject of a formula',
+      shouldParse(parser, '<a> <b> {"1" <c> "2"}.',
+          ['a', 'b', '_:b0'],
+          ['"1"', 'c', '"2"', '_:b0'],
+      ),
+    );
+
+    it(
+      'should parse a string literal as subject of a formula in a blank node',
+      shouldParse(parser, '<a> <b> [ <c> {"1" <d> "2"} ].',
+          ['a', 'b', '_:b0'],
+          ['_:b0', 'c', '_:b1'],
+          ['"1"', 'd', '"2"', '_:b1'],
+      ),
+    );
+
+    it(
+      'should parse a string literal as subject list element',
+      shouldParse(parser, '("1") <a> <b>.',
+          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"1"'],
+          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+          ['_:b0', 'a', 'b'],
+      ),
+    );
+
+    it(
+      'should parse a string literal as object list element',
+      shouldParse(parser, '<a> <b> ("1").',
+          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"1"'],
+          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+          ['a', 'b', '_:b0'],
+      ),
+    );
+
+    it(
+      'should not parse a string literal as subject with an undefined datatype prefix',
+      shouldNotParse(parser, '"1"^^p:x <a> <b>.',
+        'Undefined prefix "p:" on line 1.'),
+    );
+
+    it(
+      'should parse an integer literal as predicate',
+      shouldParse(parser, '<a> 1 <b>.',
+          ['a', '"1"^^http://www.w3.org/2001/XMLSchema#integer', 'b']),
+    );
+
+    it(
+      'should parse a string literal as predicate',
+      shouldParse(parser, '<a> "1" <b>.',
+          ['a', '"1"', 'b']),
+    );
+
+    it(
+      'should parse a string literal as object',
+      shouldParse(parser, '<a> <b> "1".',
+          ['a', 'b', '"1"']),
+    );
+
+    it(
+      'should parse a literal with datatype as predicate',
+      shouldParse(parser, '<a> "1"^^<c> <b>.',
+          ['a', '"1"^^http://example.org/c', 'b']),
+    );
+
+    it(
+      'should parse a literal with language as predicate',
+      shouldParse(parser, '<a> "one"@en <b>.',
+          ['a', '"one"@en', 'b']),
+    );
+
+    it(
+      'should parse a literal with language and direction as predicate',
+      shouldParse(parser, '<a> "one"@en--ltr <b>.',
+          ['a', '"one"@en--ltr', 'b']),
+    );
+
+    it(
+      'should not parse a string literal as predicate with an undefined datatype prefix',
+      shouldNotParse(parser, '<a> "1"^^p:x <b>.',
+        'Undefined prefix "p:" on line 1.'),
     );
 
     it(
