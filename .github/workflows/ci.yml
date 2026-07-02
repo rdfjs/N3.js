@@ -66,6 +66,19 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: build
+      # Persist rdf-test-suite's fetch cache (-c .rdf-test-suite-cache/): its
+      # cache writes are not atomic, so on a cold cache concurrent fetches of
+      # shared fixtures can race and read truncated files (#609). Hits are
+      # served without revalidation, so entries are pinned once saved — bump v1
+      # to refetch the suites. hashFiles(package.json) rotates the key whenever
+      # the spec scripts may have changed; restore-keys seeds the rotated cache
+      # so only new files are fetched live.
+      - uses: actions/cache@v6
+        with:
+          path: .rdf-test-suite-cache
+          key: rdf-test-suite-cache-v1-${{ matrix.spec }}-${{ hashFiles('package.json') }}
+          restore-keys: |
+            rdf-test-suite-cache-v1-${{ matrix.spec }}-
       - run: npm run spec-${{ matrix.spec }}
 
   lint:
