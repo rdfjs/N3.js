@@ -730,6 +730,601 @@ describe('Store', () => {
       });
     });
 
+    describe('match semantics', () => {
+      function q(s, p, o, g) {
+        return new Quad(new NamedNode(s), new NamedNode(p), new NamedNode(o), g ? new NamedNode(g) : undefined);
+      }
+      function values(view) {
+        return [...view].map(x => x.object.value).sort();
+      }
+
+      function buildStore(options) {
+        const s = new Store([], options);
+        for (let i = 0; i < 5; i++)
+          s.addQuad(q('s1', 'p1', `o${i}`));
+        s.addQuad(q('s2', 'p1', 'oX')); // a non-matching quad for an `s1` pattern
+        return s;
+      }
+
+      it('should default to lazy semantics', () => {
+        const store = buildStore();
+        const view = store.match(namedNode('s1'), null, null);
+        store.addQuad(q('s1', 'p1', 'oNEW'));
+        // Lazy: parent mutation before the view's own mutation leaks in.
+        expect(values(view)).toContain('oNEW');
+        expect([...view]).toHaveLength(6);
+      });
+
+      it('should throw on an unknown matchSemantics value', () => {
+        const store = buildStore();
+        expect(() => store.match(namedNode('s1'), null, null, null, { matchSemantics: 'bogus' }))
+          .toThrow('Unknown matchSemantics: bogus');
+      });
+
+      it('should throw on an unknown store-level matchSemantics value', () => {
+        expect(() => new Store([], { matchSemantics: 'bogus' }))
+          .toThrow('Unknown matchSemantics: bogus');
+      });
+
+      it('should use the store-level default matchSemantics', () => {
+        const store = buildStore({ matchSemantics: 'snapshot' });
+        const view = store.match(namedNode('s1'), null, null);
+        store.addQuad(q('s1', 'p1', 'oNEW'));
+        expect(values(view)).not.toContain('oNEW');
+        expect([...view]).toHaveLength(5);
+      });
+
+      it('should let a per-call matchSemantics override the store default', () => {
+        const store = buildStore({ matchSemantics: 'snapshot' });
+        const view = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'forwarded' });
+        store.addQuad(q('s1', 'p1', 'oNEW'));
+        expect(values(view)).toContain('oNEW');
+      });
+
+      it('should fall back to the store default when an options object omits matchSemantics', () => {
+        const store = buildStore({ matchSemantics: 'snapshot' });
+        const view = store.match(namedNode('s1'), null, null, null, {});
+        store.addQuad(q('s1', 'p1', 'oNEW'));
+        expect(values(view)).not.toContain('oNEW');
+      });
+
+      it('should keep internal match() calls lazy under a non-lazy store default', async () => {
+        for (const matchSemantics of ['snapshot', 'forwarded']) {
+          const store = buildStore({ matchSemantics });
+          store.deleteMatches(namedNode('s2'), null, null);
+          expect(store.size).toBe(5);
+          expect(store._observers).toBe(null);
+          await expect(arrayifyStream(store.toStream())).resolves.toHaveLength(5);
+          expect(store._observers).toBe(null);
+        }
+      });
+
+      it('should keep toStream() on a lazy view lazy under a forwarded store default', async () => {
+        const store = buildStore({ matchSemantics: 'forwarded' });
+        const view = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'lazy' });
+        await expect(arrayifyStream(view.toStream())).resolves.toHaveLength(5);
+        expect(store._observers).toBe(null);
+      });
+
+      it('should not write union() contents through to a store with a forwarded default', () => {
+        const store = buildStore({ matchSemantics: 'forwarded' });
+        const view = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'lazy' });
+        const union = view.union([q('s1', 'p1', 'oU')]);
+        expect(union.size).toBe(6);
+        expect(union.has(q('s1', 'p1', 'oU'))).toBe(true);
+        expect(store.size).toBe(6);
+        expect(store.has(q('s1', 'p1', 'oU'))).toBe(false);
+      });
+
+      it('should detach a single observer while another remains attached', () => {
+        const store = buildStore();
+        // Two snapshot views observe the store concurrently.
+        const a = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'snapshot' });
+        const b = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'snapshot' });
+        // Materialize (and detach) view `a`'s observer while view `b`'s remains registered
+        a.size; // eslint-disable-line no-unused-expressions
+        store.addQuad(q('s1', 'p1', 'oNEW'));
+        expect([...a]).toHaveLength(5);
+        expect([...b]).toHaveLength(5);
+        store.addQuad(q('s1', 'p1', 'oNEW2'));
+        expect([...b]).toHaveLength(5);
+      });
+
+      it('should stop observing when a snapshot with an absent pattern term materializes', () => {
+        const store = buildStore();
+        const view = store.match(namedNode('sNONE'), null, null, null, { matchSemantics: 'snapshot' });
+        expect(view.size).toBe(0);
+        // Materialization removes the observer also on the absent-term path
+        expect(store._observers).toBe(null);
+        // The view stays frozen to its (empty) contents
+        store.addQuad(q('sNONE', 'p1', 'o1'));
+        expect([...view]).toHaveLength(0);
+      });
+
+      describe('snapshot', () => {
+        const opts = { matchSemantics: 'snapshot' };
+
+        let store, view;
+        beforeEach(() => {
+          store = buildStore();
+          view = store.match(namedNode('s1'), null, null, null, opts);
+        });
+
+        it('should ignore parent additions made before iteration', () => {
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          expect([...view]).toHaveLength(5);
+          expect(view.size).toBe(5);
+          expect(view.has(q('s1', 'p1', 'oNEW'))).toBe(false);
+          expect(view.has(q('s1', 'p1', 'o0'))).toBe(true);
+        });
+
+        it('should ignore parent deletions made before iteration', () => {
+          store.removeQuad(q('s1', 'p1', 'o0'));
+          expect([...view]).toHaveLength(5);
+          expect(view.has(q('s1', 'p1', 'o0'))).toBe(true);
+        });
+
+        it('should ignore a parent mutation that lands during sync iteration', () => {
+          const seen = [];
+          let mutated = false;
+          for (const quad of view) {
+            seen.push(quad.object.value);
+            if (!mutated) {
+              mutated = true;
+              store.addQuad(q('s1', 'p1', 'oNEW'));
+              store.removeQuad(q('s1', 'p1', 'o4'));
+            }
+          }
+          expect(seen.sort()).toEqual(['o0', 'o1', 'o2', 'o3', 'o4']);
+        });
+
+        it('should ignore a parent mutation that lands during async iteration', async () => {
+          const seen = [];
+          await new Promise((resolve, reject) => {
+            let mutated = false;
+            view.on('data', d => {
+              seen.push(d.object.value);
+              if (!mutated) {
+                mutated = true;
+                store.addQuad(q('s1', 'p1', 'oNEW'));
+              }
+            });
+            view.on('end', resolve);
+            view.on('error', reject);
+          });
+          expect(seen).not.toContain('oNEW');
+          expect(seen.sort()).toEqual(['o0', 'o1', 'o2', 'o3', 'o4']);
+        });
+
+        it('should ignore parent mutations made after iteration', () => {
+          expect([...view]).toHaveLength(5);
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          expect([...view]).toHaveLength(5);
+        });
+
+        it('should ignore non-matching parent mutations', () => {
+          store.addQuad(q('s2', 'p1', 'oNEW'));
+          expect([...view]).toHaveLength(5);
+        });
+
+        it('should support its own independent mutations', () => {
+          view.add(q('s1', 'p1', 'oOWN'));
+          expect(view.has(q('s1', 'p1', 'oOWN'))).toBe(true);
+          // The parent is not affected by snapshot view mutations.
+          expect(store.has(q('s1', 'p1', 'oOWN'))).toBe(false);
+        });
+
+        it('should expose a stable toArray/toStream/union', async () => {
+          expect(view.toArray()).toHaveLength(5);
+          await expect(arrayifyStream(view.toStream())).resolves.toHaveLength(5);
+          expect(view.union(new Store([q('s1', 'p1', 'oU')])).size).toBe(6);
+        });
+
+        it('should freeze on a matching mutation before a first toArray', () => {
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          expect(view.toArray()).toHaveLength(5);
+        });
+
+        it('should not mutate the parent through union', () => {
+          const union = view.union([q('s1', 'p1', 'oU')]);
+          expect(union.size).toBe(6);
+          expect(store.has(q('s1', 'p1', 'oU'))).toBe(false);
+          // The union result is independent of later parent mutations
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          expect(union.size).toBe(6);
+        });
+
+        it('should keep a nested match() frozen at nesting time', () => {
+          const sub = view.match(null, namedNode('p1'));
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          expect([...sub]).toHaveLength(5);
+          expect(sub.has(q('s1', 'p1', 'oNEW'))).toBe(false);
+        });
+
+        it('should support detach() before and after materialization', () => {
+          view.detach();
+          expect(store._observers).toBe(null);
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          expect([...view]).toHaveLength(5);
+          // A view that has already materialized (removing its observer) can also detach
+          const other = store.match(namedNode('s1'), null, null, null, opts);
+          expect(other.size).toBe(6);
+          expect(other.detach().size).toBe(6);
+          expect(store._observers).toBe(null);
+        });
+      });
+
+      describe('forwarded', () => {
+        const opts = { matchSemantics: 'forwarded' };
+
+        let store, view;
+        beforeEach(() => {
+          store = buildStore();
+          view = store.match(namedNode('s1'), null, null, null, opts);
+        });
+
+        it('should reflect parent additions made before iteration', () => {
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          expect([...view]).toHaveLength(6);
+          expect(view.has(q('s1', 'p1', 'oNEW'))).toBe(true);
+        });
+
+        it('should reflect parent deletions made before iteration', () => {
+          store.removeQuad(q('s1', 'p1', 'o0'));
+          expect([...view]).toHaveLength(4);
+          expect(view.has(q('s1', 'p1', 'o0'))).toBe(false);
+        });
+
+        it('should keep the running iteration stable across a parent add during sync iteration', () => {
+          const seen = [];
+          let mutated = false;
+          for (const quad of view) {
+            seen.push(quad.object.value);
+            if (!mutated) {
+              mutated = true;
+              store.addQuad(q('s1', 'p1', 'oNEW'));
+            }
+          }
+          // The in-progress pass is stable (no duplicates, no omissions)...
+          expect(seen.sort()).toEqual(['o0', 'o1', 'o2', 'o3', 'o4']);
+          // ...and the next pass reflects the forwarded state.
+          expect([...view]).toHaveLength(6);
+        });
+
+        it('should keep the running iteration stable across a parent delete of an already-yielded quad', () => {
+          const seen = [];
+          let mutated = false;
+          for (const quad of view) {
+            seen.push(quad.object.value);
+            if (!mutated) {
+              mutated = true;
+              store.removeQuad(q('s1', 'p1', quad.object.value));
+            }
+          }
+          expect(seen.sort()).toEqual(['o0', 'o1', 'o2', 'o3', 'o4']);
+          expect([...view]).toHaveLength(4);
+        });
+
+        it('should keep the running iteration stable across a parent mutation during async iteration', async () => {
+          const seen = [];
+          await new Promise((resolve, reject) => {
+            let mutated = false;
+            view.on('data', d => {
+              seen.push(d.object.value);
+              if (!mutated) {
+                mutated = true;
+                store.removeQuad(q('s1', 'p1', 'o3'));
+              }
+            });
+            view.on('end', resolve);
+            view.on('error', reject);
+          });
+          expect(seen.sort()).toEqual(['o0', 'o1', 'o2', 'o3', 'o4']);
+          expect([...view]).toHaveLength(4);
+        });
+
+        it('should reflect parent mutations made after iteration', () => {
+          expect([...view]).toHaveLength(5);
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          expect([...view]).toHaveLength(6);
+        });
+
+        it('should ignore non-matching parent mutations', () => {
+          store.addQuad(q('s2', 'p1', 'oNEW'));
+          expect([...view]).toHaveLength(5);
+        });
+
+        it('should write view additions and deletions through to the parent', () => {
+          view.add(q('s1', 'p1', 'oOWN'));
+          expect(store.has(q('s1', 'p1', 'oOWN'))).toBe(true);
+          expect(view.has(q('s1', 'p1', 'oOWN'))).toBe(true);
+          view.delete(q('s1', 'p1', 'o0'));
+          expect(store.has(q('s1', 'p1', 'o0'))).toBe(false);
+          expect(view.has(q('s1', 'p1', 'o0'))).toBe(false);
+        });
+
+        it('should forward addAll and deleteMatches to the parent', () => {
+          view.addAll([q('s1', 'p1', 'oA'), q('s1', 'p1', 'oB')]);
+          expect(store.has(q('s1', 'p1', 'oA'))).toBe(true);
+          expect(view.size).toBe(7);
+          view.deleteMatches(namedNode('s1'), namedNode('p1'), namedNode('oA'));
+          expect(store.has(q('s1', 'p1', 'oA'))).toBe(false);
+        });
+
+        it('should write import() through to the parent', done => {
+          const events = view.import(new ArrayReader([q('s1', 'p1', 'oI')]));
+          events.on('end', () => {
+            expect(store.has(q('s1', 'p1', 'oI'))).toBe(true);
+            expect(view.has(q('s1', 'p1', 'oI'))).toBe(true);
+            done();
+          });
+        });
+
+        it('should write non-matching mutations through to the parent unrestricted', () => {
+          // A non-matching add mutates the parent but never appears in the view
+          view.add(q('s3', 'p1', 'oNM'));
+          expect(store.has(q('s3', 'p1', 'oNM'))).toBe(true);
+          expect(view.has(q('s3', 'p1', 'oNM'))).toBe(false);
+          // A non-matching addAll grows the parent, not the view
+          view.addAll([q('s3', 'p1', 'oNM2')]);
+          expect(store.has(q('s3', 'p1', 'oNM2'))).toBe(true);
+          expect(view.size).toBe(5);
+          // A deleteMatches wider than the pattern deletes parent quads outside the view
+          view.deleteMatches(namedNode('s2'), null, null);
+          expect(store.has(q('s2', 'p1', 'oX'))).toBe(false);
+          expect(view.size).toBe(5);
+        });
+
+        it('should defer materialization of an unread view across parent mutations', () => {
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          store.removeQuad(q('s1', 'p1', 'o0'));
+          // Nothing has been read from the view, so it has not materialized
+          expect(view._filtered).toBeFalsy();
+          expect(values(view)).toEqual(['o1', 'o2', 'o3', 'o4', 'oNEW']);
+        });
+
+        it('should apply parent mutations to an already-materialized view', () => {
+          // Materialize the view before any parent mutation
+          expect(view.size).toBe(5);
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          store.removeQuad(q('s1', 'p1', 'o0'));
+          expect(view.has(q('s1', 'p1', 'oNEW'))).toBe(true);
+          expect(view.has(q('s1', 'p1', 'o0'))).toBe(false);
+          expect(view.size).toBe(5);
+        });
+
+        it('should forward a Store addAll (bypassing the index-merge fast path) when observed', () => {
+          const extra = new Store([], { entityIndex: store._entityIndex });
+          extra.addQuad(q('s1', 'p1', 'oM'));
+          store.addAll(extra);
+          expect(view.has(q('s1', 'p1', 'oM'))).toBe(true);
+        });
+
+        it('should expose a live toArray/toStream/union', async () => {
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          expect(view.toArray()).toHaveLength(6);
+          await expect(arrayifyStream(view.toStream())).resolves.toHaveLength(6);
+          expect(view.union(new Store([q('s1', 'p1', 'oU')])).size).toBe(7);
+        });
+
+        it('should not mutate the parent through union', () => {
+          const union = view.union([q('s1', 'p1', 'oU')]);
+          expect(union.size).toBe(6);
+          expect(store.has(q('s1', 'p1', 'oU'))).toBe(false);
+          expect(view.has(q('s1', 'p1', 'oU'))).toBe(false);
+        });
+
+        it('should stop observing the parent after detach()', () => {
+          expect(view.detach()).toBe(view);
+          expect(store._observers).toBe(null);
+          // The view is frozen to its contents at detach time
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          expect([...view]).toHaveLength(5);
+          // Mutations now apply to the view only, not to the parent
+          view.add(q('s1', 'p1', 'oLOCAL'));
+          expect(view.has(q('s1', 'p1', 'oLOCAL'))).toBe(true);
+          expect(store.has(q('s1', 'p1', 'oLOCAL'))).toBe(false);
+          // `detach()` is idempotent
+          expect(view.detach()).toBe(view);
+          expect(view.size).toBe(6);
+        });
+
+        it('should downgrade a nested match() to a snapshot of the view', () => {
+          const sub = view.match(null, namedNode('p1'));
+          expect([...sub]).toHaveLength(5);
+          // Later root mutations reach the outer view, but not the nested snapshot
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          expect(view.has(q('s1', 'p1', 'oNEW'))).toBe(true);
+          expect([...sub]).toHaveLength(5);
+          // Mutations on the sub-view reach neither the root store nor the outer view
+          sub.add(q('s1', 'p1', 'oSUB'));
+          expect(sub.has(q('s1', 'p1', 'oSUB'))).toBe(true);
+          expect(store.has(q('s1', 'p1', 'oSUB'))).toBe(false);
+          expect(view.has(q('s1', 'p1', 'oSUB'))).toBe(false);
+        });
+
+        it('should handle matching mutations in the default graph', () => {
+          store = new Store([q('s1', 'p1', 'o0')]);
+          view = store.match(null, null, null, new DefaultGraph(), opts);
+          store.addQuad(q('s1', 'p1', 'o1'));
+          expect([...view]).toHaveLength(2);
+        });
+
+        it('should treat an empty-string graph pattern as the default graph', () => {
+          view = store.match(null, null, null, '', opts);
+          expect([...view]).toHaveLength(6);
+          // A named-graph quad does not match a default-graph pattern
+          store.addQuad(q('s3', 'p1', 'oG', 'g1'));
+          expect([...view]).toHaveLength(6);
+          expect(view.has(q('s3', 'p1', 'oG', 'g1'))).toBe(false);
+          // A default-graph quad does match
+          store.addQuad(q('s3', 'p1', 'oD'));
+          expect([...view]).toHaveLength(7);
+        });
+
+        it('should stay stable when a parent mutation lands as the source is exhausted', () => {
+          const seen = [];
+          for (const quad of view) {
+            seen.push(quad.object.value);
+            // Mutate while processing the final quad, so the source is exhausted on the next step
+            if (seen.length === 5)
+              store.addQuad(q('s1', 'p1', 'oNEW'));
+          }
+          expect(seen.sort()).toEqual(['o0', 'o1', 'o2', 'o3', 'o4']);
+          expect([...view]).toHaveLength(6);
+        });
+
+        it('should capture a baseline from an already-materialized view mid-iteration', () => {
+          // Force materialization of `_filtered` via a first matching mutation.
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          expect(view.size).toBe(6);
+          // Now iterate the materialized view and mutate mid-iteration.
+          const seen = [];
+          let mutated = false;
+          for (const quad of view) {
+            seen.push(quad.object.value);
+            if (!mutated) {
+              mutated = true;
+              store.addQuad(q('s1', 'p1', 'oNEW2'));
+            }
+          }
+          expect(seen.sort()).toEqual(['o0', 'o1', 'o2', 'o3', 'o4', 'oNEW']);
+          expect([...view]).toHaveLength(7);
+        });
+
+        it('should reflect additions of a pattern term absent at match() time', () => {
+          store = new Store();
+          // The subject `s9` is not present when the view is created.
+          view = store.match(namedNode('s9'), null, null, null, opts);
+          expect([...view]).toHaveLength(0);
+          // A mutation while `s9` is still absent cannot match the view
+          store.addQuad(q('sOther', 'p1', 'o1'));
+          expect([...view]).toHaveLength(0);
+          store.addQuad(q('s9', 'p1', 'o1'));
+          expect([...view]).toHaveLength(1);
+          expect(view.has(q('s9', 'p1', 'o1'))).toBe(true);
+        });
+
+        it('should ignore a re-added quad that already exists', () => {
+          // Re-adding an existing quad must not notify observers nor change size.
+          store.addQuad(q('s1', 'p1', 'o0'));
+          expect([...view]).toHaveLength(5);
+        });
+
+        it('should match across all pattern positions and the default graph', () => {
+          store = new Store([q('s1', 'p1', 'o1')]);
+          // Wildcard pattern: every position is a wildcard.
+          const wildcard = store.match(null, null, null, null, opts);
+          // Fully specified pattern including the default graph.
+          const exact = store.match(
+            namedNode('s1'), namedNode('p1'), namedNode('o1'), new DefaultGraph(), opts);
+          store.addQuad(q('s1', 'p1', 'o1')); // already exists, no change
+          store.addQuad(q('s1', 'p1', 'o2')); // matches wildcard, not exact (object differs)
+          expect([...wildcard]).toHaveLength(2);
+          expect([...exact]).toHaveLength(1);
+        });
+
+        it('should not match mutations differing in any single position', () => {
+          store = new Store([new Quad(
+            namedNode('s1'), namedNode('p1'), namedNode('o1'), namedNode('g1'))]);
+          view = store.match(
+            namedNode('s1'), namedNode('p1'), namedNode('o1'), namedNode('g1'), opts);
+          // Each of these differs from the pattern in exactly one position.
+          store.addQuad(new Quad(namedNode('sX'), namedNode('p1'), namedNode('o1'), namedNode('g1')));
+          store.addQuad(new Quad(namedNode('s1'), namedNode('pX'), namedNode('o1'), namedNode('g1')));
+          store.addQuad(new Quad(namedNode('s1'), namedNode('p1'), namedNode('oX'), namedNode('g1')));
+          store.addQuad(new Quad(namedNode('s1'), namedNode('p1'), namedNode('o1'), namedNode('gX')));
+          store.addQuad(new Quad(namedNode('s1'), namedNode('p1'), namedNode('o1'), namedNode('gY')));
+          expect([...view]).toHaveLength(1);
+        });
+
+        it('should release iteration state when its stream is destroyed mid-read', done => {
+          store = new Store();
+          for (let i = 0; i < 20; i++)
+            store.addQuad(q('s1', 'p1', `o${i}`));
+          view = store.match(namedNode('s1'), null, null, null, opts);
+          // A partial read leaves the internal iterator suspended
+          expect(view.read()).not.toBeNull();
+          expect(view._activeIterators).toBe(1);
+          view.once('close', () => {
+            expect(view._activeIterators).toBe(0);
+            // With no live iterators, this mutation must not freeze a baseline
+            store.addQuad(q('s1', 'p1', 'oNEW'));
+            // A later pass is still protected against mid-pass mutations
+            const seen = [];
+            let mutated = false;
+            for (const quad of view) {
+              seen.push(quad.object.value);
+              if (!mutated) {
+                mutated = true;
+                store.addQuad(q('s1', 'p1', 'oNEW2'));
+              }
+            }
+            expect(seen).toHaveLength(21);
+            done();
+          });
+          view.destroy();
+        });
+
+        it('should support destroying its stream before any read', done => {
+          view.once('close', () => {
+            // The dataset side of the view remains usable
+            expect(view.size).toBe(5);
+            done();
+          });
+          view.destroy();
+        });
+
+        it('should keep concurrent iterations stable', () => {
+          const outer = [];
+          const inner = [];
+          for (const a of view) {
+            outer.push(a.object.value);
+            if (outer.length === 1) {
+              // Run a nested iteration to completion (dropping `_activeIterators` to 1), then mutate
+              for (const b of view)
+                inner.push(b.object.value);
+              store.addQuad(q('s1', 'p1', 'oNEW'));
+            }
+          }
+          expect(inner).toHaveLength(5);
+          expect(outer.sort()).toEqual(['o0', 'o1', 'o2', 'o3', 'o4']);
+        });
+
+        it('should keep an overlapping iteration stable after a baseline freeze', () => {
+          store = new Store();
+          // Spread the quads across predicate buckets, so deletions hit levels not yet iterated
+          for (let i = 0; i < 5; i++)
+            store.addQuad(q('s1', `p${i}`, 'o1'));
+          view = store.match(namedNode('s1'), null, null, null, opts);
+          const outer = view[Symbol.iterator]();
+          expect(outer.next().done).toBe(false);
+          // This mutation freezes a baseline for the in-progress outer iteration
+          store.addQuad(q('s1', 'pNEW', 'o1'));
+          // An iteration starting now must also stay stable across further matching mutations
+          const seen = [];
+          let mutated = false;
+          for (const quad of view) {
+            seen.push(quad.predicate.value);
+            if (!mutated) {
+              mutated = true;
+              store.removeQuad(q('s1', 'p3', 'o1'));
+              store.removeQuad(q('s1', 'p4', 'o1'));
+            }
+          }
+          expect(seen).toHaveLength(6);
+          expect(seen).toEqual(expect.arrayContaining(['p3', 'p4', 'pNEW']));
+          // The outer iteration still yields the quads from its own start
+          const rest = [];
+          for (let next = outer.next(); !next.done; next = outer.next())
+            rest.push(next.value.predicate.value);
+          expect(rest).toHaveLength(4);
+          expect(rest).toEqual(expect.arrayContaining(['p3', 'p4']));
+          expect(rest).not.toContain('pNEW');
+        });
+      });
+    });
+
     describe('getSubjects', () => {
       describe('with existing predicate, object and graph parameters', () => {
         it(

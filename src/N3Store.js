@@ -161,12 +161,16 @@ export default class N3Store {
     this._size = 0;
     // `_graphs` contains subject, predicate, and object indexes per graph
     this._graphs = Object.create(null);
+    // `_observers`, when non-null, is a set of callbacks notified before every mutation
+    this._observers = null;
 
     // Shift parameters if `quads` is not given
     if (!options && quads && !quads[0] && !(typeof quads.match === 'function'))
       options = quads, quads = null;
     options = options || {};
     this._factory = options.factory || N3DataFactory;
+    // Default `match()` semantics ('lazy', 'snapshot', or 'forwarded'); see `match()`
+    this._matchSemantics = validateMatchSemantics(options.matchSemantics || 'lazy');
     this._entityIndex = options.entityIndex || new N3EntityIndex({ factory: this._factory });
     this._entities = this._entityIndex._entities;
     this._termFromId = this._entityIndex._termFromId.bind(this._entityIndex);
@@ -328,6 +332,26 @@ export default class N3Store {
     return typeof graph !== 'number' ? this._graphs : { [graph]: this._graphs[graph] };
   }
 
+  // ### `_addObserver` registers a mutation observer and returns it.
+  _addObserver(observer) {
+    (this._observers || (this._observers = new Set())).add(observer);
+    return observer;
+  }
+
+  // ### `_removeObserver` unregisters a mutation observer.
+  _removeObserver(observer) {
+    this._observers.delete(observer);
+    if (this._observers.size === 0)
+      this._observers = null;
+  }
+
+  // ### `_notifyObservers` invokes all observers with the ids of a mutated quad.
+  _notifyObservers(subjectId, predicateId, objectId, graphId, added) {
+    // Observers only ever unregister themselves, which is safe mid-iteration of a Set
+    for (const observer of this._observers)
+      observer(subjectId, predicateId, objectId, graphId, added);
+  }
+
   // ### `_uniqueEntities` returns a function that accepts an entity ID
   // and passes the corresponding entity to callback if it hasn't occurred before.
   _uniqueEntities(callback) {
@@ -377,6 +401,13 @@ export default class N3Store {
     subject   = this._termToNewNumericId(subject);
     predicate = this._termToNewNumericId(predicate);
     object    = this._termToNewNumericId(object);
+
+    // Notify observers before the mutation, but only for quads that don't already exist
+    if (this._observers !== null) {
+      const subjects = graphItem.subjects[subject], predicates = subjects && subjects[predicate];
+      if (!predicates || !(object in predicates))
+        this._notifyObservers(subject, predicate, object, graph, true);
+    }
 
     if (!this._addToIndex(graphItem.subjects,   subject,   predicate, object))
       return false;
@@ -432,6 +463,10 @@ export default class N3Store {
         !(predicates = subjects[predicate]) ||
         !(object in predicates))
       return false;
+
+    // Notify observers before the mutation
+    if (this._observers !== null)
+      this._notifyObservers(subject, predicate, object, graph, false);
 
     // Remove it from all indexes
     this._removeFromIndex(graphItem.subjects,   subject,   predicate, object);
@@ -539,8 +574,25 @@ export default class N3Store {
   // Note: Since a DatasetCore is an unordered set, the order of the quads within the returned sequence is arbitrary.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   // For backwards compatibility, the object return also implements the Readable stream interface.
-  match(subject, predicate, object, graph) {
-    return new DatasetCoreAndReadableStream(this, subject, predicate, object, graph, { entityIndex: this._entityIndex });
+  // `options.matchSemantics` (defaulting to the store-level option, default `'lazy'`) sets
+  // how the view reacts to later parent mutations:
+  //  - `'lazy'`: delegates live to the parent until its first mutation or materializing
+  //    read, such as `size` or `has` (backwards-compatible).
+  //  - `'snapshot'`: reflects the parent contents at the time of `match()`.
+  //  - `'forwarded'`: stays live; matching parent mutations are forwarded to it, and view
+  //    mutations write through to the parent unrestricted by the pattern (so a
+  //    non-matching `add` mutates the parent without appearing in the view).
+  // Calling `match()` on a view yields at most a `'snapshot'` sub-view:
+  // nested views never write through to the root store.
+  // A non-`lazy` view observes the store — `'snapshot'` until it first materializes,
+  // `'forwarded'` for the store's lifetime or until `detach()` — so the store retains
+  // each observing view, checks every mutation against its pattern, and cannot use
+  // the same-index `addAll` fast path while any view observes.
+  match(subject, predicate, object, graph, options) {
+    return new DatasetCoreAndReadableStream(this, subject, predicate, object, graph, {
+      entityIndex: this._entityIndex,
+      matchSemantics: (options && options.matchSemantics) || this._matchSemantics,
+    });
   }
 
   // ### `countQuads` returns the number of quads matching a pattern.
@@ -866,7 +918,8 @@ export default class N3Store {
 
     if (Array.isArray(quads))
       this.addQuads(quads);
-    else if (quads instanceof N3Store && quads._entityIndex === this._entityIndex) {
+    // The index-merge fast path bypasses `addQuad`, so it can't be used when observers are registered
+    else if (this._observers === null && quads instanceof N3Store && quads._entityIndex === this._entityIndex) {
       if (quads._size !== 0) {
         this._graphs = merge(this._graphs, quads._graphs);
         this._size = null; // Invalidate the cached size
@@ -924,7 +977,8 @@ export default class N3Store {
    * @param graph     The optional exact graph to match.
    */
   deleteMatches(subject, predicate, object, graph) {
-    for (const quad of this.match(subject, predicate, object, graph))
+    // Internal matching is explicitly `lazy`: a non-`lazy` view would register an observer that is never released
+    for (const quad of this.match(subject, predicate, object, graph, { matchSemantics: 'lazy' }))
       this.removeQuad(quad);
     return this;
   }
@@ -1050,9 +1104,10 @@ export default class N3Store {
 
   /**
    * Returns a stream that contains all quads of the dataset.
+   * The stream is explicitly `lazy`: a non-`lazy` view would register an observer that is never released.
    */
   toStream() {
-    return this.match();
+    return this.match(null, null, null, null, { matchSemantics: 'lazy' });
   }
 
   /**
@@ -1111,18 +1166,109 @@ function indexMatch(index, ids, depth = 0) {
 }
 
 /**
+ * Returns `semantics` if it is a supported `matchSemantics` value,
+ * and throws otherwise, so misconfiguration fails at the call site.
+ */
+function validateMatchSemantics(semantics) {
+  if (semantics !== 'lazy' && semantics !== 'snapshot' && semantics !== 'forwarded')
+    throw new Error(`Unknown matchSemantics: ${semantics}`);
+  return semantics;
+}
+
+/**
  * A class that implements both DatasetCore and Readable.
  */
 class DatasetCoreAndReadableStream extends Readable {
   constructor(n3Store, subject, predicate, object, graph, options) {
     super({ objectMode: true });
     Object.assign(this, { n3Store, subject, predicate, object, graph, options });
+    // Bumped when a matching parent mutation lands mid-iteration, signalling iterators to switch to their baseline
+    this._generation = 0;
+    // Number of in-progress iterations; baselines are only frozen on mutation while this is non-zero
+    this._activeIterators = 0;
+    // Frozen arrays of matching quads per generation, keeping in-progress iterations stable
+    this._baselines = null;
+    // Lazily cached numeric ids of the pattern terms (immutable once present in the entity index)
+    this._subjectId = this._predicateId = this._objectId = this._graphId = undefined;
+    const semantics = this._semantics = validateMatchSemantics(options.matchSemantics);
+    // For non-`lazy` semantics, observe parent mutations to keep the view consistent
+    if (semantics !== 'lazy')
+      this._observer = n3Store._addObserver(this._onParentMutation.bind(this));
+  }
+
+  // ### `_matchesPattern` returns whether the quad ids fall within this view's pattern
+  // (absent term = wildcard; the legacy `''` graph argument denotes the default graph, as in `_getGraphs`).
+  // Term ids are cached upon resolution; a pattern term may still be absent from the entity index
+  // (`_termToNumericId` then returns `undefined`, which never equals a quad id), so an
+  // unresolved id is re-resolved on every call, as the term may be interned later on.
+  _matchesPattern(subjectId, predicateId, objectId, graphId) {
+    const { subject, predicate, object, graph, n3Store } = this;
+    return (!subject   || subjectId   === (this._subjectId   || (this._subjectId   = n3Store._termToNumericId(subject))))   &&
+           (!predicate || predicateId === (this._predicateId || (this._predicateId = n3Store._termToNumericId(predicate)))) &&
+           (!object    || objectId    === (this._objectId    || (this._objectId    = n3Store._termToNumericId(object))))    &&
+           (graph === null || graph === undefined ||
+             graphId === (this._graphId || (this._graphId =
+               graph === '' || isDefaultGraph(graph) ? 1 : n3Store._termToNumericId(graph))));
+  }
+
+  // ### `_onParentMutation` reacts to a parent mutation, invoked before the parent index changes.
+  _onParentMutation(subjectId, predicateId, objectId, graphId, added) {
+    // Only matching quads can affect this view
+    if (!this._matchesPattern(subjectId, predicateId, objectId, graphId))
+      return;
+
+    // While iterating, freeze the pre-mutation matching quads under the current generation,
+    // so every iteration in progress (each started during some generation) keeps a stable view.
+    // While any iteration remains open, each matching mutation costs O(view size) and retains
+    // one frozen array (even for generations at which no iteration started); all baselines
+    // are released once the last iteration closes.
+    if (this._activeIterators > 0) {
+      if (!this._baselines)
+        this._baselines = new Map();
+      this._baselines.set(this._generation++, this._filtered ? [...this._filtered] :
+        this.n3Store.getQuads(this.subject, this.predicate, this.object, this.graph));
+    }
+
+    // `forwarded`: apply the delta only if the view has materialized; otherwise,
+    // the parent remains the source of truth, and a later read captures the current state
+    if (this._semantics === 'forwarded') {
+      if (this._filtered) {
+        const quad = this._toQuad(subjectId, predicateId, objectId, graphId);
+        if (added)
+          this._filtered.addQuad(quad);
+        else
+          this._filtered.removeQuad(quad);
+      }
+      return;
+    }
+
+    // `snapshot`: materialize the pre-mutation state
+    // (`_filtered` is always null here, as its getter unregisters this observer on build)
+    this._filtered = this.filtered;
+  }
+
+  // ### `_toQuad` builds a Quad from numeric ids in the parent's entity index.
+  _toQuad(subjectId, predicateId, objectId, graphId) {
+    const { n3Store } = this, entities = n3Store._entities;
+    return n3Store._factory.quad(
+      n3Store._termFromId(entities[subjectId]),
+      n3Store._termFromId(entities[predicateId]),
+      n3Store._termFromId(entities[objectId]),
+      n3Store._termFromId(entities[graphId]),
+    );
   }
 
   get filtered() {
     if (!this._filtered) {
       const { n3Store, graph, object, predicate, subject } = this;
       const newStore = this._filtered = new N3Store({ factory: n3Store._factory, entityIndex: this.options.entityIndex });
+
+      // A `snapshot` view is frozen once it materializes, so it no longer needs to observe
+      // the parent — also when a pattern term is absent and the view materializes empty
+      if (this._semantics === 'snapshot' && this._observer) {
+        this.n3Store._removeObserver(this._observer);
+        this._observer = null;
+      }
 
       let subjectId, predicateId, objectId;
 
@@ -1180,7 +1326,34 @@ class DatasetCoreAndReadableStream extends Readable {
     }
   }
 
+  // ### `_destroy` closes the cached iterator, so a destroyed stream releases its iteration state.
+  _destroy(error, callback) {
+    if (this[ITERATOR]) {
+      this[ITERATOR].return();
+      this[ITERATOR] = null;
+    }
+    callback(error);
+  }
+
+  // ### `detach` freezes the view to its current contents and stops observing the parent,
+  // so the parent no longer retains the view nor checks mutations against its pattern.
+  detach() {
+    // Materializing a `snapshot` view removes its observer; remove a `forwarded` observer explicitly
+    this._filtered = this.filtered;
+    if (this._observer) {
+      this.n3Store._removeObserver(this._observer);
+      this._observer = null;
+    }
+    // Parent deltas are no longer forwarded, so subsequent view mutations apply locally
+    this._semantics = 'snapshot';
+    return this;
+  }
+
   addAll(quads) {
+    if (this._semantics === 'forwarded') {
+      this.n3Store.addAll(quads);
+      return this;
+    }
     return this.filtered.addAll(quads);
   }
 
@@ -1189,6 +1362,10 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   deleteMatches(subject, predicate, object, graph) {
+    if (this._semantics === 'forwarded') {
+      this.n3Store.deleteMatches(subject, predicate, object, graph);
+      return this;
+    }
     return this.filtered.deleteMatches(subject, predicate, object, graph);
   }
 
@@ -1213,6 +1390,9 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   import(stream) {
+    // `forwarded` views write imported quads through to the parent, like `add` and `addAll`
+    if (this._semantics === 'forwarded')
+      return this.n3Store.import(stream);
     return this.filtered.import(stream);
   }
 
@@ -1233,18 +1413,25 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   toStream() {
+    // For non-`lazy` semantics, route through the snapshot rather than the live parent
+    if (this._semantics !== 'lazy')
+      return this.filtered.toStream();
+    // The internal view is explicitly `lazy`, so a non-`lazy` store default cannot leak an observer
     return this._filtered ?
       this._filtered.toStream()
-      : this.n3Store.match(this.subject, this.predicate, this.object, this.graph);
+      : this.n3Store.match(this.subject, this.predicate, this.object, this.graph, { matchSemantics: 'lazy' });
   }
 
   union(quads) {
+    // An unmaterialized view has seen no matching mutation, so the parent holds its exact contents;
+    // the internal view is explicitly `lazy` so that `addAll` cannot write through to the parent
     return this._filtered ?
       this._filtered.union(quads)
-      : this.n3Store.match(this.subject, this.predicate, this.object, this.graph).addAll(quads);
+      : this.n3Store.match(this.subject, this.predicate, this.object, this.graph, { matchSemantics: 'lazy' }).addAll(quads);
   }
 
   toArray() {
+    // An unmaterialized view has seen no matching mutation, so the parent holds its exact contents
     return this._filtered ? this._filtered.toArray() : this.n3Store.getQuads(this.subject, this.predicate, this.object, this.graph);
   }
 
@@ -1257,10 +1444,19 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   add(quad) {
+    // `forwarded` views write through to the parent, which forwards the change back via the observer
+    if (this._semantics === 'forwarded') {
+      this.n3Store.addQuad(quad);
+      return this;
+    }
     return this.filtered.add(quad);
   }
 
   delete(quad) {
+    if (this._semantics === 'forwarded') {
+      this.n3Store.removeQuad(quad);
+      return this;
+    }
     return this.filtered.delete(quad);
   }
 
@@ -1269,10 +1465,50 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   match(subject, predicate, object, graph) {
-    return new DatasetCoreAndReadableStream(this.filtered, subject, predicate, object, graph, this.options);
+    // Unlike the store's `match`, this takes no `options`: sub-views inherit these semantics.
+    // A nested view is parented on the materialized contents, not on the root store,
+    // so `forwarded` is downgraded to `snapshot`: write-through would only reach
+    // the internal materialized store, silently desyncing this view from its parent
+    return new DatasetCoreAndReadableStream(this.filtered, subject, predicate, object, graph, {
+      entityIndex: this.options.entityIndex,
+      matchSemantics: this._semantics === 'forwarded' ? 'snapshot' : this._semantics,
+    });
   }
 
   *[Symbol.iterator]() {
-    yield* this._filtered || this.n3Store.readQuads(this.subject, this.predicate, this.object, this.graph);
+    // `lazy`: iterate the snapshot if it exists, else delegate live to the parent
+    if (this._semantics === 'lazy') {
+      yield* this._filtered || this.n3Store.readQuads(this.subject, this.predicate, this.object, this.graph);
+      return;
+    }
+
+    // Non-`lazy`: iterate the current source, switching to this iteration's frozen baseline
+    // if a matching parent mutation bumps `_generation` mid-iteration.
+    const generation = this._generation;
+    let yielded = 0;
+    this._activeIterators++;
+    try {
+      const source = this._filtered ?
+        this._filtered[Symbol.iterator]() :
+        this.n3Store.readQuads(this.subject, this.predicate, this.object, this.graph);
+      for (const quad of source) {
+        if (this._generation !== generation)
+          break;
+        yielded++;
+        yield quad;
+      }
+      // A matching mutation landed mid-iteration (possibly exactly as the source was exhausted):
+      // continue from the baseline frozen at this iteration's generation, skipping already-yielded quads
+      if (this._generation !== generation) {
+        const baseline = this._baselines.get(generation);
+        for (let i = yielded; i < baseline.length; i++)
+          yield baseline[i];
+      }
+    }
+    finally {
+      // Drop the frozen baselines once no iterations remain
+      if (--this._activeIterators === 0)
+        this._baselines = null;
+    }
   }
 }

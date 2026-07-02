@@ -384,6 +384,62 @@ The store provides the following search methods
 - `getGraphs` returns an array of unique graphs occurring in matching quad
 - `forGraphs` executes a callback on unique graphs occurring in matching quads
 
+### Configuring `match()` semantics
+
+The dataset returned by `match()` is also a readable stream. By default, it is
+*lazy*: it delegates live to the parent store until the first operation that
+materializes the view (a mutation, or a non-streaming read such as `size` or
+`has`), which means parent mutations made before that point are reflected in
+the view. You can choose a different behavior with the `matchSemantics` option,
+either as a store-wide default or per call:
+
+```JavaScript
+import { Store, DataFactory } from 'n3';
+const { namedNode } = DataFactory;
+
+// As the default for every match() of a store:
+const store = new Store([], { matchSemantics: 'snapshot' });
+
+// Or per call:
+const view = store.match(namedNode('s'), null, null, null, { matchSemantics: 'snapshot' });
+```
+
+Supported values:
+
+- `'lazy'` (default) — backwards-compatible behavior. The view reflects the
+  parent store until the first operation that materializes it (a mutation, or a
+  non-streaming read such as `size` or `has`), after which it is frozen to a
+  snapshot. Parent mutations made before that point leak into the view.
+- `'snapshot'` — the view reflects the parent contents *at the time of*
+  `match()`. Later parent mutations never affect it. This is the most
+  spec-correct interpretation of an RDF/JS dataset.
+- `'forwarded'` — the view always reflects the parent state: matching parent
+  mutations are forwarded to the view, and mutations on the view (`add`,
+  `delete`, `addAll`, `deleteMatches`, `import`) are written through to the
+  parent.
+  View mutations act on the parent unrestricted by the view's pattern: adding
+  a quad that does not match the pattern mutates the parent but never appears
+  in the view, and `deleteMatches` can delete parent quads outside the view.
+  Calling `match()` on a `'forwarded'` view returns a `'snapshot'` sub-view:
+  nested views never write through to the root store.
+
+`match()` on a view takes no `matchSemantics` option: a sub-view inherits the
+view's semantics (with `'forwarded'` downgraded to `'snapshot'` as above).
+
+For `'snapshot'` and `'forwarded'`, an iteration (synchronous or via the
+stream) that is already in progress keeps a stable view of the quads as of when
+it started, even if a matching parent mutation lands mid-iteration. Views are
+maintained incrementally — they only do work when a parent mutation actually
+matches the view's pattern — so the common path stays fast.
+
+Such views observe the parent store: a `'snapshot'` view until its contents are
+first needed (its first matching parent mutation or first materializing read),
+a `'forwarded'` view for the lifetime of the store. The store holds a strong
+reference to each observing view — retaining it against garbage collection —
+and checks every mutation against each open view's pattern. Call
+`view.detach()` to release a view early: it is frozen to its contents at detach
+time and no longer taxes the store.
+
 ## Reasoning
 
 N3.js supports reasoning as follows:
