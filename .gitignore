@@ -1,5 +1,6 @@
 *.log
 .nyc_output
+.n3-tests
 .rdf-test-suite-cache
 /browser
 docs
