@@ -460,6 +460,36 @@ describe('Lexer', () => {
     );
 
     it(
+      'should tokenize a language code with a chunk boundary inside a subtag',
+      shouldTokenize(streamOf('"string"@nl-n', 'l '),
+                     { type: 'literal', value: 'string', line: 1 },
+                     { type: 'langcode', value: 'nl-nl', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should tokenize a directional language code followed by a newline in an unfinished chunk',
+      shouldTokenize(streamOf('"x"@en--rtl .\n"y"@en .', ' '),
+                     { type: 'literal', value: 'x', line: 1 },
+                     { type: 'langcode', value: 'en', line: 1 },
+                     { type: 'dircode', value: 'rtl', line: 1 },
+                     { type: '.', line: 1 },
+                     { type: 'literal', value: 'y', line: 2 },
+                     { type: 'langcode', value: 'en', line: 2 },
+                     { type: '.', line: 2 },
+                     { type: 'eof', line: 2 }),
+    );
+
+    it(
+      'should tokenize a direction code split from its language code across chunks',
+      shouldTokenize(streamOf('"string"@en-', '-rtl '),
+                     { type: 'literal', value: 'string', line: 1 },
+                     { type: 'langcode', value: 'en', line: 1 },
+                     { type: 'dircode', value: 'rtl', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
         'should tokenize a quoted string literal with directional language code',
         shouldTokenize('"string"@en--rtl "string"@nl-be--ltr "string"@EN--rtl ',
             { type: 'literal', value: 'string', line: 1 },
