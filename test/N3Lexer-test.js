@@ -1436,7 +1436,7 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize a reified triple with mixed types',
+      'should tokenize a reified triple of an IRI, a language-tagged literal, and a prefixed name',
       shouldTokenize('<<<http://ex.org/?bla#foo> "string"@nl-be c:c>> .',
         { type: '<<', line: 1 },
         { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
@@ -1449,7 +1449,7 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize a reified triple with mixed types',
+      'should tokenize a reified triple of a blank node, a prefixed name, and a language-tagged literal',
       shouldTokenize('<<_:a a:a "string"@EN>> .',
         { type: '<<', line: 1 },
         { type: 'blank', prefix: '_', value: 'a', line: 1 },
@@ -1462,7 +1462,7 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize a reified triple with mixed types',
+      'should tokenize a reified triple of a language-tagged literal, an IRI, and a blank node',
       shouldTokenize('<<"literal"@AU <http://ex.org/?bla#foo> _:a>> .',
         { type: '<<', line: 1 },
         { type: 'literal', value: 'literal', line: 1 },
