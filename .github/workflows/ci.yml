@@ -23,9 +23,10 @@ jobs:
 
   build:
     # Build once on an LTS-class Node. babel 8's CLI build (@babel/code-frame ->
-    # util.styleText) requires Node >= 20.12, and the resulting CJS lib/ +
-    # browser bundle is downleveled, so it runs everywhere. Every other job
-    # consumes this artifact instead of rebuilding.
+    # util.styleText) requires Node >= 20.12; the resulting CJS lib/ is
+    # downleveled by babel and the browser bundles are esbuilt to es2017, so
+    # they run everywhere. Every other job consumes this artifact instead of
+    # rebuilding.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
