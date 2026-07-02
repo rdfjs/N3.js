@@ -298,7 +298,6 @@ export default [
       'jest/no-standalone-expect': 0,
       'jest/expect-expect': 0,
       'jest/no-done-callback': 0,
-      'jest/no-identical-title': 0,
 
       'max-nested-callbacks': 0, // Mocha works with deeply nested callbacks
       'new-cap': 0, // test constructors as regular functions
