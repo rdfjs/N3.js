@@ -4,7 +4,7 @@ import namespaces from './IRIs';
 
 const { xsd } = namespaces;
 
-// Regular expression and replacement strings to escape N3 strings
+// Regular expression and replacement strings to unescape N3 strings
 const escapeSequence = /\\u([a-fA-F0-9]{4})|\\U([a-fA-F0-9]{8})|\\([^])/g;
 // Fixed escape sequences allowed in string literals (ECHAR)
 const stringEscapeReplacements = {
