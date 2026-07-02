@@ -730,13 +730,25 @@ describe('Writer', () => {
       });
     });
 
-    it('should serialize a blank node in an N3 list with a valid label', done => {
-      const quads = new Parser({ format: 'text/n3' }).parse('<a> <b> (_:x). _:x <c> <d>.');
+    it('should serialize a blank node in an N3 list with a valid label when formulaScopedBlankNodes is set', done => {
+      const quads = new Parser({ format: 'text/n3', formulaScopedBlankNodes: true }).parse('<a> <b> (_:x). _:x <c> <d>.');
       const writer = new Writer();
       writer.addQuads(quads);
       writer.end((error, output) => {
         // A label such as `_:.x` would fail to reparse (#332)
         expect(() => new Parser().parse(output)).not.toThrow();
+        done(error);
+      });
+    });
+
+    it('should serialize a blank node in an N3 list with an invalid label by default', done => {
+      const quads = new Parser({ format: 'text/n3' }).parse('<a> <b> (_:x). _:x <c> <d>.');
+      const writer = new Writer();
+      writer.addQuads(quads);
+      writer.end((error, output) => {
+        // The default rescoping produces the label `_:.x`,
+        // which fails to reparse (#332; the default flips in #630)
+        expect(() => new Parser().parse(output)).toThrow();
         done(error);
       });
     });

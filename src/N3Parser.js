@@ -37,6 +37,8 @@ export default class N3Parser {
     this._lexer = options.lexer || new N3Lexer({ lineMode: isLineMode, n3: isN3, isImpliedBy: this._isImpliedBy });
     // Disable explicit quantifiers by default
     this._explicitQuantifiers = !!options.explicitQuantifiers;
+    // Disable formula-only blank node scoping by default
+    this._formulaScopedBlankNodes = !!options.formulaScopedBlankNodes;
     // Disable parsing of unsupported versions by default
     this._parseUnsupportedVersions = !!options.parseUnsupportedVersions;
     this._version = options.version;
@@ -88,11 +90,12 @@ export default class N3Parser {
       // Every new scope resets the predicate direction
       this._inversePredicate = false;
       // In N3, blank nodes and quantifiers are scoped to a formula;
-      // lists and blank node property lists share the enclosing scope
-      if (type === 'formula') {
-        // Label the scope with the formula's blank node
+      // with `formulaScopedBlankNodes`, lists and blank node property lists
+      // share the enclosing scope instead of rescoping
+      if (!this._formulaScopedBlankNodes || type === 'formula') {
+        // Label the scope with the enclosing formula's blank node
         // (using a dot as separator, as a blank node label cannot start with it)
-        this._prefixes._ = `${this._graph.value}.`;
+        this._prefixes._ = (this._graph ? `${this._graph.value}.` : '.');
         this._quantified = Object.create(this._quantified);
       }
     }
