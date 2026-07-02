@@ -29,6 +29,9 @@ export default class N3Parser {
     this._supportsQuads = !(isTurtle || isTriG || isNTriples || isN3);
     // Whether the log:isImpliedBy predicate is supported
     this._isImpliedBy = options.isImpliedBy;
+    // Whether an empty formula is read as the boolean literal true,
+    // as in the N3 spec tests (opt-in until the next major version)
+    this._emptyFormulaAsTrue = !!options.emptyFormulaAsTrue;
     // Disable relative IRIs in N-Triples or N-Quads mode
     if (isLineMode)
       this._resolveRelativeIRI = iri => { return null; };
@@ -681,9 +684,10 @@ export default class N3Parser {
     // Restore the parent context containing this formula
     this._restoreContext('formula', token);
 
-    // An empty formula is equivalent to the boolean literal true
-    // (https://github.com/w3c/N3/issues/185)
-    if (empty) {
+    // When the emptyFormulaAsTrue option is set, an empty formula
+    // is read as the boolean literal true, following the N3 spec tests
+    // and the direction discussed in https://github.com/w3c-cg/N3/issues/185
+    if (empty && this._emptyFormulaAsTrue) {
       if (this._subject === formula)
         this._subject = this.N3_TRUE;
       else
