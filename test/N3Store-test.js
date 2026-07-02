@@ -1051,6 +1051,15 @@ describe('Store', () => {
           expect(store.has(q('s1', 'p1', 'oA'))).toBe(false);
         });
 
+        it('should write import() through to the parent', done => {
+          const events = view.import(new ArrayReader([q('s1', 'p1', 'oI')]));
+          events.on('end', () => {
+            expect(store.has(q('s1', 'p1', 'oI'))).toBe(true);
+            expect(view.has(q('s1', 'p1', 'oI'))).toBe(true);
+            done();
+          });
+        });
+
         it('should write non-matching mutations through to the parent unrestricted', () => {
           // A non-matching add mutates the parent but never appears in the view
           view.add(q('s3', 'p1', 'oNM'));
