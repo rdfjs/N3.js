@@ -630,41 +630,40 @@ export default class N3Parser {
     return this._completeObjectLiteralPost(token, listItem);
   }
 
-  // Completes a literal in subject position
-  _completeSubjectLiteral(token) {
-    const completed = this._completeLiteral(token, 'subject');
+  // Completes a literal in subject or predicate position
+  _completeTermLiteral(token, component) {
+    const completed = this._completeLiteral(token, component);
     if (!completed)
       return;
 
-    this._subject = completed.literal;
+    let next;
+    if (component === 'subject') {
+      this._subject = completed.literal;
+      next = this._readPredicateOrNamedGraph;
+    }
+    else {
+      this._predicate = completed.literal;
+      this._validAnnotation = true;
+      next = this._readObject;
+    }
 
     // Postpone completion if the literal is only partially completed (such as lang+dir).
     if (completed.readCb)
       return completed.readCb.bind(this, false);
 
-    // If the token was consumed as a datatype, continue with the predicate;
+    // If the token was consumed as a datatype, continue with the next component;
     // otherwise, consume the token now
-    return completed.token === null ?
-           this._readPredicateOrNamedGraph : this._readPredicateOrNamedGraph(completed.token);
+    return completed.token === null ? next : next.call(this, completed.token);
+  }
+
+  // Completes a literal in subject position
+  _completeSubjectLiteral(token) {
+    return this._completeTermLiteral(token, 'subject');
   }
 
   // Completes a literal in predicate position
   _completePredicateLiteral(token) {
-    const completed = this._completeLiteral(token, 'predicate');
-    if (!completed)
-      return;
-
-    this._predicate = completed.literal;
-    this._validAnnotation = true;
-
-    // Postpone completion if the literal is only partially completed (such as lang+dir).
-    if (completed.readCb)
-      return completed.readCb.bind(this, false);
-
-    // If the token was consumed as a datatype, continue with the object;
-    // otherwise, consume the token now
-    return completed.token === null ?
-           this._readObject : this._readObject(completed.token);
+    return this._completeTermLiteral(token, 'predicate');
   }
 
   // Completes a literal in object position
