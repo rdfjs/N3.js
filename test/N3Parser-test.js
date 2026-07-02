@@ -2872,11 +2872,60 @@ describe('Parser', () => {
       shouldParse(parser, '<a> <findAll> ( <b> { <b> a <type>. <b> <something> <foo> } <o> ).',
       ['a', 'findAll', '_:b0'],
       ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'b'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
+      ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
+      ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b3'],
+      ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'o'],
+      ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+      ['b', 'something', 'foo', '_:b2'],
+      ['b', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'type', '_:b2'],
+  ),
+    );
+
+    it(
+      'should parse a formula as only list item',
+      shouldParse(parser, '<s> <p> ({<a> <b> <c>}) .',
+      ['s', 'p', '_:b0'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+      ['a', 'b', 'c', '_:b1'],
+  ),
+    );
+
+    it(
+      'should parse a formula in a list as subject',
+      shouldParse(parser, '({<a> <b> <c>}) <p> <o> .',
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+      ['a', 'b', 'c', '_:b1'],
+      ['_:b0', 'p', 'o'],
+  ),
+    );
+
+    it(
+      'should parse two formulas in one list',
+      shouldParse(parser, '<s> <p> ({<a> <b> <c>} {<d> <e> <f>}) .',
+      ['s', 'p', '_:b0'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
       ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2'],
-      ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'o'],
+      ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3'],
       ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-      ['b', 'something', 'foo', '_:b1'],
-      ['b', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'type', '_:b1'],
+      ['a', 'b', 'c', '_:b1'],
+      ['d', 'e', 'f', '_:b3'],
+  ),
+    );
+
+    it(
+      'should parse a formula between other list items',
+      shouldParse(parser, '<s> <p> (<x> {<a> <b> <c>} <y>) .',
+      ['s', 'p', '_:b0'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
+      ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
+      ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b3'],
+      ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
+      ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+      ['a', 'b', 'c', '_:b2'],
   ),
     );
 
