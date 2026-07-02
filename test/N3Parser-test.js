@@ -1322,7 +1322,7 @@ describe('Parser', () => {
     );
 
     it('should not error if there is no triple callback', () => {
-      new Parser().parse('');
+      expect(() => new Parser().parse('')).not.toThrow();
     });
 
     it('should return prefixes through a callback', done => {

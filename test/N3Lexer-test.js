@@ -1106,7 +1106,7 @@ describe('Lexer', () => {
     );
 
     it('does not call setEncoding if not available', () => {
-      new Lexer().tokenize({ on: function () {} });
+      expect(() => new Lexer().tokenize({ on: function () {} })).not.toThrow();
     });
 
     it('should tokenize an TripleTerm start', shouldTokenize('<<(',
