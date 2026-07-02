@@ -103,6 +103,11 @@ describe('DataFactory', () => {
         .toEqual(new Literal('"2017-04-27T14:39:48.901Z"^^http://www.w3.org/2001/XMLSchema#dateTime'));
     });
 
+    it('does not convert an invalid Date', () => {
+      expect(DataFactory.literal(new Date('invalid')))
+        .toEqual(new Literal('"Invalid Date"'));
+    });
+
     it('converts a Date with a named node type', () => {
       const date = new Date(Date.UTC(2017, 3, 27, 14, 39, 48, 901));
       expect(DataFactory.literal(date, new NamedNode('http://ex.org/type')))

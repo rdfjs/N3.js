@@ -396,8 +396,8 @@ function literal(value, languageOrDataType) {
           value = value > 0 ? 'INF' : '-INF';
       }
     }
-    // Convert a date
-    else if (value instanceof Date) {
+    // Convert a valid date
+    else if (value instanceof Date && !Number.isNaN(value.getTime())) {
       datatype = xsd.dateTime;
       value = value.toISOString();
     }
