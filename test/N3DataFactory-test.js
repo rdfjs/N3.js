@@ -97,6 +97,17 @@ describe('DataFactory', () => {
     it('converts true', () => {
       expect(DataFactory.literal(true)).toEqual(new Literal('"true"^^http://www.w3.org/2001/XMLSchema#boolean'));
     });
+
+    it('converts a Date', () => {
+      expect(DataFactory.literal(new Date(Date.UTC(2017, 3, 27, 14, 39, 48, 901))))
+        .toEqual(new Literal('"2017-04-27T14:39:48.901Z"^^http://www.w3.org/2001/XMLSchema#dateTime'));
+    });
+
+    it('converts a Date with a named node type', () => {
+      const date = new Date(Date.UTC(2017, 3, 27, 14, 39, 48, 901));
+      expect(DataFactory.literal(date, new NamedNode('http://ex.org/type')))
+        .toEqual(new Literal(`"${date}"^^http://ex.org/type`));
+    });
   });
 
   describe('variable', () => {
