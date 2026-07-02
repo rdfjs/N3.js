@@ -459,7 +459,8 @@ describe('Writer', () => {
         new NamedNode('http://example.org/foo/#b'),
         new NamedNode('http://example.org/foo/cdeFgh/ijk')));
       writer.end((error, output) => {
-        expect(output).toBe('<> <#b> <cdeFgh/ijk>.\n');
+        expect(output).toBe('@base <http://example.org/foo/>.\n' +
+                            '<> <#b> <cdeFgh/ijk>.\n');
         done(error);
       });
     });
@@ -472,8 +473,44 @@ describe('Writer', () => {
           new NamedNode('https://pod.example/profile/card-1234.ttl')));
       writer.end((error, output) => {
         expect(output).toBe(
+            '@base <https://pod.example/profile/card>.\n' +
             '<#me> <http://www.w3.org/2002/07/owl#sameAs> <card-1234.ttl>.\n',
         );
+        done(error);
+      });
+    });
+
+    it('writes the base directive before the prefixes', done => {
+      const writer = new Writer({
+        prefixes: { ex: 'http://other.example/ns#' },
+        baseIRI: 'http://example.org/foo/',
+      });
+      writer.addQuad(new Quad(
+        new NamedNode('http://example.org/foo/bar'),
+        new NamedNode('http://other.example/ns#p'),
+        new NamedNode('http://example.org/foo/baz')));
+      writer.end((error, output) => {
+        expect(output).toBe('@base <http://example.org/foo/>.\n' +
+                            '@prefix ex: <http://other.example/ns#>.\n\n' +
+                            '<bar> ex:p <baz>.\n');
+        done(error);
+      });
+    });
+
+    it('should not write a base directive in N-Triples mode', done => {
+      const writer = new Writer({ format: 'N-Triples', baseIRI: 'http://example.org/foo/' });
+      writer.addQuad(new NamedNode('http://example.org/foo/bar'), new NamedNode('http://example.org/foo/#b'), new Literal('"c"'));
+      writer.end((error, output) => {
+        expect(output).toBe('<http://example.org/foo/bar> <http://example.org/foo/#b> "c" .\n');
+        done(error);
+      });
+    });
+
+    it('should not write a base directive in N-Quads mode', done => {
+      const writer = new Writer({ format: 'N-Quads', baseIRI: 'http://example.org/foo/' });
+      writer.addQuad(new NamedNode('http://example.org/foo/bar'), new NamedNode('http://example.org/foo/#b'), new Literal('"c"'), new NamedNode('http://example.org/foo/g'));
+      writer.end((error, output) => {
+        expect(output).toBe('<http://example.org/foo/bar> <http://example.org/foo/#b> "c" <http://example.org/foo/g> .\n');
         done(error);
       });
     });
@@ -5579,7 +5616,9 @@ describe('Writer', () => {
 
     function testRelativizes(baseIRI, ...cases) {
       describe(`baseIRI ${baseIRI}`, () => {
-        const parser = new Parser({ baseIRI });
+        // The parser is given no base IRI on purpose:
+        // the base directive in the output must suffice to restore the IRIs
+        const parser = new Parser();
         for (const { input, expected } of cases) {
           const writer = new Writer({ baseIRI });
           const quad = new Quad(new NamedNode('urn:ex:s'), new NamedNode('urn:ex:p'), new NamedNode(input));
@@ -5592,7 +5631,7 @@ describe('Writer', () => {
               });
             });
 
-            expect(outputString).toBe(`<urn:ex:s> <urn:ex:p> <${expected}>.\n`);
+            expect(outputString).toBe(`@base <${baseIRI}>.\n<urn:ex:s> <urn:ex:p> <${expected}>.\n`);
 
             // Now parsing our resulting string, should give us our original quad.
             const outputQuad = await new Promise(resolve => {
