@@ -830,6 +830,18 @@ describe('Store', () => {
         expect([...b]).toHaveLength(5);
       });
 
+      it('should detach both observers when one mutation notifies two snapshot views', () => {
+        const store = buildStore();
+        // Two live snapshot views; a single matching mutation notifies both, and each
+        // observer unregisters itself mid-notification while the other is still pending.
+        const a = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'snapshot' });
+        const b = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'snapshot' });
+        store.addQuad(q('s1', 'p1', 'oNEW'));
+        expect(store._observers).toBe(null);
+        expect([...a]).toHaveLength(5);
+        expect([...b]).toHaveLength(5);
+      });
+
       it('should stop observing when a snapshot with an absent pattern term materializes', () => {
         const store = buildStore();
         const view = store.match(namedNode('sNONE'), null, null, null, { matchSemantics: 'snapshot' });
