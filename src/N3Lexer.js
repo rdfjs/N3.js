@@ -4,14 +4,18 @@ import namespaces from './IRIs';
 
 const { xsd } = namespaces;
 
-// Regular expression and replacement string to escape N3 strings
+// Regular expression and replacement strings to escape N3 strings
 const escapeSequence = /\\u([a-fA-F0-9]{4})|\\U([a-fA-F0-9]{8})|\\([^])/g;
-const escapeReplacements = {
+// Fixed escape sequences allowed in string literals (ECHAR)
+const stringEscapeReplacements = {
   '\\': '\\', "'": "'", '"': '"',
   'n': '\n', 'r': '\r', 't': '\t', 'f': '\f', 'b': '\b',
+};
+// Fixed escape sequences allowed in local names of prefixed names (PN_LOCAL_ESC)
+const localNameEscapeReplacements = {
   '_': '_', '~': '~', '.': '.', '-': '-', '!': '!', '$': '$', '&': '&',
-  '(': '(', ')': ')', '*': '*', '+': '+', ',': ',', ';': ';', '=': '=',
-  '/': '/', '?': '?', '#': '#', '@': '@', '%': '%',
+  "'": "'", '(': '(', ')': ')', '*': '*', '+': '+', ',': ',', ';': ';',
+  '=': '=', '/': '/', '?': '?', '#': '#', '@': '@', '%': '%',
 };
 const illegalIriChars = /[\x00-\x20<>\\"\{\}\|\^\`]/;
 
@@ -151,7 +155,7 @@ export default class N3Lexer {
           type = 'IRI', value = match[1];
         // Try to find a full IRI with escape sequences
         else if (match = this._iri.exec(input)) {
-          value = this._unescape(match[1]);
+          value = this._unescape(match[1], stringEscapeReplacements);
           if (value === null || illegalIriChars.test(value))
             return reportSyntaxError(this);
           type = 'IRI';
@@ -373,7 +377,7 @@ export default class N3Lexer {
         // Therefore, try inserting a space if we're at the end of the input.
         else if ((match = this._prefixed.exec(input)) ||
                  inputFinished && (match = this._prefixed.exec(`${input} `)))
-          type = 'prefixed', prefix = match[1] || '', value = this._unescape(match[2]);
+          type = 'prefixed', prefix = match[1] || '', value = this._unescape(match[2], localNameEscapeReplacements);
       }
 
       // A type token is special: it can only be emitted after an IRI or prefixed name is read
@@ -418,8 +422,9 @@ export default class N3Lexer {
     function reportSyntaxError(self) { callback(self._syntaxError(/^\S*/.exec(input)[0])); }
   }
 
-  // ### `_unescape` replaces N3 escape codes by their corresponding characters
-  _unescape(item) {
+  // ### `_unescape` replaces N3 escape codes by their corresponding characters,
+  // allowing only the fixed escape sequences from the given replacement table
+  _unescape(item, replacements) {
     let invalid = false;
     const replaced = item.replace(escapeSequence, (sequence, unicode4, unicode8, escapedChar) => {
       // 4-digit unicode character
@@ -442,8 +447,8 @@ export default class N3Lexer {
           String.fromCharCode(0xD800 + ((charCode -= 0x10000) >> 10), 0xDC00 + (charCode & 0x3FF));
       }
       // fixed escape sequence
-      if (escapedChar in escapeReplacements)
-        return escapeReplacements[escapedChar];
+      if (escapedChar in replacements)
+        return replacements[escapedChar];
       // invalid escape sequence
       invalid = true;
       return '';
@@ -479,7 +484,7 @@ export default class N3Lexer {
               openingLength === 3 && this._lineMode)
             break;
           this._line += lines;
-          return { value: this._unescape(raw), matchLength };
+          return { value: this._unescape(raw, stringEscapeReplacements), matchLength };
         }
         closingPos++;
       }
