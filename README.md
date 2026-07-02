@@ -384,6 +384,20 @@ The store provides the following search methods
 - `getGraphs` returns an array of unique graphs occurring in matching quad
 - `forGraphs` executes a callback on unique graphs occurring in matching quads
 
+In addition to `null` wildcards, a `Quad` pattern term passed to `match`, `getQuads`, `countQuads`, `has`, and friends may contain `Variable` components at any depth: concrete components must be equal, each `Variable` matches anything in its position independently (even when the same variable occurs twice), and nested `Quad` components recurse. This matches RDF 1.2 triple terms structurally, like `?r rdf:reifies <<( :s ?p ?o )>>` in SPARQL 1.2, and is aligned with [rdf-stores](https://github.com/rubensworks/rdf-stores.js) (see [#633](https://github.com/rdfjs/N3.js/issues/633)):
+
+```JavaScript
+// All quads reifying a statement about :s — ?r rdf:reifies <<( :s ?p ?o )>>
+const { namedNode, variable, quad } = N3.DataFactory;
+const reifications = store.getQuads(
+  null,
+  namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#reifies'),
+  quad(namedNode('http://ex.org/s'), variable('p'), variable('o')),
+);
+```
+
+Top-level `Variable` arguments remain non-matching (use `null` as the wildcard), and the entity loops (`getSubjects`/`forObjects` and friends) match `Quad` patterns exactly only.
+
 ## Reasoning
 
 N3.js supports reasoning as follows:

@@ -116,3 +116,60 @@ for (i = 0; i < dim; i++)
       ).length,
       dimSquared);
 console.timeEnd(TEST);
+
+// ## Matching patterns inside triple terms (issue #633)
+// Workload: `ex:r{i} ex:reifies <<( ex:s{i%K} ex:p{i%16} ex:o{i} )>>`,
+// with K = N/100 (100 quads per inner subject)
+const { namedNode, variable, quad } = N3.DataFactory;
+const N = Number.parseInt(process.argv[3], 10) || 100000;
+const K = Math.max(N / 100, 1);
+const reifies = namedNode(`${prefix}reifies`);
+
+const starStore = new N3.Store();
+TEST = `- Adding ${N} quads with triple terms`;
+console.time(TEST);
+for (i = 0; i < N; i++)
+  starStore.addQuad(
+    namedNode(`${prefix}r${i}`),
+    reifies,
+    quad(namedNode(`${prefix}s${i % K}`), namedNode(`${prefix}p${i % 16}`), namedNode(`${prefix}o${i}`)));
+console.timeEnd(TEST);
+
+const plainStore = new N3.Store();
+TEST = `- Adding ${N} plain control quads`;
+console.time(TEST);
+for (i = 0; i < N; i++)
+  plainStore.addQuad(
+    namedNode(`${prefix}s${i}`),
+    namedNode(`${prefix}p${i % 16}`),
+    namedNode(`${prefix}o${i}`));
+console.timeEnd(TEST);
+
+TEST = `- Exact triple-term match, ${K} times`;
+console.time(TEST);
+for (i = 0; i < K; i++)
+  assert.equal(starStore.getQuads(null, null,
+    quad(namedNode(`${prefix}s${i % K}`), namedNode(`${prefix}p${i % 16}`), namedNode(`${prefix}o${i}`))).length, 1);
+console.timeEnd(TEST);
+
+TEST = `- Wildcard match <<( s0 ?p ?o )>>, ${N / K} results`;
+console.time(TEST);
+assert.equal(starStore.getQuads(null, null,
+  quad(namedNode(`${prefix}s0`), variable('p'), variable('o'))).length, N / K);
+console.timeEnd(TEST);
+
+TEST = `- Hard wildcard match <<( ?s p3 ?o )>>, ${Math.ceil((N - 3) / 16)} results`;
+console.time(TEST);
+assert.equal(starStore.getQuads(null, null,
+  quad(variable('s'), namedNode(`${prefix}p3`), variable('o'))).length, Math.ceil((N - 3) / 16));
+console.timeEnd(TEST);
+
+TEST = `- Scan workaround for <<( s0 ?p ?o )>>, ${N / K} results`;
+console.time(TEST);
+let found = 0;
+for (const starQuad of starStore) {
+  if (starQuad.object.termType === 'Quad' && starQuad.object.subject.value === `${prefix}s0`)
+    found++;
+}
+assert.equal(found, N / K);
+console.timeEnd(TEST);
