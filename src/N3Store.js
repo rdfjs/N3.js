@@ -1261,6 +1261,13 @@ class DatasetCoreAndReadableStream extends Readable {
       const { n3Store, graph, object, predicate, subject } = this;
       const newStore = this._filtered = new N3Store({ factory: n3Store._factory, entityIndex: this.options.entityIndex });
 
+      // A `snapshot` view is frozen once it materializes, so it no longer needs to observe
+      // the parent — also when a pattern term is absent and the view materializes empty
+      if (this._semantics === 'snapshot' && this._observer) {
+        this.n3Store._removeObserver(this._observer);
+        this._observer = null;
+      }
+
       let subjectId, predicateId, objectId;
 
       // Translate IRIs to internal index keys.
@@ -1295,12 +1302,6 @@ class DatasetCoreAndReadableStream extends Readable {
         }
       }
       newStore._size = null;
-
-      // A `snapshot` view is frozen once built, so it no longer needs to observe the parent
-      if (this._semantics === 'snapshot' && this._observer) {
-        this.n3Store._removeObserver(this._observer);
-        this._observer = null;
-      }
     }
     return this._filtered;
   }

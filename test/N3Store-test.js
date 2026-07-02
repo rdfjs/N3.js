@@ -830,6 +830,17 @@ describe('Store', () => {
         expect([...b]).toHaveLength(5);
       });
 
+      it('should stop observing when a snapshot with an absent pattern term materializes', () => {
+        const store = buildStore();
+        const view = store.match(namedNode('sNONE'), null, null, null, { matchSemantics: 'snapshot' });
+        expect(view.size).toBe(0);
+        // Materialization removes the observer also on the absent-term path
+        expect(store._observers).toBe(null);
+        // The view stays frozen to its (empty) contents
+        store.addQuad(q('sNONE', 'p1', 'o1'));
+        expect([...view]).toHaveLength(0);
+      });
+
       describe('snapshot', () => {
         const opts = { matchSemantics: 'snapshot' };
 
