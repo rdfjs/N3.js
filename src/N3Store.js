@@ -1481,6 +1481,9 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   import(stream) {
+    // `forwarded` views write imported quads through to the parent, like `add` and `addAll`
+    if (this._semantics === 'forwarded')
+      return this.n3Store.import(stream);
     return this.filtered.import(stream);
   }
 
