@@ -245,7 +245,9 @@ function crossGraphsIntersect(g1, g2, remap) {
 function crossIndexOp(self, other, keepIfPresent) {
   const store = new N3Store({ entityIndex: self._entityIndex });
   // Intersection can walk either operand, as the result is bounded by the
-  // smaller one; difference must walk `self`.
+  // smaller one; difference must walk `self`. Comparing `size` is cheap:
+  // `addQuad` maintains the cached count, and operations that invalidate it
+  // cache the recount on first access.
   const walkOther = keepIfPresent && other.size < self.size;
   const remap = walkOther ?
     remapEntityIds(other._entityIndex, self._entityIndex) :
@@ -572,8 +574,9 @@ export default class N3Store {
     this._addToIndex(graphItem.predicates, predicate, object,    subject);
     this._addToIndex(graphItem.objects,    object,    subject,   predicate);
 
-    // The cached quad count is now invalid
-    this._size = null;
+    // The quad was new, so the quad count (when cached) grows by one,
+    // mirroring the decrement in `removeQuad`
+    if (this._size !== null) this._size++;
     return true;
   }
 

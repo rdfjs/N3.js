@@ -303,6 +303,34 @@ describe('Store', () => {
     });
   });
 
+  describe('maintaining the cached size', () => {
+    it('increments the cached size when adding a new quad', () => {
+      const store = new Store();
+      store.addQuad('s1', 'p1', 'o1');
+      store.addQuad('s1', 'p1', 'o2');
+      expect(store._size).toBe(2);
+    });
+
+    it('does not change the cached size when adding an existing quad', () => {
+      const store = new Store();
+      store.addQuad('s1', 'p1', 'o1');
+      store.addQuad('s1', 'p1', 'o1');
+      expect(store._size).toBe(1);
+    });
+
+    it('leaves an invalidated size cache untouched when adding a new quad', () => {
+      const entityIndex = new EntityIndex();
+      const store = new Store([new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'))], { entityIndex });
+      // `addAll` of a store sharing the entity index invalidates the cached size
+      store.addAll(new Store([new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2'), new NamedNode('g2'))], { entityIndex }));
+      expect(store._size).toBe(null);
+      store.addQuad('s3', 'p3', 'o3');
+      expect(store._size).toBe(null);
+      expect(store.size).toBe(3);
+      expect(store._size).toBe(3);
+    });
+  });
+
   describe('removing matching quads for RDF-star', () => {
     let store;
     const allQuads = [
