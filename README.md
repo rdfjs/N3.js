@@ -223,9 +223,12 @@ since `N3.StreamParser` exposes a standard writable stream interface:
 ```JavaScript
 const streamParser = new N3.StreamParser(),
       reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
-for (let result; !(result = await reader.read()).done;)
-  streamParser.write(result.value);
-streamParser.end();
+(async () => {
+  for (let result; !(result = await reader.read()).done;)
+    if (!streamParser.write(result.value))
+      await new Promise(resolve => streamParser.once('drain', resolve));
+  streamParser.end();
+})();
 ```
 
 ## Writing
