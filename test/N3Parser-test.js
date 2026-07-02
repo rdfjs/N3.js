@@ -1607,28 +1607,28 @@ describe('Parser', () => {
     );
 
     it(
-      'should not parse nested triple terms with too many closing tags',
+      'should not parse nested triple terms with too many closing tags after the inner term',
       shouldNotParse('<d> <e> <<(<<(<a> <b> <c>)>>)>> <f> <g>)>>.',
         'Disallowed triple term as subject on line 1.',
       ),
     );
 
     it(
-        'should not parse nested reified triples with too many closing tags',
+        'should not parse nested reified triples with too many closing tags after the inner triple',
         shouldNotParse('<d> <e> <<<<<a> <b> <c>>>>> <f> <g>>>.',
             'Expected entity but got >> on line 1.',
         ),
     );
 
     it(
-      'should not parse nested triple terms with too many closing tags',
+      'should not parse nested triple terms with too many closing tags at the end',
       shouldNotParse('<d> <e> <<(<<(<a> <b> <c>)>> <f> <g>)>>)>>.',
         'Disallowed triple term as subject on line 1.',
       ),
     );
 
     it(
-        'should not parse nested reified triples with too many closing tags',
+        'should not parse nested reified triples with too many closing tags at the end',
         shouldNotParse('<d> <e> <<<<<a> <b> <c>>> <f> <g>>>>>.',
             'Expected entity but got >> on line 1.',
         ),
@@ -2110,7 +2110,7 @@ describe('Parser', () => {
     );
 
     it(
-      'should not parse a literal as subject',
+      'should not parse a literal as subject with comments enabled',
       shouldNotParseWithComments(parser, '1 <a> <b>.',
         'Unexpected literal on line 1.'),
     );
@@ -2511,7 +2511,7 @@ describe('Parser', () => {
     );
 
     it(
-      'should parse a simple left implication',
+      'should parse a simple left implication with isImpliedBy enabled',
       shouldParse(parserIsImpliedBy, '<a> <= <b>.',
                   ['a', 'http://www.w3.org/2000/10/swap/log#isImpliedBy', 'b']),
     );
@@ -2525,7 +2525,7 @@ describe('Parser', () => {
     );
 
     it(
-      'should parse a right implication between one-triple graphs',
+      'should parse a right implication between one-triple graphs with isImpliedBy enabled',
       shouldParse(parserIsImpliedBy, '{ ?a ?b <c>. } => { <d> <e> ?a }.',
                   ['_:b0', 'http://www.w3.org/2000/10/swap/log#implies', '_:b1'],
                   ['?a', '?b', 'c',  '_:b0'],
@@ -2551,7 +2551,7 @@ describe('Parser', () => {
     );
 
     it(
-      'should parse a left implication between one-triple graphs',
+      'should parse a left implication between one-triple graphs with isImpliedBy enabled',
       shouldParse(parserIsImpliedBy, '{ ?a ?b <c>. } <= { <d> <e> ?a }.',
                   ['_:b0', 'http://www.w3.org/2000/10/swap/log#isImpliedBy', '_:b1'],
                   ['?a', '?b', 'c',  '_:b0'],
