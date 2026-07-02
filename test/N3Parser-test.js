@@ -2599,6 +2599,96 @@ describe('Parser', () => {
     );
 
     it(
+      'should parse an empty formula in the subject position as the boolean literal true',
+      shouldParse(parser, '{} <b> <c>.',
+                  ['"true"^^http://www.w3.org/2001/XMLSchema#boolean', 'b', 'c']),
+    );
+
+    it(
+      'should parse an empty formula with whitespace in the subject position as the boolean literal true',
+      shouldParse(parser, '{ } <p> <o>.',
+                  ['"true"^^http://www.w3.org/2001/XMLSchema#boolean', 'p', 'o']),
+    );
+
+    it(
+      'should parse an empty formula in the object position as the boolean literal true',
+      shouldParse(parser, '<a> <b> {}.',
+                  ['a', 'b', '"true"^^http://www.w3.org/2001/XMLSchema#boolean']),
+    );
+
+    it(
+      'should parse an empty formula in the subject position mid-document as the boolean literal true',
+      shouldParse(parser, '<p> <q> <r>. {} <b> <c>.',
+                  ['p', 'q', 'r'],
+                  ['"true"^^http://www.w3.org/2001/XMLSchema#boolean', 'b', 'c']),
+    );
+
+    it(
+      'should parse empty formulas in the subject and object positions as the boolean literal true',
+      shouldParse(parser, '{} <b> {}.',
+                  ['"true"^^http://www.w3.org/2001/XMLSchema#boolean', 'b', '"true"^^http://www.w3.org/2001/XMLSchema#boolean']),
+    );
+
+    it(
+      'should parse a right implication with an empty formula as antecedent',
+      shouldParse(parser, '{} => true.',
+                  ['"true"^^http://www.w3.org/2001/XMLSchema#boolean', 'http://www.w3.org/2000/10/swap/log#implies', '"true"^^http://www.w3.org/2001/XMLSchema#boolean']),
+    );
+
+    it(
+      'should parse a left implication with an empty formula as consequent',
+      shouldParse(parser, '{ <a> <b> <c> } <= {}.',
+                  ['"true"^^http://www.w3.org/2001/XMLSchema#boolean', 'http://www.w3.org/2000/10/swap/log#implies', '_:b0'],
+                  ['a', 'b', 'c', '_:b0']),
+    );
+
+    it(
+      'should parse a left implication between empty formulas',
+      shouldParse(parserIsImpliedBy, '{} <= {}.',
+                  ['"true"^^http://www.w3.org/2001/XMLSchema#boolean', 'http://www.w3.org/2000/10/swap/log#isImpliedBy', '"true"^^http://www.w3.org/2001/XMLSchema#boolean']),
+    );
+
+    it(
+      'should parse an empty formula as the object of an empty list subject',
+      shouldParse(parser, '() <http://www.w3.org/2000/10/swap/log#onNegativeSurface> { }.',
+                  ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'http://www.w3.org/2000/10/swap/log#onNegativeSurface', '"true"^^http://www.w3.org/2001/XMLSchema#boolean']),
+    );
+
+    it(
+      'should parse an empty formula as the object of a blank node property',
+      shouldParse(parser, '[ <p> {} ].',
+                  ['_:b0', 'p', '"true"^^http://www.w3.org/2001/XMLSchema#boolean']),
+    );
+
+    it(
+      'should parse an empty formula in the object position within a formula',
+      shouldParse(parser, '<a> <b> { <x> <y> {} }.',
+                  ['a', 'b', '_:b0'],
+                  ['x', 'y', '"true"^^http://www.w3.org/2001/XMLSchema#boolean', '_:b0']),
+    );
+
+    it(
+      'should parse an empty formula in the subject position within a formula',
+      shouldParse(parser, '<a> <b> { {} <y> <z> }.',
+                  ['a', 'b', '_:b0'],
+                  ['"true"^^http://www.w3.org/2001/XMLSchema#boolean', 'y', 'z', '_:b0']),
+    );
+
+    it(
+      'should not parse a formula with a trailing dot as the boolean literal true',
+      shouldParse(parser, '<a> <b> { <x> <y> <z>. }.',
+                  ['a', 'b', '_:b0'],
+                  ['x', 'y', 'z', '_:b0']),
+    );
+
+    it(
+      'should not parse a formula with a trailing semicolon as the boolean literal true',
+      shouldParse(parser, '<a> <b> { <x> <y> <z>; }.',
+                  ['a', 'b', '_:b0'],
+                  ['x', 'y', 'z', '_:b0']),
+    );
+
+    it(
       'should not reuse identifiers of blank nodes within and outside of formulas',
       shouldParse(parser, '_:a _:b _:c. { _:a _:b _:c } => { { _:a _:b _:c } => { _:a _:b _:c } }.',
                   ['_:b0_a', '_:b0_b', '_:b0_c'],

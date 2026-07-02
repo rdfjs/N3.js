@@ -82,6 +82,7 @@ export default class N3Parser {
       inverse: n3Mode ? this._inversePredicate : false,
       blankPrefix: n3Mode ? this._prefixes._ : '',
       quantified: n3Mode ? this._quantified : null,
+      emptyFormula: n3Mode ? this._emptyFormula : false,
     });
     // The settings below only apply to N3 streams
     if (n3Mode) {
@@ -92,6 +93,13 @@ export default class N3Parser {
       this._prefixes._ = (this._graph ? `${this._graph.value}.` : '.');
       // Quantifiers are scoped to a formula
       this._quantified = Object.create(this._quantified);
+      // A formula starts a new statement, so the subject of the
+      // enclosing statement must not leak into it,
+      // and it is empty until a statement has been read
+      if (type === 'formula') {
+        this._subject = null;
+        this._emptyFormula = true;
+      }
     }
   }
 
@@ -114,6 +122,7 @@ export default class N3Parser {
       this._inversePredicate = context.inverse;
       this._prefixes._ = context.blankPrefix;
       this._quantified = context.quantified;
+      this._emptyFormula = context.emptyFormula;
     }
   }
 
@@ -205,6 +214,9 @@ export default class N3Parser {
   // ### `_readSubject` reads a quad's subject
   _readSubject(token) {
     this._predicate = null;
+    // Any statement token means the enclosing formula is not empty
+    if (token.type !== '}')
+      this._emptyFormula = false;
     switch (token.type) {
     case '[':
       // Start a new quad with a new blank node as subject
@@ -665,8 +677,19 @@ export default class N3Parser {
     if (this._subject !== null)
       this._emit(this._subject, this._predicate, this._object, this._graph);
 
+    const formula = this._graph, empty = this._emptyFormula;
     // Restore the parent context containing this formula
     this._restoreContext('formula', token);
+
+    // An empty formula is equivalent to the boolean literal true
+    // (https://github.com/w3c/N3/issues/185)
+    if (empty) {
+      if (this._subject === formula)
+        this._subject = this.N3_TRUE;
+      else
+        this._object = this.N3_TRUE;
+    }
+
     // If the formula was the subject, continue reading the predicate.
     // If the formula was the object, read punctuation.
     return this._object === null ? this._readPredicate : this._getContextEndReader();
@@ -1213,6 +1236,7 @@ export default class N3Parser {
     this._versionCallback = onVersion || noop;
     this._inversePredicate = false;
     this._quantified = Object.create(null);
+    this._emptyFormula = false;
 
     // Parse synchronously if no quad callback is given
     if (!onQuad) {
@@ -1272,6 +1296,7 @@ function initDataFactory(parser, factory) {
   parser.RDF_REIFIES = factory.namedNode(namespaces.rdf.reifies);
   parser.N3_FORALL   = factory.namedNode(namespaces.r.forAll);
   parser.N3_FORSOME  = factory.namedNode(namespaces.r.forSome);
+  parser.N3_TRUE     = factory.literal('true', factory.namedNode(namespaces.xsd.boolean));
   parser.ABBREVIATIONS = {
     'a': factory.namedNode(namespaces.rdf.type),
     '=': factory.namedNode(namespaces.owl.sameAs),
