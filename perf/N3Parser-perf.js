@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-const N3 = require('..');
 const fs = require('fs'),
     path = require('path'),
     assert = require('assert');
+const N3 = require('..');
 
 if (process.argv.length !== 3) {
   console.error('Usage: N3Parser-perf.js filename');
@@ -16,7 +16,7 @@ const TEST = `- Parsing file ${filename}`;
 console.time(TEST);
 
 let count = 0;
-new N3.Parser({ baseIRI: base }).parse(fs.createReadStream(filename), (error, quad) => {
+new N3.Parser({ baseIRI: base, format: 'text/turtle' }).parse(fs.createReadStream(filename), (error, quad) => {
   assert(!error, error);
   if (quad)
     count++;

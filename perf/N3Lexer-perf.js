@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-const N3 = require('..');
 const fs = require('fs'),
     assert = require('assert');
+const N3 = require('..');
 
 if (process.argv.length !== 3) {
   console.error('Usage: N3Lexer-perf.js filename');

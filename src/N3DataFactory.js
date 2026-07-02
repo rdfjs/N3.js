@@ -1,8 +1,8 @@
 // N3.js implementations of the RDF/JS core data types
-// See https://github.com/rdfjs/representation-task-force/blob/master/interface-spec.md
+// See http://rdf.js.org/data-model-spec/
 
 import namespaces from './IRIs';
-import { isDefaultGraph } from './N3Util';
+
 const { rdf, xsd } = namespaces;
 
 // eslint-disable-next-line prefer-const
@@ -10,7 +10,6 @@ let DEFAULTGRAPH;
 let _blankNodeCounter = 0;
 
 const escapedLiteral = /^"(.*".*)(?="[^"]*$)/;
-const quadId = /^<<("(?:""|[^"])*"[^ ]*|[^ ]+) ("(?:""|[^"])*"[^ ]*|[^ ]+) ("(?:""|[^"])*"[^ ]*|[^ ]+) ?("(?:""|[^"])*"[^ ]*|[^ ]+)?>>$/;
 
 // ## DataFactory singleton
 const DataFactory = {
@@ -21,6 +20,8 @@ const DataFactory = {
   defaultGraph,
   quad,
   triple: quad,
+  fromTerm,
+  fromQuad,
 };
 export default DataFactory;
 
@@ -87,8 +88,18 @@ export class Literal extends Term {
     // Find the last quotation mark (e.g., '"abc"@en-us')
     const id = this.id;
     let atPos = id.lastIndexOf('"') + 1;
+    const dirPos = id.lastIndexOf('--');
     // If "@" it follows, return the remaining substring; empty otherwise
-    return atPos < id.length && id[atPos++] === '@' ? id.substr(atPos).toLowerCase() : '';
+    return atPos < id.length && id[atPos++] === '@' ? (dirPos > atPos ? id.substr(0, dirPos) : id).substr(atPos).toLowerCase() : '';
+  }
+
+  // ### The direction of this literal
+  get direction() {
+    // Find the last double dash after the closing quote (e.g., '"abc"@en-us--ltr')
+    const id = this.id;
+    const endPos = id.lastIndexOf('"');
+    const dirPos = id.lastIndexOf('--');
+    return dirPos > endPos && dirPos + 2 < id.length ? id.substr(dirPos + 2).toLowerCase() : '';
   }
 
   // ### The datatype IRI of this literal
@@ -103,8 +114,8 @@ export class Literal extends Term {
     const char = dtPos < id.length ? id[dtPos] : '';
     // If "^" it follows, return the remaining substring
     return char === '^' ? id.substr(dtPos + 2) :
-           // If "@" follows, return rdf:langString; xsd:string otherwise
-           (char !== '@' ? xsd.string : rdf.langString);
+           // If "@" follows, return rdf:langString or rdf:dirLangString; xsd:string otherwise
+           (char !== '@' ? xsd.string : (id.indexOf('--', dtPos) > 0 ? rdf.dirLangString : rdf.langString));
   }
 
   // ### Returns whether this object represents the same term as the other
@@ -118,14 +129,16 @@ export class Literal extends Term {
                       this.termType === other.termType &&
                       this.value    === other.value    &&
                       this.language === other.language &&
+                      ((this.direction === other.direction) || (this.direction === '' && !other.direction)) &&
                       this.datatype.value === other.datatype.value;
   }
 
   toJSON() {
     return {
-      termType: this.termType,
-      value:    this.value,
-      language: this.language,
+      termType:  this.termType,
+      value:     this.value,
+      language:  this.language,
+      direction: this.direction,
       datatype: { termType: 'NamedNode', value: this.datatypeString },
     };
   }
@@ -188,9 +201,12 @@ export class DefaultGraph extends Term {
 // ## DefaultGraph singleton
 DEFAULTGRAPH = new DefaultGraph();
 
-
 // ### Constructs a term from the given internal string ID
-export function termFromId(id, factory) {
+// The third 'nested' parameter of this function is to aid
+// with recursion over nested terms. It should not be used
+// by consumers of this library.
+// See https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725
+export function termFromId(id, factory, nested) {
   factory = factory || DataFactory;
 
   // Falsy value or empty string indicate the default graph
@@ -212,24 +228,44 @@ export function termFromId(id, factory) {
       return factory.literal(id.substr(1, id.length - 2));
     // Literal with datatype or language
     const endPos = id.lastIndexOf('"', id.length - 1);
+    let languageOrDatatype;
+    if (id[endPos + 1] === '@') {
+      languageOrDatatype = id.substr(endPos + 2);
+      const dashDashIndex = languageOrDatatype.lastIndexOf('--');
+      if (dashDashIndex > 0 && dashDashIndex < languageOrDatatype.length) {
+        languageOrDatatype = {
+          language: languageOrDatatype.substr(0, dashDashIndex),
+          direction: languageOrDatatype.substr(dashDashIndex + 2),
+        };
+      }
+    }
+    else {
+      languageOrDatatype = factory.namedNode(id.substr(endPos + 3));
+    }
     return factory.literal(id.substr(1, endPos - 1),
-            id[endPos + 1] === '@' ? id.substr(endPos + 2)
-                                   : factory.namedNode(id.substr(endPos + 3)));
-  case '<':
-    const components = quadId.exec(id);
-    return factory.quad(
-      termFromId(unescapeQuotes(components[1]), factory),
-      termFromId(unescapeQuotes(components[2]), factory),
-      termFromId(unescapeQuotes(components[3]), factory),
-      components[4] && termFromId(unescapeQuotes(components[4]), factory)
-    );
+            languageOrDatatype);
+  case '[':
+    id = JSON.parse(id);
+    break;
   default:
-    return factory.namedNode(id);
+    if (!nested || !Array.isArray(id)) {
+      return factory.namedNode(id);
+    }
   }
+  return factory.quad(
+    termFromId(id[0], factory, true),
+    termFromId(id[1], factory, true),
+    termFromId(id[2], factory, true),
+    id[3] && termFromId(id[3], factory, true),
+  );
 }
 
 // ### Constructs an internal string ID from the given term or ID string
-export function termToId(term) {
+// The third 'nested' parameter of this function is to aid
+// with recursion over nested terms. It should not be used
+// by consumers of this library.
+// See https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725
+export function termToId(term, nested) {
   if (typeof term === 'string')
     return term;
   if (term instanceof Term && term.termType !== 'Quad')
@@ -244,20 +280,18 @@ export function termToId(term) {
   case 'Variable':     return `?${term.value}`;
   case 'DefaultGraph': return '';
   case 'Literal':      return `"${term.value}"${
-    term.language ? `@${term.language}` :
+    term.language ? `@${term.language}${term.direction ? `--${term.direction}` : ''}` :
       (term.datatype && term.datatype.value !== xsd.string ? `^^${term.datatype.value}` : '')}`;
   case 'Quad':
-    // To identify RDF* quad components, we escape quotes by doubling them.
-    // This avoids the overhead of backslash parsing of Turtle-like syntaxes.
-    return `<<${
-        escapeQuotes(termToId(term.subject))
-      } ${
-        escapeQuotes(termToId(term.predicate))
-      } ${
-        escapeQuotes(termToId(term.object))
-      }${
-        (isDefaultGraph(term.graph)) ? '' : ` ${termToId(term.graph)}`
-      }>>`;
+    const res = [
+      termToId(term.subject, true),
+      termToId(term.predicate, true),
+      termToId(term.object, true),
+    ];
+    if (term.graph && term.graph.termType !== 'DefaultGraph') {
+      res.push(termToId(term.graph, true));
+    }
+    return nested ? res : JSON.stringify(res);
   default: throw new Error(`Unexpected termType: ${term.termType}`);
   }
 }
@@ -341,6 +375,11 @@ function literal(value, languageOrDataType) {
   if (typeof languageOrDataType === 'string')
     return new Literal(`"${value}"@${languageOrDataType.toLowerCase()}`);
 
+  // Create a language-tagged string with base direction
+  if (languageOrDataType !== undefined && !('termType' in languageOrDataType)) {
+    return new Literal(`"${value}"@${languageOrDataType.language.toLowerCase()}${languageOrDataType.direction ? `--${languageOrDataType.direction.toLowerCase()}` : ''}`);
+  }
+
   // Automatically determine datatype for booleans and numbers
   let datatype = languageOrDataType ? languageOrDataType.value : '';
   if (datatype === '') {
@@ -378,4 +417,30 @@ function defaultGraph() {
 // ### Creates a quad
 function quad(subject, predicate, object, graph) {
   return new Quad(subject, predicate, object, graph);
+}
+
+export function fromTerm(term) {
+  if (term instanceof Term)
+    return term;
+
+  // Term instantiated with another library
+  switch (term.termType) {
+  case 'NamedNode':    return namedNode(term.value);
+  case 'BlankNode':    return blankNode(term.value);
+  case 'Variable':     return variable(term.value);
+  case 'DefaultGraph': return DEFAULTGRAPH;
+  case 'Literal':      return literal(term.value, term.language || term.datatype);
+  case 'Quad':         return fromQuad(term);
+  default:             throw new Error(`Unexpected termType: ${term.termType}`);
+  }
+}
+
+export function fromQuad(inQuad) {
+  if (inQuad instanceof Quad)
+    return inQuad;
+
+  if (inQuad.termType !== 'Quad')
+    throw new Error(`Unexpected termType: ${inQuad.termType}`);
+
+  return quad(fromTerm(inQuad.subject), fromTerm(inQuad.predicate), fromTerm(inQuad.object), fromTerm(inQuad.graph));
 }

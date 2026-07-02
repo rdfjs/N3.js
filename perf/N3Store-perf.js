@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-const N3 = require('..');
 const assert = require('assert');
+const N3 = require('..');
 
 console.log('N3Store performance test');
 
@@ -95,7 +95,7 @@ for (let i = 0; i < dimQuads; i++) {
   store.addQuad(
     prefix + i,
     prefix + i,
-    prefix + i
+    prefix + i,
   );
 }
 console.timeEnd(TEST);

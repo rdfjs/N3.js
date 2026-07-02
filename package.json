@@ -1,6 +1,6 @@
 {
   "name": "n3",
-  "version": "1.16.3",
+  "version": "2.0.1",
   "description": "Lightning fast, asynchronous, streaming Turtle / N3 / RDF library.",
   "author": "Ruben Verborgh <ruben.verborgh@gmail.com>",
   "keywords": [
@@ -24,46 +24,61 @@
     "browser"
   ],
   "dependencies": {
-    "queue-microtask": "^1.1.2",
+    "buffer": "^6.0.3",
     "readable-stream": "^4.0.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.16.0",
-    "@babel/core": "^7.16.0",
-    "@babel/preset-env": "^7.16.0",
-    "@babel/register": "^7.16.0",
-    "arrayify-stream": "^1.0.0",
+    "@babel/cli": "^8.0.1",
+    "@babel/core": "^8.0.1",
+    "@babel/preset-env": "^8.0.2",
+    "@babel/register": "^8.0.1",
+    "@rdfjs/data-model": "^1",
+    "arrayify-stream": "^3.0.0",
     "browserify": "^17.0.0",
-    "chai": "^4.0.2",
-    "chai-things": "^0.2.0",
-    "colors": "^1.1.2",
-    "docco": "^0.8.0",
-    "eslint": "^5.14.1",
-    "mocha": "^8.0.0",
-    "nyc": "^14.1.1",
-    "pre-commit": "^1.2.2",
-    "rdf-test-suite": "^1.19.2",
+    "deep-taxonomy-benchmark": "^2.0.0",
+    "docco": "^0.9.1",
+    "esbuild": "^0.28.1",
+    "eslint": "^10.4.1",
+    "eslint-plugin-import-x": "^4.16.2",
+    "eslint-plugin-jest": "^29.15.0",
+    "globals": "^17.6.0",
+    "jest": "^30.4.2",
+    "pre-commit": "^2.0.0",
+    "rdf-isomorphic": "^2.0.0",
+    "rdf-test-suite": "^2.1.4",
     "streamify-string": "^1.0.1",
     "uglify-js": "^3.14.3"
   },
   "scripts": {
     "build": "npm run build:node && npm run build:browser",
     "build:node": "babel src -d lib",
-    "build:browser": "rm -rf browser && mkdir browser && browserify -s N3 lib/index.js | uglifyjs > browser/n3.min.js",
-    "test": "nyc npm run mocha",
-    "mocha": "mocha",
+    "build:browser": "rm -rf browser && mkdir browser && npm run build:browser:umd && npm run build:browser:esm",
+    "build:browser:umd": "browserify -s N3 lib/index.js | uglifyjs > browser/n3.min.js",
+    "build:browser:esm": "node scripts/build-esm.js",
+    "test": "jest",
     "lint": "eslint src perf test spec",
     "prepare": "npm run build",
-    "spec": "npm run spec-turtle && npm run spec-ntriples && npm run spec-nquads && npm run spec-trig",
-    "spec-earl": "npm run spec-earl-turtle && npm run spec-earl-ntriples && npm run spec-earl-nquads && npm run spec-earl-trig",
-    "spec-ntriples": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/ntriples/manifest.ttl -i '{ \"format\": \"n-triples\" }' -c .rdf-test-suite-cache/",
-    "spec-nquads": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/nquads/manifest.ttl -i '{ \"format\": \"n-quads\" }' -c .rdf-test-suite-cache/",
-    "spec-turtle": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/turtle/manifest.ttl -i '{ \"format\": \"turtle\" }' -c .rdf-test-suite-cache/",
-    "spec-trig": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/trig/manifest.ttl -i '{ \"format\": \"trig\" }' -c .rdf-test-suite-cache/",
-    "spec-earl-ntriples": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/ntriples/manifest.ttl -i '{ \"format\": \"n-triples\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-ntriples.ttl",
-    "spec-earl-nquads": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/nquads/manifest.ttl -i '{ \"format\": \"n-quads\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-nquads.ttl",
-    "spec-earl-turtle": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/turtle/manifest.ttl -i '{ \"format\": \"turtle\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-turtle.ttl",
-    "spec-earl-trig": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/trig/manifest.ttl -i '{ \"format\": \"trig\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-trig.ttl",
+    "spec": "npm run spec-1-1 && npm run spec-1-2",
+    "spec-1-1": "npm run spec-1-1-turtle && npm run spec-1-1-ntriples && npm run spec-1-1-nquads && npm run spec-1-1-trig",
+    "spec-1-1-earl": "npm run spec-1-1-earl-turtle && npm run spec-1-1-earl-ntriples && npm run spec-1-1-earl-nquads && npm run spec-1-1-earl-trig",
+    "spec-1-1-ntriples": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-n-triples/manifest.ttl -i '{ \"format\": \"n-triples\" }' -c .rdf-test-suite-cache/",
+    "spec-1-1-nquads": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-n-quads/manifest.ttl -i '{ \"format\": \"n-quads\" }' -c .rdf-test-suite-cache/",
+    "spec-1-1-turtle": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-turtle/manifest.ttl -i '{ \"format\": \"turtle\" }' -c .rdf-test-suite-cache/ --skip \"(bad-numeric-escape|bareword_decimal)\"",
+    "spec-1-1-trig": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-trig/manifest.ttl -i '{ \"format\": \"trig\" }' -c .rdf-test-suite-cache/  --skip \"(bad-numeric-escape|IRI-resolution-01)\"",
+    "spec-1-1-earl-ntriples": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-n-triples/manifest.ttl -i '{ \"format\": \"n-triples\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-ntriples.ttl",
+    "spec-1-1-earl-nquads": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-n-quads/manifest.ttl -i '{ \"format\": \"n-quads\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-nquads.ttl",
+    "spec-1-1-earl-turtle": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-turtle/manifest.ttl -i '{ \"format\": \"turtle\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-turtle.ttl",
+    "spec-1-1-earl-trig": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-trig/manifest.ttl -i '{ \"format\": \"trig\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-trig.ttl",
+    "spec-1-2": "npm run spec-1-2-turtle && npm run spec-1-2-ntriples && npm run spec-1-2-nquads && npm run spec-1-2-trig",
+    "spec-1-2-earl": "npm run spec-1-2-earl-turtle && npm run spec-1-2-earl-ntriples && npm run spec-1-2-earl-nquads && npm run spec-1-2-earl-trig",
+    "spec-1-2-ntriples": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-n-triples/syntax/manifest.ttl -i '{ \"format\": \"n-triples\" }' -c .rdf-test-suite-cache/",
+    "spec-1-2-nquads": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-n-quads/syntax/manifest.ttl -i '{ \"format\": \"n-quads\" }' -c .rdf-test-suite-cache/",
+    "spec-1-2-turtle": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-turtle/syntax/manifest.ttl -i '{ \"format\": \"turtle\" }' -c .rdf-test-suite-cache/",
+    "spec-1-2-trig": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-trig/syntax/manifest.ttl -i '{ \"format\": \"trig\" }' -c .rdf-test-suite-cache/",
+    "spec-1-2-earl-ntriples": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-n-triples/syntax/manifest.ttl -i '{ \"format\": \"n-triples\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-ntriples.ttl",
+    "spec-1-2-earl-nquads": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-n-quads/syntax/manifest.ttl -i '{ \"format\": \"n-quads\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-nquads.ttl",
+    "spec-1-2-earl-turtle": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-turtle/syntax/manifest.ttl -i '{ \"format\": \"turtle\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-turtle.ttl",
+    "spec-1-2-earl-trig": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-trig/syntax/manifest.ttl -i '{ \"format\": \"trig\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-trig.ttl",
     "spec-clean": "rm -r .rdf-test-suite-cache/",
     "docs": "cd src && docco *.js -o ../docs && cd .."
   },
@@ -77,5 +92,36 @@
   "pre-commit": [
     "lint",
     "test"
-  ]
+  ],
+  "jest": {
+    "testMatch": [
+      "**/test/*-test.js"
+    ],
+    "collectCoverage": true,
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "/browser/"
+    ],
+    "coverageReporters": [
+      "json-summary",
+      "text",
+      "lcov"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 100,
+        "functions": 100,
+        "lines": 100,
+        "statements": 100
+      }
+    }
+  },
+  "release": {
+    "branches": [
+      "main"
+    ]
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

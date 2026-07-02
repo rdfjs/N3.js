@@ -11,11 +11,13 @@ export default {
     string:  `${XSD}string`,
   },
   rdf: {
-    type:       `${RDF}type`,
-    nil:        `${RDF}nil`,
-    first:      `${RDF}first`,
-    rest:       `${RDF}rest`,
-    langString: `${RDF}langString`,
+    type:          `${RDF}type`,
+    nil:           `${RDF}nil`,
+    first:         `${RDF}first`,
+    rest:          `${RDF}rest`,
+    langString:    `${RDF}langString`,
+    dirLangString: `${RDF}dirLangString`,
+    reifies:       `${RDF}reifies`,
   },
   owl: {
     sameAs: 'http://www.w3.org/2002/07/owl#sameAs',
@@ -26,5 +28,6 @@ export default {
   },
   log: {
     implies: `${SWAP}log#implies`,
+    isImpliedBy: `${SWAP}log#isImpliedBy`,
   },
 };

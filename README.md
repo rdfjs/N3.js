@@ -1,10 +1,10 @@
 # Lightning fast, asynchronous, streaming RDF for JavaScript
-[![Build Status](https://github.com/rdfjs/N3.js/workflows/CI/badge.svg)](https://github.com/rdfjs/N3.js/actions)
+[![Build Status](https://github.com/rdfjs/n3.js/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/rdfjs/N3.js/actions)
 [![Coverage Status](https://coveralls.io/repos/github/rdfjs/N3.js/badge.svg)](https://coveralls.io/github/rdfjs/N3.js)
 [![npm version](https://badge.fury.io/js/n3.svg)](https://www.npmjs.com/package/n3)
 [![DOI](https://zenodo.org/badge/3058202.svg)](https://zenodo.org/badge/latestdoi/3058202)
 
-The N3.js library is an implementation of the [RDF.js low-level specification](http://rdf.js.org/) that lets you handle [RDF](https://www.w3.org/TR/rdf-primer/) in JavaScript easily.
+The N3.js library is an implementation of the [RDF.js low-level specification](http://rdf.js.org/) that lets you handle [RDF 1.2](https://www.w3.org/TR/rdf-primer/) in JavaScript easily.
 It offers:
 
 - [**Parsing**](#parsing) triples/quads from
@@ -12,14 +12,12 @@ It offers:
   [TriG](https://www.w3.org/TR/trig/),
   [N-Triples](https://www.w3.org/TR/n-triples/),
   [N-Quads](https://www.w3.org/TR/n-quads/),
-  [RDF*](https://blog.liu.se/olafhartig/2019/01/10/position-statement-rdf-star-and-sparql-star/)
   and [Notation3 (N3)](https://www.w3.org/TeamSubmission/n3/)
 - [**Writing**](#writing) triples/quads to
   [Turtle](https://www.w3.org/TR/turtle/),
   [TriG](https://www.w3.org/TR/trig/),
   [N-Triples](https://www.w3.org/TR/n-triples/),
-  [N-Quads](https://www.w3.org/TR/n-quads/)
-  and [RDF*](https://blog.liu.se/olafhartig/2019/01/10/position-statement-rdf-star-and-sparql-star/)
+  and [N-Quads](https://www.w3.org/TR/n-quads/)
 - [**Storage**](#storing) of triples/quads in memory
 
 Parsing and writing is:
@@ -47,9 +45,15 @@ or
 [_Introduction to browserify_](https://writingjavascript.org/posts/introduction-to-browserify).
 You will need to create a "UMD bundle" and supply a name (e.g. with the `-s N3` option in browserify).
 
-You can also load it via CDN:
+You can also load it via CDN, either as a UMD bundle that exposes a global `N3`:
 ```html
 <script src="https://unpkg.com/n3/browser/n3.min.js"></script>
+```
+or as an ES module that you can import directly:
+```html
+<script type="module">
+  import { Store, Parser, Writer } from 'https://unpkg.com/n3/browser/n3.esm.min.js';
+</script>
 ```
 
 ## Creating triples/quads
@@ -61,10 +65,10 @@ N3.js follows the [RDF.js low-level specification](http://rdf.js.org/).
 const { DataFactory } = N3;
 const { namedNode, literal, defaultGraph, quad } = DataFactory;
 const myQuad = quad(
-  namedNode('https://ruben.verborgh.org/profile/#me'),
-  namedNode('http://xmlns.com/foaf/0.1/givenName'),
-  literal('Ruben', 'en'),
-  defaultGraph(),
+  namedNode('https://ruben.verborgh.org/profile/#me'), // Subject
+  namedNode('http://xmlns.com/foaf/0.1/givenName'),    // Predicate
+  literal('Ruben', 'en'),                              // Object
+  defaultGraph(),                                      // Graph
 );
 console.log(myQuad.termType);              // Quad
 console.log(myQuad.value);                 // ''
@@ -83,12 +87,15 @@ we assume that a quad is simply a triple in a named or default graph.
 
 `N3.Parser` transforms Turtle, TriG, N-Triples, or N-Quads document into quads through a callback:
 ```JavaScript
+const tomAndJerry = `PREFIX c: <http://example.org/cartoons#>
+  # Tom is a cat
+  c:Tom a c:Cat.
+  c:Jerry a c:Mouse;
+    c:smarterThan c:Tom.`
+
 const parser = new N3.Parser();
-parser.parse(
-  `PREFIX c: <http://example.org/cartoons#>
-   c:Tom a c:Cat.
-   c:Jerry a c:Mouse;
-           c:smarterThan c:Tom.`,
+
+parser.parse(tomAndJerry,
   (error, quad, prefixes) => {
     if (quad)
       console.log(quad);
@@ -101,9 +108,29 @@ If there are no more quads,
 the callback is invoked one last time with `null` for `quad`
 and a hash of prefixes as third argument.
 <br>
-Pass a second callback to `parse` to retrieve prefixes as they are read.
-<br>
-If no callbacks are provided, parsing happens synchronously.
+
+Alternatively, an object can be supplied, where `onQuad`, `onPrefix` and `onComment` are used to listen for `quads`, `prefixes` and `comments` as follows:
+```JavaScript
+const parser = new N3.Parser();
+
+parser.parse(tomAndJerry, {
+  // onQuad (required) accepts a listener of type (quad: RDF.Quad) => void
+  onQuad: (err, quad) => { console.log(quad); },
+  // onPrefix (optional) accepts a listener of type (prefix: string, iri: NamedNode) => void
+  onPrefix: (prefix, iri) => { console.log(prefix, 'expands to', iri.value); },
+  // onComment (optional) accepts a listener of type (comment: string) => void
+  onComment: (comment) => { console.log('#', comment); },
+});
+```
+
+If no callbacks are provided, parsing happens synchronously returning an array of quads:
+
+```JavaScript
+const parser = new N3.Parser();
+
+// An array of resultant Quads
+const quadArray = parser.parse(tomAndJerry);
+```
 
 By default, `N3.Parser` parses a permissive superset of Turtle, TriG, N-Triples, and N-Quads.
 <br>
@@ -134,6 +161,13 @@ labels. The `blankNodePrefix` constructor argument can be used to modify the
 prefix or, if set to an empty string, completely disable prefixing:
 ```JavaScript
 const parser = new N3.Parser({ blankNodePrefix: '' });
+```
+
+The parser can output a backwards chaining rule such as `_:q <= _:p.` in two ways:
+- as `_:p log:implies _:q.` (default)
+- as `_:q log:isImpliedBy _:p.` (when the `isImpliedBy` flag is set to `true`)
+```JavaScript
+const parser = new N3.Parser({ isImpliedBy: true });
 ```
 
 ### From an RDF stream to quads
@@ -168,6 +202,7 @@ function SlowConsumer() {
 ```
 
 A dedicated `prefix` event signals every prefix with `prefix` and `term` arguments.
+A dedicated `comment` event can be enabled by setting `comments: true` in the N3.StreamParser constructor.
 
 ## Writing
 
@@ -177,16 +212,11 @@ A dedicated `prefix` event signals every prefix with `prefix` and `term` argumen
 Write quads through `addQuad`.
 
 ```JavaScript
-const writer = new N3.Writer({ prefixes: { c: 'http://example.org/cartoons#' } });
-writer.addQuad(
-  namedNode('http://example.org/cartoons#Tom'),
-  namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-  namedNode('http://example.org/cartoons#Cat')
-);
+const writer = new N3.Writer({ prefixes: { c: 'http://example.org/cartoons#' } }); // Create a writer which uses `c` as a prefix for the namespace `http://example.org/cartoons#`
 writer.addQuad(quad(
-  namedNode('http://example.org/cartoons#Tom'),
-  namedNode('http://example.org/cartoons#name'),
-  literal('Tom')
+  namedNode('http://example.org/cartoons#Tom'),   // Subject
+  namedNode('http://example.org/cartoons#name'),  // Predicate
+  literal('Tom')                                  // Object
 ));
 writer.end((error, result) => console.log(result));
 ```
@@ -202,19 +232,19 @@ const writer2 = new N3.Writer({ format: 'application/trig' });
 
 ### From quads to an RDF stream
 
-`N3.Writer` can also write quads to a Node.js stream.
+`N3.Writer` can also write quads to a Node.js stream through `addQuad`.
 
 ```JavaScript
 const writer = new N3.Writer(process.stdout, { end: false, prefixes: { c: 'http://example.org/cartoons#' } });
 writer.addQuad(
-  namedNode('http://example.org/cartoons#Tom'),
-  namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-  namedNode('http://example.org/cartoons#Cat')
+  namedNode('http://example.org/cartoons#Tom'),                   // Subject
+  namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),   // Predicate
+  namedNode('http://example.org/cartoons#Cat')                    // Object
 );
 writer.addQuad(quad(
-  namedNode('http://example.org/cartoons#Tom'),
-  namedNode('http://example.org/cartoons#name'),
-  literal('Tom')
+  namedNode('http://example.org/cartoons#Tom'),     // Subject
+  namedNode('http://example.org/cartoons#name'),  // Predicate
+  literal('Tom')                                    // Object
 ));
 writer.end();
 ```
@@ -282,14 +312,18 @@ Then, we find triples with `:Mickey` as subject.
 ```JavaScript
 const store = new N3.Store();
 store.add(
-  namedNode('http://ex.org/Pluto'),
-  namedNode('http://ex.org/type'),
-  namedNode('http://ex.org/Dog')
+  quad(
+    namedNode('http://ex.org/Pluto'),
+    namedNode('http://ex.org/type'),
+    namedNode('http://ex.org/Dog')
+  )
 );
 store.add(
-  namedNode('http://ex.org/Mickey'),
-  namedNode('http://ex.org/type'),
-  namedNode('http://ex.org/Mouse')
+  quad(
+    namedNode('http://ex.org/Mickey'),
+    namedNode('http://ex.org/type'),
+    namedNode('http://ex.org/Mouse')
+  )
 );
 
 // Retrieve all quads
@@ -300,8 +334,15 @@ for (const quad of store.match(namedNode('http://ex.org/Mickey'), null, null))
   console.log(quad);
 ```
 
-### [`DatasetCore` Interface](https://rdf.js.org/dataset-spec/#datasetcore-interface)
-This store adheres to the `DatasetCore` interface which exposes the following properties
+If you are using multiple stores, you can reduce memory consumption by allowing them to share an entity index:
+```JavaScript
+const entityIndex = new N3.EntityIndex();
+const store1 = new N3.Store([], { entityIndex });
+const store2 = new N3.Store([], { entityIndex });
+```
+
+### [`Dataset` Interface](https://rdf.js.org/dataset-spec/#dataset-interface)
+This store adheres to the `Dataset` interface which exposes the following properties
 
 Attributes:
  - `size` — A non-negative integer that specifies the number of quads in the set.
@@ -314,7 +355,7 @@ Methods:
  - `[Symbol.iterator]` — Implements the iterator protocol to allow iteration over all `quads` in the dataset as in the example above.
 
 ### Addition and deletion of quads
-The store provides the following manipulation methods in addition to implementing the standard [`DatasetCore` Interface](https://rdf.js.org/dataset-spec/#datasetcore-interface)
+The store implements the following manipulation methods in addition to the standard [`Dataset` Interface](https://rdf.js.org/dataset-spec/#dataset-interface)
 ([documentation](http://rdfjs.github.io/N3.js/docs/N3Store.html)):
 - `addQuad` to insert one quad
 - `addQuads` to insert an array of quads
@@ -328,9 +369,8 @@ The store provides the following manipulation methods in addition to implementin
 ### Searching quads or entities
 The store provides the following search methods
 ([documentation](http://rdfjs.github.io/N3.js/docs/N3Store.html)):
-- `readQuads` returns a generator of quads matching the given pattern
+- `match` returns a stream and generator of quads matching the given pattern
 - `getQuads` returns an array of quads matching the given pattern
-- `match` returns a stream of quads matching the given pattern
 - `countQuads` counts the number of quads matching the given pattern
 - `forEach` executes a callback on all matching quads
 - `every` returns whether a callback on matching quads always returns true
@@ -344,6 +384,33 @@ The store provides the following search methods
 - `getGraphs` returns an array of unique graphs occurring in matching quad
 - `forGraphs` executes a callback on unique graphs occurring in matching quads
 
+## Reasoning
+
+N3.js supports reasoning as follows:
+
+```JavaScript
+import { Reasoner, Store, Parser } from 'n3';
+
+const parser = new Parser({ format: 'text/n3' });
+const rules = `
+{
+  ?s a ?o .
+  ?o <http://www.w3.org/2000/01/rdf-schema#subClassOf> ?o2 .
+} => {
+  ?s a ?o2 .
+} .
+`
+
+const rulesDataset = new Store(parser.parse(rules));
+const dataset = new Store(/* Dataset */)
+
+// Applies the rules to the store; mutating it
+const reasoner = new Reasoner(store);
+reasoner.reason(rulesDataset);
+```
+
+**Note**: N3.js currently only supports rules with [Basic Graph Patterns](https://www.w3.org/TR/sparql11-query/#BasicGraphPattern) in the premise and conclusion. Built-ins and backward-chaining are *not* supported. For an RDF/JS reasoner that supports all Notation3 reasoning features, see [eye-js](https://github.com/eyereasoner/eye-js/).
+
 ## Compatibility
 ### Format specifications
 The N3.js parser and writer is fully compatible with the following W3C specifications:
@@ -355,19 +422,17 @@ The N3.js parser and writer is fully compatible with the following W3C specifica
   – [EARL report](https://raw.githubusercontent.com/rdfjs/N3.js/earl/n3js-earl-report-ntriples.ttl)
 - [RDF 1.1 N-Quads](https://www.w3.org/TR/n-quads/)
   – [EARL report](https://raw.githubusercontent.com/rdfjs/N3.js/earl/n3js-earl-report-nquads.ttl)
+- [RDF 1.2 Turtle](https://www.w3.org/TR/rdf12-turtle/)
+- [RDF 1.2 TriG](https://www.w3.org/TR/rdf12-trig/)
+- [RDF 1.2 N-Triples](https://www.w3.org/TR/rdf12-n-triples/)
+- [RDF 1.2 N-Quads](https://www.w3.org/TR/rdf12-n-quads/)
 
 In addition, the N3.js parser also supports [Notation3 (N3)](https://www.w3.org/TeamSubmission/n3/) (no official specification yet).
 
-The N3.js parser and writer are also fully compatible with the RDF* variants
-of the W3C specifications.
-
 The default mode is permissive
-and allows a mixture of different syntaxes, including RDF*.
+and allows a mixture of different syntaxes.
 Pass a `format` option to the constructor with the name or MIME type of a format
 for strict, fault-intolerant behavior.
-If a format string contains `star` or `*`
-(e.g., `turtlestar` or `TriG*`),
-RDF* support for that format will be enabled.
 
 ### Interface specifications
 The N3.js submodules are compatible with the following [RDF.js](http://rdf.js.org) interfaces:

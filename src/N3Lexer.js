@@ -1,6 +1,6 @@
 // **N3Lexer** tokenizes N3 documents.
+import { Buffer } from 'buffer';
 import namespaces from './IRIs';
-import queueMicrotask from 'queue-microtask';
 
 const { xsd } = namespaces;
 
@@ -15,11 +15,16 @@ const escapeReplacements = {
 };
 const illegalIriChars = /[\x00-\x20<>\\"\{\}\|\^\`]/;
 
+function isSurrogateCodePoint(charCode) {
+  return charCode >= 0xD800 && charCode <= 0xDFFF;
+}
+
 const lineModeRegExps = {
   _iri: true,
   _unescapedIri: true,
   _simpleQuotedString: true,
   _langcode: true,
+  _dircode: true,
   _blank: true,
   _newline: true,
   _comment: true,
@@ -37,21 +42,25 @@ export default class N3Lexer {
     this._unescapedIri = /^<([^\x00-\x20<>\\"\{\}\|\^\`]*)>[ \t]*/; // IRI without escape sequences; no unescaping
     this._simpleQuotedString = /^"([^"\\\r\n]*)"(?=[^"])/; // string without escape sequences
     this._simpleApostropheString = /^'([^'\\\r\n]*)'(?=[^'])/;
-    this._langcode = /^@([a-z]+(?:-[a-z0-9]+)*)(?=[^a-z0-9\-])/i;
+    this._langcode = /^@([a-z]+(?:-[a-z0-9]+)*)(?=[^a-z0-9])/i;
+    this._dircode = /^--(ltr)|(rtl)/;
     this._prefix = /^((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:(?=[#\s<])/;
     this._prefixed = /^((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:((?:(?:[0-:A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])(?:(?:[\.\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])*(?:[\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~]))?)?)(?:[ \t]+|(?=\.?[,;!\^\s#()\[\]\{\}"'<>]))/;
     this._variable = /^\?(?:(?:[A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:[\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?=[.,;!\^\s#()\[\]\{\}"'<>])/;
     this._blank = /^_:((?:[0-9A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?:[ \t]+|(?=\.?[,;:\s#()\[\]\{\}"'<>]))/;
     this._number = /^[\-+]?(?:(\d+\.\d*|\.?\d+)[eE][\-+]?|\d*(\.)?)\d+(?=\.?[,;:\s#()\[\]\{\}"'<>])/;
     this._boolean = /^(?:true|false)(?=[.,;\s#()\[\]\{\}"'<>])/;
-    this._keyword = /^@[a-z]+(?=[\s#<:])/i;
-    this._sparqlKeyword = /^(?:PREFIX|BASE|GRAPH)(?=[\s#<])/i;
+    this._atKeyword = /^@[a-z]+(?=[\s#<:])/i;
+    this._keyword = /^(?:PREFIX|BASE|VERSION|GRAPH)(?=[\s#<])/i;
     this._shortPredicates = /^a(?=[\s#()\[\]\{\}"'<>])/;
     this._newline = /^[ \t]*(?:#[^\n\r]*)?(?:\r\n|\n|\r)[ \t]*/;
     this._comment = /#([^\n\r]*)/;
     this._whitespace = /^[ \t]+/;
     this._endOfFile = /^(?:#[^\n\r]*)?$/;
     options = options || {};
+
+    // Whether the log:isImpliedBy predicate is supported
+    this._isImpliedBy = options.isImpliedBy;
 
     // In line mode (N-Triples or N-Quads), only simple features may be parsed
     if (this._lineMode = !!options.lineMode) {
@@ -67,7 +76,7 @@ export default class N3Lexer {
       this._n3Mode = options.n3 !== false;
     }
     // Don't output comment tokens by default
-    this._comments = !!options.comments;
+    this.comments = !!options.comments;
     // Cache the last tested closing position of long literals
     this._literalClosingPos = 0;
   }
@@ -84,7 +93,7 @@ export default class N3Lexer {
       let whiteSpaceMatch, comment;
       while (whiteSpaceMatch = this._newline.exec(input)) {
         // Try to find a comment
-        if (this._comments && (comment = this._comment.exec(whiteSpaceMatch[0])))
+        if (this.comments && (comment = this._comment.exec(whiteSpaceMatch[0])))
           emitToken('comment', comment[1], '', this._line, whiteSpaceMatch[0].length);
         // Advance the input
         input = input.substr(whiteSpaceMatch[0].length, input.length);
@@ -100,7 +109,7 @@ export default class N3Lexer {
         // If the input is finished, emit EOF
         if (inputFinished) {
           // Try to find a final comment
-          if (this._comments && (comment = this._comment.exec(input)))
+          if (this.comments && (comment = this._comment.exec(input)))
             emitToken('comment', comment[1], '', this._line, input.length);
           input = null;
           emitToken('eof', '', '', this._line, 0);
@@ -147,15 +156,22 @@ export default class N3Lexer {
             return reportSyntaxError(this);
           type = 'IRI';
         }
-        // Try to find a nested triple
-        else if (input.length > 1 && input[1] === '<')
+        // Try to find a triple term
+        else if (input.length > 2 && input[1] === '<' && input[2] === '(')
+          type = '<<(', matchLength = 3;
+        // Try to find a reified triple
+        else if (!this._lineMode && input.length > (inputFinished ? 1 : 2) && input[1] === '<')
           type = '<<', matchLength = 2;
         // Try to find a backwards implication arrow
-        else if (this._n3Mode && input.length > 1 && input[1] === '=')
-          type = 'inverse', matchLength = 2, value = '>';
+        else if (this._n3Mode && input.length > 1 && input[1] === '=') {
+          matchLength = 2;
+          if (this._isImpliedBy) type = 'abbreviation', value = '<';
+          else type = 'inverse', value = '>';
+        }
         break;
 
       case '>':
+        // Try to find a reified triple
         if (input.length > 1 && input[1] === '>')
           type = '>>', matchLength = 2;
         break;
@@ -211,10 +227,10 @@ export default class N3Lexer {
 
       case '@':
         // Try to find a language code
-        if (this._previousMarker === 'literal' && (match = this._langcode.exec(input)))
+        if (this._previousMarker === 'literal' && (match = this._langcode.exec(input)) && match[1] !== 'version')
           type = 'langcode', value = match[1];
         // Try to find a keyword
-        else if (match = this._keyword.exec(input))
+        else if (match = this._atKeyword.exec(input))
           type = match[0];
         break;
 
@@ -239,6 +255,13 @@ export default class N3Lexer {
       case '9':
       case '+':
       case '-':
+        if (input[1] === '-') {
+          // Try to find a direction code
+          if (this._previousMarker === 'langcode' && (match = this._dircode.exec(input)))
+            type = 'dircode', matchLength = 2, value = (match[1] || match[2]), matchLength = value.length + 2;
+          break;
+        }
+
         // Try to find a number. Since it can contain (but not end with) a dot,
         // we always need a non-dot character before deciding it is a number.
         // Therefore, try inserting a space if we're at the end of the input.
@@ -256,8 +279,10 @@ export default class N3Lexer {
       case 'P':
       case 'G':
       case 'g':
+      case 'V':
+      case 'v':
         // Try to find a SPARQL-style keyword
-        if (match = this._sparqlKeyword.exec(input))
+        if (match = this._keyword.exec(input))
           type = match[0].toUpperCase();
         else
           inconclusive = true;
@@ -294,18 +319,43 @@ export default class N3Lexer {
       case '!':
         if (!this._n3Mode)
           break;
+      case ')':
+        if (!inputFinished && (input.length === 1 || (input.length === 2 && input[1] === '>'))) {
+          // Don't consume yet, as it *could* become a triple term end.
+          break;
+        }
+        // Try to find a triple term
+        if (input.length > 2 && input[1] === '>' && input[2] === '>') {
+          type = ')>>', matchLength = 3;
+          break;
+        }
       case ',':
       case ';':
       case '[':
       case ']':
       case '(':
-      case ')':
-      case '{':
       case '}':
+      case '~':
         if (!this._lineMode) {
           matchLength = 1;
           type = firstChar;
         }
+        break;
+      case '{':
+        // We need at least 2 tokens lookahead to distinguish "{|" and "{ "
+        if (!this._lineMode && input.length >= 2) {
+          // Try to find a quoted triple annotation start
+          if (input[1] === '|')
+            type = '{|', matchLength = 2;
+          else
+            type = firstChar, matchLength = 1;
+        }
+        break;
+      case '|':
+        // We need 2 tokens lookahead to parse "|}"
+        // Try to find a quoted triple annotation end
+        if (input.length >= 2 && input[1] === '}')
+          type = '|}', matchLength = 2;
         break;
 
       default:
@@ -373,11 +423,21 @@ export default class N3Lexer {
     let invalid = false;
     const replaced = item.replace(escapeSequence, (sequence, unicode4, unicode8, escapedChar) => {
       // 4-digit unicode character
-      if (typeof unicode4 === 'string')
-        return String.fromCharCode(Number.parseInt(unicode4, 16));
+      if (typeof unicode4 === 'string') {
+        const charCode = Number.parseInt(unicode4, 16);
+        if (isSurrogateCodePoint(charCode)) {
+          invalid = true;
+          return '';
+        }
+        return String.fromCharCode(charCode);
+      }
       // 8-digit unicode character
       if (typeof unicode8 === 'string') {
         let charCode = Number.parseInt(unicode8, 16);
+        if (isSurrogateCodePoint(charCode)) {
+          invalid = true;
+          return '';
+        }
         return charCode <= 0xFFFF ? String.fromCharCode(Number.parseInt(unicode8, 16)) :
           String.fromCharCode(0xD800 + ((charCode -= 0x10000) >> 10), 0xDC00 + (charCode & 0x3FF));
       }

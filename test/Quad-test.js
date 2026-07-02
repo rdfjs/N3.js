@@ -1,105 +1,105 @@
-import { Quad, Triple, DefaultGraph, termFromId, Term } from '../src/';
+import { Quad, Triple, DefaultGraph, termFromId, Term } from '../src';
 
 describe('Quad', () => {
   describe('The Quad module', () => {
     it('should be a function', () => {
-      Quad.should.be.a('function');
+      expect(Quad).toBeInstanceOf(Function);
     });
 
     it('should be a Quad constructor', () => {
-      new Quad().should.be.an.instanceof(Quad);
+      expect(new Quad()).toBeInstanceOf(Quad);
     });
 
     it('should equal Triple', () => {
-      Quad.should.equal(Triple);
+      expect(Quad).toBe(Triple);
     });
   });
 
   describe('A Quad instance created with subject/predicate/object', () => {
     let quad, subject, predicate, object;
-    before(() => {
+    beforeAll(() => {
       quad = new Quad(
         subject   = termFromId('s'),
         predicate = termFromId('p'),
-        object    = termFromId('o')
+        object    = termFromId('o'),
       );
     });
 
     it('should be a Quad', () => {
-      quad.should.be.an.instanceof(Quad);
+      expect(quad).toBeInstanceOf(Quad);
     });
 
     it('should be a Term', () => {
-      quad.should.be.an.instanceof(Term);
+      expect(quad).toBeInstanceOf(Term);
     });
 
     it('should have the correct termType', () => {
-      quad.termType.should.equal('Quad');
+      expect(quad.termType).toBe('Quad');
     });
 
     it('should have the correct subject', () => {
-      quad.subject.should.equal(subject);
+      expect(quad.subject).toBe(subject);
     });
 
     it('should have the correct predicate', () => {
-      quad.predicate.should.equal(predicate);
+      expect(quad.predicate).toBe(predicate);
     });
 
     it('should have the correct object', () => {
-      quad.object.should.equal(object);
+      expect(quad.object).toBe(object);
     });
 
     it('should have the default graph', () => {
-      quad.graph.should.equal(new DefaultGraph());
+      expect(quad.graph).toBe(new DefaultGraph());
     });
 
     it('should equal a quad with the same components', () => {
-      quad.equals({
+      expect(quad.equals({
         subject:   subject,
         predicate: predicate,
         object:    object,
         graph:     new DefaultGraph(),
-      }).should.be.true;
+      })).toBe(true);
     });
 
     it('should not equal a quad with a different subject', () => {
-      quad.equals({
+      expect(quad.equals({
         subject:   termFromId('x'),
         predicate: predicate,
         object:    object,
         graph:     new DefaultGraph(),
-      }).should.be.false;
+      })).toBe(false);
     });
 
     it('should not equal a quad with a different predicate', () => {
-      quad.equals({
+      expect(quad.equals({
         subject:   subject,
         predicate: termFromId('x'),
         object:    object,
         graph:     new DefaultGraph(),
-      }).should.be.false;
+      })).toBe(false);
     });
 
     it('should not equal a quad with a different object', () => {
-      quad.equals({
+      expect(quad.equals({
         subject:   subject,
         predicate: predicate,
         object:    termFromId('x'),
         graph:     new DefaultGraph(),
-      }).should.be.false;
+      })).toBe(false);
     });
 
     it('should not equal a quad with a different graph', () => {
-      quad.equals({
+      expect(quad.equals({
         subject:   subject,
         predicate: predicate,
         object:    object,
         graph:     termFromId('x'),
-      }).should.be.false;
+      })).toBe(false);
     });
 
     it('should provide a JSON representation', () => {
-      quad.toJSON().should.deep.equal({
+      expect(quad.toJSON()).toEqual({
         termType:  'Quad',
         subject:   { termType: 'NamedNode', value: 's' },
         predicate: { termType: 'NamedNode', value: 'p' },
@@ -111,90 +111,90 @@ describe('Quad', () => {
 
   describe('A Quad instance created with subject/predicate/object/graph', () => {
     let quad, subject, predicate, object, graph;
-    before(() => {
+    beforeAll(() => {
       quad = new Quad(
         subject   = termFromId('s'),
         predicate = termFromId('p'),
         object    = termFromId('o'),
-        graph     = termFromId('g')
+        graph     = termFromId('g'),
       );
     });
 
     it('should be a Quad', () => {
-      quad.should.be.an.instanceof(Quad);
+      expect(quad).toBeInstanceOf(Quad);
     });
 
     it('should be a Term', () => {
-      quad.should.be.an.instanceof(Term);
+      expect(quad).toBeInstanceOf(Term);
     });
 
     it('should have the correct termType', () => {
-      quad.termType.should.equal('Quad');
+      expect(quad.termType).toBe('Quad');
     });
 
     it('should have the correct subject', () => {
-      quad.subject.should.equal(subject);
+      expect(quad.subject).toBe(subject);
     });
 
     it('should have the correct predicate', () => {
-      quad.predicate.should.equal(predicate);
+      expect(quad.predicate).toBe(predicate);
     });
 
     it('should have the correct object', () => {
-      quad.object.should.equal(object);
+      expect(quad.object).toBe(object);
     });
 
     it('should have the default graph', () => {
-      quad.graph.should.equal(graph);
+      expect(quad.graph).toBe(graph);
     });
 
     it('should equal a quad with the same components', () => {
-      quad.equals({
+      expect(quad.equals({
         subject:   subject,
         predicate: predicate,
         object:    object,
         graph:     graph,
-      }).should.be.true;
+      })).toBe(true);
     });
 
     it('should not equal a quad with a different subject', () => {
-      quad.equals({
+      expect(quad.equals({
         subject:   termFromId('x'),
         predicate: predicate,
         object:    object,
         graph:     graph,
-      }).should.be.false;
+      })).toBe(false);
     });
 
     it('should not equal a quad with a different predicate', () => {
-      quad.equals({
+      expect(quad.equals({
         subject:   subject,
         predicate: termFromId('x'),
         object:    object,
         graph:     graph,
-      }).should.be.false;
+      })).toBe(false);
     });
 
     it('should not equal a quad with a different object', () => {
-      quad.equals({
+      expect(quad.equals({
         subject:   subject,
         predicate: predicate,
         object:    termFromId('x'),
         graph:     graph,
-      }).should.be.false;
+      })).toBe(false);
     });
 
     it('should not equal a quad with a different graph', () => {
-      quad.equals({
+      expect(quad.equals({
         subject:   subject,
         predicate: predicate,
         object:    object,
         graph:     termFromId('x'),
-      }).should.be.false;
+      })).toBe(false);
     });
 
     it('should provide a JSON representation', () => {
-      quad.toJSON().should.deep.equal({
+      expect(quad.toJSON()).toEqual({
         termType:  'Quad',
         subject:   { termType: 'NamedNode', value: 's' },
         predicate: { termType: 'NamedNode', value: 'p' },
@@ -206,97 +206,97 @@ describe('Quad', () => {
 
   describe('A Quad instance with nested quads', () => {
     let quad, subject, predicate, object;
-    before(() => {
+    beforeAll(() => {
       quad = new Quad(
         subject   = termFromId('<<_:n3-123 ?var-a ?var-b _:n3-000>>'),
         predicate = termFromId('p'),
-        object    = termFromId('<<http://ex.org/a http://ex.org/b http://ex.org/c>>')
+        object    = termFromId('<<http://ex.org/a http://ex.org/b http://ex.org/c>>'),
       );
     });
 
     it('should be a Quad', () => {
-      quad.should.be.an.instanceof(Quad);
+      expect(quad).toBeInstanceOf(Quad);
     });
 
     it('should be a Term', () => {
-      quad.should.be.an.instanceof(Term);
+      expect(quad).toBeInstanceOf(Term);
     });
 
     it('should have the correct termType', () => {
-      quad.termType.should.equal('Quad');
+      expect(quad.termType).toBe('Quad');
     });
 
     it('should have the correct subject', () => {
-      quad.subject.should.equal(subject);
+      expect(quad.subject).toBe(subject);
     });
 
     it('should have the correct predicate', () => {
-      quad.predicate.should.equal(predicate);
+      expect(quad.predicate).toBe(predicate);
     });
 
     it('should have the correct object', () => {
-      quad.object.should.equal(object);
+      expect(quad.object).toBe(object);
     });
 
     it('should have the default graph', () => {
-      quad.graph.should.equal(new DefaultGraph());
+      expect(quad.graph).toBe(new DefaultGraph());
     });
 
     it('should equal a quad with the same components', () => {
-      quad.equals({
+      expect(quad.equals({
         subject:   subject,
         predicate: predicate,
         object:    object,
         graph:     new DefaultGraph(),
-      }).should.be.true;
+      })).toBe(true);
     });
 
     it('should not equal a quad with a different subject', () => {
-      quad.equals({
+      expect(quad.equals({
         termType: 'Quad',
         value: '',
         subject:   termFromId('x'),
         predicate: predicate,
         object:    object,
         graph:     new DefaultGraph(),
-      }).should.be.false;
+      })).toBe(false);
     });
 
     it('should not equal a quad with a different predicate', () => {
-      quad.equals({
+      expect(quad.equals({
         termType: 'Quad',
         value: '',
         subject:   subject,
         predicate: termFromId('x'),
         object:    object,
         graph:     new DefaultGraph(),
-      }).should.be.false;
+      })).toBe(false);
     });
 
     it('should not equal a quad with a different object', () => {
-      quad.equals({
+      expect(quad.equals({
         termType: 'Quad',
         value: '',
         subject:   subject,
         predicate: predicate,
         object:    termFromId('x'),
         graph:     new DefaultGraph(),
-      }).should.be.false;
+      })).toBe(false);
     });
 
     it('should not equal a quad with a different graph', () => {
-      quad.equals({
+      expect(quad.equals({
         termType: 'Quad',
         value: '',
         subject:   subject,
         predicate: predicate,
         object:    object,
         graph:     termFromId('x'),
-      }).should.be.false;
+      })).toBe(false);
     });
 
     it('should provide a JSON representation', () => {
-      quad.toJSON().should.deep.equal({
+      expect(quad.toJSON()).toEqual({
         termType:  'Quad',
         subject:   termFromId('<<_:n3-123 ?var-a ?var-b _:n3-000>>').toJSON(),
         predicate: { termType: 'NamedNode', value: 'p' },

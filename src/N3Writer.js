@@ -2,6 +2,8 @@
 import namespaces from './IRIs';
 import { default as N3DataFactory, Term } from './N3DataFactory';
 import { isDefaultGraph } from './N3Util';
+import BaseIRI from './BaseIRI';
+import { escapeRegex } from './Util';
 
 const DEFAULTGRAPH = N3DataFactory.defaultGraph();
 
@@ -19,8 +21,8 @@ const escape    = /["\\\t\n\r\b\f\u0000-\u0019\ud800-\udbff]/,
 class SerializedTerm extends Term {
   // Pretty-printed nodes are not equal to any other node
   // (e.g., [] does not equal [])
-  equals() {
-    return false;
+  equals(other) {
+    return other === this;
   }
 }
 
@@ -58,9 +60,7 @@ export default class N3Writer {
       this._prefixIRIs = Object.create(null);
       options.prefixes && this.addPrefixes(options.prefixes);
       if (options.baseIRI) {
-        this._baseMatcher = new RegExp(`^${escapeRegex(options.baseIRI)
-            }${options.baseIRI.endsWith('/') ? '' : '[#?]'}`);
-        this._baseLength = options.baseIRI.length;
+        this._baseIri = new BaseIRI(options.baseIRI);
       }
     }
     else {
@@ -96,19 +96,19 @@ export default class N3Writer {
       if (subject.equals(this._subject)) {
         // Don't repeat the predicate if it's the same
         if (predicate.equals(this._predicate))
-          this._write(`, ${this._encodeTerm(object)}`, done);
+          this._write(`, ${this._encodeObject(object)}`, done);
         // Same subject, different predicate
         else
           this._write(`;\n    ${
                       this._encodePredicate(this._predicate = predicate)} ${
-                      this._encodeTerm(object)}`, done);
+                      this._encodeObject(object)}`, done);
       }
       // Different subject; write the whole quad
       else
         this._write(`${(this._subject === null ? '' : '.\n') +
-                    this._encodeTerm(this._subject = subject)} ${
+                    this._encodeSubject(this._subject = subject)} ${
                     this._encodePredicate(this._predicate = predicate)} ${
-                    this._encodeTerm(object)}`, done);
+                    this._encodeObject(object)}`, done);
     }
     catch (error) { done && done(error); }
   }
@@ -122,17 +122,23 @@ export default class N3Writer {
 
   // ### `quadToString` serializes a quad as a string
   quadToString(subject, predicate, object, graph) {
-    return  `${this._encodeTerm(subject)} ${
+    return  `${this._encodeSubject(subject)} ${
             this._encodeTerm(predicate)} ${
-            this._encodeTerm(object)
+            this._encodeObject(object)
             }${graph && graph.value ? ` ${this._encodeIriOrBlank(graph)} .\n` : ' .\n'}`;
   }
 
   // ### `quadsToString` serializes an array of quads as a string
   quadsToString(quads) {
-    return quads.map(t => {
-      return this.quadToString(t.subject, t.predicate, t.object, t.graph);
-    }).join('');
+    let quadsString = '';
+    for (const quad of quads)
+      quadsString += this.quadToString(quad.subject, quad.predicate, quad.object, quad.graph);
+    return quadsString;
+  }
+
+  // ### `_encodeSubject` represents a subject
+  _encodeSubject(entity) {
+    return this._encodeTerm(entity);
   }
 
   // ### `_encodeIriOrBlank` represents an IRI or blank node
@@ -146,8 +152,9 @@ export default class N3Writer {
     }
     let iri = entity.value;
     // Use relative IRIs if requested and possible
-    if (this._baseMatcher && this._baseMatcher.test(iri))
-      iri = iri.substr(this._baseLength);
+    if (this._baseIri) {
+      iri = this._baseIri.toRelative(iri);
+    }
     // Escape special characters
     if (escape.test(iri))
       iri = iri.replace(escapeAll, characterReplacer);
@@ -165,8 +172,9 @@ export default class N3Writer {
       value = value.replace(escapeAll, characterReplacer);
 
     // Write a language-tagged literal
+    const direction = literal.direction ? `--${literal.direction}` : '';
     if (literal.language)
-      return `"${value}"@${literal.language}`;
+      return `"${value}"@${literal.language}${direction}`;
 
     // Write dedicated literals per data type
     if (this._lineMode) {
@@ -207,25 +215,30 @@ export default class N3Writer {
     return predicate.value === rdf.type ? 'a' : this._encodeTerm(predicate);
   }
 
-  // ### `_encodeTerm` represents a term
-  _encodeTerm(object) {
-    switch (object.termType) {
+  // ### `_encodeObject` represents an object
+  _encodeObject(object) {
+    return this._encodeTerm(object);
+  }
+
+  // ### `_encodeTerm` represents an arbitrary term
+  _encodeTerm(term) {
+    switch (term.termType) {
     case 'Quad':
-      return this._encodeQuad(object);
+      return this._encodeQuad(term);
     case 'Literal':
-      return this._encodeLiteral(object);
+      return this._encodeLiteral(term);
     default:
-      return this._encodeIriOrBlank(object);
+      return this._encodeIriOrBlank(term);
     }
   }
 
-  // ### `_encodeQuad` encodes an RDF* quad
+  // ### `_encodeQuad` encodes an RDF-star quad
   _encodeQuad({ subject, predicate, object, graph }) {
-    return `<<${
-      this._encodeTerm(subject)} ${
+    return `<<(${
+      this._encodeSubject(subject)} ${
       this._encodePredicate(predicate)} ${
-      this._encodeTerm(object)}${
-      isDefaultGraph(graph) ? '' : ` ${this._encodeIriOrBlank(graph)}`}>>`;
+      this._encodeObject(object)}${
+      isDefaultGraph(graph) ? '' : ` ${this._encodeIriOrBlank(graph)}`})>>`;
   }
 
   // ### `_blockedWrite` replaces `_write` after the writer has been closed
@@ -290,7 +303,7 @@ export default class N3Writer {
       }
       IRIlist = escapeRegex(IRIlist, /[\]\/\(\)\*\+\?\.\\\$]/g, '\\$&');
       this._prefixRegex = new RegExp(`^(?:${prefixList})[^\/]*$|` +
-                                     `^(${IRIlist})([_a-zA-Z][\\-_a-zA-Z0-9]*)$`);
+                                     `^(${IRIlist})([_a-zA-Z0-9][\\-_a-zA-Z0-9]*)$`);
     }
     // End a prefix block with a newline
     this._write(hasPrefixes ? '\n' : '', done);
@@ -318,7 +331,7 @@ export default class N3Writer {
       child = children[0];
       if (!(child.object instanceof SerializedTerm))
         return new SerializedTerm(`[ ${this._encodePredicate(child.predicate)} ${
-                                  this._encodeTerm(child.object)} ]`);
+                                  this._encodeObject(child.object)} ]`);
     // Generate a multi-triple or nested blank node
     default:
       let contents = '[';
@@ -327,12 +340,12 @@ export default class N3Writer {
         child = children[i];
         // Write only the object is the predicate is the same as the previous
         if (child.predicate.equals(predicate))
-          contents += `, ${this._encodeTerm(child.object)}`;
+          contents += `, ${this._encodeObject(child.object)}`;
         // Otherwise, write the predicate and the object
         else {
           contents += `${(i ? ';\n  ' : '\n  ') +
                       this._encodePredicate(child.predicate)} ${
-                      this._encodeTerm(child.object)}`;
+                      this._encodeObject(child.object)}`;
           predicate = child.predicate;
         }
       }
@@ -344,7 +357,7 @@ export default class N3Writer {
   list(elements) {
     const length = elements && elements.length || 0, contents = new Array(length);
     for (let i = 0; i < length; i++)
-      contents[i] = this._encodeTerm(elements[i]);
+      contents[i] = this._encodeObject(elements[i]);
     return new SerializedTerm(`(${contents.join(' ')})`);
   }
 
@@ -386,8 +399,4 @@ function characterReplacer(character) {
     }
   }
   return result;
-}
-
-function escapeRegex(regex) {
-  return regex.replace(/[\]\/\(\)\*\+\?\.\\\$]/g, '\\$&');
 }

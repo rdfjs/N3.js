@@ -1,59 +1,98 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+    - main
+  pull_request:
 
 jobs:
+  build:
+    # Build once on an LTS-class Node. babel 8's CLI build (@babel/code-frame ->
+    # util.styleText) requires Node >= 20.12, and the resulting CJS lib/ +
+    # browser bundle is downleveled, so it runs everywhere. Every other job
+    # consumes this artifact instead of rebuilding.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: build
+          path: |
+            lib
+            browser
+          retention-days: 1
+
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        node-version:
-          - 12.x
-          - 14.x
-          - 16.x
-          - 18.x
+        # babel-jest require()s @babel/core, which is ESM in babel 8, so it needs
+        # Node >= 20.19; jest 30 additionally needs Node >= 18.14. The full jest
+        # suite transforms src/ via babel-jest at runtime, so it can only run on
+        # Node 20.19+. Node 18 is covered by the spec jobs.
+        node-version: [20.x, 22.x, 24.x, 26.x]
     steps:
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
-      - uses: actions/checkout@v2
+      - run: npm ci --ignore-scripts
+      - run: npm run test
+
+  spec:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [18.x, 20.x, 22.x, 24.x, 26.x]
+        spec: [1-1-turtle, 1-1-ntriples, 1-1-nquads, 1-1-trig, 1-2-turtle, 1-2-ntriples, 1-2-nquads, 1-2-trig]
+    needs: build
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm ci --ignore-scripts
+      # Do not rebuild: the babel CLI build crashes on Node 18. spec/parser.js
+      # does require('..') -> the built CJS lib/, so the downloaded artifact is
+      # exactly what it needs.
+      - uses: actions/download-artifact@v8
+        with:
+          name: build
+      - run: npm run spec-${{ matrix.spec }}
+
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [24.x]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
       - run: npm ci --ignore-scripts
       - run: npm run build
       - run: npm run lint
-      - run: npm run test
-      - run: npm run spec-turtle
-      - run: npm run spec-ntriples
-      - run: npm run spec-nquads
-      - run: npm run spec-trig
-      - run: npx nyc report --reporter=text-lcov > lcov.info
-      - uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.github_token }}
-          flag-name: run-${{ matrix.node-version }}
-          parallel: true
-          path-to-lcov: lcov.info
-
-  coveralls:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Consolidate test coverage from different jobs
-        uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.github_token }}
-          parallel-finished: true
 
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
-          node-version: 14.x
+          node-version: 24.x
       - run: npm ci --ignore-scripts
       - run: npm run docs
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v7
         with:
           name: docs
           path: |
@@ -61,17 +100,59 @@ jobs:
             docs
           retention-days: 1
 
+  summary:
+    # Summary job that can be used as a single required check in branch protection
+    if: always()
+    needs:
+      - build
+      - test
+      - spec
+      - lint
+      - docs
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Decide whether all required jobs succeeded or failed
+        uses: re-actors/alls-green@release/v1
+        with:
+          jobs: ${{ toJSON(needs) }}
+
   gh-pages:
     needs:
-      - docs
+      - build
       - test
+      - spec
+      - docs
+      - lint
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v8
         with:
           name: docs
-      - uses: peaceiris/actions-gh-pages@v3
+      - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: .
+
+  release:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    needs: [ test, spec ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+      - run: npm ci
+      - run: npm run build
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: npx semantic-release@25
