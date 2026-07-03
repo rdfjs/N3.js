@@ -1,6 +1,6 @@
 // **N3Writer** writes N3 documents.
 import namespaces from './IRIs';
-import { default as N3DataFactory, Term } from './N3DataFactory';
+import { default as N3DataFactory, Term, Literal, NamedNode } from './N3DataFactory';
 import { isDefaultGraph } from './N3Util';
 import BaseIRI from './BaseIRI';
 import { escapeRegex } from './Util';
@@ -167,25 +167,57 @@ export default class N3Writer {
 
   // ### `_encodeLiteral` represents a literal
   _encodeLiteral(literal) {
+    let value, language, direction, datatype, datatypeTerm;
+    // Obtain the components of a literal of this library
+    // through a single scan of its internal id,
+    // rather than through its getters, which each rescan the id
+    if (literal instanceof Literal) {
+      const id = literal.id, endQuote = id.lastIndexOf('"'), next = id[endQuote + 1];
+      value = id.substring(1, endQuote);
+      // A language-tagged literal (e.g., '"abc"@en-us--ltr')
+      if (next === '@') {
+        const atPos = endQuote + 2, dirPos = id.lastIndexOf('--');
+        language = (dirPos > atPos ? id.substring(atPos, dirPos) : id.substr(atPos)).toLowerCase();
+        direction = dirPos > endQuote && dirPos + 2 < id.length ? id.substr(dirPos + 2).toLowerCase() : '';
+        // An empty language tag implies the id ends at the "@",
+        // so no direction can follow, and the datatype is rdf:langString
+        if (!language)
+          datatype = rdf.langString;
+      }
+      // A datatyped literal (e.g., '"abc"^^http://ex.org/types#t') or a plain string
+      else {
+        language = '';
+        datatype = next === '^' ? id.substr(endQuote + 3) : xsd.string;
+      }
+    }
+    // Obtain the components of other literals through the RDF/JS interface
+    else {
+      value = literal.value;
+      language = literal.language;
+      direction = literal.direction;
+      if (!language) {
+        datatypeTerm = literal.datatype;
+        datatype = datatypeTerm.value;
+      }
+    }
+
     // Escape special characters
-    let value = literal.value;
     if (escape.test(value))
       value = value.replace(escapeAll, characterReplacer);
 
     // Write a language-tagged literal
-    const direction = literal.direction ? `--${literal.direction}` : '';
-    if (literal.language)
-      return `"${value}"@${literal.language}${direction}`;
+    if (language)
+      return `"${value}"@${language}${direction ? `--${direction}` : ''}`;
 
     // Write dedicated literals per data type
     if (this._lineMode) {
       // Only abbreviate strings in N-Triples or N-Quads
-      if (literal.datatype.value === xsd.string)
+      if (datatype === xsd.string)
         return `"${value}"`;
     }
     else {
       // Use common datatype abbreviations in Turtle or TriG
-      switch (literal.datatype.value) {
+      switch (datatype) {
       case xsd.string:
         return `"${value}"`;
       case xsd.boolean:
@@ -208,7 +240,7 @@ export default class N3Writer {
     }
 
     // Write a regular datatyped literal
-    return `"${value}"^^${this._encodeIriOrBlank(literal.datatype)}`;
+    return `"${value}"^^${this._encodeIriOrBlank(datatypeTerm || new NamedNode(datatype))}`;
   }
 
   // ### `_encodePredicate` represents a predicate
