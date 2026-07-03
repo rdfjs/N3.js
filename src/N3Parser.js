@@ -642,9 +642,7 @@ export default class N3Parser {
 
   // ### `_completeLiteral` completes a literal with an optional datatype or language
   _completeLiteral(token, component) {
-    // Create a simple string literal by default
-    let literal = this._factory.literal(this._literalValue);
-    let readCb;
+    let literal, readCb;
 
     switch (token.type) {
     // Create a datatyped literal
@@ -667,6 +665,9 @@ export default class N3Parser {
       token = null;
       readCb = this._readDirCode.bind(this, component);
       break;
+    // Create a simple string literal by default
+    default:
+      literal = this._factory.literal(this._literalValue);
     }
 
     return { token, literal, readCb };
