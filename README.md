@@ -229,6 +229,12 @@ To write N-Triples (or N-Quads) instead, pass a `format` argument upon creation
 const writer1 = new N3.Writer({ format: 'N-Triples' });
 const writer2 = new N3.Writer({ format: 'application/trig' });
 ```
+To control how quads in a named graph are handled, pass a `graphs` argument upon creation:
+```JavaScript
+const writer3 = new N3.Writer({ graphs: 'keep' });   // Write the graph name (default)
+const writer4 = new N3.Writer({ graphs: 'ignore' }); // Write the triple without its graph name
+const writer5 = new N3.Writer({ graphs: 'error' });  // Emit an error on quads in a named graph
+```
 
 ### From quads to an RDF stream
 
