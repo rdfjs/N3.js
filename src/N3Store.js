@@ -296,6 +296,19 @@ export default class N3Store {
     }
   }
 
+  // ### `_loopByKey0Deep` executes the callback on all keys of index 2
+  // for a certain entry in index 0, possibly repeating keys
+  _loopByKey0Deep(index0, key0, callback) {
+    let index1, index2, key1, key2;
+    if (index1 = index0[key0]) {
+      for (key1 in index1) {
+        index2 = index1[key1];
+        for (key2 in index2)
+          callback(key2);
+      }
+    }
+  }
+
   // ### `_countInIndex` counts matching quads in a three-layered index.
   // The index base is `index0` and the keys at each level are `key0`, `key1`, and `key2`.
   // Any of these keys can be undefined, which is interpreted as a wildcard.
@@ -719,8 +732,10 @@ export default class N3Store {
             // If subject and predicate are given, the SPO index is best.
             this._loopBy2Keys(content.subjects, subjectId, predicateId, callback);
           else
-            // If only subject is given, the OSP index is best.
-            this._loopByKey1(content.objects, subjectId, callback);
+            // If only subject is given, descending the SPO index
+            // visits only the subject's own quads,
+            // instead of probing every distinct object in the graph.
+            this._loopByKey0Deep(content.subjects, subjectId, callback);
         }
         else if (predicateId)
           // If only predicate is given, the POS index is best.

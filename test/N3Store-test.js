@@ -1645,6 +1645,30 @@ describe('Store', () => {
     });
   });
 
+  describe('A Store with an object recurring under multiple predicates', () => {
+    const store = new Store([
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
+      new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o1')),
+      new Quad(new NamedNode('s2'), new NamedNode('p1'), new NamedNode('o1')),
+    ]);
+
+    describe('getObjects with only the subject given', () => {
+      it('should return each matching object exactly once', () => {
+        const result = store.getObjects(new NamedNode('s1'), null, null);
+        expect(result).toHaveLength(2);
+        expect(result).toEqual(expect.arrayContaining(
+          [new NamedNode('o1'), new NamedNode('o2')]));
+      });
+    });
+
+    describe('getObjects with a term that is not a subject', () => {
+      it('should be empty', () => {
+        expect(store.getObjects(new NamedNode('o1'), null, null)).toHaveLength(0);
+      });
+    });
+  });
+
   describe('A Store containing a blank node', () => {
     const store = new Store();
     const b1 = store.createBlankNode();
