@@ -389,7 +389,13 @@ function literal(value, languageOrDataType) {
     // Convert an integer or double
     else if (typeof value === 'number') {
       if (Number.isFinite(value))
-        datatype = Number.isInteger(value) ? xsd.integer : xsd.double;
+        // Tag as xsd:integer only when the number provably denotes that exact
+        // integer. Beyond 2^53, a JS number can no longer represent every
+        // integer (9007199254740993 silently becomes ...992), and from 1e21
+        // upward its string form turns exponential ("1e+21"), which is not a
+        // valid xsd:integer lexical. In both cases xsd:double, the datatype
+        // matching the IEEE 754 value space, is the faithful typing.
+        datatype = Number.isSafeInteger(value) ? xsd.integer : xsd.double;
       else {
         datatype = xsd.double;
         if (!Number.isNaN(value))
