@@ -101,8 +101,8 @@ describe('Lexer', () => {
 
     it(
       'should tokenize an IRI with eight-digit unicode escapes',
-      shouldTokenize('<http://a.example/\\U00000073\\U00A00073>',
-                     { type: 'IRI', value: 'http://a.example/s\uffc0\udc73', line: 1 },
+      shouldTokenize('<http://a.example/\\U00000073\\U0001F0A1>',
+                     { type: 'IRI', value: 'http://a.example/s\ud83c\udca1', line: 1 },
                      { type: 'eof', line: 1 }),
     );
 
@@ -386,6 +386,25 @@ describe('Lexer', () => {
     );
 
     it(
+      'should not tokenize a literal with an 8-digit unicode escape beyond U+10FFFF',
+      shouldNotTokenize('"\\U00110000" ',
+                        'Unexpected ""\\U00110000"" on line 1.'),
+    );
+
+    it(
+      'should not tokenize an IRI with an 8-digit unicode escape beyond U+10FFFF',
+      shouldNotTokenize('<urn:\\U00110000>',
+                        'Unexpected "<urn:\\U00110000>" on line 1.'),
+    );
+
+    it(
+      'should tokenize a literal with the highest valid 8-digit unicode escape',
+      shouldTokenize('"\\U0010FFFF" ',
+                     { type: 'literal', value: '\u{10FFFF}', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
       'should not tokenize a double-quoted string ending with an escaped quote',
       shouldNotTokenize('"abc\\"',
                         'Unexpected ""abc\\"" on line 1.'),
@@ -518,9 +537,9 @@ describe('Lexer', () => {
 
     it(
       'should tokenize a single-quoted string with escape characters',
-      shouldTokenize("'\\\\ \\\" \\' \\n \\r \\t \\ua1b2' \n '''\\\\ \\\" \\' \\n \\r \\t \\U0020a1b2'''",
+      shouldTokenize("'\\\\ \\\" \\' \\n \\r \\t \\ua1b2' \n '''\\\\ \\\" \\' \\n \\r \\t \\U0001F0A1'''",
                      { type: 'literal', value: '\\ " \' \n \r \t \ua1b2', line: 1 },
-                     { type: 'literal', value: '\\ " \' \n \r \t \udfe8\uddb2', line: 2 },
+                     { type: 'literal', value: '\\ " \' \n \r \t \ud83c\udca1', line: 2 },
                      { type: 'eof', line: 2 }),
     );
 

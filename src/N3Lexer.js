@@ -434,7 +434,8 @@ export default class N3Lexer {
       // 8-digit unicode character
       if (typeof unicode8 === 'string') {
         let charCode = Number.parseInt(unicode8, 16);
-        if (isSurrogateCodePoint(charCode)) {
+        // Reject code points beyond U+10FFFF, which are not Unicode scalar values
+        if (charCode > 0x10FFFF || isSurrogateCodePoint(charCode)) {
           invalid = true;
           return '';
         }
