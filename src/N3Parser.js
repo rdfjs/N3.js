@@ -77,7 +77,7 @@ export default class N3Parser {
   _saveContext(type, graph, subject, predicate, object) {
     // The inverse/blankPrefix/quantified fields only apply to N3 streams.
     // For non-N3 modes (Turtle/TriG/N-Triples/N-Quads) they are always
-    // false/''/null, so push a lean 5-field context object instead (OPT-27).
+    // false/''/null, so push a lean 5-field context object instead.
     // A parser instance has a fixed mode, so only one shape is ever pushed
     // per instance and `_restoreContext` stays monomorphic.
     if (!this._n3Mode) {
@@ -574,7 +574,7 @@ export default class N3Parser {
   // ### `_completeLiteral` completes a literal with an optional datatype or language
   // When the literal is a language-tagged string, a directional language tag may
   // still follow, so completion is deferred to `_readDirCode`. Rather than binding
-  // a fresh callback per literal (OPT-26), the deferral is signalled by `readCb`
+  // a fresh callback per literal, the deferral is signalled by `readCb`
   // and the relevant state (`component`/`listItem`) is stored on the instance,
   // read back by the fixed `_readDirCode` method.
   _completeLiteral(token, component) {
