@@ -26,7 +26,7 @@ export default class N3Reasoner {
     cb(c);
   }
 
-  // OPT-43: invoked once per fully-bound match; pulled out of _evaluatePremise so the
+  // Invoked once per fully-bound match; pulled out of _evaluatePremise so the
   // hot loop no longer allocates a fresh callback closure per match.
   _emit(rule, content, cb) {
     const conclusion = rule.conclusion;
@@ -36,14 +36,14 @@ export default class N3Reasoner {
     }
   }
 
-  // OPT-16: at each of the three premise levels, when the variable is bound we do a
+  // At each of the three premise levels, when the variable is bound we do a
   // direct index lookup instead of allocating a single-key `{ [value]: index[value] }`
   // object purely to drive a for-in that only ever runs once. The unbound case still
   // iterates every key of the index. for-in yields string keys and `index[value]`
   // coerces a numeric `value` to string, so the lookups are identical; the
   // `val.value = Number(value)` reconstruction (unbound only) and the truthiness guards
   // are preserved exactly.
-  // OPT-43: conclusion emission is delegated to _emit (a method, not a fresh closure per
+  // Conclusion emission is delegated to _emit (a method, not a fresh closure per
   // match), preserving the cb(c) signalling protocol that drives the fixpoint loop.
   _evaluatePremise(rule, content, cb, i = 0) {
     let value, index1;
@@ -123,7 +123,7 @@ export default class N3Reasoner {
         });
     }
 
-    // OPT-43: indexed loop + pass (c, addRule) through _add instead of allocating a fresh
+    // Indexed loop + pass (c, addRule) through _add instead of allocating a fresh
     // `() => addRule(c)` closure per conclusion. _add invokes cb(c) on a confirmed insert,
     // preserving the original addRule(c) signalling.
     const addConclusions = conclusion => {
@@ -216,7 +216,7 @@ export default class N3Reasoner {
                 basePremise: p,
               });
             }
-            // OPT-43: indexed loop instead of a fresh forEach callback per (r1, r2, i, c).
+            // Indexed loop instead of a fresh forEach callback per (r1, r2, i, c).
             for (let k = 0; k < r2.variables.length; k++) r2.variables[k].value = null;
           }
         }
