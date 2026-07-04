@@ -341,6 +341,15 @@ describe('Lexer', () => {
                      { type: 'eof', line: 4 }),
     );
 
+    it('should tokenize a triple quoted string literal on a lexer reused after an unterminated literal', () => {
+      const lexer = new Lexer();
+      expect(() => lexer.tokenize('"""abcdefghijklmnop')).toThrow('Unexpected """"abcdefghijklmnop" on line 1.');
+      const tokens = lexer.tokenize('"""hi""" ');
+      expect(tokens).toHaveLength(2);
+      expect(tokens[0]).toMatchObject({ type: 'literal', value: 'hi', line: 1 });
+      expect(tokens[1]).toMatchObject({ type: 'eof', line: 1 });
+    });
+
     it(
       'should tokenize a string with escape characters',
       shouldTokenize('"\\\\ \\\' \\" \\n \\r \\t \\ua1b2" \n """\\\\ \\\' \\" \\n \\r \\t \\U0000a1b2"""',
@@ -463,6 +472,9 @@ describe('Lexer', () => {
 
     it('should not tokenize a direction in uppercase', shouldNotTokenize('"string"@en--LTR',
         'Unexpected "--LTR" on line 1.'));
+
+    it('should not tokenize an invalid direction when "rtl" occurs later in the input', shouldNotTokenize('"string"@en--unk # rtl\n',
+        'Unexpected "--unk" on line 1.'));
 
     it(
       'should tokenize a quoted string literal with type',
