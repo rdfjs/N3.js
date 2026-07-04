@@ -1083,6 +1083,12 @@ export default class N3Parser {
 
   // ### `_error` emits an error message through the callback
   _error(message, token) {
+    // Some messages interpolate input-derived content (e.g. a multi-MB IRI or
+    // literal), so bound the message to keep a single crafted token from
+    // producing an unbounded error string (CWE-209 / CWE-770). The full token
+    // remains available, opt-in, on `err.context.token`.
+    if (message.length > 200)
+      message = `${message.slice(0, 200)}…`;
     const err = new Error(`${message} on line ${token.line}.`);
     err.context = {
       token: token,
