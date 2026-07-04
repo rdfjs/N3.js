@@ -11,6 +11,17 @@ let _blankNodeCounter = 0;
 
 const escapedLiteral = /^"(.*".*)(?="[^"]*$)/;
 
+// ### Caches the value of a getter as an own property of the term,
+// so subsequent accesses no longer rescan its id.
+// The property is non-enumerable, keeping it invisible
+// to deep-equality checks and object spreads,
+// and non-extensible (e.g., frozen) terms are left untouched.
+function cached(term, getter, value) {
+  if (Object.isExtensible(term))
+    Object.defineProperty(term, getter, { value });
+  return value;
+}
+
 // ## DataFactory singleton
 const DataFactory = {
   namedNode,
@@ -80,7 +91,7 @@ export class Literal extends Term {
 
   // ### The text value of this literal
   get value() {
-    return this.id.substring(1, this.id.lastIndexOf('"'));
+    return cached(this, 'value', this.id.substring(1, this.id.lastIndexOf('"')));
   }
 
   // ### The language of this literal
@@ -90,7 +101,7 @@ export class Literal extends Term {
     let atPos = id.lastIndexOf('"') + 1;
     const dirPos = id.lastIndexOf('--');
     // If "@" it follows, return the remaining substring; empty otherwise
-    return atPos < id.length && id[atPos++] === '@' ? (dirPos > atPos ? id.substr(0, dirPos) : id).substr(atPos).toLowerCase() : '';
+    return cached(this, 'language', atPos < id.length && id[atPos++] === '@' ? (dirPos > atPos ? id.substr(0, dirPos) : id).substr(atPos).toLowerCase() : '');
   }
 
   // ### The direction of this literal
@@ -99,12 +110,12 @@ export class Literal extends Term {
     const id = this.id;
     const endPos = id.lastIndexOf('"');
     const dirPos = id.lastIndexOf('--');
-    return dirPos > endPos && dirPos + 2 < id.length ? id.substr(dirPos + 2).toLowerCase() : '';
+    return cached(this, 'direction', dirPos > endPos && dirPos + 2 < id.length ? id.substr(dirPos + 2).toLowerCase() : '');
   }
 
   // ### The datatype IRI of this literal
   get datatype() {
-    return new NamedNode(this.datatypeString);
+    return cached(this, 'datatype', new NamedNode(this.datatypeString));
   }
 
   // ### The datatype string of this literal
