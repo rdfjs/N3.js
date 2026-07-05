@@ -9,13 +9,29 @@ const DEFAULTGRAPH = N3DataFactory.defaultGraph();
 
 const { rdf, xsd } = namespaces;
 
-// Characters in literals that require escaping
-const escape    = /["\\\t\n\r\b\f\u0000-\u0019\ud800-\udbff]/,
-    escapeAll = /["\\\t\n\r\b\f\u0000-\u0019]|[\ud800-\udbff][\udc00-\udfff]/g,
+// Characters in literals that require escaping: the full C0 control range
+// U+0000-U+001F (which includes \t \n \r \b \f) plus DEL and the C1 control
+// range U+007F-U+009F, as well as the quote and backslash. Escaping the full
+// control ranges (not only the low U+0000-U+0019 subset) keeps raw ESC / DEL /
+// CSI / C1 bytes -- a terminal-escape smuggling vector -- out of literals.
+const escape    = /["\\\t\n\r\b\f\u0000-\u001f\u007f-\u009f\ud800-\udbff]/,
+    escapeAll = /["\\\t\n\r\b\f\u0000-\u001f\u007f-\u009f]|[\ud800-\udbff][\udc00-\udfff]/g,
     escapedCharacters = {
       '\\': '\\\\', '"': '\\"', '\t': '\\t',
       '\n': '\\n', '\r': '\\r', '\b': '\\b', '\f': '\\f',
     };
+
+// Characters in IRIs that require escaping. The Turtle / N-Triples IRIREF
+// grammar permits inside <...> only the set  [^#x00-#x20<>"{}|^`\]
+// together with UCHAR numeric escapes; there is NO \n / \t / \" -style
+// ECHAR in an IRIREF. So the control-or-space range U+0000-U+0020 and each of
+// the symbols  < > " { } | ^ ` (backtick) \  must be written as a
+// UCHAR escape (\uXXXX / \UXXXXXXXX). Without this a NamedNode value
+// carrying a > (or a newline, space, ...) closes its own <...> early and
+// injects attacker-controlled triples (RDF-injection). Astral characters and
+// lone surrogates are escaped too, so no raw such code unit reaches the output.
+const escapeIri    = /[\u0000-\u0020<>"{}|^`\\]|[\ud800-\udbff][\udc00-\udfff]|[\ud800-\udfff]/,
+    escapeIriAll = /[\u0000-\u0020<>"{}|^`\\]|[\ud800-\udbff][\udc00-\udfff]|[\ud800-\udfff]/g;
 
 // ## Placeholder class to represent already pretty-printed terms
 class SerializedTerm extends Term {
@@ -158,9 +174,10 @@ export default class N3Writer {
     if (this._baseIri) {
       iri = this._baseIri.toRelative(iri);
     }
-    // Escape special characters
-    if (escape.test(iri))
-      iri = iri.replace(escapeAll, characterReplacer);
+    // Escape IRIREF-forbidden characters so a term value cannot break out of
+    // its angle brackets and inject forged triples (RDF-injection)
+    if (escapeIri.test(iri))
+      iri = iri.replace(escapeIriAll, iriCharacterReplacer);
     // Try to represent the IRI as prefixed name
     const prefixMatch = this._prefixRegex.exec(iri);
     return !prefixMatch ? `<${iri}>` :
@@ -288,9 +305,12 @@ export default class N3Writer {
         this._write(this._inDefaultGraph ? '.\n' : '\n}\n');
         this._subject = null, this._graph = '';
       }
-      // Store and write the prefix
+      // Store and write the prefix (escaping the written IRI so a hostile
+      // prefix target cannot break out of its angle brackets)
       this._prefixIRIs[iri] = (prefix += ':');
-      this._write(`@prefix ${prefix} <${iri}>.\n`);
+      const escapedIri = escapeIri.test(iri) ?
+        iri.replace(escapeIriAll, iriCharacterReplacer) : iri;
+      this._write(`@prefix ${prefix} <${escapedIri}>.\n`);
     }
     // Recreate the prefix matcher
     if (hasPrefixes) {
@@ -397,4 +417,19 @@ function characterReplacer(character) {
     }
   }
   return result;
+}
+
+// Replaces an IRI character by its UCHAR escape (\uXXXX / \UXXXXXXXX).
+// Unlike characterReplacer it never emits an ECHAR: the IRIREF grammar permits
+// only UCHAR escapes, so a quote becomes \u0022 and a backslash \u005c.
+function iriCharacterReplacer(character) {
+  // Replace a single (BMP) character with its 4-hex-digit unicode escape
+  if (character.length === 1) {
+    const code = character.charCodeAt(0).toString(16);
+    return '\\u0000'.substr(0, 6 - code.length) + code;
+  }
+  // Replace a surrogate pair with its 8-hex-digit unicode escape
+  const code = ((character.charCodeAt(0) - 0xD800) * 0x400 +
+                 character.charCodeAt(1) + 0x2400).toString(16);
+  return '\\U00000000'.substr(0, 10 - code.length) + code;
 }

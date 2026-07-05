@@ -5685,6 +5685,154 @@ describe('Writer', () => {
   });
 });
 
+// Regression tests for https://github.com/rdfjs/N3.js/issues/659 :
+// the Writer must escape IRIREF-forbidden characters (so a hostile term value
+// cannot break out of `<...>` and inject forged triples) and must escape the
+// full C0 + DEL + C1 control ranges in literals. `BS` is a single backslash
+// obtained via `String.fromCharCode` so the test source itself stays free of
+// backslash / control literals.
+describe('Writer term-serialisation safety (#659)', () => {
+  const BS = String.fromCharCode(92);
+  const NL = String.fromCharCode(10);
+
+  function uEscape(codePoint) {
+    return `${BS}u${codePoint.toString(16).padStart(4, '0')}`;
+  }
+
+  const hostileIri =
+    'http://evil.example/o> . <http://victim.example/alice> ' +
+    '<http://xmlns.com/foaf/0.1/knows> <http://attacker.example/mallory';
+
+  it('does not let a hostile object IRI break out and inject a second quad', () => {
+    const writer = new Writer({ format: 'text/turtle' });
+    writer.addQuad(new Quad(
+      new NamedNode('http://example.org/s'),
+      new NamedNode('http://example.org/p'),
+      new NamedNode(hostileIri),
+    ));
+    let out;
+    writer.end((error, result) => { out = result; });
+
+    // The IRIREF-forbidden characters are UCHAR-escaped, so the value stays a
+    // single <...> token and cannot close its own angle brackets.
+    expect(out).not.toContain('o> . <');
+    expect(out).toContain(`o${uEscape(0x3e)}${uEscape(0x20)}.${uEscape(0x20)}${uEscape(0x3c)}http`);
+
+    // Before the fix this re-parsed as TWO quads (the forged foaf:knows). Now
+    // parsing never yields the injected quad: N3 rejects the invalid decoded IRI
+    // (-> null here), and even a lenient parser could at most recover the single
+    // original quad.
+    let quads;
+    try { quads = new Parser().parse(out); }
+    catch (error) { quads = null; }
+    const predicates = quads === null ? [] : quads.map(q => q.predicate.value);
+    expect(predicates).not.toContain('http://xmlns.com/foaf/0.1/knows');
+    expect(quads === null || (quads.length === 1 && quads[0].object.value === hostileIri)).toBe(true);
+  });
+
+  it('escapes a newline injected into an IRI so it cannot start a new statement', () => {
+    const injected = `http://ex/a${NL}<http://ex/s2> <http://ex/p2> <http://ex/o2> .${NL}b`;
+    const writer = new Writer();
+    const out = writer.quadToString(
+      new NamedNode(injected),
+      new NamedNode('http://ex/p'),
+      new NamedNode('http://ex/o'),
+    );
+    expect(out).not.toContain(`${NL}<http://ex/s2>`);
+    expect(out).toContain(uEscape(0x0a));
+    let quads;
+    try { quads = new Parser().parse(out); }
+    catch (error) { quads = null; }
+    const subjects = quads === null ? [] : quads.map(q => q.subject.value);
+    expect(subjects).not.toContain('http://ex/s2');
+    expect(quads === null || (quads.length === 1 && quads[0].subject.value === injected)).toBe(true);
+  });
+
+  it('escapes every IRIREF-forbidden character as a UCHAR', () => {
+    const forbidden = [
+      0x3c, 0x3e, 0x22, 0x7b, 0x7d, 0x7c, 0x5e, 0x60, 0x5c, // < > " { } | ^ ` \
+      0x20, 0x09, 0x0a, 0x0d, 0x00, 0x1f,                   // space tab nl cr NUL US
+    ];
+    for (const codePoint of forbidden) {
+      const raw = String.fromCharCode(codePoint);
+      const writer = new Writer();
+      const out = writer.quadToString(
+        new NamedNode(`http://ex/a${raw}b`),
+        new NamedNode('http://ex/p'),
+        new NamedNode('http://ex/o'),
+      );
+      // The escaped form is present and the raw form (a<raw>b) is not.
+      expect(out).toContain(`a${uEscape(codePoint)}b`);
+      expect(out).not.toContain(`a${raw}b`);
+    }
+  });
+
+  it('leaves valid IRIs byte-for-byte unchanged and round-trips them', () => {
+    const validIris = [
+      'http://example.org/foo',
+      'http://example.org/Ann%20Smith#me',
+      'http://example.org/a?b=c&d=e',
+      'https://xn--r8jz45g.example/path/to/thing',
+      'urn:uuid:0c2c0e0e-0000-4000-8000-000000000000',
+      'did:web:example.org',
+    ];
+    for (const iri of validIris) {
+      const writer = new Writer();
+      const out = writer.quadToString(
+        new NamedNode(iri), new NamedNode('http://ex/p'), new NamedNode('http://ex/o'),
+      );
+      expect(out).toBe(`<${iri}> <http://ex/p> <http://ex/o> .${NL}`);
+      const parsed = new Parser().parse(out);
+      expect(parsed).toHaveLength(1);
+      expect(parsed[0].subject.value).toBe(iri);
+    }
+  });
+
+  it('still writes astral characters in IRIs as 8-hex UCHAR escapes', () => {
+    const writer = new Writer();
+    const out = writer.quadToString(
+      new NamedNode('𝐀'),
+      new NamedNode('http://ex/p'),
+      new NamedNode('http://ex/o'),
+    );
+    expect(out).toContain(`${BS}U0001d400`);
+  });
+
+  it('escapes the full C0, DEL and C1 control ranges in literals and round-trips them', () => {
+    const codes = [
+      0x00, 0x07, 0x08, 0x09, 0x0a, 0x0d, 0x1a, 0x1b, 0x1f, // C0 (incl. the new 0x1a-0x1f)
+      0x7f, 0x80, 0x9b, 0x9f,                               // DEL + C1
+    ];
+    const payload = codes.map(c => String.fromCharCode(c)).join('|');
+    const writer = new Writer({ format: 'text/turtle' });
+    writer.addQuad(new Quad(
+      new NamedNode('http://ex/s'), new NamedNode('http://ex/p'), new Literal(`"${payload}"`),
+    ));
+    let out;
+    writer.end((error, result) => { out = result; });
+
+    // No raw control byte survives in the serialised literal body (strip the
+    // trailing ` .<newline>` statement terminator first).
+    const body = out.slice(0, out.length - 3);
+    for (const c of codes)
+      expect(body).not.toContain(String.fromCharCode(c));
+
+    // Round-trip: the escaped literal parses back to exactly the same value.
+    const parsed = new Parser().parse(out);
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0].object.value).toBe(payload);
+  });
+
+  it('escapes a hostile prefix IRI in the @prefix declaration', () => {
+    const hostilePrefix = `http://evil/> <http://ex/s> <http://ex/p> <http://ex/o> .${NL}`;
+    const writer = new Writer({ prefixes: { ex: hostilePrefix } });
+    let out;
+    writer.end((error, result) => { out = result; });
+    expect(out).not.toContain('> <http://ex/s>');
+    expect(out).toContain(uEscape(0x3e));
+  });
+});
+
 function shouldSerialize(/* prefixes?, tripleArrays..., expectedResult */) {
   const tripleArrays = Array.prototype.slice.call(arguments),
       expectedResult = tripleArrays.pop(),
