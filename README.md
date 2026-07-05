@@ -78,6 +78,16 @@ console.log(myQuad.object.datatype.value); // http://www.w3.org/1999/02/22-rdf-s
 console.log(myQuad.object.language);       // en
 ```
 
+Always create terms through a data factory such as `N3.DataFactory`,
+and not by instantiating the term classes directly:
+direct construction is deprecated,
+because the factory functions are where term validation can be applied.
+In line with the [RDF/JS specification](http://rdf.js.org/data-model-spec/),
+N3.js assumes that the value of any RDF/JS term it receives —
+whether from its own factory or from another implementation —
+was already validated when the term was created,
+and does not re-validate terms.
+
 In the rest of this document, we will treat “triples” and “quads” equally:
 we assume that a quad is simply a triple in a named or default graph.
 
