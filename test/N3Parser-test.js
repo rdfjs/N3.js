@@ -1,4 +1,4 @@
-import { Parser, NamedNode, BlankNode, Quad, termFromId, DataFactory as DF } from '../src';
+import { Lexer, Parser, NamedNode, BlankNode, Quad, termFromId, DataFactory as DF } from '../src';
 import rdfDataModel from '@rdfjs/data-model';
 import { isomorphic } from 'rdf-isomorphic';
 
@@ -3204,6 +3204,22 @@ describe('Parser', () => {
     function parserTermsOnly() { return new Parser({ baseIRI: BASE_IRI, validate: { terms: true } }); }
     function parserN3() { return new Parser({ format: 'text/n3', validate: true }); }
     function parserTerms11() { return new Parser({ validate: { terms: true }, version: '1.1' }); }
+    function parserSpacePrefix() { return new Parser({ validate: true, blankNodePrefix: 'has space' }); }
+    function parserSpacePrefixNoValidate() { return new Parser({ blankNodePrefix: 'has space' }); }
+    function parserBadDirLexer() { return new Parser({ validate: true, lexer: badDirLexer() }); }
+    function parserBadDirLexerNoValidate() { return new Parser({ lexer: badDirLexer() }); }
+    // Simulates a custom lexer that emits an ill-formed direction code
+    // (the built-in lexer only ever emits `ltr` or `rtl`)
+    function badDirLexer() {
+      const lexer = new Lexer();
+      const tokenize = lexer.tokenize.bind(lexer);
+      lexer.tokenize = (input, callback) => tokenize(input, (error, token) => {
+        if (token && token.type === 'dircode')
+          token.value = 'zzz';
+        callback(error, token);
+      });
+      return lexer;
+    }
     const xsd = 'PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n';
 
     it(
@@ -3246,6 +3262,24 @@ describe('Parser', () => {
       'should parse blank nodes',
       shouldParse(parser, '_:a <urn:a:p> [].',
                   ['_:b0_a', 'urn:a:p', '_:b0']),
+    );
+
+    it(
+      'should parse blank nodes with astral characters',
+      shouldParse(parser, '_:\u{10000}a <urn:a:p> _:b.',
+                  ['_:b0_\u{10000}a', 'urn:a:p', '_:b0_b']),
+    );
+
+    it(
+      'should not parse a blank node label made invalid by the blank node prefix',
+      shouldNotParse(parserSpacePrefix, '_:a <urn:a:p> <urn:a:o>.',
+                     'Invalid blank node label "has spacea" on line 1.'),
+    );
+
+    it(
+      'should not check blank node labels when validation is off',
+      shouldParse(parserSpacePrefixNoValidate, '_:a <urn:a:p> <urn:a:o>.',
+                  ['_:has spacea', 'urn:a:p', 'urn:a:o']),
     );
 
     it(
@@ -3359,9 +3393,36 @@ describe('Parser', () => {
     );
 
     it(
+      'should parse well-formed base directions',
+      shouldParse(parser, '<urn:a:s> <urn:a:p> "a"@en--ltr, "b"@ar--rtl.',
+                  ['urn:a:s', 'urn:a:p', '"a"@en--ltr'],
+                  ['urn:a:s', 'urn:a:p', '"b"@ar--rtl']),
+    );
+
+    it(
+      'should not parse an ill-formed base direction from a custom lexer',
+      shouldNotParse(parserBadDirLexer, '<urn:a:s> <urn:a:p> "x"@en--ltr.',
+                     'Invalid base direction "zzz" on line 1.'),
+    );
+
+    it(
+      'should not check base directions when validation is off',
+      shouldParse(parserBadDirLexerNoValidate, '<urn:a:s> <urn:a:p> "x"@en--ltr.',
+                  ['urn:a:s', 'urn:a:p', '"x"@en--zzz']),
+    );
+
+    it(
       'should parse N3 variables',
       shouldParse(parserN3, '@forAll <urn:a:x>. <urn:a:x> <urn:a:b> <urn:a:c>.',
                   ['?b0', 'urn:a:b', 'urn:a:c']),
+    );
+
+    it(
+      // N3 scopes labels with a dot-separated prefix, which term validation must accept
+      'should parse N3 blank nodes with scoped labels',
+      shouldParse(parserN3, '<urn:a:s> <urn:a:p> [ <urn:a:q> _:x ].',
+                  ['urn:a:s', 'urn:a:p', '_:b0'],
+                  ['_:b0', 'urn:a:q', '_:.x']),
     );
 
     it(

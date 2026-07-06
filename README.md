@@ -184,7 +184,11 @@ individual checks can be selected by passing an object instead:
 - `validate: { terms: true }` checks that IRIs
   (including those of prefix declarations)
   are absolute and match the `IRI` rule of [RFC 3987](https://www.rfc-editor.org/rfc/rfc3987),
+  that blank node labels match the `BLANK_NODE_LABEL` rule
+  (including labels formed with the `blankNodePrefix` option),
   that language tags are well-formed per [BCP 47](https://www.rfc-editor.org/rfc/rfc5646),
+  that the base direction of a directional language-tagged string
+  is either `ltr` or `rtl`,
   and that literal values of some common XSD datatypes
   (`xsd:boolean`, `xsd:integer`, `xsd:decimal`, `xsd:double`, `xsd:float`,
   `xsd:date`, `xsd:time`, and `xsd:dateTime`)

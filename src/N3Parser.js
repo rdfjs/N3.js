@@ -2,7 +2,8 @@
 import N3Lexer from './N3Lexer';
 import N3DataFactory from './N3DataFactory';
 import namespaces from './IRIs';
-import { isValidIRI, isValidLanguageTag, isValidDatatypeValue } from './Validation';
+import { isValidIRI, isValidBlankNodeLabel, isValidLanguageTag,
+         isValidBaseDirection, isValidDatatypeValue } from './Validation';
 
 let blankNodePrefix = 0;
 
@@ -49,6 +50,7 @@ export default class N3Parser {
     if (validate.terms) {
       this._readEntity = this._readValidEntity;
       this._completeLiteral = this._completeValidLiteral;
+      this._readDirCode = this._readValidDirCode;
     }
     const version = validate.version ? this._version : undefined;
     // RDF 1.2 constructs other than triple terms are only invalid in RDF 1.1
@@ -1095,12 +1097,30 @@ export default class N3Parser {
   }
 
   // ### `_readValidEntity` replaces `_readEntity` when term validation is enabled:
-  // it additionally checks the IRI of the entity against RFC 3987
+  // it additionally checks the IRI of the entity against RFC 3987,
+  // and blank node labels against the `BLANK_NODE_LABEL` rule
   _readValidEntity(token, quantifier) {
     const value = N3Parser.prototype._readEntity.call(this, token, quantifier);
-    if (value !== undefined && value.termType === 'NamedNode' && !isValidIRI(value.value))
-      return this._error(`Invalid IRI "${value.value}"`, token);
+    if (value !== undefined) {
+      if (value.termType === 'NamedNode' && !isValidIRI(value.value))
+        return this._error(`Invalid IRI "${value.value}"`, token);
+      if (value.termType === 'BlankNode') {
+        // In N3, labels carry a scope prefix with a dot separator by design,
+        // so only the label as written in the document is checked
+        const label = this._n3Mode ? token.value : value.value;
+        if (!isValidBlankNodeLabel(label))
+          return this._error(`Invalid blank node label "${label}"`, token);
+      }
+    }
     return value;
+  }
+
+  // ### `_readValidDirCode` replaces `_readDirCode` when term validation is enabled:
+  // it additionally checks the base direction of a directional language-tagged string
+  _readValidDirCode(component, listItem, token) {
+    if (token.type === 'dircode' && !isValidBaseDirection(token.value))
+      return this._error(`Invalid base direction "${token.value}"`, token);
+    return N3Parser.prototype._readDirCode.call(this, component, listItem, token);
   }
 
   // ### `_completeValidLiteral` replaces `_completeLiteral` when term validation is enabled:

@@ -1,4 +1,5 @@
-import { isValidIRI, isValidLanguageTag, isValidDatatypeValue } from '../src/Validation';
+import { isValidIRI, isValidBlankNodeLabel, isValidLanguageTag,
+         isValidBaseDirection, isValidDatatypeValue } from '../src/Validation';
 
 const XSD = 'http://www.w3.org/2001/XMLSchema#';
 
@@ -53,6 +54,43 @@ describe('Validation', () => {
     });
   });
 
+  describe('isValidBlankNodeLabel', () => {
+    it.each([
+      ['a'],
+      ['b0_a'],
+      ['0'],
+      ['_'],
+      ['9a'],
+      ['a.b.c'],
+      ['a-b\u00b7'],
+      ['\u00c0'],
+      ['a\u0300'],
+      ['\u{10000}a'],
+      ['a\u{2f800}'],
+    ])('accepts %s', label => {
+      expect(isValidBlankNodeLabel(label)).toBe(true);
+    });
+
+    it.each([
+      [''],
+      ['.a'],
+      ['a.'],
+      ['-a'],
+      ['\u0300a'],
+      ['a b'],
+      ['a\tb'],
+      ['a\nb'],
+      ['a<b'],
+      ['a>b'],
+      ['a\u0000b'],
+      ['a\u0007'],
+      ['a!b'],
+      ['\uffff'],
+    ])('rejects %s', label => {
+      expect(isValidBlankNodeLabel(label)).toBe(false);
+    });
+  });
+
   describe('isValidLanguageTag', () => {
     it.each([
       ['en'],
@@ -84,6 +122,27 @@ describe('Validation', () => {
       ['en-x'],
     ])('rejects %s', tag => {
       expect(isValidLanguageTag(tag)).toBe(false);
+    });
+  });
+
+  describe('isValidBaseDirection', () => {
+    it.each([
+      ['ltr'],
+      ['rtl'],
+    ])('accepts %s', direction => {
+      expect(isValidBaseDirection(direction)).toBe(true);
+    });
+
+    it.each([
+      [''],
+      ['LTR'],
+      ['auto'],
+      ['ltr '],
+      ['ltr\n'],
+      ['xltr'],
+      ['rtlx'],
+    ])('rejects %s', direction => {
+      expect(isValidBaseDirection(direction)).toBe(false);
     });
   });
 

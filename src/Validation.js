@@ -44,6 +44,16 @@ const IFRAGMENT = `(?:${IPCHAR}|[/?])*`;
 const IRI = new RegExp(
   `^[A-Za-z][A-Za-z0-9+.-]*:${IHIER_PART}(?:\\?${IQUERY})?(?:#${IFRAGMENT})?$`, 'u');
 
+// ### Blank node labels, following the `BLANK_NODE_LABEL` rule of Turtle
+// (shared by TriG, N-Triples, and N-Quads), without the `_:` prefix
+const PN_CHARS_BASE = 'A-Za-z\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02FF' +
+  '\\u0370-\\u037D\\u037F-\\u1FFF\\u200C\\u200D\\u2070-\\u218F' +
+  '\\u2C00-\\u2FEF\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD\\u{10000}-\\u{EFFFF}';
+const PN_CHARS_U = `${PN_CHARS_BASE}_`;
+const PN_CHARS = `${PN_CHARS_U}\\-0-9\\u00B7\\u0300-\\u036F\\u203F-\\u2040`;
+const BLANK_NODE_LABEL = new RegExp(
+  `^[${PN_CHARS_U}0-9](?:[${PN_CHARS}.]*[${PN_CHARS}])?$`, 'u');
+
 // ### Language tags, following the `Language-Tag` rule of RFC 5646 (BCP 47)
 const LANGUAGE_TAG = new RegExp(
   // langtag: language, script, region, variants, extensions, private use
@@ -57,6 +67,9 @@ const LANGUAGE_TAG = new RegExp(
   '|en-GB-oed|sgn-BE-FR|sgn-BE-NL|sgn-CH-DE' +
   '|i-(?:ami|bnn|default|enochian|hak|klingon|lur|mingo|navajo|pwn|tao|tay|tsu))$',
   'i');
+
+// ### Base directions of directional language-tagged strings, as per RDF 1.2
+const BASE_DIRECTION = /^(?:ltr|rtl)$/;
 
 // ### Lexical spaces of common XSD datatypes,
 // following the patterns of XML Schema Definition Language 1.1 Part 2
@@ -81,9 +94,21 @@ export function isValidIRI(iri) {
   return IRI.test(iri);
 }
 
+// Checks whether the given string (without the `_:` prefix)
+// is a well-formed blank node label as per the `BLANK_NODE_LABEL` rule
+export function isValidBlankNodeLabel(label) {
+  return BLANK_NODE_LABEL.test(label);
+}
+
 // Checks whether the given string is a well-formed language tag as per BCP 47
 export function isValidLanguageTag(tag) {
   return LANGUAGE_TAG.test(tag);
+}
+
+// Checks whether the given string is a valid base direction
+// of a directional language-tagged string
+export function isValidBaseDirection(direction) {
+  return BASE_DIRECTION.test(direction);
 }
 
 // Checks whether the given literal value is within the lexical space
