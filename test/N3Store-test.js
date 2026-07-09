@@ -2531,6 +2531,19 @@ describe('EntityIndex', () => {
       o5: 8,
     });
   });
+
+  it('should return terms equal to freshly created terms on repeated reads', () => {
+    const store = new Store([
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+    ], { entityIndex });
+    const first = store.getQuads(null, null, null, null);
+    expect(first).toEqual([new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'))]);
+
+    store.addQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2'));
+    const second = store.getQuads(null, null, new NamedNode('o1'), null);
+    expect(second).toEqual([new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'))]);
+    expect(second[0].equals(first[0])).toBe(true);
+  });
 });
 
 function alwaysTrue()  { return true;  }
