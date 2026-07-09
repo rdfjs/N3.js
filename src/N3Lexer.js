@@ -15,8 +15,9 @@ const escapeReplacements = {
 };
 const illegalIriChars = /[\x00-\x20<>\\"\{\}\|\^\`]/;
 
-function isSurrogateCodePoint(charCode) {
-  return charCode >= 0xD800 && charCode <= 0xDFFF;
+// A valid code point is a Unicode scalar value: at most U+10FFFF and not a surrogate
+function isValidCodePoint(charCode) {
+  return charCode <= 0x10FFFF && (charCode < 0xD800 || charCode > 0xDFFF);
 }
 
 const lineModeRegExps = {
@@ -425,7 +426,7 @@ export default class N3Lexer {
       // 4-digit unicode character
       if (typeof unicode4 === 'string') {
         const charCode = Number.parseInt(unicode4, 16);
-        if (isSurrogateCodePoint(charCode)) {
+        if (!isValidCodePoint(charCode)) {
           invalid = true;
           return '';
         }
@@ -434,8 +435,7 @@ export default class N3Lexer {
       // 8-digit unicode character
       if (typeof unicode8 === 'string') {
         let charCode = Number.parseInt(unicode8, 16);
-        // Reject code points beyond U+10FFFF, which are not Unicode scalar values
-        if (charCode > 0x10FFFF || isSurrogateCodePoint(charCode)) {
+        if (!isValidCodePoint(charCode)) {
           invalid = true;
           return '';
         }
