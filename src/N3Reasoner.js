@@ -16,14 +16,9 @@ export function getRulesFromDataset(dataset) {
 export default class N3Reasoner {
   constructor(store, options = {}) {
     this._store = store;
-    // Optional safety budgets for reasoning over rules and data that are not
-    // fully trusted. Naive forward chaining is super-linear: a transitive-closure
-    // rule over a chain of n edges derives O(n^2) quads in ~O(n^3) time, so a
-    // small input can exhaust CPU and memory. Both budgets default to unbounded
-    // for compatibility; `reason()` throws when a budget is exceeded.
+    // Optional safety budgets for reasoning over untrusted rules or data
     this._maxDerivations = options.maxDerivations === undefined ? Infinity : options.maxDerivations;
-    // `_evaluatePremise` recurses once per premise of a rule, so a single rule
-    // with very many body triples can overflow the stack. Bound the premise count.
+    // Caps a rule's premise count, as `_evaluatePremise` recurses once per premise
     this._maxPremiseDepth = options.maxPremiseDepth === undefined ? Infinity : options.maxPremiseDepth;
   }
 

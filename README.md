@@ -411,6 +411,23 @@ reasoner.reason(rulesDataset);
 
 **Note**: N3.js currently only supports rules with [Basic Graph Patterns](https://www.w3.org/TR/sparql11-query/#BasicGraphPattern) in the premise and conclusion. Built-ins and backward-chaining are *not* supported. For an RDF/JS reasoner that supports all Notation3 reasoning features, see [eye-js](https://github.com/eyereasoner/eye-js/).
 
+### Limiting reasoning cost
+
+When reasoning over rules or data that are not fully trusted,
+optional budgets bound the work `reason()` may perform:
+
+```JavaScript
+const reasoner = new Reasoner(store, {
+  maxDerivations: 100000, // maximum number of quads reason() may derive
+  maxPremiseDepth: 10,    // maximum number of premise triples per rule
+});
+reasoner.reason(rulesDataset);
+```
+
+Both budgets are unbounded by default;
+`reason()` throws when one is exceeded,
+leaving any quads derived up to that point in the store.
+
 ## Compatibility
 ### Format specifications
 The N3.js parser and writer is fully compatible with the following W3C specifications:
