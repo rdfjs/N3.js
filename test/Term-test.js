@@ -101,6 +101,19 @@ describe('Term', () => {
       });
     });
 
+    it('should create a NamedNode (not throw) from a "[" id that is not valid JSON', () => {
+      expect(termFromId('[bad').toJSON()).toEqual({
+        termType: 'NamedNode',
+        value: '[bad',
+      });
+    });
+
+    it('should create a NamedNode from a "[" id whose JSON is not a 3-or-4 element array', () => {
+      expect(termFromId('[]').toJSON()).toEqual({ termType: 'NamedNode', value: '[]' });
+      expect(termFromId('["a"]').toJSON()).toEqual({ termType: 'NamedNode', value: '["a"]' });
+      expect(termFromId('[1,2,3,4,5]').toJSON()).toEqual({ termType: 'NamedNode', value: '[1,2,3,4,5]' });
+    });
+
     it(
       'should create a BlankNode from a string that starts with an underscore',
       () => {

@@ -244,9 +244,21 @@ export function termFromId(id, factory, nested) {
     }
     return factory.literal(id.substr(1, endPos - 1),
             languageOrDatatype);
-  case '[':
-    id = JSON.parse(id);
+  case '[': {
+    // A `[`-prefixed id encodes a quoted triple as a JSON array of
+    // 3 or 4 term ids; ids that do not parse to that shape are named nodes
+    let parsed;
+    try {
+      parsed = JSON.parse(id);
+    }
+    catch (e) {
+      return factory.namedNode(id);
+    }
+    if (!Array.isArray(parsed) || parsed.length < 3 || parsed.length > 4)
+      return factory.namedNode(id);
+    id = parsed;
     break;
+  }
   default:
     if (!nested || !Array.isArray(id)) {
       return factory.namedNode(id);
