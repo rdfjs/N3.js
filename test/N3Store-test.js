@@ -1846,6 +1846,27 @@ describe('Store', () => {
     });
   });
 
+  describe('A Store containing an rdf:Collection whose head value is an inherited Object member', () => {
+    const store = new Store();
+    expect(
+      store.addQuad(new NamedNode('constructor'), new NamedNode(namespaces.rdf.first), new NamedNode('element1')),
+    ).toBe(true);
+    expect(
+      store.addQuad(new NamedNode('constructor'), new NamedNode(namespaces.rdf.rest), new NamedNode(namespaces.rdf.nil)),
+    ).toBe(true);
+    expect(
+      store.addQuad(new NamedNode('s'), new NamedNode('p'), new NamedNode('constructor')),
+    ).toBe(true);
+
+    it('extractLists returns a null-prototype map without inherited members', () => {
+      const lists = store.extractLists();
+      expect(Object.getPrototypeOf(lists)).toBe(null);
+      expect(Object.keys(lists)).toEqual(['constructor']);
+      expect(lists.constructor.map(member => member.value)).toEqual(['element1']);
+      expect('toString' in lists).toBe(false);
+    });
+  });
+
   describe('A Store containing an rdf:Collection with multiple rdf:first arcs on head', () => {
     const store = new Store();
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode());
