@@ -17,6 +17,8 @@ export default class N3StreamParser extends Transform {
       onQuad: (error, quad) => { error && this.emit('error', error) || quad && this.push(quad); },
         // Emit prefixes through the `prefix` event
       onPrefix: (prefix, uri) => { this.emit('prefix', prefix, uri); },
+        // Emit RDF messages through the `message` event
+      onMessage: (quads, messageCounter) => { this.emit('message', quads, messageCounter); },
     };
 
     if (options && options.comments)

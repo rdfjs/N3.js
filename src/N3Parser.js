@@ -35,6 +35,8 @@ export default class N3Parser {
     this._blankNodePrefix = typeof options.blankNodePrefix !== 'string' ? '' :
                               options.blankNodePrefix.replace(/^(?!_:)/, '_:');
     this._lexer = options.lexer || new N3Lexer({ lineMode: isLineMode, n3: isN3, isImpliedBy: this._isImpliedBy });
+    this._defaultMessageMode = !!options.messages || /-messages$/.test(options.version || '');
+    this._messageMode = this._defaultMessageMode;
     // Disable explicit quantifiers by default
     this._explicitQuantifiers = !!options.explicitQuantifiers;
     // Disable parsing of unsupported versions by default
@@ -121,6 +123,8 @@ export default class N3Parser {
   _readBeforeTopContext(token) {
     if (this._version && !this._isValidVersion(this._version))
       return this._error(`Detected unsupported version as media type parameter: "${this._version}"`, token);
+    if (this._version && /-messages$/.test(this._version))
+      this._messageMode = true;
     return this._readInTopContext(token);
   }
 
@@ -132,7 +136,7 @@ export default class N3Parser {
       if (this._graph !== null)
         return this._error('Unclosed graph', token);
       delete this._prefixes._;
-      return this._callback(null, null, this._prefixes);
+      return this._callback(null, null, this._prefixes, this._messageCounter);
     // It could be a prefix declaration
     case 'PREFIX':
       this._sparqlStyle = true;
@@ -148,6 +152,11 @@ export default class N3Parser {
       this._sparqlStyle = true;
     case '@version':
       return this._readVersion;
+    // It could be an RDF message delimiter
+    case 'MESSAGE':
+      return this._readMessage(token);
+    case '@message':
+      return this._readMessagePunctuation;
     // It could be a graph
     case '{':
       if (this._supportsNamedGraphs) {
@@ -810,9 +819,32 @@ export default class N3Parser {
     if ((token.end - token.start) !== token.value.length + 2)
       return this._error('Version declarations must use single quotes', token);
     this._versionCallback(token.value);
+    if (/-messages$/.test(token.value) && !this._messageMode) {
+      this._messageMode = true;
+      this._messageCounter = 0;
+      this._resetMessageBlankNodePrefix();
+    }
     if (!this._isValidVersion(token.value))
       return this._error(`Detected unsupported version: "${token.value}"`, token);
     return this._readDeclarationPunctuation;
+  }
+
+  // ### `_readMessage` reads a SPARQL-style RDF message delimiter
+  _readMessage(token) {
+    if (!this._messageMode)
+      return this._error('Unexpected MESSAGE', token);
+    this._advanceMessageCounter();
+    return this._readInTopContext;
+  }
+
+  // ### `_readMessagePunctuation` reads the dot after an old-style RDF message delimiter
+  _readMessagePunctuation(token) {
+    if (!this._messageMode)
+      return this._error('Unexpected @message', token);
+    if (token.type !== '.')
+      return this._error('Expected dot to follow @message', token);
+    this._advanceMessageCounter();
+    return this._readInTopContext;
   }
 
   // ### `_readNamedGraphLabel` reads the label of a named graph
@@ -1078,7 +1110,20 @@ export default class N3Parser {
 
   // ### `_emit` sends a quad through the callback
   _emit(subject, predicate, object, graph) {
-    this._callback(null, this._factory.quad(subject, predicate, object, graph || this.DEFAULTGRAPH));
+    const quad = this._factory.quad(subject, predicate, object, graph || this.DEFAULTGRAPH);
+    this._callback(null, quad, null, this._messageCounter);
+  }
+
+  // ### `_advanceMessageCounter` starts a new RDF message scope
+  _advanceMessageCounter() {
+    this._messageCounter++;
+    this._resetMessageBlankNodePrefix();
+  }
+
+  // ### `_resetMessageBlankNodePrefix` scopes blank node labels to the current RDF message
+  _resetMessageBlankNodePrefix() {
+    const prefix = this._blankNodePrefix ? this._blankNodePrefix.substr(2) : 'b';
+    this._prefixes._ = `${prefix}${blankNodePrefix++}_`;
   }
 
   // ### `_error` emits an error message through the callback
@@ -1188,14 +1233,17 @@ export default class N3Parser {
 
   // ### `parse` parses the N3 input and emits each parsed quad through the onQuad callback.
   parse(input, quadCallback, prefixCallback, versionCallback) {
-    // The second parameter accepts an object { onQuad: ..., onPrefix: ..., onComment: ...}
+    this._messageMode = this._defaultMessageMode;
+    // The second parameter accepts an object { onQuad: ..., onPrefix: ..., onComment: ..., onMessage: ...}
     // As a second and third parameter it still accepts a separate quadCallback and prefixCallback for backward compatibility as well
-    let onQuad, onPrefix, onComment, onVersion;
-    if (quadCallback && (quadCallback.onQuad || quadCallback.onPrefix || quadCallback.onComment || quadCallback.onVersion)) {
+    let onQuad, onPrefix, onComment, onVersion, onMessage;
+    if (quadCallback && (quadCallback.onQuad || quadCallback.onPrefix || quadCallback.onComment ||
+                         quadCallback.onVersion || quadCallback.onMessage)) {
       onQuad = quadCallback.onQuad;
       onPrefix = quadCallback.onPrefix;
       onComment = quadCallback.onComment;
       onVersion = quadCallback.onVersion;
+      onMessage = quadCallback.onMessage;
     }
     else {
       onQuad = quadCallback;
@@ -1207,10 +1255,14 @@ export default class N3Parser {
     this._readCallback = this._readBeforeTopContext;
     this._sparqlStyle = false;
     this._prefixes = Object.create(null);
-    this._prefixes._ = this._blankNodePrefix ? this._blankNodePrefix.substr(2)
-                                             : `b${blankNodePrefix++}_`;
+    if (this._messageMode)
+      this._resetMessageBlankNodePrefix();
+    else
+      this._prefixes._ = this._blankNodePrefix ? this._blankNodePrefix.substr(2)
+                                               : `b${blankNodePrefix++}_`;
     this._prefixCallback = onPrefix || noop;
     this._versionCallback = onVersion || noop;
+    this._messageCounter = this._messageMode ? 0 : undefined;
     this._inversePredicate = false;
     this._quantified = Object.create(null);
 
@@ -1224,6 +1276,29 @@ export default class N3Parser {
       });
       if (error) throw error;
       return quads;
+    }
+
+    // `onMessage` is a convenience callback that groups `onQuad` data in memory.
+    if (onMessage) {
+      let currentMessageCounter;
+      let messageQuads = [];
+      const onQuadStream = onQuad;
+      onQuad = (error, quad, prefixes, messageCounter) => {
+        if (messageCounter !== undefined && currentMessageCounter === undefined)
+          currentMessageCounter = 0;
+        if (currentMessageCounter !== undefined) {
+          while (currentMessageCounter < messageCounter) {
+            onMessage(messageQuads, currentMessageCounter);
+            messageQuads = [];
+            currentMessageCounter++;
+          }
+          if (quad)
+            messageQuads.push(quad);
+          else
+            onMessage(messageQuads, currentMessageCounter);
+        }
+        onQuadStream(error, quad, prefixes, messageCounter);
+      };
     }
 
     let processNextToken = (error, token) => {
@@ -1282,7 +1357,10 @@ function initDataFactory(parser, factory) {
 }
 N3Parser.SUPPORTED_VERSIONS = [
   '1.2',
+  '1.2-messages',
   '1.2-basic',
+  '1.2-basic-messages',
   '1.1',
+  '1.1-messages',
 ];
 initDataFactory(N3Parser.prototype, N3DataFactory);
