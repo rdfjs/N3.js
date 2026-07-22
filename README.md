@@ -204,6 +204,14 @@ function SlowConsumer() {
 A dedicated `prefix` event signals every prefix with `prefix` and `term` arguments.
 A dedicated `comment` event can be enabled by setting `comments: true` in the N3.StreamParser constructor.
 
+Note that `prefix` and `comment` events are emitted as soon as they are parsed,
+whereas quads can remain buffered until the consumer is ready to read them.
+The order of these events relative to `data` events is therefore
+not guaranteed to match the position of prefixes and comments in the document.
+If their position matters,
+use `N3.Parser` with the `onQuad`, `onPrefix` and `onComment` callbacks instead,
+which are invoked in document order.
+
 ## Writing
 
 ### From quads to a string
