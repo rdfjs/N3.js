@@ -11,13 +11,14 @@
 // Usage: node test/browser/run.mjs [chromium|firefox|webkit ...]
 import { chromium, firefox, webkit } from 'playwright';
 import { execSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { extname, join, resolve } from 'node:path';
+import { extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const browsers = { chromium, firefox, webkit };
 const root = resolve(fileURLToPath(import.meta.url), '../../..');
+const rootPrefix = root.endsWith(sep) ? root : `${root}${sep}`;
 const mimeTypes = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript' };
 
 async function main() {
@@ -28,11 +29,11 @@ async function main() {
 
   // Serve files from the repository root on an OS-assigned port
   const server = createServer((request, response) => {
-    const path = join(root, new URL(request.url, 'http://localhost').pathname);
+    const filePath = join(root, new URL(request.url || '/', 'http://localhost').pathname);
     // Only serve files inside the repository (join normalizes away any ../)
-    if (path.startsWith(`${root}/`) && existsSync(path)) {
-      response.writeHead(200, { 'Content-Type': mimeTypes[extname(path)] });
-      response.end(readFileSync(path));
+    if (filePath.startsWith(rootPrefix) && existsSync(filePath) && statSync(filePath).isFile()) {
+      response.writeHead(200, { 'Content-Type': mimeTypes[extname(filePath)] || 'application/octet-stream' });
+      response.end(readFileSync(filePath));
     }
     else {
       response.writeHead(404);
