@@ -11,13 +11,14 @@
 // Usage: node test/browser/run.mjs [chromium|firefox|webkit ...]
 import { chromium, firefox, webkit } from 'playwright';
 import { execSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { extname, join, resolve } from 'node:path';
+import { extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const browsers = { chromium, firefox, webkit };
 const root = resolve(fileURLToPath(import.meta.url), '../../..');
+const rootPrefix = root.endsWith(sep) ? root : `${root}${sep}`;
 const mimeTypes = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript' };
 
 async function main() {
@@ -28,11 +29,11 @@ async function main() {
 
   // Serve files from the repository root on an OS-assigned port
   const server = createServer((request, response) => {
-    const path = join(root, new URL(request.url, 'http://localhost').pathname);
+    const filePath = join(root, new URL(request.url || '/', 'http://localhost').pathname);
     // Only serve files inside the repository (join normalizes away any ../)
-    if (path.startsWith(`${root}/`) && existsSync(path)) {
-      response.writeHead(200, { 'Content-Type': mimeTypes[extname(path)] });
-      response.end(readFileSync(path));
+    if (filePath.startsWith(rootPrefix) && existsSync(filePath) && statSync(filePath).isFile()) {
+      response.writeHead(200, { 'Content-Type': mimeTypes[extname(filePath)] || 'application/octet-stream' });
+      response.end(readFileSync(filePath));
     }
     else {
       response.writeHead(404);
@@ -42,32 +43,36 @@ async function main() {
   await new Promise(listening => server.listen(0, '127.0.0.1', listening));
   const pageUrl = `http://127.0.0.1:${server.address().port}/test/browser/test-page.html`;
 
-  const engines = process.argv.length > 2 ? process.argv.slice(2) : Object.keys(browsers);
   let failures = 0;
-  for (const engine of engines) {
-    if (!browsers[engine])
-      throw new Error(`Unknown browser engine: ${engine}`);
-    const browser = await browsers[engine].launch();
-    try {
-      const page = await browser.newPage();
-      const pageErrors = [];
-      page.on('pageerror', error => pageErrors.push(String(error)));
-      await page.goto(pageUrl);
-      // The test page reports its results through this global
-      const results = await page.waitForFunction('window.__bundleTestResults',
-        null, { timeout: 30_000 }).then(handle => handle.jsonValue())
-        .catch(() => [{ name: 'test page', passed: false,
-          error: `never reported results; page errors: ${pageErrors.join('; ') || 'none'}` }]);
-      for (const { name, passed, error } of results) {
-        failures += passed ? 0 : 1;
-        console.log(`${passed ? 'ok     ' : 'FAILED '} ${engine.padEnd(8)} ${name}${passed ? '' : `\n${error}`}`);
+  try {
+    const engines = process.argv.length > 2 ? process.argv.slice(2) : Object.keys(browsers);
+    for (const engine of engines) {
+      if (!browsers[engine])
+        throw new Error(`Unknown browser engine: ${engine}`);
+      const browser = await browsers[engine].launch();
+      try {
+        const page = await browser.newPage();
+        const pageErrors = [];
+        page.on('pageerror', error => pageErrors.push(String(error)));
+        await page.goto(pageUrl);
+        // The test page reports its results through this global
+        const results = await page.waitForFunction('window.__bundleTestResults',
+          null, { timeout: 30_000 }).then(handle => handle.jsonValue())
+          .catch(() => [{ name: 'test page', passed: false,
+            error: `never reported results; page errors: ${pageErrors.join('; ') || 'none'}` }]);
+        for (const { name, passed, error } of results) {
+          failures += passed ? 0 : 1;
+          console.log(`${passed ? 'ok     ' : 'FAILED '} ${engine.padEnd(8)} ${name}${passed ? '' : `\n${error}`}`);
+        }
+      }
+      finally {
+        await browser.close();
       }
     }
-    finally {
-      await browser.close();
-    }
   }
-  server.close();
+  finally {
+    await new Promise((closed, reject) => server.close(error => error ? reject(error) : closed()));
+  }
   if (failures > 0) {
     console.error(`\n${failures} browser bundle test(s) failed`);
     process.exitCode = 1;
