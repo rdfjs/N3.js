@@ -37,6 +37,20 @@ describe('Writer', () => {
       ).toBe('<a> <b> <c> <g> .\n');
     });
 
+    it('should serialize a quad with an empty named node as graph', () => {
+      const writer = new Writer();
+      expect(
+        writer.quadToString(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('')),
+      ).toBe('<a> <b> <c> <> .\n');
+    });
+
+    it('should serialize a triple with empty named nodes', () => {
+      const writer = new Writer();
+      expect(
+        writer.quadToString(new NamedNode(''), new NamedNode(''), new NamedNode('')),
+      ).toBe('<> <> <> .\n');
+    });
+
     it('should serialize an array of triples', () => {
       const writer = new Writer();
       const triples = [new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')),
@@ -379,6 +393,53 @@ describe('Writer', () => {
     );
 
     it(
+      'should serialize an empty named node as subject',
+      shouldSerialize([new NamedNode(''), 'def', 'ghi'],
+                      '<> <def> <ghi>.\n'),
+    );
+
+    it(
+      'should serialize an empty named node as predicate',
+      shouldSerialize(['abc', new NamedNode(''), 'ghi'],
+                      '<abc> <> <ghi>.\n'),
+    );
+
+    it(
+      'should serialize an empty named node as object',
+      shouldSerialize(['abc', 'def', new NamedNode('')],
+                      '<abc> <def> <>.\n'),
+    );
+
+    it(
+      'should serialize an empty named node as graph',
+      shouldSerialize(['abc', 'def', 'ghi', new NamedNode('')],
+                      '<> {\n<abc> <def> <ghi>\n}\n'),
+    );
+
+    it(
+      'should not merge an empty named graph into the default graph',
+      shouldSerialize(['abc', 'def', 'ghi', ''],
+                      ['jkl', 'mno', 'pqr', new NamedNode('')],
+                      ['stu', 'vwx', 'yz',  ''],
+                      '<abc> <def> <ghi>.\n' +
+                      '<> {\n<jkl> <mno> <pqr>\n}\n' +
+                      '<stu> <vwx> <yz>.\n'),
+    );
+
+    it('round-trips a triple with an empty named node', done => {
+      const input = '<> <http://ex.org/p> <http://ex.org/o>.\n';
+      const quads = new Parser().parse(input);
+      expect(quads[0].subject).toEqual(new NamedNode(''));
+      const writer = new Writer();
+      writer.addQuads(quads);
+      writer.end((error, output) => {
+        expect(output).toBe(input);
+        expect(new Parser().parse(output)).toEqual(quads);
+        done(error);
+      });
+    });
+
+    it(
       'should output 8-bit unicode characters as escape sequences',
       shouldSerialize(['\ud835\udc00', '\ud835\udc00', '"\ud835\udc00"^^\ud835\udc00', '\ud835\udc00'],
                       '<\\U0001d400> {\n<\\U0001d400> <\\U0001d400> "\\U0001d400"^^<\\U0001d400>\n}\n'),
@@ -484,6 +545,19 @@ describe('Writer', () => {
         new NamedNode('http://example.org/foo/cdeFgh/ijk')));
       writer.end((error, output) => {
         expect(output).toBe('<> <#b> <cdeFgh/ijk>.\n');
+        done(error);
+      });
+    });
+
+    it('uses a base IRI to relativize a graph to the empty IRI', done => {
+      const writer = new Writer({ baseIRI: 'http://example.org/foo/' });
+      writer.addQuad(new Quad(
+        new NamedNode('http://example.org/foo/a'),
+        new NamedNode('http://example.org/foo/b'),
+        new NamedNode('http://example.org/foo/c'),
+        new NamedNode('http://example.org/foo/')));
+      writer.end((error, output) => {
+        expect(output).toBe('<> {\n<a> <b> <c>\n}\n');
         done(error);
       });
     });
