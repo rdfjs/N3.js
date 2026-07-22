@@ -85,7 +85,9 @@ export default class N3Writer {
   _writeQuad(subject, predicate, object, graph, done) {
     try {
       // Write the graph's label if it has changed
-      if (!graph.equals(this._graph)) {
+      // (the id-based fast path of `equals` would conflate
+      // the empty named node `<>` with the default graph)
+      if (!graph.equals(this._graph) || graph.termType !== this._graph.termType) {
         // Close the previous graph and start the new one
         this._write((this._subject === null ? '' : (this._inDefaultGraph ? '.\n' : '\n}\n')) +
                     (DEFAULTGRAPH.equals(graph) ? '' : `${this._encodeIriOrBlank(graph)} {\n`));
@@ -125,7 +127,7 @@ export default class N3Writer {
     return  `${this._encodeSubject(subject)} ${
             this._encodeIriOrBlank(predicate)} ${
             this._encodeObject(object)
-            }${graph && graph.value ? ` ${this._encodeIriOrBlank(graph)} .\n` : ' .\n'}`;
+            }${graph && !isDefaultGraph(graph) ? ` ${this._encodeIriOrBlank(graph)} .\n` : ' .\n'}`;
   }
 
   // ### `quadsToString` serializes an array of quads as a string
