@@ -212,6 +212,33 @@ If their position matters,
 use `N3.Parser` with the `onQuad`, `onPrefix` and `onComment` callbacks instead,
 which are invoked in document order.
 
+### From a Web Stream to quads
+
+N3.js consumes [Node.js streams](http://nodejs.org/api/stream.html) natively,
+but sources such as `fetch` produce [Web Streams](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API).
+On Node.js 17 or higher, convert such a stream into a Node.js stream:
+
+```JavaScript
+const streamParser = new N3.StreamParser(),
+      { Readable } = require('stream');
+Readable.fromWeb(response.body).pipe(streamParser);
+```
+
+In browsers (or anywhere without Node.js streams),
+write the chunks to the parser directly,
+since `N3.StreamParser` exposes a standard writable stream interface:
+
+```JavaScript
+const streamParser = new N3.StreamParser(),
+      reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+(async () => {
+  for (let result; !(result = await reader.read()).done;)
+    if (!streamParser.write(result.value))
+      await new Promise(resolve => streamParser.once('drain', resolve));
+  streamParser.end();
+})();
+```
+
 ## Writing
 
 ### From quads to a string
