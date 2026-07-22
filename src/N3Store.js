@@ -733,8 +733,7 @@ export default class N3Store {
             this._loopBy2Keys(content.subjects, subjectId, predicateId, callback);
           else
             // If only subject is given, descending the SPO index
-            // visits only the subject's own quads,
-            // instead of probing every distinct object in the graph.
+            // visits only the subject's own quads.
             this._loopByKey0Deep(content.subjects, subjectId, callback);
         }
         else if (predicateId)
