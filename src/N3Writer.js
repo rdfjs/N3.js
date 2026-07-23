@@ -151,7 +151,7 @@ export default class N3Writer {
       // If it is a list head, pretty-print it
       if (this._lists && (entity.value in this._lists))
         entity = this.list(this._lists[entity.value]);
-      return 'id' in entity ? entity.id : `_:${entity.value}`;
+      return entity.termType === 'BlankNode' ? `_:${entity.value}` : entity.id;
     }
     let iri = entity.value;
     // Use relative IRIs if requested and possible
