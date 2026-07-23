@@ -252,10 +252,11 @@ export default class N3Parser {
         this._literalValue = token.value;
         return this._completeSubjectLiteral;
       }
-      else
+      else {
         this._subject = this._factory.literal(token.value, this._factory.namedNode(token.prefix));
-
-      break;
+        // This branch is N3-only, so the literal subject might start a path
+        return this._getPathReader(this._readPredicateOrNamedGraph);
+      }
     case '<<(':
       if (!this._n3Mode)
         return this._error('Disallowed triple term as subject', token);
@@ -293,8 +294,9 @@ export default class N3Parser {
     case ']':
     case '}':
     case '|}':
-      // Expected predicate didn't come, must have been trailing semicolon
-      if (this._predicate === null)
+      // Expected predicate didn't come, must have been trailing semicolon.
+      // In N3 mode, a subject (such as a path) can be a statement by itself.
+      if (this._predicate === null && !this._n3Mode)
         return this._error(`Unexpected ${type}`, token);
       this._subject = null;
       return type === ']' ? this._readBlankNodeTail(token) : this._readPunctuation(token);
@@ -331,8 +333,12 @@ export default class N3Parser {
         return this._readDataTypeOrLang;
       }
       // Pre-datatyped string literal (prefix stores the datatype)
-      else
+      else {
         this._object = this._factory.literal(token.value, this._factory.namedNode(token.prefix));
+        // In N3 mode, the literal object might start a path
+        if (this._n3Mode)
+          return this._getPathReader(this._getContextEndReader());
+      }
       break;
     case '[':
       // Start a new quad with a new blank node as subject
@@ -469,12 +475,24 @@ export default class N3Parser {
       this._restoreContext('list', token);
       // If this list is contained within a parent list, return the membership quad here.
       // This will be `<parent list element> rdf:first <this list>.`.
-      if (stack.length !== 0 && stack[stack.length - 1].type === 'list')
+      if (stack.length !== 0 && stack[stack.length - 1].type === 'list') {
+        // In N3 mode, this list might be the start of a path
+        if (this._n3Mode) {
+          // Close this list's tail, as a path would alter the membership quad only
+          if (previousList !== null)
+            this._emit(previousList, this.RDF_REST, this.RDF_NIL, this._graph);
+          // Create a new context to read the path;
+          // _readPath will restore the context and output the membership quad
+          this._saveContext('item', this._graph, this._subject, this._predicate, this._object);
+          this._subject = this._object, this._predicate = null;
+          return this._getPathReader(this._readListItem);
+        }
         this._emit(this._subject, this._predicate, this._object, this._graph);
+      }
       // Was this list the parent's subject?
       if (this._predicate === null) {
         // The next token is the predicate
-        next = this._readPredicate;
+        next = this._n3Mode ? this._getPathReader(this._readPredicate) : this._readPredicate;
         // No list tail if this was an empty list
         if (this._subject === this.RDF_NIL)
           return next;
@@ -482,6 +500,9 @@ export default class N3Parser {
       // The list was in the parent context's object
       else {
         next = this._getContextEndReader();
+        // In N3 mode, the list object might be the start of a path
+        if (this._n3Mode)
+          next = this._getPathReader(next);
         // No list tail if this was an empty list
         if (this._object === this.RDF_NIL)
           return next;
@@ -541,7 +562,9 @@ export default class N3Parser {
     // If an item was read, add it to the list
     if (item !== null) {
       // In N3 mode, the item might be a path
-      if (this._n3Mode && (token.type === 'IRI' || token.type === 'prefixed')) {
+      if (this._n3Mode && (token.type === 'IRI' || token.type === 'prefixed' ||
+                           token.type === 'var' || token.type === 'blank' ||
+                           token.type === 'literal')) {
         // Create a new context to add the item's path
         this._saveContext('item', this._graph, list, this.RDF_FIRST, item);
         this._subject = item, this._predicate = null;
@@ -609,8 +632,11 @@ export default class N3Parser {
       token = null;
     }
 
-    if (component === 'subject')
-      return token === null ? this._readPredicateOrNamedGraph : this._readPredicateOrNamedGraph(token);
+    if (component === 'subject') {
+      // A subject literal implies N3 mode, so the literal might start a path
+      const reader = this._getPathEndReader(token, this._readPredicateOrNamedGraph);
+      return reader || this._readPredicateOrNamedGraph(token);
+    }
     return this._completeObjectLiteralPost(token, listItem);
   }
 
@@ -623,7 +649,9 @@ export default class N3Parser {
     if (completed.readCb)
       return completed.readCb.bind(this, false);
 
-    return this._readPredicateOrNamedGraph;
+    // The literal subject might start a path (this only occurs in N3 mode)
+    return this._getPathEndReader(completed.token, this._readPredicateOrNamedGraph) ||
+           this._readPredicateOrNamedGraph;
   }
 
   // Completes a literal in object position
@@ -642,6 +670,17 @@ export default class N3Parser {
   }
 
   _completeObjectLiteralPost(token, listItem) {
+    // In N3 mode, the literal object might start a path
+    if (this._n3Mode && (token === null || token.type === '!' || token.type === '^')) {
+      // If this literal was part of a list, defer writing the item;
+      // _readPath will then restore the context and output it
+      if (listItem) {
+        this._saveContext('item', this._graph, this._subject, this.RDF_FIRST, this._object);
+        this._subject = this._object, this._predicate = null;
+        return this._getPathEndReader(token, this._readListItem);
+      }
+      return this._getPathEndReader(token, this._getContextEndReader());
+    }
     // If this literal was part of a list, write the item
     // (we could also check the context stack, but passing in a flag is faster)
     if (listItem)
@@ -902,6 +941,17 @@ export default class N3Parser {
   _getPathReader(afterPath) {
     this._afterPath = afterPath;
     return this._readPath;
+  }
+
+  // ### `_getPathEndReader` continues reading after a term that might start a path,
+  // given the pending token that follows the term (or `null` if it was consumed)
+  _getPathEndReader(token, afterPath) {
+    // Other pending tokens are not handled here
+    if (token !== null && token.type !== '!' && token.type !== '^')
+      return null;
+    const reader = this._getPathReader(afterPath);
+    // If no token is pending, wait for the next one; otherwise, consume it now
+    return token === null ? reader : reader.call(this, token);
   }
 
   // ### `_readPath` reads a potential path
