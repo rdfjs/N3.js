@@ -1,4 +1,4 @@
-import { Parser, NamedNode, BlankNode, Quad, termFromId, DataFactory as DF } from '../src';
+import { Lexer, Parser, NamedNode, BlankNode, Quad, termFromId, DataFactory as DF } from '../src';
 import rdfDataModel from '@rdfjs/data-model';
 import { isomorphic } from 'rdf-isomorphic';
 
@@ -3196,6 +3196,358 @@ describe('Parser', () => {
         ),
       ])).toBe(true);
     });
+  });
+
+  describe('A Parser instance with term validation', () => {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, validate: true }); }
+    function parserNoBase() { return new Parser({ validate: true }); }
+    function parserTermsOnly() { return new Parser({ baseIRI: BASE_IRI, validate: { terms: true } }); }
+    function parserN3() { return new Parser({ format: 'text/n3', validate: true }); }
+    function parserTerms11() { return new Parser({ validate: { terms: true }, version: '1.1' }); }
+    function parserSpacePrefix() { return new Parser({ validate: true, blankNodePrefix: 'has space' }); }
+    function parserSpacePrefixNoValidate() { return new Parser({ blankNodePrefix: 'has space' }); }
+    function parserBadDirLexer() { return new Parser({ validate: true, lexer: badDirLexer() }); }
+    function parserBadDirLexerNoValidate() { return new Parser({ lexer: badDirLexer() }); }
+    // Simulates a custom lexer that emits an ill-formed direction code
+    // (the built-in lexer only ever emits `ltr` or `rtl`)
+    function badDirLexer() {
+      const lexer = new Lexer();
+      const tokenize = lexer.tokenize.bind(lexer);
+      lexer.tokenize = (input, callback) => tokenize(input, (error, token) => {
+        if (token && token.type === 'dircode')
+          token.value = 'zzz';
+        callback(error, token);
+      });
+      return lexer;
+    }
+    const xsd = 'PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n';
+
+    it(
+      'should parse well-formed IRIs',
+      shouldParse(parser, '<urn:a:s> <http://user@example.org:8080/p?q=1#f> <http://[2001:db8::1]/x>.',
+                  ['urn:a:s', 'http://user@example.org:8080/p?q=1#f', 'http://[2001:db8::1]/x']),
+    );
+
+    it(
+      'should parse internationalized IRIs',
+      shouldParse(parser, '<http://例え.テスト/パス> <urn:a:p> <urn:a:o>.',
+                  ['http://例え.テスト/パス', 'urn:a:p', 'urn:a:o']),
+    );
+
+    it(
+      'should parse resolved relative IRIs',
+      shouldParse(parser, '<a> <b> <c>.',
+                  ['a', 'b', 'c']),
+    );
+
+    it(
+      'should not parse an IRI with an invalid percent-encoding',
+      shouldNotParse(parser, '<http://example.org/%ZZ> <urn:a:p> <urn:a:o>.',
+                     'Invalid IRI "http://example.org/%ZZ" on line 1.'),
+    );
+
+    it(
+      'should not parse a relative IRI when no base IRI is set',
+      shouldNotParse(parserNoBase, '<a> <urn:a:p> <urn:a:o>.',
+                     'Invalid IRI "a" on line 1.'),
+    );
+
+    it(
+      'should not parse an ill-formed IRI in a prefix declaration',
+      shouldNotParse(parserNoBase, '@prefix p: <foo>. p:a p:b p:c.',
+                     'Invalid IRI "foo" on line 1.'),
+    );
+
+    it(
+      'should parse blank nodes',
+      shouldParse(parser, '_:a <urn:a:p> [].',
+                  ['_:b0_a', 'urn:a:p', '_:b0']),
+    );
+
+    it(
+      'should parse blank nodes with astral characters',
+      shouldParse(parser, '_:\u{10000}a <urn:a:p> _:b.',
+                  ['_:b0_\u{10000}a', 'urn:a:p', '_:b0_b']),
+    );
+
+    it(
+      'should not parse a blank node label made invalid by the blank node prefix',
+      shouldNotParse(parserSpacePrefix, '_:a <urn:a:p> <urn:a:o>.',
+                     'Invalid blank node label "has spacea" on line 1.'),
+    );
+
+    it(
+      'should not check blank node labels when validation is off',
+      shouldParse(parserSpacePrefixNoValidate, '_:a <urn:a:p> <urn:a:o>.',
+                  ['_:has spacea', 'urn:a:p', 'urn:a:o']),
+    );
+
+    it(
+      'should parse valid values of known datatypes',
+      shouldParse(parser, `${xsd}<urn:a:s> <urn:a:p> true, 8, "-8"^^xsd:integer, "8.5"^^xsd:decimal, ` +
+                          '"-INF"^^xsd:double, "1.5E2"^^xsd:float, "2024-02-29"^^xsd:date, ' +
+                          '"23:59:59.5+05:30"^^xsd:time, "2024-02-29T24:00:00Z"^^xsd:dateTime.',
+                  ['urn:a:s', 'urn:a:p', '"true"^^http://www.w3.org/2001/XMLSchema#boolean'],
+                  ['urn:a:s', 'urn:a:p', '"8"^^http://www.w3.org/2001/XMLSchema#integer'],
+                  ['urn:a:s', 'urn:a:p', '"-8"^^http://www.w3.org/2001/XMLSchema#integer'],
+                  ['urn:a:s', 'urn:a:p', '"8.5"^^http://www.w3.org/2001/XMLSchema#decimal'],
+                  ['urn:a:s', 'urn:a:p', '"-INF"^^http://www.w3.org/2001/XMLSchema#double'],
+                  ['urn:a:s', 'urn:a:p', '"1.5E2"^^http://www.w3.org/2001/XMLSchema#float'],
+                  ['urn:a:s', 'urn:a:p', '"2024-02-29"^^http://www.w3.org/2001/XMLSchema#date'],
+                  ['urn:a:s', 'urn:a:p', '"23:59:59.5+05:30"^^http://www.w3.org/2001/XMLSchema#time'],
+                  ['urn:a:s', 'urn:a:p', '"2024-02-29T24:00:00Z"^^http://www.w3.org/2001/XMLSchema#dateTime']),
+    );
+
+    it(
+      'should parse any value of an unknown datatype',
+      shouldParse(parser, '<urn:a:s> <urn:a:p> "anything"^^<urn:my:datatype>.',
+                  ['urn:a:s', 'urn:a:p', '"anything"^^urn:my:datatype']),
+    );
+
+    it(
+      'should not parse an invalid xsd:integer value',
+      shouldNotParse(parser, `${xsd}<urn:a:s> <urn:a:p> "abc"^^xsd:integer.`,
+                     'Invalid value "abc" for datatype http://www.w3.org/2001/XMLSchema#integer on line 2.'),
+    );
+
+    it(
+      'should not parse an invalid xsd:boolean value',
+      shouldNotParse(parser, `${xsd}<urn:a:s> <urn:a:p> "maybe"^^xsd:boolean.`,
+                     'Invalid value "maybe" for datatype http://www.w3.org/2001/XMLSchema#boolean on line 2.'),
+    );
+
+    it(
+      'should not parse an invalid xsd:decimal value',
+      shouldNotParse(parser, `${xsd}<urn:a:s> <urn:a:p> "1.2.3"^^xsd:decimal.`,
+                     'Invalid value "1.2.3" for datatype http://www.w3.org/2001/XMLSchema#decimal on line 2.'),
+    );
+
+    it(
+      'should not parse an invalid xsd:double value',
+      shouldNotParse(parser, `${xsd}<urn:a:s> <urn:a:p> "1.5E"^^xsd:double.`,
+                     'Invalid value "1.5E" for datatype http://www.w3.org/2001/XMLSchema#double on line 2.'),
+    );
+
+    it(
+      'should not parse an invalid xsd:date value',
+      shouldNotParse(parser, `${xsd}<urn:a:s> <urn:a:p> "2024-13-01"^^xsd:date.`,
+                     'Invalid value "2024-13-01" for datatype http://www.w3.org/2001/XMLSchema#date on line 2.'),
+    );
+
+    it(
+      'should not parse an invalid xsd:time value',
+      shouldNotParse(parser, `${xsd}<urn:a:s> <urn:a:p> "25:00:00"^^xsd:time.`,
+                     'Invalid value "25:00:00" for datatype http://www.w3.org/2001/XMLSchema#time on line 2.'),
+    );
+
+    it(
+      'should not parse an invalid xsd:dateTime value',
+      shouldNotParse(parser, `${xsd}<urn:a:s> <urn:a:p> "2024-01-01 00:00:00"^^xsd:dateTime.`,
+                     'Invalid value "2024-01-01 00:00:00" for datatype http://www.w3.org/2001/XMLSchema#dateTime on line 2.'),
+    );
+
+    it(
+      'should parse well-formed language tags',
+      shouldParse(parser, '<urn:a:s> <urn:a:p> "a"@de-CH-1901, "b"@zh-Hant-CN, "c"@x-private, "d"@i-klingon.',
+                  ['urn:a:s', 'urn:a:p', '"a"@de-ch-1901'],
+                  ['urn:a:s', 'urn:a:p', '"b"@zh-hant-cn'],
+                  ['urn:a:s', 'urn:a:p', '"c"@x-private'],
+                  ['urn:a:s', 'urn:a:p', '"d"@i-klingon']),
+    );
+
+    it(
+      'should keep reporting an undefined prefix',
+      shouldNotParse(parser, '<urn:a:s> <urn:a:p> p:o.',
+                     'Undefined prefix "p:" on line 1.'),
+    );
+
+    it(
+      'should keep reporting an explicit rdf:langString datatype',
+      shouldNotParse(parser, '<urn:a:s> <urn:a:p> "o"^^<http://www.w3.org/1999/02/22-rdf-syntax-ns#langString>.',
+                     'Detected illegal (directional) languaged-tagged string with explicit datatype on line 1.'),
+    );
+
+    it(
+      'should not parse a language tag with a single-character primary subtag',
+      shouldNotParse(parser, '<urn:a:s> <urn:a:p> "x"@a.',
+                     'Invalid language tag "a" on line 1.'),
+    );
+
+    it(
+      'should not parse a language tag with an incomplete extension',
+      shouldNotParse(parser, '<urn:a:s> <urn:a:p> "x"@en-a.',
+                     'Invalid language tag "en-a" on line 1.'),
+    );
+
+    it(
+      'should check terms with validate.terms only',
+      shouldNotParse(parserTermsOnly, `${xsd}<urn:a:s> <urn:a:p> "abc"^^xsd:integer.`,
+                     'Invalid value "abc" for datatype http://www.w3.org/2001/XMLSchema#integer on line 2.'),
+    );
+
+    it(
+      'should not enforce a version with validate.terms only',
+      shouldParse(parserTerms11,
+                  '<urn:a:s> <urn:a:p> "x"@en--ltr.',
+                  ['urn:a:s', 'urn:a:p', '"x"@en--ltr']),
+    );
+
+    it(
+      'should parse well-formed base directions',
+      shouldParse(parser, '<urn:a:s> <urn:a:p> "a"@en--ltr, "b"@ar--rtl.',
+                  ['urn:a:s', 'urn:a:p', '"a"@en--ltr'],
+                  ['urn:a:s', 'urn:a:p', '"b"@ar--rtl']),
+    );
+
+    it(
+      'should not parse an ill-formed base direction from a custom lexer',
+      shouldNotParse(parserBadDirLexer, '<urn:a:s> <urn:a:p> "x"@en--ltr.',
+                     'Invalid base direction "zzz" on line 1.'),
+    );
+
+    it(
+      'should not check base directions when validation is off',
+      shouldParse(parserBadDirLexerNoValidate, '<urn:a:s> <urn:a:p> "x"@en--ltr.',
+                  ['urn:a:s', 'urn:a:p', '"x"@en--zzz']),
+    );
+
+    it(
+      'should parse N3 variables',
+      shouldParse(parserN3, '@forAll <urn:a:x>. <urn:a:x> <urn:a:b> <urn:a:c>.',
+                  ['?b0', 'urn:a:b', 'urn:a:c']),
+    );
+
+    it(
+      // N3 scopes labels with a dot-separated prefix, which term validation must accept
+      'should parse N3 blank nodes with scoped labels',
+      shouldParse(parserN3, '<urn:a:s> <urn:a:p> [ <urn:a:q> _:x ].',
+                  ['urn:a:s', 'urn:a:p', '_:b0'],
+                  ['_:b0', 'urn:a:q', '_:.x']),
+    );
+
+    it(
+      'should not parse an N3 subject literal with an invalid datatype value',
+      shouldNotParse(parserN3, '"abc"^^<http://www.w3.org/2001/XMLSchema#integer> <urn:a:p> <urn:a:o>.',
+                     'Invalid value "abc" for datatype http://www.w3.org/2001/XMLSchema#integer on line 1.'),
+    );
+  });
+
+  describe('A Parser instance with version validation', () => {
+    function parser11() { return new Parser({ validate: true, version: '1.1' }); }
+    function parser12basic() { return new Parser({ validate: true, version: '1.2-basic' }); }
+    function parser12() { return new Parser({ validate: true, version: '1.2' }); }
+    function parserVersionOnly() { return new Parser({ validate: { version: true }, version: '1.1' }); }
+    function parserNoVersion() { return new Parser({ validate: { version: true } }); }
+    function parser11N3() { return new Parser({ validate: true, version: '1.1', format: 'text/n3' }); }
+
+    it(
+      'should parse an RDF 1.1 document with version 1.1',
+      shouldParse(parser11, '<urn:a:s> <urn:a:p> "o"@en.',
+                  ['urn:a:s', 'urn:a:p', '"o"@en']),
+    );
+
+    it(
+      'should not parse a reified triple as subject with version 1.1',
+      shouldNotParse(parser11, '<< <urn:a:s> <urn:a:p> <urn:a:o> >> <urn:a:b> <urn:a:c>.',
+                     'Reified triples are not allowed in RDF 1.1 on line 1.'),
+    );
+
+    it(
+      'should not parse a reified triple as object with version 1.1',
+      shouldNotParse(parser11, '<urn:a:s> <urn:a:p> << <urn:a:a> <urn:a:b> <urn:a:c> >>.',
+                     'Reified triples are not allowed in RDF 1.1 on line 1.'),
+    );
+
+    it(
+      'should not parse a reified triple in a list with version 1.1',
+      shouldNotParse(parser11, '<urn:a:s> <urn:a:p> ( << <urn:a:a> <urn:a:b> <urn:a:c> >> ).',
+                     'Reified triples are not allowed in RDF 1.1 on line 1.'),
+    );
+
+    it(
+      'should not parse a triple term with version 1.1',
+      shouldNotParse(parser11, '<urn:a:s> <urn:a:p> <<( <urn:a:a> <urn:a:b> <urn:a:c> )>>.',
+                     'Triple terms are not allowed in RDF 1.1 on line 1.'),
+    );
+
+    it(
+      'should not parse an annotation with version 1.1',
+      shouldNotParse(parser11, '<urn:a:s> <urn:a:p> <urn:a:o> {| <urn:a:b> <urn:a:c> |}.',
+                     'Triple annotations are not allowed in RDF 1.1 on line 1.'),
+    );
+
+    it(
+      'should not parse a reifier with version 1.1',
+      shouldNotParse(parser11, '<urn:a:s> <urn:a:p> <urn:a:o> ~ <urn:a:r>.',
+                     'Reifiers are not allowed in RDF 1.1 on line 1.'),
+    );
+
+    it(
+      'should not parse a directional language tag with version 1.1',
+      shouldNotParse(parser11, '<urn:a:s> <urn:a:p> "o"@en--ltr.',
+                     'Directional language tags are not allowed in RDF 1.1 on line 1.'),
+    );
+
+    it(
+      'should not parse a version declaration with version 1.1',
+      shouldNotParse(parser11, 'VERSION "1.1"\n<urn:a:s> <urn:a:p> <urn:a:o>.',
+                     'Version declarations are not allowed in RDF 1.1 on line 1.'),
+    );
+
+    it(
+      'should not parse an @version declaration with version 1.1',
+      shouldNotParse(parser11, '@version "1.1".\n<urn:a:s> <urn:a:p> <urn:a:o>.',
+                     'Version declarations are not allowed in RDF 1.1 on line 1.'),
+    );
+
+    it(
+      'should not parse a triple term as N3 subject with version 1.1',
+      shouldNotParse(parser11N3, '<<( <urn:a:a> <urn:a:b> <urn:a:c> )>> <urn:a:p> <urn:a:o>.',
+                     'Triple terms are not allowed in RDF 1.1 on line 1.'),
+    );
+
+    it(
+      'should not parse a triple term with version 1.2-basic',
+      shouldNotParse(parser12basic, '<urn:a:s> <urn:a:p> <<( <urn:a:a> <urn:a:b> <urn:a:c> )>>.',
+                     'Triple terms are not allowed in RDF 1.2-basic on line 1.'),
+    );
+
+    it(
+      'should not parse an annotation with version 1.2-basic',
+      shouldNotParse(parser12basic, '<urn:a:s> <urn:a:p> <urn:a:o> {| <urn:a:b> <urn:a:c> |}.',
+                     'Triple annotations are not allowed in RDF 1.2-basic on line 1.'),
+    );
+
+    it(
+      'should parse a directional language tag with version 1.2-basic',
+      shouldParse(parser12basic, '<urn:a:s> <urn:a:p> "o"@en--ltr.',
+                  ['urn:a:s', 'urn:a:p', '"o"@en--ltr']),
+    );
+
+    it(
+      'should parse a version declaration with version 1.2-basic',
+      shouldParse(parser12basic, 'VERSION "1.2-basic"\n<urn:a:s> <urn:a:p> <urn:a:o>.',
+                  ['urn:a:s', 'urn:a:p', 'urn:a:o']),
+    );
+
+    it(
+      'should parse a reified triple with version 1.2',
+      shouldParse(parser12, '<< <urn:a:s> <urn:a:p> <urn:a:o> >> <urn:a:b> <urn:a:c>.',
+                  ['_:b0', 'urn:a:b', 'urn:a:c'],
+                  ['_:b0', reifies, ['urn:a:s', 'urn:a:p', 'urn:a:o']]),
+    );
+
+    it(
+      'should not check terms with validate.version only',
+      shouldParse(parserVersionOnly, '<http://example.org/%ZZ> <urn:a:p> <urn:a:o>.',
+                  ['http://example.org/%ZZ', 'urn:a:p', 'urn:a:o']),
+    );
+
+    it(
+      'should not enforce a version when none is given',
+      shouldParse(parserNoVersion, '<urn:a:s> <urn:a:p> <<( <urn:a:a> <urn:a:b> <urn:a:c> )>>.',
+                  ['urn:a:s', 'urn:a:p', ['urn:a:a', 'urn:a:b', 'urn:a:c']]),
+    );
   });
 
   describe('IRI resolution', () => {

@@ -2,6 +2,8 @@
 import N3Lexer from './N3Lexer';
 import N3DataFactory from './N3DataFactory';
 import namespaces from './IRIs';
+import { isValidIRI, isValidBlankNodeLabel, isValidLanguageTag,
+         isValidBaseDirection, isValidDatatypeValue } from './Validation';
 
 let blankNodePrefix = 0;
 
@@ -40,6 +42,22 @@ export default class N3Parser {
     // Disable parsing of unsupported versions by default
     this._parseUnsupportedVersions = !!options.parseUnsupportedVersions;
     this._version = options.version;
+    // Set up opt-in validation modes (all of them are disabled by default)
+    const validate = options.validate === true ?
+        { terms: true, version: true } : options.validate || {};
+    // With term validation, replace entity and literal reading
+    // by validating variants, leaving the default code path untouched
+    if (validate.terms) {
+      this._readEntity = this._readValidEntity;
+      this._completeLiteral = this._completeValidLiteral;
+      this._readDirCode = this._readValidDirCode;
+    }
+    const version = validate.version ? this._version : undefined;
+    // RDF 1.2 constructs other than triple terms are only invalid in RDF 1.1
+    this._rejectRDF12 = version === '1.1';
+    // Triple terms and their syntactic sugar
+    // are invalid in both RDF 1.1 and RDF 1.2 Basic
+    this._rejectTripleTerms = this._rejectRDF12 || version === '1.2-basic';
   }
 
   // ## Static class methods
@@ -147,7 +165,9 @@ export default class N3Parser {
     case 'VERSION':
       this._sparqlStyle = true;
     case '@version':
-      return this._readVersion;
+      return this._rejectRDF12 ?
+        this._error(`Version declarations are not allowed in RDF ${this._version}`, token) :
+        this._readVersion;
     // It could be a graph
     case '{':
       if (this._supportsNamedGraphs) {
@@ -259,10 +279,14 @@ export default class N3Parser {
     case '<<(':
       if (!this._n3Mode)
         return this._error('Disallowed triple term as subject', token);
+      if (this._rejectTripleTerms)
+        return this._error(`Triple terms are not allowed in RDF ${this._version}`, token);
       this._saveContext('<<(', this._graph, null, null, null);
       this._graph = null;
       return this._readSubject;
     case '<<':
+      if (this._rejectTripleTerms)
+        return this._error(`Reified triples are not allowed in RDF ${this._version}`, token);
       this._saveContext('<<', this._graph, null, null, null);
       this._graph = null;
       return this._readSubject;
@@ -356,10 +380,14 @@ export default class N3Parser {
                         this._graph = this._factory.blankNode());
       return this._readSubject;
     case '<<(':
+      if (this._rejectTripleTerms)
+        return this._error(`Triple terms are not allowed in RDF ${this._version}`, token);
       this._saveContext('<<(', this._graph, this._subject, this._predicate, null);
       this._graph = null;
       return this._readSubject;
     case '<<':
+      if (this._rejectTripleTerms)
+        return this._error(`Reified triples are not allowed in RDF ${this._version}`, token);
       this._saveContext('<<', this._graph, this._subject, this._predicate, null);
       this._graph = null;
       return this._readSubject;
@@ -509,6 +537,8 @@ export default class N3Parser {
                         this._graph = this._factory.blankNode());
       return this._readSubject;
     case '<<':
+      if (this._rejectTripleTerms)
+        return this._error(`Reified triples are not allowed in RDF ${this._version}`, token);
       this._saveContext('<<', this._graph, null, null, null);
       this._graph = null;
       next = this._readSubject;
@@ -600,6 +630,8 @@ export default class N3Parser {
   _readDirCode(component, listItem, token) {
     // Attempt to read a dircode
     if (token.type === 'dircode') {
+      if (this._rejectRDF12)
+        return this._error(`Directional language tags are not allowed in RDF ${this._version}`, token);
       const term = this._factory.literal(this._literalValue, { language: this._literalLanguage, direction: token.value });
       if (component === 'subject')
         this._subject = term;
@@ -617,6 +649,8 @@ export default class N3Parser {
   // Completes a literal in subject position
   _completeSubjectLiteral(token) {
     const completed = this._completeLiteral(token, 'subject');
+    if (!completed)
+      return;
     this._subject = completed.literal;
 
     // Postpone completion if the literal is only partially completed (such as lang+dir).
@@ -701,11 +735,15 @@ export default class N3Parser {
       break;
     // ~ is allowed in the annotation syntax
     case '~':
+      if (this._rejectTripleTerms)
+        return this._error(`Reifiers are not allowed in RDF ${this._version}`, token);
       next = this._readReifierInAnnotation;
       startingAnnotation = true;
       break;
     // {| means that the current triple is annotated with predicate-object pairs.
     case '{|':
+      if (this._rejectTripleTerms)
+        return this._error(`Triple annotations are not allowed in RDF ${this._version}`, token);
       // Continue using the last triple as reified triple subject for the predicate-object pairs.
       this._subject = this._readTripleTerm();
       this._validAnnotation = false;
@@ -784,6 +822,8 @@ export default class N3Parser {
     if (token.type !== 'IRI')
       return this._error(`Expected IRI to follow prefix "${this._prefix}:"`, token);
     const prefixNode = this._readEntity(token);
+    if (prefixNode === undefined)
+      return;
     this._prefixes[this._prefix] = prefixNode.value;
     this._prefixCallback(this._prefix, prefixNode);
     return this._readDeclarationPunctuation;
@@ -1054,6 +1094,51 @@ export default class N3Parser {
     this._tripleTerm = this._tripleTerm || this._factory.quad(this._subject, this._predicate, this._object);
     this._emit(reifier, this.RDF_REIFIES, this._tripleTerm, parentGraph || this.DEFAULTGRAPH);
     return reifier;
+  }
+
+  // ### `_readValidEntity` replaces `_readEntity` when term validation is enabled:
+  // it additionally checks the IRI of the entity against RFC 3987,
+  // and blank node labels against the `BLANK_NODE_LABEL` rule
+  _readValidEntity(token, quantifier) {
+    const value = N3Parser.prototype._readEntity.call(this, token, quantifier);
+    if (value !== undefined) {
+      if (value.termType === 'NamedNode' && !isValidIRI(value.value))
+        return this._error(`Invalid IRI "${value.value}"`, token);
+      if (value.termType === 'BlankNode') {
+        // In N3, labels carry a scope prefix with a dot separator by design,
+        // so only the label as written in the document is checked
+        const label = this._n3Mode ? token.value : value.value;
+        if (!isValidBlankNodeLabel(label))
+          return this._error(`Invalid blank node label "${label}"`, token);
+      }
+    }
+    return value;
+  }
+
+  // ### `_readValidDirCode` replaces `_readDirCode` when term validation is enabled:
+  // it additionally checks the base direction of a directional language-tagged string
+  _readValidDirCode(component, listItem, token) {
+    if (token.type === 'dircode' && !isValidBaseDirection(token.value))
+      return this._error(`Invalid base direction "${token.value}"`, token);
+    return N3Parser.prototype._readDirCode.call(this, component, listItem, token);
+  }
+
+  // ### `_completeValidLiteral` replaces `_completeLiteral` when term validation is enabled:
+  // it additionally checks the language tag against BCP 47,
+  // and the value against the lexical space of the datatype
+  _completeValidLiteral(token, component) {
+    const completed = N3Parser.prototype._completeLiteral.call(this, token, component);
+    if (completed) {
+      const literal = completed.literal;
+      if (literal.language) {
+        if (!isValidLanguageTag(literal.language))
+          return this._error(`Invalid language tag "${literal.language}"`, token);
+      }
+      else if (!isValidDatatypeValue(literal.value, literal.datatype.value)) {
+        return this._error(`Invalid value "${literal.value}" for datatype ${literal.datatype.value}`, token);
+      }
+    }
+    return completed;
   }
 
   // ### `_getContextEndReader` gets the next reader function at the end of a context

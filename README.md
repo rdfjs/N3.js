@@ -170,6 +170,42 @@ The parser can output a backwards chaining rule such as `_:q <= _:p.` in two way
 const parser = new N3.Parser({ isImpliedBy: true });
 ```
 
+By default, the parser checks only the grammar of the selected format;
+it does not validate the terms it produces beyond that grammar.
+The `validate` option opts into stricter checking:
+```JavaScript
+// Reject terms that fit the grammar but are not well-formed RDF terms
+const strictTerms = new N3.Parser({ validate: true });
+// Additionally reject RDF 1.2 constructs that are not part of RDF 1.1
+const strict11 = new N3.Parser({ validate: true, version: '1.1' });
+```
+`validate: true` enables all checks;
+individual checks can be selected by passing an object instead:
+- `validate: { terms: true }` checks that IRIs
+  (including those of prefix declarations)
+  are absolute and match the `IRI` rule of [RFC 3987](https://www.rfc-editor.org/rfc/rfc3987),
+  that blank node labels match the `BLANK_NODE_LABEL` rule
+  (including labels formed with the `blankNodePrefix` option),
+  that language tags are well-formed per [BCP 47](https://www.rfc-editor.org/rfc/rfc5646),
+  that the base direction of a directional language-tagged string
+  is either `ltr` or `rtl`,
+  and that literal values of some common XSD datatypes
+  (`xsd:boolean`, `xsd:integer`, `xsd:decimal`, `xsd:double`, `xsd:float`,
+  `xsd:date`, `xsd:time`, and `xsd:dateTime`)
+  are in the lexical space of their datatype.
+  These are well-formedness checks only:
+  IRI schemes and language subtags are not checked against their registries,
+  values of other datatypes are not checked,
+  and value-space rules (such as the number of days in a month) are not enforced.
+- `validate: { version: true }` rejects constructs
+  that are not part of the RDF version passed as the `version` option:
+  with `version: '1.1'`, triple terms, reified triples, annotation syntax,
+  directional language tags, and version declarations are rejected;
+  with `version: '1.2-basic'`, triple terms and their syntactic sugar are rejected.
+
+Validation errors are reported through the parser's regular error mechanism.
+When the `validate` option is absent, parser behavior and performance are unchanged.
+
 ### From an RDF stream to quads
 
 `N3.Parser` can parse [Node.js streams](http://nodejs.org/api/stream.html) as they grow,
