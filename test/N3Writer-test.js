@@ -58,6 +58,13 @@ describe('Writer', () => {
       expect(writer.quadsToString(triples)).toBe('<a> <b> <c> .\n<d> <e> <f> .\n');
     });
 
+    it('should serialize a variable from another library through its term type', () => {
+      const writer = new Writer();
+      const variable = { termType: 'Variable', value: 'v' };
+      expect(
+        writer.quadToString(variable, new NamedNode('b'), variable),
+      ).toBe('?v <b> ?v .\n');
+    });
 
     it('should serialize 0 triples', shouldSerialize(''));
 
