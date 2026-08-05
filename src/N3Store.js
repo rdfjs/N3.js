@@ -773,7 +773,9 @@ export default class N3Store {
   // ### `extractLists` finds and removes all list triples
   // and returns the items per list.
   extractLists({ remove = false, ignoreErrors = false } = {}) {
-    const lists = {}; // has scalar keys so could be a simple Object
+    // Keys are the list heads' term values, so a null-prototype map keeps
+    // them from colliding with inherited Object members such as `toString`
+    const lists = Object.create(null);
     const onError = ignoreErrors ? (() => true) :
                   ((node, message) => { throw new Error(`${node.value} ${message}`); });
 
