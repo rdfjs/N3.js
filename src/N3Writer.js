@@ -31,6 +31,7 @@ export default class N3Writer {
   constructor(outputStream, options) {
     // ### `_prefixRegex` matches a prefixed name or IRI that begins with one of the added prefixes
     this._prefixRegex = /$0^/;
+    this._hasPrefixes = false;
 
     // Shift arguments if the first argument is not a stream
     if (outputStream && typeof outputStream.write !== 'function')
@@ -162,8 +163,8 @@ export default class N3Writer {
     // Escape special characters
     if (escape.test(iri))
       iri = iri.replace(escapeAll, characterReplacer);
-    // Try to represent the IRI as prefixed name
-    const prefixMatch = this._prefixRegex.exec(iri);
+    // Try to represent the IRI as prefixed name, unless no prefixes were added
+    const prefixMatch = this._hasPrefixes ? this._prefixRegex.exec(iri) : null;
     return !prefixMatch ? `<${iri}>` :
            (!prefixMatch[1] ? iri : this._prefixIRIs[prefixMatch[1]] + prefixMatch[2]);
   }
@@ -295,6 +296,7 @@ export default class N3Writer {
     }
     // Recreate the prefix matcher
     if (hasPrefixes) {
+      this._hasPrefixes = true;
       let IRIlist = '', prefixList = '';
       for (const prefixIRI in this._prefixIRIs) {
         IRIlist += IRIlist ? `|${prefixIRI}` : prefixIRI;
