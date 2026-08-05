@@ -14,8 +14,12 @@ export function getRulesFromDataset(dataset) {
 }
 
 export default class N3Reasoner {
-  constructor(store) {
+  constructor(store, options = {}) {
     this._store = store;
+    // Optional safety budgets for reasoning over untrusted rules or data
+    this._maxDerivations = options.maxDerivations === undefined ? Infinity : options.maxDerivations;
+    // Caps a rule's premise count, as `_evaluatePremise` recurses once per premise
+    this._maxPremiseDepth = options.maxPremiseDepth === undefined ? Infinity : options.maxPremiseDepth;
   }
 
   _add(subject, predicate, object, graphItem, cb) {
@@ -23,6 +27,11 @@ export default class N3Reasoner {
     if (!this._store._addToIndex(graphItem.subjects,   subject,   predicate, object)) return;
     this._store._addToIndex(graphItem.predicates, predicate, object,    subject);
     this._store._addToIndex(graphItem.objects,    object,    subject,   predicate);
+    // Count genuinely new derivations and fail past the budget. The check comes
+    // after all three indexes are updated, so a caught error leaves the store
+    // in a consistent state (the reasoning result is merely incomplete).
+    if (++this._derivations > this._maxDerivations)
+      throw new Error(`Reasoning exceeded the maximum of ${this._maxDerivations} derivations`);
     cb();
   }
 
@@ -129,10 +138,19 @@ export default class N3Reasoner {
   }
 
   reason(rules) {
+    this._derivations = 0;
     if (!Array.isArray(rules)) {
       rules = getRulesFromDataset(rules);
     }
     rules = rules.map(rule => this._createRule(rule));
+
+    // Reject rules with more body triples than the configured premise depth:
+    // `_evaluatePremise` recurses once per premise, so an over-long rule would
+    // otherwise overflow the stack with an uncatchable RangeError.
+    for (const rule of rules) {
+      if (rule.premise.length > this._maxPremiseDepth)
+        throw new Error(`Reasoning rule exceeds the maximum premise depth of ${this._maxPremiseDepth}`);
+    }
 
     for (const r1 of rules) {
       for (const r2 of rules) {
@@ -179,11 +197,16 @@ export default class N3Reasoner {
     }
 
     const graphs = this._store._getGraphs();
-    for (const graphId in graphs) {
-      this._reasonGraphNaive(rules, graphs[graphId]);
+    try {
+      for (const graphId in graphs) {
+        this._reasonGraphNaive(rules, graphs[graphId]);
+      }
     }
-
-    this._store._size = null;
+    finally {
+      // Invalidate the cached size even if a derivation budget was exceeded,
+      // so a caught budget error leaves the store fully consistent.
+      this._store._size = null;
+    }
   }
 }
 
