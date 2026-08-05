@@ -227,9 +227,17 @@ export default class N3Lexer {
         break;
 
       case '@':
-        // Try to find a language code
-        if (this._previousMarker === 'literal' && (match = this._langcode.exec(input)) && match[1] !== 'version')
-          type = 'langcode', value = match[1];
+        // Try to find a language code. A language code can contain dash-separated
+        // subtags, so if the match is immediately followed by a single dash and the
+        // input is not finished, another subtag may still arrive in a later chunk and
+        // the match would be premature; wait for more input in that case.
+        // A double dash starts a direction code, which cannot extend the language code.
+        if (this._previousMarker === 'literal' && (match = this._langcode.exec(input)) && match[1] !== 'version') {
+          if (!inputFinished && input[match[0].length] === '-' && input[match[0].length + 1] !== '-')
+            match = null;
+          else
+            type = 'langcode', value = match[1];
+        }
         // Try to find a keyword
         else if (match = this._atKeyword.exec(input))
           type = match[0];
