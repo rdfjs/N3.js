@@ -73,6 +73,211 @@ describe('StreamWriter', () => {
     });
   });
 
+  describe('output chunking', () => {
+    it('should serialize a small document as a single chunk', done => {
+      const inputStream = new ArrayReader([
+        new Quad(termFromId('abc'), termFromId('def'), termFromId('ghi')),
+        new Quad(termFromId('jkl'), termFromId('mno'), termFromId('pqr')),
+      ]);
+      const writer = new StreamWriter().import(inputStream);
+      const chunks = [];
+      writer.on('data', chunk => { chunks.push(chunk); });
+      writer.on('error', done);
+      writer.on('end', () => {
+        expect(chunks).toEqual(['<abc> <def> <ghi>.\n<jkl> <mno> <pqr>.\n']);
+        done();
+      });
+    });
+
+    it('should coalesce a large document into chunks of at least 64 KB', done => {
+      const quads = [];
+      let expected = '';
+      for (let i = 0; i < 4000; i++) {
+        quads.push(new Quad(termFromId(`http://example.org/subject${i}`),
+          termFromId('http://example.org/predicate'),
+          termFromId(`http://example.org/object${i}`)));
+        expected += `<http://example.org/subject${i}> <http://example.org/predicate> <http://example.org/object${i}>.\n`;
+      }
+      const writer = new StreamWriter().import(new ArrayReader(quads));
+      const chunks = [];
+      writer.on('data', chunk => { chunks.push(chunk); });
+      writer.on('error', done);
+      writer.on('end', () => {
+        expect(chunks.join('')).toBe(expected);
+        expect(chunks.length).toBeGreaterThan(1);
+        expect(chunks.length).toBeLessThan(40);
+        for (const chunk of chunks.slice(0, chunks.length - 1))
+          expect(chunk.length).toBeGreaterThanOrEqual(65536);
+        done();
+      });
+    });
+
+    it('should emit buffered output before a serialization error', done => {
+      const writer = new StreamWriter();
+      let data = '';
+      writer.on('data', chunk => { data += chunk; });
+      writer.on('error', error => {
+        expect(error).toBeInstanceOf(TypeError);
+        expect(data).toBe('<a> <b> <c>');
+        done();
+      });
+      writer.write(new Quad(termFromId('a'), termFromId('b'), termFromId('c')));
+      writer.write(new Quad(termFromId('d'), termFromId('e'), null));
+    });
+
+    it('should emit buffered output before an input stream error', done => {
+      const input = new Readable({ objectMode: true, read() {} });
+      const writer = new StreamWriter().import(input);
+      let data = '';
+      writer.on('data', chunk => { data += chunk; });
+      writer.on('error', error => {
+        expect(error.message).toBe('boom');
+        expect(data).toBe('<a> <b> <c>');
+        done();
+      });
+      writer.write(new Quad(termFromId('a'), termFromId('b'), termFromId('c')),
+        () => { input.emit('error', new Error('boom')); });
+    });
+  });
+
+  describe('pause flushing', () => {
+    // Lets pending (real) stream callbacks run while timers are fake
+    function tick() {
+      return new Promise(resolve => { setImmediate(resolve); });
+    }
+
+    function createWriter(options) {
+      const writer = new StreamWriter(options);
+      writer.chunks = [];
+      writer.on('data', chunk => { writer.chunks.push(chunk); });
+      return writer;
+    }
+
+    describe('with fake timers', () => {
+      beforeEach(() => {
+        jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate', 'queueMicrotask'] });
+      });
+      afterEach(() => { jest.useRealTimers(); });
+
+      it('flushes buffered output after the default 100 ms pause', async () => {
+        const writer = createWriter();
+        writer.write(new Quad(termFromId('a'), termFromId('b'), termFromId('c')));
+        await tick();
+        expect(writer.chunks).toEqual([]);
+        await jest.advanceTimersByTimeAsync(99);
+        expect(writer.chunks).toEqual([]);
+        await jest.advanceTimersByTimeAsync(1);
+        expect(writer.chunks).toEqual(['<a> <b> <c>']);
+        writer.destroy();
+      });
+
+      it('re-arms the pause flush after it has fired', async () => {
+        const writer = createWriter();
+        writer.write(new Quad(termFromId('a'), termFromId('b'), termFromId('c')));
+        await jest.advanceTimersByTimeAsync(100);
+        expect(writer.chunks).toEqual(['<a> <b> <c>']);
+        writer.write(new Quad(termFromId('d'), termFromId('e'), termFromId('f')));
+        await jest.advanceTimersByTimeAsync(99);
+        expect(writer.chunks).toEqual(['<a> <b> <c>']);
+        await jest.advanceTimersByTimeAsync(1);
+        expect(writer.chunks).toEqual(['<a> <b> <c>', '.\n<d> <e> <f>']);
+        writer.destroy();
+      });
+
+      it('only flushes full chunks while quads arrive quickly', async () => {
+        const writer = createWriter();
+        for (let i = 0; i < 4000; i++) {
+          writer.write(new Quad(termFromId(`http://example.org/subject${i}`),
+            termFromId('http://example.org/predicate'),
+            termFromId(`http://example.org/object${i}`)));
+        }
+        await tick();
+        // No fake time has passed, so all pushed chunks are size-triggered
+        expect(writer.chunks.length).toBeGreaterThan(1);
+        for (const chunk of writer.chunks)
+          expect(chunk.length).toBeGreaterThanOrEqual(65536);
+        writer.destroy();
+      });
+
+      it('end() flushes the tail and cancels the pause flush', async () => {
+        const writer = createWriter();
+        let ended = false;
+        writer.on('end', () => { ended = true; });
+        writer.write(new Quad(termFromId('a'), termFromId('b'), termFromId('c')));
+        writer.end();
+        await tick();
+        expect(writer.chunks).toEqual(['<a> <b> <c>.\n']);
+        expect(ended).toBe(true);
+        expect(jest.getTimerCount()).toBe(0);
+        await jest.advanceTimersByTimeAsync(1000);
+        expect(writer.chunks).toEqual(['<a> <b> <c>.\n']);
+      });
+
+      it('destroy() cancels the pause flush', async () => {
+        const writer = createWriter();
+        writer.write(new Quad(termFromId('a'), termFromId('b'), termFromId('c')));
+        await tick();
+        expect(jest.getTimerCount()).toBe(1);
+        writer.destroy();
+        await tick();
+        expect(jest.getTimerCount()).toBe(0);
+        await jest.advanceTimersByTimeAsync(1000);
+        expect(writer.chunks).toEqual([]);
+      });
+
+      it('destroy() before any output is harmless', async () => {
+        const writer = createWriter();
+        writer.destroy();
+        await tick();
+        expect(jest.getTimerCount()).toBe(0);
+        expect(writer.chunks).toEqual([]);
+      });
+
+      it('honours the flushDelay option', async () => {
+        const writer = createWriter({ flushDelay: 500 });
+        writer.write(new Quad(termFromId('a'), termFromId('b'), termFromId('c')));
+        await jest.advanceTimersByTimeAsync(499);
+        expect(writer.chunks).toEqual([]);
+        await jest.advanceTimersByTimeAsync(1);
+        expect(writer.chunks).toEqual(['<a> <b> <c>']);
+        writer.destroy();
+      });
+    });
+
+    describe('with real timers', () => {
+      it('does not keep the event loop referenced while output is buffered', () => {
+        const writer = createWriter();
+        writer.write(new Quad(termFromId('a'), termFromId('b'), termFromId('c')));
+        expect(writer._flushTimer.hasRef()).toBe(false);
+        writer.destroy();
+      });
+
+      it('tolerates timers without unref (browser environments)', done => {
+        const timeout = jest.spyOn(global, 'setTimeout').mockReturnValue(0);
+        const writer = createWriter();
+        writer.write(new Quad(termFromId('a'), termFromId('b'), termFromId('c')));
+        expect(timeout).toHaveBeenCalled();
+        timeout.mockRestore();
+        writer.on('end', () => {
+          expect(writer.chunks).toEqual(['<a> <b> <c>.\n']);
+          done();
+        });
+        writer.end();
+      });
+
+      it('delivers output to a consumer during a pause in the input', done => {
+        const writer = createWriter();
+        writer.write(new Quad(termFromId('a'), termFromId('b'), termFromId('c')));
+        setTimeout(() => {
+          // The pause flush has fired well before end()
+          expect(writer.chunks).toEqual(['<a> <b> <c>']);
+          writer.on('end', done);
+          writer.end();
+        }, 250);
+      });
+    });
+  });
+
   it('passes an error', () => {
     const input = new Readable(), writer = new StreamWriter();
     let error = null;
