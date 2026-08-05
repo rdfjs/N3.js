@@ -78,6 +78,16 @@ console.log(myQuad.object.datatype.value); // http://www.w3.org/1999/02/22-rdf-s
 console.log(myQuad.object.language);       // en
 ```
 
+Always create terms through a data factory such as `N3.DataFactory`,
+and not by instantiating the term classes directly:
+direct construction is deprecated,
+because the factory functions are where term validation can be applied.
+In line with the [RDF/JS specification](http://rdf.js.org/data-model-spec/),
+N3.js assumes that the value of any RDF/JS term it receives —
+whether from its own factory or from another implementation —
+was already validated when the term was created,
+and does not re-validate terms.
+
 In the rest of this document, we will treat “triples” and “quads” equally:
 we assume that a quad is simply a triple in a named or default graph.
 
@@ -203,6 +213,41 @@ function SlowConsumer() {
 
 A dedicated `prefix` event signals every prefix with `prefix` and `term` arguments.
 A dedicated `comment` event can be enabled by setting `comments: true` in the N3.StreamParser constructor.
+
+Note that `prefix` and `comment` events are emitted as soon as they are parsed,
+whereas quads can remain buffered until the consumer is ready to read them.
+The order of these events relative to `data` events is therefore
+not guaranteed to match the position of prefixes and comments in the document.
+If their position matters,
+use `N3.Parser` with the `onQuad`, `onPrefix` and `onComment` callbacks instead,
+which are invoked in document order.
+
+### From a Web Stream to quads
+
+N3.js consumes [Node.js streams](http://nodejs.org/api/stream.html) natively,
+but sources such as `fetch` produce [Web Streams](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API).
+On Node.js 17 or higher, convert such a stream into a Node.js stream:
+
+```JavaScript
+const streamParser = new N3.StreamParser(),
+      { Readable } = require('stream');
+Readable.fromWeb(response.body).pipe(streamParser);
+```
+
+In browsers (or anywhere without Node.js streams),
+write the chunks to the parser directly,
+since `N3.StreamParser` exposes a standard writable stream interface:
+
+```JavaScript
+const streamParser = new N3.StreamParser(),
+      reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+(async () => {
+  for (let result; !(result = await reader.read()).done;)
+    if (!streamParser.write(result.value))
+      await new Promise(resolve => streamParser.once('drain', resolve));
+  streamParser.end();
+})();
+```
 
 ## Writing
 
