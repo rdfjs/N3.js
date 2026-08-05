@@ -309,6 +309,30 @@ describe('Writer', () => {
     );
 
     it(
+      'should use prefixes for local names with dots',
+      shouldSerialize({ prefixes: { a: 'http://a.org/', b: 'http://a.org/b#' } },
+                      ['http://a.org/v1.0', 'http://a.org/b#a.b.c', 'http://a.org/a-1.b-2'],
+                      ['http://a.org/vocab.', 'http://a.org/b#.a', 'http://a.org/b#a..b'],
+                      '@prefix a: <http://a.org/>.\n' +
+                      '@prefix b: <http://a.org/b#>.\n\n' +
+                      'a:v1.0 b:a.b.c a:a-1.b-2.\n' +
+                      '<http://a.org/vocab.> <http://a.org/b#.a> <http://a.org/b#a..b>.\n'),
+    );
+
+    it('should round-trip prefixed names with dots through the parser', async () => {
+      const writer = new Writer({ prefixes: { a: 'http://a.org/' } });
+      const quad = new Quad(new NamedNode('http://a.org/v1.0'),
+                            new NamedNode('http://a.org/p'),
+                            new NamedNode('http://a.org/a.b.c'));
+      writer.addQuad(quad);
+      const output = await new Promise(resolve => {
+        writer.end((error, result) => resolve(result));
+      });
+      expect(output).toBe('@prefix a: <http://a.org/>.\n\na:v1.0 a:p a:a.b.c.\n');
+      expect(new Parser().parse(output)).toStrictEqual([quad]);
+    });
+
+    it(
       'should expand prefixes when possible',
       shouldSerialize({ prefixes: { a: 'http://a.org/', b: 'http://a.org/b#' } },
                       ['a:bc', 'b:ef', 'c:bhi'],
