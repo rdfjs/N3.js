@@ -78,6 +78,16 @@ console.log(myQuad.object.datatype.value); // http://www.w3.org/1999/02/22-rdf-s
 console.log(myQuad.object.language);       // en
 ```
 
+Always create terms through a data factory such as `N3.DataFactory`,
+and not by instantiating the term classes directly:
+direct construction is deprecated,
+because the factory functions are where term validation can be applied.
+In line with the [RDF/JS specification](http://rdf.js.org/data-model-spec/),
+N3.js assumes that the value of any RDF/JS term it receives —
+whether from its own factory or from another implementation —
+was already validated when the term was created,
+and does not re-validate terms.
+
 In the rest of this document, we will treat “triples” and “quads” equally:
 we assume that a quad is simply a triple in a named or default graph.
 
@@ -445,6 +455,23 @@ reasoner.reason(rulesDataset);
 ```
 
 **Note**: N3.js currently only supports rules with [Basic Graph Patterns](https://www.w3.org/TR/sparql11-query/#BasicGraphPattern) in the premise and conclusion. Built-ins and backward-chaining are *not* supported. For an RDF/JS reasoner that supports all Notation3 reasoning features, see [eye-js](https://github.com/eyereasoner/eye-js/).
+
+### Limiting reasoning cost
+
+When reasoning over rules or data that are not fully trusted,
+optional budgets bound the work `reason()` may perform:
+
+```JavaScript
+const reasoner = new Reasoner(store, {
+  maxDerivations: 100000, // maximum number of quads reason() may derive
+  maxPremiseDepth: 10,    // maximum number of premise triples per rule
+});
+reasoner.reason(rulesDataset);
+```
+
+Both budgets are unbounded by default;
+`reason()` throws when one is exceeded,
+leaving any quads derived up to that point in the store.
 
 ## Compatibility
 ### Format specifications
