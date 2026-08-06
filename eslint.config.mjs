@@ -295,8 +295,37 @@ export default [
     },
     rules: {
       // jest rule overrides (was in the root .eslintrc)
+      // The test suites assert through shared helpers that either return the
+      // test body (`it('…', shouldParse(…))`) or call `expect` internally.
+      'jest/expect-expect': [2, {
+        assertFunctionNames: [
+          'expect',
+          'forResultStream',
+          'shouldCallbackComments',
+          'shouldEmitComments',
+          'shouldEmitPrefixes',
+          'shouldIncludeAll',
+          'shouldNotEmitCommentsWhenNotEnabled',
+          'shouldNotParse',
+          'shouldNotParseWithComments',
+          'shouldNotTokenize',
+          'shouldParse',
+          'shouldParseWithCommentsEnabled',
+          'shouldSerialize',
+          'shouldTokenize',
+        ],
+      }],
+
+      // The `0` entries below override rules that `jest.configs['flat/recommended']`
+      // (spread into the preceding `test/**` config object) enables as `error`;
+      // in flat config, the later entry for the same files wins.
+      //
+      // `jest/no-standalone-expect` stays off — independently of
+      // `jest/expect-expect` above — because N3Store-test.js has ~40
+      // standalone `expect`s in `describe` bodies and `beforeAll` hooks
+      // while building up its shared mutable stores; enabling it requires
+      // restructuring those suites.
       'jest/no-standalone-expect': 0,
-      'jest/expect-expect': 0,
       'jest/no-done-callback': 0,
 
       'max-nested-callbacks': 0, // Mocha works with deeply nested callbacks
