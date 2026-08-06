@@ -126,7 +126,7 @@ export default class N3Writer {
   // ### `quadToString` serializes a quad as a string
   quadToString(subject, predicate, object, graph) {
     return  `${this._encodeSubject(subject)} ${
-            this._encodeIriOrBlank(predicate)} ${
+            this._encodeTerm(predicate)} ${
             this._encodeObject(object)
             }${graph && !isDefaultGraph(graph) ? ` ${this._encodeIriOrBlank(graph)} .\n` : ' .\n'}`;
   }
@@ -141,8 +141,7 @@ export default class N3Writer {
 
   // ### `_encodeSubject` represents a subject
   _encodeSubject(entity) {
-    return entity.termType === 'Quad' ?
-      this._encodeQuad(entity) : this._encodeIriOrBlank(entity);
+    return this._encodeTerm(entity);
   }
 
   // ### `_encodeIriOrBlank` represents an IRI or blank node
@@ -217,18 +216,23 @@ export default class N3Writer {
 
   // ### `_encodePredicate` represents a predicate
   _encodePredicate(predicate) {
-    return predicate.value === rdf.type ? 'a' : this._encodeIriOrBlank(predicate);
+    return predicate.value === rdf.type ? 'a' : this._encodeTerm(predicate);
   }
 
   // ### `_encodeObject` represents an object
   _encodeObject(object) {
-    switch (object.termType) {
+    return this._encodeTerm(object);
+  }
+
+  // ### `_encodeTerm` represents an arbitrary term
+  _encodeTerm(term) {
+    switch (term.termType) {
     case 'Quad':
-      return this._encodeQuad(object);
+      return this._encodeQuad(term);
     case 'Literal':
-      return this._encodeLiteral(object);
+      return this._encodeLiteral(term);
     default:
-      return this._encodeIriOrBlank(object);
+      return this._encodeIriOrBlank(term);
     }
   }
 

@@ -1021,6 +1021,45 @@ describe('Writer', () => {
       ).toBe('<a> <b> <<(<a> <b> <c> <g>)>> .\n');
     });
 
+    it('should serialize a triple with a literal as subject',
+      shouldSerialize([`"123"^^${xsd.boolean}`, 'b', 'c'], `"123"^^<${xsd.boolean}> <b> <c>.\n`));
+
+    it('should serialize a triple with a literal as predicate',
+      shouldSerialize(['a', `"123"^^${xsd.boolean}`, 'c'], `<a> "123"^^<${xsd.boolean}> <c>.\n`));
+
+    it('should serialize a triple with a language-tagged literal as subject',
+      shouldSerialize(['"hello"@en-us', 'b', 'c'], '"hello"@en-us <b> <c>.\n'));
+
+    it('should serialize a triple with a literal as subject in N3 mode',
+      shouldSerialize({ format: 'text/n3' },
+                      [`"123"^^${xsd.boolean}`, 'b', 'c'],
+                      `"123"^^<${xsd.boolean}> <b> <c>.\n`));
+
+    it('should serialize a triple with a literal as subject via quadToString', () => {
+      const writer = new Writer();
+      expect(
+        writer.quadToString(termFromId(`"123"^^${xsd.boolean}`), new NamedNode('b'), new NamedNode('c')),
+      ).toBe(`"123"^^<${xsd.boolean}> <b> <c> .\n`);
+    });
+
+    it('should serialize a triple with a literal as predicate via quadToString', () => {
+      const writer = new Writer();
+      expect(
+        writer.quadToString(new NamedNode('a'), termFromId(`"123"^^${xsd.boolean}`), new NamedNode('c')),
+      ).toBe(`<a> "123"^^<${xsd.boolean}> <c> .\n`);
+    });
+
+    it('should round-trip a triple with a literal as subject in N3 mode', done => {
+      const quad = new Quad(termFromId(`"1"^^${xsd.boolean}`),
+        new NamedNode('http://example.com/p'), new NamedNode('http://example.com/o'));
+      const writer = new Writer({ format: 'text/n3' });
+      writer.addQuad(quad);
+      writer.end((error, output) => {
+        expect(new Parser({ format: 'text/n3' }).parse(output)).toEqual([quad]);
+        done(error);
+      });
+    });
+
     /*
      * Test relativization of IRIs
      *
