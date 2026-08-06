@@ -7,12 +7,27 @@ import N3Writer from './N3Writer';
 
 const ITERATOR = Symbol('iter');
 
-function merge(target, source, depth = 4) {
-  if (depth === 0)
-    return Object.assign(target, source);
+// `SIZE` tracks the number of entries in an index node under a Symbol key,
+// which is invisible to `for...in` loops and `Object.keys`.
+// It makes empty-layer cleanup during removal O(1) instead of O(entries).
+// Every function that creates index nodes
+// (`_addToIndex`, `merge`, `intersect`, `difference`, and `indexMatch`)
+// must maintain it on the three levels below a graph.
+const SIZE = Symbol('size');
 
-  for (const key in source)
-    target[key] = merge(target[key] || Object.create(null), source[key], depth - 1);
+function merge(target, source, depth = 4) {
+  let size = target[SIZE] || 0;
+  for (const key in source) {
+    if (!(key in target)) {
+      size++;
+      target[key] = depth === 0 ? null : merge(Object.create(null), source[key], depth - 1);
+    }
+    else if (depth !== 0)
+      target[key] = merge(target[key], source[key], depth - 1);
+  }
+  // Depth 2 is the level of the `subjects`, `predicates`, and `objects` indexes.
+  if (depth <= 2)
+    target[SIZE] = size;
 
   return target;
 }
@@ -25,7 +40,7 @@ function merge(target, source, depth = 4) {
  * *not* be set as the value for an index.
  */
 function intersect(s1, s2, depth = 4) {
-  let target = false;
+  let target = false, size = 0;
 
   for (const key in s1) {
     if (key in s2) {
@@ -33,6 +48,7 @@ function intersect(s1, s2, depth = 4) {
       if (intersection !== false) {
         target = target || Object.create(null);
         target[key] = intersection;
+        size++;
       }
       // Depth 3 is the 'subjects', 'predicates' and 'objects' keys.
       // If the 'subjects' index is empty, so will the 'predicates' and 'objects' index.
@@ -41,6 +57,10 @@ function intersect(s1, s2, depth = 4) {
       }
     }
   }
+
+  // Depth 2 is the level of the `subjects`, `predicates`, and `objects` indexes.
+  if (depth <= 2 && target)
+    target[SIZE] = size;
 
   return target;
 }
@@ -53,7 +73,7 @@ function intersect(s1, s2, depth = 4) {
  * *not* be set as the value for an index.
  */
 function difference(s1, s2, depth = 4) {
-  let target = false;
+  let target = false, size = 0;
 
   for (const key in s1) {
     // When the key is not in the index, then none of the triples defined by s1[key] are
@@ -61,12 +81,14 @@ function difference(s1, s2, depth = 4) {
     if (!(key in s2)) {
       target = target || Object.create(null);
       target[key] = depth === 0 ? null : merge({}, s1[key], depth - 1);
+      size++;
     }
     else if (depth !== 0) {
       const diff = difference(s1[key], s2[key], depth - 1);
       if (diff !== false) {
         target = target || Object.create(null);
         target[key] = diff;
+        size++;
       }
       // Depth 3 is the 'subjects', 'predicates' and 'objects' keys.
       // If the 'subjects' index is empty, so will the 'predicates' and 'objects' index.
@@ -75,6 +97,10 @@ function difference(s1, s2, depth = 4) {
       }
     }
   }
+
+  // Depth 2 is the level of the `subjects`, `predicates`, and `objects` indexes.
+  if (depth <= 2 && target)
+    target[SIZE] = size;
 
   return target;
 }
@@ -203,13 +229,23 @@ export default class N3Store {
   // ### `_addToIndex` adds a quad to a three-layered index.
   // Returns if the index has changed, if the entry did not already exist.
   _addToIndex(index0, key0, key1, key2) {
-    // Create layers as necessary
-    const index1 = index0[key0] || (index0[key0] = {});
-    const index2 = index1[key1] || (index1[key1] = {});
+    // Create layers as necessary, maintaining their entry counters
+    let index1 = index0[key0];
+    if (!index1) {
+      index0[key0] = index1 = { [SIZE]: 0 };
+      index0[SIZE]++;
+    }
+    let index2 = index1[key1];
+    if (!index2) {
+      index1[key1] = index2 = { [SIZE]: 0 };
+      index1[SIZE]++;
+    }
     // Setting the key to _any_ value signals the presence of the quad
     const existed = key2 in index2;
-    if (!existed)
+    if (!existed) {
       index2[key2] = null;
+      index2[SIZE]++;
+    }
     return !existed;
   }
 
@@ -219,11 +255,13 @@ export default class N3Store {
     const index1 = index0[key0], index2 = index1[key1];
     delete index2[key2];
 
-    // Remove intermediary index layers if they are empty
-    for (const key in index2) return;
+    // Remove intermediary index layers if they are empty,
+    // which the entry counters detect in constant time
+    if (--index2[SIZE] !== 0) return;
     delete index1[key1];
-    for (const key in index1) return;
+    if (--index1[SIZE] !== 0) return;
     delete index0[key0];
+    index0[SIZE]--;
   }
 
   // ### `_findInIndex` finds a set of quads in a three-layered index.
@@ -378,7 +416,11 @@ export default class N3Store {
     let graphItem = this._graphs[graph];
     // Create the graph if it doesn't exist yet
     if (!graphItem) {
-      graphItem = this._graphs[graph] = { subjects: {}, predicates: {}, objects: {} };
+      graphItem = this._graphs[graph] = {
+        subjects: { [SIZE]: 0 },
+        predicates: { [SIZE]: 0 },
+        objects: { [SIZE]: 0 },
+      };
       // Freezing a graph helps subsequent `add` performance,
       // and properties will never be modified anyway
       Object.freeze(graphItem);
@@ -453,8 +495,8 @@ export default class N3Store {
     if (this._size !== null) this._size--;
 
     // Remove the graph if it is empty
-    for (subject in graphItem.subjects) return true;
-    delete graphs[graph];
+    if (graphItem.subjects[SIZE] === 0)
+      delete graphs[graph];
     return true;
   }
 
@@ -1114,15 +1156,18 @@ function indexMatch(index, ids, depth = 0) {
   if (ind && !(ind in index))
     return false;
 
-  let target = false;
+  let target = false, size = 0;
   for (const key in (ind ? { [ind]: index[ind] } : index)) {
     const result = depth === 2 ? null : indexMatch(index[key], ids, depth + 1);
 
     if (result !== false) {
       target = target || Object.create(null);
       target[key] = result;
+      size++;
     }
   }
+  if (target)
+    target[SIZE] = size;
   return target;
 }
 
