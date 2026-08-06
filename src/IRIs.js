@@ -4,11 +4,12 @@ const RDF  = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
 
 export default {
   xsd: {
-    decimal: `${XSD}decimal`,
-    boolean: `${XSD}boolean`,
-    double:  `${XSD}double`,
-    integer: `${XSD}integer`,
-    string:  `${XSD}string`,
+    decimal:  `${XSD}decimal`,
+    boolean:  `${XSD}boolean`,
+    dateTime: `${XSD}dateTime`,
+    double:   `${XSD}double`,
+    integer:  `${XSD}integer`,
+    string:   `${XSD}string`,
   },
   rdf: {
     type:          `${RDF}type`,

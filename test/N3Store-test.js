@@ -14,7 +14,7 @@ import namespaces from '../src/IRIs';
 import { Readable } from 'readable-stream';
 import { arrayifyStream } from 'arrayify-stream';
 
-const { namedNode, quad } = DataFactory;
+const { namedNode, literal, quad } = DataFactory;
 
 describe('Store', () => {
   describe('The Store export', () => {
@@ -128,6 +128,15 @@ describe('Store', () => {
       expect(store.createBlankNode('blank').value).toEqual('blank');
       expect(store.createBlankNode('blank').value).toEqual('blank1');
       expect(store.createBlankNode('blank').value).toEqual('blank2');
+    });
+
+    it('should be able to store and retrieve triples with Date literals', () => {
+      const date = new Date(Date.UTC(2017, 3, 27, 14, 39, 48, 901));
+      expect(store.addQuad(new NamedNode('a'), new NamedNode('b'), literal(date))).toBe(true);
+      const quads = store.getQuads(null, null, literal(date));
+      expect(quads).toHaveLength(1);
+      expect(quads[0].object).toEqual(new Literal('"2017-04-27T14:39:48.901Z"^^http://www.w3.org/2001/XMLSchema#dateTime'));
+      store.removeQuads(store.getQuads());
     });
 
     it('should be able to store triples with generated blank nodes', () => {
