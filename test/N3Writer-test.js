@@ -118,6 +118,82 @@ describe('Writer', () => {
     );
 
     it(
+      'should lowercase the language and direction of a literal',
+      shouldSerialize(['a', 'b', '"cde"@EN-US--LTR'],
+          '<a> <b> "cde"@en-us--ltr.\n'),
+    );
+
+    it(
+      'should serialize a literal with an empty language as rdf:langString',
+      shouldSerialize(['a', 'b', '"cde"@'],
+          '<a> <b> "cde"^^<http://www.w3.org/1999/02/22-rdf-syntax-ns#langString>.\n'),
+    );
+
+    it(
+      'should serialize a literal containing "--" with an empty language as rdf:langString',
+      shouldSerialize(['a', 'b', '"c--de"@'],
+          '<a> <b> "c--de"^^<http://www.w3.org/1999/02/22-rdf-syntax-ns#langString>.\n'),
+    );
+
+    it(
+      'should serialize a literal with a language and an empty direction',
+      shouldSerialize(['a', 'b', '"cde"@en--'],
+          '<a> <b> "cde"@en.\n'),
+    );
+
+    it(
+      'should serialize a literal with a datatype containing "--"',
+      shouldSerialize(['a', 'b', '"cde"^^http://ex.org/dt--x'],
+          '<a> <b> "cde"^^<http://ex.org/dt--x>.\n'),
+    );
+
+    describe('for literals from other data factories', () => {
+      function foreignLiteral(value, language, direction, datatype) {
+        return {
+          termType: 'Literal', value, language, direction,
+          datatype: { termType: 'NamedNode', value: datatype },
+        };
+      }
+      const rdf = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
+
+      it(
+        'should serialize a foreign literal with a language and direction',
+        shouldSerialize(['a', 'b', foreignLiteral('cde', 'en', 'ltr', `${rdf}dirLangString`)],
+            '<a> <b> "cde"@en--ltr.\n'),
+      );
+
+      it(
+        'should serialize a foreign literal with a language',
+        shouldSerialize(['a', 'b', foreignLiteral('cde', 'en', '', `${rdf}langString`)],
+            '<a> <b> "cde"@en.\n'),
+      );
+
+      it(
+        'should serialize a foreign string literal',
+        shouldSerialize(['a', 'b', foreignLiteral('cde', '', '', xsd.string)],
+            '<a> <b> "cde".\n'),
+      );
+
+      it(
+        'should serialize a foreign literal with a datatype',
+        shouldSerialize(['a', 'b', foreignLiteral('cde', '', '', 'http://ex.org/dt')],
+            '<a> <b> "cde"^^<http://ex.org/dt>.\n'),
+      );
+
+      it(
+        'should abbreviate a foreign integer literal',
+        shouldSerialize(['a', 'b', foreignLiteral('123', '', '', xsd.integer)],
+            '<a> <b> 123.\n'),
+      );
+
+      it(
+        'should escape a foreign literal',
+        shouldSerialize(['a', 'b', foreignLiteral('c"d\ne', '', '', xsd.string)],
+            '<a> <b> "c\\"d\\ne".\n'),
+      );
+    });
+
+    it(
       'should serialize a literal containing a single quote',
       shouldSerialize(['a', 'b', '"c\'de"'],
                       '<a> <b> "c\'de".\n'),
