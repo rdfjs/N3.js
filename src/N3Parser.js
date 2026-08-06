@@ -517,8 +517,28 @@ export default class N3Parser {
       // Start a new formula
       if (!this._n3Mode)
         return this._error('Unexpected graph', token);
-      this._saveContext('formula', this._graph, this._subject, this._predicate,
-                        this._graph = this._factory.blankNode());
+      // The formula is an item of the list,
+      // so it must be linked in the list's graph before the graph changes
+      list = this._factory.blankNode();
+      item = this._factory.blankNode();
+      // Is this the first element of the list?
+      if (previousList === null) {
+        // This list is either the subject or the object of its parent
+        if (parent.predicate === null)
+          parent.subject = list;
+        else
+          parent.object = list;
+      }
+      else {
+        // Continue the previous list with the current list
+        this._emit(previousList, this.RDF_REST, list, this._graph);
+      }
+      // Output the item
+      this._emit(list, this.RDF_FIRST, item, this._graph);
+      // Stack the current list quad and start the formula
+      this._saveContext('formula', this._graph, list, this.RDF_FIRST,
+                        this._graph = item);
+      this._subject = null;
       return this._readSubject;
     case '<<':
       this._saveContext('<<', this._graph, null, null, null);
