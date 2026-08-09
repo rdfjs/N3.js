@@ -3,7 +3,7 @@
 //
 // The term-span instrumentation (see the term-provenance branch's commit
 // message) is a formulaic transformation: a fixed set of context-anchored
-// replacements in N3Lexer.js, N3Parser.js and index.js, plus one new file
+// replacements in N3Lexer.js, N3Parser.js, and index.js, plus one new file
 // (N3ProvenanceParser.js).  This script applies it to an UNPATCHED N3.js
 // source tree, so the instrumentation can be maintained out-of-tree and
 // regenerated against upstream releases:
