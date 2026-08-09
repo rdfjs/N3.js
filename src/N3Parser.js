@@ -315,6 +315,7 @@ export default class N3Parser {
 
       if (token.prefix.length === 0) {
         this._literalValue = token.value;
+        if (this._termSpans !== null) this._literalSpan = { line: token.line, start: token.offsetStart, end: token.offsetEnd };
         return this._completePredicateLiteral;
       }
       else

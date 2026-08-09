@@ -1,153 +1,157 @@
 {
- "transforms": {
-  "src/N3Lexer.js": [
-   {
-    "old": "    // Cache the last tested closing position of long literals\n    this._literalClosingPos = 0;\n  }\n",
-    "new": "    // Cache the last tested closing position of long literals\n    this._literalClosingPos = 0;\n    // Absolute character offset of the head of `_input` within the document\n    this._offset = 0;\n    // Only annotate tokens with absolute offsets when asked (keeps the\n    // default token shape unchanged)\n    this._trackOffsets = !!options.trackOffsets;\n  }\n"
-   },
-   {
-    "old": "    // Continue parsing as far as possible; the loop will return eventually\n    let input = this._input;\n    let currentLineLength = input.length;\n    while (true) {",
-    "new": "    // Continue parsing as far as possible; the loop will return eventually\n    let input = this._input;\n    const self = this;\n    let currentLineLength = input.length;\n    while (true) {"
-   },
-   {
-    "old": "          emitToken('comment', comment[1], '', this._line, whiteSpaceMatch[0].length);\n        // Advance the input\n        input = input.substr(whiteSpaceMatch[0].length, input.length);\n        currentLineLength = input.length;",
-    "new": "          emitToken('comment', comment[1], '', this._line, whiteSpaceMatch[0].length);\n        // Advance the input\n        this._offset += whiteSpaceMatch[0].length;\n        input = input.substr(whiteSpaceMatch[0].length, input.length);\n        currentLineLength = input.length;"
-   },
-   {
-    "old": "      // Skip whitespace on current line\n      if (!whiteSpaceMatch && (whiteSpaceMatch = this._whitespace.exec(input)))\n        input = input.substr(whiteSpaceMatch[0].length, input.length);\n",
-    "new": "      // Skip whitespace on current line\n      if (!whiteSpaceMatch && (whiteSpaceMatch = this._whitespace.exec(input)))\n        this._offset += whiteSpaceMatch[0].length,\n        input = input.substr(whiteSpaceMatch[0].length, input.length);\n"
-   },
-   {
-    "old": "          this._previousMarker = '^^';\n          // Move to type IRI or prefixed name\n          input = input.substr(2);\n          if (input[0] !== '<') {\n            inconclusive = true;",
-    "new": "          this._previousMarker = '^^';\n          // Move to type IRI or prefixed name\n          this._offset += 2, input = input.substr(2);\n          if (input[0] !== '<') {\n            inconclusive = true;"
-   },
-   {
-    "old": "\n      // Advance to next part to tokenize\n      input = input.substr(length, input.length);\n    }\n",
-    "new": "\n      // Advance to next part to tokenize\n      this._offset += length, input = input.substr(length, input.length);\n    }\n"
-   },
-   {
-    "old": "      const end = start + length;\n      const token = { type, value, prefix, line, start, end };\n      callback(null, token);\n      return token;",
-    "new": "      const end = start + length;\n      const token = { type, value, prefix, line, start, end };\n      // absolute document offsets (the token begins at the unconsumed head)\n      if (self._trackOffsets) {\n        token.offsetStart = self._offset;\n        token.offsetEnd = self._offset + length;\n      }\n      callback(null, token);\n      return token;"
-   }
-  ],
-  "src/N3Parser.js": [
-   {
-    "old": "    this._setBase(options.baseIRI);\n    options.factory && initDataFactory(this, options.factory);\n\n    // Set supported features depending on the format",
-    "new": "    this._setBase(options.baseIRI);\n    options.factory && initDataFactory(this, options.factory);\n    // Opt-in source-span tracking: after each emitted quad, invoke\n    // onQuadSpans(quad, {subject, predicate, object, graph}) with the\n    // lexer's {line, start, end} for each position's source token (null for\n    // synthetic terms without one).  Zero cost when the option is absent.\n    this._onQuadSpans = options.onQuadSpans || null;\n    this._termSpans = this._onQuadSpans ? new WeakMap() : null;\n\n    // Set supported features depending on the format"
-   },
-   {
-    "old": "    this._blankNodePrefix = typeof options.blankNodePrefix !== 'string' ? '' :\n                              options.blankNodePrefix.replace(/^(?!_:)/, '_:');\n    this._lexer = options.lexer || new N3Lexer({ lineMode: isLineMode, n3: isN3, isImpliedBy: this._isImpliedBy });\n    // Disable explicit quantifiers by default\n    this._explicitQuantifiers = !!options.explicitQuantifiers;",
-    "new": "    this._blankNodePrefix = typeof options.blankNodePrefix !== 'string' ? '' :\n                              options.blankNodePrefix.replace(/^(?!_:)/, '_:');\n    this._lexer = options.lexer || new N3Lexer({ lineMode: isLineMode, n3: isN3, isImpliedBy: this._isImpliedBy, trackOffsets: !!options.onQuadSpans });\n    // Disable explicit quantifiers by default\n    this._explicitQuantifiers = !!options.explicitQuantifiers;"
-   },
-   {
-    "old": "    if (!quantifier && this._n3Mode && (value.id in this._quantified))\n      value = this._quantified[value.id];\n    return value;\n  }\n",
-    "new": "    if (!quantifier && this._n3Mode && (value.id in this._quantified))\n      value = this._quantified[value.id];\n    return this._noteSpan(value, token);\n  }\n"
-   },
-   {
-    "old": "      // Start a new quad with a new blank node as subject\n      this._saveContext('blank', this._graph,\n                        this._subject = this._factory.blankNode(), null, null);\n      return this._readBlankNodeHead;\n    case '(':",
-    "new": "      // Start a new quad with a new blank node as subject\n      this._saveContext('blank', this._graph,\n                        this._subject = this._noteSpan(this._factory.blankNode(), token), null, null);\n      return this._readBlankNodeHead;\n    case '(':"
-   },
-   {
-    "old": "        return this._error('Unexpected graph', token);\n      this._saveContext('formula', this._graph,\n                        this._graph = this._factory.blankNode(), null, null);\n      return this._readSubject;\n    case '}':",
-    "new": "        return this._error('Unexpected graph', token);\n      this._saveContext('formula', this._graph,\n                        this._graph = this._noteSpan(this._factory.blankNode(), token), null, null);\n      return this._readSubject;\n    case '}':"
-   },
-   {
-    "old": "      if (token.prefix.length === 0) {\n        this._literalValue = token.value;\n        return this._completeSubjectLiteral;\n      }",
-    "new": "      if (token.prefix.length === 0) {\n        this._literalValue = token.value;\n        if (this._termSpans !== null) this._literalSpan = { line: token.line, start: token.offsetStart, end: token.offsetEnd };\n        return this._completeSubjectLiteral;\n      }"
-   },
-   {
-    "old": "        // Start a new quad with a new blank node as subject\n        this._saveContext('blank', this._graph, this._subject,\n                          this._subject = this._factory.blankNode(), null);\n        return this._readBlankNodeHead;\n      }",
-    "new": "        // Start a new quad with a new blank node as subject\n        this._saveContext('blank', this._graph, this._subject,\n                          this._subject = this._noteSpan(this._factory.blankNode(), token), null);\n        return this._readBlankNodeHead;\n      }"
-   },
-   {
-    "old": "      if (token.prefix.length === 0) {\n        this._literalValue = token.value;\n        return this._readDataTypeOrLang;\n      }",
-    "new": "      if (token.prefix.length === 0) {\n        this._literalValue = token.value;\n        if (this._termSpans !== null) this._literalSpan = { line: token.line, start: token.offsetStart, end: token.offsetEnd };\n        return this._readDataTypeOrLang;\n      }"
-   },
-   {
-    "old": "      // Start a new quad with a new blank node as subject\n      this._saveContext('blank', this._graph, this._subject, this._predicate,\n                        this._subject = this._factory.blankNode());\n      return this._readBlankNodeHead;\n    case '(':",
-    "new": "      // Start a new quad with a new blank node as subject\n      this._saveContext('blank', this._graph, this._subject, this._predicate,\n                        this._subject = this._noteSpan(this._factory.blankNode(), token));\n      return this._readBlankNodeHead;\n    case '(':"
-   },
-   {
-    "old": "        return this._error('Unexpected graph', token);\n      this._saveContext('formula', this._graph, this._subject, this._predicate,\n                        this._graph = this._factory.blankNode());\n      return this._readSubject;\n    case '<<(':",
-    "new": "        return this._error('Unexpected graph', token);\n      this._saveContext('formula', this._graph, this._subject, this._predicate,\n                        this._graph = this._noteSpan(this._factory.blankNode(), token));\n      return this._readSubject;\n    case '<<(':"
-   },
-   {
-    "old": "      // Stack the current list quad and start a new quad with a blank node as subject\n      this._saveContext('blank', this._graph,\n                        list = this._factory.blankNode(), this.RDF_FIRST,\n                        this._subject = item = this._factory.blankNode());\n      next = this._readBlankNodeHead;\n      break;\n    case '(':\n      // Stack the current list quad and start a new list\n      this._saveContext('list', this._graph,\n                        list = this._factory.blankNode(), this.RDF_FIRST, this.RDF_NIL);\n      this._subject = null;\n      break;",
-    "new": "      // Stack the current list quad and start a new quad with a blank node as subject\n      this._saveContext('blank', this._graph,\n                        list = this._noteSpan(this._factory.blankNode(), token), this.RDF_FIRST,\n                        this._subject = item = this._noteSpan(this._factory.blankNode(), token));\n      next = this._readBlankNodeHead;\n      break;\n    case '(':\n      // Stack the current list quad and start a new list\n      this._saveContext('list', this._graph,\n                        list = this._noteSpan(this._factory.blankNode(), token), this.RDF_FIRST, this.RDF_NIL);\n      this._subject = null;\n      break;"
-   },
-   {
-    "old": "      if (token.prefix.length === 0) {\n        this._literalValue = token.value;\n        next = this._readListItemDataTypeOrLang;\n      }",
-    "new": "      if (token.prefix.length === 0) {\n        this._literalValue = token.value;\n        if (this._termSpans !== null) this._literalSpan = { line: token.line, start: token.offsetStart, end: token.offsetEnd };\n        next = this._readListItemDataTypeOrLang;\n      }"
-   },
-   {
-    "old": "        return this._error('Unexpected graph', token);\n      this._saveContext('formula', this._graph, this._subject, this._predicate,\n                        this._graph = this._factory.blankNode());\n      return this._readSubject;\n    case '<<':",
-    "new": "        return this._error('Unexpected graph', token);\n      this._saveContext('formula', this._graph, this._subject, this._predicate,\n                        this._graph = this._noteSpan(this._factory.blankNode(), token));\n      return this._readSubject;\n    case '<<':"
-   },
-   {
-    "old": "     // Create a new blank node if no item head was assigned yet\n    if (list === null)\n      this._subject = list = this._factory.blankNode();\n\n    // When reading a reified triple, store the list as subject in the stack, as this will be overridden when reading the triple.",
-    "new": "     // Create a new blank node if no item head was assigned yet\n    if (list === null)\n      this._subject = list = this._noteSpan(this._factory.blankNode(), token);\n\n    // When reading a reified triple, store the list as subject in the stack, as this will be overridden when reading the triple."
-   },
-   {
-    "old": "  _completeLiteral(token, component) {\n    // Create a simple string literal by default\n    let literal = this._factory.literal(this._literalValue);\n    let readCb;\n",
-    "new": "  _completeLiteral(token, component) {\n    // Create a simple string literal by default\n    let literal = this._noteLiteralSpan(this._factory.literal(this._literalValue));\n    let readCb;\n"
-   },
-   {
-    "old": "        return this._error('Detected illegal (directional) languaged-tagged string with explicit datatype', token);\n      }\n      literal = this._factory.literal(this._literalValue, datatype);\n      token = null;\n      break;",
-    "new": "        return this._error('Detected illegal (directional) languaged-tagged string with explicit datatype', token);\n      }\n      literal = this._noteLiteralSpan(this._factory.literal(this._literalValue, datatype));\n      token = null;\n      break;"
-   },
-   {
-    "old": "      if (token.value.split('-').some(t => t.length > 8))\n        return this._error('Detected language tag with subtag longer than 8 characters', token);\n      literal = this._factory.literal(this._literalValue, token.value);\n      this._literalLanguage = token.value;\n      token = null;",
-    "new": "      if (token.value.split('-').some(t => t.length > 8))\n        return this._error('Detected language tag with subtag longer than 8 characters', token);\n      literal = this._noteLiteralSpan(this._factory.literal(this._literalValue, token.value));\n      this._literalLanguage = token.value;\n      token = null;"
-   },
-   {
-    "old": "    // Attempt to read a dircode\n    if (token.type === 'dircode') {\n      const term = this._factory.literal(this._literalValue, { language: this._literalLanguage, direction: token.value });\n      if (component === 'subject')\n        this._subject = term;",
-    "new": "    // Attempt to read a dircode\n    if (token.type === 'dircode') {\n      const term = this._noteLiteralSpan(this._factory.literal(this._literalValue, { language: this._literalLanguage, direction: token.value }));\n      if (component === 'subject')\n        this._subject = term;"
-   },
-   {
-    "old": "    if (token.type !== ']')\n      return this._error('Invalid graph label', token);\n    this._subject = this._factory.blankNode();\n    return this._readGraph;\n  }",
-    "new": "    if (token.type !== ']')\n      return this._error('Invalid graph label', token);\n    this._subject = this._noteSpan(this._factory.blankNode(), token);\n    return this._readGraph;\n  }"
-   },
-   {
-    "old": "    // Without explicit quantifiers, map entities to a quantified entity\n    if (!this._explicitQuantifiers)\n      this._quantified[entity.id] = this._factory[this._quantifier](this._factory.blankNode().value);\n    // With explicit quantifiers, output the reified quantifier\n    else {\n      // If this is the first item, start a new quantifier list\n      if (this._subject === null)\n        this._emit(this._graph || this.DEFAULTGRAPH, this._predicate,\n                   this._subject = this._factory.blankNode(), this.QUANTIFIERS_GRAPH);\n      // Otherwise, continue the previous list\n      else\n        this._emit(this._subject, this.RDF_REST,\n                   this._subject = this._factory.blankNode(), this.QUANTIFIERS_GRAPH);\n      // Output the list item\n      this._emit(this._subject, this.RDF_FIRST, entity, this.QUANTIFIERS_GRAPH);",
-    "new": "    // Without explicit quantifiers, map entities to a quantified entity\n    if (!this._explicitQuantifiers)\n      this._quantified[entity.id] = this._factory[this._quantifier](this._noteSpan(this._factory.blankNode(), token).value);\n    // With explicit quantifiers, output the reified quantifier\n    else {\n      // If this is the first item, start a new quantifier list\n      if (this._subject === null)\n        this._emit(this._graph || this.DEFAULTGRAPH, this._predicate,\n                   this._subject = this._noteSpan(this._factory.blankNode(), token), this.QUANTIFIERS_GRAPH);\n      // Otherwise, continue the previous list\n      else\n        this._emit(this._subject, this.RDF_REST,\n                   this._subject = this._noteSpan(this._factory.blankNode(), token), this.QUANTIFIERS_GRAPH);\n      // Output the list item\n      this._emit(this._subject, this.RDF_FIRST, entity, this.QUANTIFIERS_GRAPH);"
-   },
-   {
-    "old": "  _readForwardPath(token) {\n    let subject, predicate;\n    const object = this._factory.blankNode();\n    // The next token is the predicate\n    if ((predicate = this._readEntity(token)) === undefined)",
-    "new": "  _readForwardPath(token) {\n    let subject, predicate;\n    const object = this._noteSpan(this._factory.blankNode(), token);\n    // The next token is the predicate\n    if ((predicate = this._readEntity(token)) === undefined)"
-   },
-   {
-    "old": "  // ### `_readBackwardPath` reads a '^' path\n  _readBackwardPath(token) {\n    const subject = this._factory.blankNode();\n    let predicate, object;\n    // The next token is the predicate",
-    "new": "  // ### `_readBackwardPath` reads a '^' path\n  _readBackwardPath(token) {\n    const subject = this._noteSpan(this._factory.blankNode(), token);\n    let predicate, object;\n    // The next token is the predicate"
-   },
-   {
-    "old": "      return this._error(`Expected )>> but got ${token.type}`, token);\n    // Read the quad and restore the previous context\n    const quad = this._factory.quad(this._subject, this._predicate, this._object,\n        this._graph || this.DEFAULTGRAPH);\n    this._restoreContext('<<(', token);\n",
-    "new": "      return this._error(`Expected )>> but got ${token.type}`, token);\n    // Read the quad and restore the previous context\n    const quad = this._noteSpan(this._factory.quad(this._subject, this._predicate, this._object,\n        this._graph || this.DEFAULTGRAPH), token);\n    this._restoreContext('<<(', token);\n"
-   },
-   {
-    "old": "    const stack = this._contextStack, parent = stack.length && stack[stack.length - 1];\n    const parentGraph = parent ? parent.graph : undefined;\n    const reifier = this._reifier || this._factory.blankNode();\n    this._reifier = null;\n    this._tripleTerm = this._tripleTerm || this._factory.quad(this._subject, this._predicate, this._object);\n    this._emit(reifier, this.RDF_REIFIES, this._tripleTerm, parentGraph || this.DEFAULTGRAPH);\n    return reifier;",
-    "new": "    const stack = this._contextStack, parent = stack.length && stack[stack.length - 1];\n    const parentGraph = parent ? parent.graph : undefined;\n    const reifier = this._reifier || this._noteSpan(this._factory.blankNode(), null);\n    this._reifier = null;\n    this._tripleTerm = this._tripleTerm || this._noteSpan(this._factory.quad(this._subject, this._predicate, this._object), null);\n    this._emit(reifier, this.RDF_REIFIES, this._tripleTerm, parentGraph || this.DEFAULTGRAPH);\n    return reifier;"
-   },
-   {
-    "old": "  // ### `_emit` sends a quad through the callback\n  _emit(subject, predicate, object, graph) {\n    this._callback(null, this._factory.quad(subject, predicate, object, graph || this.DEFAULTGRAPH));\n  }\n",
-    "new": "  // ### `_emit` sends a quad through the callback\n  _emit(subject, predicate, object, graph) {\n    const quad = this._factory.quad(subject, predicate, object, graph || this.DEFAULTGRAPH);\n    if (this._onQuadSpans)\n      this._onQuadSpans(quad, {\n        subject:   this._termSpans.get(subject) || null,\n        predicate: this._termSpans.get(predicate) || null,\n        object:    this._termSpans.get(object) || null,\n        graph:     graph && this._termSpans.get(graph) || null,\n      });\n    this._callback(null, quad);\n  }\n\n  // ### `_noteLiteralSpan` records the pending string token's span\n  _noteLiteralSpan(literal) {\n    if (this._termSpans !== null && this._literalSpan)\n      this._termSpans.set(literal, this._literalSpan);\n    return literal;\n  }\n\n  // ### `_noteSpan` records a term's source token span when tracking is on\n  _noteSpan(term, token) {\n    if (this._termSpans !== null && term && token && typeof term === 'object')\n      this._termSpans.set(term, { line: token.line, start: token.offsetStart, end: token.offsetEnd });\n    return term;\n  }\n"
-   }
-  ],
-  "src/index.js": [
-   {
-    "old": "import Lexer from './N3Lexer';\nimport Parser from './N3Parser';\nimport Writer from './N3Writer';\nimport Store, { N3EntityIndex as EntityIndex } from './N3Store';",
-    "new": "import Lexer from './N3Lexer';\nimport Parser from './N3Parser';\nimport ProvenanceParser, { ProvenanceIndex, quadKey, termKey } from './N3ProvenanceParser';\nimport Writer from './N3Writer';\nimport Store, { N3EntityIndex as EntityIndex } from './N3Store';"
-   },
-   {
-    "old": "export {\n  Lexer,\n  Parser,\n  Writer,\n  Store,\n  StoreFactory,",
-    "new": "export {\n  Lexer,\n  Parser,\n  ProvenanceParser,\n  ProvenanceIndex,\n  quadKey,\n  termKey,\n  Writer,\n  Store,\n  StoreFactory,"
-   },
-   {
-    "old": "export default {\n  Lexer,\n  Parser,\n  Writer,\n  Store,\n  StoreFactory,",
-    "new": "export default {\n  Lexer,\n  Parser,\n  ProvenanceParser,\n  ProvenanceIndex,\n  Writer,\n  Store,\n  StoreFactory,"
-   }
-  ]
- },
- "newFiles": {
-  "src/N3ProvenanceParser.js": "// **N3ProvenanceParser** wraps N3Parser to track quad *utterances* on the\n// side: a multiset of source occurrences layered over the set of quads.\n//\n// RDF/JS stores are sets of value-equal quads; provenance needs the\n// occurrences.  Rather than slow the store down, this wrapper keeps a\n// Map from a canonical quad key (never object identity \u2014 RDF/JS only\n// promises `.equals()`, and N3Store reconstructs quads on read) to the\n// quad's utterances:\n//\n//   {quad, subject: Range[], predicate: Range[], object: Range[], graph: Range[]}\n//\n// Each Range is {start, end} in absolute character offsets (plus\n// {line, column} of the start).  Ranges come in arrays because provenance\n// can be split or synthetic; a position whose term has no source token\n// (e.g. rdf:first in a collection) has an empty array.\n//\n// The underlying parser reports spans through its opt-in `onQuadSpans`\n// option, which costs nothing when unused.\nimport N3Parser from './N3Parser';\n\nexport function termKey(term) {\n  switch (term.termType) {\n  case 'NamedNode': return `<${term.value}>`;\n  case 'BlankNode': return `_:${term.value}`;\n  case 'Literal': {\n    const val = `\"${term.value.replace(/\\\\/g, '\\\\\\\\').replace(/\"/g, '\\\\\"').replace(/\\n/g, '\\\\n').replace(/\\r/g, '\\\\r')}\"`;\n    if (term.language)\n      return `${val}@${term.language}${term.direction ? `--${term.direction}` : ''}`;\n    if (term.datatype && term.datatype.value !== 'http://www.w3.org/2001/XMLSchema#string')\n      return `${val}^^<${term.datatype.value}>`;\n    return val;\n  }\n  case 'DefaultGraph': return '';\n  case 'Variable': return `?${term.value}`;\n  case 'Quad': return `<<(${termKey(term.subject)} ${termKey(term.predicate)} ${termKey(term.object)})>>`;\n  default: throw new Error(`termKey: unknown termType ${term.termType}`);\n  }\n}\n\nexport function quadKey(quad) {\n  return `${termKey(quad.subject)} ${termKey(quad.predicate)} ${termKey(quad.object)} ${termKey(quad.graph)}`;\n}\n\nexport class ProvenanceIndex {\n  constructor() { this._map = new Map(); }\n\n  _add(quad, utterance) {\n    const key = quadKey(quad);\n    if (!this._map.has(key))\n      this._map.set(key, []);\n    this._map.get(key).push(utterance);\n  }\n\n  // ### `get` returns the utterances of a quad (empty array if never uttered)\n  get(quad) { return this._map.get(quadKey(quad)) || []; }\n\n  // ### `size` is the number of distinct quads uttered\n  get size() { return this._map.size; }\n\n  [Symbol.iterator]() { return this._map.values(); }\n}\n\nexport default class N3ProvenanceParser {\n  constructor(options = {}) {\n    this._options = options;\n  }\n\n  // ### `parse` synchronously parses `input`, returning\n  // `{quads, provenance, prefixes}`\n  parse(input) {\n    function absolute(span) {\n      if (!span)\n        return [];\n      const start = span.start;\n      let end = span.end;\n      // some lexer token lengths include trailing whitespace; trim it\n      while (end > start && /\\s/.test(input[end - 1]))\n        end--;\n      return [{ start, end, line: span.line }];\n    }\n\n    const provenance = new ProvenanceIndex();\n    const parser = new N3Parser({\n      ...this._options,\n      // fires synchronously from _emit during the synchronous parse below\n      onQuadSpans: (quad, spans) => {\n        provenance._add(quad, {\n          quad,\n          subject:   absolute(spans.subject),\n          predicate: absolute(spans.predicate),\n          object:    absolute(spans.object),\n          graph:     absolute(spans.graph),\n        });\n      },\n    });\n    const quads = parser.parse(input);\n    const prefixes = parser._prefixes;\n    return { quads, provenance, prefixes };\n  }\n}\n"
- }
+  "transforms": {
+    "src/N3Lexer.js": [
+      {
+        "old": "    // Cache the last tested closing position of long literals\n    this._literalClosingPos = 0;\n  }\n",
+        "new": "    // Cache the last tested closing position of long literals\n    this._literalClosingPos = 0;\n    // Absolute character offset of the head of `_input` within the document\n    this._offset = 0;\n    // Only annotate tokens with absolute offsets when asked (keeps the\n    // default token shape unchanged)\n    this._trackOffsets = !!options.trackOffsets;\n  }\n"
+      },
+      {
+        "old": "    // Continue parsing as far as possible; the loop will return eventually\n    let input = this._input;\n    let currentLineLength = input.length;\n    while (true) {",
+        "new": "    // Continue parsing as far as possible; the loop will return eventually\n    let input = this._input;\n    const self = this;\n    let currentLineLength = input.length;\n    while (true) {"
+      },
+      {
+        "old": "          emitToken('comment', comment[1], '', this._line, whiteSpaceMatch[0].length);\n        // Advance the input\n        input = input.substr(whiteSpaceMatch[0].length, input.length);\n        currentLineLength = input.length;",
+        "new": "          emitToken('comment', comment[1], '', this._line, whiteSpaceMatch[0].length);\n        // Advance the input\n        this._offset += whiteSpaceMatch[0].length;\n        input = input.substr(whiteSpaceMatch[0].length, input.length);\n        currentLineLength = input.length;"
+      },
+      {
+        "old": "      // Skip whitespace on current line\n      if (!whiteSpaceMatch && (whiteSpaceMatch = this._whitespace.exec(input)))\n        input = input.substr(whiteSpaceMatch[0].length, input.length);\n",
+        "new": "      // Skip whitespace on current line\n      if (!whiteSpaceMatch && (whiteSpaceMatch = this._whitespace.exec(input)))\n        this._offset += whiteSpaceMatch[0].length,\n        input = input.substr(whiteSpaceMatch[0].length, input.length);\n"
+      },
+      {
+        "old": "          this._previousMarker = '^^';\n          // Move to type IRI or prefixed name\n          input = input.substr(2);\n          if (input[0] !== '<') {\n            inconclusive = true;",
+        "new": "          this._previousMarker = '^^';\n          // Move to type IRI or prefixed name\n          this._offset += 2, input = input.substr(2);\n          if (input[0] !== '<') {\n            inconclusive = true;"
+      },
+      {
+        "old": "\n      // Advance to next part to tokenize\n      input = input.substr(length, input.length);\n    }\n",
+        "new": "\n      // Advance to next part to tokenize\n      this._offset += length, input = input.substr(length, input.length);\n    }\n"
+      },
+      {
+        "old": "      const end = start + length;\n      const token = { type, value, prefix, line, start, end };\n      callback(null, token);\n      return token;",
+        "new": "      const end = start + length;\n      const token = { type, value, prefix, line, start, end };\n      // absolute document offsets (the token begins at the unconsumed head)\n      if (self._trackOffsets) {\n        token.offsetStart = self._offset;\n        token.offsetEnd = self._offset + length;\n      }\n      callback(null, token);\n      return token;"
+      }
+    ],
+    "src/N3Parser.js": [
+      {
+        "old": "    this._setBase(options.baseIRI);\n    options.factory && initDataFactory(this, options.factory);\n\n    // Set supported features depending on the format",
+        "new": "    this._setBase(options.baseIRI);\n    options.factory && initDataFactory(this, options.factory);\n    // Opt-in source-span tracking: after each emitted quad, invoke\n    // onQuadSpans(quad, {subject, predicate, object, graph}) with the\n    // lexer's {line, start, end} for each position's source token (null for\n    // synthetic terms without one).  Zero cost when the option is absent.\n    this._onQuadSpans = options.onQuadSpans || null;\n    this._termSpans = this._onQuadSpans ? new WeakMap() : null;\n\n    // Set supported features depending on the format"
+      },
+      {
+        "old": "    this._blankNodePrefix = typeof options.blankNodePrefix !== 'string' ? '' :\n                              options.blankNodePrefix.replace(/^(?!_:)/, '_:');\n    this._lexer = options.lexer || new N3Lexer({ lineMode: isLineMode, n3: isN3, isImpliedBy: this._isImpliedBy });\n    // Disable explicit quantifiers by default\n    this._explicitQuantifiers = !!options.explicitQuantifiers;",
+        "new": "    this._blankNodePrefix = typeof options.blankNodePrefix !== 'string' ? '' :\n                              options.blankNodePrefix.replace(/^(?!_:)/, '_:');\n    this._lexer = options.lexer || new N3Lexer({ lineMode: isLineMode, n3: isN3, isImpliedBy: this._isImpliedBy, trackOffsets: !!options.onQuadSpans });\n    // Disable explicit quantifiers by default\n    this._explicitQuantifiers = !!options.explicitQuantifiers;"
+      },
+      {
+        "old": "    if (!quantifier && this._n3Mode && (value.id in this._quantified))\n      value = this._quantified[value.id];\n    return value;\n  }\n",
+        "new": "    if (!quantifier && this._n3Mode && (value.id in this._quantified))\n      value = this._quantified[value.id];\n    return this._noteSpan(value, token);\n  }\n"
+      },
+      {
+        "old": "      // Start a new quad with a new blank node as subject\n      this._saveContext('blank', this._graph,\n                        this._subject = this._factory.blankNode(), null, null);\n      return this._readBlankNodeHead;\n    case '(':",
+        "new": "      // Start a new quad with a new blank node as subject\n      this._saveContext('blank', this._graph,\n                        this._subject = this._noteSpan(this._factory.blankNode(), token), null, null);\n      return this._readBlankNodeHead;\n    case '(':"
+      },
+      {
+        "old": "        return this._error('Unexpected graph', token);\n      this._saveContext('formula', this._graph,\n                        this._graph = this._factory.blankNode(), null, null);\n      return this._readSubject;\n    case '}':",
+        "new": "        return this._error('Unexpected graph', token);\n      this._saveContext('formula', this._graph,\n                        this._graph = this._noteSpan(this._factory.blankNode(), token), null, null);\n      return this._readSubject;\n    case '}':"
+      },
+      {
+        "old": "      if (token.prefix.length === 0) {\n        this._literalValue = token.value;\n        return this._completeSubjectLiteral;\n      }",
+        "new": "      if (token.prefix.length === 0) {\n        this._literalValue = token.value;\n        if (this._termSpans !== null) this._literalSpan = { line: token.line, start: token.offsetStart, end: token.offsetEnd };\n        return this._completeSubjectLiteral;\n      }"
+      },
+      {
+        "old": "      if (token.prefix.length === 0) {\n        this._literalValue = token.value;\n        return this._completePredicateLiteral;\n      }",
+        "new": "      if (token.prefix.length === 0) {\n        this._literalValue = token.value;\n        if (this._termSpans !== null) this._literalSpan = { line: token.line, start: token.offsetStart, end: token.offsetEnd };\n        return this._completePredicateLiteral;\n      }"
+      },
+      {
+        "old": "        // Start a new quad with a new blank node as subject\n        this._saveContext('blank', this._graph, this._subject,\n                          this._subject = this._factory.blankNode(), null);\n        return this._readBlankNodeHead;\n      }",
+        "new": "        // Start a new quad with a new blank node as subject\n        this._saveContext('blank', this._graph, this._subject,\n                          this._subject = this._noteSpan(this._factory.blankNode(), token), null);\n        return this._readBlankNodeHead;\n      }"
+      },
+      {
+        "old": "      if (token.prefix.length === 0) {\n        this._literalValue = token.value;\n        return this._readDataTypeOrLang;\n      }",
+        "new": "      if (token.prefix.length === 0) {\n        this._literalValue = token.value;\n        if (this._termSpans !== null) this._literalSpan = { line: token.line, start: token.offsetStart, end: token.offsetEnd };\n        return this._readDataTypeOrLang;\n      }"
+      },
+      {
+        "old": "      // Start a new quad with a new blank node as subject\n      this._saveContext('blank', this._graph, this._subject, this._predicate,\n                        this._subject = this._factory.blankNode());\n      return this._readBlankNodeHead;\n    case '(':",
+        "new": "      // Start a new quad with a new blank node as subject\n      this._saveContext('blank', this._graph, this._subject, this._predicate,\n                        this._subject = this._noteSpan(this._factory.blankNode(), token));\n      return this._readBlankNodeHead;\n    case '(':"
+      },
+      {
+        "old": "        return this._error('Unexpected graph', token);\n      this._saveContext('formula', this._graph, this._subject, this._predicate,\n                        this._graph = this._factory.blankNode());\n      return this._readSubject;\n    case '<<(':",
+        "new": "        return this._error('Unexpected graph', token);\n      this._saveContext('formula', this._graph, this._subject, this._predicate,\n                        this._graph = this._noteSpan(this._factory.blankNode(), token));\n      return this._readSubject;\n    case '<<(':"
+      },
+      {
+        "old": "      // Stack the current list quad and start a new quad with a blank node as subject\n      this._saveContext('blank', this._graph,\n                        list = this._factory.blankNode(), this.RDF_FIRST,\n                        this._subject = item = this._factory.blankNode());\n      next = this._readBlankNodeHead;\n      break;\n    case '(':\n      // Stack the current list quad and start a new list\n      this._saveContext('list', this._graph,\n                        list = this._factory.blankNode(), this.RDF_FIRST, this.RDF_NIL);\n      this._subject = null;\n      break;",
+        "new": "      // Stack the current list quad and start a new quad with a blank node as subject\n      this._saveContext('blank', this._graph,\n                        list = this._noteSpan(this._factory.blankNode(), token), this.RDF_FIRST,\n                        this._subject = item = this._noteSpan(this._factory.blankNode(), token));\n      next = this._readBlankNodeHead;\n      break;\n    case '(':\n      // Stack the current list quad and start a new list\n      this._saveContext('list', this._graph,\n                        list = this._noteSpan(this._factory.blankNode(), token), this.RDF_FIRST, this.RDF_NIL);\n      this._subject = null;\n      break;"
+      },
+      {
+        "old": "      if (token.prefix.length === 0) {\n        this._literalValue = token.value;\n        next = this._readListItemDataTypeOrLang;\n      }",
+        "new": "      if (token.prefix.length === 0) {\n        this._literalValue = token.value;\n        if (this._termSpans !== null) this._literalSpan = { line: token.line, start: token.offsetStart, end: token.offsetEnd };\n        next = this._readListItemDataTypeOrLang;\n      }"
+      },
+      {
+        "old": "        return this._error('Unexpected graph', token);\n      this._saveContext('formula', this._graph, this._subject, this._predicate,\n                        this._graph = this._factory.blankNode());\n      return this._readSubject;\n    case '<<':",
+        "new": "        return this._error('Unexpected graph', token);\n      this._saveContext('formula', this._graph, this._subject, this._predicate,\n                        this._graph = this._noteSpan(this._factory.blankNode(), token));\n      return this._readSubject;\n    case '<<':"
+      },
+      {
+        "old": "     // Create a new blank node if no item head was assigned yet\n    if (list === null)\n      this._subject = list = this._factory.blankNode();\n\n    // When reading a reified triple, store the list as subject in the stack, as this will be overridden when reading the triple.",
+        "new": "     // Create a new blank node if no item head was assigned yet\n    if (list === null)\n      this._subject = list = this._noteSpan(this._factory.blankNode(), token);\n\n    // When reading a reified triple, store the list as subject in the stack, as this will be overridden when reading the triple."
+      },
+      {
+        "old": "  _completeLiteral(token, component) {\n    // Create a simple string literal by default\n    let literal = this._factory.literal(this._literalValue);\n    let readCb;\n",
+        "new": "  _completeLiteral(token, component) {\n    // Create a simple string literal by default\n    let literal = this._noteLiteralSpan(this._factory.literal(this._literalValue));\n    let readCb;\n"
+      },
+      {
+        "old": "        return this._error('Detected illegal (directional) languaged-tagged string with explicit datatype', token);\n      }\n      literal = this._factory.literal(this._literalValue, datatype);\n      token = null;\n      break;",
+        "new": "        return this._error('Detected illegal (directional) languaged-tagged string with explicit datatype', token);\n      }\n      literal = this._noteLiteralSpan(this._factory.literal(this._literalValue, datatype));\n      token = null;\n      break;"
+      },
+      {
+        "old": "      if (token.value.split('-').some(t => t.length > 8))\n        return this._error('Detected language tag with subtag longer than 8 characters', token);\n      literal = this._factory.literal(this._literalValue, token.value);\n      this._literalLanguage = token.value;\n      token = null;",
+        "new": "      if (token.value.split('-').some(t => t.length > 8))\n        return this._error('Detected language tag with subtag longer than 8 characters', token);\n      literal = this._noteLiteralSpan(this._factory.literal(this._literalValue, token.value));\n      this._literalLanguage = token.value;\n      token = null;"
+      },
+      {
+        "old": "    // Attempt to read a dircode\n    if (token.type === 'dircode') {\n      const term = this._factory.literal(this._literalValue, { language: this._literalLanguage, direction: token.value });\n      if (component === 'subject')\n        this._subject = term;",
+        "new": "    // Attempt to read a dircode\n    if (token.type === 'dircode') {\n      const term = this._noteLiteralSpan(this._factory.literal(this._literalValue, { language: this._literalLanguage, direction: token.value }));\n      if (component === 'subject')\n        this._subject = term;"
+      },
+      {
+        "old": "    if (token.type !== ']')\n      return this._error('Invalid graph label', token);\n    this._subject = this._factory.blankNode();\n    return this._readGraph;\n  }",
+        "new": "    if (token.type !== ']')\n      return this._error('Invalid graph label', token);\n    this._subject = this._noteSpan(this._factory.blankNode(), token);\n    return this._readGraph;\n  }"
+      },
+      {
+        "old": "    // Without explicit quantifiers, map entities to a quantified entity\n    if (!this._explicitQuantifiers)\n      this._quantified[entity.id] = this._factory[this._quantifier](this._factory.blankNode().value);\n    // With explicit quantifiers, output the reified quantifier\n    else {\n      // If this is the first item, start a new quantifier list\n      if (this._subject === null)\n        this._emit(this._graph || this.DEFAULTGRAPH, this._predicate,\n                   this._subject = this._factory.blankNode(), this.QUANTIFIERS_GRAPH);\n      // Otherwise, continue the previous list\n      else\n        this._emit(this._subject, this.RDF_REST,\n                   this._subject = this._factory.blankNode(), this.QUANTIFIERS_GRAPH);\n      // Output the list item\n      this._emit(this._subject, this.RDF_FIRST, entity, this.QUANTIFIERS_GRAPH);",
+        "new": "    // Without explicit quantifiers, map entities to a quantified entity\n    if (!this._explicitQuantifiers)\n      this._quantified[entity.id] = this._factory[this._quantifier](this._noteSpan(this._factory.blankNode(), token).value);\n    // With explicit quantifiers, output the reified quantifier\n    else {\n      // If this is the first item, start a new quantifier list\n      if (this._subject === null)\n        this._emit(this._graph || this.DEFAULTGRAPH, this._predicate,\n                   this._subject = this._noteSpan(this._factory.blankNode(), token), this.QUANTIFIERS_GRAPH);\n      // Otherwise, continue the previous list\n      else\n        this._emit(this._subject, this.RDF_REST,\n                   this._subject = this._noteSpan(this._factory.blankNode(), token), this.QUANTIFIERS_GRAPH);\n      // Output the list item\n      this._emit(this._subject, this.RDF_FIRST, entity, this.QUANTIFIERS_GRAPH);"
+      },
+      {
+        "old": "  _readForwardPath(token) {\n    let subject, predicate;\n    const object = this._factory.blankNode();\n    // The next token is the predicate\n    if ((predicate = this._readEntity(token)) === undefined)",
+        "new": "  _readForwardPath(token) {\n    let subject, predicate;\n    const object = this._noteSpan(this._factory.blankNode(), token);\n    // The next token is the predicate\n    if ((predicate = this._readEntity(token)) === undefined)"
+      },
+      {
+        "old": "  // ### `_readBackwardPath` reads a '^' path\n  _readBackwardPath(token) {\n    const subject = this._factory.blankNode();\n    let predicate, object;\n    // The next token is the predicate",
+        "new": "  // ### `_readBackwardPath` reads a '^' path\n  _readBackwardPath(token) {\n    const subject = this._noteSpan(this._factory.blankNode(), token);\n    let predicate, object;\n    // The next token is the predicate"
+      },
+      {
+        "old": "      return this._error(`Expected )>> but got ${token.type}`, token);\n    // Read the quad and restore the previous context\n    const quad = this._factory.quad(this._subject, this._predicate, this._object,\n        this._graph || this.DEFAULTGRAPH);\n    this._restoreContext('<<(', token);\n",
+        "new": "      return this._error(`Expected )>> but got ${token.type}`, token);\n    // Read the quad and restore the previous context\n    const quad = this._noteSpan(this._factory.quad(this._subject, this._predicate, this._object,\n        this._graph || this.DEFAULTGRAPH), token);\n    this._restoreContext('<<(', token);\n"
+      },
+      {
+        "old": "    const stack = this._contextStack, parent = stack.length && stack[stack.length - 1];\n    const parentGraph = parent ? parent.graph : undefined;\n    const reifier = this._reifier || this._factory.blankNode();\n    this._reifier = null;\n    this._tripleTerm = this._tripleTerm || this._factory.quad(this._subject, this._predicate, this._object);\n    this._emit(reifier, this.RDF_REIFIES, this._tripleTerm, parentGraph || this.DEFAULTGRAPH);\n    return reifier;",
+        "new": "    const stack = this._contextStack, parent = stack.length && stack[stack.length - 1];\n    const parentGraph = parent ? parent.graph : undefined;\n    const reifier = this._reifier || this._noteSpan(this._factory.blankNode(), null);\n    this._reifier = null;\n    this._tripleTerm = this._tripleTerm || this._noteSpan(this._factory.quad(this._subject, this._predicate, this._object), null);\n    this._emit(reifier, this.RDF_REIFIES, this._tripleTerm, parentGraph || this.DEFAULTGRAPH);\n    return reifier;"
+      },
+      {
+        "old": "  // ### `_emit` sends a quad through the callback\n  _emit(subject, predicate, object, graph) {\n    this._callback(null, this._factory.quad(subject, predicate, object, graph || this.DEFAULTGRAPH));\n  }\n",
+        "new": "  // ### `_emit` sends a quad through the callback\n  _emit(subject, predicate, object, graph) {\n    const quad = this._factory.quad(subject, predicate, object, graph || this.DEFAULTGRAPH);\n    if (this._onQuadSpans)\n      this._onQuadSpans(quad, {\n        subject:   this._termSpans.get(subject) || null,\n        predicate: this._termSpans.get(predicate) || null,\n        object:    this._termSpans.get(object) || null,\n        graph:     graph && this._termSpans.get(graph) || null,\n      });\n    this._callback(null, quad);\n  }\n\n  // ### `_noteLiteralSpan` records the pending string token's span\n  _noteLiteralSpan(literal) {\n    if (this._termSpans !== null && this._literalSpan)\n      this._termSpans.set(literal, this._literalSpan);\n    return literal;\n  }\n\n  // ### `_noteSpan` records a term's source token span when tracking is on\n  _noteSpan(term, token) {\n    if (this._termSpans !== null && term && token && typeof term === 'object')\n      this._termSpans.set(term, { line: token.line, start: token.offsetStart, end: token.offsetEnd });\n    return term;\n  }\n"
+      }
+    ],
+    "src/index.js": [
+      {
+        "old": "import Lexer from './N3Lexer';\nimport Parser from './N3Parser';\nimport Writer from './N3Writer';\nimport Store, { N3EntityIndex as EntityIndex } from './N3Store';",
+        "new": "import Lexer from './N3Lexer';\nimport Parser from './N3Parser';\nimport ProvenanceParser, { ProvenanceIndex, quadKey, termKey } from './N3ProvenanceParser';\nimport Writer from './N3Writer';\nimport Store, { N3EntityIndex as EntityIndex } from './N3Store';"
+      },
+      {
+        "old": "export {\n  Lexer,\n  Parser,\n  Writer,\n  Store,\n  StoreFactory,",
+        "new": "export {\n  Lexer,\n  Parser,\n  ProvenanceParser,\n  ProvenanceIndex,\n  quadKey,\n  termKey,\n  Writer,\n  Store,\n  StoreFactory,"
+      },
+      {
+        "old": "export default {\n  Lexer,\n  Parser,\n  Writer,\n  Store,\n  StoreFactory,",
+        "new": "export default {\n  Lexer,\n  Parser,\n  ProvenanceParser,\n  ProvenanceIndex,\n  Writer,\n  Store,\n  StoreFactory,"
+      }
+    ]
+  },
+  "newFiles": {
+    "src/N3ProvenanceParser.js": "// **N3ProvenanceParser** wraps N3Parser to track quad *utterances* on the\n// side: a multiset of source occurrences layered over the set of quads.\n//\n// RDF/JS stores are sets of value-equal quads; provenance needs the\n// occurrences.  Rather than slow the store down, this wrapper keeps a\n// Map from a canonical quad key (never object identity \u2014 RDF/JS only\n// promises `.equals()`, and N3Store reconstructs quads on read) to the\n// quad's utterances:\n//\n//   {quad, subject: Range[], predicate: Range[], object: Range[], graph: Range[]}\n//\n// Each Range is {start, end} in absolute character offsets (plus\n// {line, column} of the start).  Ranges come in arrays because provenance\n// can be split or synthetic; a position whose term has no source token\n// (e.g. rdf:first in a collection) has an empty array.\n//\n// The underlying parser reports spans through its opt-in `onQuadSpans`\n// option, which costs nothing when unused.\nimport N3Parser from './N3Parser';\n\nexport function termKey(term) {\n  switch (term.termType) {\n  case 'NamedNode': return `<${term.value}>`;\n  case 'BlankNode': return `_:${term.value}`;\n  case 'Literal': {\n    const val = `\"${term.value.replace(/\\\\/g, '\\\\\\\\').replace(/\"/g, '\\\\\"').replace(/\\n/g, '\\\\n').replace(/\\r/g, '\\\\r')}\"`;\n    if (term.language)\n      return `${val}@${term.language}${term.direction ? `--${term.direction}` : ''}`;\n    if (term.datatype && term.datatype.value !== 'http://www.w3.org/2001/XMLSchema#string')\n      return `${val}^^<${term.datatype.value}>`;\n    return val;\n  }\n  case 'DefaultGraph': return '';\n  case 'Variable': return `?${term.value}`;\n  case 'Quad': return `<<(${termKey(term.subject)} ${termKey(term.predicate)} ${termKey(term.object)})>>`;\n  default: throw new Error(`termKey: unknown termType ${term.termType}`);\n  }\n}\n\nexport function quadKey(quad) {\n  return `${termKey(quad.subject)} ${termKey(quad.predicate)} ${termKey(quad.object)} ${termKey(quad.graph)}`;\n}\n\nexport class ProvenanceIndex {\n  constructor() { this._map = new Map(); }\n\n  _add(quad, utterance) {\n    const key = quadKey(quad);\n    if (!this._map.has(key))\n      this._map.set(key, []);\n    this._map.get(key).push(utterance);\n  }\n\n  // ### `get` returns the utterances of a quad (empty array if never uttered)\n  get(quad) { return this._map.get(quadKey(quad)) || []; }\n\n  // ### `size` is the number of distinct quads uttered\n  get size() { return this._map.size; }\n\n  [Symbol.iterator]() { return this._map.values(); }\n}\n\nexport default class N3ProvenanceParser {\n  constructor(options = {}) {\n    this._options = options;\n  }\n\n  // ### `parse` synchronously parses `input`, returning\n  // `{quads, provenance, prefixes}`\n  parse(input) {\n    function absolute(span) {\n      if (!span)\n        return [];\n      const start = span.start;\n      let end = span.end;\n      // some lexer token lengths include trailing whitespace; trim it\n      while (end > start && /\\s/.test(input[end - 1]))\n        end--;\n      return [{ start, end, line: span.line }];\n    }\n\n    const provenance = new ProvenanceIndex();\n    const parser = new N3Parser({\n      ...this._options,\n      // fires synchronously from _emit during the synchronous parse below\n      onQuadSpans: (quad, spans) => {\n        provenance._add(quad, {\n          quad,\n          subject:   absolute(spans.subject),\n          predicate: absolute(spans.predicate),\n          object:    absolute(spans.object),\n          graph:     absolute(spans.graph),\n        });\n      },\n    });\n    const quads = parser.parse(input);\n    const prefixes = parser._prefixes;\n    return { quads, provenance, prefixes };\n  }\n}\n"
+  }
 }

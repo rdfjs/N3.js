@@ -99,10 +99,17 @@ describe('ProvenanceParser', () => {
     });
 
     it('spans subject literals in N3 mode', () => {
-      const doc = '"s" <p> <o> <g> .';
+      const doc = '"s" <p> <o> .';
       const { quads, provenance } = parse(doc, { format: 'text/n3' });
       const [u] = provenance.get(quads[0]);
       expect(slice(doc, u.subject[0])).toBe('"s"');
+    });
+
+    it('spans predicate literals in N3 mode', () => {
+      const doc = '<s> "p" <o> .';
+      const { quads, provenance } = parse(doc, { format: 'text/n3' });
+      const [u] = provenance.get(quads[0]);
+      expect(slice(doc, u.predicate[0])).toBe('"p"');
     });
 
     it('keys triple terms, variables and the default graph', () => {
