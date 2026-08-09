@@ -741,12 +741,19 @@ export default class N3Parser {
       break;
     // ~ is allowed in the annotation syntax
     case '~':
+      // Only invalidate the cache for a genuinely new triple - chained annotation blocks on the
+      // same triple (subject already null from a preceding annotation) must keep reusing it.
+      if (subject !== null)
+        this._tripleTerm = null;
       next = this._readReifierInAnnotation;
       startingAnnotation = true;
       break;
     // {| means that the current triple is annotated with predicate-object pairs.
     case '{|':
       // Continue using the last triple as reified triple subject for the predicate-object pairs.
+      // Same staleness rule as ~ above.
+      if (subject !== null)
+        this._tripleTerm = null;
       this._subject = this._readTripleTerm();
       this._validAnnotation = false;
       startingAnnotation = true;
