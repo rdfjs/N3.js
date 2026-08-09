@@ -1078,12 +1078,40 @@ export default class N3Parser {
     // If next token is a reifier, read it as such.
     if (token.type === 'IRI' || token.type === 'typeIRI' || token.type === 'type' || token.type === 'prefixed' || token.type === 'blank' || token.type === 'var') {
       this._reifier = this._readEntity(token);
-      return this._readPunctuation;
+      return this._readAnnotationBlockOrPunctuation;
     }
     // Otherwise, emit and assert triple term.
     this._readTripleTerm();
     this._subject = null;
     return this._readPunctuation(token);
+  }
+
+  // ### `_readAnnotationBlockOrPunctuation` reads what follows an explicit reifier:
+  // either an annotation block, which reuses the reifier as its subject,
+  // or punctuation, in which case the reifier stands alone and its triple
+  // term still needs to be asserted here.
+  _readAnnotationBlockOrPunctuation(token) {
+    if (token.type === '{|')
+      return this._readPunctuation(token);
+
+    this._readTripleTerm();
+    this._annotation = false;
+    // A shared subject or predicate goes on to reify a *different* triple,
+    // so the term just asserted must not be reused for the next one.
+    this._tripleTerm = null;
+    // The annotated triple was already emitted when the tilde was read,
+    // so continue without letting `_readPunctuation` emit it a second time.
+    switch (token.type) {
+    // The subject stays shared with the next predicate-object pair
+    case ';':
+      return this._readPredicate;
+    // The subject and predicate stay shared with the next object
+    case ',':
+      return this._readObject;
+    default:
+      this._subject = null;
+      return this._readPunctuation(token);
+    }
   }
 
   _readTripleTerm() {
