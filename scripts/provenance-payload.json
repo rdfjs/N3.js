@@ -128,8 +128,8 @@
         "new": "      return this._error(`Expected )>> but got ${token.type}`, token);\n    // Read the quad and restore the previous context\n    const quad = this._noteSpan(this._factory.quad(this._subject, this._predicate, this._object,\n        this._graph || this.DEFAULTGRAPH), token);\n    this._restoreContext('<<(', token);\n"
       },
       {
-        "old": "    const stack = this._contextStack, parent = stack.length && stack[stack.length - 1];\n    const parentGraph = parent ? parent.graph : undefined;\n    const reifier = this._reifier || this._factory.blankNode();\n    this._reifier = null;\n    this._tripleTerm = this._tripleTerm || this._factory.quad(this._subject, this._predicate, this._object);\n    this._emit(reifier, this.RDF_REIFIES, this._tripleTerm, parentGraph || this.DEFAULTGRAPH);\n    return reifier;",
-        "new": "    const stack = this._contextStack, parent = stack.length && stack[stack.length - 1];\n    const parentGraph = parent ? parent.graph : undefined;\n    const reifier = this._reifier || this._noteSpan(this._factory.blankNode(), null);\n    this._reifier = null;\n    this._tripleTerm = this._tripleTerm || this._noteSpan(this._factory.quad(this._subject, this._predicate, this._object), null);\n    this._emit(reifier, this.RDF_REIFIES, this._tripleTerm, parentGraph || this.DEFAULTGRAPH);\n    return reifier;"
+        "old": "    const reifier = this._reifier || this._factory.blankNode();\n    this._reifier = null;\n    this._tripleTerm = this._tripleTerm || this._factory.quad(this._subject, this._predicate, this._object);",
+        "new": "    const reifier = this._reifier || this._noteSpan(this._factory.blankNode(), null);\n    this._reifier = null;\n    this._tripleTerm = this._tripleTerm || this._noteSpan(this._factory.quad(this._subject, this._predicate, this._object), null);"
       },
       {
         "old": "  // ### `_emit` sends a quad through the callback\n  _emit(subject, predicate, object, graph) {\n    this._callback(null, this._factory.quad(subject, predicate, object, graph || this.DEFAULTGRAPH));\n  }\n",
