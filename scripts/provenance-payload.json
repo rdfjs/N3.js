@@ -134,6 +134,22 @@
       {
         "old": "  // ### `_emit` sends a quad through the callback\n  _emit(subject, predicate, object, graph) {\n    this._callback(null, this._factory.quad(subject, predicate, object, graph || this.DEFAULTGRAPH));\n  }\n",
         "new": "  // ### `_emit` sends a quad through the callback\n  _emit(subject, predicate, object, graph) {\n    const quad = this._factory.quad(subject, predicate, object, graph || this.DEFAULTGRAPH);\n    if (this._onQuadSpans)\n      this._onQuadSpans(quad, {\n        subject:   this._termSpans.get(subject) || null,\n        predicate: this._termSpans.get(predicate) || null,\n        object:    this._termSpans.get(object) || null,\n        graph:     graph && this._termSpans.get(graph) || null,\n      });\n    this._callback(null, quad);\n  }\n\n  // ### `_noteLiteralSpan` records the pending string token's span\n  _noteLiteralSpan(literal) {\n    if (this._termSpans !== null && this._literalSpan)\n      this._termSpans.set(literal, this._literalSpan);\n    return literal;\n  }\n\n  // ### `_noteSpan` records a term's source token span when tracking is on\n  _noteSpan(term, token) {\n    if (this._termSpans !== null && term && token && typeof term === 'object')\n      this._termSpans.set(term, { line: token.line, start: token.offsetStart, end: token.offsetEnd });\n    return term;\n  }\n"
+      },
+      {
+        "old": "        return this._completeSubjectLiteral;\n      }\n      else\n        this._subject = this._factory.literal(token.value, this._factory.namedNode(token.prefix));",
+        "new": "        return this._completeSubjectLiteral;\n      }\n      else\n        this._subject = this._noteSpan(this._factory.literal(token.value, this._factory.namedNode(token.prefix)), token);"
+      },
+      {
+        "old": "        return this._completePredicateLiteral;\n      }\n      else\n        this._predicate = this._factory.literal(token.value, this._factory.namedNode(token.prefix));",
+        "new": "        return this._completePredicateLiteral;\n      }\n      else\n        this._predicate = this._noteSpan(this._factory.literal(token.value, this._factory.namedNode(token.prefix)), token);"
+      },
+      {
+        "old": "        return this._readDataTypeOrLang;\n      }\n      // Pre-datatyped string literal (prefix stores the datatype)\n      else\n        this._object = this._factory.literal(token.value, this._factory.namedNode(token.prefix));",
+        "new": "        return this._readDataTypeOrLang;\n      }\n      // Pre-datatyped string literal (prefix stores the datatype)\n      else\n        this._object = this._noteSpan(this._factory.literal(token.value, this._factory.namedNode(token.prefix)), token);"
+      },
+      {
+        "old": "        next = this._readListItemDataTypeOrLang;\n      }\n      // Pre-datatyped string literal (prefix stores the datatype)\n      else {\n        item = this._factory.literal(token.value, this._factory.namedNode(token.prefix));",
+        "new": "        next = this._readListItemDataTypeOrLang;\n      }\n      // Pre-datatyped string literal (prefix stores the datatype)\n      else {\n        item = this._noteSpan(this._factory.literal(token.value, this._factory.namedNode(token.prefix)), token);"
       }
     ],
     "src/index.js": [

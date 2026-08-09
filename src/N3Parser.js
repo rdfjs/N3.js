@@ -260,7 +260,7 @@ export default class N3Parser {
         return this._completeSubjectLiteral;
       }
       else
-        this._subject = this._factory.literal(token.value, this._factory.namedNode(token.prefix));
+        this._subject = this._noteSpan(this._factory.literal(token.value, this._factory.namedNode(token.prefix)), token);
 
       break;
     case '<<(':
@@ -319,7 +319,7 @@ export default class N3Parser {
         return this._completePredicateLiteral;
       }
       else
-        this._predicate = this._factory.literal(token.value, this._factory.namedNode(token.prefix));
+        this._predicate = this._noteSpan(this._factory.literal(token.value, this._factory.namedNode(token.prefix)), token);
 
       break;
     case '[':
@@ -353,7 +353,7 @@ export default class N3Parser {
       }
       // Pre-datatyped string literal (prefix stores the datatype)
       else
-        this._object = this._factory.literal(token.value, this._factory.namedNode(token.prefix));
+        this._object = this._noteSpan(this._factory.literal(token.value, this._factory.namedNode(token.prefix)), token);
       break;
     case '[':
       // Start a new quad with a new blank node as subject
@@ -519,7 +519,7 @@ export default class N3Parser {
       }
       // Pre-datatyped string literal (prefix stores the datatype)
       else {
-        item = this._factory.literal(token.value, this._factory.namedNode(token.prefix));
+        item = this._noteSpan(this._factory.literal(token.value, this._factory.namedNode(token.prefix)), token);
         next = this._getContextEndReader();
       }
       break;

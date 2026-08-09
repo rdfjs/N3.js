@@ -112,6 +112,30 @@ describe('ProvenanceParser', () => {
       expect(slice(doc, u.predicate[0])).toBe('"p"');
     });
 
+    // Numbers and booleans reach the parser as a single `literal` token whose
+    // prefix already holds the datatype, so they bypass the _literalSpan dance.
+    it('spans pre-datatyped object literals', () => {
+      const doc = '<s> <p> 42, 1.5e0, true .';
+      const { quads, provenance } = parse(doc);
+      expect(quads.map(q => slice(doc, provenance.get(q)[0].object[0])))
+        .toStrictEqual(['42', '1.5e0', 'true']);
+    });
+
+    it('spans pre-datatyped literals in collections', () => {
+      const doc = '<s> <p> (42) .';
+      const { quads, provenance } = parse(doc);
+      const first = quads.find(q => q.predicate.value.endsWith('#first'));
+      expect(slice(doc, provenance.get(first)[0].object[0])).toBe('42');
+    });
+
+    it('spans pre-datatyped subject and predicate literals in N3 mode', () => {
+      const doc = '42 true <o> .';
+      const { quads, provenance } = parse(doc, { format: 'text/n3' });
+      const [u] = provenance.get(quads[0]);
+      expect(slice(doc, u.subject[0])).toBe('42');
+      expect(slice(doc, u.predicate[0])).toBe('true');
+    });
+
     it('keys triple terms, variables and the default graph', () => {
       const doc = '<a> <b> <<( <s> <p> <o> )>> .';
       const { quads, provenance } = parse(doc);
