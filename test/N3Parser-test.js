@@ -1744,6 +1744,49 @@ describe('Parser', () => {
     );
 
     it(
+        'should parse an annotation inside a blank node property list',
+        shouldParse('<s> <p> [ <b> <c> {| <d> <e> |} ].',
+            ['_:b1', reifies, ['_:b0', 'b', 'c']],
+            ['_:b0', 'b', 'c'],
+            ['_:b1', 'd', 'e'],
+            ['s', 'p', '_:b0']),
+    );
+
+    it(
+        'should parse an annotation inside a blank node property list in subject position',
+        shouldParse('[ <b> <c> {| <d> <e> |} ] <p> <o>.',
+            ['_:b1', reifies, ['_:b0', 'b', 'c']],
+            ['_:b0', 'b', 'c'],
+            ['_:b1', 'd', 'e'],
+            ['_:b0', 'p', 'o']),
+    );
+
+    it(
+        'should parse an annotation inside a nested blank node property list',
+        shouldParse('<s> <p> [ <b> [ <c> <d> {| <e> <f> |} ] ].',
+            ['_:b2', reifies, ['_:b1', 'c', 'd']],
+            ['_:b1', 'c', 'd'],
+            ['_:b2', 'e', 'f'],
+            ['_:b0', 'b', '_:b1'],
+            ['s', 'p', '_:b0']),
+    );
+
+    it(
+        'should parse an annotation with a reifier inside a blank node property list',
+        shouldParse('<s> <p> [ <b> <c> ~ <r> {| <d> <e> |} ].',
+            ['_:b0', 'b', 'c'],
+            ['r', reifies, ['_:b0', 'b', 'c']],
+            ['r', 'd', 'e'],
+            ['s', 'p', '_:b0']),
+    );
+
+    it(
+        'should not parse a predicate-object pair after an annotation inside a blank node property list',
+        shouldNotParse('<s> <p> [ <b> <c> {| <d> <e> |} ; <f> <g> ].',
+            'Expected ] to follow annotation on line 1.'),
+    );
+
+    it(
       'should parse a reified triple using annotation syntax with reifier and one predicate-object',
       shouldParse('<a> <b> <c> ~ <iri> {| <b> <c> |}.',
           ['a', 'b', 'c'],

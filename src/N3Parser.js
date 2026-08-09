@@ -760,7 +760,7 @@ export default class N3Parser {
         return this._error('Annotation block can not be empty', token);
       this._subject = null;
       this._annotation = false;
-      next = this._readPunctuation;
+      next = this._getContextEndReader();
       break;
     default:
       // An entity means this is a quad (only allowed if not already inside a graph)
@@ -796,9 +796,21 @@ export default class N3Parser {
     case ',':
       next = this._readObject;
       break;
+    // Annotation syntax applies to the quad just read, exactly as it does
+    // outside of a blank node property list.  `|}` arrives here too, because
+    // the objects inside the annotation block are themselves read within the
+    // enclosing blank node context.
+    case '~':
+    case '{|':
+    case '|}':
+      return this._readPunctuation(token);
     default:
       return this._error(`Expected punctuation to follow "${this._object.id}"`, token);
     }
+    // An annotation block consumes the subject it annotates, so there is
+    // nothing left to share with a following predicate-object pair
+    if (this._subject === null)
+      return this._error('Expected ] to follow annotation', token);
     // A quad has been completed now, so return it
     this._emit(this._subject, this._predicate, this._object, this._graph);
     return next;
