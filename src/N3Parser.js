@@ -1083,7 +1083,7 @@ export default class N3Parser {
     // Otherwise, emit and assert triple term.
     this._readTripleTerm();
     this._subject = null;
-    return this._readPunctuation(token);
+    return this._getContextEndReader().call(this, token);
   }
 
   // ### `_readAnnotationBlockOrPunctuation` reads what follows an explicit reifier:
@@ -1110,7 +1110,9 @@ export default class N3Parser {
       return this._readObject;
     default:
       this._subject = null;
-      return this._readPunctuation(token);
+      // Resume in the enclosing context, which is top-level punctuation
+      // unless the reified triple sits inside a blank node property list
+      return this._getContextEndReader().call(this, token);
     }
   }
 
