@@ -180,6 +180,16 @@ The parser can output a backwards chaining rule such as `_:q <= _:p.` in two way
 const parser = new N3.Parser({ isImpliedBy: true });
 ```
 
+In N3 documents, the parser by default rescopes blank node labels
+in lists and blank node property lists, in addition to formulas,
+so `_:a` inside a list does not co-reference `_:a` outside of it.
+The `formulaScopedBlankNodes` flag scopes blank node labels to formulas only,
+matching N3's formula-scoped blank node semantics
+(this will become the default in the next major version):
+```JavaScript
+const parser = new N3.Parser({ format: 'N3', formulaScopedBlankNodes: true });
+```
+
 ### From an RDF stream to quads
 
 `N3.Parser` can parse [Node.js streams](http://nodejs.org/api/stream.html) as they grow,
