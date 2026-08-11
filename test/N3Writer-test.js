@@ -463,7 +463,11 @@ describe('Writer', () => {
         write: function () {},
         end: function () { throw new Error('error'); },
       });
-      writer.end(done);
+      writer.end(error => {
+        // A failing stream end is swallowed; done is still called without error
+        expect(error).toBeUndefined();
+        done();
+      });
     });
 
     it('sends output through end when no stream argument is given', done => {
