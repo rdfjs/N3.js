@@ -496,6 +496,80 @@ and allows a mixture of different syntaxes.
 Pass a `format` option to the constructor with the name or MIME type of a format
 for strict, fault-intolerant behavior.
 
+### Validation
+The parser validates _syntax_:
+it rejects everything that violates the grammar of the selected format,
+strictly with the `format` option and as a permissive union of formats by default.
+It does not validate the resulting _terms_ beyond that grammar:
+- IRIs are not checked for full [RFC 3987](https://www.rfc-editor.org/rfc/rfc3987) well-formedness
+  (`<http://example.org/%ZZ>` parses),
+  and relative IRIs remain relative when no `baseIRI` option is given;
+- literal values are not checked against their datatype (`"abc"^^xsd:integer` parses);
+- language tags are checked against the grammar, not against [BCP 47](https://www.rfc-editor.org/rfc/rfc5646);
+- the writer trusts the terms it is given:
+  quads constructed with invalid term values are serialized as-is
+  and can yield invalid documents.
+
+For such guarantees, chain a validating transform behind the parser,
+composing dedicated validators such as
+[`validate-iri`](https://www.npmjs.com/package/validate-iri),
+[`rdf-validate-datatype`](https://www.npmjs.com/package/rdf-validate-datatype),
+and [`bcp-47`](https://www.npmjs.com/package/bcp-47):
+```JavaScript
+const { Transform } = require('stream');
+const { validateIri, IriValidationStrategy } = require('validate-iri');
+const { validators } = require('rdf-validate-datatype');
+const { parse: parseLanguageTag } = require('bcp-47');
+
+function validateTerm(term) {
+  switch (term.termType) {
+  case 'NamedNode': // RDF requires absolute IRIs
+    return validateIri(term.value, IriValidationStrategy.Strict) || null;
+  case 'Literal':
+    if (term.language) {
+      let invalid = false;
+      parseLanguageTag(term.language, { warning: () => { invalid = true; } });
+      return invalid ? new Error(`Invalid language tag "${term.language}"`) : null;
+    }
+    const validate = validators.find(term.datatype);
+    return validate && !validate(term.value)
+      ? new Error(`Invalid value "${term.value}" for datatype ${term.datatype.value}`)
+      : null; // unknown datatypes cannot be judged
+  default:
+    return null;
+  }
+}
+
+const quadStream = fs.createReadStream('data.ttl')
+  .pipe(new N3.StreamParser())
+  .pipe(new Transform({
+    objectMode: true,
+    transform(quad, encoding, done) {
+      const error = validateTerm(quad.subject) || validateTerm(quad.predicate) ||
+                    validateTerm(quad.object) || validateTerm(quad.graph);
+      done(error, error ? undefined : quad); // or: skip/collect instead of failing
+    },
+  }));
+```
+
+Term-level checks are one of several validation dimensions
+(the [`rdf-validation`](https://github.com/rdf-ext/rdf-validation) library treats these as composable modules):
+- _interface conformance_ — whether objects implement the [RDF/JS interfaces](https://rdf.js.org/data-model-spec/),
+  a concern of the data factory and the type system
+  rather than of a parser that constructs its own terms
+  (see [Interface specifications](#interface-specifications) below);
+- _version validity_ — RDF 1.2 documents can contain constructs
+  that are not valid RDF 1.1
+  (such as triple terms and directional language tags),
+  and RDF 1.2 Basic excludes triple terms;
+- _N3 validity_ — formulae, variables, and paths are N3-only
+  and already gated by the `format` option;
+- _shape-level validation_ — checking data against schemas
+  such as SHACL or ShEx is a separate layer on top of well-formed RDF.
+
+Parser-level opt-in validation modes covering the term and version dimensions
+are proposed in [#634](https://github.com/rdfjs/N3.js/pull/634).
+
 ### Interface specifications
 The N3.js submodules are compatible with the following [RDF.js](http://rdf.js.org) interfaces:
 
