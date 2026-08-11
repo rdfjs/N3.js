@@ -18,6 +18,44 @@ function merge(target, source, depth = 4) {
 }
 
 /**
+ * Determines whether a term contains a `Variable` at any depth.
+ */
+function containsVariable(term) {
+  switch (term.termType) {
+  case 'Variable':
+    return true;
+  case 'Quad':
+    return containsVariable(term.subject) || containsVariable(term.predicate) ||
+      containsVariable(term.object) || containsVariable(term.graph);
+  default:
+    return false;
+  }
+}
+
+/**
+ * Determines whether a pattern slot is a Quad term with structural matching
+ * semantics, i.e., contains a `Variable` at any depth. The recursion only
+ * runs for Quad-typed slots, so other patterns never pay for it.
+ */
+function isVariableQuad(term) {
+  return !!term && term.termType === 'Quad' && containsVariable(term);
+}
+
+/**
+ * Adds a quad to a three-layered index; returns whether the index changed.
+ */
+function addToIndex(index0, key0, key1, key2) {
+  // Create layers as necessary
+  const index1 = index0[key0] || (index0[key0] = {});
+  const index2 = index1[key1] || (index1[key1] = {});
+  // Setting the key to _any_ value signals the presence of the quad
+  const existed = key2 in index2;
+  if (!existed)
+    index2[key2] = null;
+  return !existed;
+}
+
+/**
  * Determines the intersection of the `_graphs` index s1 and s2.
  * s1 and s2 *must* belong to Stores that share an `_entityIndex`.
  *
@@ -79,6 +117,174 @@ function difference(s1, s2, depth = 4) {
   return target;
 }
 
+/**
+ * Maps the numeric ids of the `source` entity index to those of `target`.
+ * Only entities present in both indices appear in the returned map.
+ *
+ * Composite (triple term) ids are remapped via their component-id arrays.
+ * A composite is interned after its components, so its components are always
+ * already remapped when it is reached: ids are integer-index keys below
+ * 2^32 - 1, which `Object.keys` enumerates in ascending numeric order.
+ */
+function remapEntityIds(source, target) {
+  const entities = source._entities, targetIds = target._ids;
+  const remap = Object.create(null);
+  // The empty entity (default graph) is always id 1 in every index.
+  remap[1] = 1;
+  for (const id of Object.keys(entities)) {
+    const entry = entities[id];
+    // A non-string entry is the component-id array of a triple term.
+    if (typeof entry !== 'string') {
+      const mapped = target._remapCompositeId(entry, remap);
+      if (mapped !== undefined)
+        remap[id] = mapped;
+    }
+    else if (entry !== '') {
+      const targetId = targetIds[entry];
+      if (targetId !== undefined)
+        remap[id] = targetId;
+    }
+  }
+  return remap;
+}
+
+/**
+ * Performs a cross-entity-index intersection or difference: walks the `_graphs`
+ * index `g1` (using its own numeric ids) and, for each quad, tests whether it is
+ * present in the `_graphs` index `g2` (whose ids differ) via the precomputed
+ * `remap` (g1 ids -> g2 ids). Quads are kept when their presence in `g2` equals
+ * `keepIfPresent`. The result is returned as `{ graphs, size }`, where `graphs`
+ * is a fresh index keyed by `g1`'s ids, or `false` when the result is empty
+ * (like the return value of `intersect`/`difference`).
+ *
+ * Unmapped ids cannot prune the walk: this function is shared with difference,
+ * where quads whose graph/subject/predicate/object has no counterpart in
+ * `g2`'s index are exactly the ones to keep, so `undefined` is carried down
+ * through all four levels instead of skipping.
+ *
+ * NOTE: unlike the depth-recursive `intersect`/`difference`, the descent is
+ * hand-inlined (like the `size` getter, `_findInIndex` and `_countInIndex`)
+ * because each level must consult `remap`; sharing a generic walker with
+ * those hot monomorphic per-quad loops would slow them down.
+ */
+function crossGraphsOp(g1, g2, remap, keepIfPresent) {
+  let target = false, size = 0;
+  for (const graph in g1) {
+    const subjects = g1[graph].subjects;
+    const mappedGraph = remap[graph];
+    const otherContent = mappedGraph === undefined ? undefined : g2[mappedGraph];
+    const otherSubjects = otherContent && otherContent.subjects;
+    let out = null;
+    for (const subject in subjects) {
+      const predicates = subjects[subject];
+      const mappedSubject = otherSubjects && remap[subject];
+      const otherPredicates = mappedSubject === undefined ? undefined : otherSubjects[mappedSubject];
+      for (const predicate in predicates) {
+        const objects = predicates[predicate];
+        const mappedPredicate = otherPredicates && remap[predicate];
+        const otherObjects = mappedPredicate === undefined ? undefined : otherPredicates[mappedPredicate];
+        for (const object in objects) {
+          let present = false;
+          if (otherObjects) {
+            const mappedObject = remap[object];
+            present = mappedObject !== undefined && mappedObject in otherObjects;
+          }
+          if (present === keepIfPresent) {
+            if (!out) {
+              target = target || Object.create(null);
+              out = target[graph] = { subjects: {}, predicates: {}, objects: {} };
+            }
+            // Each (s,p,o) walked from `g1` is unique within its graph, so the
+            // quad is always new in `out` (`addToIndex` never finds it) and
+            // `size` can grow unconditionally.
+            addToIndex(out.subjects, subject, predicate, object);
+            addToIndex(out.predicates, predicate, object, subject);
+            addToIndex(out.objects, object, subject, predicate);
+            size++;
+          }
+        }
+      }
+    }
+  }
+  return { graphs: target, size };
+}
+
+/**
+ * Cross-entity-index intersection that walks the smaller `_graphs` index `g1`
+ * while probing the larger `g2`: like `crossGraphsOp` with
+ * `keepIfPresent === true`, except that unmapped ids prune the walk, and kept
+ * quads are emitted under their remapped ids so the returned `graphs` index is
+ * keyed by `g2`'s ids. This is only valid for intersection: `remap` is
+ * injective, so the remapped quads are still unique per graph, whereas
+ * difference must emit the unmappable quads of the walked index.
+ */
+function crossGraphsIntersect(g1, g2, remap) {
+  let target = false, size = 0;
+  for (const graph in g1) {
+    const mappedGraph = remap[graph];
+    const otherContent = mappedGraph === undefined ? undefined : g2[mappedGraph];
+    if (otherContent) {
+      const otherSubjects = otherContent.subjects;
+      const subjects = g1[graph].subjects;
+      let out = null;
+      for (const subject in subjects) {
+        const mappedSubject = remap[subject];
+        const otherPredicates = mappedSubject === undefined ? undefined : otherSubjects[mappedSubject];
+        if (otherPredicates) {
+          const predicates = subjects[subject];
+          for (const predicate in predicates) {
+            const mappedPredicate = remap[predicate];
+            const otherObjects = mappedPredicate === undefined ? undefined : otherPredicates[mappedPredicate];
+            if (otherObjects) {
+              const objects = predicates[predicate];
+              for (const object in objects) {
+                const mappedObject = remap[object];
+                if (mappedObject !== undefined && mappedObject in otherObjects) {
+                  if (!out) {
+                    target = target || Object.create(null);
+                    out = target[mappedGraph] = { subjects: {}, predicates: {}, objects: {} };
+                  }
+                  addToIndex(out.subjects, mappedSubject, mappedPredicate, mappedObject);
+                  addToIndex(out.predicates, mappedPredicate, mappedObject, mappedSubject);
+                  addToIndex(out.objects, mappedObject, mappedSubject, mappedPredicate);
+                  size++;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return { graphs: target, size };
+}
+
+/**
+ * Shared shell for the cross-entity-index branch of `intersection`
+ * (`keepIfPresent === true`) and `difference` (`keepIfPresent === false`):
+ * builds a result store keyed by `self`'s entity index, remapping the ids of
+ * the walked operand into the id space of the probed one.
+ */
+function crossIndexOp(self, other, keepIfPresent) {
+  const store = new N3Store({ entityIndex: self._entityIndex });
+  // Intersection can walk either operand, as the result is bounded by the
+  // smaller one; difference must walk `self`. Comparing `size` is cheap:
+  // `addQuad` maintains the cached count, and operations that invalidate it
+  // cache the recount on first access.
+  const walkOther = keepIfPresent && other.size < self.size;
+  const remap = walkOther ?
+    remapEntityIds(other._entityIndex, self._entityIndex) :
+    remapEntityIds(self._entityIndex, other._entityIndex);
+  const { graphs, size } = walkOther ?
+    crossGraphsIntersect(other._graphs, self._graphs, remap) :
+    crossGraphsOp(self._graphs, other._graphs, remap, keepIfPresent);
+  if (graphs) {
+    store._graphs = graphs;
+    store._size = size;
+  }
+  return store;
+}
+
 // ## Constructor
 export class N3EntityIndex {
   constructor(options = {}) {
@@ -90,48 +296,163 @@ export class N3EntityIndex {
      // inverse of `_ids`
     this._entities = Object.create(null);
     this._entities[1] = '';
+    // `_quadIds` maps triple terms to numeric ids through their components:
+    // `sId -> pId -> oId -> termId`. The object level holds the term id
+    // directly for a default-graph term (the only kind the parser produces)
+    // and spills to a graph sub-map `graphId -> termId` (with 1 for the
+    // default graph) once a graph-component term is interned for that triple
+    this._quadIds = Object.create(null);
     // `_blankNodeIndex` is the index of the last automatically named blank node
     this._blankNodeIndex = 0;
     this._factory = options.factory || N3DataFactory;
   }
 
   _termFromId(id) {
-    if (id[0] === '.') {
+    // A non-string entry is the component-id array of a triple term
+    if (typeof id !== 'string') {
       const entities = this._entities;
-      const terms = id.split('.');
-      const q = this._factory.quad(
-        this._termFromId(entities[terms[1]]),
-        this._termFromId(entities[terms[2]]),
-        this._termFromId(entities[terms[3]]),
-        terms[4] && this._termFromId(entities[terms[4]]),
+      return this._factory.quad(
+        this._termFromId(entities[id[0]]),
+        this._termFromId(entities[id[1]]),
+        this._termFromId(entities[id[2]]),
+        id.length > 3 ? this._termFromId(entities[id[3]]) : undefined,
       );
-      return q;
     }
     return termFromId(id, this._factory);
+  }
+
+  // ### `_remapCompositeId` translates a triple term's component-id array into
+  // this index's id space via `remap`, returning its numeric id here or `undefined`.
+  _remapCompositeId(components, remap) {
+    const s = remap[components[0]], p = remap[components[1]], o = remap[components[2]],
+        g = components.length > 3 ? remap[components[3]] : 1;
+    if (s === undefined || p === undefined || o === undefined || g === undefined)
+      return undefined;
+    const l1 = this._quadIds[s], l2 = l1 && l1[p], entry = l2 && l2[o];
+    // A spilled entry maps graph ids to term ids;
+    // a numeric entry is the default-graph term's own id
+    return typeof entry === 'object' ? entry[g] : g === 1 ? entry : undefined;
   }
 
   _termToNumericId(term) {
     if (term.termType === 'Quad') {
       const s = this._termToNumericId(term.subject),
-          p = this._termToNumericId(term.predicate),
-          o = this._termToNumericId(term.object);
-      let g;
-
-      return s && p && o && (isDefaultGraph(term.graph) || (g = this._termToNumericId(term.graph))) &&
-        this._ids[g ? `.${s}.${p}.${o}.${g}` : `.${s}.${p}.${o}`];
+          p = s && this._termToNumericId(term.predicate),
+          o = p && this._termToNumericId(term.object);
+      let g = 1;
+      if (!o || !isDefaultGraph(term.graph) && !(g = this._termToNumericId(term.graph)))
+        return undefined;
+      const l1 = this._quadIds[s], l2 = l1 && l1[p], entry = l2 && l2[o];
+      // A spilled entry maps graph ids to term ids;
+      // a numeric entry is the default-graph term's own id
+      return typeof entry === 'object' ? entry[g] : g === 1 ? entry : undefined;
     }
     return this._ids[termToId(term)];
   }
 
   _termToNewNumericId(term) {
-    // This assumes that no graph term is present - we may wish to error if there is one
-    const str = term && term.termType === 'Quad' ?
-      `.${this._termToNewNumericId(term.subject)}.${this._termToNewNumericId(term.predicate)}.${this._termToNewNumericId(term.object)}${
-        isDefaultGraph(term.graph) ? '' : `.${this._termToNewNumericId(term.graph)}`
-      }`
-      : termToId(term);
-
+    if (term && term.termType === 'Quad') {
+      const s = this._termToNewNumericId(term.subject),
+          p = this._termToNewNumericId(term.predicate),
+          o = this._termToNewNumericId(term.object),
+          g = isDefaultGraph(term.graph) ? 1 : this._termToNewNumericId(term.graph);
+      const l1 = this._quadIds[s] || (this._quadIds[s] = Object.create(null)),
+          l2 = l1[p] || (l1[p] = Object.create(null));
+      const entry = l2[o];
+      if (typeof entry !== 'object') {
+        // Default-graph terms store their id directly at the object level;
+        // the reverse entry in `_entities` is the component-id array
+        // (triple terms are deliberately absent from `_ids`)
+        if (g === 1) {
+          return entry !== undefined ? entry :
+            (this._entities[++this._id] = [s, p, o], l2[o] = this._id);
+        }
+        // First graph-component term for this s/p/o: spill to a graph
+        // sub-map, keeping any existing default-graph term under key 1
+        const spill = l2[o] = Object.create(null);
+        if (entry !== undefined)
+          spill[1] = entry;
+        this._entities[++this._id] = [s, p, o, g];
+        return (spill[g] = this._id);
+      }
+      return entry[g] || (
+        this._entities[++this._id] = g === 1 ? [s, p, o] : [s, p, o, g],
+        entry[g] = this._id
+      );
+    }
+    const str = termToId(term);
     return this._ids[str] || (this._ids[this._entities[++this._id] = str] = this._id);
+  }
+
+  // ### `_matchingQuadIds` yields the numeric ids of all interned triple terms
+  // that structurally match `pattern`, a Quad term containing Variables:
+  // concrete components must be term-equal, Variables match anything,
+  // and nested Quad patterns with Variables recurse.
+  // Candidates are terms interned in this (possibly shared) index;
+  // ids without quads in a given store simply match nothing there.
+  *_matchingQuadIds(pattern) {
+    const graph = pattern.graph;
+    for (const l1 of this._matchingValues(this._quadIds, pattern.subject)) {
+      for (const l2 of this._matchingValues(l1, pattern.predicate)) {
+        for (const entry of this._matchingValues(l2, pattern.object)) {
+          // A numeric entry is a default-graph term's own id, matched by a
+          // DefaultGraph pattern component (built by `DataFactory.quad(s, p, o)`)
+          // or a Variable one
+          if (typeof entry !== 'object') {
+            if (graph.termType === 'Variable' || isDefaultGraph(graph))
+              yield entry;
+          }
+          // A spilled entry maps graph ids (1 = default graph) to term ids
+          else
+            yield* this._matchingValues(entry, graph);
+        }
+      }
+    }
+  }
+
+  // ### `_matchingValues` yields the values of `index` whose keys match a
+  // pattern component: all values for a Variable, the present candidates of a
+  // Quad pattern containing Variables, or the component's own id on a hit
+  *_matchingValues(index, component) {
+    if (component.termType === 'Variable') {
+      for (const key in index)
+        yield index[key];
+    }
+    else if (component.termType === 'Quad' && containsVariable(component)) {
+      for (const id of this._matchingQuadIds(component)) {
+        if (id in index)
+          yield index[id];
+      }
+    }
+    else {
+      const id = this._termToNumericId(component);
+      if (id !== undefined && id in index)
+        yield index[id];
+    }
+  }
+
+  // ### `_quadIdMatches` determines whether the entity with numeric id `id`
+  // structurally matches the Quad term `pattern`, by decomposing the reverse
+  // entry instead of enumerating candidates (O(nesting depth) per check)
+  _quadIdMatches(id, pattern) {
+    const entry = this._entities[id];
+    // Only triple terms (component-id arrays) can match a Quad pattern
+    return typeof entry !== 'string' &&
+      this._componentMatches(entry[0], pattern.subject) &&
+      this._componentMatches(entry[1], pattern.predicate) &&
+      this._componentMatches(entry[2], pattern.object) &&
+      this._componentMatches(entry.length > 3 ? entry[3] : 1, pattern.graph);
+  }
+
+  // ### `_componentMatches` determines whether the component with numeric id
+  // `id` matches a pattern term: Variables match anything, Quad patterns
+  // containing Variables recurse, and any other term must have id `id`
+  _componentMatches(id, pattern) {
+    if (pattern.termType === 'Variable')
+      return true;
+    if (pattern.termType === 'Quad' && containsVariable(pattern))
+      return this._quadIdMatches(id, pattern);
+    return this._termToNumericId(pattern) === id;
   }
 
   createBlankNode(suggestedName) {
@@ -202,15 +523,9 @@ export default class N3Store {
 
   // ### `_addToIndex` adds a quad to a three-layered index.
   // Returns if the index has changed, if the entry did not already exist.
+  // Method wrapper over `addToIndex`, called as a method by `addQuad`/`N3Reasoner`.
   _addToIndex(index0, key0, key1, key2) {
-    // Create layers as necessary
-    const index1 = index0[key0] || (index0[key0] = {});
-    const index2 = index1[key1] || (index1[key1] = {});
-    // Setting the key to _any_ value signals the presence of the quad
-    const existed = key2 in index2;
-    if (!existed)
-      index2[key2] = null;
-    return !existed;
+    return addToIndex(index0, key0, key1, key2);
   }
 
   // ### `_removeFromIndex` removes a quad from a three-layered index
@@ -334,6 +649,25 @@ export default class N3Store {
     return count;
   }
 
+  // ### `_candidateIds` resolves a pattern slot to an array of numeric ids:
+  // the matching triple-term ids for a Quad pattern containing Variables,
+  // or the term's single id (an empty array when it is not interned)
+  _candidateIds(term) {
+    if (term.termType === 'Quad' && containsVariable(term))
+      return [...this._entityIndex._matchingQuadIds(term)];
+    const id = this._termToNumericId(term);
+    return id === undefined ? [] : [id];
+  }
+
+  // ### `_graphCandidates` returns a graph map in the shape of `_getGraphs`
+  // for a graph pattern slot that is a Quad term containing Variables
+  _graphCandidates(pattern) {
+    const graphs = Object.create(null);
+    for (const id of this._entityIndex._matchingQuadIds(pattern))
+      graphs[id] = this._graphs[id];
+    return graphs;
+  }
+
   // ### `_getGraphs` returns an array with the given graph,
   // or all graphs if the argument is null or undefined.
   _getGraphs(graph) {
@@ -396,8 +730,9 @@ export default class N3Store {
     this._addToIndex(graphItem.predicates, predicate, object,    subject);
     this._addToIndex(graphItem.objects,    object,    subject,   predicate);
 
-    // The cached quad count is now invalid
-    this._size = null;
+    // The quad was new, so the quad count (when cached) grows by one,
+    // mirroring the decrement in `removeQuad`
+    if (this._size !== null) this._size++;
     return true;
   }
 
@@ -507,6 +842,13 @@ export default class N3Store {
    * @deprecated Use `match` instead.
    */
   *readQuads(subject, predicate, object, graph) {
+    // A Quad pattern term containing Variables matches triple terms
+    // structurally rather than by exact id
+    if (isVariableQuad(subject) || isVariableQuad(object) || isVariableQuad(graph)) {
+      yield* this._readQuadsStructural(subject, predicate, object, graph);
+      return;
+    }
+
     const graphs = this._getGraphs(graph);
     let content, subjectId, predicateId, objectId;
 
@@ -546,6 +888,50 @@ export default class N3Store {
     }
   }
 
+  /**
+   * `_readQuadsStructural` implements `readQuads` for patterns in which the
+   * subject, object or graph slot is a Quad term containing Variables:
+   * such a slot expands into the numeric ids of the matching triple terms,
+   * and every candidate combination delegates to `_findInIndex` with those
+   * ids as fixed keys (a candidate absent from an index yields nothing).
+   */
+  *_readQuadsStructural(subject, predicate, object, graph) {
+    let content, predicateId;
+    if (predicate && !(predicateId = this._termToNumericId(predicate)))
+      return;
+    const subjectIds = subject ? this._candidateIds(subject) : [undefined];
+    const objectIds = object ? this._candidateIds(object) : [undefined];
+    const graphs = isVariableQuad(graph) ? this._graphCandidates(graph) : this._getGraphs(graph);
+
+    for (const graphId in graphs) {
+      // Only if the specified graph contains triples, there can be results
+      if (content = graphs[graphId]) {
+        // Choose the optimal index per candidate combination, as `readQuads` does
+        for (const subjectId of subjectIds) {
+          for (const objectId of objectIds) {
+            if (subjectId) {
+              if (objectId)
+                yield* this._findInIndex(content.objects, objectId, subjectId, predicateId,
+                                  'object', 'subject', 'predicate', graphId);
+              else
+                yield* this._findInIndex(content.subjects, subjectId, predicateId, null,
+                                  'subject', 'predicate', 'object', graphId);
+            }
+            else if (predicateId)
+              yield* this._findInIndex(content.predicates, predicateId, objectId, null,
+                                'predicate', 'object', 'subject', graphId);
+            else if (objectId)
+              yield* this._findInIndex(content.objects, objectId, null, null,
+                                'object', 'subject', 'predicate', graphId);
+            else
+              yield* this._findInIndex(content.subjects, null, null, null,
+                                'subject', 'predicate', 'object', graphId);
+          }
+        }
+      }
+    }
+  }
+
   // ### `match` returns a new dataset that is comprised of all quads in the current instance matching the given arguments.
   // The logic described in Quad Matching is applied for each quad in this dataset to check if it should be included in the output dataset.
   // Note: This method always returns a new DatasetCore, even if that dataset contains no quads.
@@ -559,6 +945,11 @@ export default class N3Store {
   // ### `countQuads` returns the number of quads matching a pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   countQuads(subject, predicate, object, graph) {
+    // A Quad pattern term containing Variables matches triple terms
+    // structurally rather than by exact id
+    if (isVariableQuad(subject) || isVariableQuad(object) || isVariableQuad(graph))
+      return this._countQuadsStructural(subject, predicate, object, graph);
+
     const graphs = this._getGraphs(graph);
     let count = 0, content, subjectId, predicateId, objectId;
 
@@ -587,6 +978,40 @@ export default class N3Store {
         else {
           // If only object is possibly given, the object index will be the fastest
           count += this._countInIndex(content.objects, objectId, subjectId, predicateId);
+        }
+      }
+    }
+    return count;
+  }
+
+  // ### `_countQuadsStructural` implements `countQuads` for patterns in which
+  // the subject, object or graph slot is a Quad term containing Variables,
+  // summing `_countInIndex` over the candidate combinations (candidates are
+  // distinct term ids, so no quad is counted twice)
+  _countQuadsStructural(subject, predicate, object, graph) {
+    let count = 0, content, predicateId;
+    if (predicate && !(predicateId = this._termToNumericId(predicate)))
+      return 0;
+    const subjectIds = subject ? this._candidateIds(subject) : [undefined];
+    const objectIds = object ? this._candidateIds(object) : [undefined];
+    const graphs = isVariableQuad(graph) ? this._graphCandidates(graph) : this._getGraphs(graph);
+
+    for (const graphId in graphs) {
+      // Only if the specified graph contains triples, there can be results
+      if (content = graphs[graphId]) {
+        // Choose the optimal index per candidate combination, as `countQuads` does
+        for (const subjectId of subjectIds) {
+          for (const objectId of objectIds) {
+            if (subjectId) {
+              count += objectId ?
+                this._countInIndex(content.objects, objectId, subjectId, predicateId) :
+                this._countInIndex(content.subjects, subjectId, predicateId, objectId);
+            }
+            else if (predicateId)
+              count += this._countInIndex(content.predicates, predicateId, objectId, subjectId);
+            else
+              count += this._countInIndex(content.objects, objectId, subjectId, predicateId);
+          }
         }
       }
     }
@@ -629,6 +1054,9 @@ export default class N3Store {
 
   // ### `forSubjects` executes the callback on all subjects that match the pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
+  // Note: unlike `match` and `readQuads`, the `for…`/`get…` entity loops
+  // do not expand Quad patterns containing Variables:
+  // a Quad pattern term only matches its exact interned term here.
   forSubjects(callback, predicate, object, graph) {
     const graphs = this._getGraphs(graph);
     let content, predicateId, objectId;
@@ -965,6 +1393,10 @@ export default class N3Store {
       return store;
     }
 
+    // Distinct entity indices: compare on the indices by remapping the ids of one into the other.
+    if (other instanceof N3Store)
+      return crossIndexOp(this, other, false);
+
     return this.filter(quad => !other.has(quad));
   }
 
@@ -1015,6 +1447,10 @@ export default class N3Store {
       }
       return store;
     }
+
+    // Distinct entity indices: compare on the indices by remapping the ids of one into the other.
+    else if (other instanceof N3Store)
+      return crossIndexOp(this, other, true);
 
     return this.filter(quad => other.has(quad));
   }
@@ -1141,6 +1577,38 @@ class DatasetCoreAndReadableStream extends Readable {
       const newStore = this._filtered = new N3Store({ factory: n3Store._factory, entityIndex: this.options.entityIndex });
 
       let subjectId, predicateId, objectId;
+
+      // Quad pattern slots containing Variables match structurally:
+      // merge the matched index subsets of every candidate-id combination
+      // (candidates only overlap outside the expanded slot, and `merge`
+      // unifies those shared index prefixes)
+      if (isVariableQuad(subject) || isVariableQuad(object) || isVariableQuad(graph)) {
+        if (predicate && !(predicateId = newStore._termToNumericId(predicate)))
+          return newStore;
+        const subjectIds = subject ? n3Store._candidateIds(subject) : [undefined];
+        const objectIds = object ? n3Store._candidateIds(object) : [undefined];
+        const candidateGraphs = isVariableQuad(graph) ? n3Store._graphCandidates(graph) : n3Store._getGraphs(graph);
+        for (const graphKey in candidateGraphs) {
+          const content = candidateGraphs[graphKey];
+          if (content) {
+            let target = null;
+            for (subjectId of subjectIds) {
+              for (objectId of objectIds) {
+                const subjects = indexMatch(content.subjects, [subjectId, predicateId, objectId]);
+                if (subjects) {
+                  if (!target)
+                    target = newStore._graphs[graphKey] = { subjects: {}, predicates: {}, objects: {} };
+                  merge(target.subjects, subjects, 2);
+                  merge(target.predicates, indexMatch(content.predicates, [predicateId, objectId, subjectId]), 2);
+                  merge(target.objects, indexMatch(content.objects, [objectId, subjectId, predicateId]), 2);
+                }
+              }
+            }
+          }
+        }
+        newStore._size = null;
+        return newStore;
+      }
 
       // Translate IRIs to internal index keys.
       if (subject   && !(subjectId   = newStore._termToNumericId(subject))   ||
