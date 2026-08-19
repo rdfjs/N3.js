@@ -1845,6 +1845,45 @@ describe('Parser', () => {
     );
 
     it(
+        'should parse a reifier that is not followed by an annotation block',
+        shouldParse('<a> <b> <c> ~ <iri>.',
+            ['a', 'b', 'c'],
+            ['iri', reifies, ['a', 'b', 'c']]),
+    );
+
+    it(
+        'should parse a blank node reifier that is not followed by an annotation block',
+        shouldParse('<a> <b> <c> ~ _:r.',
+            ['a', 'b', 'c'],
+            ['_:b0_r', reifies, ['a', 'b', 'c']]),
+    );
+
+    it(
+        'should parse a lone reifier followed by a shared subject',
+        shouldParse('<a> <b> <c> ~ <iri>; <b2> <c2>.',
+            ['a', 'b', 'c'],
+            ['iri', reifies, ['a', 'b', 'c']],
+            ['a', 'b2', 'c2']),
+    );
+
+    it(
+        'should parse a lone reifier followed by a shared subject and predicate',
+        shouldParse('<a> <b> <c> ~ <iri>, <c2>.',
+            ['a', 'b', 'c'],
+            ['iri', reifies, ['a', 'b', 'c']],
+            ['a', 'b', 'c2']),
+    );
+
+    it(
+        'should reify the correct triple when lone reifiers follow a shared subject',
+        shouldParse('<a> <b> <c> ~ <iri1>; <b2> <c2> ~ <iri2>.',
+            ['a', 'b', 'c'],
+            ['iri1', reifies, ['a', 'b', 'c']],
+            ['a', 'b2', 'c2'],
+            ['iri2', reifies, ['a', 'b2', 'c2']]),
+    );
+
+    it(
         'should parse two reified triples using annotation syntax with one predicate-object',
         shouldParse('<a> <b> <c> {| <b> <c> |}. <a2> <b2> <c2> {| <b2> <c2> |}.',
             ['a', 'b', 'c'],
