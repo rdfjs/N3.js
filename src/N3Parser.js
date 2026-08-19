@@ -520,6 +520,11 @@ export default class N3Parser {
       this._saveContext('formula', this._graph, this._subject, this._predicate,
                         this._graph = this._factory.blankNode());
       return this._readSubject;
+    case '<<(':
+      this._saveContext('<<(', this._graph, null, null, null);
+      this._graph = null;
+      next = this._readSubject;
+      break;
     case '<<':
       this._saveContext('<<', this._graph, null, null, null);
       this._graph = null;
@@ -534,8 +539,8 @@ export default class N3Parser {
     if (list === null)
       this._subject = list = this._factory.blankNode();
 
-    // When reading a reified triple, store the list as subject in the stack, as this will be overridden when reading the triple.
-    if (token.type === '<<')
+    // When reading a reified triple or triple term, store the list as subject in the stack, as this will be overridden when reading the triple.
+    if (token.type === '<<' || token.type === '<<(')
       stack[stack.length - 1].subject = this._subject;
 
     // Is this the first element of the list?
@@ -741,12 +746,19 @@ export default class N3Parser {
       break;
     // ~ is allowed in the annotation syntax
     case '~':
+      // Only invalidate the cache for a genuinely new triple - chained annotation blocks on the
+      // same triple (subject already null from a preceding annotation) must keep reusing it.
+      if (subject !== null)
+        this._tripleTerm = null;
       next = this._readReifierInAnnotation;
       startingAnnotation = true;
       break;
     // {| means that the current triple is annotated with predicate-object pairs.
     case '{|':
       // Continue using the last triple as reified triple subject for the predicate-object pairs.
+      // Same staleness rule as ~ above.
+      if (subject !== null)
+        this._tripleTerm = null;
       this._subject = this._readTripleTerm();
       this._validAnnotation = false;
       startingAnnotation = true;
@@ -1024,6 +1036,12 @@ export default class N3Parser {
         this._graph || this.DEFAULTGRAPH);
     this._restoreContext('<<(', token);
 
+    // If we're in a list, continue processing that list
+    const stack = this._contextStack, parent = stack.length && stack[stack.length - 1];
+    if (parent && parent.type === 'list') {
+      this._emit(this._subject, this.RDF_FIRST, quad, this._graph);
+      return this._getContextEndReader();
+    }
     // If the triple was the subject, continue by reading the predicate.
     if (this._subject === null) {
       this._subject = quad;
