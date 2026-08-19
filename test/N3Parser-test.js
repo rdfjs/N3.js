@@ -1595,6 +1595,40 @@ describe('Parser', () => {
     );
 
     it(
+        'should parse an annotation on a triple with a nested reified triple as subject',
+        shouldParse('<<<a> <b> <c>>> <d> <e> {| <f> <g> |}.',
+            ['_:b0', reifies, ['a', 'b', 'c']],
+            ['_:b1', reifies, ['_:b0', 'd', 'e']],
+            ['_:b0', 'd', 'e'],
+            ['_:b1', 'f', 'g']),
+    );
+
+    it(
+        'should parse an annotation on a triple with a nested reified triple as object',
+        shouldParse('<d> <e> <<<a> <b> <c>>> {| <f> <g> |}.',
+            ['_:b0', reifies, ['a', 'b', 'c']],
+            ['_:b1', reifies, ['d', 'e', '_:b0']],
+            ['d', 'e', '_:b0'],
+            ['_:b1', 'f', 'g']),
+    );
+
+    it(
+        'should parse a bare annotation reifier on a triple with a nested reified triple as subject',
+        shouldParse('<<<a> <b> <c>>> <d> <e> ~ .',
+            ['_:b0', reifies, ['a', 'b', 'c']],
+            ['_:b0', 'd', 'e'],
+            ['_:b1', reifies, ['_:b0', 'd', 'e']]),
+    );
+
+    it(
+        'should parse a bare annotation reifier on a triple with a nested reified triple as object',
+        shouldParse('<d> <e> <<<a> <b> <c>>> ~ .',
+            ['_:b0', reifies, ['a', 'b', 'c']],
+            ['d', 'e', '_:b0'],
+            ['_:b1', reifies, ['d', 'e', '_:b0']]),
+    );
+
+    it(
       'should not parse nested triple terms that are partially closed',
       shouldNotParse('<d> <e> <<(<<(<a> <b> <c>)>> <f> <g>.',
         'Disallowed triple term as subject on line 1.',
