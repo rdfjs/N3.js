@@ -302,6 +302,18 @@ export default class N3Parser {
       // Additional semicolons can be safely ignored
       return this._predicate !== null ? this._readPredicate :
              this._error('Expected predicate but got ;', token);
+    case 'literal':
+      if (!this._n3Mode)
+        return this._error('Unexpected literal', token);
+
+      if (token.prefix.length === 0) {
+        this._literalValue = token.value;
+        return this._completePredicateLiteral;
+      }
+      else
+        this._predicate = this._factory.literal(token.value, this._factory.namedNode(token.prefix));
+
+      break;
     case '[':
       if (this._n3Mode) {
         // Start a new quad with a new blank node as subject
@@ -608,6 +620,8 @@ export default class N3Parser {
       const term = this._factory.literal(this._literalValue, { language: this._literalLanguage, direction: token.value });
       if (component === 'subject')
         this._subject = term;
+      else if (component === 'predicate')
+        this._predicate = term;
       else
         this._object = term;
       this._literalLanguage = undefined;
@@ -616,19 +630,45 @@ export default class N3Parser {
 
     if (component === 'subject')
       return token === null ? this._readPredicateOrNamedGraph : this._readPredicateOrNamedGraph(token);
+    if (component === 'predicate')
+      return token === null ? this._readObject : this._readObject(token);
     return this._completeObjectLiteralPost(token, listItem);
   }
 
-  // Completes a literal in subject position
-  _completeSubjectLiteral(token) {
-    const completed = this._completeLiteral(token, 'subject');
-    this._subject = completed.literal;
+  // Completes a literal in subject or predicate position
+  _completeTermLiteral(token, component) {
+    const completed = this._completeLiteral(token, component);
+    if (!completed)
+      return;
+
+    let next;
+    if (component === 'subject') {
+      this._subject = completed.literal;
+      next = this._readPredicateOrNamedGraph;
+    }
+    else {
+      this._predicate = completed.literal;
+      this._validAnnotation = true;
+      next = this._readObject;
+    }
 
     // Postpone completion if the literal is only partially completed (such as lang+dir).
     if (completed.readCb)
       return completed.readCb.bind(this, false);
 
-    return this._readPredicateOrNamedGraph;
+    // If the token was consumed as a datatype, continue with the next component;
+    // otherwise, consume the token now
+    return completed.token === null ? next : next.call(this, completed.token);
+  }
+
+  // Completes a literal in subject position
+  _completeSubjectLiteral(token) {
+    return this._completeTermLiteral(token, 'subject');
+  }
+
+  // Completes a literal in predicate position
+  _completePredicateLiteral(token) {
+    return this._completeTermLiteral(token, 'predicate');
   }
 
   // Completes a literal in object position
