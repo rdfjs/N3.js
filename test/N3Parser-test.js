@@ -1964,7 +1964,22 @@ describe('Parser', () => {
         shouldParse('<G> { <a> <b> <c> {| <b> <c> |}. }',
             ['a', 'b', 'c', 'G'],
             ['_:b0', 'b', 'c', 'G'],
-            ['_:b0', reifies, ['a', 'b', 'c']]),
+            ['_:b0', reifies, ['a', 'b', 'c'], 'G']),
+    );
+
+    it(
+        'should parse a reified triple in a graph using annotation syntax with an explicit reifier',
+        shouldParse('<G> { <a> <b> <c> ~ <r> {| <b> <c> |}. }',
+            ['a', 'b', 'c', 'G'],
+            ['r', reifies, ['a', 'b', 'c'], 'G'],
+            ['r', 'b', 'c', 'G']),
+    );
+
+    it(
+        'should parse a reified triple in a graph using << >> syntax',
+        shouldParse('<G> { <<<a> <b> <c>>> <p> <o> . }',
+            ['_:b0', reifies, ['a', 'b', 'c'], 'G'],
+            ['_:b0', 'p', 'o', 'G']),
     );
 
     it(

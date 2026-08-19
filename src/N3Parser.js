@@ -1152,7 +1152,7 @@ export default class N3Parser {
     const reifier = this._reifier || this._factory.blankNode();
     this._reifier = null;
     this._tripleTerm = this._tripleTerm || this._factory.quad(this._subject, this._predicate, this._object);
-    this._emit(reifier, this.RDF_REIFIES, this._tripleTerm, parentGraph || this.DEFAULTGRAPH);
+    this._emit(reifier, this.RDF_REIFIES, this._tripleTerm, parentGraph || this._graph || this.DEFAULTGRAPH);
     return reifier;
   }
 
