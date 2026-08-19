@@ -811,6 +811,22 @@ describe('Parser', () => {
             ['_:b3', reifies, ['a2', 'b2', 'c2']]),
     );
 
+    it(
+        'should parse statements with a subject list containing a triple term',
+        shouldParse('(<<(<a1> <b1> <c1>)>>) <a> <b>.',
+            ['_:b0', 'a', 'b'],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['a1', 'b1', 'c1']],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+    );
+
+    it(
+        'should parse statements with an object list containing a triple term',
+        shouldParse('<a> <b> (<<(<a1> <b1> <c1>)>>).',
+            ['a', 'b', '_:b0'],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['a1', 'b1', 'c1']],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+    );
+
     it('should not parse an invalid list', shouldNotParse('<a> <b> (]).',
                    'Expected entity but got ] on line 1.'));
 
