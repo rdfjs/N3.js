@@ -66,6 +66,20 @@ describe('Writer', () => {
       ).toBe('_:b1 <b> _:b1 _:b1 .\n');
     });
 
+    it('should fully serialize a Quad term from another library', () => {
+      const writer = new Writer();
+      const quoted = {
+        termType: 'Quad',
+        subject: { termType: 'NamedNode', value: 's' },
+        predicate: { termType: 'NamedNode', value: 'p' },
+        object: { termType: 'NamedNode', value: 'o' },
+        graph: { termType: 'DefaultGraph', value: '' },
+      };
+      expect(
+        writer.quadToString(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), quoted),
+      ).toBe('<a> <b> <c> <<(<s> <p> <o>)>> .\n');
+    });
+
     it('should serialize 0 triples', shouldSerialize(''));
 
     it('should serialize 1 triple', shouldSerialize(['abc', 'def', 'ghi'],
