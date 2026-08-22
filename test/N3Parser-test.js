@@ -3208,7 +3208,7 @@ describe('Parser', () => {
       catch (e) { error = e; }
       expect(error.message).toMatch(/^Expected punctuation to follow/);
       // Bounded well below the 400-char IRI, with a truncation marker
-      expect(error.message.length).toBeLessThan(230);
+      expect(error.message.length).toBeLessThanOrEqual(200);
       expect(error.message).toContain('…');
       expect(error.message).toMatch(/ on line 1\.$/);
     });
@@ -3221,7 +3221,7 @@ describe('Parser', () => {
       }
       catch (e) { error = e; }
       expect(error.message).toMatch(/^Undefined prefix "a+…/);
-      expect(error.message.length).toBeLessThan(230);
+      expect(error.message.length).toBeLessThanOrEqual(200);
       expect(error.context.token.prefix).toBe(bigPrefix);
     });
   });
