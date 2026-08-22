@@ -1305,6 +1305,8 @@ describe('Parser', () => {
     it('should error if punctuation follows a subject', shouldNotParse('<a> .',
                    'Unexpected . on line 1.'));
 
+    // Resource paths are an N3 extension over Turtle, as called out by the N3
+    // specification's Turtle comparison: https://w3c.github.io/N3/spec/#relationship-to-other-languages
     it(
       'should not parse a ! path after a number',
       shouldNotParse('<a> <b> 1!<c>.',
