@@ -7,6 +7,12 @@ import N3Writer from './N3Writer';
 
 const ITERATOR = Symbol('iter');
 
+function hasInIndex(index0, key0, key1, key2) {
+  const index1 = index0 && index0[key0];
+  const index2 = index1 && index1[key1];
+  return !!index2 && key2 in index2;
+}
+
 function merge(target, source, depth = 4) {
   if (depth === 0)
     return Object.assign(target, source);
@@ -405,23 +411,15 @@ export default class N3Store {
   has(subjectOrQuad, predicate, object, graph) {
     if (subjectOrQuad && subjectOrQuad.subject)
       ({ subject: subjectOrQuad, predicate, object, graph } = subjectOrQuad);
-    // If the quad is fully bound, a direct index probe
-    // avoids the generator machinery of `readQuads`.
-    // A term that is not interned cannot be part of any quad.
-    if (subjectOrQuad && predicate && object && graph) {
+    // Fully bound quads can bypass the generator machinery of `readQuads`.
+    if (subjectOrQuad && predicate && object && graph !== undefined && graph !== null) {
       const subjectId = this._termToNumericId(subjectOrQuad);
-      if (!subjectId) return false;
       const predicateId = this._termToNumericId(predicate);
-      if (!predicateId) return false;
       const objectId = this._termToNumericId(object);
-      if (!objectId) return false;
-      const graphId = isDefaultGraph(graph) ? 1 : this._termToNumericId(graph);
-      if (!graphId) return false;
-      const graphItem = this._graphs[graphId];
-      if (!graphItem) return false;
-      const predicates = graphItem.subjects[subjectId];
-      const objects = predicates && predicates[predicateId];
-      return !!objects && objectId in objects;
+      const graphId = graph === '' || isDefaultGraph(graph) ? 1 : this._termToNumericId(graph);
+      const graphItem = graphId && this._graphs[graphId];
+      return !!subjectId && !!predicateId && !!objectId && !!graphItem &&
+        hasInIndex(graphItem.subjects, subjectId, predicateId, objectId);
     }
     return !this.readQuads(subjectOrQuad, predicate, object, graph).next().done;
   }

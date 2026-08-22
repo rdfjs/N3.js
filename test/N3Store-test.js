@@ -1656,6 +1656,10 @@ describe('Store', () => {
       expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new DefaultGraph())).toBe(true);
     });
 
+    it('should find quads when the default graph is passed as its internal id', () => {
+      expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), '')).toBe(true);
+    });
+
     it('should find quads in a named graph', () => {
       expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('g1'))).toBe(true);
     });
