@@ -23,29 +23,9 @@ function merge(target, source, depth = 4) {
   return target;
 }
 
-/**
- * Determines whether a term contains a `Variable` at any depth.
- */
-function containsVariable(term) {
-  switch (term.termType) {
-  case 'Variable':
-    return true;
-  case 'Quad':
-    return containsVariable(term.subject) || containsVariable(term.predicate) ||
-      containsVariable(term.object) || containsVariable(term.graph);
-  default:
-    return false;
-  }
-}
-
-/**
- * Determines whether a pattern slot is a Quad term with structural matching
- * semantics, i.e., contains a `Variable` at any depth. The recursion only
- * runs for Quad-typed slots, so other patterns never pay for it.
- */
-function isVariableQuad(term) {
-  return !!term && term.termType === 'Quad' && containsVariable(term);
-}
+// Array-valued slots are structural Quad patterns. RDF terms, including
+// Variables and Quads, retain their ordinary exact-match semantics.
+const isQuadPattern = Array.isArray;
 
 /**
  * Determines the intersection of the `_graphs` index s1 and s2.
@@ -196,21 +176,19 @@ export class N3EntityIndex {
   }
 
   // ### `_matchingQuadIds` yields the numeric ids of all interned triple terms
-  // that structurally match `pattern`, a Quad term containing Variables:
-  // concrete components must be term-equal, Variables match anything,
-  // and nested Quad patterns with Variables recurse.
+  // that structurally match the array `pattern`: concrete components must be
+  // term-equal, nullish components match anything, and nested arrays recurse.
   // Candidates are terms interned in this (possibly shared) index;
   // ids without quads in a given store simply match nothing there.
   *_matchingQuadIds(pattern) {
-    const graph = pattern.graph;
-    for (const l1 of this._matchingValues(this._quadIds, pattern.subject)) {
-      for (const l2 of this._matchingValues(l1, pattern.predicate)) {
-        for (const entry of this._matchingValues(l2, pattern.object)) {
+    const graph = pattern[3];
+    for (const l1 of this._matchingValues(this._quadIds, pattern[0])) {
+      for (const l2 of this._matchingValues(l1, pattern[1])) {
+        for (const entry of this._matchingValues(l2, pattern[2])) {
           // A numeric entry is a default-graph term's own id, matched by a
-          // DefaultGraph pattern component (built by `DataFactory.quad(s, p, o)`)
-          // or a Variable one
+          // DefaultGraph or nullish pattern component
           if (typeof entry !== 'object') {
-            if (graph.termType === 'Variable' || isDefaultGraph(graph))
+            if (graph === null || graph === undefined || isDefaultGraph(graph))
               yield entry;
           }
           // A spilled entry maps graph ids (1 = default graph) to term ids
@@ -222,14 +200,14 @@ export class N3EntityIndex {
   }
 
   // ### `_matchingValues` yields the values of `index` whose keys match a
-  // pattern component: all values for a Variable, the present candidates of a
-  // Quad pattern containing Variables, or the component's own id on a hit
+  // pattern component: all values for a nullish wildcard, the present
+  // candidates of a nested array pattern, or the component's own id on a hit
   *_matchingValues(index, component) {
-    if (component.termType === 'Variable') {
+    if (component === null || component === undefined) {
       for (const key in index)
         yield index[key];
     }
-    else if (component.termType === 'Quad' && containsVariable(component)) {
+    else if (isQuadPattern(component)) {
       for (const id of this._matchingQuadIds(component)) {
         if (id in index)
           yield index[id];
@@ -249,19 +227,19 @@ export class N3EntityIndex {
     const entry = this._entities[id];
     // Only triple terms (component-id arrays) can match a Quad pattern
     return typeof entry !== 'string' &&
-      this._componentMatches(entry[0], pattern.subject) &&
-      this._componentMatches(entry[1], pattern.predicate) &&
-      this._componentMatches(entry[2], pattern.object) &&
-      this._componentMatches(entry.length > 3 ? entry[3] : 1, pattern.graph);
+      this._componentMatches(entry[0], pattern[0]) &&
+      this._componentMatches(entry[1], pattern[1]) &&
+      this._componentMatches(entry[2], pattern[2]) &&
+      this._componentMatches(entry.length > 3 ? entry[3] : 1, pattern[3]);
   }
 
   // ### `_componentMatches` determines whether the component with numeric id
-  // `id` matches a pattern term: Variables match anything, Quad patterns
-  // containing Variables recurse, and any other term must have id `id`
+  // `id` matches a pattern component: nullish values match anything, nested
+  // array patterns recurse, and RDF terms (including Variables) match exactly
   _componentMatches(id, pattern) {
-    if (pattern.termType === 'Variable')
+    if (pattern === null || pattern === undefined)
       return true;
-    if (pattern.termType === 'Quad' && containsVariable(pattern))
+    if (isQuadPattern(pattern))
       return this._quadIdMatches(id, pattern);
     return this._termToNumericId(pattern) === id;
   }
@@ -467,17 +445,17 @@ export default class N3Store {
   }
 
   // ### `_candidateIds` resolves a pattern slot to an array of numeric ids:
-  // the matching triple-term ids for a Quad pattern containing Variables,
+  // the matching triple-term ids for an array pattern,
   // or the term's single id (an empty array when it is not interned)
   _candidateIds(term) {
-    if (term.termType === 'Quad' && containsVariable(term))
+    if (isQuadPattern(term))
       return [...this._entityIndex._matchingQuadIds(term)];
     const id = this._termToNumericId(term);
     return id === undefined ? [] : [id];
   }
 
   // ### `_graphCandidates` returns a graph map in the shape of `_getGraphs`
-  // for a graph pattern slot that is a Quad term containing Variables
+  // for an array-valued graph pattern slot
   _graphCandidates(pattern) {
     const graphs = Object.create(null);
     for (const id of this._entityIndex._matchingQuadIds(pattern))
@@ -668,9 +646,11 @@ export default class N3Store {
    * @deprecated Use `match` instead.
    */
   *readQuads(subject, predicate, object, graph) {
-    // A Quad pattern term containing Variables matches triple terms
-    // structurally rather than by exact id
-    if (isVariableQuad(subject) || isVariableQuad(object) || isVariableQuad(graph)) {
+    // RDF 1.2 triple terms cannot occur in the predicate position
+    if (isQuadPattern(predicate))
+      return;
+    // Array-valued slots match triple terms structurally rather than by exact id
+    if (isQuadPattern(subject) || isQuadPattern(object) || isQuadPattern(graph)) {
       yield* this._readQuadsStructural(subject, predicate, object, graph);
       return;
     }
@@ -716,7 +696,7 @@ export default class N3Store {
 
   /**
    * `_readQuadsStructural` implements `readQuads` for patterns in which the
-   * subject, object or graph slot is a Quad term containing Variables:
+   * subject, object or graph slot is an array-valued Quad pattern:
    * such a slot expands into the numeric ids of the matching triple terms,
    * and every candidate combination delegates to `_findInIndex` with those
    * ids as fixed keys (a candidate absent from an index yields nothing).
@@ -727,7 +707,7 @@ export default class N3Store {
       return;
     const subjectIds = subject ? this._candidateIds(subject) : [undefined];
     const objectIds = object ? this._candidateIds(object) : [undefined];
-    const graphs = isVariableQuad(graph) ? this._graphCandidates(graph) : this._getGraphs(graph);
+    const graphs = isQuadPattern(graph) ? this._graphCandidates(graph) : this._getGraphs(graph);
 
     for (const graphId in graphs) {
       // Only if the specified graph contains triples, there can be results
@@ -771,9 +751,11 @@ export default class N3Store {
   // ### `countQuads` returns the number of quads matching a pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   countQuads(subject, predicate, object, graph) {
-    // A Quad pattern term containing Variables matches triple terms
-    // structurally rather than by exact id
-    if (isVariableQuad(subject) || isVariableQuad(object) || isVariableQuad(graph))
+    // RDF 1.2 triple terms cannot occur in the predicate position
+    if (isQuadPattern(predicate))
+      return 0;
+    // Array-valued slots match triple terms structurally rather than by exact id
+    if (isQuadPattern(subject) || isQuadPattern(object) || isQuadPattern(graph))
       return this._countQuadsStructural(subject, predicate, object, graph);
 
     const graphs = this._getGraphs(graph);
@@ -811,7 +793,7 @@ export default class N3Store {
   }
 
   // ### `_countQuadsStructural` implements `countQuads` for patterns in which
-  // the subject, object or graph slot is a Quad term containing Variables,
+  // the subject, object or graph slot is an array-valued Quad pattern,
   // summing `_countInIndex` over the candidate combinations (candidates are
   // distinct term ids, so no quad is counted twice)
   _countQuadsStructural(subject, predicate, object, graph) {
@@ -820,7 +802,7 @@ export default class N3Store {
       return 0;
     const subjectIds = subject ? this._candidateIds(subject) : [undefined];
     const objectIds = object ? this._candidateIds(object) : [undefined];
-    const graphs = isVariableQuad(graph) ? this._graphCandidates(graph) : this._getGraphs(graph);
+    const graphs = isQuadPattern(graph) ? this._graphCandidates(graph) : this._getGraphs(graph);
 
     for (const graphId in graphs) {
       // Only if the specified graph contains triples, there can be results
@@ -881,8 +863,7 @@ export default class N3Store {
   // ### `forSubjects` executes the callback on all subjects that match the pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   // Note: unlike `match` and `readQuads`, the `for…`/`get…` entity loops
-  // do not expand Quad patterns containing Variables:
-  // a Quad pattern term only matches its exact interned term here.
+  // accept RDF terms rather than array-valued structural patterns.
   forSubjects(callback, predicate, object, graph) {
     const graphs = this._getGraphs(graph);
     let content, predicateId, objectId;
@@ -1396,16 +1377,20 @@ class DatasetCoreAndReadableStream extends Readable {
 
       let subjectId, predicateId, objectId;
 
-      // Quad pattern slots containing Variables match structurally:
+      // RDF 1.2 triple terms cannot occur in the predicate position
+      if (isQuadPattern(predicate))
+        return newStore;
+
+      // Array-valued Quad pattern slots match structurally:
       // merge the matched index subsets of every candidate-id combination
       // (candidates only overlap outside the expanded slot, and `merge`
       // unifies those shared index prefixes)
-      if (isVariableQuad(subject) || isVariableQuad(object) || isVariableQuad(graph)) {
+      if (isQuadPattern(subject) || isQuadPattern(object) || isQuadPattern(graph)) {
         if (predicate && !(predicateId = newStore._termToNumericId(predicate)))
           return newStore;
         const subjectIds = subject ? n3Store._candidateIds(subject) : [undefined];
         const objectIds = object ? n3Store._candidateIds(object) : [undefined];
-        const candidateGraphs = isVariableQuad(graph) ? n3Store._graphCandidates(graph) : n3Store._getGraphs(graph);
+        const candidateGraphs = isQuadPattern(graph) ? n3Store._graphCandidates(graph) : n3Store._getGraphs(graph);
         for (const graphKey in candidateGraphs) {
           const content = candidateGraphs[graphKey];
           if (content) {
