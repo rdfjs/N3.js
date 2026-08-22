@@ -11,6 +11,16 @@ permissions:
   contents: read
 
 jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+      - run: npm ci --ignore-scripts
+      - run: npm audit --omit=dev --audit-level=moderate
+
   build:
     # Build once on an LTS-class Node. babel 8's CLI build (@babel/code-frame ->
     # util.styleText) requires Node >= 20.12, and the resulting CJS lib/ +
@@ -108,6 +118,7 @@ jobs:
     # Summary job that can be used as a single required check in branch protection
     if: always()
     needs:
+      - audit
       - build
       - test
       - spec
@@ -125,6 +136,7 @@ jobs:
 
   gh-pages:
     needs:
+      - audit
       - build
       - test
       - spec
@@ -147,7 +159,7 @@ jobs:
 
   release:
     if: ${{ github.ref == 'refs/heads/main' }}
-    needs: [ test, spec ]
+    needs: [ audit, test, spec ]
     runs-on: ubuntu-latest
     # Never run two release/publish jobs concurrently.
     concurrency:
