@@ -760,7 +760,8 @@ export default class N3Store {
   // and returns the items per list.
   // With `allowExtraArcs`, lists whose nodes carry arcs other than
   // rdf:first/rdf:rest are returned as well,
-  // but left intact when `remove` is set.
+  // but left intact when `remove` is set. Ambiguous unreferenced list heads
+  // with multiple non-list arcs remain errors.
   extractLists({ remove = false, ignoreErrors = false, allowExtraArcs = false } = {}) {
     const lists = {}; // has scalar keys so could be a simple Object
     const onError = ignoreErrors ? (() => true) :
@@ -776,8 +777,7 @@ export default class N3Store {
       let head;                   // the head of the list (_:b1 in above example)
       let headPos;                // set to subject or object when head is set
       const graph = tailQuad.graph; // make sure list is in exactly one graph
-      const removeStart = toRemove.length; // where this list's quads start in toRemove
-      toRemove.push(tailQuad);
+      const listQuads = [];       // rdf:first/rdf:rest quads of this list
 
       // Traverse the list from tail to end
       let current = tailQuad.subject;
@@ -799,7 +799,9 @@ export default class N3Store {
             if (first)
               malformed = onError(current, 'has multiple rdf:first arcs');
             else
-              toRemove.push(first = quad);
+              first = quad;
+            if (remove && first === quad)
+              listQuads.push(quad);
           }
 
           // one rdf:rest
@@ -807,7 +809,9 @@ export default class N3Store {
             if (rest)
               malformed = onError(current, 'has multiple rdf:rest arcs');
             else
-              toRemove.push(rest = quad);
+              rest = quad;
+            if (remove && rest === quad)
+              listQuads.push(quad);
           }
 
           // alien triple
@@ -857,9 +861,9 @@ export default class N3Store {
         // Store the list under the value of its head
         if (head)
           lists[head[headPos].value] = items;
-        // Leave lists with extra arcs fully intact
-        if (extraArcs)
-          toRemove.length = removeStart;
+        // Leave lists with extra arcs fully intact; otherwise queue this list once.
+        if (remove && !extraArcs)
+          toRemove.push(...listQuads);
       }
     });
 
