@@ -82,18 +82,30 @@ function quadIsWellFormed(q) {
 
 // True iff parsing `input` is "safe": returns well-formed quads, or throws an Error.
 function parseIsSafe(input, options) {
+  let quads;
   try {
-    return new Parser(options).parse(input).every(quadIsWellFormed);
+    quads = new Parser(options).parse(input);
   }
   catch (error) {
     return error instanceof Error;
+  }
+  try {
+    return quads.every(quadIsWellFormed);
+  }
+  catch {
+    return false;
   }
 }
 
 // True iff `quads` round-trip through write -> parse isomorphically.
 function roundTrips(quads) {
-  const serialized = new Writer().quadsToString(quads);
-  return isomorphic(new Parser().parse(serialized), quads);
+  try {
+    const serialized = new Writer().quadsToString(quads);
+    return isomorphic(new Parser().parse(serialized), quads);
+  }
+  catch {
+    return false;
+  }
 }
 
 describe('Fuzz / property tests', () => {
