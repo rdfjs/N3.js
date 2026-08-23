@@ -119,6 +119,15 @@ describe('Parser', () => {
     );
 
     it(
+        'should not leak direction state between language-tagged literals',
+        shouldParse('<a> <b> "x"@en--rtl, "y"@fr, "z"@de--ltr.\n<c> <d> "w"@nl.',
+            ['a', 'b', '"x"@en--rtl'],
+            ['a', 'b', '"y"@fr'],
+            ['a', 'b', '"z"@de--ltr'],
+            ['c', 'd', '"w"@nl']),
+    );
+
+    it(
         'should error on a triple with a literal with direction but without language code',
         shouldNotParse('<a> <b> "string"--rtl.',
             'Unexpected "--rtl." on line 1.', {
