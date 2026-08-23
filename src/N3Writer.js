@@ -59,10 +59,12 @@ export default class N3Writer {
       this._lineMode = false;
       this._graph = DEFAULTGRAPH;
       this._prefixIRIs = Object.create(null);
-      options.prefixes && this.addPrefixes(options.prefixes);
       if (options.baseIRI) {
         this._baseIri = new BaseIRI(options.baseIRI);
+        if (options.writeBase)
+          this._write(`@base <${options.baseIRI}>.\n`);
       }
+      options.prefixes && this.addPrefixes(options.prefixes);
     }
     else {
       this._lineMode = true;
