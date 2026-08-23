@@ -447,6 +447,8 @@ The **writer** trusts the terms it is given. Quads constructed with invalid term
 Therefore, term validation should be done post-parsing to ensure that valid RDF terms should be produced.
 
 One should also ensure that terms are valid prior to being passed into the writer; either by validation, or ensuring that valid RDF will always be produced by the application logic producing the terms.
+
+The following code snipped shows how to validate that NamedNodes and Literals are validly formed. Depending on your application you may wish to apply further validation: such as ensuring that nested Quad terms are valid in RDF 1.2, and ensuring that `termTypes` are only occuring in the positions that is valid for RDF 1.1 and RDF 1.2.
 ```JavaScript
 const { Transform } = require('stream');
 const { validateIri, IriValidationStrategy } = require('validate-iri');
