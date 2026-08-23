@@ -8,20 +8,11 @@
 //
 // A seeded PRNG keeps runs reproducible (no flaky CI). Each iteration is
 // reduced to a boolean by a helper so assertions stay unconditional.
+import { makeRng, pick } from './util';
 import { Parser, Writer, Store, DataFactory } from '../src';
 import { isomorphic } from 'rdf-isomorphic';
 
 const { namedNode, blankNode, literal, quad, defaultGraph } = DataFactory;
-
-// Small deterministic LCG.
-function makeRng(seed) {
-  let s = seed >>> 0;
-  return function next() {
-    s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
-    return s / 0x100000000;
-  };
-}
-function pick(rng, arr) { return arr[Math.floor(rng() * arr.length)]; }
 
 // Characters that historically broke lexers and writers (delimiters, quotes,
 // escapes, controls, astral). Used raw in fuzzed documents and literal values.

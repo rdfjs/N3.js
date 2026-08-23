@@ -1,3 +1,4 @@
+import { makeRng, pick } from './util';
 import {
   Store,
   termFromId, termToId,
@@ -2632,6 +2633,184 @@ describe('EntityIndex', () => {
       o5: 8,
     });
   });
+});
+
+describe('Store under randomized mutation', () => {
+  const { defaultGraph } = DataFactory;
+  const subjects   = ['s0', 's1', 's2', 's3', 's4'].map(namedNode);
+  const predicates = ['p0', 'p1', 'p2'].map(namedNode);
+  const objects    = ['o0', 'o1', 'o2', 'o3', 'o4'].map(namedNode);
+  const graphs     = [defaultGraph(), namedNode('g0'), namedNode('g1')];
+
+  function quadKey(q) {
+    return `${termToId(q.subject)} ${termToId(q.predicate)} ${termToId(q.object)} ${termToId(q.graph)}`;
+  }
+
+  // Compares the full store contents against the naive oracle set
+  function expectSameContents(store, oracle) {
+    expect(store.getQuads().map(quadKey).sort()).toEqual([...oracle].sort());
+    expect(store.size).toBe(oracle.size);
+  }
+
+  // Verifies that the entry counter of every index node
+  // matches its actual number of entries
+  function expectConsistentCounters(store) {
+    function check(node) {
+      const sizeSymbol = Object.getOwnPropertySymbols(node)
+        .find(symbol => symbol.description === 'size');
+      const keys = Object.keys(node);
+      expect(sizeSymbol).toBeDefined();
+      expect(node[sizeSymbol]).toBe(keys.length);
+      return keys;
+    }
+    for (const graphKey in store._graphs) {
+      const graphItem = store._graphs[graphKey];
+      for (const part of ['subjects', 'predicates', 'objects']) {
+        const index0 = graphItem[part];
+        for (const key0 of check(index0)) {
+          const index1 = index0[key0];
+          for (const key1 of check(index1))
+            check(index1[key1]);
+        }
+      }
+    }
+  }
+
+  function randomQuad(random) {
+    return new Quad(
+      pick(random, subjects),
+      pick(random, predicates),
+      pick(random, objects),
+      pick(random, graphs),
+    );
+  }
+
+  function randomTerm(random, terms) {
+    return random() < 0.5 ? pick(random, terms) : null;
+  }
+
+  function oracleOf(store) {
+    return new Set(store.getQuads().map(quadKey));
+  }
+
+  // Adds a quad to store and oracle, verifying the return value
+  function addAndVerify(store, oracle, q) {
+    const key = quadKey(q);
+    expect(store.addQuad(q)).toBe(!oracle.has(key));
+    oracle.add(key);
+  }
+
+  // Removes a quad from store and oracle, verifying the return value
+  function removeAndVerify(store, oracle, q) {
+    const key = quadKey(q);
+    expect(store.removeQuad(q)).toBe(oracle.has(key));
+    oracle.delete(key);
+  }
+
+  for (const seed of [1, 2, 3]) {
+    it(`should behave like a naive set of quads (seed ${seed})`, () => {
+      const random = makeRng(seed);
+      const entityIndex = new EntityIndex();
+      let store = new Store({ entityIndex });
+      let oracle = new Set();
+
+      for (let round = 0; round < 400; round++) {
+        const chance = random();
+        // Add a random quad
+        if (chance < 0.35)
+          addAndVerify(store, oracle, randomQuad(random));
+        // Remove a random quad, which may or may not exist
+        else if (chance < 0.65)
+          removeAndVerify(store, oracle, randomQuad(random));
+        // Remove all quads matching a random pattern
+        else if (chance < 0.8) {
+          const subject = randomTerm(random, subjects),
+              predicate = randomTerm(random, predicates),
+              object = randomTerm(random, objects),
+              graph = randomTerm(random, graphs);
+          store.deleteMatches(subject, predicate, object, graph);
+          for (const key of [...oracle]) {
+            const [s, p, o, g] = key.split(' ');
+            if ((!subject || termToId(subject) === s) &&
+                (!predicate || termToId(predicate) === p) &&
+                (!object || termToId(object) === o) &&
+                (!graph || termToId(graph) === g))
+              oracle.delete(key);
+          }
+        }
+        // Add multiple random quads at once
+        else if (chance < 0.9) {
+          const quads = [randomQuad(random), randomQuad(random), randomQuad(random)];
+          store.addAll(quads);
+          for (const q of quads)
+            oracle.add(quadKey(q));
+        }
+        // Replace the store by a set operation
+        // with another store sharing the same entity index,
+        // and continue mutating the result
+        else {
+          const other = new Store({ entityIndex });
+          for (let i = 0; i < 5; i++)
+            other.addQuad(randomQuad(random));
+          const otherOracle = oracleOf(other);
+          const setOp = random();
+          if (setOp < 1 / 3) {
+            store = store.union(other);
+            oracle = new Set([...oracle, ...otherOracle]);
+          }
+          else if (setOp < 2 / 3) {
+            store = store.difference(other);
+            oracle = new Set([...oracle].filter(key => !otherOracle.has(key)));
+          }
+          else {
+            store = store.intersection(other);
+            oracle = new Set([...oracle].filter(key => otherOracle.has(key)));
+          }
+        }
+
+        if (round % 50 === 49) {
+          expectSameContents(store, oracle);
+          expectConsistentCounters(store);
+        }
+      }
+
+      // Mutate a materialized `match` view of the store
+      const pattern = randomTerm(random, subjects);
+      const view = store.match(pattern, null, null, null);
+      const viewOracle = new Set([...oracle].filter(
+        key => !pattern || key.split(' ')[0] === termToId(pattern)));
+      for (let i = 0; i < 50; i++) {
+        const q = randomQuad(random);
+        if (random() < 0.5) {
+          view.add(q);
+          viewOracle.add(quadKey(q));
+        }
+        else {
+          view.delete(q);
+          viewOracle.delete(quadKey(q));
+        }
+      }
+      expectSameContents(view.filtered, viewOracle);
+      expectConsistentCounters(view.filtered);
+      // The original store is unaffected by view mutations
+      expectSameContents(store, oracle);
+
+      // Empty out the store completely; all graphs should be dropped
+      for (const key of [...oracle]) {
+        const [s, p, o, g] = key.split(' ');
+        expect(store.removeQuad(termFromId(s), termFromId(p), termFromId(o), termFromId(g))).toBe(true);
+      }
+      expect(store.size).toBe(0);
+      expect(store.getQuads()).toHaveLength(0);
+      expect(Object.keys(store._graphs)).toHaveLength(0);
+
+      // The store remains usable after being emptied
+      const q = randomQuad(random);
+      expect(store.addQuad(q)).toBe(true);
+      expect(store.getQuads().map(quadKey)).toEqual([quadKey(q)]);
+      expectConsistentCounters(store);
+    });
+  }
 });
 
 function alwaysTrue()  { return true;  }
