@@ -180,6 +180,15 @@ The parser can output a backwards chaining rule such as `_:q <= _:p.` in two way
 const parser = new N3.Parser({ isImpliedBy: true });
 ```
 
+By default, an empty formula `{}` is kept as a blank node graph term.
+The [N3 spec tests](https://w3c-cg.github.io/N3/tests/)
+(and the direction discussed in [w3c-cg/N3#185](https://github.com/w3c-cg/N3/issues/185))
+read it as the boolean literal `"true"^^xsd:boolean` instead;
+the `emptyFormulaAsTrue` flag enables that behavior:
+```JavaScript
+const parser = new N3.Parser({ format: 'text/n3', emptyFormulaAsTrue: true });
+```
+
 ### From an RDF stream to quads
 
 `N3.Parser` can parse [Node.js streams](http://nodejs.org/api/stream.html) as they grow,
