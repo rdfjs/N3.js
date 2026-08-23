@@ -80,6 +80,12 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: build
+      - uses: actions/cache@v6
+        with:
+          path: .rdf-test-suite-cache
+          key: rdf-test-suite-cache-v1-${{ matrix.spec }}-${{ hashFiles('spec/cache-key.txt') }}-${{ hashFiles('package.json') }}
+          restore-keys: |
+            rdf-test-suite-cache-v1-${{ matrix.spec }}-${{ hashFiles('spec/cache-key.txt') }}-
       - run: npm run spec-${{ matrix.spec }}
 
   lint:
