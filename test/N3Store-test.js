@@ -1645,6 +1645,62 @@ describe('Store', () => {
     });
   });
 
+  describe('has with a fully bound quad', () => {
+    const store = new Store([
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('g1')),
+      new Quad(new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), new NamedNode('p1'), new NamedNode('o1')),
+    ]);
+
+    it('should find quads in the default graph', () => {
+      expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new DefaultGraph())).toBe(true);
+    });
+
+    it('should find quads when the default graph is passed as its internal id', () => {
+      expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), '')).toBe(true);
+    });
+
+    it('should find quads in a named graph', () => {
+      expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('g1'))).toBe(true);
+    });
+
+    it('should not find quads in a graph that does not occur in the store', () => {
+      expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('g2'))).toBe(false);
+    });
+
+    it('should not find quads in a graph whose term only occurs in another position', () => {
+      expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('o1'))).toBe(false);
+    });
+
+    it('should not find quads whose subject is not a subject in the graph', () => {
+      expect(store.has(new NamedNode('o1'), new NamedNode('p1'), new NamedNode('o1'), new DefaultGraph())).toBe(false);
+    });
+
+    it('should not find quads whose predicate does not occur under the subject', () => {
+      expect(store.has(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o1'), new DefaultGraph())).toBe(false);
+    });
+
+    it('should not find quads whose object does not occur under the subject and predicate', () => {
+      expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2'), new DefaultGraph())).toBe(false);
+    });
+
+    it('should not find quads with a subject or predicate that does not occur in the store', () => {
+      expect(store.has(new NamedNode('x'), new NamedNode('p1'), new NamedNode('o1'), new DefaultGraph())).toBe(false);
+      expect(store.has(new NamedNode('s1'), new NamedNode('x'), new NamedNode('o1'), new DefaultGraph())).toBe(false);
+      expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('x'), new DefaultGraph())).toBe(false);
+    });
+
+    it('should find quads with a quoted quad as subject', () => {
+      expect(store.has(new Quad(new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), new NamedNode('p1'), new NamedNode('o1')))).toBe(true);
+      expect(store.has(new Quad(new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o1')), new NamedNode('p1'), new NamedNode('o1')))).toBe(false);
+    });
+
+    it('should still match patterns with an unbound graph', () => {
+      expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'))).toBe(true);
+      expect(store.has(new NamedNode('s2'), new NamedNode('p1'), new NamedNode('o1'))).toBe(false);
+    });
+  });
+
   describe('A Store with an object recurring under multiple predicates', () => {
     const store = new Store([
       new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
