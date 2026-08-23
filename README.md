@@ -444,11 +444,9 @@ The **parser** validates _syntax_ of the grammar the grammar of the selected for
 
 The **writer** trusts the terms it is given. Quads constructed with invalid term values are serialized as-is and can yield invalid documents.
 
-For such guarantees, chain a validating transform behind the parser,
-composing dedicated validators such as
-[`validate-iri`](https://www.npmjs.com/package/validate-iri),
-[`rdf-validate-datatype`](https://www.npmjs.com/package/rdf-validate-datatype),
-and [`bcp-47`](https://www.npmjs.com/package/bcp-47):
+Therefore, term validation should be done post-parsing to ensure that valid RDF terms should be produced.
+
+One should also ensure that terms are valid prior to being passed into the writer; either by validation, or ensuring that valid RDF will always be produced by the application logic producing the terms.
 ```JavaScript
 const { Transform } = require('stream');
 const { validateIri, IriValidationStrategy } = require('validate-iri');
