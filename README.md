@@ -230,11 +230,7 @@ const writer1 = new N3.Writer({ format: 'N-Triples' });
 const writer2 = new N3.Writer({ format: 'application/trig' });
 ```
 
-A `baseIRI` argument makes the writer abbreviate IRIs relative to that base.
-<br>
-Pass `writeBase: true` to also write the base as an `@base` directive,
-so the abbreviated IRIs resolve to the original IRIs
-regardless of where the document is stored:
+A `baseIRI` argument makes the writer abbreviate IRIs relative to that base. Pass `writeBase: true` to also write the base as an `@base` directive at the top of the document.
 
 ```JavaScript
 const writer = new N3.Writer({ baseIRI: 'http://example.org/', writeBase: true });
