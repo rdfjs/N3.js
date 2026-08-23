@@ -157,7 +157,7 @@ describe('DataFactory', () => {
       ));
     });
 
-    it('should return a nested quad', () => {
+    it('should return a quad with a nested quad as subject', () => {
       expect(DataFactory.quad(
         new Quad(
           new NamedNode('http://ex.org/a'),
@@ -181,7 +181,7 @@ describe('DataFactory', () => {
       ));
     });
 
-    it('should return a nested quad', () => {
+    it('should return a quad with a nested quad as graph', () => {
       expect(DataFactory.quad(
         new NamedNode('http://ex.org/a'),
         new NamedNode('http://ex.org/b'),
