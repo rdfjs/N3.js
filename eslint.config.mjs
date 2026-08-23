@@ -316,15 +316,6 @@ export default [
         ],
       }],
 
-      // The `0` entries below override rules that `jest.configs['flat/recommended']`
-      // (spread into the preceding `test/**` config object) enables as `error`;
-      // in flat config, the later entry for the same files wins.
-      //
-      // `jest/no-standalone-expect` stays off — independently of
-      // `jest/expect-expect` above — because N3Store-test.js has ~40
-      // standalone `expect`s in `describe` bodies and `beforeAll` hooks
-      // while building up its shared mutable stores; enabling it requires
-      // restructuring those suites.
       'jest/no-standalone-expect': 0,
       'jest/no-done-callback': 0,
 
