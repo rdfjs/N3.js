@@ -96,6 +96,10 @@ export class N3EntityIndex {
      // inverse of `_ids`
     this._entities = Object.create(null);
     this._entities[1] = '';
+    // `_termCache` memoizes the materialized term per numeric entity id.
+    // Entities are never removed from `_ids`/`_entities`, so entries never go stale,
+    // and RDF/JS terms are immutable, so instances can be shared across reads.
+    this._termCache = [];
     // `_blankNodeIndex` is the index of the last automatically named blank node
     this._blankNodeIndex = 0;
     this._factory = options.factory || N3DataFactory;
@@ -114,6 +118,12 @@ export class N3EntityIndex {
       return q;
     }
     return termFromId(id, this._factory);
+  }
+
+  // ### `_termFromNumericId` materializes the term with the given numeric id,
+  // caching the result so repeated reads reuse a single term instance
+  _termFromNumericId(id) {
+    return this._termCache[id] || (this._termCache[id] = this._termFromId(this._entities[id]));
   }
 
   _termToNumericId(term) {
@@ -176,6 +186,7 @@ export default class N3Store {
     this._entityIndex = options.entityIndex || new N3EntityIndex({ factory: this._factory });
     this._entities = this._entityIndex._entities;
     this._termFromId = this._entityIndex._termFromId.bind(this._entityIndex);
+    this._termFromNumericId = this._entityIndex._termFromNumericId.bind(this._entityIndex);
     this._termToNumericId = this._entityIndex._termToNumericId.bind(this._entityIndex);
     this._termToNewNumericId = this._entityIndex._termToNewNumericId.bind(this._entityIndex);
 
@@ -240,26 +251,27 @@ export default class N3Store {
   // (for instance: _subject_, _predicate_, and _object_).
   // Finally, `graphId` will be the graph of the created quads.
   *_findInIndex(index0, key0, key1, key2, name0, name1, name2, graphId) {
-    let tmp, index1, index2;
-    const entityKeys = this._entities;
-    const graph = this._termFromId(entityKeys[graphId]);
+    let index1, index2;
+    const graph = this._termFromNumericId(graphId);
     const parts = { subject: null, predicate: null, object: null };
 
     // If a key is specified, use only that part of index 0.
-    if (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
-    for (const value0 in index0) {
+    const values0 = key0 ? [key0] : Object.keys(index0);
+    for (let i0 = 0; i0 < values0.length; i0++) {
+      const value0 = values0[i0];
       if (index1 = index0[value0]) {
-        parts[name0] = this._termFromId(entityKeys[value0]);
+        parts[name0] = this._termFromNumericId(value0);
         // If a key is specified, use only that part of index 1.
-        if (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
-        for (const value1 in index1) {
+        const values1 = key1 ? [key1] : Object.keys(index1);
+        for (let i1 = 0; i1 < values1.length; i1++) {
+          const value1 = values1[i1];
           if (index2 = index1[value1]) {
-            parts[name1] = this._termFromId(entityKeys[value1]);
+            parts[name1] = this._termFromNumericId(value1);
             // If a key is specified, use only that part of index 2, if it exists.
             const values = key2 ? (key2 in index2 ? [key2] : []) : Object.keys(index2);
             // Create quads for all items found in index 2.
             for (let l = 0; l < values.length; l++) {
-              parts[name2] = this._termFromId(entityKeys[values[l]]);
+              parts[name2] = this._termFromNumericId(values[l]);
               yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
             }
           }
@@ -319,25 +331,41 @@ export default class N3Store {
   // The index base is `index0` and the keys at each level are `key0`, `key1`, and `key2`.
   // Any of these keys can be undefined, which is interpreted as a wildcard.
   _countInIndex(index0, key0, key1, key2) {
-    let count = 0, tmp, index1, index2;
+    let count = 0, index1;
 
     // If a key is specified, count only that part of index 0
-    if (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
-    for (const value0 in index0) {
-      if (index1 = index0[value0]) {
-        // If a key is specified, count only that part of index 1
-        if (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
-        for (const value1 in index1) {
-          if (index2 = index1[value1]) {
-            // If a key is specified, count the quad if it exists
-            if (key2) (key2 in index2) && count++;
-            // Otherwise, count all quads
-            else count += Object.keys(index2).length;
-          }
-        }
-      }
+    if (key0) {
+      if (index1 = index0[key0])
+        count = this._countInSubIndex(index1, key1, key2);
+    }
+    else {
+      for (const value0 in index0)
+        count += this._countInSubIndex(index0[value0], key1, key2);
     }
     return count;
+  }
+
+  // ### `_countInSubIndex` counts matching quads in a two-layered index
+  _countInSubIndex(index1, key1, key2) {
+    let count = 0, index2;
+
+    // If a key is specified, count only that part of index 1
+    if (key1) {
+      if (index2 = index1[key1])
+        count = this._countInLeafIndex(index2, key2);
+    }
+    else {
+      for (const value1 in index1)
+        count += this._countInLeafIndex(index1[value1], key2);
+    }
+    return count;
+  }
+
+  // ### `_countInLeafIndex` counts matching quads in a one-layered index
+  _countInLeafIndex(index2, key2) {
+    // If a key is specified, count the quad if it exists;
+    // otherwise, count all quads
+    return key2 ? (key2 in index2 ? 1 : 0) : Object.keys(index2).length;
   }
 
   // ### `_getGraphs` returns an array with the given graph,
@@ -354,7 +382,7 @@ export default class N3Store {
     return id => {
       if (!(id in uniqueIds)) {
         uniqueIds[id] = true;
-        callback(this._termFromId(this._entities[id], this._factory));
+        callback(this._termFromNumericId(id));
       }
     };
   }
@@ -777,7 +805,7 @@ export default class N3Store {
       this.some(quad => {
         callback(quad.graph);
         return true; // Halt iteration of some()
-      }, subject, predicate, object, this._termFromId(this._entities[graph]));
+      }, subject, predicate, object, this._termFromNumericId(graph));
     }
   }
 
