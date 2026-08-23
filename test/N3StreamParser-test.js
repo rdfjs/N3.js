@@ -48,6 +48,20 @@ describe('StreamParser', () => {
     );
 
     it(
+      'should parse a language tag that is split across chunks in the stream',
+      shouldParse(['<sub> <pred> "hello"@nl-', 'nl .'], 1, triples => {
+        expect(triples[0].object.language).toEqual('nl-nl');
+      }),
+    );
+
+    it(
+      'should parse a language tag whose subtag boundary aligns with the chunk boundary',
+      shouldParse(['<sub> <pred> "hello"@nl-nl', ' .'], 1, triples => {
+        expect(triples[0].object.language).toEqual('nl-nl');
+      }),
+    );
+
+    it(
       "doesn't parse an invalid stream",
       shouldNotParse(['z.'], 'Unexpected "z." on line 1.'),
       { token: undefined, line: 1, previousToken: undefined },
@@ -86,7 +100,7 @@ describe('StreamParser', () => {
     );
 
     it(
-      'emits "comment" events',
+      'does not emit "comment" events when comments are not enabled',
       shouldNotEmitCommentsWhenNotEnabled(['#comment1\n<a> <b> #comment2\n#comment3\n <c>. <d> <e> <f>.'], ['comment1', 'comment2', 'comment3']),
     );
 
