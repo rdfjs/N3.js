@@ -31,6 +31,7 @@ export default class N3Writer {
   constructor(outputStream, options) {
     // ### `_prefixRegex` matches a prefixed name or IRI that begins with one of the added prefixes
     this._prefixRegex = /$0^/;
+    this._hasPrefixes = false;
 
     // Shift arguments if the first argument is not a stream
     if (outputStream && typeof outputStream.write !== 'function')
@@ -85,7 +86,9 @@ export default class N3Writer {
   _writeQuad(subject, predicate, object, graph, done) {
     try {
       // Write the graph's label if it has changed
-      if (!graph.equals(this._graph)) {
+      // (the id-based fast path of `equals` would conflate
+      // the empty named node `<>` with the default graph)
+      if (!graph.equals(this._graph) || graph.termType !== this._graph.termType) {
         // Close the previous graph and start the new one
         this._write((this._subject === null ? '' : (this._inDefaultGraph ? '.\n' : '\n}\n')) +
                     (DEFAULTGRAPH.equals(graph) ? '' : `${this._encodeIriOrBlank(graph)} {\n`));
@@ -125,7 +128,7 @@ export default class N3Writer {
     return  `${this._encodeSubject(subject)} ${
             this._encodeIriOrBlank(predicate)} ${
             this._encodeObject(object)
-            }${graph && graph.value ? ` ${this._encodeIriOrBlank(graph)} .\n` : ' .\n'}`;
+            }${graph && !isDefaultGraph(graph) ? ` ${this._encodeIriOrBlank(graph)} .\n` : ' .\n'}`;
   }
 
   // ### `quadsToString` serializes an array of quads as a string
@@ -149,7 +152,8 @@ export default class N3Writer {
       // If it is a list head, pretty-print it
       if (this._lists && (entity.value in this._lists))
         entity = this.list(this._lists[entity.value]);
-      return 'id' in entity ? entity.id : `_:${entity.value}`;
+      return entity.termType === 'Variable' ? `?${entity.value}` :
+             'id' in entity ? entity.id : `_:${entity.value}`;
     }
     let iri = entity.value;
     // Use relative IRIs if requested and possible
@@ -159,8 +163,8 @@ export default class N3Writer {
     // Escape special characters
     if (escape.test(iri))
       iri = iri.replace(escapeAll, characterReplacer);
-    // Try to represent the IRI as prefixed name
-    const prefixMatch = this._prefixRegex.exec(iri);
+    // Try to represent the IRI as prefixed name, unless no prefixes were added
+    const prefixMatch = this._hasPrefixes ? this._prefixRegex.exec(iri) : null;
     return !prefixMatch ? `<${iri}>` :
            (!prefixMatch[1] ? iri : this._prefixIRIs[prefixMatch[1]] + prefixMatch[2]);
   }
@@ -292,6 +296,7 @@ export default class N3Writer {
     }
     // Recreate the prefix matcher
     if (hasPrefixes) {
+      this._hasPrefixes = true;
       let IRIlist = '', prefixList = '';
       for (const prefixIRI in this._prefixIRIs) {
         IRIlist += IRIlist ? `|${prefixIRI}` : prefixIRI;
@@ -299,7 +304,7 @@ export default class N3Writer {
       }
       IRIlist = escapeRegex(IRIlist, /[\]\/\(\)\*\+\?\.\\\$]/g, '\\$&');
       this._prefixRegex = new RegExp(`^(?:${prefixList})[^\/]*$|` +
-                                     `^(${IRIlist})([_a-zA-Z0-9][\\-_a-zA-Z0-9]*)$`);
+                                     `^(${IRIlist})([_a-zA-Z0-9](?:\\.?[\\-_a-zA-Z0-9])*)$`);
     }
     // End a prefix block with a newline
     this._write(hasPrefixes ? '\n' : '', done);

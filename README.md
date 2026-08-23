@@ -78,6 +78,16 @@ console.log(myQuad.object.datatype.value); // http://www.w3.org/1999/02/22-rdf-s
 console.log(myQuad.object.language);       // en
 ```
 
+Always create terms through a data factory such as `N3.DataFactory`,
+and not by instantiating the term classes directly:
+direct construction is deprecated,
+because the factory functions are where term validation can be applied.
+In line with the [RDF/JS specification](http://rdf.js.org/data-model-spec/),
+N3.js assumes that the value of any RDF/JS term it receives —
+whether from its own factory or from another implementation —
+was already validated when the term was created,
+and does not re-validate terms.
+
 In the rest of this document, we will treat “triples” and “quads” equally:
 we assume that a quad is simply a triple in a named or default graph.
 
@@ -203,6 +213,41 @@ function SlowConsumer() {
 
 A dedicated `prefix` event signals every prefix with `prefix` and `term` arguments.
 A dedicated `comment` event can be enabled by setting `comments: true` in the N3.StreamParser constructor.
+
+Note that `prefix` and `comment` events are emitted as soon as they are parsed,
+whereas quads can remain buffered until the consumer is ready to read them.
+The order of these events relative to `data` events is therefore
+not guaranteed to match the position of prefixes and comments in the document.
+If their position matters,
+use `N3.Parser` with the `onQuad`, `onPrefix` and `onComment` callbacks instead,
+which are invoked in document order.
+
+### From a Web Stream to quads
+
+N3.js consumes [Node.js streams](http://nodejs.org/api/stream.html) natively,
+but sources such as `fetch` produce [Web Streams](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API).
+On Node.js 17 or higher, convert such a stream into a Node.js stream:
+
+```JavaScript
+const streamParser = new N3.StreamParser(),
+      { Readable } = require('stream');
+Readable.fromWeb(response.body).pipe(streamParser);
+```
+
+In browsers (or anywhere without Node.js streams),
+write the chunks to the parser directly,
+since `N3.StreamParser` exposes a standard writable stream interface:
+
+```JavaScript
+const streamParser = new N3.StreamParser(),
+      reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+(async () => {
+  for (let result; !(result = await reader.read()).done;)
+    if (!streamParser.write(result.value))
+      await new Promise(resolve => streamParser.once('drain', resolve));
+  streamParser.end();
+})();
+```
 
 ## Writing
 
@@ -411,6 +456,23 @@ reasoner.reason(rulesDataset);
 
 **Note**: N3.js currently only supports rules with [Basic Graph Patterns](https://www.w3.org/TR/sparql11-query/#BasicGraphPattern) in the premise and conclusion. Built-ins and backward-chaining are *not* supported. For an RDF/JS reasoner that supports all Notation3 reasoning features, see [eye-js](https://github.com/eyereasoner/eye-js/).
 
+### Limiting reasoning cost
+
+When reasoning over rules or data that are not fully trusted,
+optional budgets bound the work `reason()` may perform:
+
+```JavaScript
+const reasoner = new Reasoner(store, {
+  maxDerivations: 100000, // maximum number of quads reason() may derive
+  maxPremiseDepth: 10,    // maximum number of premise triples per rule
+});
+reasoner.reason(rulesDataset);
+```
+
+Both budgets are unbounded by default;
+`reason()` throws when one is exceeded,
+leaving any quads derived up to that point in the store.
+
 ## Compatibility
 ### Format specifications
 The N3.js parser and writer is fully compatible with the following W3C specifications:
@@ -433,6 +495,62 @@ The default mode is permissive
 and allows a mixture of different syntaxes.
 Pass a `format` option to the constructor with the name or MIME type of a format
 for strict, fault-intolerant behavior.
+
+### Validation
+The **parser** validates the _syntax_ of the selected format's grammar, with the following exceptions:
+- IRIs are not checked for full [RFC 3987](https://www.rfc-editor.org/rfc/rfc3987) well-formedness
+  (`<http://example.org/%ZZ>` parses),
+  and relative IRIs remain relative when no `baseIRI` option is given;
+- literal values are not checked against their datatype (`"abc"^^xsd:integer` parses);
+- language tags are checked against the grammar, not against [BCP 47](https://www.rfc-editor.org/rfc/rfc5646);
+
+The **writer** trusts the terms it is given. Quads constructed with invalid term values are serialized as-is and can yield invalid documents.
+
+Therefore, term validation should be done post-parsing to ensure that valid RDF terms should be produced.
+
+One should also ensure that terms are valid prior to being passed into the writer; either by validation, or ensuring that valid RDF will always be produced by the application logic producing the terms.
+
+The following code snipped shows how to validate that NamedNodes and Literals are validly formed. Depending on your application you may wish to apply further validation: such as ensuring that nested Quad terms are valid in RDF 1.2, and ensuring that `termTypes` are only occuring in the positions that is valid for RDF 1.1 and RDF 1.2.
+```JavaScript
+const { Transform } = require('stream');
+const { validateIri, IriValidationStrategy } = require('validate-iri');
+const { validators } = require('rdf-validate-datatype');
+const { parse: parseLanguageTag } = require('bcp-47');
+
+function validateTerm(term) {
+  switch (term.termType) {
+  case 'NamedNode': // RDF requires absolute IRIs
+    return validateIri(term.value, IriValidationStrategy.Strict) || null;
+  case 'Literal':
+    if (term.language) {
+      let invalid = false;
+      parseLanguageTag(term.language, { warning: () => { invalid = true; } });
+      return invalid ? new Error(`Invalid language tag "${term.language}"`) : null;
+    }
+    const validate = validators.find(term.datatype);
+    return validate && !validate(term.value)
+      ? new Error(`Invalid value "${term.value}" for datatype ${term.datatype.value}`)
+      : null; // unknown datatypes cannot be judged
+  default:
+    return null;
+  }
+}
+
+const quadStream = fs.createReadStream('data.ttl')
+  .pipe(new N3.StreamParser())
+  .pipe(new Transform({
+    objectMode: true,
+    transform(quad, encoding, done) {
+      const error = validateTerm(quad.subject) || validateTerm(quad.predicate) ||
+                    validateTerm(quad.object) || validateTerm(quad.graph);
+      done(error, error ? undefined : quad); // or: skip/collect instead of failing
+    },
+  }));
+```
+
+
+Parser-level opt-in validation modes covering the term and version dimensions
+are proposed in [#634](https://github.com/rdfjs/N3.js/pull/634).
 
 ### Interface specifications
 The N3.js submodules are compatible with the following [RDF.js](http://rdf.js.org) interfaces:
