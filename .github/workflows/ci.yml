@@ -6,7 +6,21 @@ on:
     - main
   pull_request:
 
+# Least-privilege default for GITHUB_TOKEN; jobs opt into more only where needed.
+permissions:
+  contents: read
+
 jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+      - run: npm ci --ignore-scripts
+      - run: npm audit --omit=dev --audit-level=moderate
+
   build:
     # Build once on an LTS-class Node. babel 8's CLI build (@babel/code-frame ->
     # util.styleText) requires Node >= 20.12, and the resulting CJS lib/ +
@@ -15,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24.x
       - run: npm ci --ignore-scripts
@@ -40,7 +54,7 @@ jobs:
         node-version: [20.x, 22.x, 24.x, 26.x]
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm ci --ignore-scripts
@@ -56,7 +70,7 @@ jobs:
     needs: build
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm ci --ignore-scripts
@@ -76,7 +90,7 @@ jobs:
         node-version: [24.x]
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm ci --ignore-scripts
@@ -87,7 +101,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24.x
       - run: npm ci --ignore-scripts
@@ -104,6 +118,7 @@ jobs:
     # Summary job that can be used as a single required check in branch protection
     if: always()
     needs:
+      - audit
       - build
       - test
       - spec
@@ -113,12 +128,15 @@ jobs:
     permissions: {}
     steps:
       - name: Decide whether all required jobs succeeded or failed
-        uses: re-actors/alls-green@release/v1
+        # Pinned to a commit SHA: the action lives outside the actions/* org and
+        # `release/v1` is a mutable branch ref.
+        uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe # release/v1
         with:
           jobs: ${{ toJSON(needs) }}
 
   gh-pages:
     needs:
+      - audit
       - build
       - test
       - spec
@@ -126,19 +144,27 @@ jobs:
       - lint
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
+    # Publishing pages needs write access to contents (this job only).
+    permissions:
+      contents: write
     steps:
       - uses: actions/download-artifact@v8
         with:
           name: docs
-      - uses: peaceiris/actions-gh-pages@v4
+      # Pinned to a commit SHA: third-party action with repo write access.
+      - uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: .
 
   release:
     if: ${{ github.ref == 'refs/heads/main' }}
-    needs: [ test, spec ]
+    needs: [ audit, test, spec ]
     runs-on: ubuntu-latest
+    # Never run two release/publish jobs concurrently.
+    concurrency:
+      group: release
+      cancel-in-progress: false
     permissions:
       contents: write
       packages: write
@@ -147,7 +173,7 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24.x
       - run: npm ci
@@ -155,4 +181,6 @@ jobs:
       - name: Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          # Emit npm build provenance (SLSA) via the workflow's id-token.
+          NPM_CONFIG_PROVENANCE: true
         run: npx semantic-release@25
