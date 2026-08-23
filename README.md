@@ -286,7 +286,9 @@ const writer2 = new N3.Writer({ format: 'application/trig' });
 
 A `baseIRI` argument makes the writer abbreviate IRIs relative to that base in Turtle/TriG serializations. Pass `writeBase: true` to also write the base as an `@base` directive at the top of the document (N-Triples and N-Quads remain directive-free).
 
-    const writer = new N3.Writer({ baseIRI: 'http://example.org/', writeBase: true });
+```JavaScript
+const writer = new N3.Writer({ baseIRI: 'http://example.org/', writeBase: true });
+```
 
 ### From quads to an RDF stream
 
