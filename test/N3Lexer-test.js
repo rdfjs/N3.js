@@ -529,6 +529,9 @@ describe('Lexer', () => {
     it('should not tokenize a direction in uppercase', shouldNotTokenize('"string"@en--LTR',
         'Unexpected "--LTR" on line 1.'));
 
+    it('should not tokenize an invalid direction when "rtl" occurs later in the input', shouldNotTokenize('"string"@en--unk # rtl\n',
+        'Unexpected "--unk" on line 1.'));
+
     it(
       'should tokenize a quoted string literal with type',
       shouldTokenize('"stringA"^^<type> "stringB"^^ns:mytype ',
