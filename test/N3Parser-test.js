@@ -3758,6 +3758,34 @@ describe('Parser', () => {
     });
   });
 
+  describe('An error emitted by a Parser instance', () => {
+    it('bounds input-derived content interpolated into the message', () => {
+      const bigIri = `http://e/${'A'.repeat(400)}`;
+      let error = null;
+      try {
+        new Parser({ format: 'text/turtle' }).parse(`<http://e/s> <http://e/p> <${bigIri}> <http://e/x> .`);
+      }
+      catch (e) { error = e; }
+      expect(error.message).toMatch(/^Expected punctuation to follow/);
+      // Bounded well below the 400-char IRI, with a truncation marker
+      expect(error.message.length).toBeLessThanOrEqual(200);
+      expect(error.message).toContain('…');
+      expect(error.message).toMatch(/ on line 1\.$/);
+    });
+
+    it('keeps the full offending token available on err.context.token', () => {
+      const bigPrefix = 'a'.repeat(400);
+      let error = null;
+      try {
+        new Parser({ format: 'text/turtle' }).parse(`${bigPrefix}:b <http://e/p> <http://e/o> .`);
+      }
+      catch (e) { error = e; }
+      expect(error.message).toMatch(/^Undefined prefix "a+…/);
+      expect(error.message.length).toBeLessThanOrEqual(200);
+      expect(error.context.token.prefix).toBe(bigPrefix);
+    });
+  });
+
   describe('IRI resolution', () => {
     describe('RFC3986 normal examples', () => {
       itShouldResolve('http://a/bb/ccc/d;p?q', 'g:h',     'g:h');
