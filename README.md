@@ -441,9 +441,8 @@ The parser validates _syntax_ of the grammar the grammar of the selected format,
   and relative IRIs remain relative when no `baseIRI` option is given;
 - literal values are not checked against their datatype (`"abc"^^xsd:integer` parses);
 - language tags are checked against the grammar, not against [BCP 47](https://www.rfc-editor.org/rfc/rfc5646);
-- the writer trusts the terms it is given:
-  quads constructed with invalid term values are serialized as-is
-  and can yield invalid documents.
+
+The **writer** trusts the terms it is given. Quads constructed with invalid term values are serialized as-is and can yield invalid documents.
 
 For such guarantees, chain a validating transform behind the parser,
 composing dedicated validators such as
