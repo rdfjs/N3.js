@@ -486,20 +486,6 @@ const quadStream = fs.createReadStream('data.ttl')
   }));
 ```
 
-Term-level checks are one of several validation dimensions
-(the [`rdf-validation`](https://github.com/rdf-ext/rdf-validation) library treats these as composable modules):
-- _interface conformance_ — whether objects implement the [RDF/JS interfaces](https://rdf.js.org/data-model-spec/),
-  a concern of the data factory and the type system
-  rather than of a parser that constructs its own terms
-  (see [Interface specifications](#interface-specifications) below);
-- _version validity_ — RDF 1.2 documents can contain constructs
-  that are not valid RDF 1.1
-  (such as triple terms and directional language tags),
-  and RDF 1.2 Basic excludes triple terms;
-- _N3 validity_ — formulae, variables, and paths are N3-only
-  and already gated by the `format` option;
-- _shape-level validation_ — checking data against schemas
-  such as SHACL or ShEx is a separate layer on top of well-formed RDF.
 
 Parser-level opt-in validation modes covering the term and version dimensions
 are proposed in [#634](https://github.com/rdfjs/N3.js/pull/634).
