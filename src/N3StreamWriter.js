@@ -2,30 +2,21 @@
 import { Transform } from 'readable-stream';
 import N3Writer from './N3Writer';
 
-// Minimum size of coalesced output chunks
 const MIN_CHUNK_SIZE = 65536;
-
-// Default maximum time (in milliseconds) that output stays coalesced
-const DEFAULT_FLUSH_DELAY = 100;
+const DEFAULT_FLUSH_DELAY_MS = 100;
 
 // ## Constructor
 export default class N3StreamWriter extends Transform {
   constructor(options) {
     super({ encoding: 'utf8', writableObjectMode: true });
 
-    // Serialized output is coalesced into larger chunks before being pushed,
-    // such that the stream machinery and the downstream string-to-Buffer
-    // conversion run once per chunk rather than once per serialized fragment
+    // Coalesce serialized fragments into larger stream chunks
     this._buffer = '';
 
-    // Slow quad sources (e.g., remote query results arriving in real time)
-    // could otherwise leave output stuck below the minimum chunk size,
-    // so a timer bounds how long output stays buffered.
-    // It is armed when the buffer becomes non-empty and cleared on flush,
-    // keeping it out of the per-fragment hot path.
+    // Flush partial chunks after a bounded delay
     this._flushTimer = null;
     this._flushDelay = options && options.flushDelay !== undefined ?
-      options.flushDelay : DEFAULT_FLUSH_DELAY;
+      options.flushDelay : DEFAULT_FLUSH_DELAY_MS;
 
     // Set up writer with a dummy stream object
     const writer = this._writer = new N3Writer({
@@ -40,8 +31,7 @@ export default class N3StreamWriter extends Transform {
       end: callback => { this._pushBuffer(); this.push(null); callback && callback(); },
     }, options);
 
-    // Implement Transform methods on top of writer;
-    // a quad that fails to serialize first flushes the output buffered before it
+    // Flush buffered output before serialization errors
     let pendingDone = null;
     const quadDone = error => {
       const done = pendingDone;
@@ -57,11 +47,7 @@ export default class N3StreamWriter extends Transform {
     this._flush = done => { writer.end(done); };
   }
 
-  // ### `_pushBuffer` pushes coalesced output downstream.
-  // It pushes even when downstream applied backpressure:
-  // that only moves the bytes from this buffer to the stream's
-  // internal queue, leaving total buffered memory unchanged,
-  // whereas withholding them could delay delivery indefinitely
+  // ### `_pushBuffer` flushes coalesced output to the stream queue
   _pushBuffer() {
     this._clearFlushTimer();
     if (this._buffer !== '') {
@@ -70,15 +56,13 @@ export default class N3StreamWriter extends Transform {
     }
   }
 
-  // ### `_armFlushTimer` schedules a flush of output
-  // that stays below the minimum chunk size for too long
+  // ### `_armFlushTimer` schedules a partial-chunk flush
   _armFlushTimer() {
     this._flushTimer = setTimeout(() => {
       this._flushTimer = null;
       this._pushBuffer();
     }, this._flushDelay);
-    // Do not let the timer keep the Node.js event loop alive
-    // (browser timers are plain numbers without `unref`)
+    // Browser timers do not implement `unref`
     this._flushTimer.unref && this._flushTimer.unref();
   }
 
