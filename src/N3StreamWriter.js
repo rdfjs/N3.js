@@ -2,8 +2,8 @@
 import { Transform } from 'readable-stream';
 import N3Writer from './N3Writer';
 
-const MIN_CHUNK_SIZE = 65536;
-const DEFAULT_FLUSH_DELAY_MS = 100;
+const MIN_CHUNK_SIZE = 16 * 1024;
+const DEFAULT_FLUSH_DELAY_MS = 20;
 
 // ## Constructor
 export default class N3StreamWriter extends Transform {

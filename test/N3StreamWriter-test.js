@@ -89,7 +89,7 @@ describe('StreamWriter', () => {
       });
     });
 
-    it('should coalesce a large document into chunks of at least 64 KB', done => {
+    it('should coalesce a large document into chunks of at least 16 KiB', done => {
       const quads = [];
       let expected = '';
       for (let i = 0; i < 4000; i++) {
@@ -107,7 +107,7 @@ describe('StreamWriter', () => {
         expect(chunks.length).toBeGreaterThan(1);
         expect(chunks.length).toBeLessThan(40);
         for (const chunk of chunks.slice(0, chunks.length - 1))
-          expect(chunk.length).toBeGreaterThanOrEqual(65536);
+          expect(chunk.length).toBeGreaterThanOrEqual(16384);
         done();
       });
     });
@@ -159,12 +159,12 @@ describe('StreamWriter', () => {
       });
       afterEach(() => { jest.useRealTimers(); });
 
-      it('should flush buffered output after the default 100 ms pause', async () => {
+      it('should flush buffered output after the default 20 ms pause', async () => {
         const writer = createWriter();
         writer.write(new Quad(termFromId('a'), termFromId('b'), termFromId('c')));
         await tick();
         expect(writer.chunks).toEqual([]);
-        await jest.advanceTimersByTimeAsync(99);
+        await jest.advanceTimersByTimeAsync(19);
         expect(writer.chunks).toEqual([]);
         await jest.advanceTimersByTimeAsync(1);
         expect(writer.chunks).toEqual(['<a> <b> <c>']);
@@ -174,10 +174,10 @@ describe('StreamWriter', () => {
       it('should re-arm the pause flush after it has fired', async () => {
         const writer = createWriter();
         writer.write(new Quad(termFromId('a'), termFromId('b'), termFromId('c')));
-        await jest.advanceTimersByTimeAsync(100);
+        await jest.advanceTimersByTimeAsync(20);
         expect(writer.chunks).toEqual(['<a> <b> <c>']);
         writer.write(new Quad(termFromId('d'), termFromId('e'), termFromId('f')));
-        await jest.advanceTimersByTimeAsync(99);
+        await jest.advanceTimersByTimeAsync(19);
         expect(writer.chunks).toEqual(['<a> <b> <c>']);
         await jest.advanceTimersByTimeAsync(1);
         expect(writer.chunks).toEqual(['<a> <b> <c>', '.\n<d> <e> <f>']);
@@ -194,7 +194,7 @@ describe('StreamWriter', () => {
         await tick();
         expect(writer.chunks.length).toBeGreaterThan(1);
         for (const chunk of writer.chunks)
-          expect(chunk.length).toBeGreaterThanOrEqual(65536);
+          expect(chunk.length).toBeGreaterThanOrEqual(16384);
         writer.destroy();
       });
 
