@@ -377,11 +377,6 @@ describe('Reasoner', () => {
     });
   });
 
-  // Exercises the level-2 bound, non-last premise branch of _evaluatePremise.
-  // premise[0] (?a ?p ?b) introduces all three variables; premise[1] (?b ?p ?a) reuses
-  // them, so it is indexed on the 'objects' index where the third (val2) loop level is the
-  // predicate variable ?p — already bound at evaluation time. A further premise (?a tail ?z)
-  // follows, so that bound third level is reached while not on the last premise.
   it('Should apply a multi-premise rule whose middle premise has a bound third position', () => {
     const store = new Store([
       new Quad(new NamedNode('http://example.org/m'), new NamedNode('http://example.org/rel'), new NamedNode('http://example.org/n')),
