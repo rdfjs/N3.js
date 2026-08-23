@@ -497,7 +497,7 @@ Pass a `format` option to the constructor with the name or MIME type of a form
 for strict, fault-intolerant behavior.
 
 ### Validation
-The **parser** validates _syntax_ of the grammar the grammar of the selected format, with the following exceptions:
+The **parser** validates the _syntax_ of the selected format's grammar, with the following exceptions:
 - IRIs are not checked for full [RFC 3987](https://www.rfc-editor.org/rfc/rfc3987) well-formedness
   (`<http://example.org/%ZZ>` parses),
   and relative IRIs remain relative when no `baseIRI` option is given;
