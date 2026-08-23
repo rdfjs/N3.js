@@ -173,6 +173,13 @@ describe('Lexer', () => {
                      { type: 'eof', line: 1 }),
     );
 
+    it(
+      'should tokenize prefixed names with all reserved escape sequences',
+      shouldTokenize("ex:a\\_\\~\\.\\-\\!\\$\\&\\'\\(\\)\\*\\+\\,\\;\\=\\/\\?\\#\\@\\%b ",
+                     { type: 'prefixed', prefix: 'ex', value: "a_~.-!$&'()*+,;=/?#@%b", line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
     it('should tokenize the colon prefixed name', shouldTokenize(': : :.',
                    { type: 'prefixed', prefix: '', value: '', line: 1 },
                    { type: 'prefixed', prefix: '', value: '', line: 1 },
@@ -350,10 +357,38 @@ describe('Lexer', () => {
     );
 
     it(
+      'should tokenize a string with all ECHAR escape sequences',
+      shouldTokenize('"\\t \\b \\n \\r \\f \\\\ \\" \\\'" ',
+                     { type: 'literal', value: '\t \b \n \r \f \\ " \'', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
       'should not tokenize a string with invalid characters',
       shouldNotTokenize('"\\uXYZX" ',
                         'Unexpected ""\\uXYZX"" on line 1.'),
     );
+
+    // Escapes for these characters are only allowed in local names of prefixed names
+    for (const char of '_~.-!$&()*+,;=/?#@%') {
+      it(
+        `should not tokenize a double-quoted string with the escape sequence \\${char}`,
+        shouldNotTokenize(`"a\\${char}b" `,
+                          `Unexpected ""a\\${char}b"" on line 1.`),
+      );
+
+      it(
+        `should not tokenize a single-quoted string with the escape sequence \\${char}`,
+        shouldNotTokenize(`'a\\${char}b' `,
+                          `Unexpected "'a\\${char}b'" on line 1.`),
+      );
+
+      it(
+        `should not tokenize a triple-quoted string with the escape sequence \\${char}`,
+        shouldNotTokenize(`"""a\\${char}b""" `,
+                          `Unexpected """"a\\${char}b"""" on line 1.`),
+      );
+    }
 
     it(
       'should not tokenize a literal with a surrogate pair via unicode escapes',

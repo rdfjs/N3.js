@@ -68,6 +68,18 @@ describe('Parser', () => {
                 ['a', 'b', '"string"']));
 
     it(
+      'should not parse a triple with a literal containing a prefixed-name escape sequence',
+      shouldNotParse('<a> <b> "stri\\.ng".',
+                     'Unexpected ""stri\\.ng"." on line 1.'),
+    );
+
+    it(
+      'should parse a triple with a prefixed name containing escape sequences',
+      shouldParse('@prefix x: <urn:x:y#>. x:a\\.b <b> "string".',
+                  ['urn:x:y#a.b', 'b', '"string"']),
+    );
+
+    it(
       'should parse a triple with a numeric literal',
       shouldParse('<a> <b> 3.0.',
                   ['a', 'b', '"3.0"^^http://www.w3.org/2001/XMLSchema#decimal']),
