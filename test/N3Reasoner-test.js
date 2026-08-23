@@ -376,4 +376,29 @@ describe('Reasoner', () => {
       expect(store.size).toBe(1275);
     });
   });
+
+  it('Should apply a multi-premise rule whose middle premise has a bound third position', () => {
+    const store = new Store([
+      new Quad(new NamedNode('http://example.org/m'), new NamedNode('http://example.org/rel'), new NamedNode('http://example.org/n')),
+      new Quad(new NamedNode('http://example.org/n'), new NamedNode('http://example.org/rel'), new NamedNode('http://example.org/m')),
+      new Quad(new NamedNode('http://example.org/m'), new NamedNode('http://example.org/tail'), new NamedNode('http://example.org/z')),
+    ]);
+    expect(store.size).toEqual(3);
+    new Reasoner(store).reason([{
+      premise: [
+        new Quad(new Variable('?a'), new Variable('?p'), new Variable('?b')),
+        new Quad(new Variable('?b'), new Variable('?p'), new Variable('?a')),
+        new Quad(new Variable('?a'), new NamedNode('http://example.org/tail'), new Variable('?z')),
+      ],
+      conclusion: [
+        new Quad(new Variable('?a'), new NamedNode('http://example.org/out'), new Variable('?z')),
+      ],
+    }]);
+    expect(store.size).toEqual(4);
+    expect(store.has(new Quad(
+      new NamedNode('http://example.org/m'),
+      new NamedNode('http://example.org/out'),
+      new NamedNode('http://example.org/z'),
+    ))).toEqual(true);
+  });
 });
