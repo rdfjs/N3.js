@@ -316,4 +316,89 @@ describe('Reasoner', () => {
     new Reasoner(store).reason(RDFS_RULE);
     return expect(store.size).toEqual(1830);
   });
+
+  describe('Reasoning budgets', () => {
+    // A transitive-closure rule over a chain of n edges derives O(n^2) quads
+    function chainStore(n) {
+      let doc = '@prefix : <http://example.org/>.\n';
+      for (let i = 0; i < n; i++) doc += `:x${i} :r :x${i + 1}.\n`;
+      return new Store(new Parser({ format: 'text/n3' }).parse(doc));
+    }
+    function transitiveRule() {
+      return getRulesFromDataset(new Store(new Parser({ format: 'text/n3' }).parse(
+        '@prefix : <http://example.org/>. { ?x :r ?y. ?y :r ?z } => { ?x :r ?z }.')));
+    }
+
+    it('Should fail when reasoning exceeds maxDerivations', () => {
+      const store = chainStore(400);
+      expect(() => new Reasoner(store, { maxDerivations: 1000 }).reason(transitiveRule()))
+        .toThrow('Reasoning exceeded the maximum of 1000 derivations');
+    });
+
+    it('Should leave the store consistent after a caught maxDerivations error', () => {
+      const store = chainStore(400);
+      expect(() => new Reasoner(store, { maxDerivations: 1000 }).reason(transitiveRule()))
+        .toThrow('Reasoning exceeded the maximum of 1000 derivations');
+      // Every quad reachable through the subject index must also be reachable
+      // through the predicate and object indexes, and the size must match
+      const quads = store.getQuads(null, null, null);
+      expect(store.size).toBe(quads.length);
+      for (const quad of quads) {
+        expect(store.getQuads(null, quad.predicate, null).some(q => q.equals(quad))).toBe(true);
+        expect(store.getQuads(null, null, quad.object).some(q => q.equals(quad))).toBe(true);
+      }
+    });
+
+    it('Should reason normally within a generous maxDerivations budget', () => {
+      const store = chainStore(50);
+      new Reasoner(store, { maxDerivations: 100000 }).reason(transitiveRule());
+      expect(store.size).toBe(1275);
+    });
+
+    it('Should reason normally with the default unbounded budgets', () => {
+      const store = chainStore(50);
+      new Reasoner(store).reason(transitiveRule());
+      expect(store.size).toBe(1275);
+    });
+
+    it('Should reject a rule whose premise count exceeds maxPremiseDepth', () => {
+      let body = '';
+      for (let i = 0; i < 20; i++) body += `?x :r${i} ?y${i}. `;
+      const rules = getRulesFromDataset(new Store(new Parser({ format: 'text/n3' }).parse(
+        `@prefix : <http://example.org/>. { ${body}} => { ?x :big :thing }.`)));
+      expect(() => new Reasoner(chainStore(2), { maxPremiseDepth: 5 }).reason(rules))
+        .toThrow('Reasoning rule exceeds the maximum premise depth of 5');
+    });
+
+    it('Should accept a rule whose premise count equals maxPremiseDepth', () => {
+      const store = chainStore(50);
+      new Reasoner(store, { maxPremiseDepth: 2 }).reason(transitiveRule());
+      expect(store.size).toBe(1275);
+    });
+  });
+
+  it('Should apply a multi-premise rule whose middle premise has a bound third position', () => {
+    const store = new Store([
+      new Quad(new NamedNode('http://example.org/m'), new NamedNode('http://example.org/rel'), new NamedNode('http://example.org/n')),
+      new Quad(new NamedNode('http://example.org/n'), new NamedNode('http://example.org/rel'), new NamedNode('http://example.org/m')),
+      new Quad(new NamedNode('http://example.org/m'), new NamedNode('http://example.org/tail'), new NamedNode('http://example.org/z')),
+    ]);
+    expect(store.size).toEqual(3);
+    new Reasoner(store).reason([{
+      premise: [
+        new Quad(new Variable('?a'), new Variable('?p'), new Variable('?b')),
+        new Quad(new Variable('?b'), new Variable('?p'), new Variable('?a')),
+        new Quad(new Variable('?a'), new NamedNode('http://example.org/tail'), new Variable('?z')),
+      ],
+      conclusion: [
+        new Quad(new Variable('?a'), new NamedNode('http://example.org/out'), new Variable('?z')),
+      ],
+    }]);
+    expect(store.size).toEqual(4);
+    expect(store.has(new Quad(
+      new NamedNode('http://example.org/m'),
+      new NamedNode('http://example.org/out'),
+      new NamedNode('http://example.org/z'),
+    ))).toEqual(true);
+  });
 });
