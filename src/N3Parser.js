@@ -1183,7 +1183,11 @@ export default class N3Parser {
 
   // ### `_error` emits an error message through the callback
   _error(message, token) {
-    const err = new Error(`${message} on line ${token.line}.`);
+    // Bound input-derived content while preserving the line suffix and full token context.
+    const suffix = ` on line ${token.line}.`;
+    if (message.length + suffix.length > 200)
+      message = `${message.slice(0, 199 - suffix.length)}…`;
+    const err = new Error(`${message}${suffix}`);
     err.context = {
       token: token,
       line: token.line,
