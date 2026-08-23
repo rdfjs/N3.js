@@ -78,6 +78,16 @@ console.log(myQuad.object.datatype.value); // http://www.w3.org/1999/02/22-rdf-s
 console.log(myQuad.object.language);       // en
 ```
 
+When no language or datatype is supplied, `literal` automatically assigns XSD datatypes
+to JavaScript booleans, numbers, and valid `Date` objects. Dates are converted to UTC
+using `Date.prototype.toISOString()` and receive the `xsd:dateTime` datatype:
+
+```JavaScript
+const created = literal(new Date('2017-04-27T14:39:48.901Z'));
+console.log(created.value);          // 2017-04-27T14:39:48.901Z
+console.log(created.datatype.value); // http://www.w3.org/2001/XMLSchema#dateTime
+```
+
 Always create terms through a data factory such as `N3.DataFactory`,
 and not by instantiating the term classes directly:
 direct construction is deprecated,
