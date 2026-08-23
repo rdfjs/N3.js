@@ -66,17 +66,6 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: build
-      # Persist rdf-test-suite's fetch cache (-c .rdf-test-suite-cache/): its
-      # cache writes are not atomic, so on a cold cache concurrent fetches of
-      # shared fixtures can race and read truncated files (#609). Hits are
-      # served without revalidation, so entries are pinned once saved.
-      # spec/cache-key.txt pins the upstream w3c/rdf-tests revision; the
-      # refresh-spec-cache workflow PRs a bump when upstream changes. The pin
-      # is part of the restore-keys prefix too: stale entries are never
-      # revalidated, so a pin bump must start fully cold instead of seeding
-      # from an old cache that would shadow the updated fixtures. A
-      # package.json change still seeds from the same pin, as it cannot
-      # change what upstream serves.
       - uses: actions/cache@v6
         with:
           path: .rdf-test-suite-cache
