@@ -1,11 +1,3 @@
-# The spec jobs in ci.yml cache the rdf-test-suite fixtures, and cache hits
-# are served without revalidation, so a saved cache never sees upstream
-# changes. This workflow watches the branch that actually serves the
-# manifests (w3c/rdf-tests@gh-pages, published at w3c.github.io/rdf-tests)
-# and, when the rdf11/rdf12 suites change, opens a PR that bumps
-# spec/cache-key.txt. Merging that PR rotates the CI cache key, so the spec
-# jobs refetch the suites cold (deliberately without seeding from the old
-# cache, which would shadow the updated fixtures).
 name: Refresh spec cache
 
 on:
