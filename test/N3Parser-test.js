@@ -811,6 +811,22 @@ describe('Parser', () => {
             ['_:b3', reifies, ['a2', 'b2', 'c2']]),
     );
 
+    it(
+        'should parse statements with a subject list containing a triple term',
+        shouldParse('(<<(<a1> <b1> <c1>)>>) <a> <b>.',
+            ['_:b0', 'a', 'b'],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['a1', 'b1', 'c1']],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+    );
+
+    it(
+        'should parse statements with an object list containing a triple term',
+        shouldParse('<a> <b> (<<(<a1> <b1> <c1>)>>).',
+            ['a', 'b', '_:b0'],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['a1', 'b1', 'c1']],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+    );
+
     it('should not parse an invalid list', shouldNotParse('<a> <b> (]).',
                    'Expected entity but got ] on line 1.'));
 
@@ -1579,6 +1595,40 @@ describe('Parser', () => {
     );
 
     it(
+        'should parse an annotation on a triple with a nested reified triple as subject',
+        shouldParse('<<<a> <b> <c>>> <d> <e> {| <f> <g> |}.',
+            ['_:b0', reifies, ['a', 'b', 'c']],
+            ['_:b1', reifies, ['_:b0', 'd', 'e']],
+            ['_:b0', 'd', 'e'],
+            ['_:b1', 'f', 'g']),
+    );
+
+    it(
+        'should parse an annotation on a triple with a nested reified triple as object',
+        shouldParse('<d> <e> <<<a> <b> <c>>> {| <f> <g> |}.',
+            ['_:b0', reifies, ['a', 'b', 'c']],
+            ['_:b1', reifies, ['d', 'e', '_:b0']],
+            ['d', 'e', '_:b0'],
+            ['_:b1', 'f', 'g']),
+    );
+
+    it(
+        'should parse a bare annotation reifier on a triple with a nested reified triple as subject',
+        shouldParse('<<<a> <b> <c>>> <d> <e> ~ .',
+            ['_:b0', reifies, ['a', 'b', 'c']],
+            ['_:b0', 'd', 'e'],
+            ['_:b1', reifies, ['_:b0', 'd', 'e']]),
+    );
+
+    it(
+        'should parse a bare annotation reifier on a triple with a nested reified triple as object',
+        shouldParse('<d> <e> <<<a> <b> <c>>> ~ .',
+            ['_:b0', reifies, ['a', 'b', 'c']],
+            ['d', 'e', '_:b0'],
+            ['_:b1', reifies, ['d', 'e', '_:b0']]),
+    );
+
+    it(
       'should not parse nested triple terms that are partially closed',
       shouldNotParse('<d> <e> <<(<<(<a> <b> <c>)>> <f> <g>.',
         'Disallowed triple term as subject on line 1.',
@@ -1607,28 +1657,28 @@ describe('Parser', () => {
     );
 
     it(
-      'should not parse nested triple terms with too many closing tags',
+      'should not parse nested triple terms with too many closing tags after the inner term',
       shouldNotParse('<d> <e> <<(<<(<a> <b> <c>)>>)>> <f> <g>)>>.',
         'Disallowed triple term as subject on line 1.',
       ),
     );
 
     it(
-        'should not parse nested reified triples with too many closing tags',
+        'should not parse nested reified triples with too many closing tags after the inner triple',
         shouldNotParse('<d> <e> <<<<<a> <b> <c>>>>> <f> <g>>>.',
             'Expected entity but got >> on line 1.',
         ),
     );
 
     it(
-      'should not parse nested triple terms with too many closing tags',
+      'should not parse nested triple terms with too many closing tags at the end',
       shouldNotParse('<d> <e> <<(<<(<a> <b> <c>)>> <f> <g>)>>)>>.',
         'Disallowed triple term as subject on line 1.',
       ),
     );
 
     it(
-        'should not parse nested reified triples with too many closing tags',
+        'should not parse nested reified triples with too many closing tags at the end',
         shouldNotParse('<d> <e> <<<<<a> <b> <c>>> <f> <g>>>>>.',
             'Expected entity but got >> on line 1.',
         ),
@@ -1744,11 +1794,93 @@ describe('Parser', () => {
     );
 
     it(
+        'should parse an annotation inside a blank node property list',
+        shouldParse('<s> <p> [ <b> <c> {| <d> <e> |} ].',
+            ['_:b1', reifies, ['_:b0', 'b', 'c']],
+            ['_:b0', 'b', 'c'],
+            ['_:b1', 'd', 'e'],
+            ['s', 'p', '_:b0']),
+    );
+
+    it(
+        'should parse an annotation inside a blank node property list in subject position',
+        shouldParse('[ <b> <c> {| <d> <e> |} ] <p> <o>.',
+            ['_:b1', reifies, ['_:b0', 'b', 'c']],
+            ['_:b0', 'b', 'c'],
+            ['_:b1', 'd', 'e'],
+            ['_:b0', 'p', 'o']),
+    );
+
+    it(
+        'should parse an annotation inside a nested blank node property list',
+        shouldParse('<s> <p> [ <b> [ <c> <d> {| <e> <f> |} ] ].',
+            ['_:b2', reifies, ['_:b1', 'c', 'd']],
+            ['_:b1', 'c', 'd'],
+            ['_:b2', 'e', 'f'],
+            ['_:b0', 'b', '_:b1'],
+            ['s', 'p', '_:b0']),
+    );
+
+    it(
+        'should parse an annotation with a reifier inside a blank node property list',
+        shouldParse('<s> <p> [ <b> <c> ~ <r> {| <d> <e> |} ].',
+            ['_:b0', 'b', 'c'],
+            ['r', reifies, ['_:b0', 'b', 'c']],
+            ['r', 'd', 'e'],
+            ['s', 'p', '_:b0']),
+    );
+
+    it(
+        'should not parse a predicate-object pair after an annotation inside a blank node property list',
+        shouldNotParse('<s> <p> [ <b> <c> {| <d> <e> |} ; <f> <g> ].',
+            'Expected ] to follow annotation on line 1.'),
+    );
+
+    it(
       'should parse a reified triple using annotation syntax with reifier and one predicate-object',
       shouldParse('<a> <b> <c> ~ <iri> {| <b> <c> |}.',
           ['a', 'b', 'c'],
           ['iri', 'b', 'c'],
           ['iri', reifies, ['a', 'b', 'c']]),
+    );
+
+    it(
+        'should parse a reifier that is not followed by an annotation block',
+        shouldParse('<a> <b> <c> ~ <iri>.',
+            ['a', 'b', 'c'],
+            ['iri', reifies, ['a', 'b', 'c']]),
+    );
+
+    it(
+        'should parse a blank node reifier that is not followed by an annotation block',
+        shouldParse('<a> <b> <c> ~ _:r.',
+            ['a', 'b', 'c'],
+            ['_:b0_r', reifies, ['a', 'b', 'c']]),
+    );
+
+    it(
+        'should parse a lone reifier followed by a shared subject',
+        shouldParse('<a> <b> <c> ~ <iri>; <b2> <c2>.',
+            ['a', 'b', 'c'],
+            ['iri', reifies, ['a', 'b', 'c']],
+            ['a', 'b2', 'c2']),
+    );
+
+    it(
+        'should parse a lone reifier followed by a shared subject and predicate',
+        shouldParse('<a> <b> <c> ~ <iri>, <c2>.',
+            ['a', 'b', 'c'],
+            ['iri', reifies, ['a', 'b', 'c']],
+            ['a', 'b', 'c2']),
+    );
+
+    it(
+        'should reify the correct triple when lone reifiers follow a shared subject',
+        shouldParse('<a> <b> <c> ~ <iri1>; <b2> <c2> ~ <iri2>.',
+            ['a', 'b', 'c'],
+            ['iri1', reifies, ['a', 'b', 'c']],
+            ['a', 'b2', 'c2'],
+            ['iri2', reifies, ['a', 'b2', 'c2']]),
     );
 
     it(
@@ -1832,7 +1964,22 @@ describe('Parser', () => {
         shouldParse('<G> { <a> <b> <c> {| <b> <c> |}. }',
             ['a', 'b', 'c', 'G'],
             ['_:b0', 'b', 'c', 'G'],
-            ['_:b0', reifies, ['a', 'b', 'c']]),
+            ['_:b0', reifies, ['a', 'b', 'c'], 'G']),
+    );
+
+    it(
+        'should parse a reified triple in a graph using annotation syntax with an explicit reifier',
+        shouldParse('<G> { <a> <b> <c> ~ <r> {| <b> <c> |}. }',
+            ['a', 'b', 'c', 'G'],
+            ['r', reifies, ['a', 'b', 'c'], 'G'],
+            ['r', 'b', 'c', 'G']),
+    );
+
+    it(
+        'should parse a reified triple in a graph using << >> syntax',
+        shouldParse('<G> { <<<a> <b> <c>>> <p> <o> . }',
+            ['_:b0', reifies, ['a', 'b', 'c'], 'G'],
+            ['_:b0', 'p', 'o', 'G']),
     );
 
     it(
@@ -2110,8 +2257,14 @@ describe('Parser', () => {
     );
 
     it(
-      'should not parse a literal as subject',
+      'should not parse a literal as subject with comments enabled',
       shouldNotParseWithComments(parser, '1 <a> <b>.',
+        'Unexpected literal on line 1.'),
+    );
+
+    it(
+      'should not parse a literal as predicate',
+      shouldNotParse(parser, '<a> "1" <b>.',
         'Unexpected literal on line 1.'),
     );
 
@@ -2215,6 +2368,16 @@ describe('Parser', () => {
     it(
       'should not parse @forAll',
       shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'),
+    );
+
+    it(
+      'should not parse a literal as subject',
+      shouldNotParse(parser, '"1" <a> <b>.', 'Unexpected literal on line 1.'),
+    );
+
+    it(
+      'should not parse a literal as predicate',
+      shouldNotParse(parser, '<a> "1" <b>.', 'Unexpected literal on line 1.'),
     );
 
     it('should parse a triple term', shouldParse(parser, '<a> <b> <<(<a> <b> <c>)>>.',
@@ -2511,7 +2674,7 @@ describe('Parser', () => {
     );
 
     it(
-      'should parse a simple left implication',
+      'should parse a simple left implication with isImpliedBy enabled',
       shouldParse(parserIsImpliedBy, '<a> <= <b>.',
                   ['a', 'http://www.w3.org/2000/10/swap/log#isImpliedBy', 'b']),
     );
@@ -2525,7 +2688,7 @@ describe('Parser', () => {
     );
 
     it(
-      'should parse a right implication between one-triple graphs',
+      'should parse a right implication between one-triple graphs with isImpliedBy enabled',
       shouldParse(parserIsImpliedBy, '{ ?a ?b <c>. } => { <d> <e> ?a }.',
                   ['_:b0', 'http://www.w3.org/2000/10/swap/log#implies', '_:b1'],
                   ['?a', '?b', 'c',  '_:b0'],
@@ -2551,7 +2714,7 @@ describe('Parser', () => {
     );
 
     it(
-      'should parse a left implication between one-triple graphs',
+      'should parse a left implication between one-triple graphs with isImpliedBy enabled',
       shouldParse(parserIsImpliedBy, '{ ?a ?b <c>. } <= { <d> <e> ?a }.',
                   ['_:b0', 'http://www.w3.org/2000/10/swap/log#isImpliedBy', '_:b1'],
                   ['?a', '?b', 'c',  '_:b0'],
@@ -2920,6 +3083,101 @@ describe('Parser', () => {
             ['a', 'b', '_:b0'],
             ['"bonjour"@fr--ltr', 'sameAs', '"hello"@en--rtl', '_:b0'],
         ),
+    );
+
+    it(
+      'should parse an integer literal as subject',
+      shouldParse(parser, '1 <a> <b>.',
+          ['"1"^^http://www.w3.org/2001/XMLSchema#integer', 'a', 'b']),
+    );
+
+    it(
+      'should parse a string literal as subject',
+      shouldParse(parser, '"1" <a> <b>.',
+          ['"1"', 'a', 'b']),
+    );
+
+    it(
+      'should parse a string literal as subject of a formula',
+      shouldParse(parser, '<a> <b> {"1" <c> "2"}.',
+          ['a', 'b', '_:b0'],
+          ['"1"', 'c', '"2"', '_:b0'],
+      ),
+    );
+
+    it(
+      'should parse a string literal as subject of a formula in a blank node',
+      shouldParse(parser, '<a> <b> [ <c> {"1" <d> "2"} ].',
+          ['a', 'b', '_:b0'],
+          ['_:b0', 'c', '_:b1'],
+          ['"1"', 'd', '"2"', '_:b1'],
+      ),
+    );
+
+    it(
+      'should parse a string literal as subject list element',
+      shouldParse(parser, '("1") <a> <b>.',
+          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"1"'],
+          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+          ['_:b0', 'a', 'b'],
+      ),
+    );
+
+    it(
+      'should parse a string literal as object list element',
+      shouldParse(parser, '<a> <b> ("1").',
+          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"1"'],
+          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+          ['a', 'b', '_:b0'],
+      ),
+    );
+
+    it(
+      'should not parse a string literal as subject with an undefined datatype prefix',
+      shouldNotParse(parser, '"1"^^p:x <a> <b>.',
+        'Undefined prefix "p:" on line 1.'),
+    );
+
+    it(
+      'should parse an integer literal as predicate',
+      shouldParse(parser, '<a> 1 <b>.',
+          ['a', '"1"^^http://www.w3.org/2001/XMLSchema#integer', 'b']),
+    );
+
+    it(
+      'should parse a string literal as predicate',
+      shouldParse(parser, '<a> "1" <b>.',
+          ['a', '"1"', 'b']),
+    );
+
+    it(
+      'should parse a string literal as object',
+      shouldParse(parser, '<a> <b> "1".',
+          ['a', 'b', '"1"']),
+    );
+
+    it(
+      'should parse a literal with datatype as predicate',
+      shouldParse(parser, '<a> "1"^^<c> <b>.',
+          ['a', '"1"^^http://example.org/c', 'b']),
+    );
+
+    it(
+      'should parse a literal with language as predicate',
+      shouldParse(parser, '<a> "one"@en <b>.',
+          ['a', '"one"@en', 'b']),
+    );
+
+    it(
+      'should parse a literal with language and direction as predicate',
+      shouldParse(parser, '<a> "one"@en--ltr <b>.',
+          ['a', '"one"@en--ltr', 'b']),
+    );
+
+    it(
+      'should not parse a string literal as predicate with an undefined datatype prefix',
+      shouldNotParse(parser, '<a> "1"^^p:x <b>.',
+        'Undefined prefix "p:" on line 1.'),
     );
 
     it(

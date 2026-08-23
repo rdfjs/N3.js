@@ -173,11 +173,11 @@ describe('Store', () => {
         expect(store.size).toEqual(5);
       });
 
-      it('should return false', () => {
+      it('should return false for a triple with a quad as subject', () => {
         expect(store.addQuad(new Quad('s1', 'p1', 'o1'), 'p1', 'o1')).toBe(false);
       });
 
-      it('should not increase the size', () => {
+      it('should not increase the size for a triple with a quad as subject', () => {
         expect(store.size).toEqual(5);
       });
     });
@@ -206,13 +206,13 @@ describe('Store', () => {
         expect(store.size).toEqual(6);
       });
 
-      it('should return true', () => {
+      it('should return true for a triple with a quad as subject', () => {
         expect(
           store.addQuad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), 'p1', 'o4'),
         ).toBe(true);
       });
 
-      it('should increase the size', () => {
+      it('should increase the size for a triple with a quad as subject', () => {
         expect(store.size).toEqual(7);
       });
 
@@ -222,7 +222,7 @@ describe('Store', () => {
         ).toBe(store);
       });
 
-      it('should increase the size', () => {
+      it('should increase the size after add', () => {
         expect(store.size).toEqual(8);
       });
     });
@@ -236,13 +236,13 @@ describe('Store', () => {
         expect(store.size).toEqual(7);
       });
 
-      it('should return true', () => {
+      it('should return true for a triple with a quad as subject', () => {
         expect(
           store.removeQuad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')), 'p1', 'o4'),
         ).toBe(true);
       });
 
-      it('should decrease the size', () => {
+      it('should decrease the size for a triple with a quad as subject', () => {
         expect(store.size).toEqual(6);
       });
 
@@ -252,7 +252,7 @@ describe('Store', () => {
         ).toBe(store);
       });
 
-      it('should increase the size', () => {
+      it('should decrease the size after delete', () => {
         expect(store.size).toEqual(5);
       });
     });
@@ -266,13 +266,13 @@ describe('Store', () => {
         expect(store.size).toEqual(5);
       });
 
-      it('should return false', () => {
+      it('should return false for a triple with a quad as subject', () => {
         expect(
           store.removeQuad(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o4')), 'p1', 'o1'),
         ).toBe(false);
       });
 
-      it('should not decrease the size', () => {
+      it('should not decrease the size for a triple with a quad as subject', () => {
         expect(store.size).toEqual(5);
       });
     });
@@ -1646,6 +1646,30 @@ describe('Store', () => {
     });
   });
 
+  describe('A Store with an object recurring under multiple predicates', () => {
+    const store = new Store([
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
+      new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o1')),
+      new Quad(new NamedNode('s2'), new NamedNode('p1'), new NamedNode('o1')),
+    ]);
+
+    describe('getObjects with only the subject given', () => {
+      it('should return each matching object exactly once', () => {
+        const result = store.getObjects(new NamedNode('s1'), null, null);
+        expect(result).toHaveLength(2);
+        expect(result).toEqual(expect.arrayContaining(
+          [new NamedNode('o1'), new NamedNode('o2')]));
+      });
+    });
+
+    describe('getObjects with a term that is not a subject', () => {
+      it('should be empty', () => {
+        expect(store.getObjects(new NamedNode('o1'), null, null)).toHaveLength(0);
+      });
+    });
+  });
+
   describe('A Store containing a blank node', () => {
     const store = new Store();
     const b1 = store.createBlankNode();
@@ -1844,6 +1868,27 @@ describe('Store', () => {
 
     it('extractLists throws an error', () => {
       expect(() => store.extractLists()).toThrow('b0 has no list head');
+    });
+  });
+
+  describe('A Store containing an rdf:Collection whose head value is an inherited Object member', () => {
+    const store = new Store();
+    expect(
+      store.addQuad(new NamedNode('constructor'), new NamedNode(namespaces.rdf.first), new NamedNode('element1')),
+    ).toBe(true);
+    expect(
+      store.addQuad(new NamedNode('constructor'), new NamedNode(namespaces.rdf.rest), new NamedNode(namespaces.rdf.nil)),
+    ).toBe(true);
+    expect(
+      store.addQuad(new NamedNode('s'), new NamedNode('p'), new NamedNode('constructor')),
+    ).toBe(true);
+
+    it('extractLists returns a null-prototype map without inherited members', () => {
+      const lists = store.extractLists();
+      expect(Object.getPrototypeOf(lists)).toBe(null);
+      expect(Object.keys(lists)).toEqual(['constructor']);
+      expect(lists.constructor.map(member => member.value)).toEqual(['element1']);
+      expect('toString' in lists).toBe(false);
     });
   });
 
@@ -2406,6 +2451,13 @@ describe('Store', () => {
         store1.deleteMatches(q[0].subject, q[0].predicate, q[0].object);
         expect(store1.size).toEqual(1);
       });
+
+      it('should return the dataset without the matching quads', () => {
+        const result = store1.deleteMatches(q[0].subject, q[0].predicate, q[0].object);
+        expect(result.size).toEqual(1);
+        expect(result.has(q[0])).toBe(false);
+        expect(store1.size).toEqual(1);
+      });
     });
 
     describe('#addAll', () => {
@@ -2414,13 +2466,6 @@ describe('Store', () => {
         expect(store1.size).toEqual(3);
         store1.addAll([q[2]]);
         expect(store1.size).toEqual(3);
-      });
-    });
-
-    describe('#deleteMatches', () => {
-      it('should delete matching quads', () => {
-        store1.deleteMatches(q[0].subject, q[0].predicate, q[0].object);
-        expect(store1.size).toEqual(1);
       });
     });
 

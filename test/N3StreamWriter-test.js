@@ -44,6 +44,14 @@ describe('StreamWriter', () => {
                       'a:3a b:3a b:a3.\n'),
     );
 
+    it(
+      'should use prefixes for local names with dots',
+      shouldSerialize({ prefixes: { a: 'http://a.org/' } },
+                      ['http://a.org/v1.0', 'http://a.org/a.b.c', 'http://a.org/d.'],
+                      '@prefix a: <http://a.org/>.\n\n' +
+                      'a:v1.0 a:a.b.c <http://a.org/d.>.\n'),
+    );
+
     it('should take over prefixes from the input stream', done => {
       const inputStream = new Readable(),
           writer = new StreamWriter(),

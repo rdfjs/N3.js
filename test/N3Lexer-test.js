@@ -101,8 +101,8 @@ describe('Lexer', () => {
 
     it(
       'should tokenize an IRI with eight-digit unicode escapes',
-      shouldTokenize('<http://a.example/\\U00000073\\U00A00073>',
-                     { type: 'IRI', value: 'http://a.example/s\uffc0\udc73', line: 1 },
+      shouldTokenize('<http://a.example/\\U00000073\\U0001F0A1>',
+                     { type: 'IRI', value: 'http://a.example/s\ud83c\udca1', line: 1 },
                      { type: 'eof', line: 1 }),
     );
 
@@ -386,6 +386,25 @@ describe('Lexer', () => {
     );
 
     it(
+      'should not tokenize a literal with an 8-digit unicode escape beyond U+10FFFF',
+      shouldNotTokenize('"\\U00110000" ',
+                        'Unexpected ""\\U00110000"" on line 1.'),
+    );
+
+    it(
+      'should not tokenize an IRI with an 8-digit unicode escape beyond U+10FFFF',
+      shouldNotTokenize('<urn:\\U00110000>',
+                        'Unexpected "<urn:\\U00110000>" on line 1.'),
+    );
+
+    it(
+      'should tokenize a literal with the highest valid 8-digit unicode escape',
+      shouldTokenize('"\\U0010FFFF" ',
+                     { type: 'literal', value: '\u{10FFFF}', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
       'should not tokenize a double-quoted string ending with an escaped quote',
       shouldNotTokenize('"abc\\"',
                         'Unexpected ""abc\\"" on line 1.'),
@@ -440,6 +459,52 @@ describe('Lexer', () => {
                      { type: 'langcode', value: 'nl-be', line: 1 },
                      { type: 'literal', value: 'string', line: 1 },
                      { type: 'langcode', value: 'EN', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should tokenize a language code with a subtag split across chunks',
+      shouldTokenize(streamOf('"string"@nl-', 'nl '),
+                     { type: 'literal', value: 'string', line: 1 },
+                     { type: 'langcode', value: 'nl-nl', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should tokenize a language code whose subtag boundary aligns with a chunk boundary',
+      shouldTokenize(streamOf('"string"@nl-nl', ' '),
+                     { type: 'literal', value: 'string', line: 1 },
+                     { type: 'langcode', value: 'nl-nl', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should tokenize a language code with a chunk boundary inside a subtag',
+      shouldTokenize(streamOf('"string"@nl-n', 'l '),
+                     { type: 'literal', value: 'string', line: 1 },
+                     { type: 'langcode', value: 'nl-nl', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should tokenize a directional language code followed by a newline in an unfinished chunk',
+      shouldTokenize(streamOf('"x"@en--rtl .\n"y"@en .', ' '),
+                     { type: 'literal', value: 'x', line: 1 },
+                     { type: 'langcode', value: 'en', line: 1 },
+                     { type: 'dircode', value: 'rtl', line: 1 },
+                     { type: '.', line: 1 },
+                     { type: 'literal', value: 'y', line: 2 },
+                     { type: 'langcode', value: 'en', line: 2 },
+                     { type: '.', line: 2 },
+                     { type: 'eof', line: 2 }),
+    );
+
+    it(
+      'should tokenize a direction code split from its language code across chunks',
+      shouldTokenize(streamOf('"string"@en-', '-rtl '),
+                     { type: 'literal', value: 'string', line: 1 },
+                     { type: 'langcode', value: 'en', line: 1 },
+                     { type: 'dircode', value: 'rtl', line: 1 },
                      { type: 'eof', line: 1 }),
     );
 
@@ -518,9 +583,9 @@ describe('Lexer', () => {
 
     it(
       'should tokenize a single-quoted string with escape characters',
-      shouldTokenize("'\\\\ \\\" \\' \\n \\r \\t \\ua1b2' \n '''\\\\ \\\" \\' \\n \\r \\t \\U0020a1b2'''",
+      shouldTokenize("'\\\\ \\\" \\' \\n \\r \\t \\ua1b2' \n '''\\\\ \\\" \\' \\n \\r \\t \\U0001F0A1'''",
                      { type: 'literal', value: '\\ " \' \n \r \t \ua1b2', line: 1 },
-                     { type: 'literal', value: '\\ " \' \n \r \t \udfe8\uddb2', line: 2 },
+                     { type: 'literal', value: '\\ " \' \n \r \t \ud83c\udca1', line: 2 },
                      { type: 'eof', line: 2 }),
     );
 
@@ -1436,7 +1501,7 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize a reified triple with mixed types',
+      'should tokenize a reified triple of an IRI, a language-tagged literal, and a prefixed name',
       shouldTokenize('<<<http://ex.org/?bla#foo> "string"@nl-be c:c>> .',
         { type: '<<', line: 1 },
         { type: 'IRI', value: 'http://ex.org/?bla#foo', line: 1 },
@@ -1449,7 +1514,7 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize a reified triple with mixed types',
+      'should tokenize a reified triple of a blank node, a prefixed name, and a language-tagged literal',
       shouldTokenize('<<_:a a:a "string"@EN>> .',
         { type: '<<', line: 1 },
         { type: 'blank', prefix: '_', value: 'a', line: 1 },
@@ -1462,7 +1527,7 @@ describe('Lexer', () => {
     );
 
     it(
-      'should tokenize a reified triple with mixed types',
+      'should tokenize a reified triple of a language-tagged literal, an IRI, and a blank node',
       shouldTokenize('<<"literal"@AU <http://ex.org/?bla#foo> _:a>> .',
         { type: '<<', line: 1 },
         { type: 'literal', value: 'literal', line: 1 },
