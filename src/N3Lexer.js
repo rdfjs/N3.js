@@ -57,6 +57,7 @@ export default class N3Lexer {
     this._boolean = /^(?:true|false)(?=[.,;!\^\s#()\[\]\{\}"'<>])/;
     this._atKeyword = /^@[a-z]+(?=[\s#<:])/i;
     this._keyword = /^(?:PREFIX|BASE|VERSION|GRAPH)(?=[\s#<])/i;
+    this._n3Verb = /^(?:has|is|of)(?=[\s#()\[\]\{\}"'<>?_+\-0-9])/;
     this._shortPredicates = /^a(?=[\s#()\[\]\{\}"'<>])/;
     this._newline = /^[ \t]*(?:#[^\n\r]*)?(?:\r\n|\n|\r)[ \t]*/;
     this._comment = /#([^\n\r]*)/;
@@ -314,6 +315,16 @@ export default class N3Lexer {
         // Try to find an abbreviated predicate
         if (match = this._shortPredicates.exec(input))
           type = 'abbreviation', value = 'a';
+        else
+          inconclusive = true;
+        break;
+
+      case 'h':
+      case 'i':
+      case 'o':
+        // Try to find an N3 verb keyword
+        if (this._n3Mode && (match = this._n3Verb.exec(input)))
+          type = match[0];
         else
           inconclusive = true;
         break;

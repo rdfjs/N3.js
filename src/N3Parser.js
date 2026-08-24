@@ -87,12 +87,14 @@ export default class N3Parser {
       type,
       subject, predicate, object, graph,
       inverse: this._inversePredicate,
+      expectOf: this._expectOf,
       blankPrefix: this._prefixes._,
       quantified: this._quantified,
       emptyFormula: this._emptyFormula,
     });
     // Every new scope resets the predicate direction
     this._inversePredicate = false;
+    this._expectOf = false;
     // In N3, blank nodes are scoped to a formula
     // (using a dot as separator, as a blank node label cannot start with it)
     this._prefixes._ = (this._graph ? `${this._graph.value}.` : '.');
@@ -122,6 +124,7 @@ export default class N3Parser {
     // Restore N3 context settings
     if (this._n3Mode) {
       this._inversePredicate = context.inverse;
+      this._expectOf = context.expectOf;
       this._prefixes._ = context.blankPrefix;
       this._quantified = context.quantified;
       this._emptyFormula = context.emptyFormula;
@@ -309,6 +312,18 @@ export default class N3Parser {
     case 'abbreviation':
       this._predicate = this.ABBREVIATIONS[token.value];
       break;
+    case 'has':
+    case '@has':
+      if (!this._n3Mode)
+        return this._error(`Unexpected ${type}`, token);
+      return this._readPredicateAfterVerb;
+    case 'is':
+    case '@is':
+      if (!this._n3Mode)
+        return this._error(`Unexpected ${type}`, token);
+      this._inversePredicate = true;
+      this._expectOf = true;
+      return this._readPredicateAfterVerb;
     case '.':
     case ']':
     case '}':
@@ -359,8 +374,23 @@ export default class N3Parser {
     return this._readObject;
   }
 
+  // ### `_readPredicateAfterVerb` reads the predicate following `has` or `is`
+  _readPredicateAfterVerb(token) {
+    if (token.type === 'has' || token.type === '@has' ||
+        token.type === 'is' || token.type === '@is' ||
+        token.type === 'of' || token.type === '@of')
+      return this._error(`Expected expression but got ${token.type}`, token);
+    return this._readPredicate(token);
+  }
+
   // ### `_readObject` reads a quad's object
   _readObject(token) {
+    if (this._expectOf) {
+      if (token.type !== 'of' && token.type !== '@of')
+        return this._error(`Expected of but got ${token.type}`, token);
+      this._expectOf = false;
+      return this._readObject;
+    }
     switch (token.type) {
     case 'literal':
       // Regular literal, can still get a datatype or language
@@ -1442,6 +1472,7 @@ export default class N3Parser {
     this._prefixCallback = onPrefix || noop;
     this._versionCallback = onVersion || noop;
     this._inversePredicate = false;
+    this._expectOf = false;
     this._quantified = Object.create(null);
     this._emptyFormula = false;
 

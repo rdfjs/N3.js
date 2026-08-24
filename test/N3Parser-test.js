@@ -2662,6 +2662,7 @@ describe('Parser', () => {
 
   describe('A Parser instance for the N3 format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3' }); }
+    function turtleParser() { return new Parser({ baseIRI: BASE_IRI, format: 'Turtle' }); }
     function parserIsImpliedBy() { return new Parser({ baseIRI: BASE_IRI, format: 'N3', isImpliedBy: true }); }
 
     it(
@@ -2713,6 +2714,53 @@ describe('Parser', () => {
 
     it('should parse a simple equality', shouldParse(parser, '<a> = <b>.',
                 ['a', 'http://www.w3.org/2002/07/owl#sameAs', 'b']));
+
+    it(
+      'should parse the has verb',
+      shouldParse(parser, '<s> has <p> <o>.', ['s', 'p', 'o']),
+    );
+
+    it(
+      'should parse the is-of verb',
+      shouldParse(parser, '<s> is <p> of <o>.', ['o', 'p', 's']),
+    );
+
+    it(
+      'should parse @-prefixed verb keywords',
+      shouldParse(parser, '<s1> @has <p1> <o1>. <s2> @is <p2> @of <o2>.',
+                  ['s1', 'p1', 'o1'], ['o2', 'p2', 's2']),
+    );
+
+    it(
+      'should restore is-of state around a compound predicate',
+      shouldParse(parser, '<s> is (<a> <b>) of <o>.',
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'b'],
+        ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
+          'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['o', '_:b0', 's']),
+    );
+
+    it(
+      'should require of after an is predicate',
+      shouldNotParse(parser, '<s> is <p> <o>.', 'Expected of but got IRI on line 1.'),
+    );
+
+    it(
+      'should require an expression after has',
+      shouldNotParse(parser, '<s> has has <o>.', 'Expected expression but got has on line 1.'),
+    );
+
+    it(
+      'should reject @-prefixed N3 verbs in Turtle mode',
+      shouldNotParse(turtleParser, '<s> @has <p> <o>.', 'Unexpected @has on line 1.'),
+    );
+
+    it(
+      'should reject @-prefixed inverse N3 verbs in Turtle mode',
+      shouldNotParse(turtleParser, '<s> @is <p> @of <o>.', 'Unexpected @is on line 1.'),
+    );
 
     it(
       'should parse a simple right implication',
