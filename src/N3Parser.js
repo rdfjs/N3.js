@@ -83,14 +83,21 @@ export default class N3Parser {
       this._contextStack.push({ type, subject, predicate, object, graph });
       return;
     }
-    this._contextStack.push({
+    const context = {
       type,
       subject, predicate, object, graph,
       inverse: this._inversePredicate,
       blankPrefix: this._prefixes._,
       quantified: this._quantified,
       emptyFormula: this._emptyFormula,
-    });
+    };
+    // Prefix and base declarations are scoped to their formula
+    if (type === 'formula') {
+      context.prefixes = this._prefixes;
+      context.base = [this._base, this._basePath, this._baseRoot, this._baseScheme];
+      this._prefixes = Object.create(this._prefixes);
+    }
+    this._contextStack.push(context);
     // Every new scope resets the predicate direction
     this._inversePredicate = false;
     // In N3, blank nodes are scoped to a formula
@@ -122,7 +129,12 @@ export default class N3Parser {
     // Restore N3 context settings
     if (this._n3Mode) {
       this._inversePredicate = context.inverse;
-      this._prefixes._ = context.blankPrefix;
+      if (type === 'formula') {
+        this._prefixes = context.prefixes;
+        [this._base, this._basePath, this._baseRoot, this._baseScheme] = context.base;
+      }
+      else
+        this._prefixes._ = context.blankPrefix;
       this._quantified = context.quantified;
       this._emptyFormula = context.emptyFormula;
     }
@@ -173,6 +185,28 @@ export default class N3Parser {
     default:
       return this._readSubject(token);
     }
+  }
+
+  // ### `_readInFormulaContext` reads a token at the statement level of a formula
+  _readInFormulaContext(token) {
+    switch (token.type) {
+    case 'PREFIX':
+      this._sparqlStyle = true;
+    case '@prefix':
+      return this._readPrefix;
+    case 'BASE':
+      this._sparqlStyle = true;
+    case '@base':
+      return this._readBaseIRI;
+    default:
+      return this._readSubject(token);
+    }
+  }
+
+  // ### `_getStatementReader` returns the reader for the current statement scope
+  _getStatementReader() {
+    const context = this._contextStack[this._contextStack.length - 1];
+    return context && context.type === 'formula' ? this._readInFormulaContext : this._readInTopContext;
   }
 
   // ### `_readEntity` reads an IRI, prefixed name, blank node, or variable
@@ -245,7 +279,7 @@ export default class N3Parser {
         return this._error('Unexpected graph', token);
       this._saveContext('formula', this._graph,
                         this._graph = this._factory.blankNode(), null, null);
-      return this._readSubject;
+      return this._readInFormulaContext;
     case '}':
        // No subject; the graph in which we are reading is closed instead
       return this._readPunctuation(token);
@@ -389,7 +423,7 @@ export default class N3Parser {
         return this._error('Unexpected graph', token);
       this._saveContext('formula', this._graph, this._subject, this._predicate,
                         this._graph = this._factory.blankNode());
-      return this._readSubject;
+      return this._readInFormulaContext;
     case '<<(':
       this._saveContext('<<(', this._graph, this._subject, this._predicate, null);
       this._graph = null;
@@ -585,7 +619,7 @@ export default class N3Parser {
       this._saveContext('formula', this._graph, list, this.RDF_FIRST,
                         this._graph = item);
       this._subject = null;
-      return this._readSubject;
+      return this._readInFormulaContext;
     case '<<(':
       this._saveContext('<<(', this._graph, null, null, null);
       this._graph = null;
@@ -848,7 +882,7 @@ export default class N3Parser {
     case '.':
       this._subject = null;
       this._tripleTerm = null;
-      next = this._contextStack.length ? this._readSubject : this._readInTopContext;
+      next = this._getStatementReader();
       if (inversePredicate) this._inversePredicate = false;
       break;
     // Semicolon means the subject is shared; predicate and object are different
@@ -1021,12 +1055,12 @@ export default class N3Parser {
     // SPARQL-style declarations don't have punctuation
     if (this._sparqlStyle) {
       this._sparqlStyle = false;
-      return this._readInTopContext(token);
+      return this._getStatementReader().call(this, token);
     }
 
     if (token.type !== '.')
       return this._error('Expected declaration to end with a dot', token);
-    return this._readInTopContext;
+    return this._getStatementReader();
   }
 
   // Reads a list of quantified symbols from a @forSome or @forAll statement
