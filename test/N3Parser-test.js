@@ -2799,6 +2799,54 @@ describe('Parser', () => {
     );
 
     it(
+      'should parse a bare IRI property list',
+      shouldParse(parser, '[id <s> <p> <o>].', ['s', 'p', 'o']),
+    );
+
+    it(
+      'should parse an IRI property list in object position',
+      shouldParse(parser, '<s> <p> [id <o> <inner-p> <inner-o>].',
+                  ['s', 'p', 'o'], ['o', 'inner-p', 'inner-o']),
+    );
+
+    it(
+      'should parse an IRI property list in predicate position',
+      shouldParse(parser, '<s> [id <p> <inner-p> <inner-o>] <o>.',
+                  ['s', 'p', 'o'], ['p', 'inner-p', 'inner-o']),
+    );
+
+    it(
+      'should parse nested IRI property lists',
+      shouldParse(parser, '<s> <p> [id <o> <q> [id <inner> <r> "value"]].',
+                  ['s', 'p', 'o'], ['o', 'q', 'inner'], ['inner', 'r', '"value"']),
+    );
+
+    it(
+      'should require an IRI after id',
+      shouldNotParse(parser, '[id _:s <p> <o>].', 'Expected IRI after id but got blank on line 1.'),
+    );
+
+    it(
+      'should require an entity after id',
+      shouldNotParse(parser, '[id ; <p> <o>].', 'Expected entity but got ; on line 1.'),
+    );
+
+    it(
+      'should require properties after an IRI property list ID',
+      shouldNotParse(parser, '[id <s>].', 'Expected predicate but got ] on line 1.'),
+    );
+
+    it(
+      'should reject a semicolon after an IRI property list ID',
+      shouldNotParse(parser, '[id <s>; <p> <o>].', 'Expected predicate but got ; on line 1.'),
+    );
+
+    it(
+      'should reject multiple IRI property list IDs',
+      shouldNotParse(parser, '[id <s1>, <s2> <p> <o>].', 'Expected entity but got , on line 1.'),
+    );
+
+    it(
       'should parse a variable',
       shouldParse(parser, '?a ?b ?c.', ['?a', '?b', '?c']),
     );
