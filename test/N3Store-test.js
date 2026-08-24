@@ -1,3 +1,4 @@
+import { makeRng, pick } from './util';
 import {
   Store,
   termFromId, termToId,
@@ -14,7 +15,7 @@ import namespaces from '../src/IRIs';
 import { Readable } from 'readable-stream';
 import { arrayifyStream } from 'arrayify-stream';
 
-const { namedNode, quad } = DataFactory;
+const { namedNode, literal, quad } = DataFactory;
 
 describe('Store', () => {
   describe('The Store export', () => {
@@ -128,6 +129,15 @@ describe('Store', () => {
       expect(store.createBlankNode('blank').value).toEqual('blank');
       expect(store.createBlankNode('blank').value).toEqual('blank1');
       expect(store.createBlankNode('blank').value).toEqual('blank2');
+    });
+
+    it('should be able to store and retrieve triples with Date literals', () => {
+      const date = new Date(Date.UTC(2017, 3, 27, 14, 39, 48, 901));
+      expect(store.addQuad(new NamedNode('a'), new NamedNode('b'), literal(date))).toBe(true);
+      const quads = store.getQuads(null, null, literal(date));
+      expect(quads).toHaveLength(1);
+      expect(quads[0].object).toEqual(new Literal('"2017-04-27T14:39:48.901Z"^^http://www.w3.org/2001/XMLSchema#dateTime'));
+      store.removeQuads(store.getQuads());
     });
 
     it('should be able to store triples with generated blank nodes', () => {
@@ -1645,6 +1655,86 @@ describe('Store', () => {
     });
   });
 
+  describe('has with a fully bound quad', () => {
+    const store = new Store([
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('g1')),
+      new Quad(new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), new NamedNode('p1'), new NamedNode('o1')),
+    ]);
+
+    it('should find quads in the default graph', () => {
+      expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new DefaultGraph())).toBe(true);
+    });
+
+    it('should find quads when the default graph is passed as its internal id', () => {
+      expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), '')).toBe(true);
+    });
+
+    it('should find quads in a named graph', () => {
+      expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('g1'))).toBe(true);
+    });
+
+    it('should not find quads in a graph that does not occur in the store', () => {
+      expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('g2'))).toBe(false);
+    });
+
+    it('should not find quads in a graph whose term only occurs in another position', () => {
+      expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('o1'))).toBe(false);
+    });
+
+    it('should not find quads whose subject is not a subject in the graph', () => {
+      expect(store.has(new NamedNode('o1'), new NamedNode('p1'), new NamedNode('o1'), new DefaultGraph())).toBe(false);
+    });
+
+    it('should not find quads whose predicate does not occur under the subject', () => {
+      expect(store.has(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o1'), new DefaultGraph())).toBe(false);
+    });
+
+    it('should not find quads whose object does not occur under the subject and predicate', () => {
+      expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2'), new DefaultGraph())).toBe(false);
+    });
+
+    it('should not find quads with a subject or predicate that does not occur in the store', () => {
+      expect(store.has(new NamedNode('x'), new NamedNode('p1'), new NamedNode('o1'), new DefaultGraph())).toBe(false);
+      expect(store.has(new NamedNode('s1'), new NamedNode('x'), new NamedNode('o1'), new DefaultGraph())).toBe(false);
+      expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('x'), new DefaultGraph())).toBe(false);
+    });
+
+    it('should find quads with a quoted quad as subject', () => {
+      expect(store.has(new Quad(new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), new NamedNode('p1'), new NamedNode('o1')))).toBe(true);
+      expect(store.has(new Quad(new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o1')), new NamedNode('p1'), new NamedNode('o1')))).toBe(false);
+    });
+
+    it('should still match patterns with an unbound graph', () => {
+      expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'))).toBe(true);
+      expect(store.has(new NamedNode('s2'), new NamedNode('p1'), new NamedNode('o1'))).toBe(false);
+    });
+  });
+
+  describe('A Store with an object recurring under multiple predicates', () => {
+    const store = new Store([
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+      new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
+      new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o1')),
+      new Quad(new NamedNode('s2'), new NamedNode('p1'), new NamedNode('o1')),
+    ]);
+
+    describe('getObjects with only the subject given', () => {
+      it('should return each matching object exactly once', () => {
+        const result = store.getObjects(new NamedNode('s1'), null, null);
+        expect(result).toHaveLength(2);
+        expect(result).toEqual(expect.arrayContaining(
+          [new NamedNode('o1'), new NamedNode('o2')]));
+      });
+    });
+
+    describe('getObjects with a term that is not a subject', () => {
+      it('should be empty', () => {
+        expect(store.getObjects(new NamedNode('o1'), null, null)).toHaveLength(0);
+      });
+    });
+  });
+
   describe('A Store containing a blank node', () => {
     const store = new Store();
     const b1 = store.createBlankNode();
@@ -1843,6 +1933,27 @@ describe('Store', () => {
 
     it('extractLists throws an error', () => {
       expect(() => store.extractLists()).toThrow('b0 has no list head');
+    });
+  });
+
+  describe('A Store containing an rdf:Collection whose head value is an inherited Object member', () => {
+    const store = new Store();
+    expect(
+      store.addQuad(new NamedNode('constructor'), new NamedNode(namespaces.rdf.first), new NamedNode('element1')),
+    ).toBe(true);
+    expect(
+      store.addQuad(new NamedNode('constructor'), new NamedNode(namespaces.rdf.rest), new NamedNode(namespaces.rdf.nil)),
+    ).toBe(true);
+    expect(
+      store.addQuad(new NamedNode('s'), new NamedNode('p'), new NamedNode('constructor')),
+    ).toBe(true);
+
+    it('extractLists returns a null-prototype map without inherited members', () => {
+      const lists = store.extractLists();
+      expect(Object.getPrototypeOf(lists)).toBe(null);
+      expect(Object.keys(lists)).toEqual(['constructor']);
+      expect(lists.constructor.map(member => member.value)).toEqual(['element1']);
+      expect('toString' in lists).toBe(false);
     });
   });
 
@@ -2647,6 +2758,184 @@ describe('EntityIndex', () => {
       o5: 8,
     });
   });
+});
+
+describe('Store under randomized mutation', () => {
+  const { defaultGraph } = DataFactory;
+  const subjects   = ['s0', 's1', 's2', 's3', 's4'].map(namedNode);
+  const predicates = ['p0', 'p1', 'p2'].map(namedNode);
+  const objects    = ['o0', 'o1', 'o2', 'o3', 'o4'].map(namedNode);
+  const graphs     = [defaultGraph(), namedNode('g0'), namedNode('g1')];
+
+  function quadKey(q) {
+    return `${termToId(q.subject)} ${termToId(q.predicate)} ${termToId(q.object)} ${termToId(q.graph)}`;
+  }
+
+  // Compares the full store contents against the naive oracle set
+  function expectSameContents(store, oracle) {
+    expect(store.getQuads().map(quadKey).sort()).toEqual([...oracle].sort());
+    expect(store.size).toBe(oracle.size);
+  }
+
+  // Verifies that the entry counter of every index node
+  // matches its actual number of entries
+  function expectConsistentCounters(store) {
+    function check(node) {
+      const sizeSymbol = Object.getOwnPropertySymbols(node)
+        .find(symbol => symbol.description === 'size');
+      const keys = Object.keys(node);
+      expect(sizeSymbol).toBeDefined();
+      expect(node[sizeSymbol]).toBe(keys.length);
+      return keys;
+    }
+    for (const graphKey in store._graphs) {
+      const graphItem = store._graphs[graphKey];
+      for (const part of ['subjects', 'predicates', 'objects']) {
+        const index0 = graphItem[part];
+        for (const key0 of check(index0)) {
+          const index1 = index0[key0];
+          for (const key1 of check(index1))
+            check(index1[key1]);
+        }
+      }
+    }
+  }
+
+  function randomQuad(random) {
+    return new Quad(
+      pick(random, subjects),
+      pick(random, predicates),
+      pick(random, objects),
+      pick(random, graphs),
+    );
+  }
+
+  function randomTerm(random, terms) {
+    return random() < 0.5 ? pick(random, terms) : null;
+  }
+
+  function oracleOf(store) {
+    return new Set(store.getQuads().map(quadKey));
+  }
+
+  // Adds a quad to store and oracle, verifying the return value
+  function addAndVerify(store, oracle, q) {
+    const key = quadKey(q);
+    expect(store.addQuad(q)).toBe(!oracle.has(key));
+    oracle.add(key);
+  }
+
+  // Removes a quad from store and oracle, verifying the return value
+  function removeAndVerify(store, oracle, q) {
+    const key = quadKey(q);
+    expect(store.removeQuad(q)).toBe(oracle.has(key));
+    oracle.delete(key);
+  }
+
+  for (const seed of [1, 2, 3]) {
+    it(`should behave like a naive set of quads (seed ${seed})`, () => {
+      const random = makeRng(seed);
+      const entityIndex = new EntityIndex();
+      let store = new Store({ entityIndex });
+      let oracle = new Set();
+
+      for (let round = 0; round < 400; round++) {
+        const chance = random();
+        // Add a random quad
+        if (chance < 0.35)
+          addAndVerify(store, oracle, randomQuad(random));
+        // Remove a random quad, which may or may not exist
+        else if (chance < 0.65)
+          removeAndVerify(store, oracle, randomQuad(random));
+        // Remove all quads matching a random pattern
+        else if (chance < 0.8) {
+          const subject = randomTerm(random, subjects),
+              predicate = randomTerm(random, predicates),
+              object = randomTerm(random, objects),
+              graph = randomTerm(random, graphs);
+          store.deleteMatches(subject, predicate, object, graph);
+          for (const key of [...oracle]) {
+            const [s, p, o, g] = key.split(' ');
+            if ((!subject || termToId(subject) === s) &&
+                (!predicate || termToId(predicate) === p) &&
+                (!object || termToId(object) === o) &&
+                (!graph || termToId(graph) === g))
+              oracle.delete(key);
+          }
+        }
+        // Add multiple random quads at once
+        else if (chance < 0.9) {
+          const quads = [randomQuad(random), randomQuad(random), randomQuad(random)];
+          store.addAll(quads);
+          for (const q of quads)
+            oracle.add(quadKey(q));
+        }
+        // Replace the store by a set operation
+        // with another store sharing the same entity index,
+        // and continue mutating the result
+        else {
+          const other = new Store({ entityIndex });
+          for (let i = 0; i < 5; i++)
+            other.addQuad(randomQuad(random));
+          const otherOracle = oracleOf(other);
+          const setOp = random();
+          if (setOp < 1 / 3) {
+            store = store.union(other);
+            oracle = new Set([...oracle, ...otherOracle]);
+          }
+          else if (setOp < 2 / 3) {
+            store = store.difference(other);
+            oracle = new Set([...oracle].filter(key => !otherOracle.has(key)));
+          }
+          else {
+            store = store.intersection(other);
+            oracle = new Set([...oracle].filter(key => otherOracle.has(key)));
+          }
+        }
+
+        if (round % 50 === 49) {
+          expectSameContents(store, oracle);
+          expectConsistentCounters(store);
+        }
+      }
+
+      // Mutate a materialized `match` view of the store
+      const pattern = randomTerm(random, subjects);
+      const view = store.match(pattern, null, null, null);
+      const viewOracle = new Set([...oracle].filter(
+        key => !pattern || key.split(' ')[0] === termToId(pattern)));
+      for (let i = 0; i < 50; i++) {
+        const q = randomQuad(random);
+        if (random() < 0.5) {
+          view.add(q);
+          viewOracle.add(quadKey(q));
+        }
+        else {
+          view.delete(q);
+          viewOracle.delete(quadKey(q));
+        }
+      }
+      expectSameContents(view.filtered, viewOracle);
+      expectConsistentCounters(view.filtered);
+      // The original store is unaffected by view mutations
+      expectSameContents(store, oracle);
+
+      // Empty out the store completely; all graphs should be dropped
+      for (const key of [...oracle]) {
+        const [s, p, o, g] = key.split(' ');
+        expect(store.removeQuad(termFromId(s), termFromId(p), termFromId(o), termFromId(g))).toBe(true);
+      }
+      expect(store.size).toBe(0);
+      expect(store.getQuads()).toHaveLength(0);
+      expect(Object.keys(store._graphs)).toHaveLength(0);
+
+      // The store remains usable after being emptied
+      const q = randomQuad(random);
+      expect(store.addQuad(q)).toBe(true);
+      expect(store.getQuads().map(quadKey)).toEqual([quadKey(q)]);
+      expectConsistentCounters(store);
+    });
+  }
 });
 
 function alwaysTrue()  { return true;  }
