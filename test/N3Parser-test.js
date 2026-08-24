@@ -2690,6 +2690,48 @@ describe('Parser', () => {
     );
 
     it(
+      'should scope prefix declarations to their formula',
+      shouldParse(parser,
+                  '@prefix ex: <http://outer.example/>.\n' +
+                  '<s> <p> { @prefix ex: <http://inner.example/>. ex:s ex:p ex:o. }.\n' +
+                  'ex:s ex:p ex:o.',
+                  ['http://inner.example/s', 'http://inner.example/p', 'http://inner.example/o', '_:b0'],
+                  ['s', 'p', '_:b0'],
+                  ['http://outer.example/s', 'http://outer.example/p', 'http://outer.example/o']),
+    );
+
+    it(
+      'should restore prefix declarations between sibling formulas',
+      shouldParse(parser,
+                  '@prefix ex: <http://outer.example/>.\n' +
+                  '<s1> <p> { PREFIX ex: <http://first.example/> ex:s ex:p ex:o. }.\n' +
+                  '<s2> <p> { ex:s ex:p ex:o. }.\n',
+                  ['http://first.example/s', 'http://first.example/p', 'http://first.example/o', '_:b0'],
+                  ['s1', 'p', '_:b0'],
+                  ['http://outer.example/s', 'http://outer.example/p', 'http://outer.example/o', '_:b1'],
+                  ['s2', 'p', '_:b1']),
+    );
+
+    it(
+      'should scope base declarations to their formula',
+      shouldParse(parser,
+                  '@base <http://outer.example/>.\n' +
+                  '<s> <p> { @base <http://inner.example/>. <s> <p> <o>. }.\n' +
+                  '<s> <p> <o>.',
+                  ['http://inner.example/s', 'http://inner.example/p', 'http://inner.example/o', '_:b0'],
+                  ['http://outer.example/s', 'http://outer.example/p', '_:b0'],
+                  ['http://outer.example/s', 'http://outer.example/p', 'http://outer.example/o']),
+    );
+
+    it(
+      'should parse a SPARQL-style base declaration in a formula',
+      shouldParse(parser,
+                  '<s> <p> { BASE <http://inner.example/> <s> <p> <o>. }.',
+                  ['http://inner.example/s', 'http://inner.example/p', 'http://inner.example/o', '_:b0'],
+                  ['s', 'p', '_:b0']),
+    );
+
+    it(
       'allows a blank node in predicate position',
       shouldParse(parser, '<a> [] <c>.', ['a', '_:b0', 'c']),
     );
