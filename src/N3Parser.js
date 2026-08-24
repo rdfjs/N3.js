@@ -490,7 +490,7 @@ export default class N3Parser {
   // ### `_readIriPropertyListId` replaces a property list's blank node with its IRI
   _readIriPropertyListId(token) {
     const iri = this._readEntity(token);
-    if (!iri)
+    if (iri === undefined)
       return;
     if (iri.termType !== 'NamedNode')
       return this._error(`Expected IRI after id but got ${token.type}`, token);
