@@ -1,3 +1,4 @@
+import { browserBundleMembers } from './browser-bundle-members';
 import { exec } from 'child_process';
 import { access } from 'fs/promises';
 import { resolve } from 'path';
@@ -15,14 +16,6 @@ const bundlePath = resolve(root, 'browser/n3.esm.min.js');
 const nodeMajor = Number(process.versions.node.split('.')[0]);
 const describeEsm = nodeMajor >= 18 ? describe : describe.skip;
 
-const expectedExports = [
-  'Lexer', 'Parser', 'Writer', 'Store', 'StoreFactory', 'EntityIndex',
-  'StreamParser', 'StreamWriter', 'Util', 'Reasoner', 'BaseIRI',
-  'DataFactory', 'Term', 'NamedNode', 'Literal', 'BlankNode', 'Variable',
-  'DefaultGraph', 'Quad', 'Triple', 'termFromId', 'termToId',
-  'getRulesFromDataset',
-];
-
 describeEsm('The ESM browser bundle', () => {
   let N3;
 
@@ -35,7 +28,7 @@ describeEsm('The ESM browser bundle', () => {
   }, 60000);
 
   it('exposes all named exports', () => {
-    for (const name of expectedExports)
+    for (const name of browserBundleMembers)
       expect(N3[name]).toBeDefined();
   });
 

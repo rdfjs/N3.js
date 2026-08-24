@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Builds a minified browser bundle of src/index.js with esbuild:
-//   node scripts/build-browser-bundle.js umd   ->  browser/n3.min.js
+//   node scripts/build-browser-bundle.js iife  ->  browser/n3.min.js
 //     an IIFE exposing a global `N3`, so it keeps working when loaded
 //     via <script> as `window.N3` (replaces the former browserify +
 //     uglify-js pipeline, which pulled in the vulnerable crypto-browserify chain)
@@ -13,7 +13,7 @@
 // the npm < 9 optional-dependency bug (e.g. Node 16 / npm 8) that omits esbuild's
 // platform binary on a different-OS `npm ci`, which otherwise breaks the build.
 const bundles = {
-  umd: { format: 'iife', globalName: 'N3', outfile: 'browser/n3.min.js' },
+  iife: { format: 'iife', globalName: 'N3', outfile: 'browser/n3.min.js' },
   esm: { format: 'esm', outfile: 'browser/n3.esm.min.js' },
 };
 

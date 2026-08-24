@@ -53,8 +53,8 @@
   "scripts": {
     "build": "npm run build:node && npm run build:browser",
     "build:node": "babel src -d lib",
-    "build:browser": "rm -rf browser && mkdir browser && npm run build:browser:umd && npm run build:browser:esm",
-    "build:browser:umd": "node scripts/build-browser-bundle.js umd",
+    "build:browser": "rm -rf browser && mkdir browser && npm run build:browser:iife && npm run build:browser:esm",
+    "build:browser:iife": "node scripts/build-browser-bundle.js iife",
     "build:browser:esm": "node scripts/build-browser-bundle.js esm",
     "test": "jest",
     "lint": "eslint src perf test spec",

@@ -1,33 +1,24 @@
+import { browserBundleMembers } from './browser-bundle-members';
 import { execSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { runInThisContext } from 'vm';
 
-// The UMD bundle is a build artifact (browser/n3.min.js): an IIFE that exposes a
-// global `N3`, consumed in browsers via <script> as `window.N3`. CI builds it via
-// the `prepare` script; when running tests in isolation we build it on demand.
+// The IIFE bundle exposes `N3` to classic browser scripts.
 const root = resolve(__dirname, '..');
 const bundlePath = resolve(root, 'browser/n3.min.js');
 
 // esbuild (which builds the bundle) requires Node >= 18; on older Node the build
 // script skips the bundle, so only assert it on Node >= 18.
 const nodeMajor = Number(process.versions.node.split('.')[0]);
-const describeUmd = nodeMajor >= 18 ? describe : describe.skip;
+const describeIife = nodeMajor >= 18 ? describe : describe.skip;
 
-const expectedMembers = [
-  'Lexer', 'Parser', 'Writer', 'Store', 'StoreFactory', 'EntityIndex',
-  'StreamParser', 'StreamWriter', 'Util', 'Reasoner', 'BaseIRI',
-  'DataFactory', 'Term', 'NamedNode', 'Literal', 'BlankNode', 'Variable',
-  'DefaultGraph', 'Quad', 'Triple', 'termFromId', 'termToId',
-  'getRulesFromDataset',
-];
-
-describeUmd('The UMD browser bundle', () => {
+describeIife('The IIFE browser bundle', () => {
   let N3;
 
   beforeAll(() => {
     if (!existsSync(bundlePath))
-      execSync('npm run build:browser:umd', { cwd: root });
+      execSync('npm run build:browser:iife', { cwd: root });
     // The bundle is `var N3=(()=>{...})();`; evaluating it in this realm (which
     // has the standard globals the bundle relies on) and appending `;N3` returns
     // the global object a browser would expose as `window.N3`.
@@ -36,7 +27,7 @@ describeUmd('The UMD browser bundle', () => {
 
   it('exposes a global object with all named members', () => {
     expect(N3).toBeDefined();
-    for (const name of expectedMembers)
+    for (const name of browserBundleMembers)
       expect(N3[name]).toBeDefined();
   });
 
