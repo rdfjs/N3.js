@@ -481,11 +481,6 @@ export default class N3Store {
   import(stream) {
     stream.on('data', quad => { this.addQuad(quad); });
 
-    // The completion promise is only created upon first access of
-    // `then`/`catch`/`finally`, such that callers who use the stream
-    // in the RDF/JS `Sink.import` style (without ever awaiting)
-    // observe no changes to the stream's listeners or error handling:
-    // an unhandled `error` event still throws, and no rejection occurs.
     const store = this;
     let promise = null;
     function trackCompletion() {
