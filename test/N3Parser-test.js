@@ -2662,7 +2662,31 @@ describe('Parser', () => {
 
   describe('A Parser instance for the N3 format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3' }); }
+    function parserWithFragment() { return new Parser({ baseIRI: 'http://example.com/doc#old', format: 'N3' }); }
     function parserIsImpliedBy() { return new Parser({ baseIRI: BASE_IRI, format: 'N3', isImpliedBy: true }); }
+
+    it(
+      'should bind the empty prefix to the document local namespace',
+      shouldParse(parser, ':a :b :c .',
+                  ['http://example.org/#a', 'http://example.org/#b', 'http://example.org/#c']),
+    );
+
+    it(
+      'should let an explicit empty prefix override the implicit binding',
+      shouldParse(parser, '@prefix : <http://example.com/>. :a :b :c .',
+                  ['http://example.com/a', 'http://example.com/b', 'http://example.com/c']),
+    );
+
+    it(
+      'should replace a document IRI fragment in the implicit binding',
+      shouldParse(parserWithFragment, ':a :b :c .',
+                  ['http://example.com/doc#a', 'http://example.com/doc#b', 'http://example.com/doc#c']),
+    );
+
+    it('should require an explicit empty prefix without a document IRI', () => {
+      expect(() => new Parser({ format: 'N3' }).parse(':a :b :c .'))
+        .toThrow('Undefined prefix ":" on line 1.');
+    });
 
     it(
       'should parse a single triple',

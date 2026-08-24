@@ -1439,6 +1439,9 @@ export default class N3Parser {
     this._prefixes = Object.create(null);
     this._prefixes._ = this._blankNodePrefix ? this._blankNodePrefix.substr(2)
                                              : `b${blankNodePrefix++}_`;
+    // N3 historically binds the empty prefix to the document's local namespace
+    if (this._n3Mode && this._base)
+      this._prefixes[''] = this._resolveIRI('#');
     this._prefixCallback = onPrefix || noop;
     this._versionCallback = onVersion || noop;
     this._inversePredicate = false;
