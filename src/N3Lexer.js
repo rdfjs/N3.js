@@ -174,6 +174,9 @@ export default class N3Lexer {
           if (this._isImpliedBy) type = 'abbreviation', value = '<';
           else type = 'inverse', value = '>';
         }
+        // Try to find an inverted predicate marker
+        else if (this._n3Mode && input.length > 1 && input[1] === '-')
+          type = 'inversePredicate', matchLength = 2;
         break;
 
       case '>':

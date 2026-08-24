@@ -1210,6 +1210,38 @@ describe('Lexer', () => {
                    { type: 'eof', line: 1 }));
 
     it(
+      'should tokenize an inverted predicate marker',
+      shouldTokenize('<s> <- <p> <o>. <-s> <-<-p> <-o>.',
+                     { type: 'IRI', value: 's', line: 1 },
+                     { type: 'inversePredicate', line: 1 },
+                     { type: 'IRI', value: 'p', line: 1 },
+                     { type: 'IRI', value: 'o', line: 1 },
+                     { type: '.', line: 1 },
+                     { type: 'IRI', value: '-s', line: 1 },
+                     { type: 'inversePredicate', line: 1 },
+                     { type: 'IRI', value: '-p', line: 1 },
+                     { type: 'IRI', value: '-o', line: 1 },
+                     { type: '.', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should tokenize an inverted predicate marker split across chunks',
+      shouldTokenize(streamOf('<s> <', '- <p> <o>.'),
+                     { type: 'IRI', value: 's', line: 1 },
+                     { type: 'inversePredicate', line: 1 },
+                     { type: 'IRI', value: 'p', line: 1 },
+                     { type: 'IRI', value: 'o', line: 1 },
+                     { type: '.', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should not tokenize an inverted predicate marker outside N3 mode',
+      shouldNotTokenize(new Lexer({ n3: false }), '<- ', 'Unexpected "<-" on line 1.'),
+    );
+
+    it(
       'should tokenize a split left implication',
       shouldTokenize(streamOf('<a> <', '= <b> '),
         { type: 'IRI', value: 'a', line: 1 },

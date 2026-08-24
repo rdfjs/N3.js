@@ -2726,6 +2726,20 @@ describe('Parser', () => {
     );
 
     it(
+      'should parse an inverted predicate marker',
+      shouldParse(parser, '<s> <- <p> <o>. <-s> <-<-p> <-o>.',
+                  ['o', 'p', 's'], ['-o', '-p', '-s']),
+    );
+
+    it(
+      'should parse an inverted compound predicate',
+      shouldParse(parser, '<s> <- (<a>) <o>.',
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['o', '_:b0', 's']),
+    );
+
+    it(
       'should parse @-prefixed verb keywords',
       shouldParse(parser, '<s1> @has <p1> <o1>. <s2> @is <p2> @of <o2>.',
                   ['s1', 'p1', 'o1'], ['o2', 'p2', 's2']),
@@ -2750,6 +2764,11 @@ describe('Parser', () => {
     it(
       'should require an expression after has',
       shouldNotParse(parser, '<s> has has <o>.', 'Expected expression but got has on line 1.'),
+    );
+
+    it(
+      'should require an expression after an inverted predicate marker',
+      shouldNotParse(parser, '<s> <- <- <p> <o>.', 'Expected expression but got inversePredicate on line 1.'),
     );
 
     it(

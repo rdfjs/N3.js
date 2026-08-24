@@ -324,6 +324,9 @@ export default class N3Parser {
       this._inversePredicate = true;
       this._expectOf = true;
       return this._readPredicateAfterVerb;
+    case 'inversePredicate':
+      this._inversePredicate = true;
+      return this._readPredicateAfterVerb;
     case '.':
     case ']':
     case '}':
@@ -378,7 +381,8 @@ export default class N3Parser {
   _readPredicateAfterVerb(token) {
     if (token.type === 'has' || token.type === '@has' ||
         token.type === 'is' || token.type === '@is' ||
-        token.type === 'of' || token.type === '@of')
+        token.type === 'of' || token.type === '@of' ||
+        token.type === 'inversePredicate')
       return this._error(`Expected expression but got ${token.type}`, token);
     return this._readPredicate(token);
   }
