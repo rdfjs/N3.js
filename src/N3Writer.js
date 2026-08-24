@@ -10,8 +10,9 @@ const DEFAULTGRAPH = N3DataFactory.defaultGraph();
 const { rdf, xsd } = namespaces;
 
 // Characters in literals that require escaping
-const escape    = /["\\\t\n\r\b\f\u0000-\u0019\ud800-\udbff]/,
-    escapeAll = /["\\\t\n\r\b\f\u0000-\u0019]|[\ud800-\udbff][\udc00-\udfff]/g,
+const escape    = /["\\\t\n\r\b\f\u0000-\u001f\u007f-\u009f\ud800-\udbff]/,
+    escapeAll = /["\\\t\n\r\b\f\u0000-\u001f\u007f-\u009f]|[\ud800-\udbff][\udc00-\udfff]/g,
+    escapeIri = /[<>"{}|^`\\\s\u0000-\u001f\u007f-\u009f]|[\ud800-\udbff][\udc00-\udfff]/g,
     escapedCharacters = {
       '\\': '\\\\', '"': '\\"', '\t': '\\t',
       '\n': '\\n', '\r': '\\r', '\b': '\\b', '\f': '\\f',
@@ -37,6 +38,7 @@ export default class N3Writer {
     if (outputStream && typeof outputStream.write !== 'function')
       options = outputStream, outputStream = null;
     options = options || {};
+    this._format = options.format || '';
     this._lists = options.lists;
 
     // If no output stream given, send the output as string through the end callback
@@ -115,14 +117,23 @@ export default class N3Writer {
                     this._encodePredicate(this._predicate = predicate)} ${
                     this._encodeObject(object)}`, done);
     }
-    catch (error) { done && done(error); }
+    catch (error) {
+      if (done) done(error);
+      else throw error;
+    }
   }
 
   // ### `_writeQuadLine` writes the quad to the output stream as a single line
   _writeQuadLine(subject, predicate, object, graph, done) {
     // Write the quad without prefixes
     delete this._prefixMatch;
-    this._write(this.quadToString(subject, predicate, object, graph), done);
+    try {
+      this._write(this.quadToString(subject, predicate, object, graph), done);
+    }
+    catch (error) {
+      if (done) done(error);
+      else throw error;
+    }
   }
 
   // ### `quadToString` serializes a quad as a string
@@ -154,8 +165,12 @@ export default class N3Writer {
       // If it is a list head, pretty-print it
       if (this._lists && (entity.value in this._lists))
         entity = this.list(this._lists[entity.value]);
-      return entity.termType === 'Variable' ? `?${entity.value}` :
-             'id' in entity ? entity.id : `_:${entity.value}`;
+      if (entity.termType === 'Variable') {
+        if (this._format && !(/n3|notation3/i).test(this._format))
+          throw new Error(`Cannot write Variable term in ${this._format} format.`);
+        return `?${entity.value}`;
+      }
+      return 'id' in entity ? entity.id : `_:${entity.value}`;
     }
     let iri = entity.value;
     // Use relative IRIs if requested and possible
@@ -163,8 +178,8 @@ export default class N3Writer {
       iri = this._baseIri.toRelative(iri);
     }
     // Escape special characters
-    if (escape.test(iri))
-      iri = iri.replace(escapeAll, characterReplacer);
+    if (escapeIri.test(iri))
+      iri = iri.replace(escapeIri, characterReplacer);
     // Try to represent the IRI as prefixed name, unless no prefixes were added
     const prefixMatch = this._hasPrefixes ? this._prefixRegex.exec(iri) : null;
     return !prefixMatch ? `<${iri}>` :
