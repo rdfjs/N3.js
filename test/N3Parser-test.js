@@ -2676,7 +2676,7 @@ describe('Parser', () => {
 
     it(
       'should not parse a named graph',
-      shouldNotParse(parser, '<g> {}', 'Expected entity but got { on line 1.'),
+      shouldNotParse(parser, '<g> {}', 'Expected entity but got eof on line 1.'),
     );
 
     it(
@@ -2704,6 +2704,56 @@ describe('Parser', () => {
       shouldParse(parser, '<a> [<p> <o>] <c>.',
                   ['a', '_:b0', 'c'],
                   ['_:b0', 'p', 'o']),
+    );
+
+    it(
+      'should parse a formula in predicate position',
+      shouldParse(parser, '<s> { <a> <b> <c>. } <o>.',
+                  ['s', '_:b0', 'o'], ['a', 'b', 'c', '_:b0']),
+    );
+
+    it(
+      'should parse a forward path in predicate position',
+      shouldParse(parser, '<s> <p>!<q> <o>.',
+                  ['p', 'q', '_:b0'], ['s', '_:b0', 'o']),
+    );
+
+    it(
+      'should parse a backward path in predicate position',
+      shouldParse(parser, '<s> <p>^<q> <o>.',
+                  ['_:b0', 'q', 'p'], ['s', '_:b0', 'o']),
+    );
+
+    it(
+      'should parse a path after a formula predicate',
+      shouldParse(parser, '<s> { <a> <b> <c>. }!<q> <o>.',
+                  ['a', 'b', 'c', '_:b0'], ['_:b0', 'q', '_:b1'], ['s', '_:b1', 'o']),
+    );
+
+    it(
+      'should parse a path after a list predicate',
+      shouldParse(parser, '<s> (<a>)!<q> <o>.',
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b0', 'q', '_:b1'], ['s', '_:b1', 'o']),
+    );
+
+    it(
+      'should parse a path after a literal predicate',
+      shouldParse(parser, '<s> "p"^<q> <o>.',
+                  ['_:b0', 'q', '"p"'], ['s', '_:b0', 'o']),
+    );
+
+    it(
+      'should parse a path after a directional language-tagged literal predicate',
+      shouldParse(parser, '<s> "p"@en--ltr!<q> <o>.',
+                  ['"p"@en--ltr', 'q', '_:b0'], ['s', '_:b0', 'o']),
+    );
+
+    it(
+      'should parse a path after a blank node property list predicate',
+      shouldParse(parser, '<s> [<inner-p> <inner-o>]!<q> <o>.',
+                  ['_:b0', 'inner-p', 'inner-o'], ['_:b0', 'q', '_:b1'], ['s', '_:b1', 'o']),
     );
 
     it(
@@ -4030,6 +4080,12 @@ describe('Parser', () => {
       'should parse an empty formula in the object position as the boolean literal true',
       shouldParse(parser, '<a> <b> {}.',
                   ['a', 'b', '"true"^^http://www.w3.org/2001/XMLSchema#boolean']),
+    );
+
+    it(
+      'should parse an empty formula in the predicate position as the boolean literal true',
+      shouldParse(parser, '<a> {} <c>.',
+                  ['a', '"true"^^http://www.w3.org/2001/XMLSchema#boolean', 'c']),
     );
 
     it(
