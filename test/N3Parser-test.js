@@ -2662,7 +2662,42 @@ describe('Parser', () => {
 
   describe('A Parser instance for the N3 format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3' }); }
+    function implicitEmptyPrefixParser() {
+      return new Parser({ baseIRI: BASE_IRI, format: 'N3', implicitEmptyPrefix: true });
+    }
+    function parserWithFragment() {
+      return new Parser({ baseIRI: 'http://example.com/doc#old', format: 'N3', implicitEmptyPrefix: true });
+    }
     function parserIsImpliedBy() { return new Parser({ baseIRI: BASE_IRI, format: 'N3', isImpliedBy: true }); }
+
+    it(
+      'should bind the empty prefix to the document local namespace',
+      shouldParse(implicitEmptyPrefixParser, ':a :b :c .',
+                  ['http://example.org/#a', 'http://example.org/#b', 'http://example.org/#c']),
+    );
+
+    it(
+      'should let an explicit empty prefix override the implicit binding',
+      shouldParse(implicitEmptyPrefixParser, '@prefix : <http://example.com/>. :a :b :c .',
+                  ['http://example.com/a', 'http://example.com/b', 'http://example.com/c']),
+    );
+
+    // RFC 3986 section 5.2 resolves "#" after removing the base IRI fragment.
+    it(
+      'should replace a document IRI fragment in the implicit binding',
+      shouldParse(parserWithFragment, ':a :b :c .',
+                  ['http://example.com/doc#a', 'http://example.com/doc#b', 'http://example.com/doc#c']),
+    );
+
+    it(
+      'should require an explicit empty prefix by default',
+      shouldNotParse(parser, ':a :b :c .', 'Undefined prefix ":" on line 1.'),
+    );
+
+    it('should require an explicit empty prefix without a document IRI', () => {
+      expect(() => new Parser({ format: 'N3', implicitEmptyPrefix: true }).parse(':a :b :c .'))
+        .toThrow('Undefined prefix ":" on line 1.');
+    });
 
     it(
       'should parse a single triple',

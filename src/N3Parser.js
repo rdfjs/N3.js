@@ -29,6 +29,8 @@ export default class N3Parser {
     this._supportsQuads = !(isTurtle || isTriG || isNTriples || isN3);
     // Whether the log:isImpliedBy predicate is supported
     this._isImpliedBy = options.isImpliedBy;
+    // Whether an undeclared empty prefix resolves against the document IRI
+    this._implicitEmptyPrefix = !!options.implicitEmptyPrefix;
     // Whether an empty formula is read as the boolean literal true,
     // as in the N3 spec tests (opt-in until the next major version)
     this._emptyFormulaAsTrue = !!options.emptyFormulaAsTrue;
@@ -1522,6 +1524,9 @@ export default class N3Parser {
     this._prefixes = Object.create(null);
     this._prefixes._ = this._blankNodePrefix ? this._blankNodePrefix.substr(2)
                                              : `b${blankNodePrefix++}_`;
+    // Optionally bind the N3 empty prefix to the document's local namespace
+    if (this._n3Mode && this._implicitEmptyPrefix && this._base)
+      this._prefixes[''] = this._resolveIRI('#');
     this._prefixCallback = onPrefix || noop;
     this._versionCallback = onVersion || noop;
     this._inversePredicate = false;
