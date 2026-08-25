@@ -619,8 +619,7 @@ The N3.js submodules are compatible with the following [RDF.js](http://rdf.js.or
   [`DatasetCore`](https://rdf.js.org/dataset-spec/#datasetcore-interface)
 
 ## License and contributions
-The N3.js library is copyrighted by [Ruben Verborgh](https://ruben.verborgh.org/)
-and released under the [MIT License](https://github.com/rdfjs/N3.js/blob/master/LICENSE.md).
+N3.js is released under the [MIT License](https://github.com/rdfjs/N3.js/blob/master/LICENSE.md).
 
 Contributions are welcome, and bug reports or pull requests are always helpful.
-If you plan to implement a larger feature, it's best to contact me first.
+If you plan to implement a larger feature, it's best to contact us first.

@@ -62,6 +62,16 @@ describe('StreamParser', () => {
     );
 
     it(
+      'should parse a formula prefix declaration split across chunks',
+      shouldParse(['<s> <p> { @pre', 'fix ex: <http://example.org/>. ex:s ex:p ex:o. }.'], 2,
+                  triples => {
+                    expect(triples[0].subject.value).toEqual('http://example.org/s');
+                    expect(triples[0].predicate.value).toEqual('http://example.org/p');
+                    expect(triples[0].object.value).toEqual('http://example.org/o');
+                  }, { format: 'N3', baseIRI: 'http://base.example/' }),
+    );
+
+    it(
       "doesn't parse an invalid stream",
       shouldNotParse(['z.'], 'Unexpected "z." on line 1.'),
       { token: undefined, line: 1, previousToken: undefined },
@@ -117,11 +127,11 @@ describe('StreamParser', () => {
 });
 
 
-function shouldParse(chunks, expectedLength, validateTriples) {
+function shouldParse(chunks, expectedLength, validateTriples, options) {
   return function (done) {
     const triples = [],
         inputStream = new ArrayReader(chunks),
-        parser = new StreamParser(),
+        parser = new StreamParser(options),
         outputStream = new ArrayWriter(triples);
     expect(parser.import(inputStream)).toBe(parser);
     parser.pipe(outputStream);
