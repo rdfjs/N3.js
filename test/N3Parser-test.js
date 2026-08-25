@@ -2662,7 +2662,42 @@ describe('Parser', () => {
 
   describe('A Parser instance for the N3 format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3' }); }
+    function implicitEmptyPrefixParser() {
+      return new Parser({ baseIRI: BASE_IRI, format: 'N3', implicitEmptyPrefix: true });
+    }
+    function parserWithFragment() {
+      return new Parser({ baseIRI: 'http://example.com/doc#old', format: 'N3', implicitEmptyPrefix: true });
+    }
     function parserIsImpliedBy() { return new Parser({ baseIRI: BASE_IRI, format: 'N3', isImpliedBy: true }); }
+
+    it(
+      'should bind the empty prefix to the document local namespace',
+      shouldParse(implicitEmptyPrefixParser, ':a :b :c .',
+                  ['http://example.org/#a', 'http://example.org/#b', 'http://example.org/#c']),
+    );
+
+    it(
+      'should let an explicit empty prefix override the implicit binding',
+      shouldParse(implicitEmptyPrefixParser, '@prefix : <http://example.com/>. :a :b :c .',
+                  ['http://example.com/a', 'http://example.com/b', 'http://example.com/c']),
+    );
+
+    // RFC 3986 section 5.2 resolves "#" after removing the base IRI fragment.
+    it(
+      'should replace a document IRI fragment in the implicit binding',
+      shouldParse(parserWithFragment, ':a :b :c .',
+                  ['http://example.com/doc#a', 'http://example.com/doc#b', 'http://example.com/doc#c']),
+    );
+
+    it(
+      'should require an explicit empty prefix by default',
+      shouldNotParse(parser, ':a :b :c .', 'Undefined prefix ":" on line 1.'),
+    );
+
+    it('should require an explicit empty prefix without a document IRI', () => {
+      expect(() => new Parser({ format: 'N3', implicitEmptyPrefix: true }).parse(':a :b :c .'))
+        .toThrow('Undefined prefix ":" on line 1.');
+    });
 
     it(
       'should parse a single triple',
@@ -2676,7 +2711,7 @@ describe('Parser', () => {
 
     it(
       'should not parse a named graph',
-      shouldNotParse(parser, '<g> {}', 'Expected entity but got { on line 1.'),
+      shouldNotParse(parser, '<g> {}', 'Expected entity but got eof on line 1.'),
     );
 
     it(
@@ -2687,6 +2722,48 @@ describe('Parser', () => {
     it(
       'should not parse a quad',
       shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "http://example.org/c" on line 1.'),
+    );
+
+    it(
+      'should scope prefix declarations to their formula',
+      shouldParse(parser,
+                  '@prefix ex: <http://outer.example/>.\n' +
+                  '<s> <p> { @prefix ex: <http://inner.example/>. ex:s ex:p ex:o. }.\n' +
+                  'ex:s ex:p ex:o.',
+                  ['http://inner.example/s', 'http://inner.example/p', 'http://inner.example/o', '_:b0'],
+                  ['s', 'p', '_:b0'],
+                  ['http://outer.example/s', 'http://outer.example/p', 'http://outer.example/o']),
+    );
+
+    it(
+      'should restore prefix declarations between sibling formulas',
+      shouldParse(parser,
+                  '@prefix ex: <http://outer.example/>.\n' +
+                  '<s1> <p> { PREFIX ex: <http://first.example/> ex:s ex:p ex:o. }.\n' +
+                  '<s2> <p> { ex:s ex:p ex:o. }.\n',
+                  ['http://first.example/s', 'http://first.example/p', 'http://first.example/o', '_:b0'],
+                  ['s1', 'p', '_:b0'],
+                  ['http://outer.example/s', 'http://outer.example/p', 'http://outer.example/o', '_:b1'],
+                  ['s2', 'p', '_:b1']),
+    );
+
+    it(
+      'should scope base declarations to their formula',
+      shouldParse(parser,
+                  '@base <http://outer.example/>.\n' +
+                  '<s> <p> { @base <http://inner.example/>. <s> <p> <o>. }.\n' +
+                  '<s> <p> <o>.',
+                  ['http://inner.example/s', 'http://inner.example/p', 'http://inner.example/o', '_:b0'],
+                  ['http://outer.example/s', 'http://outer.example/p', '_:b0'],
+                  ['http://outer.example/s', 'http://outer.example/p', 'http://outer.example/o']),
+    );
+
+    it(
+      'should parse a SPARQL-style base declaration in a formula',
+      shouldParse(parser,
+                  '<s> <p> { BASE <http://inner.example/> <s> <p> <o>. }.',
+                  ['http://inner.example/s', 'http://inner.example/p', 'http://inner.example/o', '_:b0'],
+                  ['s', 'p', '_:b0']),
     );
 
     it(
@@ -2704,6 +2781,104 @@ describe('Parser', () => {
       shouldParse(parser, '<a> [<p> <o>] <c>.',
                   ['a', '_:b0', 'c'],
                   ['_:b0', 'p', 'o']),
+    );
+
+    it(
+      'should parse a formula in predicate position',
+      shouldParse(parser, '<s> { <a> <b> <c>. } <o>.',
+                  ['s', '_:b0', 'o'], ['a', 'b', 'c', '_:b0']),
+    );
+
+    it(
+      'should parse a forward path in predicate position',
+      shouldParse(parser, '<s> <p>!<q> <o>.',
+                  ['p', 'q', '_:b0'], ['s', '_:b0', 'o']),
+    );
+
+    it(
+      'should parse a backward path in predicate position',
+      shouldParse(parser, '<s> <p>^<q> <o>.',
+                  ['_:b0', 'q', 'p'], ['s', '_:b0', 'o']),
+    );
+
+    it(
+      'should parse a path after a formula predicate',
+      shouldParse(parser, '<s> { <a> <b> <c>. }!<q> <o>.',
+                  ['a', 'b', 'c', '_:b0'], ['_:b0', 'q', '_:b1'], ['s', '_:b1', 'o']),
+    );
+
+    it(
+      'should parse a path after a list predicate',
+      shouldParse(parser, '<s> (<a>)!<q> <o>.',
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b0', 'q', '_:b1'], ['s', '_:b1', 'o']),
+    );
+
+    it(
+      'should parse a path after a literal predicate',
+      shouldParse(parser, '<s> "p"^<q> <o>.',
+                  ['_:b0', 'q', '"p"'], ['s', '_:b0', 'o']),
+    );
+
+    it(
+      'should parse a path after a directional language-tagged literal predicate',
+      shouldParse(parser, '<s> "p"@en--ltr!<q> <o>.',
+                  ['"p"@en--ltr', 'q', '_:b0'], ['s', '_:b0', 'o']),
+    );
+
+    it(
+      'should parse a path after a blank node property list predicate',
+      shouldParse(parser, '<s> [<inner-p> <inner-o>]!<q> <o>.',
+                  ['_:b0', 'inner-p', 'inner-o'], ['_:b0', 'q', '_:b1'], ['s', '_:b1', 'o']),
+    );
+
+    it(
+      'should parse a bare IRI property list',
+      shouldParse(parser, '[id <s> <p> <o>].', ['s', 'p', 'o']),
+    );
+
+    it(
+      'should parse an IRI property list in object position',
+      shouldParse(parser, '<s> <p> [id <o> <inner-p> <inner-o>].',
+                  ['s', 'p', 'o'], ['o', 'inner-p', 'inner-o']),
+    );
+
+    it(
+      'should parse an IRI property list in predicate position',
+      shouldParse(parser, '<s> [id <p> <inner-p> <inner-o>] <o>.',
+                  ['s', 'p', 'o'], ['p', 'inner-p', 'inner-o']),
+    );
+
+    it(
+      'should parse nested IRI property lists',
+      shouldParse(parser, '<s> <p> [id <o> <q> [id <inner> <r> "value"]].',
+                  ['s', 'p', 'o'], ['o', 'q', 'inner'], ['inner', 'r', '"value"']),
+    );
+
+    it(
+      'should require an IRI after id',
+      shouldNotParse(parser, '[id _:s <p> <o>].', 'Expected IRI after id but got blank on line 1.'),
+    );
+
+    it(
+      'should require an entity after id',
+      shouldNotParse(parser, '[id ; <p> <o>].', 'Expected entity but got ; on line 1.'),
+    );
+
+    it(
+      'should require properties after an IRI property list ID',
+      shouldNotParse(parser, '[id <s>].', 'Expected predicate but got ] on line 1.'),
+    );
+
+    it(
+      'should reject a semicolon after an IRI property list ID',
+      shouldNotParse(parser, '[id <s>; <p> <o>].', 'Expected predicate but got ; on line 1.'),
+    );
+
+    it(
+      'should reject multiple IRI property list IDs',
+      shouldNotParse(parser, '[id <s1>, <s2> <p> <o>].', 'Expected entity but got , on line 1.'),
     );
 
     it(
@@ -4030,6 +4205,12 @@ describe('Parser', () => {
       'should parse an empty formula in the object position as the boolean literal true',
       shouldParse(parser, '<a> <b> {}.',
                   ['a', 'b', '"true"^^http://www.w3.org/2001/XMLSchema#boolean']),
+    );
+
+    it(
+      'should parse an empty formula in the predicate position as the boolean literal true',
+      shouldParse(parser, '<a> {} <c>.',
+                  ['a', '"true"^^http://www.w3.org/2001/XMLSchema#boolean', 'c']),
     );
 
     it(
