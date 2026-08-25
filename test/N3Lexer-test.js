@@ -1014,6 +1014,48 @@ describe('Lexer', () => {
                    { type: 'eof', line: 1 }));
 
     it(
+      'should tokenize IRI property list identifiers',
+      shouldTokenize('[ id <s> <p> <o> ] [id<s> <p> <o>]',
+                     { type: '[', line: 1 },
+                     { type: 'id', line: 1 },
+                     { type: 'IRI', value: 's', line: 1 },
+                     { type: 'IRI', value: 'p', line: 1 },
+                     { type: 'IRI', value: 'o', line: 1 },
+                     { type: ']', line: 1 },
+                     { type: '[', line: 1 },
+                     { type: 'id', line: 1 },
+                     { type: 'IRI', value: 's', line: 1 },
+                     { type: 'IRI', value: 'p', line: 1 },
+                     { type: 'IRI', value: 'o', line: 1 },
+                     { type: ']', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should tokenize an IRI property list identifier split across chunks',
+      shouldTokenize(streamOf('[ i', 'd <s> <p> <o> ]'),
+                     { type: '[', line: 1 },
+                     { type: 'id', line: 1 },
+                     { type: 'IRI', value: 's', line: 1 },
+                     { type: 'IRI', value: 'p', line: 1 },
+                     { type: 'IRI', value: 'o', line: 1 },
+                     { type: ']', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should keep an id prefix as a prefixed name',
+      shouldTokenize('id:p',
+                     { type: 'prefixed', prefix: 'id', value: 'p', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should not tokenize IRI property list identifiers outside N3 mode',
+      shouldNotTokenize(new Lexer({ n3: false }), 'id ', 'Unexpected "id" on line 1.'),
+    );
+
+    it(
       'should tokenize the "a" predicate without spacing',
       shouldTokenize('[a<>].\n[a[]].\n[a()].\n<>a<>.\n<>a[].\n<>a().\n',
                      { type: '[', line: 1 },

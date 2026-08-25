@@ -175,6 +175,16 @@ This is done by passing a `baseIRI` argument upon creation:
 const parser = new N3.Parser({ baseIRI: 'http://example.org/' });
 ```
 
+In N3 mode, `implicitEmptyPrefix` can bind an undeclared empty prefix to the
+document IRI with a `#` fragment:
+```JavaScript
+const parser = new N3.Parser({
+  format: 'text/n3',
+  baseIRI: 'http://example.org/document',
+  implicitEmptyPrefix: true,
+});
+```
+
 By default, `N3.Parser` will prefix blank node labels with a `b{digit}_` prefix.
 This is done to prevent collisions of unrelated blank nodes having identical
 labels. The `blankNodePrefix` constructor argument can be used to modify the
@@ -609,8 +619,7 @@ The N3.js submodules are compatible with the following [RDF.js](http://rdf.js.or
   [`DatasetCore`](https://rdf.js.org/dataset-spec/#datasetcore-interface)
 
 ## License and contributions
-The N3.js library is copyrighted by [Ruben Verborgh](https://ruben.verborgh.org/)
-and released under the [MIT License](https://github.com/rdfjs/N3.js/blob/master/LICENSE.md).
+N3.js is released under the [MIT License](https://github.com/rdfjs/N3.js/blob/master/LICENSE.md).
 
 Contributions are welcome, and bug reports or pull requests are always helpful.
-If you plan to implement a larger feature, it's best to contact me first.
+If you plan to implement a larger feature, it's best to contact us first.

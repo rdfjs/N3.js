@@ -29,6 +29,8 @@ export default class N3Parser {
     this._supportsQuads = !(isTurtle || isTriG || isNTriples || isN3);
     // Whether the log:isImpliedBy predicate is supported
     this._isImpliedBy = options.isImpliedBy;
+    // Whether an undeclared empty prefix resolves against the document IRI
+    this._implicitEmptyPrefix = !!options.implicitEmptyPrefix;
     // Whether an empty formula is read as the boolean literal true,
     // as in the N3 spec tests (opt-in until the next major version)
     this._emptyFormulaAsTrue = !!options.emptyFormulaAsTrue;
@@ -83,14 +85,21 @@ export default class N3Parser {
       this._contextStack.push({ type, subject, predicate, object, graph });
       return;
     }
-    this._contextStack.push({
+    const context = {
       type,
       subject, predicate, object, graph,
       inverse: this._inversePredicate,
       blankPrefix: this._prefixes._,
       quantified: this._quantified,
       emptyFormula: this._emptyFormula,
-    });
+    };
+    // Prefix and base declarations are scoped to their formula
+    if (type === 'formula') {
+      context.prefixes = this._prefixes;
+      context.base = [this._base, this._basePath, this._baseRoot, this._baseScheme];
+      this._prefixes = Object.create(this._prefixes);
+    }
+    this._contextStack.push(context);
     // Every new scope resets the predicate direction
     this._inversePredicate = false;
     // In N3, blank nodes are scoped to a formula
@@ -122,7 +131,12 @@ export default class N3Parser {
     // Restore N3 context settings
     if (this._n3Mode) {
       this._inversePredicate = context.inverse;
-      this._prefixes._ = context.blankPrefix;
+      if (type === 'formula') {
+        this._prefixes = context.prefixes;
+        [this._base, this._basePath, this._baseRoot, this._baseScheme] = context.base;
+      }
+      else
+        this._prefixes._ = context.blankPrefix;
       this._quantified = context.quantified;
       this._emptyFormula = context.emptyFormula;
     }
@@ -173,6 +187,28 @@ export default class N3Parser {
     default:
       return this._readSubject(token);
     }
+  }
+
+  // ### `_readInFormulaContext` reads a token at the statement level of a formula
+  _readInFormulaContext(token) {
+    switch (token.type) {
+    case 'PREFIX':
+      this._sparqlStyle = true;
+    case '@prefix':
+      return this._readPrefix;
+    case 'BASE':
+      this._sparqlStyle = true;
+    case '@base':
+      return this._readBaseIRI;
+    default:
+      return this._readSubject(token);
+    }
+  }
+
+  // ### `_getStatementReader` returns the reader for the current statement scope
+  _getStatementReader() {
+    const context = this._contextStack[this._contextStack.length - 1];
+    return context && context.type === 'formula' ? this._readInFormulaContext : this._readInTopContext;
   }
 
   // ### `_readEntity` reads an IRI, prefixed name, blank node, or variable
@@ -245,7 +281,7 @@ export default class N3Parser {
         return this._error('Unexpected graph', token);
       this._saveContext('formula', this._graph,
                         this._graph = this._factory.blankNode(), null, null);
-      return this._readSubject;
+      return this._readInFormulaContext;
     case '}':
        // No subject; the graph in which we are reading is closed instead
       return this._readPunctuation(token);
@@ -303,6 +339,7 @@ export default class N3Parser {
   // ### `_readPredicate` reads a quad's predicate
   _readPredicate(token) {
     const type = token.type;
+    let pathable = false;
     switch (type) {
     case 'inverse':
       this._inversePredicate = true;
@@ -334,6 +371,7 @@ export default class N3Parser {
       else
         this._predicate = this._factory.literal(token.value, this._factory.namedNode(token.prefix));
 
+      pathable = true;
       break;
     case '(':
       // In N3, a list can be a predicate
@@ -347,16 +385,26 @@ export default class N3Parser {
                           this._subject = this._factory.blankNode(), null);
         return this._readBlankNodeHead;
       }
+      return this._error('Disallowed blank node as predicate', token);
+    case '{':
+      // In N3, a formula can be a predicate
+      if (this._n3Mode) {
+        this._saveContext('formula', this._graph, this._subject,
+                          this._graph = this._factory.blankNode(), null);
+        return this._readSubject;
+      }
+      return this._readEntity(token);
     case 'blank':
       if (!this._n3Mode)
         return this._error('Disallowed blank node as predicate', token);
     default:
       if ((this._predicate = this._readEntity(token)) === undefined)
         return;
+      pathable = this._n3Mode;
     }
     this._validAnnotation = true;
     // The next token must be an object
-    return this._readObject;
+    return pathable ? this._getPathReader(this._readObject, 'predicate') : this._readObject;
   }
 
   // ### `_readObject` reads a quad's object
@@ -389,7 +437,7 @@ export default class N3Parser {
         return this._error('Unexpected graph', token);
       this._saveContext('formula', this._graph, this._subject, this._predicate,
                         this._graph = this._factory.blankNode());
-      return this._readSubject;
+      return this._readInFormulaContext;
     case '<<(':
       this._saveContext('<<(', this._graph, this._subject, this._predicate, null);
       this._graph = null;
@@ -434,9 +482,39 @@ export default class N3Parser {
       if (parentParent.type === '<<') {
         return this._error('Unexpected compound blank node expression in reified triple', token);
       }
+      if (token.type === 'id')
+        return this._readIriPropertyListId;
       this._predicate = null;
       return this._readPredicate(token);
     }
+  }
+
+  // ### `_readIriPropertyListId` replaces a property list's blank node with its IRI
+  _readIriPropertyListId(token) {
+    const iri = this._readEntity(token);
+    if (iri === undefined)
+      return;
+    if (iri.termType !== 'NamedNode')
+      return this._error(`Expected IRI after id but got ${token.type}`, token);
+
+    const placeholder = this._subject;
+    this._subject = iri;
+    const context = this._contextStack[this._contextStack.length - 1];
+    if (context.subject === placeholder)
+      context.subject = iri;
+    if (context.predicate === placeholder)
+      context.predicate = iri;
+    if (context.object === placeholder)
+      context.object = iri;
+    this._predicate = null;
+    return this._readIriPropertyListPredicate;
+  }
+
+  // ### `_readIriPropertyListPredicate` requires properties after an IRI property list ID
+  _readIriPropertyListPredicate(token) {
+    if (token.type === ';' || token.type === ']' || token.type === '.' || token.type === '}')
+      return this._error(`Expected predicate but got ${token.type}`, token);
+    return this._readPredicate(token);
   }
 
   // ### `_readBlankNodeTail` reads the end of a blank node
@@ -456,7 +534,7 @@ export default class N3Parser {
       return this._getContextEndReader();
     // If the blank node was the predicate, continue reading the object
     else if (this._predicate !== null)
-      return this._readObject;
+      return this._getPathReader(this._readObject, 'predicate');
     // If the blank node was the subject, continue reading the predicate
     else
       // If the blank node was empty, it could be a named graph label
@@ -529,7 +607,7 @@ export default class N3Parser {
       // Was this list the parent's predicate?
       else if (this._object === null) {
         // The next token is the object
-        next = this._readObject;
+        next = this._getPathReader(this._readObject, 'predicate');
         // No list tail if this was an empty list
         if (this._predicate === this.RDF_NIL)
           return next;
@@ -585,7 +663,7 @@ export default class N3Parser {
       this._saveContext('formula', this._graph, list, this.RDF_FIRST,
                         this._graph = item);
       this._subject = null;
-      return this._readSubject;
+      return this._readInFormulaContext;
     case '<<(':
       this._saveContext('<<(', this._graph, null, null, null);
       this._graph = null;
@@ -706,13 +784,12 @@ export default class N3Parser {
       token = null;
     }
 
-    if (component === 'subject') {
-      // A subject literal implies N3 mode, so the literal might start a path
-      const reader = this._getPathEndReader(token, this._readPredicateOrNamedGraph);
-      return reader || this._readPredicateOrNamedGraph(token);
+    if (component === 'subject' || component === 'predicate') {
+      // A subject or predicate literal implies N3 mode, so it might start a path
+      const next = component === 'subject' ? this._readPredicateOrNamedGraph : this._readObject;
+      const reader = this._getPathEndReader(token, next, component);
+      return reader || next.call(this, token);
     }
-    if (component === 'predicate')
-      return token === null ? this._readObject : this._readObject(token);
     return this._completeObjectLiteralPost(token, listItem);
   }
 
@@ -739,16 +816,13 @@ export default class N3Parser {
       return this._readDirCode;
     }
 
-    // A subject literal implies N3 mode, so it might start a path.
-    if (component === 'subject') {
-      const reader = this._getPathEndReader(completed.token, next);
-      if (reader)
-        return reader;
-    }
+    // A subject or predicate literal implies N3 mode, so it might start a path.
+    const reader = this._getPathEndReader(completed.token, next, component);
+    if (reader)
+      return reader;
 
-    // If the token was consumed as a datatype, continue with the next component;
-    // otherwise, consume the token now
-    return completed.token === null ? next : next.call(this, completed.token);
+    // Consume the non-path token now
+    return next.call(this, completed.token);
   }
 
   // Completes a literal in subject position
@@ -823,13 +897,18 @@ export default class N3Parser {
     if (empty && this._emptyFormulaAsTrue) {
       if (this._subject === formula)
         this._subject = this.N3_TRUE;
+      else if (this._predicate === formula)
+        this._predicate = this.N3_TRUE;
       else
         this._object = this.N3_TRUE;
     }
 
-    // If the formula was the subject, continue reading the predicate.
-    // If the formula was the object, read punctuation.
-    return this._object === null ? this._readPredicate : this._getContextEndReader();
+    // Continue according to the formula's position in the enclosing statement
+    if (this._object !== null)
+      return this._getPathReader(this._getContextEndReader(), 'object');
+    if (this._predicate !== null)
+      return this._getPathReader(this._readObject, 'predicate');
+    return this._getPathReader(this._readPredicate, 'subject');
   }
 
   // ### `_readPunctuation` reads punctuation between quads or quad parts
@@ -848,7 +927,7 @@ export default class N3Parser {
     case '.':
       this._subject = null;
       this._tripleTerm = null;
-      next = this._contextStack.length ? this._readSubject : this._readInTopContext;
+      next = this._getStatementReader();
       if (inversePredicate) this._inversePredicate = false;
       break;
     // Semicolon means the subject is shared; predicate and object are different
@@ -1021,12 +1100,12 @@ export default class N3Parser {
     // SPARQL-style declarations don't have punctuation
     if (this._sparqlStyle) {
       this._sparqlStyle = false;
-      return this._readInTopContext(token);
+      return this._getStatementReader().call(this, token);
     }
 
     if (token.type !== '.')
       return this._error('Expected declaration to end with a dot', token);
-    return this._readInTopContext;
+    return this._getStatementReader();
   }
 
   // Reads a list of quantified symbols from a @forSome or @forAll statement
@@ -1078,18 +1157,19 @@ export default class N3Parser {
   }
 
   // ### `_getPathReader` reads a potential path and then resumes with the given function
-  _getPathReader(afterPath) {
+  _getPathReader(afterPath, position) {
     this._afterPath = afterPath;
+    this._pathPosition = position || (this._predicate === null ? 'subject' : 'object');
     return this._readPath;
   }
 
   // ### `_getPathEndReader` continues reading after a term that might start a path,
   // given the pending token that follows the term (or `null` if it was consumed)
-  _getPathEndReader(token, afterPath) {
+  _getPathEndReader(token, afterPath, position) {
     // Other pending tokens are not handled here
     if (token !== null && token.type !== '!' && token.type !== '^')
       return null;
-    const reader = this._getPathReader(afterPath);
+    const reader = this._getPathReader(afterPath, position);
     // If no token is pending, wait for the next one; otherwise, consume it now
     return token === null ? reader : reader.call(this, token);
   }
@@ -1103,6 +1183,7 @@ export default class N3Parser {
     case '^': return this._readBackwardPath;
     // Not a path; resume reading where we left off
     default:
+      const afterPath = this._afterPath;
       const stack = this._contextStack, parent = stack.length && stack[stack.length - 1];
       // If we were reading a list item, we still need to output it
       if (parent && parent.type === 'item') {
@@ -1113,7 +1194,9 @@ export default class N3Parser {
         // Output the list item
         this._emit(this._subject, this.RDF_FIRST, item, this._graph);
       }
-      return this._afterPath(token);
+      this._afterPath = null;
+      this._pathPosition = null;
+      return afterPath.call(this, token);
     }
   }
 
@@ -1124,10 +1207,11 @@ export default class N3Parser {
     // The next token is the predicate
     if ((predicate = this._readEntity(token)) === undefined)
       return;
-    // If we were reading a subject, replace the subject by the path's object
-    if (this._predicate === null)
+    // Replace the path expression with the generated object in its current position
+    if (this._pathPosition === 'subject')
       subject = this._subject, this._subject = object;
-    // If we were reading an object, replace the subject by the path's object
+    else if (this._pathPosition === 'predicate')
+      subject = this._predicate, this._predicate = object;
     else
       subject = this._object,  this._object  = object;
     // Emit the path's current quad and read its next section
@@ -1142,10 +1226,11 @@ export default class N3Parser {
     // The next token is the predicate
     if ((predicate = this._readEntity(token)) === undefined)
       return;
-    // If we were reading a subject, replace the subject by the path's subject
-    if (this._predicate === null)
+    // Replace the path expression with the generated subject in its current position
+    if (this._pathPosition === 'subject')
       object = this._subject, this._subject = subject;
-    // If we were reading an object, replace the subject by the path's subject
+    else if (this._pathPosition === 'predicate')
+      object = this._predicate, this._predicate = subject;
     else
       object = this._object,  this._object  = subject;
     // Emit the path's current quad and read its next section
@@ -1439,6 +1524,9 @@ export default class N3Parser {
     this._prefixes = Object.create(null);
     this._prefixes._ = this._blankNodePrefix ? this._blankNodePrefix.substr(2)
                                              : `b${blankNodePrefix++}_`;
+    // Optionally bind the N3 empty prefix to the document's local namespace
+    if (this._n3Mode && this._implicitEmptyPrefix && this._base)
+      this._prefixes[''] = this._resolveIRI('#');
     this._prefixCallback = onPrefix || noop;
     this._versionCallback = onVersion || noop;
     this._inversePredicate = false;
