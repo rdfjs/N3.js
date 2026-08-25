@@ -1,4 +1,4 @@
-import { Parser, NamedNode, BlankNode, Quad, termFromId, DataFactory as DF } from '../src';
+import { Parser, Writer, NamedNode, BlankNode, Quad, termFromId, DataFactory as DF } from '../src';
 import rdfDataModel from '@rdfjs/data-model';
 import { isomorphic } from 'rdf-isomorphic';
 
@@ -68,6 +68,18 @@ describe('Parser', () => {
                 ['a', 'b', '"string"']));
 
     it(
+      'should not parse a triple with a literal containing a prefixed-name escape sequence',
+      shouldNotParse('<a> <b> "stri\\.ng".',
+                     'Unexpected ""stri\\.ng"." on line 1.'),
+    );
+
+    it(
+      'should parse a triple with a prefixed name containing escape sequences',
+      shouldParse('@prefix x: <urn:x:y#>. x:a\\.b <b> "string".',
+                  ['urn:x:y#a.b', 'b', '"string"']),
+    );
+
+    it(
       'should parse a triple with a numeric literal',
       shouldParse('<a> <b> 3.0.',
                   ['a', 'b', '"3.0"^^http://www.w3.org/2001/XMLSchema#decimal']),
@@ -104,6 +116,15 @@ describe('Parser', () => {
         'should parse a triple with a literal with directional language code',
         shouldParse('<a> <b> "string"@en--rtl.',
             ['a', 'b', '"string"@en--rtl']),
+    );
+
+    it(
+        'should not leak direction state between language-tagged literals',
+        shouldParse('<a> <b> "x"@en--rtl, "y"@fr, "z"@de--ltr.\n<c> <d> "w"@nl.',
+            ['a', 'b', '"x"@en--rtl'],
+            ['a', 'b', '"y"@fr'],
+            ['a', 'b', '"z"@de--ltr'],
+            ['c', 'd', '"w"@nl']),
     );
 
     it(
@@ -648,6 +669,12 @@ describe('Parser', () => {
                   ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     );
 
+    it(
+      'should not parse statements with a list in the predicate',
+      shouldNotParse('<a> (<b>) <c>.',
+                     'Expected entity but got ( on line 1.'),
+    );
+
     it('should parse a list with a literal', shouldParse('<a> <b> ("x").',
                 ['a', 'b', '_:b0'],
                 ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"x"'],
@@ -809,6 +836,22 @@ describe('Parser', () => {
             ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
             ['_:b1', reifies, ['a1', 'b1', 'c1']],
             ['_:b3', reifies, ['a2', 'b2', 'c2']]),
+    );
+
+    it(
+        'should parse statements with a subject list containing a triple term',
+        shouldParse('(<<(<a1> <b1> <c1>)>>) <a> <b>.',
+            ['_:b0', 'a', 'b'],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['a1', 'b1', 'c1']],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+    );
+
+    it(
+        'should parse statements with an object list containing a triple term',
+        shouldParse('<a> <b> (<<(<a1> <b1> <c1>)>>).',
+            ['a', 'b', '_:b0'],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', ['a1', 'b1', 'c1']],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     );
 
     it('should not parse an invalid list', shouldNotParse('<a> <b> (]).',
@@ -1305,6 +1348,26 @@ describe('Parser', () => {
     it('should error if punctuation follows a subject', shouldNotParse('<a> .',
                    'Unexpected . on line 1.'));
 
+    // Resource paths are an N3 extension over Turtle, as called out by the N3
+    // specification's Turtle comparison: https://w3c.github.io/N3/spec/#relationship-to-other-languages
+    it(
+      'should not parse a ! path after a number',
+      shouldNotParse('<a> <b> 1!<c>.',
+                     'Unexpected "!<c>." on line 1.'),
+    );
+
+    it(
+      'should not parse a ^ path after a boolean',
+      shouldNotParse('<a> <b> true^<c>.',
+                     'Unexpected "^<c>." on line 1.'),
+    );
+
+    it(
+      'should not parse a ! path after a blank node',
+      shouldNotParse('<a> <b> _:m!<c>.',
+                     'Unexpected "!<c>." on line 1.'),
+    );
+
     it(
       'should error if an unexpected token follows a subject',
       shouldNotParse('<a> @',
@@ -1322,7 +1385,7 @@ describe('Parser', () => {
     );
 
     it('should not error if there is no triple callback', () => {
-      new Parser().parse('');
+      expect(() => new Parser().parse('')).not.toThrow();
     });
 
     it('should return prefixes through a callback', done => {
@@ -1579,6 +1642,40 @@ describe('Parser', () => {
     );
 
     it(
+        'should parse an annotation on a triple with a nested reified triple as subject',
+        shouldParse('<<<a> <b> <c>>> <d> <e> {| <f> <g> |}.',
+            ['_:b0', reifies, ['a', 'b', 'c']],
+            ['_:b1', reifies, ['_:b0', 'd', 'e']],
+            ['_:b0', 'd', 'e'],
+            ['_:b1', 'f', 'g']),
+    );
+
+    it(
+        'should parse an annotation on a triple with a nested reified triple as object',
+        shouldParse('<d> <e> <<<a> <b> <c>>> {| <f> <g> |}.',
+            ['_:b0', reifies, ['a', 'b', 'c']],
+            ['_:b1', reifies, ['d', 'e', '_:b0']],
+            ['d', 'e', '_:b0'],
+            ['_:b1', 'f', 'g']),
+    );
+
+    it(
+        'should parse a bare annotation reifier on a triple with a nested reified triple as subject',
+        shouldParse('<<<a> <b> <c>>> <d> <e> ~ .',
+            ['_:b0', reifies, ['a', 'b', 'c']],
+            ['_:b0', 'd', 'e'],
+            ['_:b1', reifies, ['_:b0', 'd', 'e']]),
+    );
+
+    it(
+        'should parse a bare annotation reifier on a triple with a nested reified triple as object',
+        shouldParse('<d> <e> <<<a> <b> <c>>> ~ .',
+            ['_:b0', reifies, ['a', 'b', 'c']],
+            ['d', 'e', '_:b0'],
+            ['_:b1', reifies, ['d', 'e', '_:b0']]),
+    );
+
+    it(
       'should not parse nested triple terms that are partially closed',
       shouldNotParse('<d> <e> <<(<<(<a> <b> <c>)>> <f> <g>.',
         'Disallowed triple term as subject on line 1.',
@@ -1744,11 +1841,93 @@ describe('Parser', () => {
     );
 
     it(
+        'should parse an annotation inside a blank node property list',
+        shouldParse('<s> <p> [ <b> <c> {| <d> <e> |} ].',
+            ['_:b1', reifies, ['_:b0', 'b', 'c']],
+            ['_:b0', 'b', 'c'],
+            ['_:b1', 'd', 'e'],
+            ['s', 'p', '_:b0']),
+    );
+
+    it(
+        'should parse an annotation inside a blank node property list in subject position',
+        shouldParse('[ <b> <c> {| <d> <e> |} ] <p> <o>.',
+            ['_:b1', reifies, ['_:b0', 'b', 'c']],
+            ['_:b0', 'b', 'c'],
+            ['_:b1', 'd', 'e'],
+            ['_:b0', 'p', 'o']),
+    );
+
+    it(
+        'should parse an annotation inside a nested blank node property list',
+        shouldParse('<s> <p> [ <b> [ <c> <d> {| <e> <f> |} ] ].',
+            ['_:b2', reifies, ['_:b1', 'c', 'd']],
+            ['_:b1', 'c', 'd'],
+            ['_:b2', 'e', 'f'],
+            ['_:b0', 'b', '_:b1'],
+            ['s', 'p', '_:b0']),
+    );
+
+    it(
+        'should parse an annotation with a reifier inside a blank node property list',
+        shouldParse('<s> <p> [ <b> <c> ~ <r> {| <d> <e> |} ].',
+            ['_:b0', 'b', 'c'],
+            ['r', reifies, ['_:b0', 'b', 'c']],
+            ['r', 'd', 'e'],
+            ['s', 'p', '_:b0']),
+    );
+
+    it(
+        'should not parse a predicate-object pair after an annotation inside a blank node property list',
+        shouldNotParse('<s> <p> [ <b> <c> {| <d> <e> |} ; <f> <g> ].',
+            'Expected ] to follow annotation on line 1.'),
+    );
+
+    it(
       'should parse a reified triple using annotation syntax with reifier and one predicate-object',
       shouldParse('<a> <b> <c> ~ <iri> {| <b> <c> |}.',
           ['a', 'b', 'c'],
           ['iri', 'b', 'c'],
           ['iri', reifies, ['a', 'b', 'c']]),
+    );
+
+    it(
+        'should parse a reifier that is not followed by an annotation block',
+        shouldParse('<a> <b> <c> ~ <iri>.',
+            ['a', 'b', 'c'],
+            ['iri', reifies, ['a', 'b', 'c']]),
+    );
+
+    it(
+        'should parse a blank node reifier that is not followed by an annotation block',
+        shouldParse('<a> <b> <c> ~ _:r.',
+            ['a', 'b', 'c'],
+            ['_:b0_r', reifies, ['a', 'b', 'c']]),
+    );
+
+    it(
+        'should parse a lone reifier followed by a shared subject',
+        shouldParse('<a> <b> <c> ~ <iri>; <b2> <c2>.',
+            ['a', 'b', 'c'],
+            ['iri', reifies, ['a', 'b', 'c']],
+            ['a', 'b2', 'c2']),
+    );
+
+    it(
+        'should parse a lone reifier followed by a shared subject and predicate',
+        shouldParse('<a> <b> <c> ~ <iri>, <c2>.',
+            ['a', 'b', 'c'],
+            ['iri', reifies, ['a', 'b', 'c']],
+            ['a', 'b', 'c2']),
+    );
+
+    it(
+        'should reify the correct triple when lone reifiers follow a shared subject',
+        shouldParse('<a> <b> <c> ~ <iri1>; <b2> <c2> ~ <iri2>.',
+            ['a', 'b', 'c'],
+            ['iri1', reifies, ['a', 'b', 'c']],
+            ['a', 'b2', 'c2'],
+            ['iri2', reifies, ['a', 'b2', 'c2']]),
     );
 
     it(
@@ -1832,7 +2011,22 @@ describe('Parser', () => {
         shouldParse('<G> { <a> <b> <c> {| <b> <c> |}. }',
             ['a', 'b', 'c', 'G'],
             ['_:b0', 'b', 'c', 'G'],
-            ['_:b0', reifies, ['a', 'b', 'c']]),
+            ['_:b0', reifies, ['a', 'b', 'c'], 'G']),
+    );
+
+    it(
+        'should parse a reified triple in a graph using annotation syntax with an explicit reifier',
+        shouldParse('<G> { <a> <b> <c> ~ <r> {| <b> <c> |}. }',
+            ['a', 'b', 'c', 'G'],
+            ['r', reifies, ['a', 'b', 'c'], 'G'],
+            ['r', 'b', 'c', 'G']),
+    );
+
+    it(
+        'should parse a reified triple in a graph using << >> syntax',
+        shouldParse('<G> { <<<a> <b> <c>>> <p> <o> . }',
+            ['_:b0', reifies, ['a', 'b', 'c'], 'G'],
+            ['_:b0', 'p', 'o', 'G']),
     );
 
     it(
@@ -2115,6 +2309,12 @@ describe('Parser', () => {
         'Unexpected literal on line 1.'),
     );
 
+    it(
+      'should not parse a literal as predicate',
+      shouldNotParse(parser, '<a> "1" <b>.',
+        'Unexpected literal on line 1.'),
+    );
+
     it('should parse a triple term', shouldParse(parser, '<a> <b> <<(<a> <b> <c>)>>.',
         ['a', 'b', ['a', 'b', 'c']]));
 
@@ -2170,6 +2370,12 @@ describe('Parser', () => {
 
     it('should parse a default graph', shouldParse(parser, '{}'));
 
+    it(
+      'should not parse statements with a list in the predicate',
+      shouldNotParse(parser, '<a> (<b>) <c>.',
+                     'Expected entity but got ( on line 1.'),
+    );
+
     it('should parse a named graph', shouldParse(parser, '<g> {}'));
 
     it(
@@ -2215,6 +2421,16 @@ describe('Parser', () => {
     it(
       'should not parse @forAll',
       shouldNotParse(parser, '@forAll <x>.', 'Unexpected "@forAll" on line 1.'),
+    );
+
+    it(
+      'should not parse a literal as subject',
+      shouldNotParse(parser, '"1" <a> <b>.', 'Unexpected literal on line 1.'),
+    );
+
+    it(
+      'should not parse a literal as predicate',
+      shouldNotParse(parser, '<a> "1" <b>.', 'Unexpected literal on line 1.'),
     );
 
     it('should parse a triple term', shouldParse(parser, '<a> <b> <<(<a> <b> <c>)>>.',
@@ -2446,7 +2662,42 @@ describe('Parser', () => {
 
   describe('A Parser instance for the N3 format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3' }); }
+    function implicitEmptyPrefixParser() {
+      return new Parser({ baseIRI: BASE_IRI, format: 'N3', implicitEmptyPrefix: true });
+    }
+    function parserWithFragment() {
+      return new Parser({ baseIRI: 'http://example.com/doc#old', format: 'N3', implicitEmptyPrefix: true });
+    }
     function parserIsImpliedBy() { return new Parser({ baseIRI: BASE_IRI, format: 'N3', isImpliedBy: true }); }
+
+    it(
+      'should bind the empty prefix to the document local namespace',
+      shouldParse(implicitEmptyPrefixParser, ':a :b :c .',
+                  ['http://example.org/#a', 'http://example.org/#b', 'http://example.org/#c']),
+    );
+
+    it(
+      'should let an explicit empty prefix override the implicit binding',
+      shouldParse(implicitEmptyPrefixParser, '@prefix : <http://example.com/>. :a :b :c .',
+                  ['http://example.com/a', 'http://example.com/b', 'http://example.com/c']),
+    );
+
+    // RFC 3986 section 5.2 resolves "#" after removing the base IRI fragment.
+    it(
+      'should replace a document IRI fragment in the implicit binding',
+      shouldParse(parserWithFragment, ':a :b :c .',
+                  ['http://example.com/doc#a', 'http://example.com/doc#b', 'http://example.com/doc#c']),
+    );
+
+    it(
+      'should require an explicit empty prefix by default',
+      shouldNotParse(parser, ':a :b :c .', 'Undefined prefix ":" on line 1.'),
+    );
+
+    it('should require an explicit empty prefix without a document IRI', () => {
+      expect(() => new Parser({ format: 'N3', implicitEmptyPrefix: true }).parse(':a :b :c .'))
+        .toThrow('Undefined prefix ":" on line 1.');
+    });
 
     it(
       'should parse a single triple',
@@ -2460,7 +2711,7 @@ describe('Parser', () => {
 
     it(
       'should not parse a named graph',
-      shouldNotParse(parser, '<g> {}', 'Expected entity but got { on line 1.'),
+      shouldNotParse(parser, '<g> {}', 'Expected entity but got eof on line 1.'),
     );
 
     it(
@@ -2471,6 +2722,48 @@ describe('Parser', () => {
     it(
       'should not parse a quad',
       shouldNotParse(parser, '<a> <b> <c> <d>.', 'Expected punctuation to follow "http://example.org/c" on line 1.'),
+    );
+
+    it(
+      'should scope prefix declarations to their formula',
+      shouldParse(parser,
+                  '@prefix ex: <http://outer.example/>.\n' +
+                  '<s> <p> { @prefix ex: <http://inner.example/>. ex:s ex:p ex:o. }.\n' +
+                  'ex:s ex:p ex:o.',
+                  ['http://inner.example/s', 'http://inner.example/p', 'http://inner.example/o', '_:b0'],
+                  ['s', 'p', '_:b0'],
+                  ['http://outer.example/s', 'http://outer.example/p', 'http://outer.example/o']),
+    );
+
+    it(
+      'should restore prefix declarations between sibling formulas',
+      shouldParse(parser,
+                  '@prefix ex: <http://outer.example/>.\n' +
+                  '<s1> <p> { PREFIX ex: <http://first.example/> ex:s ex:p ex:o. }.\n' +
+                  '<s2> <p> { ex:s ex:p ex:o. }.\n',
+                  ['http://first.example/s', 'http://first.example/p', 'http://first.example/o', '_:b0'],
+                  ['s1', 'p', '_:b0'],
+                  ['http://outer.example/s', 'http://outer.example/p', 'http://outer.example/o', '_:b1'],
+                  ['s2', 'p', '_:b1']),
+    );
+
+    it(
+      'should scope base declarations to their formula',
+      shouldParse(parser,
+                  '@base <http://outer.example/>.\n' +
+                  '<s> <p> { @base <http://inner.example/>. <s> <p> <o>. }.\n' +
+                  '<s> <p> <o>.',
+                  ['http://inner.example/s', 'http://inner.example/p', 'http://inner.example/o', '_:b0'],
+                  ['http://outer.example/s', 'http://outer.example/p', '_:b0'],
+                  ['http://outer.example/s', 'http://outer.example/p', 'http://outer.example/o']),
+    );
+
+    it(
+      'should parse a SPARQL-style base declaration in a formula',
+      shouldParse(parser,
+                  '<s> <p> { BASE <http://inner.example/> <s> <p> <o>. }.',
+                  ['http://inner.example/s', 'http://inner.example/p', 'http://inner.example/o', '_:b0'],
+                  ['s', 'p', '_:b0']),
     );
 
     it(
@@ -2488,6 +2781,104 @@ describe('Parser', () => {
       shouldParse(parser, '<a> [<p> <o>] <c>.',
                   ['a', '_:b0', 'c'],
                   ['_:b0', 'p', 'o']),
+    );
+
+    it(
+      'should parse a formula in predicate position',
+      shouldParse(parser, '<s> { <a> <b> <c>. } <o>.',
+                  ['s', '_:b0', 'o'], ['a', 'b', 'c', '_:b0']),
+    );
+
+    it(
+      'should parse a forward path in predicate position',
+      shouldParse(parser, '<s> <p>!<q> <o>.',
+                  ['p', 'q', '_:b0'], ['s', '_:b0', 'o']),
+    );
+
+    it(
+      'should parse a backward path in predicate position',
+      shouldParse(parser, '<s> <p>^<q> <o>.',
+                  ['_:b0', 'q', 'p'], ['s', '_:b0', 'o']),
+    );
+
+    it(
+      'should parse a path after a formula predicate',
+      shouldParse(parser, '<s> { <a> <b> <c>. }!<q> <o>.',
+                  ['a', 'b', 'c', '_:b0'], ['_:b0', 'q', '_:b1'], ['s', '_:b1', 'o']),
+    );
+
+    it(
+      'should parse a path after a list predicate',
+      shouldParse(parser, '<s> (<a>)!<q> <o>.',
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b0', 'q', '_:b1'], ['s', '_:b1', 'o']),
+    );
+
+    it(
+      'should parse a path after a literal predicate',
+      shouldParse(parser, '<s> "p"^<q> <o>.',
+                  ['_:b0', 'q', '"p"'], ['s', '_:b0', 'o']),
+    );
+
+    it(
+      'should parse a path after a directional language-tagged literal predicate',
+      shouldParse(parser, '<s> "p"@en--ltr!<q> <o>.',
+                  ['"p"@en--ltr', 'q', '_:b0'], ['s', '_:b0', 'o']),
+    );
+
+    it(
+      'should parse a path after a blank node property list predicate',
+      shouldParse(parser, '<s> [<inner-p> <inner-o>]!<q> <o>.',
+                  ['_:b0', 'inner-p', 'inner-o'], ['_:b0', 'q', '_:b1'], ['s', '_:b1', 'o']),
+    );
+
+    it(
+      'should parse a bare IRI property list',
+      shouldParse(parser, '[id <s> <p> <o>].', ['s', 'p', 'o']),
+    );
+
+    it(
+      'should parse an IRI property list in object position',
+      shouldParse(parser, '<s> <p> [id <o> <inner-p> <inner-o>].',
+                  ['s', 'p', 'o'], ['o', 'inner-p', 'inner-o']),
+    );
+
+    it(
+      'should parse an IRI property list in predicate position',
+      shouldParse(parser, '<s> [id <p> <inner-p> <inner-o>] <o>.',
+                  ['s', 'p', 'o'], ['p', 'inner-p', 'inner-o']),
+    );
+
+    it(
+      'should parse nested IRI property lists',
+      shouldParse(parser, '<s> <p> [id <o> <q> [id <inner> <r> "value"]].',
+                  ['s', 'p', 'o'], ['o', 'q', 'inner'], ['inner', 'r', '"value"']),
+    );
+
+    it(
+      'should require an IRI after id',
+      shouldNotParse(parser, '[id _:s <p> <o>].', 'Expected IRI after id but got blank on line 1.'),
+    );
+
+    it(
+      'should require an entity after id',
+      shouldNotParse(parser, '[id ; <p> <o>].', 'Expected entity but got ; on line 1.'),
+    );
+
+    it(
+      'should require properties after an IRI property list ID',
+      shouldNotParse(parser, '[id <s>].', 'Expected predicate but got ] on line 1.'),
+    );
+
+    it(
+      'should reject a semicolon after an IRI property list ID',
+      shouldNotParse(parser, '[id <s>; <p> <o>].', 'Expected predicate but got ; on line 1.'),
+    );
+
+    it(
+      'should reject multiple IRI property list IDs',
+      shouldNotParse(parser, '[id <s1>, <s2> <p> <o>].', 'Expected entity but got , on line 1.'),
     );
 
     it(
@@ -2596,6 +2987,38 @@ describe('Parser', () => {
                   ['_:b4', 'http://www.w3.org/2000/10/swap/log#implies', '_:b5', '_:b3'],
                   ['?g', '?h', '?i', '_:b4'],
                   ['?j', '?k', '?l', '_:b5']),
+    );
+
+    it(
+      'should parse an empty formula in the subject position as a blank node graph term',
+      shouldParse(parser, '{} <b> <c>.',
+                  ['_:b0', 'b', 'c']),
+    );
+
+    it(
+      'should parse an empty formula in the object position as a blank node graph term',
+      shouldParse(parser, '<a> <b> {}.',
+                  ['a', 'b', '_:b0']),
+    );
+
+    it(
+      'should parse an empty formula mid-document without leaking the previous subject into it',
+      shouldParse(parser, '<p> <q> <r>. {} <b> <c>.',
+                  ['p', 'q', 'r'],
+                  ['_:b0', 'b', 'c']),
+    );
+
+    it(
+      'should parse empty formulas in the subject and object positions as distinct blank node graph terms',
+      shouldParse(parser, '{} <b> {}.',
+                  ['_:b0', 'b', '_:b1']),
+    );
+
+    it(
+      // Regression test for https://github.com/rdfjs/N3.js/issues/356
+      'should parse an empty formula after a list subject without emitting a garbage quad',
+      shouldParse(parser, '() <http://www.w3.org/2000/10/swap/log#onNegativeSurface> { }.',
+                  ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'http://www.w3.org/2000/10/swap/log#onNegativeSurface', '_:b0']),
     );
 
     it(
@@ -2812,6 +3235,251 @@ describe('Parser', () => {
     );
 
     it(
+      'should parse statements with an empty list in the predicate',
+      shouldParse(parser, '<a> () <b>.',
+                  ['a', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'b']),
+    );
+
+    it(
+      'should parse statements with a single-element list in the predicate',
+      shouldParse(parser, '<a> (<p>) <b>.',
+                  ['a', '_:b0', 'b'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'p'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+    );
+
+    it(
+      'should parse statements with a multi-element list in the predicate',
+      shouldParse(parser, '<a> (<p> <q>) <b>.',
+                  ['a', '_:b0', 'b'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'p'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'q'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+    );
+
+    it(
+      'should parse statements with a nested list in the predicate',
+      shouldParse(parser, '<a> ((<p>) <q>) <b>.',
+                  ['a', '_:b0', 'b'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'p'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'q'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+    );
+
+    it(
+      'should parse statements after a list in the predicate',
+      shouldParse(parser, '<a> (<p>) <b>. <c> <d> <e>.',
+                  ['a', '_:b0', 'b'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'p'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['c', 'd', 'e']),
+    );
+
+    it(
+      'should parse a list in the predicate within a formula',
+      shouldParse(parser, '{ <a> (<p>) <b>. } => { <a> <b> <c>. }.',
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'p', '_:b0'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b0'],
+                  ['a', '_:b1', 'b', '_:b0'],
+                  ['a', 'b', 'c', '_:b2'],
+                  ['_:b0', 'http://www.w3.org/2000/10/swap/log#implies', '_:b2']),
+    );
+
+    it(
+      'should parse a ! path in a list as predicate',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
+                          '<l> (:joe!fam:mother) <m>.',
+                  ['l', '_:b0', 'm'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['ex:joe', 'f:mother', '_:b1']),
+    );
+
+    it(
+      'should parse nested lists in the subject, predicate, and object simultaneously',
+      // Subject ((<a>) (<b> (<c>))): _:b0 [_:b1 (a), _:b2 [_:b3 (b), _:b4 (_:b5 (c))]]
+      // Predicate ((<p>)): _:b6 (_:b7 (p)); object ((<x> (<y>))): _:b8 (_:b9 (x), _:b10 (_:b11 (y)))
+      shouldParse(parser, '((<a>) (<b> (<c>))) ((<p>)) ((<x> (<y>))).',
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'b'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b4'],
+                  ['_:b4', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b5'],
+                  ['_:b4', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b5', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'c'],
+                  ['_:b5', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b6', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b7'],
+                  ['_:b6', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b7', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'p'],
+                  ['_:b7', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b8', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b9'],
+                  ['_:b8', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b9', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
+                  ['_:b9', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b10'],
+                  ['_:b10', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b11'],
+                  ['_:b10', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b11', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
+                  ['_:b11', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b0', '_:b6', '_:b8']),
+    );
+
+    it(
+      'should parse a triple-nested list in the predicate',
+      shouldParse(parser, '<a> (((<p>))) <b>.',
+                  ['a', '_:b0', 'b'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'p'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+    );
+
+    it(
+      'should parse a nested list in the predicate within a formula',
+      // The list structure belongs to the formula's graph
+      shouldParse(parser, '<s> <p> { <a> ((<q>)) <b>. }.',
+                  ['s', 'p', '_:b0'],
+                  ['a', '_:b1', 'b', '_:b0'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2', '_:b0'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b0'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'q', '_:b0'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b0']),
+    );
+
+    it(
+      'should parse empty lists at each depth and position',
+      // An empty list is the IRI rdf:nil, so only non-empty enclosing lists produce cells
+      shouldParse(parser, '(()) (() ()) ((() ())).',
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b4'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b4', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b4', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b5'],
+                  ['_:b5', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b5', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b0', '_:b1', '_:b3']),
+    );
+
+    it(
+      'should parse lists in every position of a statement in a formula',
+      shouldParse(parser, '{ (<a>) (<p>) (<b>). } => { <x> <y> <z>. }.',
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a', '_:b0'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b0'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'p', '_:b0'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b0'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'b', '_:b0'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b0'],
+                  ['_:b1', '_:b2', '_:b3', '_:b0'],
+                  ['x', 'y', 'z', '_:b4'],
+                  ['_:b0', 'http://www.w3.org/2000/10/swap/log#implies', '_:b4']),
+    );
+
+    describe('nested lists across all positions', () => {
+      const RDF_FIRST = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first',
+          RDF_REST = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
+          RDF_NIL = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil';
+
+      // A term of depth 0 is a plain IRI;
+      // a term of depth n is a two-element list of an IRI and a term of depth n - 1,
+      // so a term of depth n contributes exactly 2n list cells (4n quads)
+      function nested(depth, name) {
+        return depth === 0 ? `<${name}>` : `(<${name}${depth}> ${nested(depth - 1, name)})`;
+      }
+
+      // Verifies that `term` is the well-formed list produced by `nested(depth, name)`:
+      // each cell has exactly one rdf:first and one rdf:rest arc,
+      // each chain terminates in rdf:nil, and no cell is shared
+      function verifyTerm(term, depth, firsts, rests, seen) {
+        if (depth === 0) {
+          expect(term.termType).toBe('NamedNode');
+          return;
+        }
+        expect(term.termType).toBe('BlankNode');
+        const head = term.value;
+        expect(seen).not.toContain(head);
+        seen.push(head);
+        expect(firsts[head].termType).toBe('NamedNode');
+        expect(firsts[head].value).not.toBe(RDF_NIL);
+        const tail = rests[head];
+        expect(tail.termType).toBe('BlankNode');
+        expect(seen).not.toContain(tail.value);
+        seen.push(tail.value);
+        verifyTerm(firsts[tail.value], depth - 1, firsts, rests, seen);
+        expect(rests[tail.value].value).toBe(RDF_NIL);
+      }
+
+      // Deterministically cover every combination of nesting depths 0-3
+      // across the subject, predicate, and object position
+      for (let subjectDepth = 0; subjectDepth < 4; subjectDepth++) {
+        for (let predicateDepth = 0; predicateDepth < 4; predicateDepth++) {
+          for (let objectDepth = subjectDepth || predicateDepth ? 0 : 1; objectDepth < 4; objectDepth++) {
+            it(`should parse lists of depths ${subjectDepth}, ${predicateDepth}, and ${objectDepth
+                } in the subject, predicate, and object`, done => {
+              const doc = `${nested(subjectDepth, 's')} ${nested(predicateDepth, 'p')} ${nested(objectDepth, 'o')}.`;
+              const quads = new Parser({ baseIRI: BASE_IRI, format: 'N3' }).parse(doc);
+
+              // Each nesting level contributes two cells of two quads each
+              const cells = 2 * (subjectDepth + predicateDepth + objectDepth);
+              expect(quads).toHaveLength(1 + 2 * cells);
+
+              // Everything lives in the default graph
+              expect(quads.every(quad => quad.graph.termType === 'DefaultGraph')).toBe(true);
+
+              // Index the list arcs by cell
+              const firsts = {}, rests = {}, statements = [];
+              let duplicateArcs = 0;
+              for (const quad of quads) {
+                const arcs = quad.predicate.value === RDF_FIRST ? firsts :
+                             quad.predicate.value === RDF_REST  ? rests : null;
+                if (arcs === null)
+                  statements.push(quad);
+                else if (quad.subject.value in arcs)
+                  duplicateArcs++;
+                else
+                  arcs[quad.subject.value] = quad.object;
+              }
+              // Every cell has exactly one rdf:first and one rdf:rest arc
+              expect(duplicateArcs).toBe(0);
+              expect(Object.keys(firsts).sort()).toEqual(Object.keys(rests).sort());
+              // Only the main statement is not part of a list structure
+              expect(statements).toHaveLength(1);
+
+              // Every cell is on a nil-terminated chain hanging off the main statement
+              const seen = [];
+              verifyTerm(statements[0].subject, subjectDepth, firsts, rests, seen);
+              verifyTerm(statements[0].predicate, predicateDepth, firsts, rests, seen);
+              verifyTerm(statements[0].object, objectDepth, firsts, rests, seen);
+              expect(seen).toHaveLength(cells);
+
+              // The parsed quads survive a round trip through the writer
+              const writer = new Writer({ format: 'text/n3' });
+              writer.addQuads(quads);
+              writer.end((error, output) => {
+                expect(error).toBeFalsy();
+                expect(isomorphic(new Parser({ baseIRI: BASE_IRI, format: 'N3' }).parse(output), quads)).toBe(true);
+                done();
+              });
+            });
+          }
+        }
+      }
+    });
+
+    it(
       'should parse a ! path in a list as subject',
       shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>.' +
                           '(<x> :joe!fam:mother <y>) a :List.',
@@ -2872,11 +3540,183 @@ describe('Parser', () => {
       shouldParse(parser, '<a> <findAll> ( <b> { <b> a <type>. <b> <something> <foo> } <o> ).',
       ['a', 'findAll', '_:b0'],
       ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'b'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
+      ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
+      ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b3'],
+      ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'o'],
+      ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+      ['b', 'something', 'foo', '_:b2'],
+      ['b', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'type', '_:b2'],
+  ),
+    );
+
+    it(
+      'should parse a formula as only list item',
+      shouldParse(parser, '<s> <p> ({<a> <b> <c>}) .',
+      ['s', 'p', '_:b0'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+      ['a', 'b', 'c', '_:b1'],
+  ),
+    );
+
+    it(
+      'should parse a formula in a list as subject',
+      shouldParse(parser, '({<a> <b> <c>}) <p> <o> .',
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+      ['a', 'b', 'c', '_:b1'],
+      ['_:b0', 'p', 'o'],
+  ),
+    );
+
+    it(
+      'should parse two formulas in one list',
+      shouldParse(parser, '<s> <p> ({<a> <b> <c>} {<d> <e> <f>}) .',
+      ['s', 'p', '_:b0'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
       ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2'],
-      ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'o'],
+      ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3'],
       ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
-      ['b', 'something', 'foo', '_:b1'],
-      ['b', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'type', '_:b1'],
+      ['a', 'b', 'c', '_:b1'],
+      ['d', 'e', 'f', '_:b3'],
+  ),
+    );
+
+    it(
+      'should parse a formula between other list items',
+      shouldParse(parser, '<s> <p> (<x> {<a> <b> <c>} <y>) .',
+      ['s', 'p', '_:b0'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
+      ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
+      ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b3'],
+      ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
+      ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+      ['a', 'b', 'c', '_:b2'],
+  ),
+    );
+
+    it(
+      'should parse a list inside a formula inside a list',
+      // The outer list links the formula in the default graph;
+      // the inner list belongs to the formula's graph
+      shouldParse(parser, '<s> <p> ( { <a> <b> ( <c> ) } ).',
+      ['s', 'p', '_:b0'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+      ['a', 'b', '_:b2', '_:b1'],
+      ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'c', '_:b1'],
+      ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b1'],
+  ),
+    );
+
+    it(
+      'should parse alternating list-formula nesting three levels deep',
+      // list (default graph) > formula _:b1 > list (graph _:b1) > formula _:b3 > list (graph _:b3)
+      shouldParse(parser, '<s> <p> ( { <a> <b> ( { <c> <d> ( <e> ) } ) } ).',
+      ['s', 'p', '_:b0'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+      ['a', 'b', '_:b2', '_:b1'],
+      ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3', '_:b1'],
+      ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b1'],
+      ['c', 'd', '_:b4', '_:b3'],
+      ['_:b4', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'e', '_:b3'],
+      ['_:b4', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b3'],
+  ),
+    );
+
+    it(
+      'should parse a subject list containing a formula containing a list containing a formula',
+      shouldParse(parser, '( { <a> <b> ( { <c> <d> <e> } ) } ) <p> <o>.',
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+      ['_:b0', 'p', 'o'],
+      ['a', 'b', '_:b2', '_:b1'],
+      ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3', '_:b1'],
+      ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b1'],
+      ['c', 'd', 'e', '_:b3'],
+  ),
+    );
+
+    it(
+      'should parse a formula containing a list of formulas',
+      shouldParse(parser, '<s> <p> { <a> <b> ( { <c> <d> <e> } { <f> <g> <h> } ) }.',
+      ['s', 'p', '_:b0'],
+      ['a', 'b', '_:b1', '_:b0'],
+      ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2', '_:b0'],
+      ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b3', '_:b0'],
+      ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b4', '_:b0'],
+      ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b0'],
+      ['c', 'd', 'e', '_:b2'],
+      ['f', 'g', 'h', '_:b4'],
+  ),
+    );
+
+    it(
+      'should parse a formula inside a nested list',
+      shouldParse(parser, '<s> <p> ( ( <x> { <a> <b> <c> } ) <y> ).',
+      ['s', 'p', '_:b0'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b4'],
+      ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'x'],
+      ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2'],
+      ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3'],
+      ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+      ['_:b4', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'y'],
+      ['_:b4', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+      ['a', 'b', 'c', '_:b3'],
+  ),
+    );
+
+    it(
+      'should parse formulas in subject and object lists of the same triple',
+      shouldParse(parser, '( { <a> <b> <c> } ) <p> ( { <d> <e> <f> } ).',
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+      ['_:b0', 'p', '_:b2'],
+      ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3'],
+      ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+      ['a', 'b', 'c', '_:b1'],
+      ['d', 'e', 'f', '_:b3'],
+  ),
+    );
+
+    it(
+      'should parse adjacent formulas in a nested list',
+      shouldParse(parser, '<s> <p> ( ( { <a> <b> <c> } { <d> <e> <f> } ) ).',
+      ['s', 'p', '_:b0'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+      ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+      ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
+      ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b3'],
+      ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b4'],
+      ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+      ['a', 'b', 'c', '_:b2'],
+      ['d', 'e', 'f', '_:b4'],
+  ),
+    );
+
+    it(
+      'should parse a formula in a list in a blank node property list',
+      shouldParse(parser, '[ <p> ( { <a> <b> <c> } ) ] <q> <o>.',
+      ['_:b0', 'p', '_:b1'],
+      ['_:b0', 'q', 'o'],
+      ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
+      ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+      ['a', 'b', 'c', '_:b2'],
+  ),
+    );
+
+    it(
+      'should parse an existentially quantified variable inside a formula in a list',
+      // @forSome allocates _:b0 for x before the list and formula blank nodes
+      shouldParse(parser, '@forSome <x>. <s> <p> ( { <x> <b> <c> } ).',
+      ['s', 'p', '_:b1'],
+      ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
+      ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+      ['_:b0', 'b', 'c', '_:b2'],
   ),
     );
 
@@ -2888,6 +3728,288 @@ describe('Parser', () => {
     it(
       'should not parse an invalid ^ path',
       shouldNotParse(parser, '<a>^"invalid" ', 'Expected entity but got literal on line 1.'),
+    );
+
+    it(
+      'should not parse an incomplete statement starting with a literal',
+      shouldNotParse(parser, '"lit" <p> ', 'Expected entity but got eof on line 1.'),
+    );
+
+    // The tests below derive their expectations from the N3 path semantics
+    // (https://w3c.github.io/N3/spec/#paths): `a!b` denotes a fresh blank node `_:x`
+    // asserted with `a b _:x`, and `a^b` a fresh `_:x` asserted with `_:x b a`.
+
+    // "lit"!f:mother denotes _:b0 such that ["lit" f:mother _:b0]
+    it(
+      'should parse a ! path of length 2 starting with a literal as subject',
+      shouldParse(parser, '@prefix fam: <f:>. "lit"!fam:mother a fam:Person.',
+                  ['"lit"', 'f:mother', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']),
+    );
+
+    // "lit"^f:son denotes _:b0 such that [_:b0 f:son "lit"]
+    it(
+      'should parse a ^ path of length 2 starting with a literal as subject',
+      shouldParse(parser, '@prefix fam: <f:>. "lit"^fam:son a fam:Person.',
+                  ['_:b0', 'f:son', '"lit"'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']),
+    );
+
+    // Statement consisting of only a path (as in issue #508):
+    // "Some message"^log:trace denotes _:b0 such that [_:b0 log:trace "Some message"]
+    it(
+      'should parse a statement consisting of only a ^ path starting with a literal',
+      shouldParse(parser, '@prefix log: <l:>. "Some message"^log:trace .',
+                  ['_:b0', 'l:trace', '"Some message"']),
+    );
+
+    // :joe!fam:mother denotes _:b0 such that [ex:joe f:mother _:b0]
+    it(
+      'should parse a statement consisting of only a ! path',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>. :joe!fam:mother .',
+                  ['ex:joe', 'f:mother', '_:b0']),
+    );
+
+    // "x"^^:dt!f:mother denotes _:b0 such that ["x"^^ex:dt f:mother _:b0]
+    it(
+      'should parse a ! path starting with a datatyped literal as subject',
+      shouldParse(parser, '@prefix : <ex:>. @prefix fam: <f:>. "x"^^:dt!fam:mother a fam:Person.',
+                  ['"x"^^ex:dt', 'f:mother', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']),
+    );
+
+    // "x"@en!f:mother denotes _:b0 such that ["x"@en f:mother _:b0]
+    it(
+      'should parse a ! path starting with a language-tagged literal as subject',
+      shouldParse(parser, '@prefix fam: <f:>. "x"@en!fam:mother a fam:Person.',
+                  ['"x"@en', 'f:mother', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']),
+    );
+
+    // "x"@en--ltr!f:mother denotes _:b0 such that ["x"@en--ltr f:mother _:b0]
+    it(
+      'should parse a ! path starting with a directional language-tagged literal as subject',
+      shouldParse(parser, '@prefix fam: <f:>. "x"@en--ltr!fam:mother a fam:Person.',
+                  ['"x"@en--ltr', 'f:mother', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'f:Person']),
+    );
+
+    // 1!:p denotes _:b0 such that ["1"^^xsd:integer ex:p _:b0]
+    it(
+      'should parse a ! path starting with a number as subject',
+      shouldParse(parser, '@prefix : <ex:>. 1!:p :q :r.',
+                  ['"1"^^http://www.w3.org/2001/XMLSchema#integer', 'ex:p', '_:b0'],
+                  ['_:b0', 'ex:q', 'ex:r']),
+    );
+
+    // true!:p denotes _:b0 such that ["true"^^xsd:boolean ex:p _:b0]
+    it(
+      'should parse a ! path starting with a boolean as subject',
+      shouldParse(parser, '@prefix : <ex:>. true!:p :q :r.',
+                  ['"true"^^http://www.w3.org/2001/XMLSchema#boolean', 'ex:p', '_:b0'],
+                  ['_:b0', 'ex:q', 'ex:r']),
+    );
+
+    // _:m!:p denotes _:b0 such that [_:m ex:p _:b0]
+    it(
+      'should parse a ! path starting with a blank node as subject',
+      shouldParse(parser, '@prefix : <ex:>. _:m!:p :q :r.',
+                  ['_:b0_m', 'ex:p', '_:b0'],
+                  ['_:b0', 'ex:q', 'ex:r']),
+    );
+
+    // "lit"!:p denotes _:b0 such that ["lit" ex:p _:b0]
+    it(
+      'should parse a ! path of length 2 starting with a literal as object',
+      shouldParse(parser, '@prefix : <ex:>. :a :b "lit"!:p.',
+                  ['"lit"', 'ex:p', '_:b0'],
+                  ['ex:a', 'ex:b', '_:b0']),
+    );
+
+    // "lit"^:p denotes _:b0 such that [_:b0 ex:p "lit"]
+    it(
+      'should parse a ^ path of length 2 starting with a literal as object',
+      shouldParse(parser, '@prefix : <ex:>. :a :b "lit"^:p.',
+                  ['_:b0', 'ex:p', '"lit"'],
+                  ['ex:a', 'ex:b', '_:b0']),
+    );
+
+    // "x"^^:dt!:p denotes _:b0 such that ["x"^^ex:dt ex:p _:b0]
+    it(
+      'should parse a ! path starting with a datatyped literal as object',
+      shouldParse(parser, '@prefix : <ex:>. :a :b "x"^^:dt!:p.',
+                  ['"x"^^ex:dt', 'ex:p', '_:b0'],
+                  ['ex:a', 'ex:b', '_:b0']),
+    );
+
+    // "x"@en!:p denotes _:b0 such that ["x"@en ex:p _:b0]
+    it(
+      'should parse a ! path starting with a language-tagged literal as object',
+      shouldParse(parser, '@prefix : <ex:>. :a :b "x"@en!:p.',
+                  ['"x"@en', 'ex:p', '_:b0'],
+                  ['ex:a', 'ex:b', '_:b0']),
+    );
+
+    // 1!:p denotes _:b0 such that ["1"^^xsd:integer ex:p _:b0]
+    it(
+      'should parse a ! path starting with a number as object',
+      shouldParse(parser, '@prefix : <ex:>. :a :b 1!:p.',
+                  ['"1"^^http://www.w3.org/2001/XMLSchema#integer', 'ex:p', '_:b0'],
+                  ['ex:a', 'ex:b', '_:b0']),
+    );
+
+    // (ex:a)!:p denotes _:b1 such that [_:b0 ex:p _:b1], with _:b0 the list (ex:a)
+    it(
+      'should parse a ! path starting with a list as subject',
+      shouldParse(parser, '@prefix : <ex:>. (:a)!:p :q :r.',
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'ex:a'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b0', 'ex:p', '_:b1'],
+                  ['_:b1', 'ex:q', 'ex:r']),
+    );
+
+    // (ex:a)^:p denotes _:b1 such that [_:b1 ex:p _:b0], with _:b0 the list (ex:a)
+    it(
+      'should parse a ^ path starting with a list as subject',
+      shouldParse(parser, '@prefix : <ex:>. (:a)^:p :q :r.',
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'ex:a'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b1', 'ex:p', '_:b0'],
+                  ['_:b1', 'ex:q', 'ex:r']),
+    );
+
+    // (ex:x)!:p denotes _:b1 such that [_:b0 ex:p _:b1], with _:b0 the list (ex:x)
+    it(
+      'should parse a ! path starting with a list as object',
+      shouldParse(parser, '@prefix : <ex:>. :a :b (:x)!:p.',
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'ex:x'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b0', 'ex:p', '_:b1'],
+                  ['ex:a', 'ex:b', '_:b1']),
+    );
+
+    // ()!:p denotes _:b0 such that [rdf:nil ex:p _:b0]
+    it(
+      'should parse a ! path starting with an empty list as subject',
+      shouldParse(parser, '@prefix : <ex:>. ()!:p :q :r.',
+                  ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'ex:p', '_:b0'],
+                  ['_:b0', 'ex:q', 'ex:r']),
+    );
+
+    // ()!:p denotes _:b0 such that [rdf:nil ex:p _:b0]
+    it(
+      'should parse a ! path starting with an empty list as object',
+      shouldParse(parser, '@prefix : <ex:>. :a :b ()!:p.',
+                  ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'ex:p', '_:b0'],
+                  ['ex:a', 'ex:b', '_:b0']),
+    );
+
+    // The inner list (ex:a) is _:b1; (ex:a)!:p denotes _:b2 such that [_:b1 ex:p _:b2];
+    // the outer list ((ex:a)!:p ex:b) is _:b0 with members _:b2 and ex:b
+    it(
+      'should parse a ! path starting with a list inside a list',
+      shouldParse(parser, '@prefix : <ex:>. ((:a)!:p :b) :q :r.',
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'ex:a'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b1', 'ex:p', '_:b2'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b2'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b3'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'ex:b'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b0', 'ex:q', 'ex:r']),
+    );
+
+    // ()!:p denotes _:b1 such that [rdf:nil ex:p _:b1];
+    // the outer list (()!:p) is _:b0 with single member _:b1
+    it(
+      'should parse a ! path starting with an empty list inside a list',
+      shouldParse(parser, '@prefix : <ex:>. (()!:p) :q :r.',
+                  ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'ex:p', '_:b1'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b0', 'ex:q', 'ex:r']),
+    );
+
+    // ?v!:p denotes _:b1 such that [?v ex:p _:b1]; the list (?v!:p) is _:b0
+    it(
+      'should parse a ! path starting with a variable inside a list',
+      shouldParse(parser, '@prefix : <ex:>. (?v!:p) :q :r.',
+                  ['?v', 'ex:p', '_:b1'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b0', 'ex:q', 'ex:r']),
+    );
+
+    // "s"!:p denotes _:b1 such that ["s" ex:p _:b1], and 1^:q denotes _:b3 such
+    // that [_:b3 ex:q "1"^^xsd:integer]; the list ("s"!:p 1^:q) is _:b0 with
+    // members _:b1 (in cell _:b0) and _:b3 (in cell _:b2)
+    it(
+      'should parse ! and ^ paths starting with literals inside a list',
+      shouldParse(parser, '@prefix : <ex:>. ("s"!:p 1^:q) a :List.',
+                  ['"s"', 'ex:p', '_:b1'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+                  ['_:b3', 'ex:q', '"1"^^http://www.w3.org/2001/XMLSchema#integer'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'ex:List']),
+    );
+
+    // ("x"^^:dt) is the list _:b0 with member "x"^^ex:dt
+    it(
+      'should parse a datatyped literal inside a list',
+      shouldParse(parser, '@prefix : <ex:>. ("x"^^:dt) :q :r.',
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"x"^^ex:dt'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b0', 'ex:q', 'ex:r']),
+    );
+
+    // _:m!:p denotes _:b1 such that [_:m ex:p _:b1]; the list (_:m!:p) is _:b0
+    // (as in all lists, the blank node label is scoped to the list context)
+    it(
+      'should parse a ! path starting with a blank node inside a list',
+      shouldParse(parser, '@prefix : <ex:>. (_:m!:p) :q :r.',
+                  ['_:.m', 'ex:p', '_:b1'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b0', 'ex:q', 'ex:r']),
+    );
+
+    // Inside formula _:b0, ex:a!ex:b denotes _:b1 such that [ex:a ex:b _:b1 _:b0];
+    // the path is a statement by itself
+    it(
+      'should parse a statement consisting of only a ! path inside a formula',
+      shouldParse(parser, '@prefix : <ex:>. { :a!:b } => { :c :d :e }.',
+                  ['ex:a', 'ex:b', '_:b1', '_:b0'],
+                  ['ex:c', 'ex:d', 'ex:e', '_:b2'],
+                  ['_:b0', 'http://www.w3.org/2000/10/swap/log#implies', '_:b2']),
+    );
+
+    // The example from issue #348: with _:b0 and _:b1 the two formulas,
+    // ?s!foaf:birthday denotes _:b5 such that [?s foaf:birthday _:b5];
+    // (?date ?s!foaf:birthday) is the list _:b3 (cells _:b3, _:b4);
+    // (...)!math:difference denotes _:b6 such that [_:b3 math:difference _:b6];
+    // ((...)!math:difference 31622400) is the list _:b2 (cells _:b2, _:b7)
+    it(
+      'should parse a rule with paths starting with variables and lists inside lists',
+      shouldParse(parser,
+                  '@prefix foaf: <http://xmlns.com/foaf/0.1/> .' +
+                  '@prefix math: <http://www.w3.org/2000/10/swap/math#> .' +
+                  '@prefix : <http://example.org/> .' +
+                  '{ ?x :trueOnDate ?date. } <= { ((?date ?s!foaf:birthday)!math:difference 31622400) math:integerQuotient ?age . } .',
+                  ['?x', 'http://example.org/trueOnDate', '?date', '_:b0'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '?date', '_:b1'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b4', '_:b1'],
+                  ['?s', 'http://xmlns.com/foaf/0.1/birthday', '_:b5', '_:b1'],
+                  ['_:b4', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b5', '_:b1'],
+                  ['_:b4', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b1'],
+                  ['_:b3', 'http://www.w3.org/2000/10/swap/math#difference', '_:b6', '_:b1'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b6', '_:b1'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b7', '_:b1'],
+                  ['_:b7', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"31622400"^^http://www.w3.org/2001/XMLSchema#integer', '_:b1'],
+                  ['_:b7', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b1'],
+                  ['_:b2', 'http://www.w3.org/2000/10/swap/math#integerQuotient', '?age', '_:b1'],
+                  ['_:b1', 'http://www.w3.org/2000/10/swap/log#implies', '_:b0']),
     );
 
     it(
@@ -2920,6 +4042,101 @@ describe('Parser', () => {
             ['a', 'b', '_:b0'],
             ['"bonjour"@fr--ltr', 'sameAs', '"hello"@en--rtl', '_:b0'],
         ),
+    );
+
+    it(
+      'should parse an integer literal as subject',
+      shouldParse(parser, '1 <a> <b>.',
+          ['"1"^^http://www.w3.org/2001/XMLSchema#integer', 'a', 'b']),
+    );
+
+    it(
+      'should parse a string literal as subject',
+      shouldParse(parser, '"1" <a> <b>.',
+          ['"1"', 'a', 'b']),
+    );
+
+    it(
+      'should parse a string literal as subject of a formula',
+      shouldParse(parser, '<a> <b> {"1" <c> "2"}.',
+          ['a', 'b', '_:b0'],
+          ['"1"', 'c', '"2"', '_:b0'],
+      ),
+    );
+
+    it(
+      'should parse a string literal as subject of a formula in a blank node',
+      shouldParse(parser, '<a> <b> [ <c> {"1" <d> "2"} ].',
+          ['a', 'b', '_:b0'],
+          ['_:b0', 'c', '_:b1'],
+          ['"1"', 'd', '"2"', '_:b1'],
+      ),
+    );
+
+    it(
+      'should parse a string literal as subject list element',
+      shouldParse(parser, '("1") <a> <b>.',
+          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"1"'],
+          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+          ['_:b0', 'a', 'b'],
+      ),
+    );
+
+    it(
+      'should parse a string literal as object list element',
+      shouldParse(parser, '<a> <b> ("1").',
+          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '"1"'],
+          ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+          ['a', 'b', '_:b0'],
+      ),
+    );
+
+    it(
+      'should not parse a string literal as subject with an undefined datatype prefix',
+      shouldNotParse(parser, '"1"^^p:x <a> <b>.',
+        'Undefined prefix "p:" on line 1.'),
+    );
+
+    it(
+      'should parse an integer literal as predicate',
+      shouldParse(parser, '<a> 1 <b>.',
+          ['a', '"1"^^http://www.w3.org/2001/XMLSchema#integer', 'b']),
+    );
+
+    it(
+      'should parse a string literal as predicate',
+      shouldParse(parser, '<a> "1" <b>.',
+          ['a', '"1"', 'b']),
+    );
+
+    it(
+      'should parse a string literal as object',
+      shouldParse(parser, '<a> <b> "1".',
+          ['a', 'b', '"1"']),
+    );
+
+    it(
+      'should parse a literal with datatype as predicate',
+      shouldParse(parser, '<a> "1"^^<c> <b>.',
+          ['a', '"1"^^http://example.org/c', 'b']),
+    );
+
+    it(
+      'should parse a literal with language as predicate',
+      shouldParse(parser, '<a> "one"@en <b>.',
+          ['a', '"one"@en', 'b']),
+    );
+
+    it(
+      'should parse a literal with language and direction as predicate',
+      shouldParse(parser, '<a> "one"@en--ltr <b>.',
+          ['a', '"one"@en--ltr', 'b']),
+    );
+
+    it(
+      'should not parse a string literal as predicate with an undefined datatype prefix',
+      shouldNotParse(parser, '<a> "1"^^p:x <b>.',
+        'Undefined prefix "p:" on line 1.'),
     );
 
     it(
@@ -2963,6 +4180,130 @@ describe('Parser', () => {
     it('should throw when a triple term does not terminate correctly', () => {
       expect((() => { new Parser().parse('<a> <b> <<( <c> <d> <e>.'); })).toThrow('Expected )>> but got . on line 1.');
     });
+  });
+
+  // The N3 spec tests read an empty formula as the boolean literal true
+  // (a direction discussed in https://github.com/w3c-cg/N3/issues/185, not yet a settled decision),
+  // so this behavior is opt-in until the next major version (https://github.com/rdfjs/N3.js/issues/632)
+  describe('A Parser instance for the N3 format with the emptyFormulaAsTrue option', () => {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3', emptyFormulaAsTrue: true }); }
+    function parserIsImpliedBy() { return new Parser({ baseIRI: BASE_IRI, format: 'N3', emptyFormulaAsTrue: true, isImpliedBy: true }); }
+
+    it(
+      'should parse an empty formula in the subject position as the boolean literal true',
+      shouldParse(parser, '{} <b> <c>.',
+                  ['"true"^^http://www.w3.org/2001/XMLSchema#boolean', 'b', 'c']),
+    );
+
+    it(
+      'should parse an empty formula with whitespace in the subject position as the boolean literal true',
+      shouldParse(parser, '{ } <p> <o>.',
+                  ['"true"^^http://www.w3.org/2001/XMLSchema#boolean', 'p', 'o']),
+    );
+
+    it(
+      'should parse an empty formula in the object position as the boolean literal true',
+      shouldParse(parser, '<a> <b> {}.',
+                  ['a', 'b', '"true"^^http://www.w3.org/2001/XMLSchema#boolean']),
+    );
+
+    it(
+      'should parse an empty formula in the predicate position as the boolean literal true',
+      shouldParse(parser, '<a> {} <c>.',
+                  ['a', '"true"^^http://www.w3.org/2001/XMLSchema#boolean', 'c']),
+    );
+
+    it(
+      'should parse an empty formula in the subject position mid-document as the boolean literal true',
+      shouldParse(parser, '<p> <q> <r>. {} <b> <c>.',
+                  ['p', 'q', 'r'],
+                  ['"true"^^http://www.w3.org/2001/XMLSchema#boolean', 'b', 'c']),
+    );
+
+    it(
+      'should parse empty formulas in the subject and object positions as the boolean literal true',
+      shouldParse(parser, '{} <b> {}.',
+                  ['"true"^^http://www.w3.org/2001/XMLSchema#boolean', 'b', '"true"^^http://www.w3.org/2001/XMLSchema#boolean']),
+    );
+
+    it(
+      'should parse a right implication with an empty formula as antecedent',
+      shouldParse(parser, '{} => true.',
+                  ['"true"^^http://www.w3.org/2001/XMLSchema#boolean', 'http://www.w3.org/2000/10/swap/log#implies', '"true"^^http://www.w3.org/2001/XMLSchema#boolean']),
+    );
+
+    it(
+      'should parse a left implication with an empty formula as consequent',
+      shouldParse(parser, '{ <a> <b> <c> } <= {}.',
+                  ['"true"^^http://www.w3.org/2001/XMLSchema#boolean', 'http://www.w3.org/2000/10/swap/log#implies', '_:b0'],
+                  ['a', 'b', 'c', '_:b0']),
+    );
+
+    it(
+      'should parse a left implication between empty formulas',
+      shouldParse(parserIsImpliedBy, '{} <= {}.',
+                  ['"true"^^http://www.w3.org/2001/XMLSchema#boolean', 'http://www.w3.org/2000/10/swap/log#isImpliedBy', '"true"^^http://www.w3.org/2001/XMLSchema#boolean']),
+    );
+
+    it(
+      'should parse an empty formula as the object of an empty list subject',
+      shouldParse(parser, '() <http://www.w3.org/2000/10/swap/log#onNegativeSurface> { }.',
+                  ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'http://www.w3.org/2000/10/swap/log#onNegativeSurface', '"true"^^http://www.w3.org/2001/XMLSchema#boolean']),
+    );
+
+    it(
+      'should parse an empty formula as the object of a blank node property',
+      shouldParse(parser, '[ <p> {} ].',
+                  ['_:b0', 'p', '"true"^^http://www.w3.org/2001/XMLSchema#boolean']),
+    );
+
+    it(
+      'should parse an empty formula in the object position within a formula',
+      shouldParse(parser, '<a> <b> { <x> <y> {} }.',
+                  ['a', 'b', '_:b0'],
+                  ['x', 'y', '"true"^^http://www.w3.org/2001/XMLSchema#boolean', '_:b0']),
+    );
+
+    it(
+      'should parse an empty formula in the subject position within a formula',
+      shouldParse(parser, '<a> <b> { {} <y> <z> }.',
+                  ['a', 'b', '_:b0'],
+                  ['"true"^^http://www.w3.org/2001/XMLSchema#boolean', 'y', 'z', '_:b0']),
+    );
+
+    it(
+      'should not parse a formula with a trailing dot as the boolean literal true',
+      shouldParse(parser, '<a> <b> { <x> <y> <z>. }.',
+                  ['a', 'b', '_:b0'],
+                  ['x', 'y', 'z', '_:b0']),
+    );
+
+    it(
+      'should not parse a formula with a trailing semicolon as the boolean literal true',
+      shouldParse(parser, '<a> <b> { <x> <y> <z>; }.',
+                  ['a', 'b', '_:b0'],
+                  ['x', 'y', 'z', '_:b0']),
+    );
+
+    // The two tests below port the empty-graph-term cases from the N3 spec test suite
+    // (added in https://github.com/w3c-cg/N3/pull/202). The suite states their results
+    // as documents to compare against; they are asserted here as the exact quads
+    // N3.js emits, with formula terms represented as blank nodes.
+
+    it(
+      // https://w3c-cg.github.io/N3/tests/N3Tests/manifest-parser.ttl#empty_graph_eval
+      'should pass the N3 spec test "Empty Graph Eval"',
+      shouldParse(parser, '@prefix : <http://example.com/> .\n\n:a :b {} .',
+                  ['http://example.com/a', 'http://example.com/b', '"true"^^http://www.w3.org/2001/XMLSchema#boolean']),
+    );
+
+    it(
+      // https://w3c-cg.github.io/N3/tests/N3Tests/manifest-parser.ttl#empty_graph_implies_eval
+      'should pass the N3 spec test "Empty Graph Implies Eval"',
+      shouldParse(parser, '{\n  {} => {}\n} => {} .',
+                  ['_:b0', 'http://www.w3.org/2000/10/swap/log#implies', '"true"^^http://www.w3.org/2001/XMLSchema#boolean'],
+                  ['"true"^^http://www.w3.org/2001/XMLSchema#boolean', 'http://www.w3.org/2000/10/swap/log#implies', '"true"^^http://www.w3.org/2001/XMLSchema#boolean', '_:b0']),
+    );
   });
 
   describe('A Parser instance for the N3Star format', () => {
@@ -3195,6 +4536,34 @@ describe('Parser', () => {
           DF.literal('Thomas'),
         ),
       ])).toBe(true);
+    });
+  });
+
+  describe('An error emitted by a Parser instance', () => {
+    it('bounds input-derived content interpolated into the message', () => {
+      const bigIri = `http://e/${'A'.repeat(400)}`;
+      let error = null;
+      try {
+        new Parser({ format: 'text/turtle' }).parse(`<http://e/s> <http://e/p> <${bigIri}> <http://e/x> .`);
+      }
+      catch (e) { error = e; }
+      expect(error.message).toMatch(/^Expected punctuation to follow/);
+      // Bounded well below the 400-char IRI, with a truncation marker
+      expect(error.message.length).toBeLessThanOrEqual(200);
+      expect(error.message).toContain('…');
+      expect(error.message).toMatch(/ on line 1\.$/);
+    });
+
+    it('keeps the full offending token available on err.context.token', () => {
+      const bigPrefix = 'a'.repeat(400);
+      let error = null;
+      try {
+        new Parser({ format: 'text/turtle' }).parse(`${bigPrefix}:b <http://e/p> <http://e/o> .`);
+      }
+      catch (e) { error = e; }
+      expect(error.message).toMatch(/^Undefined prefix "a+…/);
+      expect(error.message.length).toBeLessThanOrEqual(200);
+      expect(error.context.token.prefix).toBe(bigPrefix);
     });
   });
 

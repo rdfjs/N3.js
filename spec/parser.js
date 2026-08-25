@@ -5,6 +5,10 @@ const { StreamParser } = require('..');
 module.exports = {
   parse: function (data, baseIRI, options) {
     return require('arrayify-stream').arrayifyStream(require('streamify-string')(data).pipe(
-      new StreamParser(Object.assign({ baseIRI: baseIRI, parseUnsupportedVersions: true }, options))));
+      new StreamParser(Object.assign({
+        baseIRI: baseIRI,
+        implicitEmptyPrefix: true,
+        parseUnsupportedVersions: true,
+      }, options))));
   },
 };

@@ -4,19 +4,24 @@ import namespaces from './IRIs';
 
 const { xsd } = namespaces;
 
-// Regular expression and replacement string to escape N3 strings
+// Regular expression and replacement strings to unescape N3 strings
 const escapeSequence = /\\u([a-fA-F0-9]{4})|\\U([a-fA-F0-9]{8})|\\([^])/g;
-const escapeReplacements = {
+// Fixed escape sequences allowed in string literals (ECHAR)
+const stringEscapeReplacements = {
   '\\': '\\', "'": "'", '"': '"',
   'n': '\n', 'r': '\r', 't': '\t', 'f': '\f', 'b': '\b',
+};
+// Fixed escape sequences allowed in local names of prefixed names (PN_LOCAL_ESC)
+const localNameEscapeReplacements = {
   '_': '_', '~': '~', '.': '.', '-': '-', '!': '!', '$': '$', '&': '&',
-  '(': '(', ')': ')', '*': '*', '+': '+', ',': ',', ';': ';', '=': '=',
-  '/': '/', '?': '?', '#': '#', '@': '@', '%': '%',
+  "'": "'", '(': '(', ')': ')', '*': '*', '+': '+', ',': ',', ';': ';',
+  '=': '=', '/': '/', '?': '?', '#': '#', '@': '@', '%': '%',
 };
 const illegalIriChars = /[\x00-\x20<>\\"\{\}\|\^\`]/;
 
-function isSurrogateCodePoint(charCode) {
-  return charCode >= 0xD800 && charCode <= 0xDFFF;
+// A valid code point is a Unicode scalar value: at most U+10FFFF and not a surrogate
+function isValidCodePoint(charCode) {
+  return charCode <= 0x10FFFF && (charCode < 0xD800 || charCode > 0xDFFF);
 }
 
 const lineModeRegExps = {
@@ -43,15 +48,16 @@ export default class N3Lexer {
     this._simpleQuotedString = /^"([^"\\\r\n]*)"(?=[^"])/; // string without escape sequences
     this._simpleApostropheString = /^'([^'\\\r\n]*)'(?=[^'])/;
     this._langcode = /^@([a-z]+(?:-[a-z0-9]+)*)(?=[^a-z0-9])/i;
-    this._dircode = /^--(ltr)|(rtl)/;
+    this._dircode = /^--(?:(ltr)|(rtl))/;
     this._prefix = /^((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:(?=[#\s<])/;
     this._prefixed = /^((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:((?:(?:[0-:A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])(?:(?:[\.\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])*(?:[\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~]))?)?)(?:[ \t]+|(?=\.?[,;!\^\s#()\[\]\{\}"'<>]))/;
     this._variable = /^\?(?:(?:[A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:[\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?=[.,;!\^\s#()\[\]\{\}"'<>])/;
-    this._blank = /^_:((?:[0-9A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?:[ \t]+|(?=\.?[,;:\s#()\[\]\{\}"'<>]))/;
-    this._number = /^[\-+]?(?:(\d+\.\d*|\.?\d+)[eE][\-+]?|\d*(\.)?)\d+(?=\.?[,;:\s#()\[\]\{\}"'<>])/;
-    this._boolean = /^(?:true|false)(?=[.,;\s#()\[\]\{\}"'<>])/;
+    this._blank = /^_:((?:[0-9A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?:[ \t]+|(?=\.?[,;:!\^\s#()\[\]\{\}"'<>]))/;
+    this._number = /^[\-+]?(?:(\d+\.\d*|\.?\d+)[eE][\-+]?|\d*(\.)?)\d+(?=\.?[,;:!\^\s#()\[\]\{\}"'<>])/;
+    this._boolean = /^(?:true|false)(?=[.,;!\^\s#()\[\]\{\}"'<>])/;
     this._atKeyword = /^@[a-z]+(?=[\s#<:])/i;
     this._keyword = /^(?:PREFIX|BASE|VERSION|GRAPH)(?=[\s#<])/i;
+    this._n3Id = /^id(?=[\s#<])/;
     this._shortPredicates = /^a(?=[\s#()\[\]\{\}"'<>])/;
     this._newline = /^[ \t]*(?:#[^\n\r]*)?(?:\r\n|\n|\r)[ \t]*/;
     this._comment = /#([^\n\r]*)/;
@@ -151,7 +157,7 @@ export default class N3Lexer {
           type = 'IRI', value = match[1];
         // Try to find a full IRI with escape sequences
         else if (match = this._iri.exec(input)) {
-          value = this._unescape(match[1]);
+          value = this._unescape(match[1], stringEscapeReplacements);
           if (value === null || illegalIriChars.test(value))
             return reportSyntaxError(this);
           type = 'IRI';
@@ -226,9 +232,17 @@ export default class N3Lexer {
         break;
 
       case '@':
-        // Try to find a language code
-        if (this._previousMarker === 'literal' && (match = this._langcode.exec(input)) && match[1] !== 'version')
-          type = 'langcode', value = match[1];
+        // Try to find a language code. A language code can contain dash-separated
+        // subtags, so if the match is immediately followed by a single dash and the
+        // input is not finished, another subtag may still arrive in a later chunk and
+        // the match would be premature; wait for more input in that case.
+        // A double dash starts a direction code, which cannot extend the language code.
+        if (this._previousMarker === 'literal' && (match = this._langcode.exec(input)) && match[1] !== 'version') {
+          if (!inputFinished && input[match[0].length] === '-' && input[match[0].length + 1] !== '-')
+            match = null;
+          else
+            type = 'langcode', value = match[1];
+        }
         // Try to find a keyword
         else if (match = this._atKeyword.exec(input))
           type = match[0];
@@ -305,6 +319,14 @@ export default class N3Lexer {
           inconclusive = true;
         break;
 
+      case 'i':
+        // Try to find the IRI property list identifier
+        if (this._n3Mode && (match = this._n3Id.exec(input)))
+          type = 'id';
+        else
+          inconclusive = true;
+        break;
+
       case '=':
         // Try to find an implication arrow or equals sign
         if (this._n3Mode && input.length > 1) {
@@ -373,7 +395,7 @@ export default class N3Lexer {
         // Therefore, try inserting a space if we're at the end of the input.
         else if ((match = this._prefixed.exec(input)) ||
                  inputFinished && (match = this._prefixed.exec(`${input} `)))
-          type = 'prefixed', prefix = match[1] || '', value = this._unescape(match[2]);
+          type = 'prefixed', prefix = match[1] || '', value = this._unescape(match[2], localNameEscapeReplacements);
       }
 
       // A type token is special: it can only be emitted after an IRI or prefixed name is read
@@ -418,14 +440,15 @@ export default class N3Lexer {
     function reportSyntaxError(self) { callback(self._syntaxError(/^\S*/.exec(input)[0])); }
   }
 
-  // ### `_unescape` replaces N3 escape codes by their corresponding characters
-  _unescape(item) {
+  // ### `_unescape` replaces N3 escape codes by their corresponding characters,
+  // allowing only the fixed escape sequences from the given replacement table
+  _unescape(item, replacements) {
     let invalid = false;
     const replaced = item.replace(escapeSequence, (sequence, unicode4, unicode8, escapedChar) => {
       // 4-digit unicode character
       if (typeof unicode4 === 'string') {
         const charCode = Number.parseInt(unicode4, 16);
-        if (isSurrogateCodePoint(charCode)) {
+        if (!isValidCodePoint(charCode)) {
           invalid = true;
           return '';
         }
@@ -434,7 +457,7 @@ export default class N3Lexer {
       // 8-digit unicode character
       if (typeof unicode8 === 'string') {
         let charCode = Number.parseInt(unicode8, 16);
-        if (isSurrogateCodePoint(charCode)) {
+        if (!isValidCodePoint(charCode)) {
           invalid = true;
           return '';
         }
@@ -442,8 +465,8 @@ export default class N3Lexer {
           String.fromCharCode(0xD800 + ((charCode -= 0x10000) >> 10), 0xDC00 + (charCode & 0x3FF));
       }
       // fixed escape sequence
-      if (escapedChar in escapeReplacements)
-        return escapeReplacements[escapedChar];
+      if (escapedChar in replacements)
+        return replacements[escapedChar];
       // invalid escape sequence
       invalid = true;
       return '';
@@ -479,7 +502,7 @@ export default class N3Lexer {
               openingLength === 3 && this._lineMode)
             break;
           this._line += lines;
-          return { value: this._unescape(raw), matchLength };
+          return { value: this._unescape(raw, stringEscapeReplacements), matchLength };
         }
         closingPos++;
       }

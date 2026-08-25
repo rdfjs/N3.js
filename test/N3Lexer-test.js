@@ -101,8 +101,8 @@ describe('Lexer', () => {
 
     it(
       'should tokenize an IRI with eight-digit unicode escapes',
-      shouldTokenize('<http://a.example/\\U00000073\\U00A00073>',
-                     { type: 'IRI', value: 'http://a.example/s\uffc0\udc73', line: 1 },
+      shouldTokenize('<http://a.example/\\U00000073\\U0001F0A1>',
+                     { type: 'IRI', value: 'http://a.example/s\ud83c\udca1', line: 1 },
                      { type: 'eof', line: 1 }),
     );
 
@@ -170,6 +170,13 @@ describe('Lexer', () => {
       'should tokenize prefixed names with reserved escape sequences',
       shouldTokenize('wgs:lat\\-long ',
                      { type: 'prefixed', prefix: 'wgs', value: 'lat-long', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should tokenize prefixed names with all reserved escape sequences',
+      shouldTokenize("ex:a\\_\\~\\.\\-\\!\\$\\&\\'\\(\\)\\*\\+\\,\\;\\=\\/\\?\\#\\@\\%b ",
+                     { type: 'prefixed', prefix: 'ex', value: "a_~.-!$&'()*+,;=/?#@%b", line: 1 },
                      { type: 'eof', line: 1 }),
     );
 
@@ -350,10 +357,38 @@ describe('Lexer', () => {
     );
 
     it(
+      'should tokenize a string with all ECHAR escape sequences',
+      shouldTokenize('"\\t \\b \\n \\r \\f \\\\ \\" \\\'" ',
+                     { type: 'literal', value: '\t \b \n \r \f \\ " \'', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
       'should not tokenize a string with invalid characters',
       shouldNotTokenize('"\\uXYZX" ',
                         'Unexpected ""\\uXYZX"" on line 1.'),
     );
+
+    // Escapes for these characters are only allowed in local names of prefixed names
+    for (const char of '_~.-!$&()*+,;=/?#@%') {
+      it(
+        `should not tokenize a double-quoted string with the escape sequence \\${char}`,
+        shouldNotTokenize(`"a\\${char}b" `,
+                          `Unexpected ""a\\${char}b"" on line 1.`),
+      );
+
+      it(
+        `should not tokenize a single-quoted string with the escape sequence \\${char}`,
+        shouldNotTokenize(`'a\\${char}b' `,
+                          `Unexpected "'a\\${char}b'" on line 1.`),
+      );
+
+      it(
+        `should not tokenize a triple-quoted string with the escape sequence \\${char}`,
+        shouldNotTokenize(`"""a\\${char}b""" `,
+                          `Unexpected """"a\\${char}b"""" on line 1.`),
+      );
+    }
 
     it(
       'should not tokenize a literal with a surrogate pair via unicode escapes',
@@ -383,6 +418,25 @@ describe('Lexer', () => {
       'should not tokenize a literal with a low surrogate 8-digit unicode escape',
       shouldNotTokenize('"\\U0000DFFF" ',
                         'Unexpected ""\\U0000DFFF"" on line 1.'),
+    );
+
+    it(
+      'should not tokenize a literal with an 8-digit unicode escape beyond U+10FFFF',
+      shouldNotTokenize('"\\U00110000" ',
+                        'Unexpected ""\\U00110000"" on line 1.'),
+    );
+
+    it(
+      'should not tokenize an IRI with an 8-digit unicode escape beyond U+10FFFF',
+      shouldNotTokenize('<urn:\\U00110000>',
+                        'Unexpected "<urn:\\U00110000>" on line 1.'),
+    );
+
+    it(
+      'should tokenize a literal with the highest valid 8-digit unicode escape',
+      shouldTokenize('"\\U0010FFFF" ',
+                     { type: 'literal', value: '\u{10FFFF}', line: 1 },
+                     { type: 'eof', line: 1 }),
     );
 
     it(
@@ -444,6 +498,52 @@ describe('Lexer', () => {
     );
 
     it(
+      'should tokenize a language code with a subtag split across chunks',
+      shouldTokenize(streamOf('"string"@nl-', 'nl '),
+                     { type: 'literal', value: 'string', line: 1 },
+                     { type: 'langcode', value: 'nl-nl', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should tokenize a language code whose subtag boundary aligns with a chunk boundary',
+      shouldTokenize(streamOf('"string"@nl-nl', ' '),
+                     { type: 'literal', value: 'string', line: 1 },
+                     { type: 'langcode', value: 'nl-nl', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should tokenize a language code with a chunk boundary inside a subtag',
+      shouldTokenize(streamOf('"string"@nl-n', 'l '),
+                     { type: 'literal', value: 'string', line: 1 },
+                     { type: 'langcode', value: 'nl-nl', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should tokenize a directional language code followed by a newline in an unfinished chunk',
+      shouldTokenize(streamOf('"x"@en--rtl .\n"y"@en .', ' '),
+                     { type: 'literal', value: 'x', line: 1 },
+                     { type: 'langcode', value: 'en', line: 1 },
+                     { type: 'dircode', value: 'rtl', line: 1 },
+                     { type: '.', line: 1 },
+                     { type: 'literal', value: 'y', line: 2 },
+                     { type: 'langcode', value: 'en', line: 2 },
+                     { type: '.', line: 2 },
+                     { type: 'eof', line: 2 }),
+    );
+
+    it(
+      'should tokenize a direction code split from its language code across chunks',
+      shouldTokenize(streamOf('"string"@en-', '-rtl '),
+                     { type: 'literal', value: 'string', line: 1 },
+                     { type: 'langcode', value: 'en', line: 1 },
+                     { type: 'dircode', value: 'rtl', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
         'should tokenize a quoted string literal with directional language code',
         shouldTokenize('"string"@en--rtl "string"@nl-be--ltr "string"@EN--rtl ',
             { type: 'literal', value: 'string', line: 1 },
@@ -463,6 +563,9 @@ describe('Lexer', () => {
 
     it('should not tokenize a direction in uppercase', shouldNotTokenize('"string"@en--LTR',
         'Unexpected "--LTR" on line 1.'));
+
+    it('should not tokenize an invalid direction when "rtl" occurs later in the input', shouldNotTokenize('"string"@en--unk # rtl\n',
+        'Unexpected "--unk" on line 1.'));
 
     it(
       'should tokenize a quoted string literal with type',
@@ -518,9 +621,9 @@ describe('Lexer', () => {
 
     it(
       'should tokenize a single-quoted string with escape characters',
-      shouldTokenize("'\\\\ \\\" \\' \\n \\r \\t \\ua1b2' \n '''\\\\ \\\" \\' \\n \\r \\t \\U0020a1b2'''",
+      shouldTokenize("'\\\\ \\\" \\' \\n \\r \\t \\ua1b2' \n '''\\\\ \\\" \\' \\n \\r \\t \\U0001F0A1'''",
                      { type: 'literal', value: '\\ " \' \n \r \t \ua1b2', line: 1 },
-                     { type: 'literal', value: '\\ " \' \n \r \t \udfe8\uddb2', line: 2 },
+                     { type: 'literal', value: '\\ " \' \n \r \t \ud83c\udca1', line: 2 },
                      { type: 'eof', line: 2 }),
     );
 
@@ -911,6 +1014,48 @@ describe('Lexer', () => {
                    { type: 'eof', line: 1 }));
 
     it(
+      'should tokenize IRI property list identifiers',
+      shouldTokenize('[ id <s> <p> <o> ] [id<s> <p> <o>]',
+                     { type: '[', line: 1 },
+                     { type: 'id', line: 1 },
+                     { type: 'IRI', value: 's', line: 1 },
+                     { type: 'IRI', value: 'p', line: 1 },
+                     { type: 'IRI', value: 'o', line: 1 },
+                     { type: ']', line: 1 },
+                     { type: '[', line: 1 },
+                     { type: 'id', line: 1 },
+                     { type: 'IRI', value: 's', line: 1 },
+                     { type: 'IRI', value: 'p', line: 1 },
+                     { type: 'IRI', value: 'o', line: 1 },
+                     { type: ']', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should tokenize an IRI property list identifier split across chunks',
+      shouldTokenize(streamOf('[ i', 'd <s> <p> <o> ]'),
+                     { type: '[', line: 1 },
+                     { type: 'id', line: 1 },
+                     { type: 'IRI', value: 's', line: 1 },
+                     { type: 'IRI', value: 'p', line: 1 },
+                     { type: 'IRI', value: 'o', line: 1 },
+                     { type: ']', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should keep an id prefix as a prefixed name',
+      shouldTokenize('id:p',
+                     { type: 'prefixed', prefix: 'id', value: 'p', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should not tokenize IRI property list identifiers outside N3 mode',
+      shouldNotTokenize(new Lexer({ n3: false }), 'id ', 'Unexpected "id" on line 1.'),
+    );
+
+    it(
       'should tokenize the "a" predicate without spacing',
       shouldTokenize('[a<>].\n[a[]].\n[a()].\n<>a<>.\n<>a[].\n<>a().\n',
                      { type: '[', line: 1 },
@@ -1106,7 +1251,7 @@ describe('Lexer', () => {
     );
 
     it('does not call setEncoding if not available', () => {
-      new Lexer().tokenize({ on: function () {} });
+      expect(() => new Lexer().tokenize({ on: function () {} })).not.toThrow();
     });
 
     it('should tokenize an TripleTerm start', shouldTokenize('<<(',
