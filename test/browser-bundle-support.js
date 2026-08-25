@@ -12,6 +12,7 @@ export function expectBrowserBundleMembers(N3) {
   expect(N3).toBeDefined();
   for (const name of browserBundleMembers)
     expect(N3[name]).toBeDefined();
+  expect(N3.EntityRegistry).toBeUndefined();
 }
 
 export function expectBrowserBundleParser(N3) {

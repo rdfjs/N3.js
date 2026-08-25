@@ -414,12 +414,14 @@ for (const quad of store.match(namedNode('http://ex.org/Mickey'), null, null))
   console.log(quad);
 ```
 
-If you are using multiple stores, you can reduce memory consumption by allowing them to share an entity index:
-```JavaScript
-const entityIndex = new N3.EntityIndex();
-const store1 = new N3.Store([], { entityIndex });
-const store2 = new N3.Store([], { entityIndex });
-```
+Stores created by the same N3.js module automatically share numeric entity identifiers.
+They retain separate entity indices, factories, and blank-node allocation state, while set operations can work directly on their aligned internal keys.
+The shared registry is internal: an identifier is retained while at least one live entity index owns it, then incrementally released and recycled after those indices are collected.
+Every `EntityIndex` created by that module uses the same registry; the registry cannot be replaced or isolated.
+Separately loaded copies of N3.js retain separate registries so different package versions do not share private encodings.
+
+The `EntityIndex` export and `entityIndex` store option remain as compatibility façades, but are deprecated.
+New code should let each `Store` manage its own entity index.
 
 ### [`Dataset` Interface](https://rdf.js.org/dataset-spec/#dataset-interface)
 This store adheres to the `Dataset` interface which exposes the following properties
