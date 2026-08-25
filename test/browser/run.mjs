@@ -11,15 +11,19 @@
 // Usage: node test/browser/run.mjs [chromium|firefox|webkit ...]
 import { chromium, firefox, webkit } from 'playwright';
 import { execSync } from 'node:child_process';
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { extname, join, resolve, sep } from 'node:path';
+import { extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const browsers = { chromium, firefox, webkit };
 const root = resolve(fileURLToPath(import.meta.url), '../../..');
-const rootPrefix = root.endsWith(sep) ? root : `${root}${sep}`;
 const mimeTypes = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript' };
+const files = new Map([
+  ['/test/browser/test-page.html', join(root, 'test/browser/test-page.html')],
+  ['/browser/n3.min.js', join(root, 'browser/n3.min.js')],
+  ['/browser/n3.esm.min.js', join(root, 'browser/n3.esm.min.js')],
+]);
 
 async function main() {
   // The bundles are build artifacts; CI downloads them, local runs may not have them yet
@@ -29,13 +33,13 @@ async function main() {
 
   // Serve files from the repository root on an OS-assigned port
   const server = createServer((request, response) => {
-    const filePath = join(root, new URL(request.url || '/', 'http://localhost').pathname);
-    // Only serve files inside the repository (join normalizes away any ../)
-    if (filePath.startsWith(rootPrefix) && existsSync(filePath) && statSync(filePath).isFile()) {
+    const filePath = files.get(new URL(request.url || '/', 'http://localhost').pathname);
+    try {
+      const contents = readFileSync(filePath);
       response.writeHead(200, { 'Content-Type': mimeTypes[extname(filePath)] || 'application/octet-stream' });
-      response.end(readFileSync(filePath));
+      response.end(contents);
     }
-    else {
+    catch {
       response.writeHead(404);
       response.end();
     }
