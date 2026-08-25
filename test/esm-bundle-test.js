@@ -1,4 +1,8 @@
-import { browserBundleMembers } from './browser-bundle-members';
+import {
+  expectBrowserBundleMembers,
+  expectBrowserBundleParser,
+  expectBrowserBundleWriter,
+} from './browser-bundle-support';
 import { exec } from 'child_process';
 import { access } from 'fs/promises';
 import { resolve } from 'path';
@@ -27,34 +31,24 @@ describeEsm('The ESM browser bundle', () => {
     N3 = await import(bundlePath);
   }, 60000);
 
-  it('exposes all named exports', () => {
-    for (const name of browserBundleMembers)
-      expect(N3[name]).toBeDefined();
+  it('exposes all named members', () => {
+    expect.hasAssertions();
+    expectBrowserBundleMembers(N3);
+  });
+
+  it('parses Turtle into a populated Store', () => {
+    expect.hasAssertions();
+    expectBrowserBundleParser(N3);
+  });
+
+  it('round-trips a quad through the Writer', () => {
+    expect.hasAssertions();
+    return expectBrowserBundleWriter(N3);
   });
 
   it('exposes a default export with the same members', () => {
     expect(N3.default).toBeDefined();
     expect(N3.default.Store).toBe(N3.Store);
     expect(N3.default.Parser).toBe(N3.Parser);
-  });
-
-  it('parses Turtle into a populated Store', () => {
-    const quads = new N3.Parser().parse(
-      '<http://ex.org/s> <http://ex.org/p> <http://ex.org/o> .');
-    const store = new N3.Store(quads);
-    expect(quads).toHaveLength(1);
-    expect(store.size).toBe(1);
-    expect(quads[0].subject.value).toBe('http://ex.org/s');
-  });
-
-  it('round-trips a quad through the Writer', async () => {
-    const { DataFactory, Writer } = N3;
-    const writer = new Writer();
-    writer.addQuad(DataFactory.quad(
-      DataFactory.namedNode('http://ex.org/s'),
-      DataFactory.namedNode('http://ex.org/p'),
-      DataFactory.literal('o')));
-    const result = await promisify(writer.end.bind(writer))();
-    expect(result).toContain('<http://ex.org/s>');
   });
 });

@@ -1,4 +1,8 @@
-import { browserBundleMembers } from './browser-bundle-members';
+import {
+  expectBrowserBundleMembers,
+  expectBrowserBundleParser,
+  expectBrowserBundleWriter,
+} from './browser-bundle-support';
 import { execSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
@@ -25,32 +29,18 @@ describeIife('The IIFE browser bundle', () => {
     N3 = runInThisContext(`${readFileSync(bundlePath, 'utf8')}\n;N3`);
   }, 60000);
 
-  it('exposes a global object with all named members', () => {
-    expect(N3).toBeDefined();
-    for (const name of browserBundleMembers)
-      expect(N3[name]).toBeDefined();
+  it('exposes all named members', () => {
+    expect.hasAssertions();
+    expectBrowserBundleMembers(N3);
   });
 
   it('parses Turtle into a populated Store', () => {
-    const quads = new N3.Parser().parse(
-      '<http://ex.org/s> <http://ex.org/p> <http://ex.org/o> .');
-    const store = new N3.Store(quads);
-    expect(quads).toHaveLength(1);
-    expect(store.size).toBe(1);
-    expect(quads[0].subject.value).toBe('http://ex.org/s');
+    expect.hasAssertions();
+    expectBrowserBundleParser(N3);
   });
 
-  it('round-trips a quad through the Writer', done => {
-    const { DataFactory, Writer } = N3;
-    const writer = new Writer();
-    writer.addQuad(DataFactory.quad(
-      DataFactory.namedNode('http://ex.org/s'),
-      DataFactory.namedNode('http://ex.org/p'),
-      DataFactory.literal('o')));
-    writer.end((error, result) => {
-      expect(error).toBeFalsy();
-      expect(result).toContain('<http://ex.org/s>');
-      done();
-    });
+  it('round-trips a quad through the Writer', () => {
+    expect.hasAssertions();
+    return expectBrowserBundleWriter(N3);
   });
 });
