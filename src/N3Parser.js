@@ -480,9 +480,39 @@ export default class N3Parser {
       if (parentParent.type === '<<') {
         return this._error('Unexpected compound blank node expression in reified triple', token);
       }
+      if (token.type === 'id')
+        return this._readIriPropertyListId;
       this._predicate = null;
       return this._readPredicate(token);
     }
+  }
+
+  // ### `_readIriPropertyListId` replaces a property list's blank node with its IRI
+  _readIriPropertyListId(token) {
+    const iri = this._readEntity(token);
+    if (iri === undefined)
+      return;
+    if (iri.termType !== 'NamedNode')
+      return this._error(`Expected IRI after id but got ${token.type}`, token);
+
+    const placeholder = this._subject;
+    this._subject = iri;
+    const context = this._contextStack[this._contextStack.length - 1];
+    if (context.subject === placeholder)
+      context.subject = iri;
+    if (context.predicate === placeholder)
+      context.predicate = iri;
+    if (context.object === placeholder)
+      context.object = iri;
+    this._predicate = null;
+    return this._readIriPropertyListPredicate;
+  }
+
+  // ### `_readIriPropertyListPredicate` requires properties after an IRI property list ID
+  _readIriPropertyListPredicate(token) {
+    if (token.type === ';' || token.type === ']' || token.type === '.' || token.type === '}')
+      return this._error(`Expected predicate but got ${token.type}`, token);
+    return this._readPredicate(token);
   }
 
   // ### `_readBlankNodeTail` reads the end of a blank node
