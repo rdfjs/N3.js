@@ -15,24 +15,31 @@ export default class N3EntityRegistry {
     if (typeof FinalizationRegistry !== 'function')
       throw new Error('EntityRegistry requires FinalizationRegistry support');
 
+    this._maxId = Number.MAX_SAFE_INTEGER;
+    this._pendingReleases = [];
+    this._releaseScheduled = false;
+    this._activeScopes = 0;
+    this._reset();
+
+    // One registration per entity scope releases all of its identifiers together.
+    this._finalizer = new FinalizationRegistry(ownership => this._releaseScope(ownership));
+  }
+
+  _reset() {
     this._id = 1;
     this._ids = new Map([['', 1]]);
     this._entities = Object.create(null);
     this._entities[1] = '';
     this._references = Object.create(null);
     this._references[1] = Infinity;
-    this._maxId = Number.MAX_SAFE_INTEGER;
     this._wrapped = false;
-    this._pendingReleases = [];
-    this._releaseScheduled = false;
-
-    // One registration per entity scope releases all of its identifiers together.
-    this._finalizer = new FinalizationRegistry(ownership => this._enqueueRelease(ownership));
+    this._pendingReleases.length = 0;
   }
 
   _createOwnership(target) {
     const ownership = [];
     this._finalizer.register(target, ownership);
+    this._activeScopes++;
     return ownership;
   }
 
@@ -70,6 +77,13 @@ export default class N3EntityRegistry {
   _retain(id, ownership) {
     ownership.push(id);
     this._references[id]++;
+  }
+
+  _releaseScope(ownership) {
+    if (--this._activeScopes === 0)
+      this._reset();
+    else
+      this._enqueueRelease(ownership);
   }
 
   _enqueueRelease(ownership) {

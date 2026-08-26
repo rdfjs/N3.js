@@ -2973,7 +2973,7 @@ describe('shared entity registry', () => {
     expect(new EntityIndex({ registry: {} })._registry).toBe(entityRegistry);
   });
 
-  it('should release identifiers after all owning indices are finalized', async () => {
+  it('should release identifiers and reset after all owning scopes are finalized', async () => {
     await withFinalizationRegistry(async (ownerships, finalize) => {
       const registry = new EntityRegistry();
       const left = registry._createOwnership({});
@@ -2981,20 +2981,48 @@ describe('shared entity registry', () => {
       const leftId = retain(registry, left, 'shared');
       const rightId = retain(registry, right, 'shared');
 
+      expect(registry._activeScopes).toBe(2);
       expect(rightId).toBe(leftId);
       expect(registry._references[leftId]).toBe(2);
       finalize(ownerships[0]);
       await new Promise(resolve => setImmediate(resolve));
+      expect(registry._activeScopes).toBe(1);
       expect(registry._references[leftId]).toBe(1);
       expect(registry._lookup('shared')).toBe(leftId);
+      registry._id = registry._maxId;
+      registry._wrapped = true;
       finalize(ownerships[1]);
-      await new Promise(resolve => setImmediate(resolve));
+      expect(registry._activeScopes).toBe(0);
       expect(registry._lookup('shared')).toBeUndefined();
       expect(registry._entities[leftId]).toBeUndefined();
       expect(registry._references[leftId]).toBeUndefined();
       expect(registry._freeIds).toBeUndefined();
+      expect(registry._id).toBe(1);
+      expect(registry._wrapped).toBe(false);
       const replacement = registry._createOwnership({});
-      expect(retain(registry, replacement, 'replacement')).toBe(leftId + 1);
+      expect(retain(registry, replacement, 'replacement')).toBe(leftId);
+    });
+  });
+
+  it('should not let a scheduled release affect a scope created after reset', async () => {
+    await withFinalizationRegistry(async (ownerships, finalize) => {
+      const registry = new EntityRegistry();
+      const first = registry._createOwnership({});
+      const second = registry._createOwnership({});
+      retain(registry, first, 'first');
+      retain(registry, second, 'second');
+
+      finalize(ownerships[0]);
+      expect(registry._pendingReleases).toHaveLength(1);
+      finalize(ownerships[1]);
+      expect(registry._pendingReleases).toHaveLength(0);
+
+      const replacement = registry._createOwnership({});
+      const replacementId = retain(registry, replacement, 'replacement');
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(registry._lookup('replacement')).toBe(replacementId);
+      expect(registry._references[replacementId]).toBe(1);
     });
   });
 
@@ -3025,19 +3053,21 @@ describe('shared entity registry', () => {
   it('should release identifiers in bounded batches', async () => {
     await withFinalizationRegistry(async (ownerships, finalize) => {
       const registry = new EntityRegistry();
+      const retained = registry._createOwnership({});
       const ownership = registry._createOwnership({});
+      retain(registry, retained, 'retained');
       for (let id = 0; id < 4097; id++)
         retain(registry, ownership, `entity${id}`);
 
-      finalize(ownerships[0]);
+      finalize(ownerships[1]);
       await new Promise(resolve => setImmediate(resolve));
 
-      expect(registry._ids.size).toBe(2);
+      expect(registry._ids.size).toBe(3);
       expect(registry._pendingReleases).toHaveLength(1);
 
       await new Promise(resolve => setImmediate(resolve));
 
-      expect(registry._ids.size).toBe(1);
+      expect(registry._ids.size).toBe(2);
       expect(registry._pendingReleases).toHaveLength(0);
     });
   });
@@ -3047,8 +3077,10 @@ describe('shared entity registry', () => {
       const registry = new EntityRegistry();
       const first = registry._createOwnership({});
       const second = registry._createOwnership({});
+      const retained = registry._createOwnership({});
       retain(registry, first, 'first');
       retain(registry, second, 'second');
+      retain(registry, retained, 'retained');
 
       finalize(ownerships[0]);
       finalize(ownerships[1]);
@@ -3056,7 +3088,7 @@ describe('shared entity registry', () => {
       expect(registry._pendingReleases).toHaveLength(2);
       await new Promise(resolve => setImmediate(resolve));
       expect(registry._pendingReleases).toHaveLength(0);
-      expect(registry._ids.size).toBe(1);
+      expect(registry._ids.size).toBe(2);
     });
   });
 
@@ -3064,10 +3096,10 @@ describe('shared entity registry', () => {
     await withFinalizationRegistry(async (ownerships, finalize) => {
       const registry = new EntityRegistry();
       const finalized = registry._createOwnership({});
+      const retained = registry._createOwnership({});
       const id = retain(registry, finalized, 'shared');
 
       finalize(ownerships[0]);
-      const retained = registry._createOwnership({});
       expect(retain(registry, retained, 'shared')).toBe(id);
 
       await new Promise(resolve => setImmediate(resolve));
