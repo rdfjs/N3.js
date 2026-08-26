@@ -118,14 +118,14 @@ function createCollectableStore(count, useRegistry) {
   const registry = store._entityIndex._registry;
   return {
     registry,
-    expectedFreeIds: registry._freeIds.length + count + 2,
+    expectedRegistrySize: registry._ids.size - count - 2,
   };
 }
 
 async function garbageCollection(count, useRegistry) {
   collect();
   const before = process.memoryUsage().heapUsed;
-  const { registry, expectedFreeIds } = createCollectableStore(count, useRegistry);
+  const { registry, expectedRegistrySize } = createCollectableStore(count, useRegistry);
   const allocated = process.memoryUsage().heapUsed;
   let maxBatch = 0;
   let drainReleases;
@@ -144,10 +144,10 @@ async function garbageCollection(count, useRegistry) {
 
   start = performance.now();
   if (registry) {
-    for (let turn = 0; registry._freeIds.length !== expectedFreeIds && turn < 10_000; turn++)
+    for (let turn = 0; registry._ids.size !== expectedRegistrySize && turn < 10_000; turn++)
       await immediate();
-    if (registry._freeIds.length !== expectedFreeIds)
-      throw new Error(`Freed ${registry._freeIds.length} of ${expectedFreeIds} identifiers`);
+    if (registry._ids.size !== expectedRegistrySize)
+      throw new Error(`Registry contains ${registry._ids.size} rather than ${expectedRegistrySize} identifiers`);
     registry._drainReleases = drainReleases;
   }
   else

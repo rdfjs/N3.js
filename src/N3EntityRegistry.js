@@ -21,7 +21,8 @@ export default class N3EntityRegistry {
     this._entities[1] = '';
     this._references = Object.create(null);
     this._references[1] = Infinity;
-    this._freeIds = [];
+    this._maxId = Number.MAX_SAFE_INTEGER;
+    this._wrapped = false;
     this._pendingReleases = [];
     this._releaseScheduled = false;
 
@@ -39,16 +40,26 @@ export default class N3EntityRegistry {
     return this._ids.get(value);
   }
 
+  _nextId() {
+    if (!this._wrapped && this._id < this._maxId)
+      return ++this._id;
+
+    this._wrapped = true;
+    const first = this._id >= this._maxId ? 2 : this._id + 1;
+    let id = first;
+    do {
+      if (!(id in this._references))
+        return this._id = id;
+      id = id >= this._maxId ? 2 : id + 1;
+    }
+    while (id !== first);
+    throw new RangeError('Entity identifier limit exceeded');
+  }
+
   _intern(value) {
     let id = this._ids.get(value);
     if (!id) {
-      if (this._freeIds.length)
-        id = this._freeIds.pop();
-      else {
-        if (this._id >= Number.MAX_SAFE_INTEGER)
-          throw new RangeError('Entity identifier limit exceeded');
-        id = ++this._id;
-      }
+      id = this._nextId();
       this._ids.set(value, id);
       this._entities[id] = value;
       this._references[id] = 0;
@@ -89,7 +100,6 @@ export default class N3EntityRegistry {
           this._ids.delete(this._entities[id]);
           delete this._entities[id];
           delete this._references[id];
-          this._freeIds.push(id);
         }
       }
       if (!ownership.length)

@@ -2991,19 +2991,24 @@ describe('shared entity registry', () => {
       await new Promise(resolve => setImmediate(resolve));
       expect(registry._lookup('shared')).toBeUndefined();
       expect(registry._entities[leftId]).toBeUndefined();
-      expect(registry._freeIds).toEqual([leftId]);
+      expect(registry._references[leftId]).toBeUndefined();
+      expect(registry._freeIds).toBeUndefined();
+      const replacement = registry._createOwnership({});
+      expect(retain(registry, replacement, 'replacement')).toBe(leftId + 1);
     });
   });
 
-  it('should recycle released identifiers', async () => {
+  it('should recycle released identifiers after wrapping and skip live identifiers', async () => {
     await withFinalizationRegistry(async (ownerships, finalize) => {
       const registry = new EntityRegistry();
-      const released = registry._createOwnership({});
       const retained = registry._createOwnership({});
-      const releasedId = retain(registry, released, 'released');
+      const released = registry._createOwnership({});
+      registry._maxId = 4;
       const retainedId = retain(registry, retained, 'retained');
+      const releasedId = retain(registry, released, 'released');
+      const otherRetainedId = retain(registry, retained, 'other-retained');
 
-      finalize(ownerships[0]);
+      finalize(ownerships[1]);
       await new Promise(resolve => setImmediate(resolve));
       const replacement = registry._createOwnership({});
       const replacementId = retain(registry, replacement, 'replacement');
@@ -3012,6 +3017,8 @@ describe('shared entity registry', () => {
       expect(registry._lookup('released')).toBeUndefined();
       expect(registry._lookup('replacement')).toBe(releasedId);
       expect(registry._lookup('retained')).toBe(retainedId);
+      expect(registry._lookup('other-retained')).toBe(otherRetainedId);
+      expect(() => registry._intern('overflow')).toThrow('Entity identifier limit exceeded');
     });
   });
 
@@ -3025,12 +3032,12 @@ describe('shared entity registry', () => {
       finalize(ownerships[0]);
       await new Promise(resolve => setImmediate(resolve));
 
-      expect(registry._freeIds).toHaveLength(4096);
+      expect(registry._ids.size).toBe(2);
       expect(registry._pendingReleases).toHaveLength(1);
 
       await new Promise(resolve => setImmediate(resolve));
 
-      expect(registry._freeIds).toHaveLength(4097);
+      expect(registry._ids.size).toBe(1);
       expect(registry._pendingReleases).toHaveLength(0);
     });
   });
@@ -3049,7 +3056,7 @@ describe('shared entity registry', () => {
       expect(registry._pendingReleases).toHaveLength(2);
       await new Promise(resolve => setImmediate(resolve));
       expect(registry._pendingReleases).toHaveLength(0);
-      expect(registry._freeIds).toHaveLength(2);
+      expect(registry._ids.size).toBe(1);
     });
   });
 
@@ -3067,18 +3074,18 @@ describe('shared entity registry', () => {
 
       expect(registry._lookup('shared')).toBe(id);
       expect(registry._references[id]).toBe(1);
-      expect(registry._freeIds).toHaveLength(0);
+      expect(registry._ids.size).toBe(2);
     });
   });
 
   it('should reject allocation after exhausting safe integer identifiers', () => {
     const registry = new EntityRegistry();
-    registry._id = Number.MAX_SAFE_INTEGER;
+    const ownership = registry._createOwnership({});
+    registry._maxId = 3;
+    retain(registry, ownership, 'second');
+    retain(registry, ownership, 'third');
 
     expect(() => registry._intern('overflow')).toThrow('Entity identifier limit exceeded');
-
-    registry._freeIds.push(2);
-    expect(registry._intern('recycled')).toBe(2);
   });
 
   it('should align equal terms in separate entity indices', () => {

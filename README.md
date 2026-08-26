@@ -416,7 +416,9 @@ for (const quad of store.match(namedNode('http://ex.org/Mickey'), null, null))
 
 Stores created by the same N3.js module automatically share numeric entity identifiers.
 They retain separate internal ownership scopes, factories, and blank-node allocation state, while set operations can work directly on their aligned internal keys.
-The shared registry is internal: an identifier is retained while at least one live scope owns it, then incrementally released and recycled after those scopes are collected.
+The shared registry is internal: an identifier is retained while at least one live scope owns it, then incrementally released after those scopes are collected.
+Identifiers increase monotonically until the safe-integer limit, then allocation wraps to ID 2 and scans for the next identifier that is not in use.
+Released identifiers are not retained in a free list; they become allocation candidates only after that wrap.
 Every `EntityIndex` created by that module uses the same registry; the registry cannot be replaced or isolated.
 Separately loaded copies of N3.js retain separate registries so different package versions do not share private encodings.
 
