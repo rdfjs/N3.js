@@ -415,13 +415,17 @@ for (const quad of store.match(namedNode('http://ex.org/Mickey'), null, null))
 ```
 
 Stores created by the same N3.js module automatically share numeric entity identifiers.
-They retain separate entity indices, factories, and blank-node allocation state, while set operations can work directly on their aligned internal keys.
-The shared registry is internal: an identifier is retained while at least one live entity index owns it, then incrementally released and recycled after those indices are collected.
+They retain separate internal ownership scopes, factories, and blank-node allocation state, while set operations can work directly on their aligned internal keys.
+The shared registry is internal: an identifier is retained while at least one live scope owns it, then incrementally released and recycled after those scopes are collected.
 Every `EntityIndex` created by that module uses the same registry; the registry cannot be replaced or isolated.
 Separately loaded copies of N3.js retain separate registries so different package versions do not share private encodings.
 
+Operations that enumerate their output, such as `filter` and `map`, create an independent scope containing only the output entities.
+Operations that copy aligned indexes, such as `match`, `intersection`, and `difference`, select a scope based on entity cardinality: sparse and empty results retain only their own entities, while dense results share their source scope to avoid a full extra scan.
+Importing another store likewise retains only entities referenced by the imported graph, rather than everything owned by its scope.
+
 The `EntityIndex` export and `entityIndex` store option remain as compatibility façades, but are deprecated.
-New code should let each `Store` manage its own entity index.
+New code should let each `Store` manage its own entity ownership scope.
 
 ### [`Dataset` Interface](https://rdf.js.org/dataset-spec/#dataset-interface)
 This store adheres to the `Dataset` interface which exposes the following properties

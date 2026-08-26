@@ -71,6 +71,23 @@ function intersection(shared, rightSize = size) {
   return duration;
 }
 
+function scopeSelection() {
+  const source = fill(new N3.Store(), 'high');
+  const sparseSource = fill(new N3.Store(), 'high', size / 2, Math.max(1, Math.floor(size / 100)));
+  const dense = source.intersection(source);
+  const sparse = source.intersection(sparseSource);
+  const empty = source.difference(source);
+  return {
+    sourceIdentifiers: source._entityScope._ownership.length,
+    denseIdentifiers: dense._entityScope._ownership.length,
+    denseSharesScope: dense._entityScope === source._entityScope,
+    sparseIdentifiers: sparse._entityScope._ownership.length,
+    sparseSharesScope: sparse._entityScope === source._entityScope,
+    emptyIdentifiers: empty._entityScope._ownership.length,
+    emptySharesScope: empty._entityScope === source._entityScope,
+  };
+}
+
 function compare(callback) {
   callback(false);
   callback(true);
@@ -212,6 +229,7 @@ async function main() {
     addHighCardinality: compare(shared => add(shared, 'high')),
     intersection: compare(shared => intersection(shared)),
     asymmetricIntersection: compare(shared => intersection(shared, Math.max(1, Math.floor(size / 100)))),
+    scopeSelection: scopeSelection(),
     garbageCollection: gc,
   }, null, 2));
 }

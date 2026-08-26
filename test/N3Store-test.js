@@ -2908,10 +2908,64 @@ describe('shared entity registry', () => {
     const left = new Store([quad(namedNode('s'), namedNode('p'), namedNode('o'))]);
     const right = new Store([quad(namedNode('other'), namedNode('p'), namedNode('o'))]);
 
+    expect(left._entityIndex).toBe(left._entityScope);
+    expect(left._entityScope).not.toBeInstanceOf(EntityIndex);
     expect(left._entityIndex).not.toBe(right._entityIndex);
     expect(left._entityIndex._registry).toBe(right._entityIndex._registry);
     expect(left._entityIndex._termToNumericId(namedNode('p')))
       .toBe(right._entityIndex._termToNumericId(namedNode('p')));
+  });
+
+  it('should isolate empty and entity-sparse result scopes', () => {
+    const nested = quad(namedNode('nested-s'), namedNode('nested-p'), namedNode('nested-o'));
+    const shared = quad(nested, namedNode('outer-p'), namedNode('outer-o'));
+    const extras = Array.from({ length: 10 }, (_, index) =>
+      quad(namedNode(`s${index}`), namedNode(`p${index}`), namedNode(`o${index}`)));
+    const source = new Store([shared, ...extras]);
+    const other = new Store([shared]);
+
+    const sparse = source.intersection(other);
+    expect(sparse.equals(other)).toBe(true);
+    expect(sparse._entityScope).not.toBe(source._entityScope);
+    // The quoted subject and its components must all remain owned.
+    expect(sparse._entityScope._ownership).toHaveLength(6);
+
+    for (const empty of [
+      source.difference(source),
+      source.intersection(new Store([quad(namedNode('x'), namedNode('y'), namedNode('z'))])),
+      source.match(namedNode('missing')).filtered,
+    ]) {
+      expect(empty._entityScope).not.toBe(source._entityScope);
+      expect(empty._entityScope._ownership).toHaveLength(0);
+    }
+  });
+
+  it('should share dense result scopes and selectively retain imported graphs', () => {
+    const entityIndex = new EntityIndex();
+    const shared = quad(namedNode('s'), namedNode('p'), namedNode('o'));
+    const source = new Store([shared], { entityIndex });
+
+    expect(source.intersection(source)._entityScope).toBe(entityIndex);
+
+    // Pollute the compatibility scope without adding those entities to source.
+    const unrelated = new Store(Array.from({ length: 10 }, (_, index) =>
+      quad(namedNode(`other-s${index}`), namedNode(`other-p${index}`), namedNode(`other-o${index}`))),
+    { entityIndex });
+    const target = new Store();
+    target.addAll(source);
+
+    expect(unrelated.size).toBe(10);
+    expect(target._entityScope._ownership).toHaveLength(3);
+    expect(target._entityScope._ownership.length).toBeLessThan(entityIndex._ownership.length);
+    expect(source.union(new Store())._entityScope).not.toBe(entityIndex);
+    expect(source.match().filtered._entityScope).not.toBe(entityIndex);
+  });
+
+  it('should give enumerated filter and map results independent scopes', () => {
+    const source = new Store([quad(namedNode('s'), namedNode('p'), namedNode('o'))]);
+
+    expect(source.filter(() => true)._entityScope).not.toBe(source._entityScope);
+    expect(source.map(value => value)._entityScope).not.toBe(source._entityScope);
   });
 
   it('should always bind entity indices to the module registry', () => {

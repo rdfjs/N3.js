@@ -1,4 +1,4 @@
-// Assigns shared numeric identifiers while an entity index owns them.
+// Assigns shared numeric identifiers while an entity scope owns them.
 // Bound finalizer cleanup so large stores do not monopolize the event loop.
 const RELEASE_BATCH_SIZE = 4096;
 
@@ -25,7 +25,7 @@ export default class N3EntityRegistry {
     this._pendingReleases = [];
     this._releaseScheduled = false;
 
-    // One registration per entity index releases all of its identifiers together.
+    // One registration per entity scope releases all of its identifiers together.
     this._finalizer = new FinalizationRegistry(ownership => this._enqueueRelease(ownership));
   }
 
