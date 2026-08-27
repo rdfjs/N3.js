@@ -57,6 +57,7 @@ export default class N3Lexer {
     this._boolean = /^(?:true|false)(?=[.,;!\^\s#()\[\]\{\}"'<>])/;
     this._atKeyword = /^@[a-z]+(?=[\s#<:])/i;
     this._keyword = /^(?:PREFIX|BASE|VERSION|GRAPH)(?=[\s#<])/i;
+    this._n3Id = /^id(?=[\s#<])/;
     this._shortPredicates = /^a(?=[\s#()\[\]\{\}"'<>])/;
     this._newline = /^[ \t]*(?:#[^\n\r]*)?(?:\r\n|\n|\r)[ \t]*/;
     this._comment = /#([^\n\r]*)/;
@@ -314,6 +315,14 @@ export default class N3Lexer {
         // Try to find an abbreviated predicate
         if (match = this._shortPredicates.exec(input))
           type = 'abbreviation', value = 'a';
+        else
+          inconclusive = true;
+        break;
+
+      case 'i':
+        // Try to find the IRI property list identifier
+        if (this._n3Mode && (match = this._n3Id.exec(input)))
+          type = 'id';
         else
           inconclusive = true;
         break;

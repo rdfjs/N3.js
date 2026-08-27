@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>N3.js browser bundle tests</title>
+</head>
+<body>
+  <!-- The IIFE bundle is consumed the way browsers use it: a plain script tag
+       exposing a global N3. -->
+  <script src="/browser/n3.min.js"></script>
+  <script type="module">
+    // Parses Turtle (including a language-tagged literal and an RDF 1.2 triple
+    // term), writes the quads back out, re-parses the output, and checks the
+    // round trip preserved every quad.
+    async function roundTrip(N3) {
+      const assert = (condition, message) => {
+        if (!condition)
+          throw new Error(message);
+      };
+      const turtle = `@prefix ex: <http://example.org/>.
+        ex:s ex:p "bonjour"@fr.
+        ex:s ex:q <<( ex:a ex:b ex:c )>>.`;
+
+      const quads = new N3.Parser().parse(turtle);
+      assert(quads.length === 2, `expected 2 quads, got ${quads.length}`);
+      const literal = quads[0].object;
+      assert(literal.termType === 'Literal' && literal.language === 'fr',
+        `expected a French literal, got ${literal.termType} "${literal.value}"`);
+      const tripleTerm = quads[1].object;
+      assert(tripleTerm.termType === 'Quad' &&
+             tripleTerm.predicate.value === 'http://example.org/b',
+        `expected a triple term object, got ${tripleTerm.termType}`);
+
+      const written = await new Promise((resolve, reject) => {
+        const writer = new N3.Writer();
+        writer.addQuads(quads);
+        writer.end((error, result) => error ? reject(error) : resolve(result));
+      });
+      const reparsed = new N3.Parser().parse(written);
+      assert(reparsed.length === quads.length &&
+             quads.every(quad => reparsed.some(other => other.equals(quad))),
+        `round trip lost quads; writer output was:\n${written}`);
+    }
+
+    // Runs the round trip against a bundle, reporting per-bundle pass/fail.
+    async function testBundle(name, loadBundle) {
+      try {
+        await roundTrip(await loadBundle());
+        return { name, passed: true };
+      }
+      catch (error) {
+        return { name, passed: false, error: String(error && error.stack || error) };
+      }
+    }
+
+    // The runner (test/browser/run.mjs) polls for this global.
+    window.__bundleTestResults = await Promise.all([
+      testBundle('IIFE browser/n3.min.js', () => window.N3),
+      testBundle('ESM  browser/n3.esm.min.js', () => import('/browser/n3.esm.min.js')),
+    ]);
+  </script>
+</body>
+</html>
