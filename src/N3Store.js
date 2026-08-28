@@ -1344,8 +1344,6 @@ class DatasetCoreAndReadableStream extends Readable {
     return new DatasetCoreAndReadableStream(this.filtered, subject, predicate, object, graph, this.options);
   }
 
-  // ### Dataset matches are iterable.
-  // Uses the materialized store when available, or reads matching quads lazily.
   [Symbol.iterator]() {
     return this._filtered ? this._filtered[Symbol.iterator]() :
       this.n3Store.readQuads(this.subject, this.predicate, this.object, this.graph);
