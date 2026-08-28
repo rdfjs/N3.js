@@ -351,25 +351,29 @@ export default class N3Store {
 
   // ### `_countInIndex` counts matching quads in a three-layered index.
   // The index base is `index0` and the keys at each level are `key0`, `key1`, and `key2`.
-  // Any of these keys can be undefined, which is interpreted as a wildcard.
+  // A key and any keys after it can be null or undefined, which is interpreted as a wildcard.
   _countInIndex(index0, key0, key1, key2) {
-    let count = 0, tmp, index1, index2;
+    let count = 0, index1, index2;
 
-    // If a key is specified, count only that part of index 0
-    if (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
-    for (const value0 in index0) {
-      if (index1 = index0[value0]) {
-        // If a key is specified, count only that part of index 1
-        if (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
-        for (const value1 in index1) {
-          if (index2 = index1[value1]) {
-            // If a key is specified, count the quad if it exists
-            if (key2) (key2 in index2) && count++;
-            // Otherwise, count all quads
-            else count += index2[SIZE];
-          }
-        }
+    // Bound outer keys can be looked up directly.
+    if (key0) {
+      if (!(index1 = index0[key0]))
+        return 0;
+      if (key1) {
+        if (!(index2 = index1[key1]))
+          return 0;
+        return key2 ? (key2 in index2 ? 1 : 0) : index2[SIZE];
       }
+
+      for (const value1 in index1)
+        count += index1[value1][SIZE];
+      return count;
+    }
+
+    for (const value0 in index0) {
+      index1 = index0[value0];
+      for (const value1 in index1)
+        count += index1[value1][SIZE];
     }
     return count;
   }
