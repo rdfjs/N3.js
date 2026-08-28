@@ -268,35 +268,65 @@ export default class N3Store {
 
   // ### `_findInIndex` finds a set of quads in a three-layered index.
   // The index base is `index0` and the keys at each level are `key0`, `key1`, and `key2`.
-  // Any of these keys can be undefined, which is interpreted as a wildcard.
+  // A key and any keys after it can be undefined, which is interpreted as a wildcard.
   // `name0`, `name1`, and `name2` are the names of the keys at each level,
   // used when reconstructing the resulting quad
   // (for instance: _subject_, _predicate_, and _object_).
   // Finally, `graphId` will be the graph of the created quads.
   *_findInIndex(index0, key0, key1, key2, name0, name1, name2, graphId) {
-    let tmp, index1, index2;
+    let index1, index2;
     const entityKeys = this._entities;
     const graph = this._termFromId(entityKeys[graphId]);
     const parts = { subject: null, predicate: null, object: null };
 
-    // If a key is specified, use only that part of index 0.
-    if (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
-    for (const value0 in index0) {
-      if (index1 = index0[value0]) {
-        parts[name0] = this._termFromId(entityKeys[value0]);
-        // If a key is specified, use only that part of index 1.
-        if (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
-        for (const value1 in index1) {
-          if (index2 = index1[value1]) {
-            parts[name1] = this._termFromId(entityKeys[value1]);
-            // If a key is specified, use only that part of index 2, if it exists.
-            const values = key2 ? (key2 in index2 ? [key2] : []) : Object.keys(index2);
-            // Create quads for all items found in index 2.
-            for (let l = 0; l < values.length; l++) {
-              parts[name2] = this._termFromId(entityKeys[values[l]]);
-              yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
-            }
+    // Bound outer keys can be looked up directly.
+    if (key0) {
+      if (!(index1 = index0[key0]))
+        return;
+      parts[name0] = this._termFromId(entityKeys[key0]);
+
+      if (key1) {
+        if (!(index2 = index1[key1]))
+          return;
+        parts[name1] = this._termFromId(entityKeys[key1]);
+        if (key2) {
+          if (!(key2 in index2))
+            return;
+          parts[name2] = this._termFromId(entityKeys[key2]);
+          yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
+        }
+        else {
+          const values = Object.keys(index2);
+          for (let l = 0; l < values.length; l++) {
+            parts[name2] = this._termFromId(entityKeys[values[l]]);
+            yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
           }
+        }
+      }
+      else {
+        for (const value1 in index1) {
+          index2 = index1[value1];
+          parts[name1] = this._termFromId(entityKeys[value1]);
+          const values = Object.keys(index2);
+          for (let l = 0; l < values.length; l++) {
+            parts[name2] = this._termFromId(entityKeys[values[l]]);
+            yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
+          }
+        }
+      }
+      return;
+    }
+
+    for (const value0 in index0) {
+      index1 = index0[value0];
+      parts[name0] = this._termFromId(entityKeys[value0]);
+      for (const value1 in index1) {
+        index2 = index1[value1];
+        parts[name1] = this._termFromId(entityKeys[value1]);
+        const values = Object.keys(index2);
+        for (let l = 0; l < values.length; l++) {
+          parts[name2] = this._termFromId(entityKeys[values[l]]);
+          yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
         }
       }
     }
