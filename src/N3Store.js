@@ -351,7 +351,7 @@ export default class N3Store {
 
   // ### `_countInIndex` counts matching quads in a three-layered index.
   // The index base is `index0` and the keys at each level are `key0`, `key1`, and `key2`.
-  // A key and any keys after it can be undefined, which is interpreted as a wildcard.
+  // A key and any keys after it can be null or undefined, which is interpreted as a wildcard.
   _countInIndex(index0, key0, key1, key2) {
     let count = 0, index1, index2;
 
