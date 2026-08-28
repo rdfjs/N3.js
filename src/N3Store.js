@@ -1148,10 +1148,9 @@ export default class N3Store {
   }
 
   // ### Store is an iterable.
-  // Can be used where iterables are expected: for...of loops, array spread operator,
-  // `yield*`, and destructuring assignment (order is not guaranteed).
-  *[Symbol.iterator]() {
-    yield* this.readQuads();
+  // Returns the quad iterator directly; order is not guaranteed.
+  [Symbol.iterator]() {
+    return this.readQuads();
   }
 }
 
@@ -1345,7 +1344,8 @@ class DatasetCoreAndReadableStream extends Readable {
     return new DatasetCoreAndReadableStream(this.filtered, subject, predicate, object, graph, this.options);
   }
 
-  *[Symbol.iterator]() {
-    yield* this._filtered || this.n3Store.readQuads(this.subject, this.predicate, this.object, this.graph);
+  [Symbol.iterator]() {
+    return this._filtered ? this._filtered[Symbol.iterator]() :
+      this.n3Store.readQuads(this.subject, this.predicate, this.object, this.graph);
   }
 }

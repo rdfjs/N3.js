@@ -102,13 +102,13 @@ export default class N3Lexer {
         if (this.comments && (comment = this._comment.exec(whiteSpaceMatch[0])))
           emitToken('comment', comment[1], '', this._line, whiteSpaceMatch[0].length);
         // Advance the input
-        input = input.substr(whiteSpaceMatch[0].length, input.length);
+        input = input.slice(whiteSpaceMatch[0].length);
         currentLineLength = input.length;
         this._line++;
       }
       // Skip whitespace on current line
       if (!whiteSpaceMatch && (whiteSpaceMatch = this._whitespace.exec(input)))
-        input = input.substr(whiteSpaceMatch[0].length, input.length);
+        input = input.slice(whiteSpaceMatch[0].length);
 
       // Stop for now if we're at the end
       if (this._endOfFile.test(input)) {
@@ -136,7 +136,7 @@ export default class N3Lexer {
         else if (input[1] === '^') {
           this._previousMarker = '^^';
           // Move to type IRI or prefixed name
-          input = input.substr(2);
+          input = input.slice(2);
           if (input[0] !== '<') {
             inconclusive = true;
             break;
@@ -425,7 +425,7 @@ export default class N3Lexer {
       this._previousMarker = type;
 
       // Advance to next part to tokenize
-      input = input.substr(length, input.length);
+      input = input.slice(length);
     }
 
     // Emits the token through the callback
@@ -525,7 +525,7 @@ export default class N3Lexer {
 
   // ### Strips off any starting UTF BOM mark.
   _readStartingBom(input) {
-    return input.startsWith('\ufeff') ? input.substr(1) : input;
+    return input.startsWith('\ufeff') ? input.slice(1) : input;
   }
 
   // ## Public methods
