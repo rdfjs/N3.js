@@ -274,54 +274,38 @@ export default class N3Store {
   // (for instance: _subject_, _predicate_, and _object_).
   // Finally, `graphId` will be the graph of the created quads.
   *_findInIndex(index0, key0, key1, key2, name0, name1, name2, graphId) {
-    let index1, index2;
     const entityKeys = this._entities;
     const graph = this._termFromId(entityKeys[graphId]);
     const parts = { subject: null, predicate: null, object: null };
 
-    // Bound outer keys can be looked up directly.
-    if (key0) {
-      if (!(index1 = index0[key0]))
+    // Exact matches avoid allocating key arrays or entering generic loops.
+    if (key2) {
+      const index1 = index0[key0];
+      const index2 = index1 && index1[key1];
+      if (!index2 || !(key2 in index2))
         return;
       parts[name0] = this._termFromId(entityKeys[key0]);
-
-      if (key1) {
-        if (!(index2 = index1[key1]))
-          return;
-        parts[name1] = this._termFromId(entityKeys[key1]);
-        if (key2) {
-          if (!(key2 in index2))
-            return;
-          parts[name2] = this._termFromId(entityKeys[key2]);
-          yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
-        }
-        else {
-          const values = Object.keys(index2);
-          for (let l = 0; l < values.length; l++) {
-            parts[name2] = this._termFromId(entityKeys[values[l]]);
-            yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
-          }
-        }
-      }
-      else {
-        for (const value1 in index1) {
-          index2 = index1[value1];
-          parts[name1] = this._termFromId(entityKeys[value1]);
-          const values = Object.keys(index2);
-          for (let l = 0; l < values.length; l++) {
-            parts[name2] = this._termFromId(entityKeys[values[l]]);
-            yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
-          }
-        }
-      }
+      parts[name1] = this._termFromId(entityKeys[key1]);
+      parts[name2] = this._termFromId(entityKeys[key2]);
+      yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
       return;
     }
 
-    for (const value0 in index0) {
-      index1 = index0[value0];
+    if (key0 && !(key0 in index0))
+      return;
+    // A null key list stops after visiting a bound key, avoiding a one-item array.
+    const keys0 = key0 ? null : Object.keys(index0);
+    for (let i0 = 0, value0 = key0 || keys0[0]; value0;
+         value0 = keys0 && keys0[++i0]) {
+      const index1 = index0[value0];
       parts[name0] = this._termFromId(entityKeys[value0]);
-      for (const value1 in index1) {
-        index2 = index1[value1];
+
+      if (key1 && !(key1 in index1))
+        return;
+      const keys1 = key1 ? null : Object.keys(index1);
+      for (let i1 = 0, value1 = key1 || keys1[0]; value1;
+           value1 = keys1 && keys1[++i1]) {
+        const index2 = index1[value1];
         parts[name1] = this._termFromId(entityKeys[value1]);
         const values = Object.keys(index2);
         for (let l = 0; l < values.length; l++) {
