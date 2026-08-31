@@ -479,10 +479,41 @@ export default class N3Store {
     return !this.readQuads(subjectOrQuad, predicate, object, graph).next().done;
   }
 
-  // ### `import` adds a stream of quads to the store
+  // ### `import` adds a stream of quads to the store.
+  // It returns the stream, wrapped such that it can also be awaited
+  // as a promise of the store (per the RDF/JS `Dataset.import` signature).
   import(stream) {
     stream.on('data', quad => { this.addQuad(quad); });
-    return stream;
+
+    const store = this;
+    let promise = null;
+    function trackCompletion() {
+      return promise || (promise = new Promise((resolve, reject) => {
+        // A stream that has already errored rejects,
+        // even if it was destroyed or has stopped being readable
+        if (stream.errored)
+          reject(stream.errored);
+        // A stream that has already ended resolves immediately
+        else if (stream.readableEnded || stream.destroyed || stream.readable === false)
+          resolve(store);
+        // An active stream resolves or rejects upon completion
+        else {
+          stream.once('end', () => resolve(store));
+          stream.once('error', reject);
+        }
+      }));
+    }
+
+    // Return a wrapper that behaves as the stream, but is also awaitable
+    return new Proxy(stream, {
+      get(target, property) {
+        if (property === 'then' || property === 'catch' || property === 'finally') {
+          const completion = trackCompletion();
+          return completion[property].bind(completion);
+        }
+        return target[property];
+      },
+    });
   }
 
   // ### `removeQuad` removes a quad from the store if it exists
