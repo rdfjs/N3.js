@@ -31,6 +31,9 @@ function merge(target, source, depth = 4) {
   return target;
 }
 
+// Array-valued slots structurally match triple terms.
+const isQuadPattern = Array.isArray;
+
 /**
  * Determines the intersection of the `_graphs` index s1 and s2.
  * s1 and s2 *must* belong to Stores that share an `_entityIndex`.
@@ -118,22 +121,23 @@ export class N3EntityIndex {
      // inverse of `_ids`
     this._entities = Object.create(null);
     this._entities[1] = '';
+    // Maps s/p/o[/g] component ids to triple-term ids
+    this._quadIds = Object.create(null);
     // `_blankNodeIndex` is the index of the last automatically named blank node
     this._blankNodeIndex = 0;
     this._factory = options.factory || N3DataFactory;
   }
 
   _termFromId(id) {
-    if (id[0] === '.') {
+    // Component-id arrays represent triple terms
+    if (typeof id !== 'string') {
       const entities = this._entities;
-      const terms = id.split('.');
-      const q = this._factory.quad(
-        this._termFromId(entities[terms[1]]),
-        this._termFromId(entities[terms[2]]),
-        this._termFromId(entities[terms[3]]),
-        terms[4] && this._termFromId(entities[terms[4]]),
+      return this._factory.quad(
+        this._termFromId(entities[id[0]]),
+        this._termFromId(entities[id[1]]),
+        this._termFromId(entities[id[2]]),
+        id.length > 3 ? this._termFromId(entities[id[3]]) : undefined,
       );
-      return q;
     }
     return termFromId(id, this._factory);
   }
@@ -141,25 +145,102 @@ export class N3EntityIndex {
   _termToNumericId(term) {
     if (term.termType === 'Quad') {
       const s = this._termToNumericId(term.subject),
-          p = this._termToNumericId(term.predicate),
-          o = this._termToNumericId(term.object);
-      let g;
-
-      return s && p && o && (isDefaultGraph(term.graph) || (g = this._termToNumericId(term.graph))) &&
-        this._ids[g ? `.${s}.${p}.${o}.${g}` : `.${s}.${p}.${o}`];
+          p = s && this._termToNumericId(term.predicate),
+          o = p && this._termToNumericId(term.object);
+      let g = 1;
+      if (!o || !isDefaultGraph(term.graph) && !(g = this._termToNumericId(term.graph)))
+        return undefined;
+      const l1 = this._quadIds[s], l2 = l1 && l1[p], entry = l2 && l2[o];
+      // Objects map graph ids; numbers represent default-graph terms
+      return typeof entry === 'object' ? entry[g] : g === 1 ? entry : undefined;
     }
     return this._ids[termToId(term)];
   }
 
   _termToNewNumericId(term) {
-    // This assumes that no graph term is present - we may wish to error if there is one
-    const str = term && term.termType === 'Quad' ?
-      `.${this._termToNewNumericId(term.subject)}.${this._termToNewNumericId(term.predicate)}.${this._termToNewNumericId(term.object)}${
-        isDefaultGraph(term.graph) ? '' : `.${this._termToNewNumericId(term.graph)}`
-      }`
-      : termToId(term);
-
+    if (term && term.termType === 'Quad') {
+      const s = this._termToNewNumericId(term.subject),
+          p = this._termToNewNumericId(term.predicate),
+          o = this._termToNewNumericId(term.object),
+          g = isDefaultGraph(term.graph) ? 1 : this._termToNewNumericId(term.graph);
+      const l1 = this._quadIds[s] || (this._quadIds[s] = Object.create(null)),
+          l2 = l1[p] || (l1[p] = Object.create(null));
+      const entry = l2[o];
+      if (typeof entry !== 'object') {
+        // Store default-graph term ids directly
+        if (g === 1) {
+          return entry !== undefined ? entry :
+            (this._entities[++this._id] = [s, p, o], l2[o] = this._id);
+        }
+        // Add graph-specific terms through a graph sub-map
+        const spill = l2[o] = Object.create(null);
+        if (entry !== undefined)
+          spill[1] = entry;
+        this._entities[++this._id] = [s, p, o, g];
+        return (spill[g] = this._id);
+      }
+      return entry[g] || (
+        this._entities[++this._id] = g === 1 ? [s, p, o] : [s, p, o, g],
+        entry[g] = this._id
+      );
+    }
+    const str = termToId(term);
     return this._ids[str] || (this._ids[this._entities[++this._id] = str] = this._id);
+  }
+
+  // ### `_matchingQuadIds` yields triple-term ids matching an array pattern
+  *_matchingQuadIds(pattern) {
+    const graph = pattern[3];
+    for (const l1 of this._matchingValues(this._quadIds, pattern[0])) {
+      for (const l2 of this._matchingValues(l1, pattern[1])) {
+        for (const entry of this._matchingValues(l2, pattern[2])) {
+          if (typeof entry !== 'object') {
+            if (graph === null || graph === undefined || isDefaultGraph(graph))
+              yield entry;
+          }
+          else
+            yield* this._matchingValues(entry, graph);
+        }
+      }
+    }
+  }
+
+  // ### `_matchingValues` yields index values matching a pattern component
+  *_matchingValues(index, component) {
+    if (component === null || component === undefined) {
+      for (const key in index)
+        yield index[key];
+    }
+    else if (isQuadPattern(component)) {
+      for (const id of this._matchingQuadIds(component)) {
+        if (id in index)
+          yield index[id];
+      }
+    }
+    else {
+      const id = this._termToNumericId(component);
+      if (id !== undefined && id in index)
+        yield index[id];
+    }
+  }
+
+  // ### `_quadIdMatches` tests a triple-term id against an array pattern
+  _quadIdMatches(id, pattern) {
+    const entry = this._entities[id];
+    return typeof entry !== 'string' &&
+      this._componentMatches(entry[0], pattern[0]) &&
+      this._componentMatches(entry[1], pattern[1]) &&
+      this._componentMatches(entry[2], pattern[2]) &&
+      this._componentMatches(entry.length > 3 ? entry[3] : 1, pattern[3]);
+  }
+
+  // ### `_componentMatches` tests a component id against a pattern component
+  _componentMatches(id, pattern) {
+    if (pattern === null || pattern === undefined)
+      return true;
+    if (isQuadPattern(pattern))
+      return this._quadIdMatches(id, pattern);
+    return this._termToNumericId(pattern) === id;
   }
 
   createBlankNode(suggestedName) {
@@ -378,6 +459,22 @@ export default class N3Store {
     return count;
   }
 
+  // ### `_candidateIds` resolves a pattern slot to matching ids
+  _candidateIds(term) {
+    if (isQuadPattern(term))
+      return [...this._entityIndex._matchingQuadIds(term)];
+    const id = this._termToNumericId(term);
+    return id === undefined ? [] : [id];
+  }
+
+  // ### `_graphCandidates` returns graphs matching an array pattern
+  _graphCandidates(pattern) {
+    const graphs = Object.create(null);
+    for (const id of this._entityIndex._matchingQuadIds(pattern))
+      graphs[id] = this._graphs[id];
+    return graphs;
+  }
+
   // ### `_getGraphs` returns an array with the given graph,
   // or all graphs if the argument is null or undefined.
   _getGraphs(graph) {
@@ -565,6 +662,14 @@ export default class N3Store {
    * @deprecated Use `match` instead.
    */
   *readQuads(subject, predicate, object, graph) {
+    // Predicates cannot be triple terms
+    if (isQuadPattern(predicate))
+      return;
+    if (isQuadPattern(subject) || isQuadPattern(object) || isQuadPattern(graph)) {
+      yield* this._readQuadsStructural(subject, predicate, object, graph);
+      return;
+    }
+
     const graphs = this._getGraphs(graph);
     let content, subjectId, predicateId, objectId;
 
@@ -604,6 +709,43 @@ export default class N3Store {
     }
   }
 
+  // ### `_readQuadsStructural` reads quads through array-pattern candidates
+  *_readQuadsStructural(subject, predicate, object, graph) {
+    let content, predicateId;
+    if (predicate && !(predicateId = this._termToNumericId(predicate)))
+      return;
+    const subjectIds = subject ? this._candidateIds(subject) : [undefined];
+    const objectIds = object ? this._candidateIds(object) : [undefined];
+    const graphs = isQuadPattern(graph) ? this._graphCandidates(graph) : this._getGraphs(graph);
+
+    for (const graphId in graphs) {
+      if (content = graphs[graphId]) {
+        // Choose the best index for each candidate pair
+        for (const subjectId of subjectIds) {
+          for (const objectId of objectIds) {
+            if (subjectId) {
+              if (objectId)
+                yield* this._findInIndex(content.objects, objectId, subjectId, predicateId,
+                                  'object', 'subject', 'predicate', graphId);
+              else
+                yield* this._findInIndex(content.subjects, subjectId, predicateId, null,
+                                  'subject', 'predicate', 'object', graphId);
+            }
+            else if (predicateId)
+              yield* this._findInIndex(content.predicates, predicateId, objectId, null,
+                                'predicate', 'object', 'subject', graphId);
+            else if (objectId)
+              yield* this._findInIndex(content.objects, objectId, null, null,
+                                'object', 'subject', 'predicate', graphId);
+            else
+              yield* this._findInIndex(content.subjects, null, null, null,
+                                'subject', 'predicate', 'object', graphId);
+          }
+        }
+      }
+    }
+  }
+
   // ### `match` returns a new dataset that is comprised of all quads in the current instance matching the given arguments.
   // The logic described in Quad Matching is applied for each quad in this dataset to check if it should be included in the output dataset.
   // Note: This method always returns a new DatasetCore, even if that dataset contains no quads.
@@ -617,6 +759,12 @@ export default class N3Store {
   // ### `countQuads` returns the number of quads matching a pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   countQuads(subject, predicate, object, graph) {
+    // Predicates cannot be triple terms
+    if (isQuadPattern(predicate))
+      return 0;
+    if (isQuadPattern(subject) || isQuadPattern(object) || isQuadPattern(graph))
+      return this._countQuadsStructural(subject, predicate, object, graph);
+
     const graphs = this._getGraphs(graph);
     let count = 0, content, subjectId, predicateId, objectId;
 
@@ -645,6 +793,36 @@ export default class N3Store {
         else {
           // If only object is possibly given, the object index will be the fastest
           count += this._countInIndex(content.objects, objectId, subjectId, predicateId);
+        }
+      }
+    }
+    return count;
+  }
+
+  // ### `_countQuadsStructural` counts quads through array-pattern candidates
+  _countQuadsStructural(subject, predicate, object, graph) {
+    let count = 0, content, predicateId;
+    if (predicate && !(predicateId = this._termToNumericId(predicate)))
+      return 0;
+    const subjectIds = subject ? this._candidateIds(subject) : [undefined];
+    const objectIds = object ? this._candidateIds(object) : [undefined];
+    const graphs = isQuadPattern(graph) ? this._graphCandidates(graph) : this._getGraphs(graph);
+
+    for (const graphId in graphs) {
+      if (content = graphs[graphId]) {
+        // Choose the best index for each candidate pair
+        for (const subjectId of subjectIds) {
+          for (const objectId of objectIds) {
+            if (subjectId) {
+              count += objectId ?
+                this._countInIndex(content.objects, objectId, subjectId, predicateId) :
+                this._countInIndex(content.subjects, subjectId, predicateId, objectId);
+            }
+            else if (predicateId)
+              count += this._countInIndex(content.predicates, predicateId, objectId, subjectId);
+            else
+              count += this._countInIndex(content.objects, objectId, subjectId, predicateId);
+          }
         }
       }
     }
@@ -687,6 +865,7 @@ export default class N3Store {
 
   // ### `forSubjects` executes the callback on all subjects that match the pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
+  // Entity loops accept RDF terms, not array patterns
   forSubjects(callback, predicate, object, graph) {
     const graphs = this._getGraphs(graph);
     let content, predicateId, objectId;
@@ -1201,6 +1380,39 @@ class DatasetCoreAndReadableStream extends Readable {
       const newStore = this._filtered = new N3Store({ factory: n3Store._factory, entityIndex: this.options.entityIndex });
 
       let subjectId, predicateId, objectId;
+
+      // Predicates cannot be triple terms
+      if (isQuadPattern(predicate))
+        return newStore;
+
+      // Merge the subindexes of each array-pattern candidate
+      if (isQuadPattern(subject) || isQuadPattern(object) || isQuadPattern(graph)) {
+        if (predicate && !(predicateId = newStore._termToNumericId(predicate)))
+          return newStore;
+        const subjectIds = subject ? n3Store._candidateIds(subject) : [undefined];
+        const objectIds = object ? n3Store._candidateIds(object) : [undefined];
+        const candidateGraphs = isQuadPattern(graph) ? n3Store._graphCandidates(graph) : n3Store._getGraphs(graph);
+        for (const graphKey in candidateGraphs) {
+          const content = candidateGraphs[graphKey];
+          if (content) {
+            let target = null;
+            for (subjectId of subjectIds) {
+              for (objectId of objectIds) {
+                const subjects = indexMatch(content.subjects, [subjectId, predicateId, objectId]);
+                if (subjects) {
+                  if (!target)
+                    target = newStore._graphs[graphKey] = { subjects: {}, predicates: {}, objects: {} };
+                  merge(target.subjects, subjects, 2);
+                  merge(target.predicates, indexMatch(content.predicates, [predicateId, objectId, subjectId]), 2);
+                  merge(target.objects, indexMatch(content.objects, [objectId, subjectId, predicateId]), 2);
+                }
+              }
+            }
+          }
+        }
+        newStore._size = null;
+        return newStore;
+      }
 
       // Translate IRIs to internal index keys.
       if (subject   && !(subjectId   = newStore._termToNumericId(subject))   ||

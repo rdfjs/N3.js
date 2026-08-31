@@ -464,6 +464,20 @@ The store provides the following search methods
 - `getGraphs` returns an array of unique graphs occurring in matching quad
 - `forGraphs` executes a callback on unique graphs occurring in matching quads
 
+An array in the subject, object, or graph slot of `match`, `getQuads`, `countQuads`, `has`, and friends structurally matches an RDF 1.2 triple term. Its four entries represent the term's subject, predicate, object, and graph: `null` or `undefined` is a wildcard, RDF terms match exactly, and nested arrays recurse. Regular `Quad` and `Variable` terms retain exact-match semantics (see [#633](https://github.com/rdfjs/N3.js/issues/633)):
+
+```JavaScript
+// All quads reifying a statement about :s, in any graph component
+const { namedNode } = N3.DataFactory;
+const reifications = store.getQuads(
+  null,
+  namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#reifies'),
+  [namedNode('http://ex.org/s'), null, null, null],
+);
+```
+
+The entity loops (`getSubjects`/`forObjects` and friends) continue to accept RDF terms rather than structural arrays.
+
 ## Reasoning
 
 N3.js supports reasoning as follows:
