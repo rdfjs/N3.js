@@ -1,11 +1,15 @@
 // **N3Store** objects store N3 quads by graph in memory.
 import { Readable } from 'readable-stream';
 import { default as N3DataFactory, termToId, termFromId } from './N3DataFactory';
+import { entityRegistry } from './N3EntityRegistry';
 import namespaces from './IRIs';
 import { isDefaultGraph } from './N3Util';
 import N3Writer from './N3Writer';
 
 const ITERATOR = Symbol('iter');
+const ENTITY_SCOPE = Symbol('entityScope');
+// Keep common lookups local without duplicating every registry entry per store.
+const ENTITY_CACHE_SIZE = 4096;
 const SIZE = Symbol('size');
 
 function hasInIndex(index0, key0, key1, key2) {
@@ -33,7 +37,7 @@ function merge(target, source, depth = 4) {
 
 /**
  * Determines the intersection of the `_graphs` index s1 and s2.
- * s1 and s2 *must* belong to Stores that share an `_entityIndex`.
+ * s1 and s2 *must* belong to Stores with aligned entity identifiers.
  *
  * False is returned when there is no intersection; this should
  * *not* be set as the value for an index.
@@ -69,7 +73,7 @@ function intersect(s1, s2, depth = 4) {
 
 /**
  * Determines the difference of the `_graphs` index s1 and s2.
- * s1 and s2 *must* belong to Stores that share an `_entityIndex`.
+ * s1 and s2 *must* belong to Stores with aligned entity identifiers.
  *
  * False is returned when there is no difference; this should
  * *not* be set as the value for an index.
@@ -107,20 +111,106 @@ function difference(s1, s2, depth = 4) {
   return target;
 }
 
+// Collect the entities referenced by one graph index, stopping once sharing the
+// source scope is cheaper than creating a narrower one.
+function collectGraphEntityIds(graphs, entities, limit) {
+  const ids = new Set();
+  function add(id) {
+    id = Number(id);
+    if (id === 1 || ids.has(id))
+      return true;
+    ids.add(id);
+    if (ids.size >= limit)
+      return false;
+
+    const value = entities[id];
+    if (value[0] === '.') {
+      for (const component of value.split('.').slice(1))
+        if (!add(component))
+          return false;
+    }
+    return true;
+  }
+
+  for (const graphId in graphs) {
+    if (!add(graphId))
+      return null;
+    const subjects = graphs[graphId].subjects;
+    for (const subjectId in subjects) {
+      if (!add(subjectId))
+        return null;
+      const predicates = subjects[subjectId];
+      for (const predicateId in predicates) {
+        if (!add(predicateId))
+          return null;
+        for (const objectId in predicates[predicateId])
+          if (!add(objectId))
+            return null;
+      }
+    }
+  }
+  return ids;
+}
+
 // ## Constructor
-export class N3EntityIndex {
+class N3EntityScope {
   constructor(options = {}) {
-    this._id = 1;
+    this._registry = entityRegistry;
+    Object.defineProperty(this, '_id', {
+      enumerable: true,
+      get: () => this._registry._id,
+    });
+    this._ownership = this._registry._createOwnership(this);
+    this._owned = Object.create(null);
+    this._owned[1] = true;
+
     // `_ids` maps entities such as `http://xmlns.com/foaf/0.1/name` to numbers,
     // saving memory by using only numbers as keys in `_graphs`
     this._ids = Object.create(null);
     this._ids[''] = 1;
-     // inverse of `_ids`
-    this._entities = Object.create(null);
-    this._entities[1] = '';
+    this._entities = this._registry._entities;
+    this._cacheSize = 1;
     // `_blankNodeIndex` is the index of the last automatically named blank node
     this._blankNodeIndex = 0;
     this._factory = options.factory || N3DataFactory;
+  }
+
+  _retain(id, value) {
+    if (!this._owned[id]) {
+      this._registry._retain(id, this._ownership);
+      this._owned[id] = true;
+    }
+    if (value !== undefined && this._cacheSize < ENTITY_CACHE_SIZE && this._ids[value] === undefined) {
+      this._ids[value] = id;
+      this._cacheSize++;
+    }
+    return id;
+  }
+
+  _importGraphs(graphs) {
+    const ids = collectGraphEntityIds(graphs, this._entities, Infinity);
+    for (const id of ids)
+      this._retain(id, this._entities[id]);
+  }
+
+  _scopeForGraphs(graphs) {
+    // Reuse the scope when the result needs at least half of its entities.
+    const ids = collectGraphEntityIds(
+      graphs,
+      this._entities,
+      Math.ceil(this._ownership.length / 2),
+    );
+    if (ids === null)
+      return this;
+
+    const scope = new N3EntityScope({ factory: this._factory });
+    for (const id of ids)
+      scope._retain(id, this._entities[id]);
+    return scope;
+  }
+
+  _owns(value) {
+    return this._owned[this._registry._lookup(value)];
   }
 
   _termFromId(id) {
@@ -145,21 +235,31 @@ export class N3EntityIndex {
           o = this._termToNumericId(term.object);
       let g;
 
-      return s && p && o && (isDefaultGraph(term.graph) || (g = this._termToNumericId(term.graph))) &&
-        this._ids[g ? `.${s}.${p}.${o}.${g}` : `.${s}.${p}.${o}`];
+      if (!(s && p && o && (isDefaultGraph(term.graph) || (g = this._termToNumericId(term.graph)))))
+        return undefined;
+      const value = g ? `.${s}.${p}.${o}.${g}` : `.${s}.${p}.${o}`;
+      return this._ids[value] || this._registry._lookup(value);
     }
-    return this._ids[termToId(term)];
+
+    const value = termToId(term);
+    return this._ids[value] || this._registry._lookup(value);
   }
 
   _termToNewNumericId(term) {
-    // This assumes that no graph term is present - we may wish to error if there is one
-    const str = term && term.termType === 'Quad' ?
-      `.${this._termToNewNumericId(term.subject)}.${this._termToNewNumericId(term.predicate)}.${this._termToNewNumericId(term.object)}${
-        isDefaultGraph(term.graph) ? '' : `.${this._termToNewNumericId(term.graph)}`
-      }`
-      : termToId(term);
+    let value;
+    if (term && term.termType === 'Quad') {
+      const s = this._termToNewNumericId(term.subject),
+          p = this._termToNewNumericId(term.predicate),
+          o = this._termToNewNumericId(term.object),
+          g = isDefaultGraph(term.graph) ? undefined : this._termToNewNumericId(term.graph);
+      value = g ? `.${s}.${p}.${o}.${g}` : `.${s}.${p}.${o}`;
+    }
+    else
+      value = termToId(term);
 
-    return this._ids[str] || (this._ids[this._entities[++this._id] = str] = this._id);
+    if (this._ids[value])
+      return this._ids[value];
+    return this._retain(this._registry._intern(value), value);
   }
 
   createBlankNode(suggestedName) {
@@ -167,20 +267,22 @@ export class N3EntityIndex {
     // Generate a name based on the suggested name
     if (suggestedName) {
       name = suggestedName = `_:${suggestedName}`, index = 1;
-      while (this._ids[name])
+      while (this._owns(name))
         name = suggestedName + index++;
     }
     // Generate a generic blank node name
     else {
       do { name = `_:b${this._blankNodeIndex++}`; }
-      while (this._ids[name]);
+      while (this._owns(name));
     }
     // Add the blank node to the entities, avoiding the generation of duplicates
-    this._ids[name] = ++this._id;
-    this._entities[this._id] = name;
+    this._retain(this._registry._intern(name), name);
     return this._factory.blankNode(name.substr(2));
   }
 }
+
+// Deprecated compatibility façade. Stores use internal ownership scopes.
+export class N3EntityIndex extends N3EntityScope {}
 
 // ## Constructor
 export default class N3Store {
@@ -195,11 +297,16 @@ export default class N3Store {
       options = quads, quads = null;
     options = options || {};
     this._factory = options.factory || N3DataFactory;
-    this._entityIndex = options.entityIndex || new N3EntityIndex({ factory: this._factory });
-    this._entities = this._entityIndex._entities;
-    this._termFromId = this._entityIndex._termFromId.bind(this._entityIndex);
-    this._termToNumericId = this._entityIndex._termToNumericId.bind(this._entityIndex);
-    this._termToNewNumericId = this._entityIndex._termToNewNumericId.bind(this._entityIndex);
+    if (options.entityIndex && !(options.entityIndex instanceof N3EntityIndex))
+      throw new TypeError('entityIndex must be an EntityIndex');
+    this._entityScope = options[ENTITY_SCOPE] || options.entityIndex ||
+      new N3EntityScope({ factory: this._factory });
+    // Retain the old private name for integrations that inspected it.
+    this._entityIndex = this._entityScope;
+    this._entities = this._entityScope._entities;
+    this._termFromId = this._entityScope._termFromId.bind(this._entityScope);
+    this._termToNumericId = this._entityScope._termToNumericId.bind(this._entityScope);
+    this._termToNewNumericId = this._entityScope._termToNewNumericId.bind(this._entityScope);
 
     // Add quads if passed
     if (quads)
@@ -227,6 +334,18 @@ export default class N3Store {
   }
 
   // ## Private methods
+
+  _newStore(entityScope = new N3EntityScope({ factory: this._entityScope._factory })) {
+    return new N3Store({ factory: this._factory, [ENTITY_SCOPE]: entityScope });
+  }
+
+  _resultStore(graphs, size = null) {
+    graphs = graphs || Object.create(null);
+    const store = this._newStore(this._entityScope._scopeForGraphs(graphs));
+    store._graphs = graphs;
+    store._size = size;
+    return store;
+  }
 
   // ### `_addToIndex` adds a quad to a three-layered index.
   // Returns if the index has changed, if the entry did not already exist.
@@ -611,7 +730,7 @@ export default class N3Store {
   // Setting any field to `undefined` or `null` indicates a wildcard.
   // For backwards compatibility, the object return also implements the Readable stream interface.
   match(subject, predicate, object, graph) {
-    return new DatasetCoreAndReadableStream(this, subject, predicate, object, graph, { entityIndex: this._entityIndex });
+    return new DatasetCoreAndReadableStream(this, subject, predicate, object, graph);
   }
 
   // ### `countQuads` returns the number of quads matching a pattern.
@@ -825,7 +944,7 @@ export default class N3Store {
 
   // ### `createBlankNode` creates a new blank node, returning its name
   createBlankNode(suggestedName) {
-    return this._entityIndex.createBlankNode(suggestedName);
+    return this._entityScope.createBlankNode(suggestedName);
   }
 
   // ### `extractLists` finds and removes all list triples
@@ -859,8 +978,6 @@ export default class N3Store {
           quad = subjectQuads[i];
           if (!quad.graph.equals(graph))
             malformed = onError(current, 'not confined to single graph');
-          else if (head)
-            malformed = onError(current, 'has non-list arcs out');
 
           // one rdf:first
           else if (quad.predicate.value === namespaces.rdf.first) {
@@ -877,6 +994,9 @@ export default class N3Store {
             else
               toRemove.push(rest = quad);
           }
+
+          else if (head)
+            malformed = onError(current, 'has non-list arcs out');
 
           // alien triple
           else if (objectQuads.length)
@@ -940,8 +1060,10 @@ export default class N3Store {
 
     if (Array.isArray(quads))
       this.addQuads(quads);
-    else if (quads instanceof N3Store && quads._entityIndex === this._entityIndex) {
+    else if (quads instanceof N3Store) {
       if (quads._size !== 0) {
+        if (quads._entityScope !== this._entityScope)
+          this._entityScope._importGraphs(quads._graphs);
         this._graphs = merge(this._graphs, quads._graphs);
         this._size = null; // Invalidate the cached size
       }
@@ -966,7 +1088,7 @@ export default class N3Store {
     if (other === this)
       return true;
 
-    if (!(other instanceof N3Store) || this._entityIndex !== other._entityIndex)
+    if (!(other instanceof N3Store))
       return other.every(quad => this.has(quad));
 
     const g1 = this._graphs, g2 = other._graphs;
@@ -1011,16 +1133,11 @@ export default class N3Store {
       other = other.filtered;
 
     if (other === this)
-      return new N3Store({ entityIndex: this._entityIndex });
+      return this._newStore();
 
-    if ((other instanceof N3Store) && other._entityIndex === this._entityIndex) {
-      const store = new N3Store({ entityIndex: this._entityIndex });
+    if (other instanceof N3Store) {
       const graphs = difference(this._graphs, other._graphs);
-      if (graphs) {
-        store._graphs = graphs;
-        store._size = null;
-      }
-      return store;
+      return this._resultStore(graphs);
     }
 
     return this.filter(quad => !other.has(quad));
@@ -1044,7 +1161,7 @@ export default class N3Store {
    * This method is aligned with Array.prototype.filter() in ECMAScript-262.
    */
   filter(iteratee) {
-    const store = new N3Store({ entityIndex: this._entityIndex });
+    const store = this._newStore();
     for (const quad of this)
       if (iteratee(quad, this))
         store.add(quad);
@@ -1059,19 +1176,11 @@ export default class N3Store {
       other = other.filtered;
 
     if (other === this) {
-      const store = new N3Store({ entityIndex: this._entityIndex });
-      store._graphs = merge(Object.create(null), this._graphs);
-      store._size = this._size;
-      return store;
+      return this._resultStore(merge(Object.create(null), this._graphs), this._size);
     }
-    else if ((other instanceof N3Store) && this._entityIndex === other._entityIndex) {
-      const store = new N3Store({ entityIndex: this._entityIndex });
+    else if (other instanceof N3Store) {
       const graphs = intersect(other._graphs, this._graphs);
-      if (graphs) {
-        store._graphs = graphs;
-        store._size = null;
-      }
-      return store;
+      return this._resultStore(graphs);
     }
 
     return this.filter(quad => other.has(quad));
@@ -1081,7 +1190,7 @@ export default class N3Store {
    * Returns a new dataset containing all quads returned by applying `iteratee` to each quad in the current dataset.
    */
   map(iteratee) {
-    const store = new N3Store({ entityIndex: this._entityIndex });
+    const store = this._newStore();
     for (const quad of this)
       store.add(iteratee(quad, this));
     return store;
@@ -1143,9 +1252,7 @@ export default class N3Store {
    * Returns a new `Dataset` that is a concatenation of this dataset and the quads given as an argument.
    */
   union(quads) {
-    const store = new N3Store({ entityIndex: this._entityIndex });
-    store._graphs = merge(Object.create(null), this._graphs);
-    store._size = this._size;
+    const store = this._resultStore(merge(Object.create(null), this._graphs), this._size);
 
     store.addAll(quads);
     return store;
@@ -1190,24 +1297,24 @@ function indexMatch(index, ids, depth = 0) {
  * A class that implements both DatasetCore and Readable.
  */
 class DatasetCoreAndReadableStream extends Readable {
-  constructor(n3Store, subject, predicate, object, graph, options) {
+  constructor(n3Store, subject, predicate, object, graph) {
     super({ objectMode: true });
-    Object.assign(this, { n3Store, subject, predicate, object, graph, options });
+    Object.assign(this, { n3Store, subject, predicate, object, graph });
   }
 
   get filtered() {
     if (!this._filtered) {
       const { n3Store, graph, object, predicate, subject } = this;
-      const newStore = this._filtered = new N3Store({ factory: n3Store._factory, entityIndex: this.options.entityIndex });
 
       let subjectId, predicateId, objectId;
 
       // Translate IRIs to internal index keys.
-      if (subject   && !(subjectId   = newStore._termToNumericId(subject))   ||
-          predicate && !(predicateId = newStore._termToNumericId(predicate)) ||
-          object    && !(objectId    = newStore._termToNumericId(object)))
-        return newStore;
+      if (subject   && !(subjectId   = n3Store._termToNumericId(subject))   ||
+          predicate && !(predicateId = n3Store._termToNumericId(predicate)) ||
+          object    && !(objectId    = n3Store._termToNumericId(object)))
+        return this._filtered = n3Store._newStore();
 
+      const matchedGraphs = Object.create(null);
       const graphs = n3Store._getGraphs(graph);
       for (const graphKey in graphs) {
         let subjects, predicates, objects, content;
@@ -1230,10 +1337,10 @@ class DatasetCoreAndReadableStream extends Readable {
           }
 
           if (subjects)
-            newStore._graphs[graphKey] = { subjects, predicates, objects };
+            matchedGraphs[graphKey] = { subjects, predicates, objects };
         }
       }
-      newStore._size = null;
+      this._filtered = n3Store._resultStore(matchedGraphs);
     }
     return this._filtered;
   }

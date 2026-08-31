@@ -1,10 +1,11 @@
 import { makeRng, pick } from './util';
-import {
+import N3, {
   Store,
   termFromId, termToId,
   EntityIndex,
   DataFactory,
 } from '../src';
+import EntityRegistry, { entityRegistry } from '../src/N3EntityRegistry';
 import {
   NamedNode,
   Literal,
@@ -2236,26 +2237,34 @@ describe('Store', () => {
     );
   });
 
-  const matrix = [true, false, 'instantiated'].flatMap(match => [true, false].map(share => [match, share]));
+  const matrix = [true, false, 'instantiated'].flatMap(match =>
+    ['default', 'compatibility-shared', 'compatibility-separate'].map(sharing => [match, sharing]));
 
-  describe.each(matrix)('RDF/JS Dataset Methods [DatasetCoreAndReadableStream: %s] [sharedIndex: %s]', (match, shareIndex) => {
-    let q, store, store1, store2, store3, store4, storeg, storeb, empty, options;
+  describe.each(matrix)('RDF/JS Dataset Methods [DatasetCoreAndReadableStream: %s] [identifiers: %s]', (match, sharing) => {
+    let q, store, store1, store2, store3, store4, storeg, storeb, empty, createOptions;
 
     beforeEach(() => {
-      options = shareIndex ? { entityIndex: new EntityIndex() } : {};
+      if (sharing === 'compatibility-shared') {
+        const entityIndex = new EntityIndex();
+        createOptions = () => ({ entityIndex });
+      }
+      else if (sharing === 'compatibility-separate')
+        createOptions = () => ({ entityIndex: new EntityIndex() });
+      else
+        createOptions = () => ({});
       q = [new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
         new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o2')),
         new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o3')),
         new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o3'))];
       q = [...q, ...q.map(quad => new Quad(quad.subject, quad.predicate, quad.object, new NamedNode('c4')))];
-      empty = new Store([], options);
-      store = new Store([q[0]], options);
-      storeg = new Store([q[4]], options);
-      storeb = new Store([q[0], q[4]], options);
-      store1 = new Store([q[0], q[1]], options);
-      store2 = new Store([q[0], q[2]], options);
-      store3 = new Store([q[0], q[3]], options);
-      store4 = new Store([new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))], options);
+      empty = new Store([], createOptions());
+      store = new Store([q[0]], createOptions());
+      storeg = new Store([q[4]], createOptions());
+      storeb = new Store([q[0], q[4]], createOptions());
+      store1 = new Store([q[0], q[1]], createOptions());
+      store2 = new Store([q[0], q[2]], createOptions());
+      store3 = new Store([q[0], q[3]], createOptions());
+      store4 = new Store([new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))], createOptions());
 
       if (match) {
         empty = store2.match(new NamedNode('sn'));
@@ -2608,39 +2617,66 @@ describe('EntityIndex', () => {
     expect(entityIndex).toBeInstanceOf(EntityIndex);
   });
 
-  it('custom index should be used when instantiated with store', () => {
-    const index = {
-      '': 1,
-      's1': 2,
-      'p1': 3,
-      'o0': 4,
-      's2': 5,
-      'p2': 6,
-      'o2': 7,
-    };
+  it('should reject a non-EntityIndex store option', () => {
+    expect(() => new Store({ entityIndex: {} })).toThrow('entityIndex must be an EntityIndex');
+  });
 
+  it('custom index should be used when instantiated with store', () => {
     const store = new Store([
       new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o0')),
     ], { entityIndex });
     expect(store.size).toBe(1);
-    expect(entityIndex._id).toEqual(4);
+    expect(store._entityIndex).toBe(entityIndex);
 
     const substore = store.match();
     substore.add(new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')));
     expect(store.size).toBe(1);
     expect(substore.size).toBe(2);
-    expect(entityIndex._id).toEqual(7);
-    expect(entityIndex._ids).toEqual(index);
+    expect(substore.filtered._entityIndex).toBe(entityIndex);
 
     const store2 = new Store([
       new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o5')),
     ], { entityIndex });
     expect(store2.size).toBe(1);
-    expect(entityIndex._id).toEqual(8);
-    expect(entityIndex._ids).toEqual({
-      ...index,
-      o5: 8,
-    });
+    expect(store2._entityIndex).toBe(entityIndex);
+    for (const value of ['', 's1', 'p1', 'o0', 's2', 'p2', 'o2', 'o5'])
+      expect(entityIndex._ids[value]).toBe(entityRegistry._lookup(value));
+  });
+
+  it('should index and query nested terms', () => {
+    const tripleTerm = quad(namedNode('s'), namedNode('p'), namedNode('o'));
+    const graphTerm = quad(namedNode('s'), namedNode('p'), namedNode('o'), namedNode('g'));
+    const tripleId = entityIndex._termToNewNumericId(tripleTerm);
+    const graphId = entityIndex._termToNewNumericId(graphTerm);
+
+    expect(entityIndex._termToNewNumericId(null)).toBe(1);
+    expect(entityIndex._termToNumericId(quad(namedNode('s'), namedNode('p'), namedNode('o'))))
+      .toBe(tripleId);
+    expect(entityIndex._termToNumericId(
+      quad(namedNode('s'), namedNode('p'), namedNode('o'), namedNode('g')),
+    )).toBe(graphId);
+    expect(entityIndex._termToNumericId(
+      quad(namedNode('missing'), namedNode('p'), namedNode('o')),
+    )).toBeUndefined();
+    expect(entityIndex._termToNumericId(
+      quad(namedNode('s'), namedNode('missing'), namedNode('o')),
+    )).toBeUndefined();
+    expect(entityIndex._termToNumericId(
+      quad(namedNode('s'), namedNode('p'), namedNode('missing')),
+    )).toBeUndefined();
+    expect(entityIndex._termToNumericId(
+      quad(namedNode('s'), namedNode('p'), namedNode('o'), namedNode('missing')),
+    )).toBeUndefined();
+  });
+
+  it('should allocate blank nodes and reject missing predicate queries', () => {
+    expect(entityIndex.createBlankNode().value).toBe('b0');
+    expect(entityIndex.createBlankNode('b0').value).toBe('b01');
+
+    const store = new Store([quad(namedNode('s'), namedNode('p'), namedNode('o'))], { entityIndex });
+    const callback = jest.fn();
+    store.forPredicates(callback, namedNode('missing'));
+    expect(callback).not.toHaveBeenCalled();
   });
 });
 
@@ -2820,6 +2856,390 @@ describe('Store under randomized mutation', () => {
       expectConsistentCounters(store);
     });
   }
+});
+
+describe('shared entity registry', () => {
+  function retain(registry, ownership, value) {
+    const id = registry._intern(value);
+    registry._retain(id, ownership);
+    return id;
+  }
+
+  async function withFinalizationRegistry(callback) {
+    const implementation = global.FinalizationRegistry;
+    const ownerships = [];
+    let finalize;
+    try {
+      global.FinalizationRegistry = class FinalizationRegistry {
+        constructor(callback) {
+          finalize = callback;
+        }
+        register(_target, ownership) {
+          ownerships.push(ownership);
+        }
+      };
+      await callback(ownerships, ownership => finalize(ownership));
+    }
+    finally {
+      global.FinalizationRegistry = implementation;
+    }
+  }
+
+  it('should keep the registry out of the public API', () => {
+    expect(N3.EntityRegistry).toBeUndefined();
+  });
+
+  it('should construct the internal registry', () => {
+    expect(new EntityRegistry()).toBeInstanceOf(EntityRegistry);
+  });
+
+  it('should require FinalizationRegistry support', () => {
+    const implementation = global.FinalizationRegistry;
+    try {
+      global.FinalizationRegistry = undefined;
+      expect(() => new EntityRegistry()).toThrow('EntityRegistry requires FinalizationRegistry support');
+    }
+    finally {
+      global.FinalizationRegistry = implementation;
+    }
+  });
+
+  it('should share identifiers between stores by default', () => {
+    const left = new Store([quad(namedNode('s'), namedNode('p'), namedNode('o'))]);
+    const right = new Store([quad(namedNode('other'), namedNode('p'), namedNode('o'))]);
+
+    expect(left._entityIndex).toBe(left._entityScope);
+    expect(left._entityScope).not.toBeInstanceOf(EntityIndex);
+    expect(left._entityIndex).not.toBe(right._entityIndex);
+    expect(left._entityIndex._registry).toBe(right._entityIndex._registry);
+    expect(left._entityIndex._termToNumericId(namedNode('p')))
+      .toBe(right._entityIndex._termToNumericId(namedNode('p')));
+  });
+
+  it('should isolate empty and entity-sparse result scopes', () => {
+    const nested = quad(namedNode('nested-s'), namedNode('nested-p'), namedNode('nested-o'));
+    const shared = quad(nested, namedNode('outer-p'), namedNode('outer-o'));
+    const extras = Array.from({ length: 10 }, (_, index) =>
+      quad(namedNode(`s${index}`), namedNode(`p${index}`), namedNode(`o${index}`)));
+    const source = new Store([shared, ...extras]);
+    const other = new Store([shared]);
+
+    const sparse = source.intersection(other);
+    expect(sparse.equals(other)).toBe(true);
+    expect(sparse._entityScope).not.toBe(source._entityScope);
+    // The quoted subject and its components must all remain owned.
+    expect(sparse._entityScope._ownership).toHaveLength(6);
+
+    for (const empty of [
+      source.difference(source),
+      source.intersection(new Store([quad(namedNode('x'), namedNode('y'), namedNode('z'))])),
+      source.match(namedNode('missing')).filtered,
+    ]) {
+      expect(empty._entityScope).not.toBe(source._entityScope);
+      expect(empty._entityScope._ownership).toHaveLength(0);
+    }
+  });
+
+  it('should share dense result scopes and selectively retain imported graphs', () => {
+    const entityIndex = new EntityIndex();
+    const shared = quad(namedNode('s'), namedNode('p'), namedNode('o'));
+    const source = new Store([shared], { entityIndex });
+
+    expect(source.intersection(source)._entityScope).toBe(entityIndex);
+
+    // Pollute the compatibility scope without adding those entities to source.
+    const unrelated = new Store(Array.from({ length: 10 }, (_, index) =>
+      quad(namedNode(`other-s${index}`), namedNode(`other-p${index}`), namedNode(`other-o${index}`))),
+    { entityIndex });
+    const target = new Store();
+    target.addAll(source);
+
+    expect(unrelated.size).toBe(10);
+    expect(target._entityScope._ownership).toHaveLength(3);
+    expect(target._entityScope._ownership.length).toBeLessThan(entityIndex._ownership.length);
+    expect(source.union(new Store())._entityScope).not.toBe(entityIndex);
+    expect(source.match().filtered._entityScope).not.toBe(entityIndex);
+  });
+
+  it('should give enumerated filter and map results independent scopes', () => {
+    const source = new Store([quad(namedNode('s'), namedNode('p'), namedNode('o'))]);
+
+    expect(source.filter(() => true)._entityScope).not.toBe(source._entityScope);
+    expect(source.map(value => value)._entityScope).not.toBe(source._entityScope);
+  });
+
+  it('should always bind entity indices to the module registry', () => {
+    expect(new EntityIndex()._registry).toBe(entityRegistry);
+    expect(new EntityIndex({ registry: {} })._registry).toBe(entityRegistry);
+  });
+
+  it('should release identifiers and reset after all owning scopes are finalized', async () => {
+    await withFinalizationRegistry(async (ownerships, finalize) => {
+      const registry = new EntityRegistry();
+      const left = registry._createOwnership({});
+      const right = registry._createOwnership({});
+      const leftId = retain(registry, left, 'shared');
+      const rightId = retain(registry, right, 'shared');
+
+      expect(registry._activeScopes).toBe(2);
+      expect(rightId).toBe(leftId);
+      expect(registry._references[leftId]).toBe(2);
+      finalize(ownerships[0]);
+      await new Promise(resolve => setImmediate(resolve));
+      expect(registry._activeScopes).toBe(1);
+      expect(registry._references[leftId]).toBe(1);
+      expect(registry._lookup('shared')).toBe(leftId);
+      registry._id = registry._maxId;
+      registry._wrapped = true;
+      finalize(ownerships[1]);
+      expect(registry._activeScopes).toBe(0);
+      expect(registry._lookup('shared')).toBeUndefined();
+      expect(registry._entities[leftId]).toBeUndefined();
+      expect(registry._references[leftId]).toBeUndefined();
+      expect(registry._freeIds).toBeUndefined();
+      expect(registry._id).toBe(1);
+      expect(registry._wrapped).toBe(false);
+      const replacement = registry._createOwnership({});
+      expect(retain(registry, replacement, 'replacement')).toBe(leftId);
+    });
+  });
+
+  it('should not let a scheduled release affect a scope created after reset', async () => {
+    await withFinalizationRegistry(async (ownerships, finalize) => {
+      const registry = new EntityRegistry();
+      const first = registry._createOwnership({});
+      const second = registry._createOwnership({});
+      retain(registry, first, 'first');
+      retain(registry, second, 'second');
+
+      finalize(ownerships[0]);
+      expect(registry._pendingReleases).toHaveLength(1);
+      finalize(ownerships[1]);
+      expect(registry._pendingReleases).toHaveLength(0);
+
+      const replacement = registry._createOwnership({});
+      const replacementId = retain(registry, replacement, 'replacement');
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(registry._lookup('replacement')).toBe(replacementId);
+      expect(registry._references[replacementId]).toBe(1);
+    });
+  });
+
+  it('should recycle released identifiers after wrapping and skip live identifiers', async () => {
+    await withFinalizationRegistry(async (ownerships, finalize) => {
+      const registry = new EntityRegistry();
+      const retained = registry._createOwnership({});
+      const released = registry._createOwnership({});
+      registry._maxId = 4;
+      const retainedId = retain(registry, retained, 'retained');
+      const releasedId = retain(registry, released, 'released');
+      const otherRetainedId = retain(registry, retained, 'other-retained');
+
+      finalize(ownerships[1]);
+      await new Promise(resolve => setImmediate(resolve));
+      const replacement = registry._createOwnership({});
+      const replacementId = retain(registry, replacement, 'replacement');
+
+      expect(replacementId).toBe(releasedId);
+      expect(registry._lookup('released')).toBeUndefined();
+      expect(registry._lookup('replacement')).toBe(releasedId);
+      expect(registry._lookup('retained')).toBe(retainedId);
+      expect(registry._lookup('other-retained')).toBe(otherRetainedId);
+      expect(() => registry._intern('overflow')).toThrow('Entity identifier limit exceeded');
+    });
+  });
+
+  it('should release identifiers in bounded batches', async () => {
+    await withFinalizationRegistry(async (ownerships, finalize) => {
+      const registry = new EntityRegistry();
+      const retained = registry._createOwnership({});
+      const ownership = registry._createOwnership({});
+      retain(registry, retained, 'retained');
+      for (let id = 0; id < 4097; id++)
+        retain(registry, ownership, `entity${id}`);
+
+      finalize(ownerships[1]);
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(registry._ids.size).toBe(3);
+      expect(registry._pendingReleases).toHaveLength(1);
+
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(registry._ids.size).toBe(2);
+      expect(registry._pendingReleases).toHaveLength(0);
+    });
+  });
+
+  it('should coalesce releases scheduled in the same turn', async () => {
+    await withFinalizationRegistry(async (ownerships, finalize) => {
+      const registry = new EntityRegistry();
+      const first = registry._createOwnership({});
+      const second = registry._createOwnership({});
+      const retained = registry._createOwnership({});
+      retain(registry, first, 'first');
+      retain(registry, second, 'second');
+      retain(registry, retained, 'retained');
+
+      finalize(ownerships[0]);
+      finalize(ownerships[1]);
+
+      expect(registry._pendingReleases).toHaveLength(2);
+      await new Promise(resolve => setImmediate(resolve));
+      expect(registry._pendingReleases).toHaveLength(0);
+      expect(registry._ids.size).toBe(2);
+    });
+  });
+
+  it('should retain an identifier reacquired before its release batch runs', async () => {
+    await withFinalizationRegistry(async (ownerships, finalize) => {
+      const registry = new EntityRegistry();
+      const finalized = registry._createOwnership({});
+      const retained = registry._createOwnership({});
+      const id = retain(registry, finalized, 'shared');
+
+      finalize(ownerships[0]);
+      expect(retain(registry, retained, 'shared')).toBe(id);
+
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(registry._lookup('shared')).toBe(id);
+      expect(registry._references[id]).toBe(1);
+      expect(registry._ids.size).toBe(2);
+    });
+  });
+
+  it('should reject allocation after exhausting safe integer identifiers', () => {
+    const registry = new EntityRegistry();
+    const ownership = registry._createOwnership({});
+    registry._maxId = 3;
+    retain(registry, ownership, 'second');
+    retain(registry, ownership, 'third');
+
+    expect(() => registry._intern('overflow')).toThrow('Entity identifier limit exceeded');
+  });
+
+  it('should align equal terms in separate entity indices', () => {
+    const leftQuad = quad(quad(namedNode('s'), namedNode('p'), namedNode('o')), namedNode('p2'), namedNode('o2'));
+    const rightQuad = quad(quad(namedNode('s'), namedNode('p'), namedNode('o')), namedNode('p2'), namedNode('o2'));
+    const left = new Store([leftQuad]);
+    const right = new Store([rightQuad]);
+
+    expect(left._entityIndex).not.toBe(right._entityIndex);
+    expect(left._entityIndex._id).toBe(right._entityIndex._id);
+    expect(left._entityIndex._termToNumericId(leftQuad.subject))
+      .toBe(right._entityIndex._termToNumericId(rightQuad.subject));
+    expect(left._entityIndex._termToNumericId(
+      quad(namedNode('s'), namedNode('p'), namedNode('o')),
+    )).toBe(left._entityIndex._termToNumericId(leftQuad.subject));
+    expect(left._entityIndex._termToNumericId(
+      quad(namedNode('missing'), namedNode('p'), namedNode('o')),
+    )).toBeUndefined();
+    expect(left._entityIndex._termToNumericId(
+      quad(namedNode('s'), namedNode('missing'), namedNode('o')),
+    )).toBeUndefined();
+    expect(left._entityIndex._termToNumericId(
+      quad(namedNode('s'), namedNode('p'), namedNode('missing')),
+    )).toBeUndefined();
+    expect(left._entityIndex._termToNumericId(
+      quad(namedNode('s'), namedNode('p'), namedNode('o2')),
+    )).toBeUndefined();
+    const registryOnlyTerm = quad(namedNode('s'), namedNode('p'), namedNode('o2'));
+    const registryOnlyId = right._entityIndex._termToNewNumericId(registryOnlyTerm);
+    expect(left._entityIndex._termToNumericId(
+      quad(namedNode('s'), namedNode('p'), namedNode('o2')),
+    )).toBe(registryOnlyId);
+    const graphTerm = quad(namedNode('s'), namedNode('p'), namedNode('o'), namedNode('g'));
+    const graphTermId = left._entityIndex._termToNewNumericId(graphTerm);
+    expect(left._entityIndex._termToNumericId(
+      quad(namedNode('s'), namedNode('p'), namedNode('o'), namedNode('g')),
+    )).toBe(graphTermId);
+    expect(left._entityIndex._termToNumericId(
+      quad(namedNode('s'), namedNode('p'), namedNode('o'), namedNode('missing')),
+    )).toBeUndefined();
+    expect(left.contains(right)).toBe(true);
+    expect(left.intersection(right).equals(left)).toBe(true);
+  });
+
+  it('should preserve set-operation correctness across compatibility entity indices', () => {
+    const sharedQuad = quad(namedNode('s'), namedNode('p'), namedNode('o'));
+    const extraQuad = quad(namedNode('extra-s'), namedNode('extra-p'), namedNode('extra-o'));
+    const left = new Store([extraQuad, sharedQuad], { entityIndex: new EntityIndex() });
+    const right = new Store([sharedQuad], { entityIndex: new EntityIndex() });
+
+    expect(left._entityIndex._registry).toBe(entityRegistry);
+    expect(right._entityIndex._registry).toBe(entityRegistry);
+    expect(left._entityIndex._termToNumericId(sharedQuad.subject))
+      .toBe(right._entityIndex._termToNumericId(sharedQuad.subject));
+    expect(left.contains(right)).toBe(true);
+    expect(left.intersection(right).equals(right)).toBe(true);
+    expect(left.difference(right).equals(new Store([extraQuad]))).toBe(true);
+  });
+
+  it('should preserve generic DatasetCore fallbacks', () => {
+    const sharedQuad = quad(namedNode('s'), namedNode('p'), namedNode('o'));
+    const extraQuad = quad(namedNode('extra-s'), namedNode('extra-p'), namedNode('extra-o'));
+    const quads = [sharedQuad];
+    const dataset = {
+      *[Symbol.iterator]() {
+        yield* quads;
+      },
+      every: callback => quads.every(callback),
+      has: value => quads.some(quad => quad.equals(value)),
+    };
+    const source = new Store([sharedQuad, extraQuad]);
+    const target = new Store();
+
+    target.addAll(dataset);
+
+    expect(target.equals(new Store(quads))).toBe(true);
+    expect(source.contains(dataset)).toBe(true);
+    expect(source.difference(dataset).equals(new Store([extraQuad]))).toBe(true);
+    expect(source.intersection(dataset).equals(new Store(quads))).toBe(true);
+  });
+
+  it('should extract lists independently of globally assigned predicate order', () => {
+    const seed = new Store([quad(namedNode('seed'), namedNode('p'), namedNode('value'))], {
+      entityIndex: new EntityIndex(),
+    });
+    const store = new Store([], { entityIndex: new EntityIndex() });
+    const [head] = addList(store, namedNode('item'));
+    store.addQuad(head, namedNode('p'), namedNode('value'));
+
+    expect(seed.size).toBe(1);
+    expect(store.extractLists()).toEqual({ b0: [namedNode('item')] });
+  });
+
+  it('should retain imported entities in the target factory', () => {
+    const sourceQuad = quad(namedNode('s'), namedNode('p'), namedNode('o'));
+    const source = new Store([sourceQuad]);
+    const factory = {
+      ...DataFactory,
+      namedNode: jest.fn(DataFactory.namedNode),
+      quad: jest.fn(DataFactory.quad),
+    };
+    const target = new Store([], { factory });
+
+    target.addAll(source);
+
+    expect(target.getQuads()).toEqual([sourceQuad]);
+    expect(factory.namedNode).toHaveBeenCalledTimes(3);
+    expect(factory.quad).toHaveBeenCalledTimes(1);
+  });
+
+  it('should keep blank node allocation local to each entity index', () => {
+    const left = new Store();
+    const right = new Store();
+
+    const leftBlank = left.createBlankNode();
+    const rightBlank = right.createBlankNode();
+
+    expect(leftBlank.value).toBe('b0');
+    expect(rightBlank.value).toBe('b0');
+    expect(left._entityIndex._termToNumericId(leftBlank))
+      .toBe(right._entityIndex._termToNumericId(rightBlank));
+  });
 });
 
 function alwaysTrue()  { return true;  }
