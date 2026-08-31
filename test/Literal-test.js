@@ -910,4 +910,81 @@ describe('Literal', () => {
       });
     });
   });
+
+  describe('A Literal instance with cached getters', () => {
+    // Reads every getter once, so its value gets cached
+    function accessGetters(literal) {
+      return [literal.value, literal.language, literal.direction, literal.datatype];
+    }
+
+    it('should return the same value on repeated access', () => {
+      const literal = new Literal('"abc"@en-us--rtl');
+      expect(literal.value).toBe(literal.value);
+      expect(literal.language).toBe(literal.language);
+      expect(literal.direction).toBe(literal.direction);
+    });
+
+    it('should return the identical datatype instance on repeated access', () => {
+      const literal = new Literal('"abc"@en-us--rtl');
+      const datatype = literal.datatype;
+      expect(datatype).toBeInstanceOf(NamedNode);
+      expect(literal.datatype).toBe(datatype);
+    });
+
+    it('should return the same values as an equal fresh instance', () => {
+      for (const id of [
+        '""', '"abc"', '"a\\"b\\nc"', '"abc"@EN-US', '"abc"@en-us--LTR',
+        '"a--b"@', '"a--b"@en', '"abc"@en--', '"abc"^^http://ex.org/dt--x',
+        '"abc"^^http://www.w3.org/2001/XMLSchema#integer',
+      ]) {
+        const cachedLiteral = new Literal(id), fresh = new Literal(id);
+        // Access every getter twice, so the second read hits the cache
+        for (let i = 0; i < 2; i++) {
+          expect(cachedLiteral.value).toBe(fresh.value);
+          expect(cachedLiteral.language).toBe(fresh.language);
+          expect(cachedLiteral.direction).toBe(fresh.direction);
+          expect(cachedLiteral.datatype.value).toBe(fresh.datatype.value);
+        }
+      }
+    });
+
+    it('should not expose cached values as enumerable properties', () => {
+      const literal = new Literal('"abc"@en-us--rtl');
+      accessGetters(literal);
+      expect(Object.keys(literal)).toEqual(['id']);
+    });
+
+    it('should deep-equal a fresh instance after its getters were accessed', () => {
+      const literal = new Literal('"abc"@en-us--rtl');
+      accessGetters(literal);
+      expect(literal).toEqual(new Literal('"abc"@en-us--rtl'));
+      expect(new Literal('"abc"@en-us--rtl')).toEqual(literal);
+    });
+
+    it('should still equal other terms after its getters were accessed', () => {
+      const literal = new Literal('"abc"@en-us--rtl');
+      accessGetters(literal);
+      expect(literal.equals(new Literal('"abc"@en-us--rtl'))).toBe(true);
+      expect(new Literal('"abc"@en-us--rtl').equals(literal)).toBe(true);
+      expect(literal.equals(new Literal('"abc"@en-us'))).toBe(false);
+    });
+
+    it('should not allow overwriting a cached getter', () => {
+      const literal = new Literal('"abc"');
+      expect(literal.value).toBe('abc');
+      expect(() => { literal.value = 'other'; }).toThrow(TypeError);
+      expect(literal.value).toBe('abc');
+    });
+
+    it('should support getter access on a frozen instance', () => {
+      const literal = Object.freeze(new Literal('"abc"@en-us--rtl'));
+      // A frozen instance cannot cache, so its getters recompute every time
+      for (let i = 0; i < 2; i++) {
+        expect(literal.value).toBe('abc');
+        expect(literal.language).toBe('en-us');
+        expect(literal.direction).toBe('rtl');
+        expect(literal.datatype.value).toBe('http://www.w3.org/1999/02/22-rdf-syntax-ns#dirLangString');
+      }
+    });
+  });
 });
