@@ -2890,6 +2890,72 @@ describe('Parser', () => {
                 ['a', 'http://www.w3.org/2002/07/owl#sameAs', 'b']));
 
     it(
+      'should parse the has verb',
+      shouldParse(parser, '<s> has <p> <o>.', ['s', 'p', 'o']),
+    );
+
+    it(
+      'should parse the is-of verb',
+      shouldParse(parser, '<s> is <p> of <o>.', ['o', 'p', 's']),
+    );
+
+    it(
+      'should parse verb keywords after literal subjects',
+      shouldParse(parser, '"s1" has <p1> <o1>. "s2" is <p2> of <o2>.',
+                  ['"s1"', 'p1', 'o1'], ['o2', 'p2', '"s2"']),
+    );
+
+    it(
+      'should parse an inverted predicate marker',
+      shouldParse(parser, '<s> <- <p> <o>. <-s> <-<-p> <-o>.',
+                  ['o', 'p', 's'], ['-o', '-p', '-s']),
+    );
+
+    it(
+      'should parse an inverted compound predicate',
+      shouldParse(parser, '<s> <- (<a>) <o>.',
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['o', '_:b0', 's']),
+    );
+
+    it(
+      'should restore is-of state around a compound predicate',
+      shouldParse(parser, '<s> is (<a> <b>) of <o>.',
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'a'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b1'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', 'b'],
+        ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest',
+          'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['o', '_:b0', 's']),
+    );
+
+    it(
+      'should require of after an is predicate',
+      shouldNotParse(parser, '<s> is <p> <o>.', 'Expected of but got IRI on line 1.'),
+    );
+
+    it(
+      'should require an expression after has',
+      shouldNotParse(parser, '<s> has has <o>.', 'Expected expression but got has on line 1.'),
+    );
+
+    it(
+      'should require an expression after an inverted predicate marker',
+      shouldNotParse(parser, '<s> <- <- <p> <o>.', 'Expected expression but got inversePredicate on line 1.'),
+    );
+
+    it(
+      'should reject the historical @has keyword',
+      shouldNotParse(parser, '<s> @has <p> <o>.', 'Expected entity but got @has on line 1.'),
+    );
+
+    it(
+      'should reject the historical @is and @of keywords',
+      shouldNotParse(parser, '<s> @is <p> @of <o>.', 'Expected entity but got @is on line 1.'),
+    );
+
+    it(
       'should parse a simple right implication',
       shouldParse(parser, '<a> => <b>.',
                   ['a', 'http://www.w3.org/2000/10/swap/log#implies', 'b']),

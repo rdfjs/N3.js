@@ -57,6 +57,7 @@ export default class N3Lexer {
     this._boolean = /^(?:true|false)(?=[.,;!\^\s#()\[\]\{\}"'<>])/;
     this._atKeyword = /^@[a-z]+(?=[\s#<:])/i;
     this._keyword = /^(?:PREFIX|BASE|VERSION|GRAPH)(?=[\s#<])/i;
+    this._n3Verb = /^(?:has|is|of)(?=[\s#()\[\]\{\}"'<>?_+\-0-9])/;
     this._n3Id = /^id(?=[\s#<])/;
     this._shortPredicates = /^a(?=[\s#()\[\]\{\}"'<>])/;
     this._newline = /^[ \t]*(?:#[^\n\r]*)?(?:\r\n|\n|\r)[ \t]*/;
@@ -174,6 +175,9 @@ export default class N3Lexer {
           if (this._isImpliedBy) type = 'abbreviation', value = '<';
           else type = 'inverse', value = '>';
         }
+        // Try to find an inverted predicate marker
+        else if (this._n3Mode && input.length > 1 && input[1] === '-')
+          type = 'inversePredicate', matchLength = 2;
         break;
 
       case '>':
@@ -319,10 +323,21 @@ export default class N3Lexer {
           inconclusive = true;
         break;
 
+      case 'h':
+      case 'o':
+        // Try to find an N3 verb keyword
+        if (this._n3Mode && (match = this._n3Verb.exec(input)))
+          type = match[0];
+        else
+          inconclusive = true;
+        break;
+
       case 'i':
-        // Try to find the IRI property list identifier
+        // Try to find an IRI property list identifier or N3 verb keyword
         if (this._n3Mode && (match = this._n3Id.exec(input)))
           type = 'id';
+        else if (this._n3Mode && (match = this._n3Verb.exec(input)))
+          type = match[0];
         else
           inconclusive = true;
         break;
