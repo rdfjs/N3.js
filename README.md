@@ -478,8 +478,8 @@ import { Store, DataFactory } from 'n3';
 const { namedNode } = DataFactory;
 
 const store = new Store([], { matchSemantics: 'snapshot' });
-
-const view = store.match(namedNode('s'), null, null, null, { matchSemantics: 'snapshot' });
+const snapshot = store.match(namedNode('s'));
+const forwarded = store.match(namedNode('s'), null, null, null, { matchSemantics: 'forwarded' });
 ```
 
 Supported values:

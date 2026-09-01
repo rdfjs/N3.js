@@ -741,6 +741,8 @@ describe('Store', () => {
     });
 
     describe('match semantics', () => {
+      const initialValues = ['o0', 'o1', 'o2', 'o3', 'o4'];
+
       function q(s, p, o, g) {
         return new Quad(new NamedNode(s), new NamedNode(p), new NamedNode(o), g ? new NamedNode(g) : undefined);
       }
@@ -748,10 +750,20 @@ describe('Store', () => {
         return [...view].map(x => x.object.value).sort();
       }
 
+      function valuesWithMutationAfterFirstQuad(view, mutate) {
+        const seen = [];
+        for (const quad of view) {
+          seen.push(quad.object.value);
+          if (seen.length === 1)
+            mutate(quad);
+        }
+        return seen.sort();
+      }
+
       function buildStore(options) {
         const store = new Store([], options);
-        for (let i = 0; i < 5; i++)
-          store.addQuad(q('s1', 'p1', `o${i}`));
+        for (const object of initialValues)
+          store.addQuad(q('s1', 'p1', object));
         store.addQuad(q('s2', 'p1', 'oX'));
         return store;
       }
@@ -897,9 +909,9 @@ describe('Store', () => {
           parent.add(q('s1', 'p1', 'oPARENT'));
           child.add(q('s1', 'p1', 'oCHILD'));
 
-          expect(values(parent)).toEqual(['o0', 'o1', 'o2', 'o3', 'o4', 'oPARENT']);
-          expect(values(child)).toEqual(['o0', 'o1', 'o2', 'o3', 'o4', 'oCHILD']);
-          expect(values(leaf)).toEqual(['o0', 'o1', 'o2', 'o3', 'o4', 'oCHILD']);
+          expect(values(parent)).toEqual([...initialValues, 'oPARENT']);
+          expect(values(child)).toEqual([...initialValues, 'oCHILD']);
+          expect(values(leaf)).toEqual([...initialValues, 'oCHILD']);
         });
 
         it('should preserve each snapshot boundary in a match chain', () => {
@@ -912,9 +924,9 @@ describe('Store', () => {
           parent.add(q('s1', 'p1', 'oPARENT'));
           child.add(q('s1', 'p1', 'oCHILD'));
 
-          expect(values(parent)).toEqual(['o0', 'o1', 'o2', 'o3', 'o4', 'oPARENT']);
-          expect(values(child)).toEqual(['o0', 'o1', 'o2', 'o3', 'o4', 'oCHILD']);
-          expect(values(leaf)).toEqual(['o0', 'o1', 'o2', 'o3', 'o4']);
+          expect(values(parent)).toEqual([...initialValues, 'oPARENT']);
+          expect(values(child)).toEqual([...initialValues, 'oCHILD']);
+          expect(values(leaf)).toEqual(initialValues);
         });
 
         it('should downgrade forwarded descendants to snapshots', () => {
@@ -927,9 +939,9 @@ describe('Store', () => {
           parent.add(q('s1', 'p1', 'oPARENT'));
           child.add(q('s1', 'p1', 'oCHILD'));
 
-          expect(values(parent)).toEqual(['o0', 'o1', 'o2', 'o3', 'o4', 'oPARENT', 'oROOT']);
-          expect(values(child)).toEqual(['o0', 'o1', 'o2', 'o3', 'o4', 'oCHILD']);
-          expect(values(leaf)).toEqual(['o0', 'o1', 'o2', 'o3', 'o4']);
+          expect(values(parent)).toEqual([...initialValues, 'oPARENT', 'oROOT']);
+          expect(values(child)).toEqual([...initialValues, 'oCHILD']);
+          expect(values(leaf)).toEqual(initialValues);
           expect(store.has(q('s1', 'p1', 'oPARENT'))).toBe(true);
           expect(store.has(q('s1', 'p1', 'oCHILD'))).toBe(false);
         });
@@ -959,17 +971,11 @@ describe('Store', () => {
         });
 
         it('should ignore a parent mutation that lands during sync iteration', () => {
-          const seen = [];
-          let mutated = false;
-          for (const quad of view) {
-            seen.push(quad.object.value);
-            if (!mutated) {
-              mutated = true;
-              store.addQuad(q('s1', 'p1', 'oNEW'));
-              store.removeQuad(q('s1', 'p1', 'o4'));
-            }
-          }
-          expect(seen.sort()).toEqual(['o0', 'o1', 'o2', 'o3', 'o4']);
+          const seen = valuesWithMutationAfterFirstQuad(view, () => {
+            store.addQuad(q('s1', 'p1', 'oNEW'));
+            store.removeQuad(q('s1', 'p1', 'o4'));
+          });
+          expect(seen).toEqual(initialValues);
         });
 
         it('should ignore a parent mutation that lands during async iteration', async () => {
@@ -987,7 +993,7 @@ describe('Store', () => {
             view.on('error', reject);
           });
           expect(seen).not.toContain('oNEW');
-          expect(seen.sort()).toEqual(['o0', 'o1', 'o2', 'o3', 'o4']);
+          expect(seen.sort()).toEqual(initialValues);
         });
 
         it('should ignore parent mutations made after iteration', () => {
@@ -1067,30 +1073,16 @@ describe('Store', () => {
         });
 
         it('should keep the running iteration stable across a parent add during sync iteration', () => {
-          const seen = [];
-          let mutated = false;
-          for (const quad of view) {
-            seen.push(quad.object.value);
-            if (!mutated) {
-              mutated = true;
-              store.addQuad(q('s1', 'p1', 'oNEW'));
-            }
-          }
-          expect(seen.sort()).toEqual(['o0', 'o1', 'o2', 'o3', 'o4']);
+          const seen = valuesWithMutationAfterFirstQuad(view,
+            () => store.addQuad(q('s1', 'p1', 'oNEW')));
+          expect(seen).toEqual(initialValues);
           expect([...view]).toHaveLength(6);
         });
 
         it('should keep the running iteration stable across a parent delete of an already-yielded quad', () => {
-          const seen = [];
-          let mutated = false;
-          for (const quad of view) {
-            seen.push(quad.object.value);
-            if (!mutated) {
-              mutated = true;
-              store.removeQuad(q('s1', 'p1', quad.object.value));
-            }
-          }
-          expect(seen.sort()).toEqual(['o0', 'o1', 'o2', 'o3', 'o4']);
+          const seen = valuesWithMutationAfterFirstQuad(view,
+            quad => store.removeQuad(q('s1', 'p1', quad.object.value)));
+          expect(seen).toEqual(initialValues);
           expect([...view]).toHaveLength(4);
         });
 
@@ -1108,7 +1100,7 @@ describe('Store', () => {
             view.on('end', resolve);
             view.on('error', reject);
           });
-          expect(seen.sort()).toEqual(['o0', 'o1', 'o2', 'o3', 'o4']);
+          expect(seen.sort()).toEqual(initialValues);
           expect([...view]).toHaveLength(4);
         });
 
@@ -1246,23 +1238,16 @@ describe('Store', () => {
             if (seen.length === 5)
               store.addQuad(q('s1', 'p1', 'oNEW'));
           }
-          expect(seen.sort()).toEqual(['o0', 'o1', 'o2', 'o3', 'o4']);
+          expect(seen.sort()).toEqual(initialValues);
           expect([...view]).toHaveLength(6);
         });
 
         it('should capture a baseline from an already-materialized view mid-iteration', () => {
           store.addQuad(q('s1', 'p1', 'oNEW'));
           expect(view.size).toBe(6);
-          const seen = [];
-          let mutated = false;
-          for (const quad of view) {
-            seen.push(quad.object.value);
-            if (!mutated) {
-              mutated = true;
-              store.addQuad(q('s1', 'p1', 'oNEW2'));
-            }
-          }
-          expect(seen.sort()).toEqual(['o0', 'o1', 'o2', 'o3', 'o4', 'oNEW']);
+          const seen = valuesWithMutationAfterFirstQuad(view,
+            () => store.addQuad(q('s1', 'p1', 'oNEW2')));
+          expect(seen).toEqual([...initialValues, 'oNEW']);
           expect([...view]).toHaveLength(7);
         });
 
@@ -1316,15 +1301,8 @@ describe('Store', () => {
           view.once('close', () => {
             expect(view._activeIterators).toBe(0);
             store.addQuad(q('s1', 'p1', 'oNEW'));
-            const seen = [];
-            let mutated = false;
-            for (const quad of view) {
-              seen.push(quad.object.value);
-              if (!mutated) {
-                mutated = true;
-                store.addQuad(q('s1', 'p1', 'oNEW2'));
-              }
-            }
+            const seen = valuesWithMutationAfterFirstQuad(view,
+              () => store.addQuad(q('s1', 'p1', 'oNEW2')));
             expect(seen).toHaveLength(21);
             done();
           });
@@ -1351,7 +1329,7 @@ describe('Store', () => {
             }
           }
           expect(inner).toHaveLength(5);
-          expect(outer.sort()).toEqual(['o0', 'o1', 'o2', 'o3', 'o4']);
+          expect(outer.sort()).toEqual(initialValues);
         });
 
         it('should keep an overlapping iteration stable after a baseline freeze', () => {

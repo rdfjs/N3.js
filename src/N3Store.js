@@ -1328,10 +1328,8 @@ class DatasetCoreAndReadableStream extends Readable {
       const { n3Store, graph, object, predicate, subject } = this;
       const newStore = this._filtered = new N3Store({ factory: n3Store._factory, entityIndex: this.options.entityIndex });
 
-      if (this._semantics === 'snapshot' && this._observer) {
-        this.n3Store._removeObserver(this._observer);
-        this._observer = null;
-      }
+      if (this._semantics === 'snapshot')
+        this._detachObserver();
 
       let subjectId, predicateId, objectId;
 
@@ -1398,13 +1396,18 @@ class DatasetCoreAndReadableStream extends Readable {
     callback(error);
   }
 
-  // ### `detach` freezes the view and stops observing the parent.
-  detach() {
-    this._filtered = this.filtered;
+  // ### `_detachObserver` stops observing the parent store.
+  _detachObserver() {
     if (this._observer) {
       this.n3Store._removeObserver(this._observer);
       this._observer = null;
     }
+  }
+
+  // ### `detach` freezes the view and stops observing the parent.
+  detach() {
+    this._filtered = this.filtered;
+    this._detachObserver();
     // Lazy views deferred this state
     if (this._semantics === 'lazy') {
       this._generation = 0;
