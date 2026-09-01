@@ -1124,19 +1124,19 @@ describe('Store', () => {
         });
 
         it('should write view additions and deletions through to the parent', () => {
-          view.add(q('s1', 'p1', 'oOWN'));
+          expect(view.add(q('s1', 'p1', 'oOWN'))).toBe(view);
           expect(store.has(q('s1', 'p1', 'oOWN'))).toBe(true);
           expect(view.has(q('s1', 'p1', 'oOWN'))).toBe(true);
-          view.delete(q('s1', 'p1', 'o0'));
+          expect(view.delete(q('s1', 'p1', 'o0'))).toBe(view);
           expect(store.has(q('s1', 'p1', 'o0'))).toBe(false);
           expect(view.has(q('s1', 'p1', 'o0'))).toBe(false);
         });
 
         it('should forward addAll and deleteMatches to the parent', () => {
-          view.addAll([q('s1', 'p1', 'oA'), q('s1', 'p1', 'oB')]);
+          expect(view.addAll([q('s1', 'p1', 'oA'), q('s1', 'p1', 'oB')])).toBe(view);
           expect(store.has(q('s1', 'p1', 'oA'))).toBe(true);
           expect(view.size).toBe(7);
-          view.deleteMatches(namedNode('s1'), namedNode('p1'), namedNode('oA'));
+          expect(view.deleteMatches(namedNode('s1'), namedNode('p1'), namedNode('oA'))).toBe(view);
           expect(store.has(q('s1', 'p1', 'oA'))).toBe(false);
         });
 
