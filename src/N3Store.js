@@ -268,7 +268,7 @@ export default class N3Store {
 
   // ### `_findInIndex` finds a set of quads in a three-layered index.
   // The index base is `index0` and the keys at each level are `key0`, `key1`, and `key2`.
-  // A key and any keys after it can be undefined, which is interpreted as a wildcard.
+  // A key and any keys after it can be null or undefined, which is interpreted as a wildcard.
   // `name0`, `name1`, and `name2` are the names of the keys at each level,
   // used when reconstructing the resulting quad
   // (for instance: _subject_, _predicate_, and _object_).
