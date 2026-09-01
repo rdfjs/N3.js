@@ -4,6 +4,7 @@ import {
   NamedNode,
   BlankNode,
   Literal,
+  Variable,
   Quad,
   termFromId,
 } from '../src';
@@ -5810,6 +5811,41 @@ describe('Writer', () => {
         }
       });
     }
+  });
+
+  describe('Variable serialization and IRI security escaping', () => {
+    it('should throw an error when writing a Variable term in Turtle format', () => {
+      const writer = new Writer({ format: 'Turtle' });
+      expect(() => {
+        writer.addQuad(new Variable('v'), new NamedNode('http://ex.org/p'), new NamedNode('http://ex.org/o'));
+      }).toThrow(/Cannot write Variable term in Turtle format/);
+    });
+
+    it('should pass error to callback when writing a Variable term in N-Triples format', done => {
+      const writer = new Writer({ format: 'N-Triples' });
+      writer.addQuad(new NamedNode('http://ex.org/s'), new NamedNode('http://ex.org/p'), new Variable('v'), null, err => {
+        expect(err).toBeInstanceOf(Error);
+        expect(err.message).toMatch(/Cannot write Variable term in N-Triples format/);
+        done();
+      });
+    });
+
+    it('should throw synchronously when writing a Variable term in N-Triples format without callback', () => {
+      const writer = new Writer({ format: 'N-Triples' });
+      expect(() => {
+        writer.addQuad(new NamedNode('http://ex.org/s'), new NamedNode('http://ex.org/p'), new Variable('v'));
+      }).toThrow(/Cannot write Variable term in N-Triples format/);
+    });
+
+    it('should escape forbidden characters in IRIs to prevent RDF injection', shouldSerialize(
+      ['http://ex.org/s> . <http://ex.org/injected', 'http://ex.org/p', 'http://ex.org/o'],
+      '<http://ex.org/s\\u003e\\u0020.\\u0020\\u003chttp://ex.org/injected> <http://ex.org/p> <http://ex.org/o>.\n',
+    ));
+
+    it('should escape C1 control characters in literals', shouldSerialize(
+      ['http://ex.org/s', 'http://ex.org/p', '"test\u0080value\u009f"'],
+      '<http://ex.org/s> <http://ex.org/p> "test\\u0080value\\u009f".\n',
+    ));
   });
 });
 
