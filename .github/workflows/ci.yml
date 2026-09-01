@@ -5,6 +5,8 @@ on:
     branches:
     - main
   pull_request:
+  merge_group:
+    types: [checks_requested]
 
 # Least-privilege default for GITHUB_TOKEN; jobs opt into more only where needed.
 permissions:
