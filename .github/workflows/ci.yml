@@ -5,6 +5,8 @@ on:
     branches:
     - main
   pull_request:
+  merge_group:
+    types: [checks_requested]
 
 # Least-privilege default for GITHUB_TOKEN; jobs opt into more only where needed.
 permissions:
@@ -23,9 +25,10 @@ jobs:
 
   build:
     # Build once on an LTS-class Node. babel 8's CLI build (@babel/code-frame ->
-    # util.styleText) requires Node >= 20.12, and the resulting CJS lib/ +
-    # browser bundle is downleveled, so it runs everywhere. Every other job
-    # consumes this artifact instead of rebuilding.
+    # util.styleText) requires Node >= 20.12; the resulting CJS lib/ is
+    # downleveled by babel and the browser bundles are esbuilt to es2017, so
+    # they run everywhere. Every other job consumes this artifact instead of
+    # rebuilding.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -88,6 +91,24 @@ jobs:
             rdf-test-suite-cache-v1-${{ matrix.spec }}-${{ hashFiles('spec/cache-key.txt') }}-
       - run: npm run spec-${{ matrix.spec }}
 
+  browser:
+    # Runs the built browser bundles in real engines (Chromium, Firefox,
+    # WebKit) via test/browser/run.mjs. Deliberately outside the jest
+    # coverage gate: it exercises the build artifacts, not src/.
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+      - run: npm ci --ignore-scripts
+      - uses: actions/download-artifact@v8
+        with:
+          name: build
+      - run: npx playwright install --with-deps chromium firefox webkit
+      - run: node test/browser/run.mjs
+
   lint:
     runs-on: ubuntu-latest
     strategy:
@@ -128,6 +149,7 @@ jobs:
       - build
       - test
       - spec
+      - browser
       - lint
       - docs
     runs-on: ubuntu-latest
@@ -136,7 +158,7 @@ jobs:
       - name: Decide whether all required jobs succeeded or failed
         # Pinned to a commit SHA: the action lives outside the actions/* org and
         # `release/v1` is a mutable branch ref.
-        uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe # release/v1
+        uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # release/v1
         with:
           jobs: ${{ toJSON(needs) }}
 

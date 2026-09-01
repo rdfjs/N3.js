@@ -22,7 +22,7 @@ export default [
 
   // Base configuration (was the root .eslintrc), applied to all sources.
   {
-    files: ['**/*.js'],
+    files: ['**/*.js', '**/*.mjs'],
 
     plugins: {
       'import-x': importX,
@@ -339,6 +339,15 @@ export default [
           'type',
         ],
       }],
+    },
+  },
+
+  // Browser bundle test runner: a standalone Node script executed outside
+  // jest (see test/browser/run.mjs), so console output is its interface.
+  {
+    files: ['test/browser/**'],
+    rules: {
+      'no-console': 0,
     },
   },
 

@@ -1031,6 +1031,24 @@ describe('Lexer', () => {
     );
 
     it(
+      'should tokenize IRI property list identifiers',
+      shouldTokenize('[ id <s> <p> <o> ] [id<s> <p> <o>]',
+                     { type: '[', line: 1 },
+                     { type: 'id', line: 1 },
+                     { type: 'IRI', value: 's', line: 1 },
+                     { type: 'IRI', value: 'p', line: 1 },
+                     { type: 'IRI', value: 'o', line: 1 },
+                     { type: ']', line: 1 },
+                     { type: '[', line: 1 },
+                     { type: 'id', line: 1 },
+                     { type: 'IRI', value: 's', line: 1 },
+                     { type: 'IRI', value: 'p', line: 1 },
+                     { type: 'IRI', value: 'o', line: 1 },
+                     { type: ']', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
       'should tokenize N3 verb keywords split across chunks',
       shouldTokenize(streamOf('<s> h', 'as <p> <o>. <s> i', 's <p> o', 'f <o>.'),
                      { type: 'IRI', value: 's', line: 1 },
@@ -1048,6 +1066,18 @@ describe('Lexer', () => {
     );
 
     it(
+      'should tokenize an IRI property list identifier split across chunks',
+      shouldTokenize(streamOf('[ i', 'd <s> <p> <o> ]'),
+                     { type: '[', line: 1 },
+                     { type: 'id', line: 1 },
+                     { type: 'IRI', value: 's', line: 1 },
+                     { type: 'IRI', value: 'p', line: 1 },
+                     { type: 'IRI', value: 'o', line: 1 },
+                     { type: ']', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
       'should keep keyword-like prefixes as prefixed names',
       shouldTokenize('has:p is:p of:p',
                      { type: 'prefixed', prefix: 'has', value: 'p', line: 1 },
@@ -1057,8 +1087,20 @@ describe('Lexer', () => {
     );
 
     it(
+      'should keep an id prefix as a prefixed name',
+      shouldTokenize('id:p',
+                     { type: 'prefixed', prefix: 'id', value: 'p', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
       'should not tokenize N3 verb keywords outside N3 mode',
       shouldNotTokenize(new Lexer({ n3: false }), 'has ', 'Unexpected "has" on line 1.'),
+    );
+
+    it(
+      'should not tokenize IRI property list identifiers outside N3 mode',
+      shouldNotTokenize(new Lexer({ n3: false }), 'id ', 'Unexpected "id" on line 1.'),
     );
 
     it(
