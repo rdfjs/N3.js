@@ -749,20 +749,27 @@ describe('Store', () => {
       }
 
       function buildStore(options) {
-        const s = new Store([], options);
+        const store = new Store([], options);
         for (let i = 0; i < 5; i++)
-          s.addQuad(q('s1', 'p1', `o${i}`));
-        s.addQuad(q('s2', 'p1', 'oX')); // a non-matching quad for an `s1` pattern
-        return s;
+          store.addQuad(q('s1', 'p1', `o${i}`));
+        store.addQuad(q('s2', 'p1', 'oX'));
+        return store;
       }
 
       it('should default to lazy semantics', () => {
         const store = buildStore();
         const view = store.match(namedNode('s1'), null, null);
         store.addQuad(q('s1', 'p1', 'oNEW'));
-        // Lazy: parent mutation before the view's own mutation leaks in.
         expect(values(view)).toContain('oNEW');
         expect([...view]).toHaveLength(6);
+      });
+
+      it('should detach a lazy view as a snapshot', () => {
+        const view = buildStore().match(namedNode('s1'), null, null).detach();
+        const nested = view.match(null, namedNode('p1'));
+        view.add(q('s1', 'p1', 'oNEW'));
+        expect([...view]).toHaveLength(6);
+        expect([...nested]).toHaveLength(5);
       });
 
       it('should throw on an unknown matchSemantics value', () => {
@@ -828,10 +835,8 @@ describe('Store', () => {
 
       it('should detach a single observer while another remains attached', () => {
         const store = buildStore();
-        // Two snapshot views observe the store concurrently.
         const a = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'snapshot' });
         const b = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'snapshot' });
-        // Materialize (and detach) view `a`'s observer while view `b`'s remains registered
         a.size; // eslint-disable-line no-unused-expressions
         store.addQuad(q('s1', 'p1', 'oNEW'));
         expect([...a]).toHaveLength(5);
@@ -842,8 +847,6 @@ describe('Store', () => {
 
       it('should detach both observers when one mutation notifies two snapshot views', () => {
         const store = buildStore();
-        // Two live snapshot views; a single matching mutation notifies both, and each
-        // observer unregisters itself mid-notification while the other is still pending.
         const a = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'snapshot' });
         const b = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'snapshot' });
         store.addQuad(q('s1', 'p1', 'oNEW'));
@@ -856,11 +859,80 @@ describe('Store', () => {
         const store = buildStore();
         const view = store.match(namedNode('sNONE'), null, null, null, { matchSemantics: 'snapshot' });
         expect(view.size).toBe(0);
-        // Materialization removes the observer also on the absent-term path
         expect(store._observers).toBe(null);
-        // The view stays frozen to its (empty) contents
         store.addQuad(q('sNONE', 'p1', 'o1'));
         expect([...view]).toHaveLength(0);
+      });
+
+      describe('transitive matches', () => {
+        it.each(['lazy', 'snapshot', 'forwarded'])(
+          'should intersect patterns through a %s match chain',
+          matchSemantics => {
+            const store = new Store([
+              q('s1', 'p1', 'o1'),
+              q('s1', 'p1', 'o2'),
+              q('s1', 'p2', 'o1'),
+              q('s2', 'p1', 'o1'),
+              q('s1', 'p1', 'o1', 'g1'),
+            ]);
+            const bySubject = store.match(namedNode('s1'), null, null, null, { matchSemantics });
+            const byPredicate = bySubject.match(null, namedNode('p1'));
+            const byObject = byPredicate.match(null, null, namedNode('o1'));
+            const byGraph = byObject.match(null, null, null, new DefaultGraph());
+
+            expect([...bySubject]).toHaveLength(4);
+            expect([...byPredicate]).toHaveLength(3);
+            expect([...byObject]).toHaveLength(2);
+            expect([...byGraph]).toEqual([q('s1', 'p1', 'o1')]);
+          },
+        );
+
+        it('should keep a lazy leaf live to its immediate parent', () => {
+          const store = buildStore();
+          const parent = store.match(namedNode('s1'), null, null);
+          const child = parent.match(null, namedNode('p1'));
+          const leaf = child.match();
+
+          store.addQuad(q('s1', 'p1', 'oROOT'));
+          parent.add(q('s1', 'p1', 'oPARENT'));
+          child.add(q('s1', 'p1', 'oCHILD'));
+
+          expect(values(parent)).toEqual(['o0', 'o1', 'o2', 'o3', 'o4', 'oPARENT']);
+          expect(values(child)).toEqual(['o0', 'o1', 'o2', 'o3', 'o4', 'oCHILD']);
+          expect(values(leaf)).toEqual(['o0', 'o1', 'o2', 'o3', 'o4', 'oCHILD']);
+        });
+
+        it('should preserve each snapshot boundary in a match chain', () => {
+          const store = buildStore();
+          const parent = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'snapshot' });
+          const child = parent.match(null, namedNode('p1'));
+          const leaf = child.match();
+
+          store.addQuad(q('s1', 'p1', 'oROOT'));
+          parent.add(q('s1', 'p1', 'oPARENT'));
+          child.add(q('s1', 'p1', 'oCHILD'));
+
+          expect(values(parent)).toEqual(['o0', 'o1', 'o2', 'o3', 'o4', 'oPARENT']);
+          expect(values(child)).toEqual(['o0', 'o1', 'o2', 'o3', 'o4', 'oCHILD']);
+          expect(values(leaf)).toEqual(['o0', 'o1', 'o2', 'o3', 'o4']);
+        });
+
+        it('should downgrade forwarded descendants to snapshots', () => {
+          const store = buildStore();
+          const parent = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'forwarded' });
+          const child = parent.match(null, namedNode('p1'));
+          const leaf = child.match();
+
+          store.addQuad(q('s1', 'p1', 'oROOT'));
+          parent.add(q('s1', 'p1', 'oPARENT'));
+          child.add(q('s1', 'p1', 'oCHILD'));
+
+          expect(values(parent)).toEqual(['o0', 'o1', 'o2', 'o3', 'o4', 'oPARENT', 'oROOT']);
+          expect(values(child)).toEqual(['o0', 'o1', 'o2', 'o3', 'o4', 'oCHILD']);
+          expect(values(leaf)).toEqual(['o0', 'o1', 'o2', 'o3', 'o4']);
+          expect(store.has(q('s1', 'p1', 'oPARENT'))).toBe(true);
+          expect(store.has(q('s1', 'p1', 'oCHILD'))).toBe(false);
+        });
       });
 
       describe('snapshot', () => {
@@ -932,7 +1004,6 @@ describe('Store', () => {
         it('should support its own independent mutations', () => {
           view.add(q('s1', 'p1', 'oOWN'));
           expect(view.has(q('s1', 'p1', 'oOWN'))).toBe(true);
-          // The parent is not affected by snapshot view mutations.
           expect(store.has(q('s1', 'p1', 'oOWN'))).toBe(false);
         });
 
@@ -951,7 +1022,6 @@ describe('Store', () => {
           const union = view.union([q('s1', 'p1', 'oU')]);
           expect(union.size).toBe(6);
           expect(store.has(q('s1', 'p1', 'oU'))).toBe(false);
-          // The union result is independent of later parent mutations
           store.addQuad(q('s1', 'p1', 'oNEW'));
           expect(union.size).toBe(6);
         });
@@ -968,7 +1038,6 @@ describe('Store', () => {
           expect(store._observers).toBe(null);
           store.addQuad(q('s1', 'p1', 'oNEW'));
           expect([...view]).toHaveLength(5);
-          // A view that has already materialized (removing its observer) can also detach
           const other = store.match(namedNode('s1'), null, null, null, opts);
           expect(other.size).toBe(6);
           expect(other.detach().size).toBe(6);
@@ -1007,9 +1076,7 @@ describe('Store', () => {
               store.addQuad(q('s1', 'p1', 'oNEW'));
             }
           }
-          // The in-progress pass is stable (no duplicates, no omissions)...
           expect(seen.sort()).toEqual(['o0', 'o1', 'o2', 'o3', 'o4']);
-          // ...and the next pass reflects the forwarded state.
           expect([...view]).toHaveLength(6);
         });
 
@@ -1083,15 +1150,12 @@ describe('Store', () => {
         });
 
         it('should write non-matching mutations through to the parent unrestricted', () => {
-          // A non-matching add mutates the parent but never appears in the view
           view.add(q('s3', 'p1', 'oNM'));
           expect(store.has(q('s3', 'p1', 'oNM'))).toBe(true);
           expect(view.has(q('s3', 'p1', 'oNM'))).toBe(false);
-          // A non-matching addAll grows the parent, not the view
           view.addAll([q('s3', 'p1', 'oNM2')]);
           expect(store.has(q('s3', 'p1', 'oNM2'))).toBe(true);
           expect(view.size).toBe(5);
-          // A deleteMatches wider than the pattern deletes parent quads outside the view
           view.deleteMatches(namedNode('s2'), null, null);
           expect(store.has(q('s2', 'p1', 'oX'))).toBe(false);
           expect(view.size).toBe(5);
@@ -1100,13 +1164,11 @@ describe('Store', () => {
         it('should defer materialization of an unread view across parent mutations', () => {
           store.addQuad(q('s1', 'p1', 'oNEW'));
           store.removeQuad(q('s1', 'p1', 'o0'));
-          // Nothing has been read from the view, so it has not materialized
           expect(view._filtered).toBeFalsy();
           expect(values(view)).toEqual(['o1', 'o2', 'o3', 'o4', 'oNEW']);
         });
 
         it('should apply parent mutations to an already-materialized view', () => {
-          // Materialize the view before any parent mutation
           expect(view.size).toBe(5);
           store.addQuad(q('s1', 'p1', 'oNEW'));
           store.removeQuad(q('s1', 'p1', 'o0'));
@@ -1139,14 +1201,11 @@ describe('Store', () => {
         it('should stop observing the parent after detach()', () => {
           expect(view.detach()).toBe(view);
           expect(store._observers).toBe(null);
-          // The view is frozen to its contents at detach time
           store.addQuad(q('s1', 'p1', 'oNEW'));
           expect([...view]).toHaveLength(5);
-          // Mutations now apply to the view only, not to the parent
           view.add(q('s1', 'p1', 'oLOCAL'));
           expect(view.has(q('s1', 'p1', 'oLOCAL'))).toBe(true);
           expect(store.has(q('s1', 'p1', 'oLOCAL'))).toBe(false);
-          // `detach()` is idempotent
           expect(view.detach()).toBe(view);
           expect(view.size).toBe(6);
         });
@@ -1154,11 +1213,9 @@ describe('Store', () => {
         it('should downgrade a nested match() to a snapshot of the view', () => {
           const sub = view.match(null, namedNode('p1'));
           expect([...sub]).toHaveLength(5);
-          // Later root mutations reach the outer view, but not the nested snapshot
           store.addQuad(q('s1', 'p1', 'oNEW'));
           expect(view.has(q('s1', 'p1', 'oNEW'))).toBe(true);
           expect([...sub]).toHaveLength(5);
-          // Mutations on the sub-view reach neither the root store nor the outer view
           sub.add(q('s1', 'p1', 'oSUB'));
           expect(sub.has(q('s1', 'p1', 'oSUB'))).toBe(true);
           expect(store.has(q('s1', 'p1', 'oSUB'))).toBe(false);
@@ -1175,11 +1232,9 @@ describe('Store', () => {
         it('should treat an empty-string graph pattern as the default graph', () => {
           view = store.match(null, null, null, '', opts);
           expect([...view]).toHaveLength(6);
-          // A named-graph quad does not match a default-graph pattern
           store.addQuad(q('s3', 'p1', 'oG', 'g1'));
           expect([...view]).toHaveLength(6);
           expect(view.has(q('s3', 'p1', 'oG', 'g1'))).toBe(false);
-          // A default-graph quad does match
           store.addQuad(q('s3', 'p1', 'oD'));
           expect([...view]).toHaveLength(7);
         });
@@ -1188,7 +1243,6 @@ describe('Store', () => {
           const seen = [];
           for (const quad of view) {
             seen.push(quad.object.value);
-            // Mutate while processing the final quad, so the source is exhausted on the next step
             if (seen.length === 5)
               store.addQuad(q('s1', 'p1', 'oNEW'));
           }
@@ -1197,10 +1251,8 @@ describe('Store', () => {
         });
 
         it('should capture a baseline from an already-materialized view mid-iteration', () => {
-          // Force materialization of `_filtered` via a first matching mutation.
           store.addQuad(q('s1', 'p1', 'oNEW'));
           expect(view.size).toBe(6);
-          // Now iterate the materialized view and mutate mid-iteration.
           const seen = [];
           let mutated = false;
           for (const quad of view) {
@@ -1216,10 +1268,8 @@ describe('Store', () => {
 
         it('should reflect additions of a pattern term absent at match() time', () => {
           store = new Store();
-          // The subject `s9` is not present when the view is created.
           view = store.match(namedNode('s9'), null, null, null, opts);
           expect([...view]).toHaveLength(0);
-          // A mutation while `s9` is still absent cannot match the view
           store.addQuad(q('sOther', 'p1', 'o1'));
           expect([...view]).toHaveLength(0);
           store.addQuad(q('s9', 'p1', 'o1'));
@@ -1228,16 +1278,13 @@ describe('Store', () => {
         });
 
         it('should ignore a re-added quad that already exists', () => {
-          // Re-adding an existing quad must not notify observers nor change size.
           store.addQuad(q('s1', 'p1', 'o0'));
           expect([...view]).toHaveLength(5);
         });
 
         it('should match across all pattern positions and the default graph', () => {
           store = new Store([q('s1', 'p1', 'o1')]);
-          // Wildcard pattern: every position is a wildcard.
           const wildcard = store.match(null, null, null, null, opts);
-          // Fully specified pattern including the default graph.
           const exact = store.match(
             namedNode('s1'), namedNode('p1'), namedNode('o1'), new DefaultGraph(), opts);
           store.addQuad(q('s1', 'p1', 'o1')); // already exists, no change
@@ -1251,7 +1298,6 @@ describe('Store', () => {
             namedNode('s1'), namedNode('p1'), namedNode('o1'), namedNode('g1'))]);
           view = store.match(
             namedNode('s1'), namedNode('p1'), namedNode('o1'), namedNode('g1'), opts);
-          // Each of these differs from the pattern in exactly one position.
           store.addQuad(new Quad(namedNode('sX'), namedNode('p1'), namedNode('o1'), namedNode('g1')));
           store.addQuad(new Quad(namedNode('s1'), namedNode('pX'), namedNode('o1'), namedNode('g1')));
           store.addQuad(new Quad(namedNode('s1'), namedNode('p1'), namedNode('oX'), namedNode('g1')));
@@ -1265,14 +1311,11 @@ describe('Store', () => {
           for (let i = 0; i < 20; i++)
             store.addQuad(q('s1', 'p1', `o${i}`));
           view = store.match(namedNode('s1'), null, null, null, opts);
-          // A partial read leaves the internal iterator suspended
           expect(view.read()).not.toBeNull();
           expect(view._activeIterators).toBe(1);
           view.once('close', () => {
             expect(view._activeIterators).toBe(0);
-            // With no live iterators, this mutation must not freeze a baseline
             store.addQuad(q('s1', 'p1', 'oNEW'));
-            // A later pass is still protected against mid-pass mutations
             const seen = [];
             let mutated = false;
             for (const quad of view) {
@@ -1290,7 +1333,6 @@ describe('Store', () => {
 
         it('should support destroying its stream before any read', done => {
           view.once('close', () => {
-            // The dataset side of the view remains usable
             expect(view.size).toBe(5);
             done();
           });
@@ -1303,7 +1345,6 @@ describe('Store', () => {
           for (const a of view) {
             outer.push(a.object.value);
             if (outer.length === 1) {
-              // Run a nested iteration to completion (dropping `_activeIterators` to 1), then mutate
               for (const b of view)
                 inner.push(b.object.value);
               store.addQuad(q('s1', 'p1', 'oNEW'));
@@ -1315,15 +1356,12 @@ describe('Store', () => {
 
         it('should keep an overlapping iteration stable after a baseline freeze', () => {
           store = new Store();
-          // Spread the quads across predicate buckets, so deletions hit levels not yet iterated
           for (let i = 0; i < 5; i++)
             store.addQuad(q('s1', `p${i}`, 'o1'));
           view = store.match(namedNode('s1'), null, null, null, opts);
           const outer = view[Symbol.iterator]();
           expect(outer.next().done).toBe(false);
-          // This mutation freezes a baseline for the in-progress outer iteration
           store.addQuad(q('s1', 'pNEW', 'o1'));
-          // An iteration starting now must also stay stable across further matching mutations
           const seen = [];
           let mutated = false;
           for (const quad of view) {
@@ -1336,7 +1374,6 @@ describe('Store', () => {
           }
           expect(seen).toHaveLength(6);
           expect(seen).toEqual(expect.arrayContaining(['p3', 'p4', 'pNEW']));
-          // The outer iteration still yields the quads from its own start
           const rest = [];
           for (let next = outer.next(); !next.done; next = outer.next())
             rest.push(next.value.predicate.value);

@@ -477,10 +477,8 @@ either as a store-wide default or per call:
 import { Store, DataFactory } from 'n3';
 const { namedNode } = DataFactory;
 
-// As the default for every match() of a store:
 const store = new Store([], { matchSemantics: 'snapshot' });
 
-// Or per call:
 const view = store.match(namedNode('s'), null, null, null, { matchSemantics: 'snapshot' });
 ```
 

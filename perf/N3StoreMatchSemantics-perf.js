@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// Benchmark for configurable `#match()` semantics, comparing `lazy`, `snapshot`, and `forwarded`.
 const assert = require('assert');
 const N3 = require('..');
 
@@ -7,31 +6,31 @@ const { DataFactory: { namedNode } } = N3;
 
 console.log('N3Store #match() semantics performance test');
 
-// `dim` x `dim` subjects/objects in the default graph.
 const dim = Number.parseInt(process.argv[2], 10) || 256;
 const total = dim * dim;
 
 const prefix = 'http://example.org/#';
+const predicate = namedNode('p');
+const object = namedNode('o');
+const mid = namedNode('mid');
 
-// Each scenario gets its own store: `snapshot` and `forwarded` views keep observing
-// the parent store, so views left behind by one scenario would contaminate the next.
+// Keep observers created by one scenario out of the next
 function freshStore() {
   const store = new N3.Store();
   for (let i = 0; i < dim; i++)
     for (let j = 0; j < dim; j++)
-      store.addQuad(namedNode(prefix + i), namedNode('p'), namedNode(prefix + j));
+      store.addQuad(namedNode(prefix + i), predicate, namedNode(prefix + j));
   return store;
 }
 
-// Warm up all three semantics so JIT effects do not skew the first measurement.
 function warmUp() {
   const store = new N3.Store();
   for (let i = 0; i < 4; i++)
-    store.addQuad(namedNode(prefix + i), namedNode('p'), namedNode('o'));
+    store.addQuad(namedNode(prefix + i), predicate, object);
   [undefined, { matchSemantics: 'snapshot' }, { matchSemantics: 'forwarded' }].forEach((options, k) => {
     const view = store.match(namedNode(prefix + 0), null, null, null, options);
     assert.equal([...view].length, k + 1);
-    store.addQuad(namedNode(prefix + 0), namedNode('p'), namedNode(`warm${k}`));
+    store.addQuad(namedNode(prefix + 0), predicate, namedNode(`warm${k}`));
   });
 }
 warmUp();
@@ -62,7 +61,7 @@ runMatchIterate('lazy (default)', undefined);
 runMatchIterate('snapshot', { matchSemantics: 'snapshot' });
 runMatchIterate('forwarded', { matchSemantics: 'forwarded' });
 
-// Many open views during non-matching parent mutations: exercises observer fan-out.
+/* Observer fan-out */
 function runOpenViewsWithMutations(label, options) {
   const store = freshStore();
   const views = [];
@@ -70,9 +69,8 @@ function runOpenViewsWithMutations(label, options) {
     views.push(store.match(namedNode(prefix + i), null, null, null, options));
   TEST = `- ${label}: ${total} non-matching parent mutations with ${dim} open views`;
   console.time(TEST);
-  // Mutate a separate subject space so none of the open views match
   for (let j = 0; j < total; j++)
-    store.addQuad(namedNode(`http://other/#${j}`), namedNode('p'), namedNode('o'));
+    store.addQuad(namedNode(`http://other/#${j}`), predicate, object);
   console.timeEnd(TEST);
   assert.equal(views.length, dim);
   assert.equal(store.size, total * 2);
@@ -82,7 +80,7 @@ runOpenViewsWithMutations('lazy (default)', undefined);
 runOpenViewsWithMutations('snapshot', { matchSemantics: 'snapshot' });
 runOpenViewsWithMutations('forwarded', { matchSemantics: 'forwarded' });
 
-// Iteration with a matching parent mutation landing mid-stream.
+/* Mid-iteration mutation */
 function runMidStreamSwitch(label, options) {
   const store = freshStore();
   TEST = `- ${label}: ${dim} iterations each with a mid-stream matching mutation`;
@@ -94,21 +92,38 @@ function runMidStreamSwitch(label, options) {
       count++;
       if (!mutated) {
         mutated = true;
-        store.addQuad(namedNode(prefix + i), namedNode('p'), namedNode('mid'));
+        store.addQuad(namedNode(prefix + i), predicate, mid);
       }
     }
-    // Both snapshot and forwarded stay stable for the in-progress pass (dim)
     assert.equal(count, dim);
   }
   console.timeEnd(TEST);
-  // Untimed removal of the mid-stream quads; the `forwarded` views stay unmaterialized
-  // (iteration alone does not materialize), so this exercises the observers' no-op path
   for (let i = 0; i < dim; i++)
-    store.removeQuad(namedNode(prefix + i), namedNode('p'), namedNode('mid'));
+    store.removeQuad(namedNode(prefix + i), predicate, mid);
   assert.equal(store.size, total);
 }
 
 runMidStreamSwitch('snapshot', { matchSemantics: 'snapshot' });
 runMidStreamSwitch('forwarded', { matchSemantics: 'forwarded' });
+
+/* Repeated mutations with a suspended iterator */
+function runSuspendedIteration() {
+  const store = freshStore();
+  const subject = namedNode(prefix + 0);
+  const view = store.match(subject, null, null, null, { matchSemantics: 'forwarded' });
+  const iterator = view[Symbol.iterator]();
+  assert.equal(iterator.next().done, false);
+
+  TEST = `- forwarded: ${dim} matching mutations with a suspended iteration`;
+  console.time(TEST);
+  for (let i = 0; i < dim; i++)
+    store.addQuad(subject, predicate, namedNode(`suspended${i}`));
+  console.timeEnd(TEST);
+
+  iterator.return();
+  assert.equal(view.size, dim * 2);
+}
+
+runSuspendedIteration();
 
 console.log(`* Memory usage at end: ${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB`);
