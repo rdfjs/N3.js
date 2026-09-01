@@ -549,9 +549,12 @@ export default class N3Parser {
       return this._readBlankNodePunctuation(token);
 
     // Store blank node quad
-    if (this._subject !== null)
-      this._emit(this._subject, this._predicate, this._object, this._graph,
-          this._inversePredicate);
+    if (this._subject !== null) {
+      if (this._inversePredicate)
+        this._emit(this._object, this._predicate, this._subject, this._graph);
+      else
+        this._emit(this._subject, this._predicate, this._object, this._graph);
+    }
 
     // Restore the parent context containing this blank node
     const empty = this._predicate === null;
@@ -911,9 +914,12 @@ export default class N3Parser {
       return this._readPunctuation(token);
 
     // Store the last quad of the formula
-    if (this._subject !== null)
-      this._emit(this._subject, this._predicate, this._object, this._graph,
-          this._inversePredicate);
+    if (this._subject !== null) {
+      if (this._inversePredicate)
+        this._emit(this._object, this._predicate, this._subject, this._graph);
+      else
+        this._emit(this._subject, this._predicate, this._object, this._graph);
+    }
 
     const formula = this._graph, empty = this._emptyFormula;
     // Restore the parent context containing this formula
@@ -956,11 +962,11 @@ export default class N3Parser {
       this._subject = null;
       this._tripleTerm = null;
       next = this._getStatementReader();
-      this._inversePredicate = false;
+      if (inversePredicate) this._inversePredicate = false;
       break;
     // Semicolon means the subject is shared; predicate and object are different
     case ';':
-      this._inversePredicate = false;
+      if (inversePredicate) this._inversePredicate = false;
       next = this._readPredicate;
       break;
     // Comma means both the subject and predicate are shared; the object is different
@@ -1010,7 +1016,10 @@ export default class N3Parser {
     // A quad has been completed now, so return it
     if (subject !== null && (!startingAnnotation || (startingAnnotation && !this._annotation))) {
       const predicate = this._predicate, object = this._object;
-      this._emit(subject, predicate, object, graph, inversePredicate);
+      if (!inversePredicate)
+        this._emit(subject, predicate, object, graph);
+      else
+        this._emit(object, predicate, subject, graph);
     }
     if (startingAnnotation) {
       this._annotation = true;
@@ -1025,7 +1034,7 @@ export default class N3Parser {
     switch (token.type) {
     // Semicolon means the subject is shared; predicate and object are different
     case ';':
-      this._inversePredicate = false;
+      if (inversePredicate) this._inversePredicate = false;
       next = this._readPredicate;
       break;
     // Comma means both the subject and predicate are shared; the object is different
@@ -1048,8 +1057,10 @@ export default class N3Parser {
     if (this._subject === null)
       return this._error('Expected ] to follow annotation', token);
     // A quad has been completed now, so return it
-    this._emit(this._subject, this._predicate, this._object, this._graph,
-        inversePredicate);
+    if (inversePredicate)
+      this._emit(this._object, this._predicate, this._subject, this._graph);
+    else
+      this._emit(this._subject, this._predicate, this._object, this._graph);
     return next;
   }
 
@@ -1429,8 +1440,8 @@ export default class N3Parser {
   }
 
   // ### `_emit` sends a quad through the callback
-  _emit(subject, predicate, object, graph, inversePredicate) {
-    this._callback(null, this._createQuad(subject, predicate, object, graph, inversePredicate));
+  _emit(subject, predicate, object, graph) {
+    this._callback(null, this._factory.quad(subject, predicate, object, graph || this.DEFAULTGRAPH));
   }
 
   // ### `_error` emits an error message through the callback
