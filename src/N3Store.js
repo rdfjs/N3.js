@@ -365,15 +365,18 @@ export default class N3Store {
         return key2 ? (key2 in index2 ? 1 : 0) : index2[SIZE];
       }
 
-      for (const value1 in index1)
-        count += index1[value1][SIZE];
+      const keys1 = Object.keys(index1);
+      for (let i1 = 0; i1 < keys1.length; i1++)
+        count += index1[keys1[i1]][SIZE];
       return count;
     }
 
-    for (const value0 in index0) {
-      index1 = index0[value0];
-      for (const value1 in index1)
-        count += index1[value1][SIZE];
+    const keys0 = Object.keys(index0);
+    for (let i0 = 0; i0 < keys0.length; i0++) {
+      index1 = index0[keys0[i0]];
+      const keys1 = Object.keys(index1);
+      for (let i1 = 0; i1 < keys1.length; i1++)
+        count += index1[keys1[i1]][SIZE];
     }
     return count;
   }
