@@ -58,6 +58,28 @@ describe('Writer', () => {
       expect(writer.quadsToString(triples)).toBe('<a> <b> <c> .\n<d> <e> <f> .\n');
     });
 
+    it('should serialize a blank node from another library through its term type', () => {
+      const writer = new Writer();
+      const blankNode = { termType: 'BlankNode', value: 'b1', id: 'not-a-blank-node-id' };
+      expect(
+        writer.quadToString(blankNode, new NamedNode('b'), blankNode, blankNode),
+      ).toBe('_:b1 <b> _:b1 _:b1 .\n');
+    });
+
+    it('should fully serialize a Quad term from another library', () => {
+      const writer = new Writer();
+      const quoted = {
+        termType: 'Quad',
+        subject: { termType: 'NamedNode', value: 's' },
+        predicate: { termType: 'NamedNode', value: 'p' },
+        object: { termType: 'NamedNode', value: 'o' },
+        graph: { termType: 'DefaultGraph', value: '' },
+      };
+      expect(
+        writer.quadToString(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), quoted),
+      ).toBe('<a> <b> <c> <<(<s> <p> <o>)>> .\n');
+    });
+
     it('should serialize a variable from another library through its term type', () => {
       const writer = new Writer();
       const variable = { termType: 'Variable', value: 'v' };
