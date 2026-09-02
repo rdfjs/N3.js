@@ -1066,6 +1066,16 @@ describe('Lexer', () => {
     );
 
     it(
+      'should keep numeric characters as N3 verb boundaries when no prefix follows',
+      shouldTokenize(streamOf('has1', ' of-1'),
+                     { type: 'has', line: 1 },
+                     { type: 'literal', value: '1', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                     { type: 'of', line: 1 },
+                     { type: 'literal', value: '-1', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
       'should tokenize an IRI property list identifier split across chunks',
       shouldTokenize(streamOf('[ i', 'd <s> <p> <o> ]'),
                      { type: '[', line: 1 },
@@ -1079,10 +1089,28 @@ describe('Lexer', () => {
 
     it(
       'should keep keyword-like prefixes as prefixed names',
-      shouldTokenize('has:p is:p of:p',
+      shouldTokenize('has:p is:p of:p has1:p has_:p has-foo:p is1:p is_:p is-foo:p of1:p of_:p of-foo:p',
                      { type: 'prefixed', prefix: 'has', value: 'p', line: 1 },
                      { type: 'prefixed', prefix: 'is', value: 'p', line: 1 },
                      { type: 'prefixed', prefix: 'of', value: 'p', line: 1 },
+                     { type: 'prefixed', prefix: 'has1', value: 'p', line: 1 },
+                     { type: 'prefixed', prefix: 'has_', value: 'p', line: 1 },
+                     { type: 'prefixed', prefix: 'has-foo', value: 'p', line: 1 },
+                     { type: 'prefixed', prefix: 'is1', value: 'p', line: 1 },
+                     { type: 'prefixed', prefix: 'is_', value: 'p', line: 1 },
+                     { type: 'prefixed', prefix: 'is-foo', value: 'p', line: 1 },
+                     { type: 'prefixed', prefix: 'of1', value: 'p', line: 1 },
+                     { type: 'prefixed', prefix: 'of_', value: 'p', line: 1 },
+                     { type: 'prefixed', prefix: 'of-foo', value: 'p', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should keep keyword-like prefixes split across chunks as prefixed names',
+      shouldTokenize(streamOf('has', '1:p is', '_:p of-', 'foo:p'),
+                     { type: 'prefixed', prefix: 'has1', value: 'p', line: 1 },
+                     { type: 'prefixed', prefix: 'is_', value: 'p', line: 1 },
+                     { type: 'prefixed', prefix: 'of-foo', value: 'p', line: 1 },
                      { type: 'eof', line: 1 }),
     );
 

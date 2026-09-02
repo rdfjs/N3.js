@@ -2900,6 +2900,62 @@ describe('Parser', () => {
     );
 
     it(
+      'should preserve inversion across commas and reset it after a semicolon',
+      shouldParse(parser, '<s> is <p> of <o1>, <o2>; <q> <r>.',
+                  ['o1', 'p', 's'], ['o2', 'p', 's'], ['s', 'q', 'r']),
+    );
+
+    it(
+      'should reset inverted predicate markers after a semicolon',
+      shouldParse(parser, '<s> <- <p> <o>; <q> <r>.',
+                  ['o', 'p', 's'], ['s', 'q', 'r']),
+    );
+
+    it(
+      'should apply inversion when a blank node property list closes',
+      shouldParse(parser, '[ is <p1> of <o1> ]. [ <- <p2> <o2> ].',
+                  ['o1', 'p1', '_:b0'], ['o2', 'p2', '_:b1']),
+    );
+
+    it(
+      'should scope inversion across blank node property-list punctuation',
+      shouldParse(parser, '[ is <p> of <o1>, <o2>; <q> <r> ].',
+                  ['o1', 'p', '_:b0'], ['o2', 'p', '_:b0'], ['_:b0', 'q', 'r']),
+    );
+
+    it(
+      'should apply and scope inversion inside formulas',
+      shouldParse(parser,
+                  '{ <s1> is <p1> of <o1> }. { <s2> is <p2> of <o2>; <q2> <r2> }.',
+                  ['o1', 'p1', 's1', '_:b0'],
+                  ['o2', 'p2', 's2', '_:b1'], ['s2', 'q2', 'r2', '_:b1']),
+    );
+
+    it(
+      'should apply inversion inside triple terms',
+      shouldParse(parser, '<<( <s> is <p> of <o> )>> <q> <r>.',
+                  [['o', 'p', 's'], 'q', 'r']),
+    );
+
+    it(
+      'should apply inversion inside reified triples',
+      shouldParse(parser, '<< <s> is <p> of <o> >> <q> <r>.',
+                  ['_:b0', 'q', 'r'], ['_:b0', reifies, ['o', 'p', 's']]),
+    );
+
+    it(
+      'should apply inversion to annotated triples without leaking into annotations',
+      shouldParse(parser, '<s> is <p> of <o> {| <q> <r> |}.',
+                  ['o', 'p', 's'], ['_:b0', 'q', 'r'], ['_:b0', reifies, ['o', 'p', 's']]),
+    );
+
+    it(
+      'should reset inversion after a reifier and semicolon',
+      shouldParse(parser, '<s> is <p> of <o> ~ <t>; <q> <r>.',
+                  ['o', 'p', 's'], ['t', reifies, ['o', 'p', 's']], ['s', 'q', 'r']),
+    );
+
+    it(
       'should parse verb keywords after literal subjects',
       shouldParse(parser, '"s1" has <p1> <o1>. "s2" is <p2> of <o2>.',
                   ['"s1"', 'p1', 'o1'], ['o2', 'p2', '"s2"']),

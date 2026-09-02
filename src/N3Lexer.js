@@ -326,7 +326,7 @@ export default class N3Lexer {
       case 'h':
       case 'o':
         // Try to find an N3 verb keyword
-        if (this._n3Mode && (match = this._n3Verb.exec(input)))
+        if (this._n3Mode && (match = this._matchN3Verb(input, inputFinished)))
           type = match[0];
         else
           inconclusive = true;
@@ -336,7 +336,7 @@ export default class N3Lexer {
         // Try to find an IRI property list identifier or N3 verb keyword
         if (this._n3Mode && (match = this._n3Id.exec(input)))
           type = 'id';
-        else if (this._n3Mode && (match = this._n3Verb.exec(input)))
+        else if (this._n3Mode && (match = this._matchN3Verb(input, inputFinished)))
           type = match[0];
         else
           inconclusive = true;
@@ -453,6 +453,33 @@ export default class N3Lexer {
     }
     // Signals the syntax error through the callback
     function reportSyntaxError(self) { callback(self._syntaxError(/^\S*/.exec(input)[0])); }
+  }
+
+  // ### `_matchN3Verb` matches an N3 verb unless the input is a longer prefixed name
+  _matchN3Verb(input, inputFinished) {
+    const verb = this._n3Verb.exec(input);
+    if (!verb)
+      return null;
+
+    // Most verb boundaries cannot be part of a prefix, so keep the common path fast.
+    const next = input[verb[0].length];
+    if (next !== '-' && next !== '_' && (next < '0' || next > '9'))
+      return verb;
+
+    // A prefix can start with a verb and continue with characters that are also
+    // valid verb boundaries. Prefer the longer prefixed name when it is complete.
+    if (this._prefixed.exec(input) || this._prefixed.exec(`${input} `))
+      return null;
+
+    // If a stream chunk ends partway through such a prefix, wait for the colon
+    // instead of prematurely emitting the verb. Appending ": " lets the prefix
+    // grammar determine whether all input seen so far can be a complete prefix.
+    if (!inputFinished) {
+      const prefix = this._prefix.exec(`${input}: `);
+      if (prefix)
+        return null;
+    }
+    return verb;
   }
 
   // ### `_unescape` replaces N3 escape codes by their corresponding characters,

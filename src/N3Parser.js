@@ -23,6 +23,13 @@ export default class N3Parser {
         isNTriples = /triple/.test(format), isNQuads = /quad/.test(format),
         isN3 = this._n3Mode = /n3/.test(format),
         isLineMode = isNTriples || isNQuads;
+    // Keep inverse handling off the non-N3 emission path
+    this._emitCurrent = this._emit;
+    if (isN3) {
+      this._createQuad = this._createQuadInDirection;
+      this._emit = this._emitInDirection;
+      this._emitCurrent = this._emitCurrentInDirection;
+    }
     if (!(this._supportsNamedGraphs = !(isTurtle || isN3)))
       this._readPredicateOrNamedGraph = this._readPredicate;
     // Support triples in other graphs
@@ -550,7 +557,7 @@ export default class N3Parser {
 
     // Store blank node quad
     if (this._subject !== null)
-      this._emit(this._subject, this._predicate, this._object, this._graph);
+      this._emitCurrent(this._subject, this._predicate, this._object, this._graph);
 
     // Restore the parent context containing this blank node
     const empty = this._predicate === null;
@@ -911,7 +918,7 @@ export default class N3Parser {
 
     // Store the last quad of the formula
     if (this._subject !== null)
-      this._emit(this._subject, this._predicate, this._object, this._graph);
+      this._emitCurrent(this._subject, this._predicate, this._object, this._graph);
 
     const formula = this._graph, empty = this._emptyFormula;
     // Restore the parent context containing this formula
@@ -958,6 +965,7 @@ export default class N3Parser {
       break;
     // Semicolon means the subject is shared; predicate and object are different
     case ';':
+      if (inversePredicate) this._inversePredicate = false;
       next = this._readPredicate;
       break;
     // Comma means both the subject and predicate are shared; the object is different
@@ -980,6 +988,7 @@ export default class N3Parser {
       if (subject !== null)
         this._tripleTerm = null;
       this._subject = this._readTripleTerm();
+      this._inversePredicate = false;
       this._validAnnotation = false;
       startingAnnotation = true;
       next = this._readPredicate;
@@ -992,6 +1001,7 @@ export default class N3Parser {
         return this._error('Annotation block can not be empty', token);
       this._subject = null;
       this._annotation = false;
+      this._inversePredicate = false;
       next = this._getContextEndReader();
       break;
     default:
@@ -1005,10 +1015,7 @@ export default class N3Parser {
     // A quad has been completed now, so return it
     if (subject !== null && (!startingAnnotation || (startingAnnotation && !this._annotation))) {
       const predicate = this._predicate, object = this._object;
-      if (!inversePredicate)
-        this._emit(subject, predicate, object,  graph);
-      else
-        this._emit(object,  predicate, subject, graph);
+      this._emit(subject, predicate, object, graph, inversePredicate);
     }
     if (startingAnnotation) {
       this._annotation = true;
@@ -1018,10 +1025,11 @@ export default class N3Parser {
 
     // ### `_readBlankNodePunctuation` reads punctuation in a blank node
   _readBlankNodePunctuation(token) {
-    let next;
+    let next, resetInversePredicate = false;
     switch (token.type) {
     // Semicolon means the subject is shared; predicate and object are different
     case ';':
+      resetInversePredicate = this._inversePredicate;
       next = this._readPredicate;
       break;
     // Comma means both the subject and predicate are shared; the object is different
@@ -1044,7 +1052,9 @@ export default class N3Parser {
     if (this._subject === null)
       return this._error('Expected ] to follow annotation', token);
     // A quad has been completed now, so return it
-    this._emit(this._subject, this._predicate, this._object, this._graph);
+    this._emitCurrent(this._subject, this._predicate, this._object, this._graph);
+    if (resetInversePredicate)
+      this._inversePredicate = false;
     return next;
   }
 
@@ -1269,8 +1279,8 @@ export default class N3Parser {
     if (token.type !== ')>>')
       return this._error(`Expected )>> but got ${token.type}`, token);
     // Read the quad and restore the previous context
-    const quad = this._factory.quad(this._subject, this._predicate, this._object,
-        this._graph || this.DEFAULTGRAPH);
+    const quad = this._createQuad(this._subject, this._predicate, this._object,
+        this._graph, this._inversePredicate);
     this._restoreContext('<<(', token);
 
     // If we're in a list, continue processing that list
@@ -1371,6 +1381,7 @@ export default class N3Parser {
     switch (token.type) {
     // The subject stays shared with the next predicate-object pair
     case ';':
+      this._inversePredicate = false;
       return this._readPredicate;
     // The subject and predicate stay shared with the next object
     case ',':
@@ -1388,7 +1399,9 @@ export default class N3Parser {
     const parentGraph = parent ? parent.graph : undefined;
     const reifier = this._reifier || this._factory.blankNode();
     this._reifier = null;
-    this._tripleTerm = this._tripleTerm || this._factory.quad(this._subject, this._predicate, this._object);
+    this._tripleTerm = this._tripleTerm || this._createQuad(
+      this._subject, this._predicate, this._object, null, this._inversePredicate,
+    );
     this._emit(reifier, this.RDF_REIFIES, this._tripleTerm, parentGraph || this._graph || this.DEFAULTGRAPH);
     return reifier;
   }
@@ -1411,6 +1424,28 @@ export default class N3Parser {
     case '<<':
       return this._readReifiedTripleTailOrReifier;
     }
+  }
+
+  // ### `_createQuad` creates a quad
+  _createQuad(subject, predicate, object, graph) {
+    return this._factory.quad(subject, predicate, object, graph || this.DEFAULTGRAPH);
+  }
+
+  // ### `_createQuadInDirection` creates a quad in the active predicate direction
+  _createQuadInDirection(subject, predicate, object, graph, inversePredicate) {
+    return inversePredicate ?
+      this._factory.quad(object, predicate, subject, graph || this.DEFAULTGRAPH) :
+      this._factory.quad(subject, predicate, object, graph || this.DEFAULTGRAPH);
+  }
+
+  // ### `_emitInDirection` sends a quad in the active predicate direction
+  _emitInDirection(subject, predicate, object, graph, inversePredicate) {
+    this._callback(null, this._createQuad(subject, predicate, object, graph, inversePredicate));
+  }
+
+  // ### `_emitCurrentInDirection` sends a quad in the current predicate direction
+  _emitCurrentInDirection(subject, predicate, object, graph) {
+    this._callback(null, this._createQuad(subject, predicate, object, graph, this._inversePredicate));
   }
 
   // ### `_emit` sends a quad through the callback
