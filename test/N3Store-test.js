@@ -760,6 +760,11 @@ describe('Store', () => {
         return seen.sort();
       }
 
+      function removeOtherSubject(store, first) {
+        store.removeQuad(first.subject.value === 's1' ?
+          q('s2', 'p1', 'o2') : q('s1', 'p1', 'o1'));
+      }
+
       function buildStore(options) {
         const store = new Store([], options);
         for (const object of initialValues)
@@ -776,6 +781,20 @@ describe('Store', () => {
         expect([...view]).toHaveLength(6);
       });
 
+      it('should preserve match() arity', () => {
+        expect(buildStore().match).toHaveLength(4);
+      });
+
+      it('should preserve a lazy iterator source after materialization', () => {
+        const store = buildStore();
+        const view = store.match(namedNode('s1'), null, null);
+        const iterator = view[Symbol.iterator]();
+        expect(view.size).toBe(5);
+        store.addQuad(q('s1', 'p1', 'oNEW'));
+        expect(values(iterator)).toEqual([...initialValues, 'oNEW']);
+        expect(values(view)).toEqual(initialValues);
+      });
+
       it('should detach a lazy view as a snapshot', () => {
         const view = buildStore().match(namedNode('s1'), null, null).detach();
         const nested = view.match(null, namedNode('p1'));
@@ -784,16 +803,15 @@ describe('Store', () => {
         expect([...nested]).toHaveLength(5);
       });
 
-      it('should throw on an unknown matchSemantics value', () => {
-        const store = buildStore();
-        expect(() => store.match(namedNode('s1'), null, null, null, { matchSemantics: 'bogus' }))
-          .toThrow('Unknown matchSemantics: bogus');
-      });
-
-      it('should throw on an unknown store-level matchSemantics value', () => {
-        expect(() => new Store([], { matchSemantics: 'bogus' }))
-          .toThrow('Unknown matchSemantics: bogus');
-      });
+      it.each(['bogus', '', false, 0, null])(
+        'should reject an invalid matchSemantics value (%p)',
+        matchSemantics => {
+          const message = `Unknown matchSemantics: ${matchSemantics}`;
+          expect(() => new Store([], { matchSemantics })).toThrow(message);
+          expect(() => buildStore().match(
+            namedNode('s1'), null, null, null, { matchSemantics })).toThrow(message);
+        },
+      );
 
       it('should use the store-level default matchSemantics', () => {
         const store = buildStore({ matchSemantics: 'snapshot' });
@@ -845,11 +863,13 @@ describe('Store', () => {
         expect(store.has(q('s1', 'p1', 'oU'))).toBe(false);
       });
 
-      it('should detach a single observer while another remains attached', () => {
+      it('should leave other snapshots observed when one materializes', () => {
         const store = buildStore();
         const a = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'snapshot' });
         const b = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'snapshot' });
-        a.size; // eslint-disable-line no-unused-expressions
+        expect(store._observers.size).toBe(2);
+        expect(a.size).toBe(5);
+        expect(store._observers.size).toBe(1);
         store.addQuad(q('s1', 'p1', 'oNEW'));
         expect([...a]).toHaveLength(5);
         expect([...b]).toHaveLength(5);
@@ -867,12 +887,58 @@ describe('Store', () => {
         expect([...b]).toHaveLength(5);
       });
 
-      it('should stop observing when a snapshot with an absent pattern term materializes', () => {
+      it.each(['snapshot', 'forwarded'])(
+        'should keep a %s iterator stable when deletion removes an index branch',
+        matchSemantics => {
+          const store = new Store([q('s1', 'p1', 'o1'), q('s2', 'p1', 'o2')]);
+          const view = store.match(null, null, null, null, { matchSemantics });
+          const iterator = view[Symbol.iterator]();
+          const first = iterator.next().value;
+          removeOtherSubject(store, first);
+          expect(values([first, ...iterator])).toEqual(['o1', 'o2']);
+        },
+      );
+
+      it('should keep an iterator stable when deletion removes a nested index branch', () => {
+        const store = new Store([q('s1', 'p1', 'o1'), q('s1', 'p2', 'o2')]);
+        const view = store.match(null, null, null, null, { matchSemantics: 'snapshot' });
+        const iterator = view[Symbol.iterator]();
+        const first = iterator.next().value;
+        store.removeQuad(first.predicate.value === 'p1' ?
+          q('s1', 'p2', 'o2') : q('s1', 'p1', 'o1'));
+        expect(values([first, ...iterator])).toEqual(['o1', 'o2']);
+      });
+
+      it.each(['snapshot', 'forwarded'])(
+        'should keep a %s iterator stable across a reentrant factory mutation',
+        matchSemantics => {
+          const state = { mutate: false, store: null };
+          const factory = {
+            ...DataFactory,
+            defaultGraph() {
+              const graph = DataFactory.defaultGraph();
+              if (state.mutate) {
+                state.mutate = false;
+                state.store.removeQuad(q('s1', 'p1', 'o1'));
+              }
+              return graph;
+            },
+          };
+          const store = new Store([q('s1', 'p1', 'o1'), q('s2', 'p1', 'o2')], { factory });
+          state.store = store;
+          const view = store.match(null, null, null, null, { matchSemantics });
+          state.mutate = true;
+          expect([...view].map(({ subject, object }) =>
+            `${subject.value}:${object.value}`).sort()).toEqual(['s1:o1', 's2:o2']);
+          expect(store.has(q('s1', 'p1', 'o1'))).toBe(false);
+        },
+      );
+
+      it('should snapshot an absent pattern term before its first matching mutation', () => {
         const store = buildStore();
         const view = store.match(namedNode('sNONE'), null, null, null, { matchSemantics: 'snapshot' });
-        expect(view.size).toBe(0);
-        expect(store._observers).toBe(null);
         store.addQuad(q('sNONE', 'p1', 'o1'));
+        expect(store._observers).toBe(null);
         expect([...view]).toHaveLength(0);
       });
 
@@ -896,6 +962,7 @@ describe('Store', () => {
             expect([...byPredicate]).toHaveLength(3);
             expect([...byObject]).toHaveLength(2);
             expect([...byGraph]).toEqual([q('s1', 'p1', 'o1')]);
+            expect([...bySubject.match(namedNode('s2'))]).toHaveLength(0);
           },
         );
 
@@ -964,6 +1031,12 @@ describe('Store', () => {
           expect(view.has(q('s1', 'p1', 'o0'))).toBe(true);
         });
 
+        it('should ignore parent additions between iterator creation and first read', () => {
+          const iterator = view[Symbol.iterator]();
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          expect(values(iterator)).toEqual(initialValues);
+        });
+
         it('should ignore parent deletions made before iteration', () => {
           store.removeQuad(q('s1', 'p1', 'o0'));
           expect([...view]).toHaveLength(5);
@@ -976,6 +1049,16 @@ describe('Store', () => {
             store.removeQuad(q('s1', 'p1', 'o4'));
           });
           expect(seen).toEqual(initialValues);
+        });
+
+        it('should keep an active iterator stable when materialized', () => {
+          store = new Store([q('s1', 'p1', 'o1'), q('s2', 'p1', 'o2')]);
+          view = store.match(null, null, null, null, opts);
+          const seen = valuesWithMutationAfterFirstQuad(view, first => {
+            expect(view.size).toBe(2);
+            removeOtherSubject(store, first);
+          });
+          expect(seen).toEqual(['o1', 'o2']);
         });
 
         it('should ignore a parent mutation that lands during async iteration', async () => {
@@ -1064,6 +1147,12 @@ describe('Store', () => {
           store.addQuad(q('s1', 'p1', 'oNEW'));
           expect([...view]).toHaveLength(6);
           expect(view.has(q('s1', 'p1', 'oNEW'))).toBe(true);
+        });
+
+        it('should reflect parent additions between iterator creation and first read', () => {
+          const iterator = view[Symbol.iterator]();
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          expect(values(iterator)).toEqual([...initialValues, 'oNEW']);
         });
 
         it('should reflect parent deletions made before iteration', () => {
@@ -1169,6 +1258,24 @@ describe('Store', () => {
           expect(view.size).toBe(5);
         });
 
+        it('should keep an active iterator stable when materialized', () => {
+          store = new Store([
+            q('s1', 'p1', 'o2'),
+            q('s2', 'p1', 'o1'),
+            q('s1', 'p1', 'o1'),
+            q('s2', 'p1', 'o2'),
+          ]);
+          view = store.match(null, namedNode('p1'), null, null, opts);
+          const iterator = view[Symbol.iterator]();
+          const seen = [iterator.next().value, iterator.next().value];
+          expect(view.size).toBe(4);
+          store.addQuad(q('s3', 'p1', 'o3'));
+          seen.push(...iterator);
+          expect(seen.map(({ subject, object }) => `${subject.value}:${object.value}`).sort()).toEqual([
+            's1:o1', 's1:o2', 's2:o1', 's2:o2',
+          ]);
+        });
+
         it('should forward a Store addAll (bypassing the index-merge fast path) when observed', () => {
           const extra = new Store([], { entityIndex: store._entityIndex });
           extra.addQuad(q('s1', 'p1', 'oM'));
@@ -1200,6 +1307,17 @@ describe('Store', () => {
           expect(store.has(q('s1', 'p1', 'oLOCAL'))).toBe(false);
           expect(view.detach()).toBe(view);
           expect(view.size).toBe(6);
+        });
+
+        it('should keep an active iterator stable when detached', () => {
+          store = new Store([q('s1', 'p1', 'o1'), q('s2', 'p1', 'o2')]);
+          view = store.match(null, null, null, null, opts);
+          const seen = valuesWithMutationAfterFirstQuad(view, first => {
+            view.detach();
+            removeOtherSubject(store, first);
+          });
+          expect(seen).toEqual(['o1', 'o2']);
+          expect(values(view)).toEqual(['o1', 'o2']);
         });
 
         it('should downgrade a nested match() to a snapshot of the view', () => {

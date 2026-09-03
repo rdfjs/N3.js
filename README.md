@@ -468,7 +468,7 @@ The store provides the following search methods
 
 The dataset returned by `match()` is also a readable stream. By default, it is
 *lazy*: it delegates live to the parent store until the first operation that
-materializes the view (a mutation, or a non-streaming read such as `size` or
+materializes the view (a mutation, or a materializing read such as `size` or
 `has`), which means parent mutations made before that point are reflected in
 the view. You can choose a different behavior with the `matchSemantics` option,
 either as a store-wide default or per call:
@@ -486,8 +486,8 @@ Supported values:
 
 - `'lazy'` (default) — backwards-compatible behavior. The view reflects the
   parent store until the first operation that materializes it (a mutation, or a
-  non-streaming read such as `size` or `has`), after which it is frozen to a
-  snapshot. Parent mutations made before that point leak into the view.
+  materializing read such as `size` or `has`), after which it is frozen to a
+  snapshot. Parent mutations made before that point remain visible in the view.
 - `'snapshot'` — the view reflects the parent contents *at the time of*
   `match()`. Later parent mutations never affect it. This is the most
   spec-correct interpretation of an RDF/JS dataset.
@@ -506,17 +506,15 @@ view's semantics (with `'forwarded'` downgraded to `'snapshot'` as above).
 
 For `'snapshot'` and `'forwarded'`, an iteration (synchronous or via the
 stream) that is already in progress keeps a stable view of the quads as of when
-it started, even if a matching parent mutation lands mid-iteration. Views are
-maintained incrementally — they only do work when a parent mutation actually
-matches the view's pattern — so the common path stays fast.
+it started, even if a matching parent mutation lands mid-iteration. Parent
+mutations only materialize or update a view when they match its pattern.
 
-Such views observe the parent store: a `'snapshot'` view until its contents are
-first needed (its first matching parent mutation or first materializing read),
-a `'forwarded'` view for the lifetime of the store. The store holds a strong
-reference to each observing view — retaining it against garbage collection —
-and checks every mutation against each open view's pattern. Call
-`view.detach()` to release a view early: it is frozen to its contents at detach
-time and no longer taxes the store.
+Such views observe the parent store: a `'snapshot'` view until it materializes,
+is frozen by a matching mutation, or is detached; a `'forwarded'` view until it
+is detached. The store holds a strong reference to each observing view —
+retaining it against garbage collection — and checks every mutation against
+each open view's pattern. Call `view.detach()` to release a view early: it is
+frozen to its contents at detach time and no longer taxes the store.
 
 ## Reasoning
 

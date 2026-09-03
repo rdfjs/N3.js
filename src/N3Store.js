@@ -197,7 +197,7 @@ export default class N3Store {
       options = quads, quads = null;
     options = options || {};
     this._factory = options.factory || N3DataFactory;
-    this._matchSemantics = validateMatchSemantics(options.matchSemantics || 'lazy');
+    this._matchSemantics = validateMatchSemantics(options.matchSemantics);
     this._entityIndex = options.entityIndex || new N3EntityIndex({ factory: this._factory });
     this._entities = this._entityIndex._entities;
     this._termFromId = this._entityIndex._termFromId.bind(this._entityIndex);
@@ -479,11 +479,8 @@ export default class N3Store {
     object    = this._termToNewNumericId(object);
 
     // Notify observers only for new quads
-    if (this._observers !== null) {
-      const subjects = graphItem.subjects[subject], predicates = subjects && subjects[predicate];
-      if (!predicates || !(object in predicates))
-        this._notifyObservers(subject, predicate, object, graph, true);
-    }
+    if (this._observers !== null && !hasInIndex(graphItem.subjects, subject, predicate, object))
+      this._notifyObservers(subject, predicate, object, graph, true);
 
     if (!this._addToIndex(graphItem.subjects,   subject,   predicate, object))
       return false;
@@ -661,10 +658,11 @@ export default class N3Store {
   // Setting any field to `undefined` or `null` indicates a wildcard.
   // For backwards compatibility, the object return also implements the Readable stream interface.
   // `options.matchSemantics` controls how the view reacts to later mutations.
-  match(subject, predicate, object, graph, options) {
+  match(subject, predicate, object, graph, options = null) {
     return new DatasetCoreAndReadableStream(this, subject, predicate, object, graph, {
       entityIndex: this._entityIndex,
-      matchSemantics: (options && options.matchSemantics) || this._matchSemantics,
+      matchSemantics: options && options.matchSemantics !== undefined ?
+        options.matchSemantics : this._matchSemantics,
     });
   }
 
@@ -1241,7 +1239,7 @@ function indexMatch(index, ids, depth = 0) {
   return target;
 }
 
-function validateMatchSemantics(semantics) {
+function validateMatchSemantics(semantics = 'lazy') {
   if (semantics !== 'lazy' && semantics !== 'snapshot' && semantics !== 'forwarded')
     throw new Error(`Unknown matchSemantics: ${semantics}`);
   return semantics;
@@ -1282,19 +1280,28 @@ class DatasetCoreAndReadableStream extends Readable {
         graph === '' || isDefaultGraph(graph) ? 1 : n3Store._termToNumericId(graph)));
   }
 
+  // ### `_sourceIterator` returns an iterator over the current backing store.
+  _sourceIterator() {
+    return this._filtered ? this._filtered[Symbol.iterator]() :
+      this.n3Store.readQuads(this.subject, this.predicate, this.object, this.graph);
+  }
+
+  // ### `_freezeCurrentIterators` snapshots readers in the current generation.
+  _freezeCurrentIterators() {
+    if (this._currentIterators === 0)
+      return;
+    if (!this._baselines)
+      this._baselines = new Map();
+    this._baselines.set(this._generation++, [...this._sourceIterator()]);
+    this._currentIterators = 0;
+  }
+
   // ### `_onParentMutation` applies a parent mutation to this view.
   _onParentMutation(subjectId, predicateId, objectId, graphId, added) {
     if (!this._matchesPattern(subjectId, predicateId, objectId, graphId))
       return;
 
-    // Freeze active readers before the mutation
-    if (this._currentIterators > 0) {
-      if (!this._baselines)
-        this._baselines = new Map();
-      this._baselines.set(this._generation++, this._filtered ? [...this._filtered] :
-        this.n3Store.getQuads(this.subject, this.predicate, this.object, this.graph));
-      this._currentIterators = 0;
-    }
+    this._freezeCurrentIterators();
 
     // Keep using the parent until materialization
     if (this._semantics === 'forwarded') {
@@ -1326,6 +1333,8 @@ class DatasetCoreAndReadableStream extends Readable {
   get filtered() {
     if (!this._filtered) {
       const { n3Store, graph, object, predicate, subject } = this;
+      if (this._semantics !== 'lazy')
+        this._freezeCurrentIterators();
       const newStore = this._filtered = new N3Store({ factory: n3Store._factory, entityIndex: this.options.entityIndex });
 
       if (this._semantics === 'snapshot')
@@ -1529,11 +1538,11 @@ class DatasetCoreAndReadableStream extends Readable {
     });
   }
 
-  *[Symbol.iterator]() {
-    if (this._semantics === 'lazy') {
-      yield* this._filtered || this.n3Store.readQuads(this.subject, this.predicate, this.object, this.graph);
-      return;
-    }
+  [Symbol.iterator]() {
+    return this._semantics === 'lazy' ? this._sourceIterator() : this._iterateStable();
+  }
+
+  *_iterateStable() {
 
     // Use a snapshot if the parent changes mid-iteration
     const generation = this._generation;
@@ -1541,10 +1550,7 @@ class DatasetCoreAndReadableStream extends Readable {
     this._activeIterators++;
     this._currentIterators++;
     try {
-      const source = this._filtered ?
-        this._filtered[Symbol.iterator]() :
-        this.n3Store.readQuads(this.subject, this.predicate, this.object, this.graph);
-      for (const quad of source) {
+      for (const quad of this._sourceIterator()) {
         if (this._generation !== generation)
           break;
         yielded++;

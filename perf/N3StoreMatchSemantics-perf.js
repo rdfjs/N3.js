@@ -83,9 +83,10 @@ runOpenViewsWithMutations('forwarded', { matchSemantics: 'forwarded' });
 /* Mid-iteration mutation */
 function runMidStreamSwitch(label, options) {
   const store = freshStore();
-  TEST = `- ${label}: ${dim} iterations each with a mid-stream matching mutation`;
-  console.time(TEST);
+  TEST = `- ${label}: ${dim} iterations with a mid-stream mutation and detach()`;
+  let elapsed = 0n;
   for (let i = 0; i < dim; i++) {
+    const start = process.hrtime.bigint();
     const view = store.match(namedNode(prefix + i), null, null, null, options);
     let count = 0, mutated = false;
     for (const _ of view) { // eslint-disable-line no-unused-vars
@@ -96,8 +97,11 @@ function runMidStreamSwitch(label, options) {
       }
     }
     assert.equal(count, dim);
+    view.detach();
+    elapsed += process.hrtime.bigint() - start;
   }
-  console.timeEnd(TEST);
+  assert.equal(store._observers, null);
+  console.log(`${TEST}: ${(Number(elapsed) / 1e6).toFixed(3)}ms`);
   for (let i = 0; i < dim; i++)
     store.removeQuad(namedNode(prefix + i), predicate, mid);
   assert.equal(store.size, total);
