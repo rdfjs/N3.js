@@ -297,7 +297,9 @@ export default class N3Store {
     const keys0 = key0 ? null : Object.keys(index0);
     for (let i0 = 0, value0 = key0 || keys0[0]; value0;
          value0 = keys0 && keys0[++i0]) {
+      // Mutations can remove keys captured before an earlier yield.
       const index1 = index0[value0];
+      if (!index1) continue; // eslint-disable-line no-continue
       parts[name0] = this._termFromId(entityKeys[value0]);
 
       if (key1 && !(key1 in index1))
@@ -306,6 +308,7 @@ export default class N3Store {
       for (let i1 = 0, value1 = key1 || keys1[0]; value1;
            value1 = keys1 && keys1[++i1]) {
         const index2 = index1[value1];
+        if (!index2) continue; // eslint-disable-line no-continue
         parts[name1] = this._termFromId(entityKeys[value1]);
         const values = Object.keys(index2);
         for (let l = 0; l < values.length; l++) {

@@ -2234,6 +2234,26 @@ describe('Store', () => {
         expect([...store.match(null, null, null, null)]).toHaveLength(5);
       },
     );
+
+    it('should skip a subject branch deleted during iteration', () => {
+      const firstQuad = new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'));
+      const secondQuad = new Quad(new NamedNode('s2'), new NamedNode('p1'), new NamedNode('o2'));
+      store = new Store([firstQuad, secondQuad]);
+      const iterator = store.readQuads();
+      const first = iterator.next().value;
+      store.removeQuad(first.subject.value === 's1' ? secondQuad : firstQuad);
+      expect([...iterator]).toHaveLength(0);
+    });
+
+    it('should skip a predicate branch deleted during iteration', () => {
+      const firstQuad = new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'));
+      const secondQuad = new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2'));
+      store = new Store([firstQuad, secondQuad]);
+      const iterator = store.readQuads(new NamedNode('s1'));
+      const first = iterator.next().value;
+      store.removeQuad(first.predicate.value === 'p1' ? secondQuad : firstQuad);
+      expect([...iterator]).toHaveLength(0);
+    });
   });
 
   const matrix = [true, false, 'instantiated'].flatMap(match => [true, false].map(share => [match, share]));
