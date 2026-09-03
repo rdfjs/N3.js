@@ -478,7 +478,7 @@ export default class N3Store {
     predicate = this._termToNewNumericId(predicate);
     object    = this._termToNewNumericId(object);
 
-    // Notify observers only for new quads
+    // Notify observers before inserting a new quad so snapshots retain their prior contents
     if (this._observers !== null && !hasInIndex(graphItem.subjects, subject, predicate, object))
       this._notifyObservers(subject, predicate, object, graph, true);
 
@@ -1626,7 +1626,6 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   *_iterateStable() {
-
     // Use a snapshot if the parent changes mid-iteration
     const generation = this._generation;
     let yielded = 0;
