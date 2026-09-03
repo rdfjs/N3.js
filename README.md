@@ -494,15 +494,17 @@ Supported values:
 - `'forwarded'` — the view always reflects the parent state: matching parent
   mutations are forwarded to the view, and mutations on the view (`add`,
   `delete`, `addAll`, `deleteMatches`, `import`) are written through to the
-  parent.
-  View mutations act on the parent unrestricted by the view's pattern: adding
-  a quad that does not match the pattern mutates the parent but never appears
-  in the view, and `deleteMatches` can delete parent quads outside the view.
-  Calling `match()` on a `'forwarded'` view returns a `'snapshot'` sub-view:
-  nested views never write through to the root store.
+  parent. Nested matches remain forwarded to the root, with every ancestor's
+  pattern applied. `add` and `addAll` throw upon encountering a quad outside
+  that combined pattern, while `import` emits an error on its input stream.
+  `delete` ignores a quad outside the pattern, and `deleteMatches` only removes
+  matching quads visible in the view.
 
-`match()` on a view takes no `matchSemantics` option: a sub-view inherits the
-view's semantics (with `'forwarded'` downgraded to `'snapshot'` as above).
+A sub-view inherits its parent's `matchSemantics`. The same value can be
+supplied explicitly, but a different value throws. Allowing a sub-view to
+change semantics would make its snapshot, materialization, and write target
+ambiguous across view boundaries; call `match()` on the root store when a
+different behavior is needed.
 
 For `'snapshot'` and `'forwarded'`, an iteration (synchronous or via the
 stream) that is already in progress keeps a stable view of the quads as of when
@@ -514,7 +516,8 @@ is frozen by a matching mutation, or is detached; a `'forwarded'` view until it
 is detached. The store holds a strong reference to each observing view —
 retaining it against garbage collection — and checks every mutation against
 each open view's pattern. Call `view.detach()` to release a view early: it is
-frozen to its contents at detach time and no longer taxes the store.
+frozen to its contents at detach time and no longer taxes the store. Detaching
+one view does not detach sub-views that were already created from it.
 
 ## Reasoning
 

@@ -1245,6 +1245,21 @@ function validateMatchSemantics(semantics = 'lazy') {
   return semantics;
 }
 
+// Returns the intersection of two quad patterns, or false if they conflict.
+function intersectMatchPatterns(left, right) {
+  const result = new Array(4);
+  for (let i = 0; i < 4; i++) {
+    const leftTerm = left[i], rightTerm = right[i];
+    if (leftTerm === null || leftTerm === undefined)
+      result[i] = rightTerm;
+    else if (rightTerm === null || rightTerm === undefined || termToId(leftTerm) === termToId(rightTerm))
+      result[i] = leftTerm;
+    else
+      return false;
+  }
+  return result;
+}
+
 /**
  * A class that implements both DatasetCore and Readable.
  */
@@ -1254,6 +1269,11 @@ class DatasetCoreAndReadableStream extends Readable {
     Object.assign(this, { n3Store, subject, predicate, object, graph, options });
     const semantics = this._semantics = validateMatchSemantics(options.matchSemantics);
 
+    if (options.matchesNothing) {
+      this._matchesNothing = true;
+      this._filtered = new N3Store({ factory: n3Store._factory, entityIndex: options.entityIndex });
+    }
+
     if (semantics !== 'lazy') {
       // Track stable reads across parent mutations
       this._generation = 0;
@@ -1261,8 +1281,10 @@ class DatasetCoreAndReadableStream extends Readable {
       this._baselines = null;
       // Cache pattern ids on first use
       this._subjectId = this._predicateId = this._objectId = this._graphId = undefined;
-      this._observer = this._onParentMutation.bind(this);
-      n3Store._addObserver(this._observer);
+      if (!this._matchesNothing) {
+        this._observer = this._onParentMutation.bind(this);
+        n3Store._addObserver(this._observer);
+      }
     }
   }
 
@@ -1278,6 +1300,22 @@ class DatasetCoreAndReadableStream extends Readable {
     return graph === null || graph === undefined ||
       graphId === (this._graphId || (this._graphId =
         graph === '' || isDefaultGraph(graph) ? 1 : n3Store._termToNumericId(graph)));
+  }
+
+  // ### `_matchesQuad` tests a Quad against this view.
+  _matchesQuad(quad) {
+    const { subject, predicate, object, graph } = this;
+    return !this._matchesNothing &&
+      (subject === null || subject === undefined || termToId(subject) === termToId(quad.subject)) &&
+      (predicate === null || predicate === undefined || termToId(predicate) === termToId(quad.predicate)) &&
+      (object === null || object === undefined || termToId(object) === termToId(quad.object)) &&
+      (graph === null || graph === undefined || termToId(graph) === termToId(quad.graph));
+  }
+
+  // ### `_assertMatchesPattern` rejects a Quad outside this view.
+  _assertMatchesPattern(quad) {
+    if (!this._matchesQuad(quad))
+      throw new Error('Cannot add a quad that does not match the forwarded view pattern');
   }
 
   // ### `_sourceIterator` returns an iterator over the current backing store.
@@ -1429,7 +1467,10 @@ class DatasetCoreAndReadableStream extends Readable {
 
   addAll(quads) {
     if (this._semantics === 'forwarded') {
-      this.n3Store.addAll(quads);
+      for (const quad of quads) {
+        this._assertMatchesPattern(quad);
+        this.n3Store.addQuad(quad);
+      }
       return this;
     }
     return this.filtered.addAll(quads);
@@ -1441,7 +1482,12 @@ class DatasetCoreAndReadableStream extends Readable {
 
   deleteMatches(subject, predicate, object, graph) {
     if (this._semantics === 'forwarded') {
-      this.n3Store.deleteMatches(subject, predicate, object, graph);
+      const pattern = !this._matchesNothing && intersectMatchPatterns(
+        [this.subject, this.predicate, this.object, this.graph],
+        [subject, predicate, object, graph],
+      );
+      if (pattern)
+        this.n3Store.deleteMatches(...pattern);
       return this;
     }
     return this.filtered.deleteMatches(subject, predicate, object, graph);
@@ -1468,8 +1514,19 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   import(stream) {
-    if (this._semantics === 'forwarded')
-      return this.n3Store.import(stream);
+    if (this._semantics === 'forwarded') {
+      const n3Store = this.n3Store;
+      stream.on('data', quad => {
+        try {
+          this._assertMatchesPattern(quad);
+          n3Store.addQuad(quad);
+        }
+        catch (error) {
+          stream.destroy(error);
+        }
+      });
+      return stream;
+    }
     return this.filtered.import(stream);
   }
 
@@ -1517,6 +1574,7 @@ class DatasetCoreAndReadableStream extends Readable {
 
   add(quad) {
     if (this._semantics === 'forwarded') {
+      this._assertMatchesPattern(quad);
       this.n3Store.addQuad(quad);
       return this;
     }
@@ -1525,7 +1583,8 @@ class DatasetCoreAndReadableStream extends Readable {
 
   delete(quad) {
     if (this._semantics === 'forwarded') {
-      this.n3Store.removeQuad(quad);
+      if (this._matchesQuad(quad))
+        this.n3Store.removeQuad(quad);
       return this;
     }
     return this.filtered.delete(quad);
@@ -1535,12 +1594,31 @@ class DatasetCoreAndReadableStream extends Readable {
     return this.filtered.has(quad);
   }
 
-  match(subject, predicate, object, graph) {
-    // Nested views cannot write through to the root
-    return new DatasetCoreAndReadableStream(this.filtered, subject, predicate, object, graph, {
-      entityIndex: this.options.entityIndex,
-      matchSemantics: this._semantics === 'forwarded' ? 'snapshot' : this._semantics,
-    });
+  match(subject, predicate, object, graph, options = null) {
+    const requestedSemantics = options && options.matchSemantics;
+    if (options && requestedSemantics !== undefined) {
+      validateMatchSemantics(requestedSemantics);
+      if (requestedSemantics !== this._semantics)
+        throw new Error(`Cannot override matchSemantics on a view: inherited "${this._semantics}", received "${requestedSemantics}"`);
+    }
+
+    if (this._semantics !== 'forwarded')
+      return new DatasetCoreAndReadableStream(this.filtered, subject, predicate, object, graph, {
+        entityIndex: this.options.entityIndex,
+        matchSemantics: this._semantics,
+      });
+
+    const pattern = !this._matchesNothing && intersectMatchPatterns(
+      [this.subject, this.predicate, this.object, this.graph],
+      [subject, predicate, object, graph],
+    );
+    const [matchedSubject, matchedPredicate, matchedObject, matchedGraph] = pattern || [null, null, null, null];
+    return new DatasetCoreAndReadableStream(
+      this.n3Store, matchedSubject, matchedPredicate, matchedObject, matchedGraph, {
+        entityIndex: this.options.entityIndex,
+        matchSemantics: 'forwarded',
+        matchesNothing: !pattern,
+      });
   }
 
   [Symbol.iterator]() {

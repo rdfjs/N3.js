@@ -782,7 +782,9 @@ describe('Store', () => {
       });
 
       it('should preserve match() arity', () => {
-        expect(buildStore().match).toHaveLength(4);
+        const store = buildStore();
+        expect(store.match).toHaveLength(4);
+        expect(store.match().match).toHaveLength(4);
       });
 
       it('should preserve a lazy iterator source after materialization', () => {
@@ -810,8 +812,43 @@ describe('Store', () => {
           expect(() => new Store([], { matchSemantics })).toThrow(message);
           expect(() => buildStore().match(
             namedNode('s1'), null, null, null, { matchSemantics })).toThrow(message);
+          const view = buildStore().match(namedNode('s1'));
+          expect(() => view.match(
+            null, namedNode('p1'), null, null, { matchSemantics })).toThrow(message);
         },
       );
+
+      it.each(['lazy', 'snapshot', 'forwarded'])(
+        'should accept an explicit inherited %s matchSemantics on a view',
+        matchSemantics => {
+          const store = buildStore();
+          const view = store.match(namedNode('s1'), null, null, null, { matchSemantics });
+          const child = view.match(null, namedNode('p1'), null, null, { matchSemantics });
+          expect([...child]).toHaveLength(5);
+        },
+      );
+
+      it('should inherit view semantics when options omit matchSemantics', () => {
+        const store = buildStore();
+        const view = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'forwarded' });
+        const child = view.match(null, namedNode('p1'), null, null, {});
+        store.addQuad(q('s1', 'p1', 'oNEW'));
+        expect(child.has(q('s1', 'p1', 'oNEW'))).toBe(true);
+      });
+
+      it.each([
+        ['lazy', 'snapshot'],
+        ['snapshot', 'forwarded'],
+        ['forwarded', 'lazy'],
+      ])('should reject overriding view semantics from %s to %s', (inherited, requested) => {
+        const store = buildStore();
+        const view = store.match(namedNode('s1'), null, null, null, { matchSemantics: inherited });
+        const observerCount = store._observers && store._observers.size;
+        expect(() => view.match(null, namedNode('p1'), null, null, { matchSemantics: requested }))
+          .toThrow(`Cannot override matchSemantics on a view: inherited "${inherited}", received "${requested}"`);
+        expect(view._filtered).toBeUndefined();
+        expect(store._observers && store._observers.size).toBe(observerCount);
+      });
 
       it('should use the store-level default matchSemantics', () => {
         const store = buildStore({ matchSemantics: 'snapshot' });
@@ -996,21 +1033,90 @@ describe('Store', () => {
           expect(values(leaf)).toEqual(initialValues);
         });
 
-        it('should downgrade forwarded descendants to snapshots', () => {
-          const store = buildStore();
+        it('should forward recursively through a match chain', () => {
+          const store = new Store([
+            q('s1', 'p1', 'o1'),
+            q('s1', 'p2', 'o2'),
+            q('s2', 'p1', 'o3'),
+          ]);
           const parent = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'forwarded' });
           const child = parent.match(null, namedNode('p1'));
           const leaf = child.match();
 
+          expect(parent._filtered).toBeUndefined();
+          expect(store._observers.size).toBe(3);
           store.addQuad(q('s1', 'p1', 'oROOT'));
-          parent.add(q('s1', 'p1', 'oPARENT'));
-          child.add(q('s1', 'p1', 'oCHILD'));
+          expect(leaf.add(q('s1', 'p1', 'oLEAF'))).toBe(leaf);
+          expect(leaf.delete(q('s1', 'p1', 'o1'))).toBe(leaf);
 
-          expect(values(parent)).toEqual([...initialValues, 'oPARENT', 'oROOT']);
-          expect(values(child)).toEqual([...initialValues, 'oCHILD']);
-          expect(values(leaf)).toEqual(initialValues);
-          expect(store.has(q('s1', 'p1', 'oPARENT'))).toBe(true);
-          expect(store.has(q('s1', 'p1', 'oCHILD'))).toBe(false);
+          expect(store.has(q('s1', 'p1', 'oLEAF'))).toBe(true);
+          expect(store.has(q('s1', 'p1', 'o1'))).toBe(false);
+          expect(values(parent).sort()).toEqual(['o2', 'oLEAF', 'oROOT']);
+          expect(values(child).sort()).toEqual(['oLEAF', 'oROOT']);
+          expect(values(leaf).sort()).toEqual(['oLEAF', 'oROOT']);
+          expect(store.size).toBe(4);
+        });
+
+        it('should keep a conflicting forwarded descendant empty', () => {
+          const store = buildStore();
+          const parent = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'forwarded' });
+          const child = parent.match(namedNode('s2'));
+          const leaf = child.match(null, namedNode('p1'));
+
+          expect(store._observers.size).toBe(1);
+          expect([...child]).toHaveLength(0);
+          expect([...leaf]).toHaveLength(0);
+          expect(child.deleteMatches()).toBe(child);
+          expect(store.size).toBe(6);
+          store.addQuad(q('s2', 'p1', 'oNEW'));
+          expect([...child]).toHaveLength(0);
+          expect(() => child.add(q('s2', 'p1', 'oCHILD')))
+            .toThrow('Cannot add a quad that does not match the forwarded view pattern');
+          expect(store.has(q('s2', 'p1', 'oCHILD'))).toBe(false);
+        });
+
+        it('should intersect nested default graph patterns', () => {
+          const store = new Store([
+            q('s1', 'p1', 'o1'),
+            q('s1', 'p1', 'o2', 'g1'),
+          ]);
+          const parent = store.match(null, null, null, new DefaultGraph(), { matchSemantics: 'forwarded' });
+          const child = parent.match(null, null, null, '');
+          const conflicting = child.match(null, null, null, namedNode('g1'));
+
+          expect([...child]).toEqual([q('s1', 'p1', 'o1')]);
+          expect([...conflicting]).toHaveLength(0);
+          expect(store._observers.size).toBe(2);
+          expect(child.add(q('s2', 'p1', 'o2'))).toBe(child);
+          expect(store.has(q('s2', 'p1', 'o2'))).toBe(true);
+        });
+
+        it('should scope recursive deleteMatches to every ancestor pattern', () => {
+          const store = new Store([
+            q('s1', 'p1', 'o1'),
+            q('s1', 'p2', 'o2'),
+            q('s2', 'p1', 'o3'),
+          ]);
+          const parent = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'forwarded' });
+          const child = parent.match(null, namedNode('p1'));
+
+          expect(() => child.add(q('s1', 'p2', 'oNEW')))
+            .toThrow('Cannot add a quad that does not match the forwarded view pattern');
+          expect(child.deleteMatches()).toBe(child);
+          expect(store.has(q('s1', 'p1', 'o1'))).toBe(false);
+          expect(store.has(q('s1', 'p2', 'o2'))).toBe(true);
+          expect(store.has(q('s2', 'p1', 'o3'))).toBe(true);
+        });
+
+        it('should keep a nested forwarded iterator stable across a root mutation', () => {
+          const store = new Store([q('s1', 'p1', 'o1'), q('s1', 'p1', 'o2')]);
+          const parent = store.match(namedNode('s1'), null, null, null, { matchSemantics: 'forwarded' });
+          const child = parent.match(null, namedNode('p1'));
+          const iterator = child[Symbol.iterator]();
+          const first = iterator.next().value;
+          store.removeQuad(q('s1', 'p1', first.object.value === 'o1' ? 'o2' : 'o1'));
+          expect(values([first, ...iterator])).toEqual(['o1', 'o2']);
+          expect([...child]).toHaveLength(1);
         });
       });
 
@@ -1214,12 +1320,20 @@ describe('Store', () => {
           expect(view.has(q('s1', 'p1', 'o0'))).toBe(false);
         });
 
-        it('should forward addAll and deleteMatches to the parent', () => {
-          expect(view.addAll([q('s1', 'p1', 'oA'), q('s1', 'p1', 'oB')])).toBe(view);
-          expect(store.has(q('s1', 'p1', 'oA'))).toBe(true);
+        it('should forward addAll incrementally and deleteMatches to the parent', () => {
+          const first = q('s1', 'p1', 'oA'), second = q('s1', 'p1', 'oB');
+          function* additions() {
+            yield first;
+            if (store.has(first))
+              yield second;
+          }
+
+          expect(view.addAll(additions())).toBe(view);
+          expect(store.has(first)).toBe(true);
+          expect(store.has(second)).toBe(true);
           expect(view.size).toBe(7);
-          expect(view.deleteMatches(namedNode('s1'), namedNode('p1'), namedNode('oA'))).toBe(view);
-          expect(store.has(q('s1', 'p1', 'oA'))).toBe(false);
+          expect(view.deleteMatches(first.subject, first.predicate, first.object)).toBe(view);
+          expect(store.has(first)).toBe(false);
         });
 
         it('should write import() through to the parent', done => {
@@ -1231,16 +1345,36 @@ describe('Store', () => {
           });
         });
 
-        it('should write non-matching mutations through to the parent unrestricted', () => {
-          view.add(q('s3', 'p1', 'oNM'));
-          expect(store.has(q('s3', 'p1', 'oNM'))).toBe(true);
-          expect(view.has(q('s3', 'p1', 'oNM'))).toBe(false);
-          view.addAll([q('s3', 'p1', 'oNM2')]);
-          expect(store.has(q('s3', 'p1', 'oNM2'))).toBe(true);
-          expect(view.size).toBe(5);
-          view.deleteMatches(namedNode('s2'), null, null);
-          expect(store.has(q('s2', 'p1', 'oX'))).toBe(false);
-          expect(view.size).toBe(5);
+        it('should reject additions outside the view pattern', () => {
+          const matching = q('s1', 'p1', 'oA'), nonMatching = q('s2', 'p1', 'oB');
+          const message = 'Cannot add a quad that does not match the forwarded view pattern';
+
+          expect(() => view.add(nonMatching)).toThrow(message);
+          expect(store.has(nonMatching)).toBe(false);
+          expect(() => view.addAll([matching, nonMatching])).toThrow(message);
+          expect(store.has(matching)).toBe(true);
+          expect(store.has(nonMatching)).toBe(false);
+        });
+
+        it('should constrain deletions to the view pattern', () => {
+          const outside = q('s2', 'p1', 'oX');
+          expect(view.delete(outside)).toBe(view);
+          expect(store.has(outside)).toBe(true);
+          expect(view.deleteMatches(namedNode('s2'))).toBe(view);
+          expect(store.has(outside)).toBe(true);
+          expect(view.deleteMatches()).toBe(view);
+          expect([...view]).toHaveLength(0);
+          expect(store.has(outside)).toBe(true);
+        });
+
+        it('should emit an error when import contains a quad outside the view pattern', async () => {
+          const nonMatching = q('s2', 'p1', 'oI');
+          const stream = new ArrayReader([nonMatching]);
+          const error = new Promise(resolve => stream.on('error', resolve));
+          expect(view.import(stream)).toBe(stream);
+          await expect(error).resolves.toHaveProperty(
+            'message', 'Cannot add a quad that does not match the forwarded view pattern');
+          expect(store.has(nonMatching)).toBe(false);
         });
 
         it('should defer materialization of an unread view across parent mutations', () => {
@@ -1321,16 +1455,25 @@ describe('Store', () => {
           expect(values(view)).toEqual(['o1', 'o2']);
         });
 
-        it('should downgrade a nested match() to a snapshot of the view', () => {
+        it('should keep a materialized nested match() forwarded to the root', () => {
           const sub = view.match(null, namedNode('p1'));
-          expect([...sub]).toHaveLength(5);
+          expect(sub.size).toBe(5);
           store.addQuad(q('s1', 'p1', 'oNEW'));
           expect(view.has(q('s1', 'p1', 'oNEW'))).toBe(true);
-          expect([...sub]).toHaveLength(5);
-          sub.add(q('s1', 'p1', 'oSUB'));
-          expect(sub.has(q('s1', 'p1', 'oSUB'))).toBe(true);
-          expect(store.has(q('s1', 'p1', 'oSUB'))).toBe(false);
-          expect(view.has(q('s1', 'p1', 'oSUB'))).toBe(false);
+          expect([...sub]).toHaveLength(6);
+          expect(sub.add(q('s1', 'p1', 'oSUB'))).toBe(sub);
+          expect(store.has(q('s1', 'p1', 'oSUB'))).toBe(true);
+          expect(view.has(q('s1', 'p1', 'oSUB'))).toBe(true);
+        });
+
+        it('should detach nested forwarded views independently', () => {
+          const sub = view.match(null, namedNode('p1'));
+          view.detach();
+          store.addQuad(q('s1', 'p1', 'oROOT'));
+          expect(view.has(q('s1', 'p1', 'oROOT'))).toBe(false);
+          expect(sub.has(q('s1', 'p1', 'oROOT'))).toBe(true);
+          expect(sub.detach()).toBe(sub);
+          expect(store._observers).toBe(null);
         });
 
         it('should handle matching mutations in the default graph', () => {
@@ -1343,10 +1486,12 @@ describe('Store', () => {
         it('should treat an empty-string graph pattern as the default graph', () => {
           view = store.match(null, null, null, '', opts);
           expect([...view]).toHaveLength(6);
+          expect(view.add(q('s3', 'p1', 'oD'))).toBe(view);
+          expect(() => view.add(q('s3', 'p1', 'oG', 'g1')))
+            .toThrow('Cannot add a quad that does not match the forwarded view pattern');
           store.addQuad(q('s3', 'p1', 'oG', 'g1'));
-          expect([...view]).toHaveLength(6);
+          expect([...view]).toHaveLength(7);
           expect(view.has(q('s3', 'p1', 'oG', 'g1'))).toBe(false);
-          store.addQuad(q('s3', 'p1', 'oD'));
           expect([...view]).toHaveLength(7);
         });
 
@@ -1391,6 +1536,7 @@ describe('Store', () => {
           const wildcard = store.match(null, null, null, null, opts);
           const exact = store.match(
             namedNode('s1'), namedNode('p1'), namedNode('o1'), new DefaultGraph(), opts);
+          expect(exact.add(q('s1', 'p1', 'o1'))).toBe(exact);
           store.addQuad(q('s1', 'p1', 'o1')); // already exists, no change
           store.addQuad(q('s1', 'p1', 'o2')); // matches wildcard, not exact (object differs)
           expect([...wildcard]).toHaveLength(2);
