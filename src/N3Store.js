@@ -1427,15 +1427,12 @@ class DatasetCoreAndReadableStream extends Readable {
     return this;
   }
 
-  // ### `_mutationStore` returns the store targeted by mutations.
-  get _mutationStore() {
-    return this._semantics === 'forwarded' ? this.n3Store : this.filtered;
-  }
-
   addAll(quads) {
-    const store = this._mutationStore;
-    store.addAll(quads);
-    return store === this.n3Store ? this : store;
+    if (this._semantics === 'forwarded') {
+      this.n3Store.addAll(quads);
+      return this;
+    }
+    return this.filtered.addAll(quads);
   }
 
   contains(other) {
@@ -1443,9 +1440,11 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   deleteMatches(subject, predicate, object, graph) {
-    const store = this._mutationStore;
-    store.deleteMatches(subject, predicate, object, graph);
-    return store === this.n3Store ? this : store;
+    if (this._semantics === 'forwarded') {
+      this.n3Store.deleteMatches(subject, predicate, object, graph);
+      return this;
+    }
+    return this.filtered.deleteMatches(subject, predicate, object, graph);
   }
 
   difference(other) {
@@ -1469,7 +1468,9 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   import(stream) {
-    return this._mutationStore.import(stream);
+    if (this._semantics === 'forwarded')
+      return this.n3Store.import(stream);
+    return this.filtered.import(stream);
   }
 
   intersection(other) {
@@ -1515,15 +1516,19 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   add(quad) {
-    const store = this._mutationStore;
-    store.addQuad(quad);
-    return store === this.n3Store ? this : store;
+    if (this._semantics === 'forwarded') {
+      this.n3Store.addQuad(quad);
+      return this;
+    }
+    return this.filtered.add(quad);
   }
 
   delete(quad) {
-    const store = this._mutationStore;
-    store.removeQuad(quad);
-    return store === this.n3Store ? this : store;
+    if (this._semantics === 'forwarded') {
+      this.n3Store.removeQuad(quad);
+      return this;
+    }
+    return this.filtered.delete(quad);
   }
 
   has(quad) {

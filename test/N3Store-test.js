@@ -1204,11 +1204,12 @@ describe('Store', () => {
           expect([...view]).toHaveLength(5);
         });
 
-        it('should write view additions and deletions through to the parent', () => {
+        it('should write view additions and deletions through without materializing', () => {
           expect(view.add(q('s1', 'p1', 'oOWN'))).toBe(view);
+          expect(view.delete(q('s1', 'p1', 'o0'))).toBe(view);
+          expect(view._filtered).toBeFalsy();
           expect(store.has(q('s1', 'p1', 'oOWN'))).toBe(true);
           expect(view.has(q('s1', 'p1', 'oOWN'))).toBe(true);
-          expect(view.delete(q('s1', 'p1', 'o0'))).toBe(view);
           expect(store.has(q('s1', 'p1', 'o0'))).toBe(false);
           expect(view.has(q('s1', 'p1', 'o0'))).toBe(false);
         });
