@@ -979,6 +979,29 @@ describe('Store', () => {
         expect([...view]).toHaveLength(0);
       });
 
+      it.each(['snapshot', 'forwarded'])(
+        'should keep a %s toStream() stable across parent mutations',
+        async matchSemantics => {
+          const quads = Array.from({ length: 40 }, (_, i) => q(`s${i}`, 'p1', `o${i}`));
+          const store = new Store(quads);
+          const view = store.match(null, null, null, null, { matchSemantics });
+          const stream = view.toStream();
+          let first = true;
+          stream.on('data', () => {
+            if (first) {
+              first = false;
+              store.delete(quads[39]);
+              store.add(q('sNEW', 'p1', 'oNEW'));
+            }
+          });
+          expect(values(await arrayifyStream(stream))).toEqual(values(quads));
+          expect(view._activeIterators).toBe(0);
+          expect(view._baselines).toBe(null);
+          expect(view.has(quads[39])).toBe(matchSemantics === 'snapshot');
+          view.detach();
+        },
+      );
+
       describe('transitive matches', () => {
         it.each(['lazy', 'snapshot', 'forwarded'])(
           'should intersect patterns through a %s match chain',
@@ -1320,6 +1343,66 @@ describe('Store', () => {
           expect(view.has(q('s1', 'p1', 'o0'))).toBe(false);
         });
 
+        it.each(['every', 'some', 'filter', 'map', 'forEach'])(
+          'should forward mutations through the dataset passed to %s callbacks',
+          method => {
+            const original = q('s1', 'p1', 'o1');
+            const replacement = q('s1', 'p1', 'oNEW');
+            const outside = q('s2', 'p1', 'oOUT');
+            store = new Store([original]);
+            view = store.match(namedNode('s1'), null, null, null, opts);
+            const callback = jest.fn((quad, dataset) => {
+              expect(dataset).toBe(view);
+              dataset.delete(quad);
+              dataset.add(replacement);
+              expect(() => dataset.add(outside))
+                .toThrow('Cannot add a quad that does not match the forwarded view pattern');
+              return quad;
+            });
+
+            const result = view[method](callback);
+            expect(callback).toHaveBeenCalledTimes(1);
+            expect(store.has(original)).toBe(false);
+            expect(store.has(replacement)).toBe(true);
+            expect(store.has(outside)).toBe(false);
+            expect([...view]).toEqual([replacement]);
+            const expected = {
+              every: true, some: true, filter: [original], map: [original], forEach: undefined,
+            };
+            expect(result instanceof Store ? [...result] : result).toEqual(expected[method]);
+          },
+        );
+
+        it('should forward mutations through the dataset passed to reduce callbacks', () => {
+          const original = q('s1', 'p1', 'o1');
+          const replacement = q('s1', 'p1', 'oNEW');
+          store = new Store([original]);
+          view = store.match(namedNode('s1'), null, null, null, opts);
+          expect(view.reduce((count, quad, dataset) => {
+            expect(dataset).toBe(view);
+            dataset.delete(quad);
+            dataset.add(replacement);
+            return count + 1;
+          }, 0)).toBe(1);
+          expect(store.has(original)).toBe(false);
+          expect(store.has(replacement)).toBe(true);
+          expect([...view]).toEqual([replacement]);
+        });
+
+        it.each(['every', 'some', 'forEach'])(
+          'should preserve quad pattern arguments for %s callbacks',
+          method => {
+            const selected = q('s1', 'p1', 'o3');
+            const callback = jest.fn((quad, dataset) => {
+              expect(dataset).toBe(view);
+              return true;
+            });
+            view[method](callback, selected.subject, selected.predicate, selected.object, selected.graph);
+            expect(callback).toHaveBeenCalledTimes(1);
+            expect(callback).toHaveBeenCalledWith(selected, view);
+          },
+        );
+
         it('should forward addAll incrementally and deleteMatches to the parent', () => {
           const first = q('s1', 'p1', 'oA'), second = q('s1', 'p1', 'oB');
           function* additions() {
@@ -1424,6 +1507,43 @@ describe('Store', () => {
           await expect(arrayifyStream(view.toStream())).resolves.toHaveLength(6);
           expect(view.union(new Store([q('s1', 'p1', 'oU')])).size).toBe(7);
         });
+
+        it('should give each toStream() an independent iteration', async () => {
+          const first = view.toStream();
+          const firstQuad = first.read();
+          expect(firstQuad).not.toBeNull();
+          store.add(q('s1', 'p1', 'oNEW'));
+          const second = view.toStream();
+          const [remaining, current] = await Promise.all([
+            arrayifyStream(first), arrayifyStream(second),
+          ]);
+          expect(values([firstQuad, ...remaining])).toEqual(initialValues);
+          expect(values(current)).toEqual([...initialValues, 'oNEW']);
+          expect(values(await arrayifyStream(view))).toEqual([...initialValues, 'oNEW']);
+          expect(view._activeIterators).toBe(0);
+          expect(view._baselines).toBe(null);
+        });
+
+        it.each([undefined, new Error('cancel stream')])(
+          'should release toStream() iteration state on destroy (%p)',
+          async error => {
+            const stream = view.toStream();
+            expect(stream.read()).not.toBeNull();
+            store.add(q('s1', 'p1', 'oNEW'));
+            expect(view._activeIterators).toBe(1);
+            const onError = jest.fn();
+            stream.on('error', onError);
+            await new Promise(resolve => {
+              stream.once('close', resolve);
+              stream.destroy(error);
+            });
+            expect(view._activeIterators).toBe(0);
+            expect(view._baselines).toBe(null);
+            expect(view.destroyed).toBe(false);
+            expect(values(view)).toEqual([...initialValues, 'oNEW']);
+            expect(onError.mock.calls).toEqual(error ? [[error]] : []);
+          },
+        );
 
         it('should not mutate the parent through union', () => {
           const union = view.union([q('s1', 'p1', 'oU')]);
@@ -1595,6 +1715,33 @@ describe('Store', () => {
           }
           expect(inner).toHaveLength(5);
           expect(outer.sort()).toEqual(initialValues);
+        });
+
+        it('should release completed baselines while an older iteration remains open', () => {
+          const outer = view[Symbol.iterator]();
+          const peer = view[Symbol.iterator]();
+          const first = outer.next().value;
+          expect(peer.next().value).toEqual(first);
+          const extra = q('s1', 'p1', 'oTEMP');
+          store.add(extra);
+          peer.return();
+          expect(view._baselines.size).toBe(1);
+          store.delete(extra);
+
+          for (let i = 0; i < 20; i++) {
+            const inner = view[Symbol.iterator]();
+            const firstInner = inner.next().value;
+            store.add(extra);
+            expect(view._baselines.size).toBe(2);
+            expect(values([firstInner, ...inner])).toEqual(initialValues);
+            expect(view._baselines.size).toBe(1);
+            store.delete(extra);
+          }
+
+          expect(view._activeIterators).toBe(1);
+          expect(values([first, ...outer])).toEqual(initialValues);
+          expect(view._activeIterators).toBe(0);
+          expect(view._baselines).toBe(null);
         });
 
         it('should keep an overlapping iteration stable after a baseline freeze', () => {

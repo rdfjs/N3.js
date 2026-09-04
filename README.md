@@ -510,6 +510,8 @@ For `'snapshot'` and `'forwarded'`, an iteration (synchronous or via the
 stream) that is already in progress keeps a stable view of the quads as of when
 it started, even if a matching parent mutation lands mid-iteration. Parent
 mutations only materialize or update a view when they match its pattern.
+Each `toStream()` call has its own iteration. Snapshots used by active
+iterations are released when their last reader finishes.
 
 Such views observe the parent store: a `'snapshot'` view until it materializes,
 is frozen by a matching mutation, or is detached; a `'forwarded'` view until it

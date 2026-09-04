@@ -1330,7 +1330,10 @@ class DatasetCoreAndReadableStream extends Readable {
       return;
     if (!this._baselines)
       this._baselines = new Map();
-    this._baselines.set(this._generation++, [...this._sourceIterator()]);
+    this._baselines.set(this._generation++, {
+      readers: this._currentIterators,
+      quads: [...this._sourceIterator()],
+    });
     this._currentIterators = 0;
   }
 
@@ -1502,15 +1505,18 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   every(callback, subject, predicate, object, graph) {
-    return this.filtered.every(callback, subject, predicate, object, graph);
+    return this.filtered.every(this._semantics === 'forwarded' ?
+      quad => callback(quad, this) : callback, subject, predicate, object, graph);
   }
 
   filter(iteratee) {
-    return this.filtered.filter(iteratee);
+    return this.filtered.filter(this._semantics === 'forwarded' ?
+      quad => iteratee(quad, this) : iteratee);
   }
 
   forEach(callback, subject, predicate, object, graph) {
-    return this.filtered.forEach(callback, subject, predicate, object, graph);
+    return this.filtered.forEach(this._semantics === 'forwarded' ?
+      quad => callback(quad, this) : callback, subject, predicate, object, graph);
   }
 
   import(stream) {
@@ -1535,11 +1541,13 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   map(iteratee) {
-    return this.filtered.map(iteratee);
+    return this.filtered.map(this._semantics === 'forwarded' ?
+      quad => iteratee(quad, this) : iteratee);
   }
 
   some(callback, subject, predicate, object, graph) {
-    return this.filtered.some(callback, subject, predicate, object, graph);
+    return this.filtered.some(this._semantics === 'forwarded' ?
+      quad => callback(quad, this) : callback, subject, predicate, object, graph);
   }
 
   toCanonical() {
@@ -1548,7 +1556,8 @@ class DatasetCoreAndReadableStream extends Readable {
 
   toStream() {
     if (this._semantics !== 'lazy')
-      return this.filtered.toStream();
+      // Use a fresh sync iterator instead of consuming this view's own readable stream.
+      return Readable.from(this[Symbol.iterator]());
     return this._filtered ?
       this._filtered.toStream()
       : this.n3Store.match(this.subject, this.predicate, this.object, this.graph, { matchSemantics: 'lazy' });
@@ -1565,7 +1574,8 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   reduce(callback, initialValue) {
-    return this.filtered.reduce(callback, initialValue);
+    return this.filtered.reduce(this._semantics === 'forwarded' ?
+      (accumulator, quad) => callback(accumulator, quad, this) : callback, initialValue);
   }
 
   toString() {
@@ -1639,7 +1649,7 @@ class DatasetCoreAndReadableStream extends Readable {
         yield quad;
       }
       if (this._generation !== generation) {
-        const baseline = this._baselines.get(generation);
+        const baseline = this._baselines.get(generation).quads;
         for (let i = yielded; i < baseline.length; i++)
           yield baseline[i];
       }
@@ -1647,6 +1657,12 @@ class DatasetCoreAndReadableStream extends Readable {
     finally {
       if (this._generation === generation)
         this._currentIterators--;
+      else {
+        const baseline = this._baselines.get(generation);
+        // A slow reader must not retain snapshots of later, completed generations.
+        if (--baseline.readers === 0)
+          this._baselines.delete(generation);
+      }
       if (--this._activeIterators === 0)
         this._baselines = null;
     }
