@@ -5,8 +5,7 @@ import N3Parser from './N3Parser';
 // ## Constructor
 export default class N3StreamParser extends Transform {
   constructor(options) {
-    super({ decodeStrings: true });
-    this._readableState.objectMode = true;
+    super({ decodeStrings: true, readableObjectMode: true });
 
     // Set up parser with dummy stream to obtain `data` and `end` callbacks
     const parser = new N3Parser(options);

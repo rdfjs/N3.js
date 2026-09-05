@@ -14,6 +14,30 @@ describe('StreamParser', () => {
   });
 
   describe('A StreamParser instance', () => {
+    it('bounds unread quads using the object-mode high-water mark', async () => {
+      let produced = 0;
+      const input = new Readable({
+        highWaterMark: 1,
+        read() {
+          this.push(produced++ < 30000 ? '<a> <b> <c>.\n' : null);
+        },
+      });
+      const parser = new StreamParser();
+      const paused = new Promise(resolve => input.once('pause', resolve));
+      try {
+        input.pipe(parser);
+        await paused;
+        expect(parser.readableHighWaterMark).toBe(16);
+        expect(parser.readableLength).toBeGreaterThan(0);
+        expect(parser.readableLength).toBeLessThanOrEqual(16);
+        expect(produced).toBeLessThan(30000);
+      }
+      finally {
+        input.destroy();
+        parser.destroy();
+      }
+    });
+
     it('pauses an imported readable until its quads are consumed', async () => {
       const total = 30000;
       let produced = 0, consumed = 0;
