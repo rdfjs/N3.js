@@ -575,8 +575,8 @@ export default class N3Lexer {
   // ### `tokenize` starts the transformation of an N3 document into an array of tokens.
   // The input can be a string or a stream.
   tokenize(input, callback) {
-    // Old streams may still emit after completion or failure. Keep their
-    // handlers from consuming input or calling back for a later invocation.
+    // Deferred tokenization and stream events can outlive their invocation.
+    // Ignore them once a later call takes ownership of the lexer state.
     const tokenization = this._tokenization = {};
     this._line = 1;
 
@@ -585,7 +585,10 @@ export default class N3Lexer {
       this._input = this._readStartingBom(input);
       // If a callback was passed, asynchronously call it
       if (typeof callback === 'function')
-        queueMicrotask(() => this._tokenizeToEnd(callback, true));
+        queueMicrotask(() => {
+          if (this._tokenization === tokenization)
+            this._tokenizeToEnd(callback, true);
+        });
       // If no callback was passed, tokenize synchronously and return
       else {
         const tokens = [];

@@ -2041,6 +2041,24 @@ describe('Lexer', () => {
       });
     });
 
+    it.each(['asynchronous', 'synchronous'])('ignores a queued tokenizer superseded by %s string input', mode => {
+      jest.useFakeTimers();
+      try {
+        const lexer = new Lexer(), previousCallback = jest.fn(), nextCallback = jest.fn(),
+            expected = new Lexer().tokenize('<new>');
+        lexer.tokenize('<old>', previousCallback);
+        const result = lexer.tokenize('<new>', mode === 'asynchronous' ? nextCallback : undefined);
+
+        expect(() => jest.runAllTicks()).not.toThrow();
+        expect(previousCallback).not.toHaveBeenCalled();
+        expect(result).toEqual(mode === 'asynchronous' ? undefined : expected);
+        expect(nextCallback.mock.calls).toEqual(mode === 'asynchronous' ? expected.map(token => [null, token]) : []);
+      }
+      finally {
+        jest.useRealTimers();
+      }
+    });
+
     describe.each(['syntax error', 'stream error', 'end'])('reusing a lexer after %s', outcome => {
       it.each(['data', 'end', 'error'])('ignores later %s events from the previous stream', event => {
         jest.useFakeTimers();
