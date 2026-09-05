@@ -38,9 +38,13 @@ export default class N3StreamParser extends Transform {
 
   // ### Parses a stream of strings
   import(stream) {
-    stream.on('data',  chunk => { this.write(chunk); });
-    stream.on('end',   ()      => { this.end(); });
     stream.on('error', error => { this.emit('error', error); });
+    if (typeof stream.pipe === 'function')
+      stream.pipe(this);
+    else {
+      stream.on('data', chunk => { this.write(chunk); });
+      stream.on('end',  ()    => { this.end(); });
+    }
     return this;
   }
 }
