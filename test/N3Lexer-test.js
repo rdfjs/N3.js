@@ -2040,6 +2040,58 @@ describe('Lexer', () => {
         expect((() => { lexer.tokenize('<a> bar'); })).toThrow('Unexpected "bar" on line 1.');
       });
     });
+
+    it.each(['asynchronous', 'synchronous'])('ignores a queued tokenizer superseded by %s string input', mode => {
+      jest.useFakeTimers();
+      try {
+        const lexer = new Lexer(), previousCallback = jest.fn(), nextCallback = jest.fn(),
+            expected = new Lexer().tokenize('<new>');
+        lexer.tokenize('<old>', previousCallback);
+        const result = lexer.tokenize('<new>', mode === 'asynchronous' ? nextCallback : undefined);
+
+        expect(() => jest.runAllTicks()).not.toThrow();
+        expect(previousCallback).not.toHaveBeenCalled();
+        expect(result).toEqual(mode === 'asynchronous' ? undefined : expected);
+        expect(nextCallback.mock.calls).toEqual(mode === 'asynchronous' ? expected.map(token => [null, token]) : []);
+      }
+      finally {
+        jest.useRealTimers();
+      }
+    });
+
+    describe.each(['syntax error', 'stream error', 'end'])('reusing a lexer after %s', outcome => {
+      it.each(['data', 'end', 'error'])('ignores later %s events from the previous stream', event => {
+        jest.useFakeTimers();
+        try {
+          const lexer = new Lexer(), stream = new EventEmitter(),
+              previousCallback = jest.fn(), nextCallback = jest.fn();
+          lexer.tokenize(stream, previousCallback);
+          if (outcome === 'syntax error')
+            stream.emit('data', '@\n');
+          else if (outcome === 'stream error')
+            stream.emit('error', new Error('source failed'));
+          else {
+            stream.emit('data', '<old>');
+            stream.emit('end');
+          }
+          const previousCalls = previousCallback.mock.calls.slice();
+          expect(previousCalls.length).toBeGreaterThan(0);
+
+          // String tokenization is deferred, so the old source can still emit
+          // events while the lexer holds the new input.
+          lexer.tokenize('<new>', nextCallback);
+          stream.emit(event, event === 'error' ? new Error('late error') : '<stale>');
+          expect(() => jest.runAllTicks()).not.toThrow();
+
+          expect(nextCallback.mock.calls).toEqual(new Lexer().tokenize('<new>')
+            .map(token => [null, token]));
+          expect(previousCallback.mock.calls).toEqual(previousCalls);
+        }
+        finally {
+          jest.useRealTimers();
+        }
+      });
+    });
   });
 });
 

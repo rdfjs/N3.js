@@ -575,6 +575,9 @@ export default class N3Lexer {
   // ### `tokenize` starts the transformation of an N3 document into an array of tokens.
   // The input can be a string or a stream.
   tokenize(input, callback) {
+    // Deferred tokenization and stream events can outlive their invocation.
+    // Ignore them once a later call takes ownership of the lexer state.
+    const tokenization = this._tokenization = {};
     this._line = 1;
 
     // If the input is a string, continuously emit tokens through the callback until the end
@@ -582,7 +585,10 @@ export default class N3Lexer {
       this._input = this._readStartingBom(input);
       // If a callback was passed, asynchronously call it
       if (typeof callback === 'function')
-        queueMicrotask(() => this._tokenizeToEnd(callback, true));
+        queueMicrotask(() => {
+          if (this._tokenization === tokenization)
+            this._tokenizeToEnd(callback, true);
+        });
       // If no callback was passed, tokenize synchronously and return
       else {
         const tokens = [];
@@ -599,7 +605,7 @@ export default class N3Lexer {
         input.setEncoding('utf8');
       // Adds the data chunk to the buffer and parses as far as possible
       input.on('data', data => {
-        if (this._input !== null && data.length !== 0) {
+        if (this._tokenization === tokenization && this._input !== null && data.length !== 0) {
           // Prepend any previous pending writes
           if (this._pendingBuffer) {
             data = Buffer.concat([this._pendingBuffer, data]);
@@ -622,10 +628,13 @@ export default class N3Lexer {
       });
       // Parses until the end
       input.on('end', () => {
-        if (typeof this._input === 'string')
+        if (this._tokenization === tokenization && typeof this._input === 'string')
           this._tokenizeToEnd(callback, true);
       });
-      input.on('error', callback);
+      input.on('error', error => {
+        if (this._tokenization === tokenization)
+          callback(error);
+      });
     }
   }
 }
