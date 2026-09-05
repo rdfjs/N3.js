@@ -3,6 +3,7 @@ import { Buffer } from 'buffer';
 import namespaces from './IRIs';
 
 const { xsd } = namespaces;
+const SPACE = 0x20, TAB = 0x09, LF = 0x0A, CR = 0x0D, HASH = 0x23;
 
 // Regular expression and replacement strings to unescape N3 strings
 const escapeSequence = /\\u([a-fA-F0-9]{4})|\\U([a-fA-F0-9]{8})|\\([^])/g;
@@ -30,10 +31,8 @@ const lineModeRegExps = {
   _simpleQuotedString: true,
   _langcode: true,
   _blank: true,
-  _newline: true,
-  _comment: true,
+  _commentLine: true,
   _whitespace: true,
-  _endOfFile: true,
 };
 const invalidRegExp = /$0^/;
 
@@ -58,10 +57,8 @@ export default class N3Lexer {
     this._n3Verb = /^(?:has|is|of)(?=[\s#()\[\]\{\}"'<>?_+\-0-9])/;
     this._n3Id = /^id(?=[\s#<])/;
     this._shortPredicates = /^a(?=[\s#()\[\]\{\}"'<>])/;
-    this._newline = /^[ \t]*(?:#[^\n\r]*)?(?:\r\n|\n|\r)[ \t]*/;
-    this._comment = /#([^\n\r]*)/;
+    this._commentLine = /^[ \t]*#([^\n\r]*)(?:\r\n|\n|\r)[ \t]*/;
     this._whitespace = /^[ \t]+/;
-    this._endOfFile = /^(?:#[^\n\r]*)?$/;
     options = options || {};
 
     // Whether the log:isImpliedBy predicate is supported
@@ -94,28 +91,56 @@ export default class N3Lexer {
     let input = this._input;
     let currentLineLength = input.length;
     while (true) {
-      // Count and skip whitespace lines
-      let whiteSpaceMatch, comment;
-      while (whiteSpaceMatch = this._newline.exec(input)) {
-        // Try to find a comment
-        if (this.comments && (comment = this._comment.exec(whiteSpaceMatch[0])))
-          emitToken('comment', comment[1], '', this._line, whiteSpaceMatch[0].length);
-        // Advance the input
-        input = input.slice(whiteSpaceMatch[0].length);
-        currentLineLength = input.length;
-        this._line++;
+      // Consume one separator line at a time, including its following indentation.
+      while (true) {
+        let charCode = input.charCodeAt(0), separatorLength = 0;
+        if (charCode === SPACE || charCode === TAB) {
+          const next = input.charCodeAt(1);
+          separatorLength = next === SPACE || next === TAB ?
+            this._whitespace.exec(input)[0].length : 1;
+          charCode = input.charCodeAt(separatorLength);
+        }
+        if (charCode === HASH) {
+          const comment = this._commentLine.exec(input);
+          if (comment) {
+            if (this.comments)
+              emitToken('comment', comment[1], '', this._line, comment[0].length);
+            input = input.slice(comment[0].length);
+            currentLineLength = input.length;
+            this._line++;
+          }
+          else {
+            // A comment without a line ending stays buffered until EOF.
+            input = input.slice(separatorLength);
+            if (!inputFinished)
+              return this._input = input;
+            if (this.comments)
+              emitToken('comment', input.slice(1), '', this._line, input.length);
+            input = '';
+            break;
+          }
+        }
+        else if (charCode === LF || charCode === CR) {
+          separatorLength += charCode === CR && input.charCodeAt(separatorLength + 1) === LF ? 2 : 1;
+          // Indentation is part of the same separator match as the newline.
+          const next = input.charCodeAt(separatorLength);
+          if (next === SPACE || next === TAB) {
+            const following = input.charCodeAt(separatorLength + 1);
+            separatorLength += following === SPACE || following === TAB ?
+              this._whitespace.exec(input.slice(separatorLength))[0].length : 1;
+          }
+          input = input.slice(separatorLength);
+          currentLineLength = input.length;
+          this._line++;
+        }
+        else {
+          if (separatorLength !== 0)
+            input = input.slice(separatorLength);
+          break;
+        }
       }
-      // Skip whitespace on current line
-      if (!whiteSpaceMatch && (whiteSpaceMatch = this._whitespace.exec(input)))
-        input = input.slice(whiteSpaceMatch[0].length);
-
-      // Stop for now if we're at the end
-      if (this._endOfFile.test(input)) {
-        // If the input is finished, emit EOF
+      if (input.length === 0) {
         if (inputFinished) {
-          // Try to find a final comment
-          if (this.comments && (comment = this._comment.exec(input)))
-            emitToken('comment', comment[1], '', this._line, input.length);
           input = null;
           emitToken('eof', '', '', this._line, 0);
         }
