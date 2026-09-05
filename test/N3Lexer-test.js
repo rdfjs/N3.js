@@ -1945,6 +1945,30 @@ describe('Lexer', () => {
     });
 
     it.each([
+      ['"a\\"b"', 'a"b'],
+      ["'a\\'b'", "a'b"],
+      ['"""a""b\nc"""', 'a""b\nc'],
+      ["'''a''b\nc'''", "a''b\nc"],
+      ['""""""', ''],
+      ["''''''", ''],
+    ])('recognizes the literal delimiter across every split of %s', (input, value) => {
+      for (let split = 0; split <= input.length; split++) {
+        const stream = new EventEmitter(), tokens = [];
+        new Lexer().tokenize(stream, (error, token) => {
+          expect(error).toBeNull();
+          tokens.push({ type: token.type, value: token.value });
+        });
+        stream.emit('data', input.slice(0, split));
+        stream.emit('data', input.slice(split));
+        stream.emit('end');
+        expect(tokens).toEqual([
+          { type: 'literal', value },
+          { type: 'eof', value: '' },
+        ]);
+      }
+    });
+
+    it.each([
       [false, 'ltr'], [false, 'rtl'], [true, 'ltr'], [true, 'rtl'],
     ])('recognizes direction %s / %s across stream splits', (lineMode, direction) => {
       const input = `"hello"@en--${direction}`;
