@@ -1,5 +1,6 @@
 import { StreamParser, NamedNode } from '../src';
 import { Readable, Writable } from 'readable-stream';
+import { EventEmitter } from 'events';
 
 describe('StreamParser', () => {
   describe('The StreamParser export', () => {
@@ -13,6 +14,49 @@ describe('StreamParser', () => {
   });
 
   describe('A StreamParser instance', () => {
+    it('pauses an imported readable until its quads are consumed', async () => {
+      const total = 30000;
+      let produced = 0, consumed = 0;
+      const input = new Readable({
+        highWaterMark: 1,
+        read() {
+          this.push(produced++ < total ? '<a> <b> <c>.\n' : null);
+        },
+      });
+      const parser = new StreamParser();
+      const ended = new Promise((resolve, reject) => {
+        parser.once('end', resolve);
+        parser.once('error', reject);
+      });
+      try {
+        expect(parser.import(input)).toBe(parser);
+        await new Promise(resolve => setImmediate(resolve));
+        expect(produced).toBeLessThan(total);
+        parser.on('data', () => { consumed++; });
+        await ended;
+        expect(consumed).toBe(total);
+      }
+      finally {
+        input.destroy();
+        parser.destroy();
+      }
+    });
+
+    it('imports an event source without a pipe method', async () => {
+      const input = new EventEmitter(), parser = new StreamParser(), quads = [];
+      const ended = new Promise((resolve, reject) => {
+        parser.once('end', resolve);
+        parser.once('error', reject);
+      });
+      parser.on('data', quad => { quads.push(quad); });
+      expect(parser.import(input)).toBe(parser);
+      input.emit('data', '<a> <b> <c>.');
+      input.emit('end');
+      await ended;
+      expect(quads).toHaveLength(1);
+      expect(quads[0].subject.value).toBe('a');
+    });
+
     it('parses the empty stream', shouldParse([], 0));
 
     it('parses the zero-length stream', shouldParse([''], 0));
