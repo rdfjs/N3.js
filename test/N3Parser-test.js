@@ -453,7 +453,7 @@ describe('Parser', () => {
                          value: 'a',
                          prefix: '',
                          start: 0,
-                         end: 4,
+                         end: 3,
                        },
                      }),
     );
@@ -468,7 +468,7 @@ describe('Parser', () => {
                          value: 'b',
                          prefix: '_',
                          start: 4,
-                         end: 8,
+                         end: 7,
                        },
                        line: 2,
                        previousToken: {
@@ -477,7 +477,7 @@ describe('Parser', () => {
                          value: 'a',
                          prefix: '',
                          start: 0,
-                         end: 4,
+                         end: 3,
                        },
                      }),
     );

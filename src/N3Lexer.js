@@ -60,7 +60,7 @@ export default class N3Lexer {
     this._n3Verb = /^(?:has|is|of)(?=[\s#()\[\]\{\}"'<>?_+\-0-9])/;
     this._n3Id = /^id(?=[\s#<])/;
     this._shortPredicates = /^a(?=[\s#()\[\]\{\}"'<>])/;
-    this._newline = /^[ \t]*(?:#[^\n\r]*)?(?:\r\n|\n|\r)[ \t]*/;
+    this._newline = /^[ \t]*(?:#[^\n\r]*)?(?:\r\n|\n|\r)([ \t]*)/;
     this._comment = /#([^\n\r]*)/;
     this._whitespace = /^[ \t]+/;
     this._endOfFile = /^(?:#[^\n\r]*)?$/;
@@ -94,17 +94,24 @@ export default class N3Lexer {
   _tokenizeToEnd(callback, inputFinished) {
     // Continue parsing as far as possible; the loop will return eventually
     let input = this._input;
-    let currentLineLength = input.length;
+    let currentLineLength = this._linePosition + input.length;
     while (true) {
       // Count and skip whitespace lines
       let whiteSpaceMatch, comment;
       while (whiteSpaceMatch = this._newline.exec(input)) {
+        // A trailing CR might be the first half of CRLF in the next stream
+        // chunk. Keep it buffered so the pair counts as one line ending.
+        if (!inputFinished && whiteSpaceMatch[0].endsWith('\r') &&
+            whiteSpaceMatch[0].length === input.length) {
+          this._linePosition = currentLineLength - input.length;
+          return this._input = input;
+        }
         // Try to find a comment
         if (this.comments && (comment = this._comment.exec(whiteSpaceMatch[0])))
-          emitToken('comment', comment[1], '', this._line, whiteSpaceMatch[0].length);
+          emitComment(comment, this._line);
         // Advance the input
         input = input.slice(whiteSpaceMatch[0].length);
-        currentLineLength = input.length;
+        currentLineLength = input.length + whiteSpaceMatch[1].length;
         this._line++;
       }
       // Skip whitespace on current line
@@ -117,17 +124,19 @@ export default class N3Lexer {
         if (inputFinished) {
           // Try to find a final comment
           if (this.comments && (comment = this._comment.exec(input)))
-            emitToken('comment', comment[1], '', this._line, input.length);
+            emitComment(comment, this._line);
           input = null;
           emitToken('eof', '', '', this._line, 0);
         }
+        this._linePosition = input === null ? currentLineLength : currentLineLength - input.length;
         return this._input = input;
       }
 
       // Look for specific token types based on the first character
       const line = this._line, firstChar = input[0];
       let type = '', value = '', prefix = '',
-          match = null, matchLength = 0, inconclusive = false;
+          match = null, matchLength = 0, lexicalLength = 0,
+          finalLineLength = 0, inconclusive = false;
       switch (firstChar) {
       case '^':
         // We need at least 3 tokens lookahead to distinguish ^^<IRI> and ^^pre:fixed
@@ -154,14 +163,17 @@ export default class N3Lexer {
         // Fall through in case the type is an IRI
       case '<':
         // Try to find a full IRI without escape sequences
-        if (match = this._unescapedIri.exec(input))
+        if (match = this._unescapedIri.exec(input)) {
           type = 'IRI', value = match[1];
+          lexicalLength = match[1].length + 2;
+        }
         // Try to find a full IRI with escape sequences
         else if (match = this._iri.exec(input)) {
           value = this._unescape(match[1], stringEscapeReplacements);
           if (value === null || illegalIriChars.test(value))
             return reportSyntaxError(this);
           type = 'IRI';
+          lexicalLength = match[1].length + 2;
         }
         // Try to find a triple term
         else if (input.length > 2 && input[1] === '<' && input[2] === '(')
@@ -191,8 +203,10 @@ export default class N3Lexer {
         // we always need a non-dot character before deciding it is a blank node.
         // Therefore, try inserting a space if we're at the end of the input.
         if ((match = this._blank.exec(input)) ||
-            inputFinished && (match = this._blank.exec(`${input} `)))
+            inputFinished && (match = this._blank.exec(`${input} `))) {
           type = 'blank', prefix = '_', value = match[1];
+          lexicalLength = match[1].length + 2;
+        }
         break;
 
       case '"':
@@ -201,7 +215,7 @@ export default class N3Lexer {
           value = match[1];
         // Try to find a literal wrapped in three pairs of quotes
         else {
-          ({ value, matchLength } = this._parseLiteral(input));
+          ({ value, matchLength, finalLineLength } = this._parseLiteral(input));
           if (value === null)
             return reportSyntaxError(this);
         }
@@ -218,7 +232,7 @@ export default class N3Lexer {
             value = match[1];
           // Try to find a literal wrapped in three pairs of quotes
           else {
-            ({ value, matchLength } = this._parseLiteral(input));
+            ({ value, matchLength, finalLineLength } = this._parseLiteral(input));
             if (value === null)
               return reportSyntaxError(this);
           }
@@ -409,8 +423,11 @@ export default class N3Lexer {
         // we always need a non-dot character before deciding it is a prefixed name.
         // Therefore, try inserting a space if we're at the end of the input.
         else if ((match = this._prefixed.exec(input)) ||
-                 inputFinished && (match = this._prefixed.exec(`${input} `)))
-          type = 'prefixed', prefix = match[1] || '', value = this._unescape(match[2], localNameEscapeReplacements);
+                 inputFinished && (match = this._prefixed.exec(`${input} `))) {
+          type = 'prefixed', prefix = match[1] || '';
+          value = this._unescape(match[2], localNameEscapeReplacements);
+          lexicalLength = (match[1] || '').length + match[2].length + 1;
+        }
       }
 
       // A type token is special: it can only be emitted after an IRI or prefixed name is read
@@ -429,20 +446,44 @@ export default class N3Lexer {
         // One exception: error on an unaccounted linebreak (= not inside a triple-quoted literal).
         if (inputFinished || (!/^'''|^"""/.test(input) && /\n|\r/.test(input)))
           return reportSyntaxError(this);
-        else
+        else {
+          this._linePosition = currentLineLength - input.length;
           return this._input = input;
+        }
       }
 
       // Emit the parsed token
+      // Consumption includes separator whitespace; lexicalLength excludes it
+      // and any synthetic EOF space. slice below clamps consumption to the input.
       const length = matchLength || match[0].length;
-      const token = emitToken(type, value, prefix, line, length);
+      let token;
+      if (finalLineLength) {
+        token = {
+          type, value, prefix, line,
+          start: currentLineLength - input.length,
+          end: finalLineLength, endLine: this._line,
+        };
+        callback(null, token);
+      }
+      else
+        token = emitToken(type, value, prefix, line, lexicalLength || length);
       this.previousToken = token;
       this._previousMarker = type;
 
       // Advance to next part to tokenize
       input = input.slice(length);
+      if (finalLineLength)
+        currentLineLength = input.length + finalLineLength;
     }
 
+    // Emits a comment at its exact position within matched whitespace.
+    function emitComment(comment, line) {
+      const start = currentLineLength - input.length + comment.index;
+      callback(null, {
+        type: 'comment', value: comment[1], prefix: '', line,
+        start, end: start + comment[0].length,
+      });
+    }
     // Emits the token through the callback
     function emitToken(type, value, prefix, line, length) {
       const start = input ? currentLineLength - input.length : currentLineLength;
@@ -538,21 +579,23 @@ export default class N3Lexer {
         // means these are actual, non-escaped closing quotes
         if (backslashCount % 2 === 0) {
           // Extract and unescape the value
-          const raw = input.substring(openingLength, closingPos);
-          const lines = raw.split(/\r\n|\r|\n/).length - 1;
+          const raw = input.substring(openingLength, closingPos),
+              lines = raw.split(/\r\n|\r|\n/),
+              lineCount = lines.length - 1;
           const matchLength = closingPos + openingLength;
           // Only triple-quoted strings can be multi-line
-          if (openingLength === 1 && lines !== 0 ||
+          if (openingLength === 1 && lineCount !== 0 ||
               openingLength === 3 && this._lineMode)
             break;
-          this._line += lines;
-          return { value: this._unescape(raw, stringEscapeReplacements), matchLength };
+          this._line += lineCount;
+          const finalLineLength = lineCount === 0 ? 0 : lines[lines.length - 1].length + openingLength;
+          return { value: this._unescape(raw, stringEscapeReplacements), matchLength, finalLineLength };
         }
         closingPos++;
       }
       this._literalClosingPos = input.length - openingLength + 1;
     }
-    return { value: '', matchLength: 0 };
+    return { value: '', matchLength: 0, finalLineLength: 0 };
   }
 
   // ### `_syntaxError` creates a syntax error for the given issue
@@ -569,18 +612,30 @@ export default class N3Lexer {
 
   // ### Strips off any starting UTF BOM mark.
   _readStartingBom(input) {
-    return input.startsWith('\ufeff') ? input.slice(1) : input;
+    if (input.startsWith('\ufeff')) {
+      this._linePosition = 1;
+      return input.slice(1);
+    }
+    return input;
   }
 
   // ## Public methods
 
   // ### `tokenize` starts the transformation of an N3 document into an array of tokens.
   // The input can be a string or a stream.
+  // Token ranges use one-based lines and zero-based, end-exclusive UTF-16 columns.
+  // Separator whitespace counts towards the next token's start, outside either range.
+  // Multiline tokens also have endLine; their end column is relative to that line.
   tokenize(input, callback) {
     // Deferred tokenization and stream events can outlive their invocation.
     // Ignore them once a later call takes ownership of the lexer state.
     const tokenization = this._tokenization = {};
     this._line = 1;
+    this._linePosition = 0;
+    this._previousMarker = undefined;
+    this.previousToken = undefined;
+    this._literalClosingPos = 0;
+    this._input = undefined;
 
     // If the input is a string, continuously emit tokens through the callback until the end
     if (typeof input === 'string') {
