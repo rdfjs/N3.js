@@ -1944,6 +1944,28 @@ describe('Lexer', () => {
       ]);
     });
 
+    it.each([
+      [false, 'ltr'], [false, 'rtl'], [true, 'ltr'], [true, 'rtl'],
+    ])('recognizes direction %s / %s across stream splits', (lineMode, direction) => {
+      const input = `"hello"@en--${direction}`;
+      for (let split = 0; split <= input.length; split++) {
+        const stream = new EventEmitter(), tokens = [];
+        new Lexer({ lineMode }).tokenize(stream, (error, token) => {
+          expect(error).toBeNull();
+          tokens.push({ type: token.type, value: token.value });
+        });
+        stream.emit('data', input.slice(0, split));
+        stream.emit('data', input.slice(split));
+        stream.emit('end');
+        expect(tokens).toEqual([
+          { type: 'literal', value: 'hello' },
+          { type: 'langcode', value: 'en' },
+          { type: 'dircode', value: direction },
+          { type: 'eof', value: '' },
+        ]);
+      }
+    });
+
     describe('passing data after the stream has been finished', () => {
       const tokens = [];
       let error;
