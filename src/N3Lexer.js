@@ -524,9 +524,12 @@ export default class N3Lexer {
   _parseLiteral(input) {
     // Ensure we have enough lookahead to identify triple-quoted strings
     if (input.length >= 3) {
-      // Identify the opening quote(s)
-      const opening = input.match(/^(?:"""|"|'''|'|)/)[0];
-      const openingLength = opening.length;
+      // The caller has already identified a single or double quote.
+      const quote = input[0];
+      const openingLength = input[1] === quote && input[2] === quote ? 3 : 1;
+      let opening = quote;
+      if (openingLength === 3)
+        opening = quote === '"' ? '"""' : "'''";
 
       // Find the next candidate closing quotes
       let closingPos = Math.max(this._literalClosingPos, openingLength);
