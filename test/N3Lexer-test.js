@@ -1966,6 +1966,29 @@ describe('Lexer', () => {
       }
     });
 
+    it.each([false, true])('keeps separator tokens across stream splits with comments=%s', comments => {
+      const input = '\t# first\n \t#\r  <s>\n\t# final';
+      const expected = [
+        { type: 'comment', value: ' first', prefix: '', line: 1 },
+        { type: 'comment', value: '', prefix: '', line: 2 },
+        { type: 'IRI', value: 's', prefix: '', line: 3 },
+        { type: 'comment', value: ' final', prefix: '', line: 4 },
+        { type: 'eof', value: '', prefix: '', line: 4 },
+      ].filter(token => comments || token.type !== 'comment');
+      for (let split = 0; split <= input.length; split++) {
+        const stream = new EventEmitter(), tokens = [];
+        new Lexer({ comments }).tokenize(stream, (error, token) => {
+          expect(error).toBeNull();
+          const { type, value, prefix, line } = token;
+          tokens.push({ type, value, prefix, line });
+        });
+        stream.emit('data', input.slice(0, split));
+        stream.emit('data', input.slice(split));
+        stream.emit('end');
+        expect(tokens).toEqual(expected);
+      }
+    });
+
     describe('passing data after the stream has been finished', () => {
       const tokens = [];
       let error;
