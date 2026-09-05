@@ -485,6 +485,8 @@ export default class N3Lexer {
   // ### `_unescape` replaces N3 escape codes by their corresponding characters,
   // allowing only the fixed escape sequences from the given replacement table
   _unescape(item, replacements) {
+    if (item.indexOf('\\') < 0)
+      return item;
     let invalid = false;
     const replaced = item.replace(escapeSequence, (sequence, unicode4, unicode8, escapedChar) => {
       // 4-digit unicode character
