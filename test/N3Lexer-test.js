@@ -14,6 +14,33 @@ describe('Lexer', () => {
   });
 
   describe('A Lexer instance', () => {
+    it.each([
+      ['a', 'abbreviation', 'a', ''],
+      ['true', 'literal', 'true', 'http://www.w3.org/2001/XMLSchema#boolean'],
+      ['false', 'literal', 'false', 'http://www.w3.org/2001/XMLSchema#boolean'],
+      ['id', 'id', '', ''],
+    ])('recognizes fixed token %s at every stream split', (word, type, value, prefix) => {
+      const input = `${word} <s>`;
+      expect(new Lexer().tokenize(input)[0]).toEqual({
+        type, value, prefix, line: 1, start: 0, end: word.length,
+      });
+      for (let split = 0; split <= input.length; split++) {
+        const stream = new EventEmitter(), tokens = [];
+        new Lexer().tokenize(stream, (error, token) => {
+          expect(error).toBeNull();
+          tokens.push({ type: token.type, value: token.value, prefix: token.prefix });
+        });
+        stream.emit('data', input.slice(0, split));
+        stream.emit('data', input.slice(split));
+        stream.emit('end');
+        expect(tokens).toEqual([
+          { type, value, prefix },
+          { type: 'IRI', value: 's', prefix: '' },
+          { type: 'eof', value: '', prefix: '' },
+        ]);
+      }
+    });
+
     it('should tokenize the empty string', shouldTokenize('',
                    { type: 'eof', line: 1 }));
 

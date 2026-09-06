@@ -336,16 +336,16 @@ export default class N3Lexer {
       case 'f':
       case 't':
         // Try to match a boolean
-        if (match = this._boolean.exec(input))
-          type = 'literal', value = match[0], prefix = xsd.boolean;
+        if (this._boolean.test(input))
+          type = 'literal', value = firstChar === 't' ? 'true' : 'false', prefix = xsd.boolean, matchLength = value.length;
         else
           inconclusive = true;
         break;
 
       case 'a':
         // Try to find an abbreviated predicate
-        if (match = this._shortPredicates.exec(input))
-          type = 'abbreviation', value = 'a';
+        if (this._shortPredicates.test(input))
+          type = 'abbreviation', value = 'a', matchLength = 1;
         else
           inconclusive = true;
         break;
@@ -361,8 +361,8 @@ export default class N3Lexer {
 
       case 'i':
         // Try to find an IRI property list identifier or N3 verb keyword
-        if (this._n3Mode && (match = this._n3Id.exec(input)))
-          type = 'id';
+        if (this._n3Mode && this._n3Id.test(input))
+          type = 'id', matchLength = 2;
         else if (this._n3Mode && (match = this._matchN3Verb(input, inputFinished)))
           type = match[0];
         else
