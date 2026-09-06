@@ -1953,8 +1953,8 @@ describe('Lexer', () => {
     it('returns start and end index for every token', () => {
       const tokens = new Lexer().tokenize('<a:a> <b:c> "lit"@EN.');
       expect(tokens).toEqual([
-        { line: 1, prefix: '', type: 'IRI', value: 'a:a', start: 0, end: 6 },
-        { line: 1, prefix: '', type: 'IRI', value: 'b:c', start: 6, end: 12 },
+        { line: 1, prefix: '', type: 'IRI', value: 'a:a', start: 0, end: 5 },
+        { line: 1, prefix: '', type: 'IRI', value: 'b:c', start: 6, end: 11 },
         { line: 1, prefix: '', type: 'literal', value: 'lit', start: 12, end: 17 },
         { line: 1, prefix: '', type: 'langcode', value: 'EN', start: 17, end: 20 },
         { line: 1, prefix: '', type: '.', value: '', start: 20, end: 21 },
@@ -1962,41 +1962,145 @@ describe('Lexer', () => {
       ]);
     });
 
-    it('returns start and end index relative to line', () => {
+    it('returns start and end index relative to the physical line', () => {
       const tokens = new Lexer().tokenize('<a:a> <b:c> "lit"@EN ; \n <b:d> <d:e> .');
       expect(tokens).toEqual([
-        { line: 1, prefix: '', type: 'IRI', value: 'a:a', start: 0, end: 6 },
-        { line: 1, prefix: '', type: 'IRI', value: 'b:c', start: 6, end: 12 },
+        { line: 1, prefix: '', type: 'IRI', value: 'a:a', start: 0, end: 5 },
+        { line: 1, prefix: '', type: 'IRI', value: 'b:c', start: 6, end: 11 },
         { line: 1, prefix: '', type: 'literal', value: 'lit', start: 12, end: 17 },
         { line: 1, prefix: '', type: 'langcode', value: 'EN', start: 17, end: 20 },
         { line: 1, prefix: '', type: ';', value: '', start: 21, end: 22 },
-        { line: 2, prefix: '', type: 'IRI', value: 'b:d', start: 0, end: 6 },
-        { line: 2, prefix: '', type: 'IRI', value: 'd:e', start: 6, end: 12 },
-        { line: 2, prefix: '', type: '.', value: '', start: 12, end: 13 },
-        { line: 2, prefix: '', type: 'eof', value: '', start: 13, end: 13 },
+        { line: 2, prefix: '', type: 'IRI', value: 'b:d', start: 1, end: 6 },
+        { line: 2, prefix: '', type: 'IRI', value: 'd:e', start: 7, end: 12 },
+        { line: 2, prefix: '', type: '.', value: '', start: 13, end: 14 },
+        { line: 2, prefix: '', type: 'eof', value: '', start: 14, end: 14 },
       ]);
     });
 
-    it('returns index including whitespaces', () => {
+    it('counts a byte-order mark in physical source columns', () => {
+      const tokens = new Lexer().tokenize('\ufeff<a>\n  <b>')
+        .filter(token => token.type === 'IRI');
+      expect(tokens).toEqual([
+        { line: 1, prefix: '', type: 'IRI', value: 'a', start: 1, end: 4 },
+        { line: 2, prefix: '', type: 'IRI', value: 'b', start: 2, end: 5 },
+      ]);
+    });
+
+    it.each([
+      ['LF', '<s> <p> """a\nb""" .', 'a\nb'],
+      ['CRLF', '<s> <p> """a\r\nb""" .', 'a\r\nb'],
+      ['CR', '<s> <p> """a\rb""" .', 'a\rb'],
+    ])('returns line-relative indexes after a multiline literal with %s', (_, input, value) => {
+      const tokens = new Lexer().tokenize(input);
+      expect(tokens.filter(token => token.type === 'literal' || token.type === '.' || token.type === 'eof')).toEqual([
+        { line: 1, endLine: 2, prefix: '', type: 'literal', value, start: 8, end: 4 },
+        { line: 2, prefix: '', type: '.', value: '', start: 5, end: 6 },
+        { line: 2, prefix: '', type: 'eof', value: '', start: 6, end: 6 },
+      ]);
+    });
+
+    it('keeps line-relative indexes when a stream splits after a multiline literal', () => {
+      const stream = new EventEmitter(), tokens = [];
+      new Lexer().tokenize(stream, (error, token) => {
+        expect(error).toBeNull();
+        tokens.push(token);
+      });
+      stream.emit('data', '<s> <p> """a\nb"""');
+      stream.emit('data', ' .');
+      stream.emit('end');
+      expect(tokens.filter(token => token.type === '.' || token.type === 'eof')).toEqual([
+        { line: 2, prefix: '', type: '.', value: '', start: 5, end: 6 },
+        { line: 2, prefix: '', type: 'eof', value: '', start: 6, end: 6 },
+      ]);
+    });
+
+    it('counts CRLF split across stream chunks as one line ending', () => {
+      const stream = new EventEmitter(), tokens = [];
+      new Lexer().tokenize(stream, (error, token) => {
+        expect(error).toBeNull();
+        tokens.push(token);
+      });
+      stream.emit('data', '<s> <p> <o> .\r');
+      stream.emit('data', '\n  <s2> <p2> <o2> .');
+      stream.emit('end');
+      expect(tokens.find(token => token.value === 's2')).toMatchObject({
+        line: 2,
+        start: 2,
+        end: 6,
+      });
+    });
+
+    it('keeps comment coordinates stable across CRLF stream boundaries', () => {
+      const input = '# hi\r\n\t<s> <p> <o> .',
+          expected = new Lexer({ comments: true }).tokenize(input);
+      for (const split of [input.indexOf('\r'), input.indexOf('\r') + 1, input.indexOf('\n') + 1]) {
+        const stream = new EventEmitter(), tokens = [];
+        new Lexer({ comments: true }).tokenize(stream, (error, token) => {
+          expect(error).toBeNull();
+          tokens.push(token);
+        });
+        stream.emit('data', input.slice(0, split));
+        stream.emit('data', input.slice(split));
+        stream.emit('end');
+        expect(tokens).toEqual(expected);
+      }
+    });
+
+    it('does not include synthetic EOF lookahead in token ranges', () => {
+      expect(new Lexer().tokenize('_:x')[0]).toMatchObject({ start: 0, end: 3 });
+      expect(new Lexer().tokenize('ex:x')[0]).toMatchObject({ start: 0, end: 4 });
+    });
+
+    it('returns lexical indexes around whitespace', () => {
       const tokens = new Lexer().tokenize('<a:a>   <b:c>    <d:e>  .');
       expect(tokens).toEqual([
-        { line: 1, prefix: '', type: 'IRI', value: 'a:a', start: 0, end: 8 },
-        { line: 1, prefix: '', type: 'IRI', value: 'b:c', start: 8, end: 17 },
-        { line: 1, prefix: '', type: 'IRI', value: 'd:e', start: 17, end: 24 },
+        { line: 1, prefix: '', type: 'IRI', value: 'a:a', start: 0, end: 5 },
+        { line: 1, prefix: '', type: 'IRI', value: 'b:c', start: 8, end: 13 },
+        { line: 1, prefix: '', type: 'IRI', value: 'd:e', start: 17, end: 22 },
         { line: 1, prefix: '', type: '.', value: '', start: 24, end: 25 },
         { line: 1, prefix: '', type: 'eof', value: '', start: 25, end: 25 },
       ]);
     });
 
+    it.each(['<abc>', '<a\\u0062>', '<😀>', '_:blank', 'ex:a\\~b', ':'])(
+      'counts separators after %s towards the next token start across stream boundaries', raw => {
+        for (const [separator, nextLine, nextStart] of [
+          [' \t  ', 1, raw.length + 6],
+          [' \t\n \t ', 2, 3],
+          [' \t\r \t ', 2, 3],
+          [' \t\r\n \t ', 2, 3],
+        ]) {
+          const input = `  ${raw}${separator}<next>`,
+              expected = new Lexer().tokenize(input);
+          expect(expected[0]).toMatchObject({ line: 1, start: 2, end: raw.length + 2 });
+          expect(input.slice(expected[0].start, expected[0].end)).toBe(raw);
+          expect(expected[1]).toMatchObject({ line: nextLine, start: nextStart, end: nextStart + 6 });
+          expect(expected[2]).toMatchObject({ type: 'eof', line: nextLine, start: nextStart + 6, end: nextStart + 6 });
+
+          for (let split = 0; split <= input.length; split++) {
+            const stream = new EventEmitter(), tokens = [];
+            new Lexer().tokenize(stream, (error, token) => {
+              expect(error).toBeNull();
+              tokens.push(token);
+            });
+            stream.emit('data', input.slice(0, split));
+            stream.emit('data', input.slice(split));
+            stream.emit('end');
+            expect(tokens).toEqual(expected);
+          }
+        }
+      },
+    );
+
     it('returns index for comments and eof', () => {
       const tokens = new Lexer({ comments: true }).tokenize('# some\n<a:a> <b:b> <c:c> . # trailing comment\n# thing');
       expect(tokens).toEqual([
-        { line: 1, prefix: '', type: 'comment', value: ' some', start: 0, end: 7 },
-        { line: 2, prefix: '', type: 'IRI', value: 'a:a', start: 0, end: 6 },
-        { line: 2, prefix: '', type: 'IRI', value: 'b:b', start: 6, end: 12 },
-        { line: 2, prefix: '', type: 'IRI', value: 'c:c', start: 12, end: 18 },
+        { line: 1, prefix: '', type: 'comment', value: ' some', start: 0, end: 6 },
+        { line: 2, prefix: '', type: 'IRI', value: 'a:a', start: 0, end: 5 },
+        { line: 2, prefix: '', type: 'IRI', value: 'b:b', start: 6, end: 11 },
+        { line: 2, prefix: '', type: 'IRI', value: 'c:c', start: 12, end: 17 },
         { line: 2, prefix: '', type: '.', value: '', start: 18, end: 19 },
-        { line: 2, prefix: '', type: 'comment', value: ' trailing comment', start: 19, end: 39 },
+        { line: 2, prefix: '', type: 'comment', value: ' trailing comment', start: 20, end: 38 },
         { line: 3, prefix: '', type: 'comment', value: ' thing', start: 0, end: 7 },
         { line: 3, prefix: '', type: 'eof', value: '', start: 7, end: 7 },
       ]);
@@ -2069,6 +2173,61 @@ describe('Lexer', () => {
         stream.emit('end');
         expect(tokens).toEqual(expected);
       }
+    });
+
+    it.each([false, true])('keeps separator ranges across every split with comments=%s', comments => {
+      const input = '\t# first\r\n \t#\r  <s>\n\t# final';
+      const expected = [
+        { type: 'comment', value: ' first', prefix: '', line: 1, start: 1, end: 8 },
+        { type: 'comment', value: '', prefix: '', line: 2, start: 2, end: 3 },
+        { type: 'IRI', value: 's', prefix: '', line: 3, start: 2, end: 5 },
+        { type: 'comment', value: ' final', prefix: '', line: 4, start: 1, end: 8 },
+        { type: 'eof', value: '', prefix: '', line: 4, start: 8, end: 8 },
+      ].filter(token => comments || token.type !== 'comment');
+      expect(new Lexer({ comments }).tokenize(input)).toEqual(expected);
+      for (let split = 0; split <= input.length; split++) {
+        const stream = new EventEmitter(), tokens = [];
+        new Lexer({ comments }).tokenize(stream, (error, token) => {
+          expect(error).toBeNull();
+          tokens.push(token);
+        });
+        stream.emit('data', input.slice(0, split));
+        stream.emit('data', input.slice(split));
+        stream.emit('end');
+        expect(tokens).toEqual(expected);
+      }
+    });
+
+    it('retains columns across consecutive whitespace-only chunks', () => {
+      const stream = new EventEmitter(), tokens = [];
+      new Lexer().tokenize(stream, (error, token) => {
+        expect(error).toBeNull();
+        tokens.push(token);
+      });
+      for (const chunk of [' ', '\t', ' ', '<s>', '\r', '\n', ' ', '\t', ' ', '<t>'])
+        stream.emit('data', chunk);
+      stream.emit('end');
+      expect(tokens).toEqual([
+        { type: 'IRI', value: 's', prefix: '', line: 1, start: 3, end: 6 },
+        { type: 'IRI', value: 't', prefix: '', line: 2, start: 3, end: 6 },
+        { type: 'eof', value: '', prefix: '', line: 2, start: 6, end: 6 },
+      ]);
+    });
+
+    it('waits for a potentially split CRLF before emitting a comment', () => {
+      const stream = new EventEmitter(), tokens = [];
+      new Lexer({ comments: true }).tokenize(stream, (error, token) => {
+        expect(error).toBeNull();
+        tokens.push(token);
+      });
+      stream.emit('data', '# a\r');
+      expect(tokens).toEqual([]);
+      stream.emit('data', '\n');
+      expect(tokens).toEqual([
+        { type: 'comment', value: ' a', prefix: '', line: 1, start: 0, end: 3 },
+      ]);
+      stream.emit('end');
+      expect(tokens[1]).toEqual({ type: 'eof', value: '', prefix: '', line: 2, start: 0, end: 0 });
     });
 
     describe('passing data after the stream has been finished', () => {
@@ -2151,8 +2310,8 @@ describe('Lexer', () => {
 
       it('returns all tokens synchronously', () => {
         expect(tokens).toEqual([
-          { line: 1, type: 'IRI', value: 'a', prefix: '', start: 0,  end:  4 },
-          { line: 1, type: 'IRI', value: 'b', prefix: '', start: 4,  end:  8 },
+          { line: 1, type: 'IRI', value: 'a', prefix: '', start: 0,  end:  3 },
+          { line: 1, type: 'IRI', value: 'b', prefix: '', start: 4,  end:  7 },
           { line: 1, type: 'IRI', value: 'c', prefix: '', start: 8,  end: 11 },
           { line: 1, type: '.',   value: '',  prefix: '', start: 11, end: 12 },
           { line: 1, type: 'eof', value: '',  prefix: '', start: 12, end: 12 },
@@ -2218,6 +2377,44 @@ describe('Lexer', () => {
           jest.useRealTimers();
         }
       });
+    });
+
+    it('can tokenize another string after a syntax error', () => {
+      const lexer = new Lexer();
+      expect(() => lexer.tokenize('^^?')).toThrow();
+      expect(lexer.tokenize('<a>')[0]).toMatchObject({
+        type: 'IRI', value: 'a', line: 1, start: 0, end: 3,
+      });
+    });
+
+    it('can tokenize a stream after an unterminated literal error', () => {
+      const lexer = new Lexer(), stream = new EventEmitter(), tokens = [];
+      expect(() => lexer.tokenize('"""this literal never closes')).toThrow();
+
+      lexer.tokenize(stream, (error, token) => {
+        expect(error).toBeNull();
+        tokens.push(token);
+      });
+      stream.emit('data', '"""ok"""');
+      stream.emit('end');
+
+      expect(tokens).toEqual([
+        { type: 'literal', value: 'ok', prefix: '', line: 1, start: 0, end: 8 },
+        { type: 'eof', value: '', prefix: '', line: 1, start: 8, end: 8 },
+      ]);
+    });
+
+    it('does not retain the previous token in a later error', () => {
+      const lexer = new Lexer();
+      let laterError;
+      expect(() => lexer.tokenize('<old> @')).toThrow();
+      try {
+        lexer.tokenize('@');
+      }
+      catch (error) {
+        laterError = error;
+      }
+      expect(laterError.context.previousToken).toBeUndefined();
     });
   });
 });
@@ -2289,7 +2486,7 @@ describe('A Lexer instance with the comment option set to true', () => {
 
 function shouldTokenize(lexer, input) {
   const expected = Array.prototype.slice.call(arguments, 1);
-  const ignoredAttributes = { start: true, end: true };
+  const ignoredAttributes = { start: true, end: true, endLine: true };
 
   // Shift parameters as necessary
   if (lexer instanceof Lexer)
