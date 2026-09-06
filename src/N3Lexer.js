@@ -103,14 +103,16 @@ export default class N3Lexer {
         if (charCode === HASH) {
           const comment = this._commentLine.exec(input);
           if (comment) {
+            const commentLength = comment[0].length;
             // Keep a trailing CR buffered in case the next chunk starts with LF.
-            if (!inputFinished && comment[0].endsWith('\r') && comment[0].length === input.length) {
+            if (!inputFinished && commentLength === input.length &&
+                input.charCodeAt(commentLength - 1) === CR) {
               this._linePosition = currentLineLength - input.length;
               return this._input = input;
             }
             if (this.comments)
               emitComment(comment[1], this._line, separatorLength);
-            input = input.slice(comment[0].length);
+            input = input.slice(commentLength);
             currentLineLength = input.length + comment[2].length;
             this._line++;
           }
@@ -157,7 +159,7 @@ export default class N3Lexer {
           input = null;
           emitToken('eof', '', '', this._line, 0);
         }
-        this._linePosition = input === null ? currentLineLength : currentLineLength - input.length;
+        this._linePosition = currentLineLength;
         return this._input = input;
       }
 
@@ -459,7 +461,7 @@ export default class N3Lexer {
                  inputFinished && (match = this._prefixed.exec(`${input} `))) {
           type = 'prefixed', prefix = match[1] || '';
           value = this._unescape(match[2], localNameEscapeReplacements);
-          lexicalLength = (match[1] || '').length + match[2].length + 1;
+          lexicalLength = prefix.length + match[2].length + 1;
         }
       }
 
