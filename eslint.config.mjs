@@ -342,6 +342,20 @@ export default [
     },
   },
 
+  // Reference implementations import the library they demonstrate.
+  {
+    files: ['examples/provenance/**'],
+    rules: {
+      'import-x/no-relative-parent-imports': 0,
+    },
+  },
+  {
+    files: ['examples/provenance/demo.js'],
+    rules: {
+      'no-console': 0,
+    },
+  },
+
   // Browser bundle test runner: a standalone Node script executed outside
   // jest (see test/browser/run.mjs), so console output is its interface.
   {

@@ -129,12 +129,13 @@ the callback is invoked one last time with `null` for `quad`
 and a hash of prefixes as third argument.
 <br>
 
-Alternatively, an object can be supplied, where `onQuad`, `onPrefix` and `onComment` are used to listen for `quads`, `prefixes` and `comments` as follows:
+Alternatively, an object can be supplied with named callbacks for quads, prefixes,
+comments, and token processing:
 ```JavaScript
 const parser = new N3.Parser();
 
 parser.parse(tomAndJerry, {
-  // onQuad (required) accepts a listener of type (quad: RDF.Quad) => void
+  // onQuad (optional) receives errors, quads, and completion
   onQuad: (err, quad) => { console.log(quad); },
   // onPrefix (optional) accepts a listener of type (prefix: string, iri: NamedNode) => void
   onPrefix: (prefix, iri) => { console.log(prefix, 'expands to', iri.value); },
@@ -142,6 +143,38 @@ parser.parse(tomAndJerry, {
   onComment: (comment) => { console.log('#', comment); },
 });
 ```
+
+`onToken(token)` runs immediately before a lexer token is processed, and
+`onTokenEnd(token)` runs immediately afterwards, including when processing throws.
+Both are optional synchronous observers; return values are ignored. For example:
+
+```JavaScript
+const tokens = [];
+const quads = parser.parse('<a> <b> "hello"@en.', {
+  onToken: token => tokens.push(token),
+  onTokenEnd: token => { /* Finish per-token bookkeeping here. */ },
+});
+```
+
+Omitting `onQuad` still returns the quads synchronously. With `onQuad`, the same
+observers work with asynchronous string parsing and streaming input. The token
+is the original lexer object: treat it as read-only. Its `line` is one-based;
+`start` and `end` are zero-based UTF-16 columns, with an exclusive end. A multiline
+token also has `endLine`. Whitespace between tokens is outside their ranges.
+
+Each token is observed once, even when the grammar internally reads it more than
+once. This includes `eof`: the final `onQuad(null, null, prefixes)` notification
+occurs between its `onToken` and `onTokenEnd`. Comments participate only when
+comment tokens are enabled by `onComment` or by a custom lexer's `comments`
+option; their `onComment` notification occurs between the two token observers.
+
+`onTokenEnd` also runs if `onToken` throws. Observer exceptions abort parsing and
+propagate through the call delivering tokens; they are not sent to `onQuad` as
+syntax errors. As with JavaScript `finally`, an exception from `onTokenEnd`
+replaces an exception already in flight. Callbacks must not reenter the parser or
+modify its tokens. Synchronous parsing tokenizes the whole string first, so a
+lexer error produces no token events; streaming can emit events before a later
+lexer error. Callbacks are registered separately for each `parse` call.
 
 If no callbacks are provided, parsing happens synchronously returning an array of quads:
 

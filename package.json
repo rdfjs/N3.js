@@ -58,7 +58,7 @@
     "build:browser:iife": "node scripts/build-browser-bundle.js iife",
     "build:browser:esm": "node scripts/build-browser-bundle.js esm",
     "test": "jest",
-    "lint": "eslint src perf test spec",
+    "lint": "eslint src perf test spec examples/provenance",
     "prepare": "npm run build",
     "spec": "npm run spec-1-1 && npm run spec-1-2",
     "spec-1-1": "npm run spec-1-1-turtle && npm run spec-1-1-ntriples && npm run spec-1-1-nquads && npm run spec-1-1-trig",
