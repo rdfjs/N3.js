@@ -5,8 +5,6 @@ import namespaces from './IRIs';
 const { xsd } = namespaces;
 const SPACE = 0x20, TAB = 0x09, LF = 0x0A, CR = 0x0D, HASH = 0x23;
 
-// Regular expression and replacement strings to unescape N3 strings
-const escapeSequence = /\\u([a-fA-F0-9]{4})|\\U([a-fA-F0-9]{8})|\\([^])/g;
 // Fixed escape sequences allowed in string literals (ECHAR)
 const stringEscapeReplacements = {
   '\\': '\\', "'": "'", '"': '"',
@@ -561,37 +559,48 @@ export default class N3Lexer {
   // ### `_unescape` replaces N3 escape codes by their corresponding characters,
   // allowing only the fixed escape sequences from the given replacement table
   _unescape(item, replacements) {
-    if (item.indexOf('\\') < 0)
+    let backslash = item.indexOf('\\');
+    if (backslash < 0)
       return item;
-    let invalid = false;
-    const replaced = item.replace(escapeSequence, (sequence, unicode4, unicode8, escapedChar) => {
-      // 4-digit unicode character
-      if (typeof unicode4 === 'string') {
-        const charCode = Number.parseInt(unicode4, 16);
-        if (!isValidCodePoint(charCode)) {
-          invalid = true;
-          return '';
+
+    let result = '', start = 0;
+    // A trailing lone backslash is not an escape sequence.
+    while (backslash >= 0 && backslash + 1 < item.length) {
+      const escapedChar = item[backslash + 1];
+      let end = backslash + 2, replacement;
+      if (escapedChar === 'u' || escapedChar === 'U') {
+        end += escapedChar === 'u' ? 4 : 8;
+        if (end > item.length)
+          return null;
+
+        let charCode = 0;
+        for (let i = backslash + 2; i < end; i++) {
+          let digit = item.charCodeAt(i);
+          if (digit >= 0x30 && digit <= 0x39) // 0–9
+            digit -= 0x30;
+          else if (digit >= 0x41 && digit <= 0x46) // A–F
+            digit -= 0x41 - 10;
+          else if (digit >= 0x61 && digit <= 0x66) // a–f
+            digit -= 0x61 - 10;
+          else
+            return null;
+          // Eight digits can exceed a signed 32-bit integer; avoid bitwise shifts.
+          charCode = charCode * 16 + digit;
         }
-        return String.fromCharCode(charCode);
+        if (!isValidCodePoint(charCode))
+          return null;
+        replacement = String.fromCodePoint(charCode);
       }
-      // 8-digit unicode character
-      if (typeof unicode8 === 'string') {
-        let charCode = Number.parseInt(unicode8, 16);
-        if (!isValidCodePoint(charCode)) {
-          invalid = true;
-          return '';
-        }
-        return charCode <= 0xFFFF ? String.fromCharCode(Number.parseInt(unicode8, 16)) :
-          String.fromCharCode(0xD800 + ((charCode -= 0x10000) >> 10), 0xDC00 + (charCode & 0x3FF));
+      else {
+        if (!(escapedChar in replacements))
+          return null;
+        replacement = replacements[escapedChar];
       }
-      // fixed escape sequence
-      if (escapedChar in replacements)
-        return replacements[escapedChar];
-      // invalid escape sequence
-      invalid = true;
-      return '';
-    });
-    return invalid ? null : replaced;
+      result += item.slice(start, backslash) + replacement;
+      start = end;
+      backslash = item.indexOf('\\', start);
+    }
+    return result + item.slice(start);
   }
 
   // ### `_parseLiteral` parses a literal into an unescaped value
