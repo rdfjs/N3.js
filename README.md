@@ -464,6 +464,63 @@ The store provides the following search methods
 - `getGraphs` returns an array of unique graphs occurring in matching quad
 - `forGraphs` executes a callback on unique graphs occurring in matching quads
 
+### Configuring `match()` semantics
+
+The dataset returned by `match()` is also a readable stream. By default, it is
+*lazy*: it delegates live to the parent store until the first operation that
+materializes the view (a mutation, or a materializing read such as `size` or
+`has`), which means parent mutations made before that point are reflected in
+the view. You can choose a different behavior with the `matchSemantics` option,
+either as a store-wide default or per call:
+
+```JavaScript
+import { Store, DataFactory } from 'n3';
+const { namedNode } = DataFactory;
+
+const store = new Store([], { matchSemantics: 'snapshot' });
+const snapshot = store.match(namedNode('s'));
+const forwarded = store.match(namedNode('s'), null, null, null, { matchSemantics: 'forwarded' });
+```
+
+Supported values:
+
+- `'lazy'` (default) — backwards-compatible behavior. The view reflects the
+  parent store until the first operation that materializes it (a mutation, or a
+  materializing read such as `size` or `has`), after which it is frozen to a
+  snapshot. Parent mutations made before that point remain visible in the view.
+- `'snapshot'` — the view reflects the parent contents *at the time of*
+  `match()`. Later parent mutations never affect it. This is the most
+  spec-correct interpretation of an RDF/JS dataset.
+- `'forwarded'` — the view always reflects the parent state: matching parent
+  mutations are forwarded to the view, and mutations on the view (`add`,
+  `delete`, `addAll`, `deleteMatches`, `import`) are written through to the
+  parent. Nested matches remain forwarded to the root, with every ancestor's
+  pattern applied. `add` and `addAll` throw upon encountering a quad outside
+  that combined pattern, while `import` emits an error on its input stream.
+  `delete` ignores a quad outside the pattern, and `deleteMatches` only removes
+  matching quads visible in the view.
+
+A sub-view inherits its parent's `matchSemantics`. The same value can be
+supplied explicitly, but a different value throws. Allowing a sub-view to
+change semantics would make its snapshot, materialization, and write target
+ambiguous across view boundaries; call `match()` on the root store when a
+different behavior is needed.
+
+For `'snapshot'` and `'forwarded'`, an iteration (synchronous or via the
+stream) that is already in progress keeps a stable view of the quads as of when
+it started, even if a matching parent mutation lands mid-iteration. Parent
+mutations only materialize or update a view when they match its pattern.
+Each `toStream()` call has its own iteration. Snapshots used by active
+iterations are released when their last reader finishes.
+
+Such views observe the parent store: a `'snapshot'` view until it materializes,
+is frozen by a matching mutation, or is detached; a `'forwarded'` view until it
+is detached. The store holds a strong reference to each observing view —
+retaining it against garbage collection — and checks every mutation against
+each open view's pattern. Call `view.detach()` to release a view early: it is
+frozen to its contents at detach time and no longer taxes the store. Detaching
+one view does not detach sub-views that were already created from it.
+
 ## Reasoning
 
 N3.js supports reasoning as follows:
