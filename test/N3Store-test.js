@@ -1,6 +1,7 @@
 import { makeRng, pick } from './util';
 import {
   Store,
+  Parser,
   termFromId, termToId,
   EntityIndex,
   DataFactory,
@@ -2013,7 +2014,110 @@ describe('Store', () => {
     ).toBe(true);
 
     it('extractLists throws an error', () => {
-      expect(() => store.extractLists()).toThrow('b4 can\'t be subject and object');
+      expect(() => store.extractLists()).toThrow('b4 has non-list arc http://a.example/foo');
+    });
+
+    it(
+      'extractLists with allowExtraArcs returns no lists and does not delete triples',
+      () => {
+        const size = store.size;
+        expect(listsToJSON(store.extractLists({ allowExtraArcs: true, remove: true }))).toEqual({});
+        expect(store.size).toBe(size);
+      },
+    );
+  });
+
+  // Fixture of https://github.com/rdfjs/N3.js/issues/546
+  describe('A Store containing an rdf:Collection with an extra arc on its head', () => {
+    const ex = 'http://example.org/', foaf = 'http://xmlns.com/foaf/0.1/';
+    const rdfList = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#List';
+    const listDocument = `
+      @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+      @prefix foaf: <${foaf}> .
+      @prefix : <${ex}> .
+
+      :alice foaf:name  "Alice" .
+      :bob   foaf:name  "Bob" .
+      :cal   foaf:knows :1 .
+
+      :1 rdf:first :alice ; rdf:rest :2 .
+      :2 rdf:first :bob   ; rdf:rest rdf:nil .
+
+      :1 a rdf:List .`;
+    const listQuads = [
+      [`${ex}alice`, `${foaf}name`, '"Alice"'],
+      [`${ex}bob`, `${foaf}name`, '"Bob"'],
+      [`${ex}cal`, `${foaf}knows`, `${ex}1`],
+      [`${ex}1`, namespaces.rdf.first, `${ex}alice`],
+      [`${ex}1`, namespaces.rdf.rest, `${ex}2`],
+      [`${ex}2`, namespaces.rdf.first, `${ex}bob`],
+      [`${ex}2`, namespaces.rdf.rest, namespaces.rdf.nil],
+      [`${ex}1`, namespaces.rdf.type, rdfList],
+    ];
+    const listItemsJSON = {
+      [`${ex}1`]: [
+        { termType: 'NamedNode', value: `${ex}alice` },
+        { termType: 'NamedNode', value: `${ex}bob` },
+      ],
+    };
+
+    describe('extractLists without allowExtraArcs', () => {
+      const store = new Store(new Parser().parse(listDocument));
+      it('throws an error naming the extra arc', () => {
+        expect(() => store.extractLists())
+          .toThrow(`${ex}1 has non-list arc ${namespaces.rdf.type}`);
+      });
+    });
+
+    describe('extractLists with ignoreErrors but without allowExtraArcs', () => {
+      const store = new Store(new Parser().parse(listDocument));
+      const lists = store.extractLists({ ignoreErrors: true, remove: true });
+      it('should generate an empty list of Collections', () => {
+        expect(listsToJSON(lists)).toEqual({});
+      });
+      it('should not delete triples', shouldIncludeAll(store.getQuads(), ...listQuads));
+    });
+
+    describe('extractLists with allowExtraArcs without remove', () => {
+      const store = new Store(new Parser().parse(listDocument));
+      const lists = store.extractLists({ allowExtraArcs: true });
+      it('should generate a list of Collections', () => {
+        expect(listsToJSON(lists)).toEqual(listItemsJSON);
+      });
+      it('should not delete triples', shouldIncludeAll(store.getQuads(), ...listQuads));
+    });
+
+    describe('extractLists with allowExtraArcs and remove', () => {
+      const store = new Store(new Parser().parse(listDocument));
+      // Add a second list without extra arcs, which should still be removed
+      store.addQuad(new NamedNode(`${ex}cal`), new NamedNode(`${foaf}knows`), new NamedNode(`${ex}3`));
+      store.addQuad(new NamedNode(`${ex}3`), new NamedNode(namespaces.rdf.first), new NamedNode(`${ex}alice`));
+      store.addQuad(new NamedNode(`${ex}3`), new NamedNode(namespaces.rdf.rest), new NamedNode(namespaces.rdf.nil));
+      const lists = store.extractLists({ allowExtraArcs: true, remove: true });
+      it('should generate a list of Collections with both lists', () => {
+        expect(listsToJSON(lists)).toEqual({
+          ...listItemsJSON,
+          [`${ex}3`]: [{ termType: 'NamedNode', value: `${ex}alice` }],
+        });
+      });
+      it(
+        'should leave the list with extra arcs intact but remove the other list',
+        shouldIncludeAll(store.getQuads(), ...listQuads, [`${ex}cal`, `${foaf}knows`, `${ex}3`]),
+      );
+    });
+
+    describe('extractLists with allowExtraArcs and ignoreErrors', () => {
+      const store = new Store(new Parser().parse(listDocument));
+      // Add a malformed list, which should still disable removal altogether
+      store.addQuad(store.createBlankNode(), new NamedNode(namespaces.rdf.rest), new NamedNode(namespaces.rdf.nil));
+      const size = store.size;
+      const lists = store.extractLists({ allowExtraArcs: true, ignoreErrors: true, remove: true });
+      it('should generate a list of Collections without the malformed list', () => {
+        expect(listsToJSON(lists)).toEqual(listItemsJSON);
+      });
+      it('should not delete triples', () => {
+        expect(store.size).toBe(size);
+      });
     });
   });
 
