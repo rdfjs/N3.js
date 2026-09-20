@@ -414,12 +414,21 @@ for (const quad of store.match(namedNode('http://ex.org/Mickey'), null, null))
   console.log(quad);
 ```
 
-If you are using multiple stores, you can reduce memory consumption by allowing them to share an entity index:
-```JavaScript
-const entityIndex = new N3.EntityIndex();
-const store1 = new N3.Store([], { entityIndex });
-const store2 = new N3.Store([], { entityIndex });
-```
+Stores created by the same N3.js module automatically share numeric entity identifiers.
+They retain separate internal ownership scopes, factories, and blank-node allocation state, while set operations can work directly on their aligned internal keys.
+The shared registry is internal: an identifier is retained while at least one live scope owns it, then incrementally released after those scopes are collected.
+When the final registered scope is collected, the registry resets its tables directly instead of releasing identifiers individually.
+Identifiers increase monotonically until the safe-integer limit, then allocation wraps to ID 2 and scans for the next identifier that is not in use.
+Released identifiers are not retained in a free list; they become allocation candidates only after that wrap.
+Every `EntityIndex` created by that module uses the same registry; the registry cannot be replaced or isolated.
+Separately loaded copies of N3.js retain separate registries so different package versions do not share private encodings.
+
+Operations that enumerate their output, such as `filter` and `map`, create an independent scope containing only the output entities.
+Operations that copy aligned indexes, such as `match`, `intersection`, and `difference`, select a scope based on entity cardinality: sparse and empty results retain only their own entities, while dense results share their source scope to avoid a full extra scan.
+Importing another store likewise retains only entities referenced by the imported graph, rather than everything owned by its scope.
+
+The `EntityIndex` export and `entityIndex` store option remain as compatibility façades, but are deprecated.
+New code should let each `Store` manage its own entity ownership scope.
 
 ### [`Dataset` Interface](https://rdf.js.org/dataset-spec/#dataset-interface)
 This store adheres to the `Dataset` interface which exposes the following properties
