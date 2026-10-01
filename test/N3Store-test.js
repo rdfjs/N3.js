@@ -14,6 +14,7 @@ import {
 import namespaces from '../src/IRIs';
 import { Readable } from 'readable-stream';
 import { arrayifyStream } from 'arrayify-stream';
+import { EventEmitter } from 'events';
 
 const { namedNode, literal, quad } = DataFactory;
 
@@ -1610,14 +1611,49 @@ describe('Store', () => {
           expect([...store]).toEqual(before);
         });
 
-        it('should emit an error when import contains a quad outside the view pattern', async () => {
-          const nonMatching = q('s2', 'p1', 'oI');
-          const stream = new ArrayReader([nonMatching]);
-          const error = new Promise(resolve => stream.on('error', resolve));
-          expect(view.import(stream)).toBe(stream);
-          await expect(error).resolves.toHaveProperty(
-            'message', 'Quad does not match the forwarded view pattern');
-          expect(store.has(nonMatching)).toBe(false);
+        describe('importing a quad outside the view pattern', () => {
+          const message = 'Quad does not match the forwarded view pattern';
+          const before = q('s1', 'p1', 'oBefore'), nonMatching = q('s2', 'p1', 'oI');
+          const after = q('s1', 'p1', 'oAfter'), late = q('s1', 'p1', 'oLate');
+
+          function expectStoppedImport(otherListener) {
+            expect(store.has(before)).toBe(true);
+            expect(store.has(nonMatching)).toBe(false);
+            expect(store.has(after)).toBe(false);
+            expect(store.has(late)).toBe(false);
+            // Only the failed import stops listening
+            expect(otherListener).toHaveBeenLastCalledWith(late);
+          }
+
+          it('should destroy a Readable with the error and stop importing', async () => {
+            const stream = new ArrayReader([before, nonMatching, after]);
+            const error = new Promise(resolve => stream.on('error', resolve));
+            expect(view.import(stream)).toBe(stream);
+            const otherListener = jest.fn();
+            stream.on('data', otherListener);
+
+            await expect(error).resolves.toHaveProperty('message', message);
+            expect(stream.destroyed).toBe(true);
+            stream.emit('data', late);
+            expectStoppedImport(otherListener);
+          });
+
+          it('should emit the error on an RDF/JS stream without destroy() and stop importing', () => {
+            const stream = new EventEmitter();
+            stream.read = () => null;
+            const onError = jest.fn();
+            stream.on('error', onError);
+            expect(view.import(stream)).toBe(stream);
+            const otherListener = jest.fn();
+            stream.on('data', otherListener);
+
+            for (const item of [before, nonMatching, after, late])
+              stream.emit('data', item);
+            expect(onError).toHaveBeenCalledTimes(1);
+            expect(onError.mock.calls[0][0]).toHaveProperty('message', message);
+            expect(otherListener).toHaveBeenCalledTimes(4);
+            expectStoppedImport(otherListener);
+          });
         });
 
         it('should defer materialization of an unread view across parent mutations', () => {

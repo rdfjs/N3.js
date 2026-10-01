@@ -1606,20 +1606,26 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   import(stream) {
-    if (this._semantics === 'forwarded') {
-      const n3Store = this.n3Store;
-      stream.on('data', quad => {
-        try {
-          this._assertMatchesPattern(quad);
-          n3Store.addQuad(quad);
-        }
-        catch (error) {
+    if (this._semantics !== 'forwarded')
+      return this.filtered.import(stream);
+
+    const view = this;
+    function onData(quad) {
+      try {
+        view._assertMatchesPattern(quad);
+        view.n3Store.addQuad(quad);
+      }
+      catch (error) {
+        // Stop this import; RDF/JS streams need not implement destroy()
+        stream.removeListener('data', onData);
+        if (typeof stream.destroy === 'function')
           stream.destroy(error);
-        }
-      });
-      return stream;
+        else
+          stream.emit('error', error);
+      }
     }
-    return this.filtered.import(stream);
+    stream.on('data', onData);
+    return stream;
   }
 
   intersection(other) {

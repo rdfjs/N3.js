@@ -512,8 +512,10 @@ different behavior is needed.
 
 For `'snapshot'` and `'forwarded'`, an iteration (synchronous or via the
 stream) that is already in progress keeps a stable view of the quads as of when
-it started, even if a matching parent mutation lands mid-iteration. Parent
-mutations only materialize or update a view when they match its pattern.
+it started, even if a matching parent mutation lands mid-iteration. Mutating a
+`'snapshot'` view itself or using callback methods such as `forEach`, `some`,
+`every`, `filter`, `map`, and `reduce` does not guarantee a stable traversal.
+Parent mutations only materialize or update a view when they match its pattern.
 Each `toStream()` call has its own iteration. Snapshots used by active
 iterations capture internal term identifiers; RDF terms and quads are only
 constructed as readers consume them. Readers that started before the same change

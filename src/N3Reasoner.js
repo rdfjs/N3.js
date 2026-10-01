@@ -23,10 +23,18 @@ export default class N3Reasoner {
   }
 
   _add(subject, predicate, object, graphItem, c, cb) {
-    // Only add to the remaining indexes if there is not already a value in the index
-    if (!this._store._addToIndex(graphItem.subjects,   subject,   predicate, object)) return;
-    this._store._addToIndex(graphItem.predicates, predicate, object,    subject);
-    this._store._addToIndex(graphItem.objects,    object,    subject,   predicate);
+    const store = this._store;
+    // Observing views must see each derivation before indexing
+    // (stores from other N3 versions have no observers)
+    if (store._observers) {
+      if (!store._addQuad(subject, predicate, object, this._graphId)) return;
+    }
+    else {
+      // Only add to the remaining indexes if there is not already a value in the index
+      if (!store._addToIndex(graphItem.subjects,   subject,   predicate, object)) return;
+      store._addToIndex(graphItem.predicates, predicate, object,    subject);
+      store._addToIndex(graphItem.objects,    object,    subject,   predicate);
+    }
     // Count genuinely new derivations and fail past the budget. The check comes
     // after all three indexes are updated, so a caught error leaves the store
     // in a consistent state (the reasoning result is merely incomplete).
@@ -228,6 +236,8 @@ export default class N3Reasoner {
     const graphs = this._store._getGraphs();
     try {
       for (const graphId in graphs) {
+        // Observers compare numeric graph identifiers
+        this._graphId = Number(graphId);
         this._reasonGraphNaive(rules, graphs[graphId]);
       }
     }
