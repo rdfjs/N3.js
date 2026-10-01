@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // node perf/N3StoreSnapshotRepresentations-perf.js array.cjs index.cjs [rounds] [size]
 // Both bundles must expose the same Store API; only the snapshot helpers differ.
+// The copied-index candidate patch is no longer in the working tree; recover it from Git history:
+// git show 2bdd69a8934b3cc6aa5b47ced4db3893f932a2ab:perf/fixtures/N3Store-index-snapshot.patch
 const assert = require('assert');
 const { execFileSync } = require('child_process');
 const { resolve } = require('path');
