@@ -479,7 +479,7 @@ const forwarded = store.match(namedNode('s'), null, null, null, { matchSemantics
 
 Supported values:
 
-- `'lazy'` (default) — the view reflects the
+- `'lazy'` (default) — the view (return value of `Store#match`) reflects the
   parent store until the first operation that materializes it (a mutation, or a
   materializing read such as `size` or `has`), after which it is frozen to a
   snapshot. Parent mutations made before that point remain visible in the view.
