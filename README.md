@@ -466,12 +466,7 @@ The store provides the following search methods
 
 ### Configuring `match()` semantics
 
-The dataset returned by `match()` is also a readable stream. By default, it is
-*lazy*: it delegates live to the parent store until the first operation that
-materializes the view (a mutation, or a materializing read such as `size` or
-`has`), which means parent mutations made before that point are reflected in
-the view. You can choose a different behavior with the `matchSemantics` option,
-either as a store-wide default or per call:
+The behaviour of `match()` can be configured as a store-wide default or per-call as follows:
 
 ```JavaScript
 import { Store, DataFactory } from 'n3';
@@ -484,59 +479,23 @@ const forwarded = store.match(namedNode('s'), null, null, null, { matchSemantics
 
 Supported values:
 
-- `'lazy'` (default) — backwards-compatible behavior. The view reflects the
+- `'lazy'` (default) the view reflects the
   parent store until the first operation that materializes it (a mutation, or a
   materializing read such as `size` or `has`), after which it is frozen to a
   snapshot. Parent mutations made before that point remain visible in the view.
   In the next major version, only mutating operations will materialize a lazy
-  view; reads such as `size` and `has` will leave it live.
+  view.
 - `'snapshot'` — the view reflects the parent contents *at the time of*
   `match()`. Later parent mutations never affect it. This is the most
   spec-correct interpretation of an RDF/JS dataset and will become the default
   in the next major version.
-- `'forwarded'` — the view always reflects the parent state: matching parent
-  mutations are forwarded to the view, and mutations on the view (`add`,
-  `delete`, `addAll`, `deleteMatches`, `import`) are written through to the
-  parent. Nested matches remain forwarded to the root, with every ancestor's
-  pattern applied. `add`, `addAll`, and `delete` throw upon encountering a quad
-  outside that combined pattern, while `import` emits an error on its input stream.
-  `deleteMatches` throws if its pattern conflicts with the view, and otherwise
-  only removes matching quads visible in the view; omitted terms are wildcards.
-  Deletions from a view with conflicting ancestor patterns also throw.
+- `'forwarded'` — the view always reflects the parent state, and mutations to the view are written through to the parent. Attempts to mutate on the view which do not match the views `#match` pattern result in an error.
 
-A sub-view inherits its parent's `matchSemantics`. The same value can be
-supplied explicitly, but a different value throws. Allowing a sub-view to
-change semantics would make its snapshot, materialization, and write target
-ambiguous across view boundaries; call `match()` on the root store when a
-different behavior is needed.
+A sub-view inherits its parent's `matchSemantics`.
 
 For `'snapshot'` and `'forwarded'`, an iteration (synchronous or via the
-stream) that is already in progress keeps a stable view of the quads as of when
-it started, even if a matching parent mutation lands mid-iteration. Mutating a
-`'snapshot'` view itself or using callback methods such as `forEach`, `some`,
-`every`, `filter`, `map`, and `reduce` does not guarantee a stable traversal.
-Parent mutations only materialize or update a view when they match its pattern.
-Each `toStream()` call has its own iteration. Snapshots used by active
-iterations capture internal term identifiers; RDF terms and quads are only
-constructed as readers consume them. Readers that started before the same change
-share one snapshot. The snapshot is released when those readers finish or are
-garbage-collected, even if the view itself is kept alive.
+stream) that is already in progress keeps a stable view of the quads as of when it started.
 
-Such views observe the parent store: a `'snapshot'` view until it materializes,
-is frozen by a matching mutation, or is detached; a `'forwarded'` view until it
-is detached. Observers hold views weakly, so discarding a view allows it to be
-garbage-collected without explicit cleanup, including views created by internal
-library calls. Finalization removes the dead registration, and mutations also
-prune collected views if finalization has not run yet. Cleanup timing depends on
-the JavaScript runtime; live views and active readers retain their semantics.
-Internal cleanup can use `view._detach()` to freeze a view to its current contents
-and release its observer immediately. This is an internal method, not part of the
-public API. Detaching one view does not detach sub-views already created from it.
-
-The `'snapshot'` and `'forwarded'` modes require native `WeakRef` and
-`FinalizationRegistry` support (Node.js 14.6 or later, or a browser with these
-APIs). Selecting either mode on an unsupported runtime throws; the default
-`'lazy'` mode does not require these APIs.
 
 ## Reasoning
 
