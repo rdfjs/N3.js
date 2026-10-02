@@ -464,6 +464,39 @@ The store provides the following search methods
 - `getGraphs` returns an array of unique graphs occurring in matching quad
 - `forGraphs` executes a callback on unique graphs occurring in matching quads
 
+### Configuring `match()` semantics
+
+The behaviour of `match()` can be configured as a store-wide default or per-call as follows:
+
+```JavaScript
+import { Store, DataFactory } from 'n3';
+const { namedNode } = DataFactory;
+
+const store = new Store([], { matchSemantics: 'snapshot' });
+const snapshot = store.match(namedNode('s'));
+const forwarded = store.match(namedNode('s'), null, null, null, { matchSemantics: 'forwarded' });
+```
+
+Supported values:
+
+- `'lazy'` (default) — the view (return value of `Store#match`) reflects the
+  parent store until the first operation that materializes it (a mutation, or a
+  materializing read such as `size` or `has`), after which it is frozen to a
+  snapshot. Parent mutations made before that point remain visible in the view.
+  In the next major version, only mutating operations will materialize a lazy
+  view.
+- `'snapshot'` — the view reflects the parent contents *at the time of*
+  `match()`. Later parent mutations never affect it. This is the most
+  spec-correct interpretation of an RDF/JS dataset and will become the default
+  in the next major version.
+- `'forwarded'` — the view always reflects the parent state, and mutations to the view are written through to the parent. Attempts to mutate on the view which do not match the views `#match` pattern result in an error.
+
+A sub-view inherits its parent's `matchSemantics`.
+
+For `'snapshot'` and `'forwarded'`, an iteration (synchronous or via the
+stream) that is already in progress keeps a stable view of the quads as of when it started.
+
+
 ## Reasoning
 
 N3.js supports reasoning as follows:
