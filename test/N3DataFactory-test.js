@@ -85,18 +85,11 @@ describe('DataFactory', () => {
       expect(DataFactory.literal(1e30)).toEqual(new Literal('"1e+30"^^http://www.w3.org/2001/XMLSchema#double'));
     });
 
-    it('converts an integer-valued number beyond Number.MAX_SAFE_INTEGER to xsd:double', () => {
-      // 2**53 + 1 is not representable and silently becomes 2**53, so an
-      // xsd:integer tag would assert an exact integer value that was never given
-      expect(DataFactory.literal(2 ** 53 + 1)).toEqual(new Literal('"9007199254740992"^^http://www.w3.org/2001/XMLSchema#double'));
-      expect(DataFactory.literal(2 ** 53)).toEqual(new Literal('"9007199254740992"^^http://www.w3.org/2001/XMLSchema#double'));
-      expect(DataFactory.literal(-(2 ** 53))).toEqual(new Literal('"-9007199254740992"^^http://www.w3.org/2001/XMLSchema#double'));
-      expect(DataFactory.literal(1e20)).toEqual(new Literal('"100000000000000000000"^^http://www.w3.org/2001/XMLSchema#double'));
-    });
-
-    it('converts Number.MAX_SAFE_INTEGER and its negation to xsd:integer', () => {
-      expect(DataFactory.literal(2 ** 53 - 1)).toEqual(new Literal('"9007199254740991"^^http://www.w3.org/2001/XMLSchema#integer'));
-      expect(DataFactory.literal(-(2 ** 53 - 1))).toEqual(new Literal('"-9007199254740991"^^http://www.w3.org/2001/XMLSchema#integer'));
+    it('converts integer-valued numbers below 1e21 to xsd:integer', () => {
+      expect(DataFactory.literal(2 ** 53)).toEqual(new Literal('"9007199254740992"^^http://www.w3.org/2001/XMLSchema#integer'));
+      expect(DataFactory.literal(-(2 ** 53))).toEqual(new Literal('"-9007199254740992"^^http://www.w3.org/2001/XMLSchema#integer'));
+      expect(DataFactory.literal(1e20)).toEqual(new Literal('"100000000000000000000"^^http://www.w3.org/2001/XMLSchema#integer'));
+      expect(DataFactory.literal(999999999999999900000)).toEqual(new Literal('"999999999999999900000"^^http://www.w3.org/2001/XMLSchema#integer'));
     });
 
     it('converts Infinity', () => {

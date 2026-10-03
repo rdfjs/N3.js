@@ -389,13 +389,10 @@ function literal(value, languageOrDataType) {
     // Convert an integer or double
     else if (typeof value === 'number') {
       if (Number.isFinite(value))
-        // Tag as xsd:integer only when the number provably denotes that exact
-        // integer. Beyond 2^53, a JS number can no longer represent every
-        // integer (9007199254740993 silently becomes ...992), and from 1e21
-        // upward its string form turns exponential ("1e+21"), which is not a
-        // valid xsd:integer lexical. In both cases xsd:double, the datatype
-        // matching the IEEE 754 value space, is the faithful typing.
-        datatype = Number.isSafeInteger(value) ? xsd.integer : xsd.double;
+        // From 1e21 upward, a number's string form turns exponential ("1e+21"),
+        // which is not a valid xsd:integer lexical, so type it as xsd:double
+        // (the same cut-off as JSON-LD 1.1's Object to RDF Conversion)
+        datatype = Number.isInteger(value) && Math.abs(value) < 1e21 ? xsd.integer : xsd.double;
       else {
         datatype = xsd.double;
         if (!Number.isNaN(value))
