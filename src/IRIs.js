@@ -6,6 +6,7 @@ export default {
   xsd: {
     decimal: `${XSD}decimal`,
     boolean: `${XSD}boolean`,
+    dateTime: `${XSD}dateTime`,
     double:  `${XSD}double`,
     integer: `${XSD}integer`,
     string:  `${XSD}string`,

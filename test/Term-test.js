@@ -179,7 +179,7 @@ describe('Term', () => {
       },
     );
 
-    it('should create a Quad correctly', () => {
+    it('should create a Quad correctly with an implicit default graph', () => {
       const id = '["http://ex.org/a", "http://ex.org/b", "http://ex.org/c"]';
       expect(termFromId(id)).toEqual(new Quad(
         new NamedNode('http://ex.org/a'),
@@ -189,7 +189,7 @@ describe('Term', () => {
       ));
     });
 
-    it('should create a Quad correctly', () => {
+    it('should create a Quad correctly with a blank node graph', () => {
       const id = '["_:n3-123", "?var-a", "?var-b", "_:n3-000"]';
       expect(termFromId(id)).toEqual(new Quad(
         new BlankNode('n3-123'),
@@ -199,7 +199,7 @@ describe('Term', () => {
       ));
     });
 
-    it('should create a Quad correctly', () => {
+    it('should create a Quad correctly with a literal object', () => {
       const id = '["?var-a", "?var-b", "\\"abc\\"@en-us", "?var-d"]';
       expect(termFromId(id)).toEqual(new Quad(
         new Variable('var-a'),
@@ -209,7 +209,7 @@ describe('Term', () => {
       ));
     });
 
-    it('should create a Quad correctly', () => {
+    it('should create a Quad correctly with a named node graph', () => {
       const id = '["_:n3-000", "?var-b", "_:n3-123", "http://ex.org/d"]';
       expect(termFromId(id)).toEqual(new Quad(
         new BlankNode('n3-000'),
@@ -233,7 +233,7 @@ describe('Term', () => {
     );
 
     it(
-      'should create a Quad correctly from literal containing escaped quotes',
+      'should round-trip a Quad with a subject literal containing escaped quotes',
       () => {
         const q = new Quad(
           new Literal('"Hello "W"orl"d!"@en-us'),

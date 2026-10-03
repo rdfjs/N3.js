@@ -5,8 +5,7 @@ import N3Parser from './N3Parser';
 // ## Constructor
 export default class N3StreamParser extends Transform {
   constructor(options) {
-    super({ decodeStrings: true });
-    this._readableState.objectMode = true;
+    super({ decodeStrings: true, readableObjectMode: true });
 
     // Set up parser with dummy stream to obtain `data` and `end` callbacks
     const parser = new N3Parser(options);
@@ -38,9 +37,13 @@ export default class N3StreamParser extends Transform {
 
   // ### Parses a stream of strings
   import(stream) {
-    stream.on('data',  chunk => { this.write(chunk); });
-    stream.on('end',   ()      => { this.end(); });
     stream.on('error', error => { this.emit('error', error); });
+    if (typeof stream.pipe === 'function')
+      stream.pipe(this);
+    else {
+      stream.on('data', chunk => { this.write(chunk); });
+      stream.on('end',  ()    => { this.end(); });
+    }
     return this;
   }
 }

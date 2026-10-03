@@ -500,7 +500,7 @@ describe('Literal', () => {
     });
   });
 
-  describe('A Literal instance created from a string without language or datatype', () => {
+  describe('A Literal instance created from a string with a language', () => {
     let literal;
     beforeAll(() => { literal = new Literal('"my @^^ string"@en-us'); });
 
