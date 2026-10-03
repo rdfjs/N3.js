@@ -316,7 +316,6 @@ export default [
         ],
       }],
 
-      'jest/no-standalone-expect': 0,
       'jest/no-done-callback': 0,
 
       'max-nested-callbacks': 0, // Mocha works with deeply nested callbacks
