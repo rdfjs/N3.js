@@ -3156,7 +3156,7 @@ describe('Parser', () => {
     );
 
     // The tests below pin the default behaviour of rescoping blank node
-    // labels in lists and blank node property lists (#332);
+    // labels in lists and blank node property lists (#332, #660);
     // the default flips to `formulaScopedBlankNodes` in a next major version (#630)
 
     it(
@@ -3216,6 +3216,19 @@ describe('Parser', () => {
       shouldParse(parserFormulaScoped, '_:a <p> [ <q> _:a ].',
                   ['_:b0_a', 'p', '_:b0'],
                   ['_:b0', 'q', '_:b0_a']),
+    );
+
+    it(
+      'should reuse identifiers of blank nodes in nested lists and blank node property lists with formulaScopedBlankNodes (#660)',
+      shouldParse(parserFormulaScoped, '_:a <p> ([ <q> _:a ] (_:a)).',
+                  ['_:b0_a', 'p', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+                  ['_:b1', 'q', '_:b0_a'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b0_a'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
     );
 
     it(
