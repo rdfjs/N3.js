@@ -421,6 +421,78 @@ describe('Lexer', () => {
                      { type: 'eof', line: 1 }),
     );
 
+    it.each([
+      [String.raw`\u0000\uD7FF\uE000\uFfFf`, '\0\uD7FF\uE000\uFFFF'],
+      [String.raw`\U0000D7FF\U0000E000\U0010FfFf`, '\uD7FF\uE000\u{10FFFF}'],
+      [String.raw`\u0061f\U000000622`, 'afb2'],
+      [String.raw`\n\u0061\\\U0001F600`, '\na\\😀'],
+      [String.raw`\\u0061\\U0001F600`, String.raw`\u0061\U0001F600`],
+    ])('decodes adjacent escapes in %s exactly once', (raw, value) => {
+      expect(new Lexer().tokenize(`"${raw}" `)[0].value).toBe(value);
+    });
+
+    it.each([
+      '\\u', '\\u0', '\\u123', '\\U', '\\U0000000',
+      '\\UFFFFFFFF', '\\U80000000', '\\u-001', '\\u+001',
+      '\\u 001', '\\u0x41', '\\u00é1',
+    ])('rejects incomplete or invalid Unicode escape %s', raw => {
+      expect(() => new Lexer().tokenize(`"${raw}" `)).toThrow();
+    });
+
+    it.each([['u', 4], ['U', 8]])('validates every hex digit of a \\%s escape', (kind, length) => {
+      for (let position = 0; position < length; position++) {
+        for (const invalid of ['/', ':', '@', 'G', '`', 'g']) {
+          const raw = `\\${kind}${'0'.repeat(position)}${invalid}${'0'.repeat(length - position - 1)}`;
+          expect(() => new Lexer().tokenize(`"${raw}" `)).toThrow();
+        }
+      }
+    });
+
+    it.each([
+      String.raw`"\n\u0061\\\U0001F600" <urn:after>`,
+      String.raw`'\t\U00000061\u0062' <urn:after>`,
+      '"""first\n\\u0061\\U0001F600""" <urn:after>',
+      String.raw`<urn:\u0061\U0001F600> <urn:after>`,
+      String.raw`ex:a\~\#\%b <urn:after>`,
+    ])('decodes escapes at every stream split in %s', input => {
+      function fields({ type, value, prefix, line }) { return { type, value, prefix, line }; }
+      const expected = new Lexer().tokenize(input).map(fields);
+      for (let split = 0; split <= input.length; split++) {
+        const stream = new EventEmitter(), tokens = [];
+        new Lexer().tokenize(stream, (error, token) => {
+          expect(error).toBeNull();
+          tokens.push(fields(token));
+        });
+        stream.emit('data', input.slice(0, split));
+        stream.emit('data', input.slice(split));
+        stream.emit('end');
+        expect(tokens).toEqual(expected);
+      }
+    });
+
+    it.each([String.raw`\u12g4`, String.raw`\U0000000g`, String.raw`\UFFFFFFFF`])(
+      'rejects malformed escape %s at every stream split', raw => {
+        const input = `"${raw}" `;
+        for (let split = 0; split <= input.length; split++) {
+          const stream = new EventEmitter(), errors = [];
+          new Lexer().tokenize(stream, error => {
+            if (error)
+              errors.push(error.message);
+          });
+          stream.emit('data', input.slice(0, split));
+          stream.emit('data', input.slice(split));
+          stream.emit('end');
+          expect(errors).toEqual([`Unexpected ""${raw}"" on line 1.`]);
+        }
+      },
+    );
+
+    it.each([
+      ['plain', 'plain'], ['trailing\\', 'trailing\\'], ['\\ntrailing\\', '\ntrailing\\'],
+    ])('leaves non-escape text intact when unescaping %s', (input, expected) => {
+      expect(new Lexer()._unescape(input, { n: '\n' })).toBe(expected);
+    });
+
     it(
       'should not tokenize a string with invalid characters',
       shouldNotTokenize('"\\uXYZX" ',
