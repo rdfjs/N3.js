@@ -4,6 +4,8 @@ on:
   push:
     branches:
     - main
+    # Breaking changes for the next major; releases alphas. See RELEASING.md.
+    - next-major
   pull_request:
   merge_group:
     types: [checks_requested]
@@ -186,7 +188,9 @@ jobs:
           publish_dir: .
 
   release:
-    if: ${{ github.ref == 'refs/heads/main' }}
+    # main publishes to `latest`; next-major publishes prereleases to `alpha`
+    # (branch config in package.json "release").
+    if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/next-major' }}
     needs: [ audit, test, spec ]
     runs-on: ubuntu-latest
     # Never run two release/publish jobs concurrently.
@@ -211,4 +215,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           # Emit npm build provenance (SLSA) via the workflow's id-token.
           NPM_CONFIG_PROVENANCE: true
-        run: npx semantic-release@25
+        # The conventionalcommits preset reads `feat!:` squash titles as
+        # breaking; the default angular preset only sees BREAKING CHANGE footers.
+        run: npx -p semantic-release@25 -p conventional-changelog-conventionalcommits@10 semantic-release
