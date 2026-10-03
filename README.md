@@ -79,7 +79,11 @@ console.log(myQuad.object.language);       // en
 ```
 
 When no language or datatype is supplied, `literal` automatically assigns XSD datatypes
-to JavaScript booleans, numbers, and valid `Date` objects. Dates are converted to UTC
+to JavaScript booleans, numbers, BigInts, and valid `Date` objects.
+Integer-valued numbers below 1e21 and all BigInts become `xsd:integer`,
+so use a BigInt when an integer must stay exact beyond `Number.MAX_SAFE_INTEGER`;
+other numbers become `xsd:double`.
+Dates are converted to UTC
 using `Date.prototype.toISOString()` and receive the `xsd:dateTime` datatype:
 
 ```JavaScript
