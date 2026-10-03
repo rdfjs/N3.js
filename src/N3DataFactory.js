@@ -8,6 +8,8 @@ const { rdf, xsd } = namespaces;
 // eslint-disable-next-line prefer-const
 let DEFAULTGRAPH;
 let _blankNodeCounter = 0;
+// The ID of the empty IRI, which cannot be '' as that is the ID of the default graph
+const EMPTY_IRI_ID = '<>';
 
 const escapedLiteral = /^"(.*".*)(?="[^"]*$)/;
 
@@ -72,7 +74,13 @@ export class NamedNode extends Term {
    * the constructor assumes an already-validated IRI.
    */
   constructor(iri) {
-    super(iri);
+    if (iri !== '')
+      super(iri);
+    // The empty IRI gets a distinct ID, since '' is the ID of the default graph
+    else {
+      super(EMPTY_IRI_ID);
+      Object.defineProperty(this, 'value', { value: '' });
+    }
   }
 
   // ### The term type of this term
@@ -285,6 +293,10 @@ export function termFromId(id, factory, nested) {
   case '[':
     id = JSON.parse(id);
     break;
+  case '<':
+    if (id === EMPTY_IRI_ID)
+      return factory.namedNode('');
+    // falls through
   default:
     if (!nested || !Array.isArray(id)) {
       return factory.namedNode(id);
@@ -313,7 +325,10 @@ export function termToId(term, nested) {
 
   // Term instantiated with another library
   switch (term.termType) {
-  case 'NamedNode':    return term.value;
+  case 'NamedNode': {
+    const iri = term.value;
+    return iri !== '' ? iri : EMPTY_IRI_ID;
+  }
   case 'BlankNode':    return `_:${term.value}`;
   case 'Variable':     return `?${term.value}`;
   case 'DefaultGraph': return '';

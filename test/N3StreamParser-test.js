@@ -106,13 +106,13 @@ describe('StreamParser', () => {
 
     it(
       'should parse non-breaking spaces that are split across chunks in the stream correctly',
-      done => {
+      () => new Promise((resolve, reject) => {
         const buffer = Buffer.from('<sub> <pred> " " .'),
             chunks = [buffer, buffer.slice(0, 15), buffer.slice(15, buffer.length)];
         shouldParse(chunks, 2, triples => {
           expect(triples[0]).toEqual(triples[1]);
-        })(done);
-      },
+        })(error => error ? reject(error) : resolve());
+      }),
     );
 
     it(

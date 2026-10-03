@@ -2,6 +2,7 @@ import { makeRng, pick } from './util';
 import {
   Store,
   Parser,
+  Writer,
   termFromId, termToId,
   EntityIndex,
   DataFactory,
@@ -42,40 +43,40 @@ describe('Store', () => {
     });
 
     describe('when removing a stream of 2 quads', () => {
-      beforeAll(done => {
+      beforeAll(() => new Promise(resolve => {
         const stream = new ArrayReader([
           new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
           new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
         ]);
         const events = store.remove(stream);
-        events.on('end', done);
-      });
+        events.on('end', resolve);
+      }));
 
       it('should have size 0', () => { expect(store.size).toEqual(0); });
     });
 
     describe('when importing a stream of 2 nested quads', () => {
-      beforeAll(done => {
+      beforeAll(() => new Promise(resolve => {
         const stream = new ArrayReader([
           new Quad(new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')), new NamedNode('p2'), new NamedNode('o2')),
           new Quad(new NamedNode('s1'), new NamedNode('p1'), new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2'))),
         ]);
         const events = store.import(stream);
-        events.on('end', done);
-      });
+        events.on('end', resolve);
+      }));
 
       it('should have size 2', () => { expect(store.size).toEqual(2); });
     });
 
     describe('when removing a stream of 2 nested quads', () => {
-      beforeAll(done => {
+      beforeAll(() => new Promise(resolve => {
         const stream = new ArrayReader([
           new Quad(new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')), new NamedNode('p2'), new NamedNode('o2')),
           new Quad(new NamedNode('s1'), new NamedNode('p1'), new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2'))),
         ]);
         const events = store.remove(stream);
-        events.on('end', done);
-      });
+        events.on('end', resolve);
+      }));
 
       it('should have size 0', () => { expect(store.size).toEqual(0); });
     });
@@ -350,25 +351,21 @@ describe('Store', () => {
       expect(store.size).toEqual(4);
     });
 
-    it('should match RDF-star and normal quads at the same time', done => {
+    it('should match RDF-star and normal quads at the same time', async () => {
       const stream = store.removeMatches(null, 'p1', 'o2');
-      stream.on('end', () => {
-        expect(store.size).toEqual(2);
-        done();
-      });
+      await new Promise(resolve => stream.on('end', resolve));
+      expect(store.size).toEqual(2);
     });
 
-    it('should allow matching using a quad', done => {
+    it('should allow matching using a quad', async () => {
       const stream = store.removeMatches(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')));
-      stream.on('end', () => {
-        expect(store.size).toEqual(0);
-        done();
-      });
+      await new Promise(resolve => stream.on('end', resolve));
+      expect(store.size).toEqual(0);
     });
 
     it(
       'should allow matching using a quad and only match against relevant quads',
-      done => {
+      async () => {
         const s2 = new Store([
           ...allQuads,
           new Quad(
@@ -378,10 +375,8 @@ describe('Store', () => {
         ]);
 
         const stream = s2.removeMatches(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')));
-        stream.on('end', () => {
-          expect(s2.size).toEqual(2);
-          done();
-        });
+        await new Promise(resolve => stream.on('end', resolve));
+        expect(s2.size).toEqual(2);
       },
     );
   });
@@ -430,15 +425,25 @@ describe('Store', () => {
 
   describe('A Store with 7 elements', () => {
     const store = new Store();
-    expect(store.addQuad('s1', 'p1', 'o1')).toBe(true);
-    expect(store.addQuad({ subject: 's1', predicate: 'p1', object: 'o2' })).toBe(true);
+    const addedPositional = store.addQuad('s1', 'p1', 'o1');
+    const addedObject = store.addQuad({ subject: 's1', predicate: 'p1', object: 'o2' });
     store.addQuads([
       { subject: 's1', predicate: 'p2', object: 'o2' },
       { subject: 's2', predicate: 'p1', object: 'o1' },
     ]);
-    expect(store.addQuad('s1', 'p1', 'o1', 'c4')).toBe(true);
+    const addedWithGraph = store.addQuad('s1', 'p1', 'o1', 'c4');
     store.addQuad(new Quad('s2', 'p2', 'o2'), 'p1', 'o3');
-    expect(store.add(new Quad('s2', 'p2', 'o2'))).toBe(store);
+    const addResult = store.add(new Quad('s2', 'p2', 'o2'));
+
+    it('should return true when adding new quads', () => {
+      expect(addedPositional).toBe(true);
+      expect(addedObject).toBe(true);
+      expect(addedWithGraph).toBe(true);
+    });
+
+    it('should return the store from add', () => {
+      expect(addResult).toBe(store);
+    });
 
     it('should have size 7', () => {
       expect(store.size).toEqual(7);
@@ -1558,13 +1563,11 @@ describe('Store', () => {
           expect(store.has(first)).toBe(false);
         });
 
-        it('should write import() through to the parent', done => {
+        it('should write import() through to the parent', async () => {
           const events = view.import(new ArrayReader([q('s1', 'p1', 'oI')]));
-          events.on('end', () => {
-            expect(store.has(q('s1', 'p1', 'oI'))).toBe(true);
-            expect(view.has(q('s1', 'p1', 'oI'))).toBe(true);
-            done();
-          });
+          await new Promise(resolve => events.on('end', resolve));
+          expect(store.has(q('s1', 'p1', 'oI'))).toBe(true);
+          expect(view.has(q('s1', 'p1', 'oI'))).toBe(true);
         });
 
         it('should reject additions outside the view pattern', () => {
@@ -1900,7 +1903,7 @@ describe('Store', () => {
           expect([...view]).toHaveLength(1);
         });
 
-        it('should release iteration state when its stream is destroyed mid-read', done => {
+        it('should release iteration state when its stream is destroyed mid-read', async () => {
           store = new Store();
           for (let i = 0; i < 20; i++)
             store.addQuad(q('s1', 'p1', `o${i}`));
@@ -1908,24 +1911,22 @@ describe('Store', () => {
           expect(view.read()).not.toBeNull();
           const readers = view._readers;
           expect(readers.count).toBe(1);
-          view.once('close', () => {
-            expect(readers.count).toBe(0);
-            expect(view._readers).toBe(null);
-            store.addQuad(q('s1', 'p1', 'oNEW'));
-            const seen = valuesWithMutationAfterFirstQuad(view,
-              () => store.addQuad(q('s1', 'p1', 'oNEW2')));
-            expect(seen).toHaveLength(21);
-            done();
-          });
+          const closed = new Promise(resolve => view.once('close', resolve));
           view.destroy();
+          await closed;
+          expect(readers.count).toBe(0);
+          expect(view._readers).toBe(null);
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          const seen = valuesWithMutationAfterFirstQuad(view,
+            () => store.addQuad(q('s1', 'p1', 'oNEW2')));
+          expect(seen).toHaveLength(21);
         });
 
-        it('should support destroying its stream before any read', done => {
-          view.once('close', () => {
-            expect(view.size).toBe(5);
-            done();
-          });
+        it('should support destroying its stream before any read', async () => {
+          const closed = new Promise(resolve => view.once('close', resolve));
           view.destroy();
+          await closed;
+          expect(view.size).toBe(5);
         });
 
         it('should keep concurrent iterations stable', () => {
@@ -2757,108 +2758,102 @@ describe('Store', () => {
     });
 
     describe('when trying to remove a triple with a non-existing subject', () => {
-      beforeAll(
-        () => {
-          expect(
-          store.removeQuad(new NamedNode('s0'), new NamedNode('p1'), new NamedNode('o1')),
-        ).toBe(false);
-        },
-      );
+      let removed;
+      beforeAll(() => {
+        removed = store.removeQuad(new NamedNode('s0'), new NamedNode('p1'), new NamedNode('o1'));
+      });
+
+      it('should return false when removing', () => { expect(removed).toBe(false); });
       it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
 
     describe('when trying to remove a triple with a non-existing predicate', () => {
-      beforeAll(
-        () => {
-          expect(
-          store.removeQuad(new NamedNode('s1'), new NamedNode('p0'), new NamedNode('o1')),
-        ).toBe(false);
-        },
-      );
+      let removed;
+      beforeAll(() => {
+        removed = store.removeQuad(new NamedNode('s1'), new NamedNode('p0'), new NamedNode('o1'));
+      });
+
+      it('should return false when removing', () => { expect(removed).toBe(false); });
       it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
 
     describe('when trying to remove a triple with a non-existing object', () => {
-      beforeAll(
-        () => {
-          expect(
-          store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o0')),
-        ).toBe(false);
-        },
-      );
+      let removed;
+      beforeAll(() => {
+        removed = store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o0'));
+      });
+
+      it('should return false when removing', () => { expect(removed).toBe(false); });
       it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
 
     describe('when trying to remove a triple for which no subjects exist', () => {
-      beforeAll(
-        () => {
-          expect(
-          store.removeQuad(new NamedNode('o1'), new NamedNode('p1'), new NamedNode('o1')),
-        ).toBe(false);
-        },
-      );
+      let removed;
+      beforeAll(() => {
+        removed = store.removeQuad(new NamedNode('o1'), new NamedNode('p1'), new NamedNode('o1'));
+      });
+
+      it('should return false when removing', () => { expect(removed).toBe(false); });
       it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
 
     describe('when trying to remove a triple for which no predicates exist', () => {
-      beforeAll(
-        () => {
-          expect(
-          store.removeQuad(new NamedNode('s1'), new NamedNode('s1'), new NamedNode('o1')),
-        ).toBe(false);
-        },
-      );
+      let removed;
+      beforeAll(() => {
+        removed = store.removeQuad(new NamedNode('s1'), new NamedNode('s1'), new NamedNode('o1'));
+      });
+
+      it('should return false when removing', () => { expect(removed).toBe(false); });
       it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
 
     describe('when trying to remove a triple for which no objects exist', () => {
-      beforeAll(
-        () => {
-          expect(
-          store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('s1')),
-        ).toBe(false);
-        },
-      );
+      let removed;
+      beforeAll(() => {
+        removed = store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('s1'));
+      });
+
+      it('should return false when removing', () => { expect(removed).toBe(false); });
       it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
 
     describe('when trying to remove a triple that does not exist', () => {
-      beforeAll(
-        () => {
-          expect(
-          store.removeQuad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o1')),
-        ).toBe(false);
-        },
-      );
+      let removed;
+      beforeAll(() => {
+        removed = store.removeQuad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o1'));
+      });
+
+      it('should return false when removing', () => { expect(removed).toBe(false); });
       it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
 
     describe('when trying to remove an incomplete triple', () => {
-      beforeAll(
-        () => { expect(store.removeQuad(new NamedNode('s1'), null, null)).toBe(false); },
-      );
+      let removed;
+      beforeAll(() => {
+        removed = store.removeQuad(new NamedNode('s1'), null, null);
+      });
+
+      it('should return false when removing', () => { expect(removed).toBe(false); });
       it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
 
     describe('when trying to remove a triple with a non-existing graph', () => {
-      beforeAll(
-        () => {
-          expect(
-          store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c0')),
-        ).toBe(false);
-        },
-      );
+      let removed;
+      beforeAll(() => {
+        removed = store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c0'));
+      });
+
+      it('should return false when removing', () => { expect(removed).toBe(false); });
       it('should still have size 7', () => { expect(store.size).toEqual(7); });
     });
 
     describe('when removing an existing triple', () => {
-      beforeAll(
-        () => {
-          expect(
-          store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
-        ).toBe(true);
-        },
-      );
+      let removed;
+      beforeAll(() => {
+        removed = store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'));
+      });
+
+      it('should return true when removing', () => { expect(removed).toBe(true); });
 
       it('should have size 6', () => { expect(store.size).toEqual(6); });
 
@@ -2875,13 +2870,12 @@ describe('Store', () => {
     });
 
     describe('when removing an existing triple from a named graph', () => {
-      beforeAll(
-        () => {
-          expect(
-          store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c4')),
-        ).toBe(true);
-        },
-      );
+      let removed;
+      beforeAll(() => {
+        removed = store.removeQuad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'), new NamedNode('c4'));
+      });
+
+      it('should return true when removing', () => { expect(removed).toBe(true); });
 
       it('should have size 5', () => { expect(store.size).toEqual(5); });
 
@@ -2908,12 +2902,15 @@ describe('Store', () => {
     });
 
     describe('when adding and removing a triple', () => {
+      let added, removed;
       beforeAll(() => {
-        expect(store.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))).toBe(true);
-        expect(
-          store.removeQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')),
-        ).toBe(true);
+        added = store.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'));
+        removed = store.removeQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'));
       });
+
+      it('should return true when adding', () => { expect(added).toBe(true); });
+
+      it('should return true when removing', () => { expect(removed).toBe(true); });
 
       it('should have an unchanged size', () => { expect(store.size).toEqual(3); });
     });
@@ -3002,7 +2999,11 @@ describe('Store', () => {
   describe('A Store containing a blank node', () => {
     const store = new Store();
     const b1 = store.createBlankNode();
-    expect(store.addQuad(new NamedNode('s1'), new NamedNode('p1'), b1)).toBe(true);
+    const added = store.addQuad(new NamedNode('s1'), new NamedNode('p1'), b1);
+
+    it('should return true when adding the quad', () => {
+      expect(added).toBe(true);
+    });
 
     describe('when searched with more than one variable', () => {
       it(
@@ -3023,7 +3024,7 @@ describe('Store', () => {
 
   describe('A Store with a custom DataFactory', () => {
     const factory = {};
-    let store;
+    let store, addedPositional, addedObject, addedWithGraph;
     beforeAll(() => {
       factory.quad = function (s, p, o, g) { return { s: s, p: p, o: o, g: g }; };
       ['namedNode', 'blankNode', 'literal', 'variable', 'defaultGraph'].forEach(f => {
@@ -3031,13 +3032,19 @@ describe('Store', () => {
       });
 
       store = new Store({ factory: factory });
-      expect(store.addQuad('s1', 'p1', 'o1')).toBe(true);
-      expect(store.addQuad({ subject: 's1', predicate: 'p1', object: 'o2' })).toBe(true);
+      addedPositional = store.addQuad('s1', 'p1', 'o1');
+      addedObject = store.addQuad({ subject: 's1', predicate: 'p1', object: 'o2' });
       store.addQuads([
         { subject: 's1', predicate: 'p2', object: 'o2' },
         { subject: 's2', predicate: 'p1', object: 'o1' },
       ]);
-      expect(store.addQuad('s1', 'p1', 'o1', 'c4')).toBe(true);
+      addedWithGraph = store.addQuad('s1', 'p1', 'o1', 'c4');
+    });
+
+    it('should return true when adding new quads', () => {
+      expect(addedPositional).toBe(true);
+      expect(addedObject).toBe(true);
+      expect(addedWithGraph).toBe(true);
     });
 
     it('should use the factory when returning quads', () => {
@@ -3082,7 +3089,11 @@ describe('Store', () => {
   describe('A Store containing a well-formed rdf:Collection as subject', () => {
     const store = new Store();
     const listElements = addList(store, new NamedNode('element1'), new Literal('"element2"'));
-    expect(store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o1'))).toBe(true);
+    const added = store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o1'));
+
+    it('should return true when adding the quad', () => {
+      expect(added).toBe(true);
+    });
     const listItemsJSON = {
       b0: [
         { termType: 'NamedNode', value: 'element1' },
@@ -3121,7 +3132,11 @@ describe('Store', () => {
   describe('A Store containing a well-formed rdf:Collection as object', () => {
     const store = new Store();
     const listElements = addList(store, new NamedNode('element1'), new Literal('"element2"'));
-    expect(store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0])).toBe(true);
+    const added = store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0]);
+
+    it('should return true when adding the quad', () => {
+      expect(added).toBe(true);
+    });
     const listItemsJSON = {
       b0: [
         { termType: 'NamedNode', value: 'element1' },
@@ -3191,9 +3206,11 @@ describe('Store', () => {
 
   describe('A Store containing a rdf:Collection without first', () => {
     const store = new Store();
-    expect(
-      store.addQuad(store.createBlankNode(), new NamedNode(namespaces.rdf.rest), namespaces.rdf.nil),
-    ).toBe(true);
+    const added = store.addQuad(store.createBlankNode(), new NamedNode(namespaces.rdf.rest), namespaces.rdf.nil);
+
+    it('should return true when adding the quad', () => {
+      expect(added).toBe(true);
+    });
 
     it('extractLists throws an error', () => {
       expect(() => store.extractLists()).toThrow('b0 has no list head');
@@ -3202,15 +3219,15 @@ describe('Store', () => {
 
   describe('A Store containing an rdf:Collection whose head value is an inherited Object member', () => {
     const store = new Store();
-    expect(
-      store.addQuad(new NamedNode('constructor'), new NamedNode(namespaces.rdf.first), new NamedNode('element1')),
-    ).toBe(true);
-    expect(
-      store.addQuad(new NamedNode('constructor'), new NamedNode(namespaces.rdf.rest), new NamedNode(namespaces.rdf.nil)),
-    ).toBe(true);
-    expect(
-      store.addQuad(new NamedNode('s'), new NamedNode('p'), new NamedNode('constructor')),
-    ).toBe(true);
+    const added1 = store.addQuad(new NamedNode('constructor'), new NamedNode(namespaces.rdf.first), new NamedNode('element1'));
+    const added2 = store.addQuad(new NamedNode('constructor'), new NamedNode(namespaces.rdf.rest), new NamedNode(namespaces.rdf.nil));
+    const added3 = store.addQuad(new NamedNode('s'), new NamedNode('p'), new NamedNode('constructor'));
+
+    it('should return true when adding the quads', () => {
+      expect(added1).toBe(true);
+      expect(added2).toBe(true);
+      expect(added3).toBe(true);
+    });
 
     it('extractLists returns a null-prototype map without inherited members', () => {
       const lists = store.extractLists();
@@ -3224,9 +3241,11 @@ describe('Store', () => {
   describe('A Store containing an rdf:Collection with multiple rdf:first arcs on head', () => {
     const store = new Store();
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode());
-    expect(
-      store.addQuad(listElements[0], new NamedNode(namespaces.rdf.first), store.createBlankNode()),
-    ).toBe(true);
+    const added = store.addQuad(listElements[0], new NamedNode(namespaces.rdf.first), store.createBlankNode());
+
+    it('should return true when adding the quad', () => {
+      expect(added).toBe(true);
+    });
 
     it('extractLists throws an error', () => {
       expect(() => store.extractLists()).toThrow('b2 has multiple rdf:first arcs');
@@ -3236,9 +3255,11 @@ describe('Store', () => {
   describe('A Store containing an rdf:Collection with multiple rdf:first arcs on tail', () => {
     const store = new Store();
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode());
-    expect(
-      store.addQuad(listElements[1], new NamedNode(namespaces.rdf.first), store.createBlankNode()),
-    ).toBe(true);
+    const added = store.addQuad(listElements[1], new NamedNode(namespaces.rdf.first), store.createBlankNode());
+
+    it('should return true when adding the quad', () => {
+      expect(added).toBe(true);
+    });
 
     it('extractLists throws an error', () => {
       expect(() => store.extractLists()).toThrow('b3 has multiple rdf:first arcs');
@@ -3248,9 +3269,11 @@ describe('Store', () => {
   describe('A Store containing an rdf:Collection with multiple rdf:rest arcs on head', () => {
     const store = new Store();
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode());
-    expect(
-      store.addQuad(listElements[0], new NamedNode(namespaces.rdf.rest), store.createBlankNode()),
-    ).toBe(true);
+    const added = store.addQuad(listElements[0], new NamedNode(namespaces.rdf.rest), store.createBlankNode());
+
+    it('should return true when adding the quad', () => {
+      expect(added).toBe(true);
+    });
 
     it('extractLists throws an error', () => {
       expect(() => store.extractLists()).toThrow('b2 has multiple rdf:rest arcs');
@@ -3260,9 +3283,11 @@ describe('Store', () => {
   describe('A Store containing an rdf:Collection with multiple rdf:rest arcs on tail', () => {
     const store = new Store();
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode());
-    expect(
-      store.addQuad(listElements[1], new NamedNode(namespaces.rdf.rest), store.createBlankNode()),
-    ).toBe(true);
+    const added = store.addQuad(listElements[1], new NamedNode(namespaces.rdf.rest), store.createBlankNode());
+
+    it('should return true when adding the quad', () => {
+      expect(added).toBe(true);
+    });
 
     it('extractLists throws an error', () => {
       expect(() => store.extractLists()).toThrow('b3 has multiple rdf:rest arcs');
@@ -3272,9 +3297,11 @@ describe('Store', () => {
   describe('A Store containing an rdf:Collection with non-list arcs out', () => {
     const store = new Store();
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
-    expect(
-      store.addQuad(listElements[1], new NamedNode('http://a.example/foo'), store.createBlankNode()),
-    ).toBe(true);
+    const added = store.addQuad(listElements[1], new NamedNode('http://a.example/foo'), store.createBlankNode());
+
+    it('should return true when adding the quad', () => {
+      expect(added).toBe(true);
+    });
 
     it('extractLists throws an error', () => {
       expect(() => store.extractLists()).toThrow('b4 has non-list arc http://a.example/foo');
@@ -3387,9 +3414,11 @@ describe('Store', () => {
   describe('A Store containing an rdf:Collection with multiple incoming rdf:rest arcs', () => {
     const store = new Store();
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
-    expect(
-      store.addQuad(store.createBlankNode(), new NamedNode(namespaces.rdf.rest), listElements[1]),
-    ).toBe(true);
+    const added = store.addQuad(store.createBlankNode(), new NamedNode(namespaces.rdf.rest), listElements[1]);
+
+    it('should return true when adding the quad', () => {
+      expect(added).toBe(true);
+    });
 
     it('extractLists throws an error', () => {
       expect(() => store.extractLists()).toThrow('b4 has incoming rdf:rest arcs');
@@ -3399,8 +3428,13 @@ describe('Store', () => {
   describe('A Store containing an rdf:Collection with co-references out of head', () => {
     const store = new Store();
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
-    expect(store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o1'))).toBe(true);
-    expect(store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o2'))).toBe(true);
+    const added1 = store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o1'));
+    const added2 = store.addQuad(listElements[0], new NamedNode('p1'), new NamedNode('o2'));
+
+    it('should return true when adding the quads', () => {
+      expect(added1).toBe(true);
+      expect(added2).toBe(true);
+    });
 
     it('extractLists throws an error', () => {
       expect(() => store.extractLists()).toThrow('b3 has non-list arcs out');
@@ -3410,11 +3444,15 @@ describe('Store', () => {
   describe('A Store containing an rdf:Collection with co-references into head', () => {
     const store = new Store();
     const listElements = addList(store, store.createBlankNode(), store.createBlankNode(), store.createBlankNode());
-    expect(store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0])).toBe(true);
-    expect(
-      store.addQuad(new NamedNode('s2'), new NamedNode(namespaces.rdf.rest), listElements[0]),
-    ).toBe(true);
-    expect(store.addQuad(new NamedNode('s2'), new NamedNode('p1'), listElements[0])).toBe(true);
+    const added1 = store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0]);
+    const added2 = store.addQuad(new NamedNode('s2'), new NamedNode(namespaces.rdf.rest), listElements[0]);
+    const added3 = store.addQuad(new NamedNode('s2'), new NamedNode('p1'), listElements[0]);
+
+    it('should return true when adding the quads', () => {
+      expect(added1).toBe(true);
+      expect(added2).toBe(true);
+      expect(added3).toBe(true);
+    });
 
     it('extractLists throws an error', () => {
       expect(() => store.extractLists()).toThrow('b3 can\'t have coreferences');
@@ -3429,19 +3467,19 @@ describe('Store', () => {
       store.createBlankNode(),
       store.createBlankNode(),
     ];
-    expect(
-      store.addQuad(listElements[0], new NamedNode(namespaces.rdf.first), member0),
-    ).toBe(true);
-    expect(
-      store.addQuad(listElements[0], new NamedNode(namespaces.rdf.rest), listElements[1], new NamedNode('g1')),
-    ).toBe(true);
-    expect(
-      store.addQuad(listElements[1], new NamedNode(namespaces.rdf.first), member1),
-    ).toBe(true);
-    expect(
-      store.addQuad(listElements[1], new NamedNode(namespaces.rdf.rest), new NamedNode(namespaces.rdf.nil)),
-    ).toBe(true);
-    expect(store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0])).toBe(true);
+    const added1 = store.addQuad(listElements[0], new NamedNode(namespaces.rdf.first), member0);
+    const added2 = store.addQuad(listElements[0], new NamedNode(namespaces.rdf.rest), listElements[1], new NamedNode('g1'));
+    const added3 = store.addQuad(listElements[1], new NamedNode(namespaces.rdf.first), member1);
+    const added4 = store.addQuad(listElements[1], new NamedNode(namespaces.rdf.rest), new NamedNode(namespaces.rdf.nil));
+    const added5 = store.addQuad(new NamedNode('s1'), new NamedNode('p1'), listElements[0]);
+
+    it('should return true when adding the quads', () => {
+      expect(added1).toBe(true);
+      expect(added2).toBe(true);
+      expect(added3).toBe(true);
+      expect(added4).toBe(true);
+      expect(added5).toBe(true);
+    });
 
     describe('extractLists without ignoreErrors', () => {
       it('extractLists throws an error', () => {
@@ -3883,14 +3921,14 @@ describe('Store', () => {
     });
 
     describe('#import', () => {
-      beforeEach(done => {
+      beforeEach(() => new Promise(resolve => {
         const stream = new ArrayReader([
           new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
           new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
         ]);
         const events = empty.import(stream);
-        events.on('end', done);
-      });
+        events.on('end', resolve);
+      }));
 
       it('should have size 2', () => { expect(empty.size).toEqual(2); });
     });
@@ -3982,6 +4020,67 @@ describe('Store', () => {
     const store = new Store(quads);
     expect(store.size).toEqual(2);
     expect(store.getQuads()).toHaveLength(2);
+  });
+
+  describe('A Store containing the empty IRI', () => {
+    const p = namedNode('http://example.org/p');
+    const o = namedNode('http://example.org/o');
+    const emptyIri = namedNode('');
+    const quads = [
+      quad(emptyIri, p, o),
+      quad(o, p, emptyIri),
+      quad(o, p, o, emptyIri),
+    ];
+    let store;
+    beforeEach(() => { store = new Store(quads); });
+
+    it('should return the empty IRI as a NamedNode', () => {
+      expect(store.getQuads().map(q => q.toJSON())).toEqual(quads.map(q => q.toJSON()));
+    });
+
+    it('should not match the empty IRI as the default graph', () => {
+      expect(store.getQuads(null, null, null, DataFactory.defaultGraph())).toHaveLength(2);
+      expect(store.getQuads(null, null, null, emptyIri)).toHaveLength(1);
+      expect(store.getGraphs().map(g => g.termType).sort()).toEqual(['DefaultGraph', 'NamedNode']);
+    });
+
+    it('should match the empty IRI as subject and object', () => {
+      expect(store.getQuads(emptyIri)).toHaveLength(1);
+      expect(store.getQuads(null, null, emptyIri)).toHaveLength(1);
+      expect(store.has(quad(emptyIri, p, o))).toBe(true);
+    });
+
+    it('should match the empty IRI from another library', () => {
+      const foreign = { termType: 'NamedNode', value: '' };
+      expect(store.getQuads(foreign)).toHaveLength(1);
+      expect(store.getQuads(null, null, null, foreign)).toHaveLength(1);
+    });
+
+    it('should store the empty IRI from another library', () => {
+      const foreign = { termType: 'NamedNode', value: '' };
+      const other = new Store();
+      other.addQuad(foreign, p, o, foreign);
+      expect(other.getQuads().map(q => q.toJSON())).toEqual([quad(emptyIri, p, o, emptyIri).toJSON()]);
+    });
+
+    it('should keep the empty IRI inside quoted triples', () => {
+      const quoted = quad(quad(emptyIri, p, o), p, o);
+      const other = new Store([quoted]);
+      expect(other.getQuads()[0].subject.subject.toJSON()).toEqual(emptyIri.toJSON());
+      expect(other.has(quoted)).toBe(true);
+    });
+
+    it('should be written as <> by the Writer', async () => {
+      const writer = new Writer();
+      writer.addQuads(store.getQuads());
+      const output = await new Promise((resolve, reject) => {
+        writer.end((error, result) => error ? reject(error) : resolve(result));
+      });
+      expect(output).toBe(
+        '<> <http://example.org/p> <http://example.org/o>.\n' +
+        '<http://example.org/o> <http://example.org/p> <>.\n' +
+        '<> {\n<http://example.org/o> <http://example.org/p> <http://example.org/o>\n}\n');
+    });
   });
 });
 

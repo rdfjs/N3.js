@@ -129,7 +129,8 @@ export default class N3Writer {
   // ### `quadToString` serializes a quad as a string
   quadToString(subject, predicate, object, graph) {
     return  `${this._encodeSubject(subject)} ${
-            this._encodeIriOrBlank(predicate)} ${
+            predicate.termType === 'Literal' ?
+              this._encodeLiteral(predicate) : this._encodeIriOrBlank(predicate)} ${
             this._encodeObject(object)
             }${graph && !isDefaultGraph(graph) ? ` ${this._encodeIriOrBlank(graph)} .\n` : ' .\n'}`;
   }
@@ -144,8 +145,15 @@ export default class N3Writer {
 
   // ### `_encodeSubject` represents a subject
   _encodeSubject(entity) {
-    return entity.termType === 'Quad' ?
-      this._encodeQuad(entity) : this._encodeIriOrBlank(entity);
+    switch (entity.termType) {
+    case 'Quad':
+      return this._encodeQuad(entity);
+    // Literal subjects are only valid in N3
+    case 'Literal':
+      return this._encodeLiteral(entity);
+    default:
+      return this._encodeIriOrBlank(entity);
+    }
   }
 
   // ### `_encodeIriOrBlank` represents an IRI or blank node
@@ -155,8 +163,10 @@ export default class N3Writer {
       // If it is a list head, pretty-print it
       if (this._lists && (entity.value in this._lists))
         entity = this.list(this._lists[entity.value]);
-      return entity.termType === 'Variable' ? `?${entity.value}` :
-             'id' in entity ? entity.id : `_:${entity.value}`;
+      // Terms from this library already hold their serialization as id
+      if (entity instanceof Term)
+        return entity.id;
+      return entity.termType === 'Variable' ? `?${entity.value}` : `_:${entity.value}`;
     }
     let iri = entity.value;
     // Use relative IRIs if requested and possible
@@ -223,7 +233,15 @@ export default class N3Writer {
 
   // ### `_encodePredicate` represents a predicate
   _encodePredicate(predicate) {
-    return predicate.value === rdf.type ? 'a' : this._encodeIriOrBlank(predicate);
+    switch (predicate.termType) {
+    case 'NamedNode':
+      return predicate.value === rdf.type ? 'a' : this._encodeIriOrBlank(predicate);
+    // Literal predicates are only valid in N3
+    case 'Literal':
+      return this._encodeLiteral(predicate);
+    default:
+      return this._encodeIriOrBlank(predicate);
+    }
   }
 
   // ### `_encodeObject` represents an object
