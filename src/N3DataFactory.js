@@ -325,7 +325,10 @@ export function termToId(term, nested) {
 
   // Term instantiated with another library
   switch (term.termType) {
-  case 'NamedNode':    return term.value !== '' ? term.value : EMPTY_IRI_ID;
+  case 'NamedNode': {
+    const iri = term.value;
+    return iri !== '' ? iri : EMPTY_IRI_ID;
+  }
   case 'BlankNode':    return `_:${term.value}`;
   case 'Variable':     return `?${term.value}`;
   case 'DefaultGraph': return '';
