@@ -129,17 +129,28 @@ the callback is invoked one last time with `null` for `quad`
 and a hash of prefixes as third argument.
 <br>
 
-Alternatively, an object can be supplied, where `onQuad`, `onPrefix` and `onComment` are used to listen for `quads`, `prefixes` and `comments` as follows:
+Alternatively, an object can be supplied with named callbacks for quads, prefixes, comments, and token processing:
 ```JavaScript
 const parser = new N3.Parser();
 
 parser.parse(tomAndJerry, {
-  // onQuad (required) accepts a listener of type (quad: RDF.Quad) => void
+  // onQuad (optional) receives errors, quads, and completion
   onQuad: (err, quad) => { console.log(quad); },
   // onPrefix (optional) accepts a listener of type (prefix: string, iri: NamedNode) => void
   onPrefix: (prefix, iri) => { console.log(prefix, 'expands to', iri.value); },
   // onComment (optional) accepts a listener of type (comment: string) => void
   onComment: (comment) => { console.log('#', comment); },
+});
+```
+
+`onToken(token)` runs immediately before a lexer token is processed, and
+`onTokenEnd(token)` runs immediately afterwards, including when processing throws.
+
+```JavaScript
+const tokens = [];
+const quads = parser.parse('<a> <b> "hello"@en.', {
+  onToken: token => tokens.push(token),
+  onTokenEnd: token => { /* Finish per-token bookkeeping here. */ },
 });
 ```
 

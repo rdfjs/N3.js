@@ -1564,14 +1564,17 @@ export default class N3Parser {
 
   // ### `parse` parses the N3 input and emits each parsed quad through the onQuad callback.
   parse(input, quadCallback, prefixCallback, versionCallback) {
-    // The second parameter accepts an object { onQuad: ..., onPrefix: ..., onComment: ...}
+    // The second parameter also accepts an object of named callbacks.
     // As a second and third parameter it still accepts a separate quadCallback and prefixCallback for backward compatibility as well
-    let onQuad, onPrefix, onComment, onVersion;
-    if (quadCallback && (quadCallback.onQuad || quadCallback.onPrefix || quadCallback.onComment || quadCallback.onVersion)) {
+    let onQuad, onPrefix, onComment, onVersion, onToken, onTokenEnd;
+    if (quadCallback && (quadCallback.onQuad || quadCallback.onPrefix || quadCallback.onComment || quadCallback.onVersion ||
+                         quadCallback.onToken || quadCallback.onTokenEnd)) {
       onQuad = quadCallback.onQuad;
       onPrefix = quadCallback.onPrefix;
       onComment = quadCallback.onComment;
       onVersion = quadCallback.onVersion;
+      onToken = quadCallback.onToken;
+      onTokenEnd = quadCallback.onTokenEnd;
     }
     else {
       onQuad = quadCallback;
@@ -1595,41 +1598,59 @@ export default class N3Parser {
     this._quantified = Object.create(null);
     this._emptyFormula = false;
 
-    // Parse synchronously if no quad callback is given
+    let readToken = token => {
+      return this._readCallback = this._readCallback(token);
+    };
+
+    // Comments bypass the grammar, but participate in the token lifecycle.
+    if (onComment || this._lexer.comments) {
+      this._lexer.comments = true;
+      const readGrammarToken = readToken;
+      readToken = token => {
+        if (token.type !== 'comment')
+          return readGrammarToken(token);
+        if (onComment) onComment(token.value);
+        return this._readCallback;
+      };
+    }
+
+    // Install observers once per parse, leaving the ordinary token path intact.
+    if (onToken || onTokenEnd) {
+      const consumeToken = readToken;
+      readToken = token => {
+        try {
+          try {
+            if (onToken) onToken(token);
+            return consumeToken(token);
+          }
+          finally {
+            if (onTokenEnd) onTokenEnd(token);
+          }
+        }
+        catch (error) {
+          // A consumer exception aborts this parse, including later chunks.
+          this._readCallback = null;
+          throw error;
+        }
+      };
+    }
+
+    // Parse synchronously if no quad callback is given.
     if (!onQuad) {
       const quads = [];
       let error;
       this._callback = (e, t) => { e ? (error = e) : t && quads.push(t); };
-      this._lexer.tokenize(input).every(token => {
-        return this._readCallback = this._readCallback(token);
-      });
+      this._lexer.tokenize(input).every(readToken);
       if (error) throw error;
       return quads;
     }
 
-    let processNextToken = (error, token) => {
+    const processNextToken = (error, token) => {
       if (error !== null)
         this._callback(error), this._callback = noop;
       else if (this._readCallback)
-        this._readCallback = this._readCallback(token);
+        readToken(token);
     };
-
-    // Enable checking for comments on every token when a commentCallback has been set
-    if (onComment) {
-      // Enable the lexer to return comments as tokens first (disabled by default)
-      this._lexer.comments = true;
-      // Patch the processNextToken function
-      processNextToken = (error, token) => {
-        if (error !== null)
-          this._callback(error), this._callback = noop;
-        else if (this._readCallback) {
-          if (token.type === 'comment')
-            onComment(token.value);
-          else
-            this._readCallback = this._readCallback(token);
-        }
-      };
-    }
 
     // Parse asynchronously otherwise, executing the read callback when a token arrives
     this._callback = onQuad;
