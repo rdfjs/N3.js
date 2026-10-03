@@ -32,7 +32,8 @@ and `--rounds`, `--iterations` and `--threshold` tune the comparison.
   and `blank()`/`list()` output.
 - **Store**: `addQuad` with terms and with strings, `getQuads` by each
   position, `countQuads` and `has`, `match` and iteration, `removeQuad`.
-- **DataFactory**: creating terms and quads, term getters and `equals`,
+- **DataFactory**: creating terms and quads, `literal()` from numbers,
+  booleans and dates, term getters and `equals`,
   `termToId`/`termFromId`.
 - **Reasoner**: the deep taxonomy benchmark at depth 1000.
 
