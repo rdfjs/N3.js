@@ -42,10 +42,13 @@ jobs:
           done > spec/cache-key.txt
           sha=$(gh api 'repos/w3c-cg/N3/commits?sha=master&path=tests/N3Tests&per_page=1' --jq '.[0].sha')
           [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || { echo "Bad SHA for n3: '$sha'" >&2; exit 1; }
-          echo "n3 $sha" >> spec/cache-key.txt
+          # Pinned separately so an N3-only refresh leaves the RDF fixture caches warm.
+          echo "$sha" > spec/n3-revision.txt
       - uses: peter-evans/create-pull-request@v8
         with:
-          add-paths: spec/cache-key.txt
+          add-paths: |
+            spec/cache-key.txt
+            spec/n3-revision.txt
           branch: ci/refresh-spec-cache
           delete-branch: true
           commit-message: 'chore(ci): refetch upstream spec suites'

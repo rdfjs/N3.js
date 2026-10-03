@@ -2,7 +2,7 @@
 set -eu
 
 checkout=.n3-tests
-revision=$(awk '$1 == "n3" { print $2; exit }' spec/cache-key.txt)
+revision=$(cat spec/n3-revision.txt)
 
 if ! printf '%s\n' "$revision" | grep -Eq '^[0-9a-f]{40}$'; then
   echo "Invalid N3 test-suite revision: '$revision'" >&2
