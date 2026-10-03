@@ -11,6 +11,13 @@ import namespaces from '../src/IRIs';
 
 const { xsd, rdf } = namespaces;
 
+// Ends the writer, resolving with its output or rejecting with its error
+function end(writer) {
+  return new Promise((resolve, reject) => {
+    writer.end((error, output) => error ? reject(error) : resolve(output));
+  });
+}
+
 describe('Writer', () => {
   describe('The Writer export', () => {
     it('should be a function', () => {
@@ -441,17 +448,15 @@ describe('Writer', () => {
                       '<stu> <vwx> <yz>.\n'),
     );
 
-    it('round-trips a triple with an empty named node', done => {
+    it('round-trips a triple with an empty named node', async () => {
       const input = '<> <http://ex.org/p> <http://ex.org/o>.\n';
       const quads = new Parser().parse(input);
       expect(quads[0].subject).toEqual(new NamedNode(''));
       const writer = new Writer();
       writer.addQuads(quads);
-      writer.end((error, output) => {
-        expect(output).toBe(input);
-        expect(new Parser().parse(output)).toEqual(quads);
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe(input);
+      expect(new Parser().parse(output)).toEqual(quads);
     });
 
     it(
@@ -466,82 +471,71 @@ describe('Writer', () => {
                       '_:\ud835\udc00 {\n_:\ud835\udc00 _:\ud835\udc00 _:\ud835\udc00\n}\n'),
     );
 
-    it('calls the done callback when ending the outputstream errors', done => {
+    it('calls the done callback when ending the outputstream errors', async () => {
       const writer = new Writer({
         write: function () {},
         end: function () { throw new Error('error'); },
       });
-      writer.end(error => {
-        // A failing stream end is swallowed; done is still called without error
-        expect(error).toBeUndefined();
-        done();
-      });
+      const error = await new Promise(resolve => writer.end(resolve));
+      // A failing stream end is swallowed; the callback is still called without error
+      expect(error).toBeUndefined();
     });
 
-    it('sends output through end when no stream argument is given', done => {
+    it('sends output through end when no stream argument is given', async () => {
       const writer = new Writer();
       let notCalled = true;
       writer.addQuad(new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')), () => { notCalled = false; });
-      writer.end((error, output) => {
-        expect(output).toBe('<a> <b> <c>.\n');
-        done(notCalled || error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('<a> <b> <c>.\n');
+      expect(notCalled).toBe(false);
     });
 
     it(
       'respects the prefixes argument when no stream argument is given',
-      done => {
+      async () => {
         const writer = new Writer({ prefixes: { a: 'b#' } });
         writer.addQuad(new Quad(new NamedNode('b#a'), new NamedNode('b#b'), new NamedNode('b#c')));
-        writer.end((error, output) => {
-          expect(output).toBe('@prefix a: <b#>.\n\na:a a:b a:c.\n');
-          done(error);
-        });
+        const output = await end(writer);
+        expect(output).toBe('@prefix a: <b#>.\n\na:a a:b a:c.\n');
       },
     );
 
-    it('ignores an empty prefix list', done => {
+    it('ignores an empty prefix list', async () => {
       const writer = new Writer();
       writer.addPrefixes({});
       writer.addQuad(new Quad(new NamedNode('b#a'), new NamedNode('b#b'), new NamedNode('b#c')));
-      writer.end((error, output) => {
-        expect(output).toBe('<b#a> <b#b> <b#c>.\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('<b#a> <b#b> <b#c>.\n');
     });
 
     it(
       'should serialize triples of graph with prefix for local names that begin with underscore',
-      done => {
+      async () => {
         const writer = new Writer();
         writer.addPrefix('a', 'b#');
         writer.addQuad(new Quad(new NamedNode('b#_a'), new NamedNode('b#b'), new NamedNode('b#c'), new NamedNode('b#g')));
-        writer.end((error, output) => {
-          expect(output).toBe('@prefix a: <b#>.\n\na:g {\na:_a a:b a:c\n}\n');
-          done(error);
-        });
+        const output = await end(writer);
+        expect(output).toBe('@prefix a: <b#>.\n\na:g {\na:_a a:b a:c\n}\n');
       },
     );
 
     it(
       'serializes triples of a graph with a prefix declaration in between',
-      done => {
+      async () => {
         const writer = new Writer();
         writer.addQuad(new Quad(new NamedNode('b#a'), new NamedNode('b#b'), new NamedNode('b#c')));
         writer.addPrefix('a', 'b#');
         writer.addQuad(new Quad(new NamedNode('b#a'), new NamedNode('b#b'), new NamedNode('b#c'), new NamedNode('b#g')));
         writer.addPrefix('d', 'e#');
         writer.addQuad({ subject: new NamedNode('b#a'), predicate: new NamedNode('b#b'), object: new NamedNode('b#d'), graph: new NamedNode('b#g') });
-        writer.end((error, output) => {
-          expect(output).toBe('<b#a> <b#b> <b#c>.\n' +
-                              '@prefix a: <b#>.\n\na:g {\na:a a:b a:c\n}\n' +
-                              '@prefix d: <e#>.\n\na:g {\na:a a:b a:d\n}\n');
-          done(error);
-        });
+        const output = await end(writer);
+        expect(output).toBe('<b#a> <b#b> <b#c>.\n' +
+                            '@prefix a: <b#>.\n\na:g {\na:a a:b a:c\n}\n' +
+                            '@prefix d: <e#>.\n\na:g {\na:a a:b a:d\n}\n');
       },
     );
 
-    it('should not write prefixes in N-Triples mode', done => {
+    it('should not write prefixes in N-Triples mode', async () => {
       const writer = new Writer({ format: 'N-Triples', prefixes: { a: 'b#' } });
       let called = false;
       function callback() { called = true; }
@@ -549,53 +543,45 @@ describe('Writer', () => {
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new Literal('"c"'));
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new Literal(`"1"^^${xsd.integer}`));
       writer.addPrefix('e', 'f#', callback);
-      writer.end((error, output) => {
-        expect(called).toBe(true);
-        expect(output).toBe(`<a> <b> "c" .\n<a> <b> "1"^^<${xsd.integer}> .\n`);
-        done(error);
-      });
+      const output = await end(writer);
+      expect(called).toBe(true);
+      expect(output).toBe(`<a> <b> "c" .\n<a> <b> "1"^^<${xsd.integer}> .\n`);
     });
 
-    it('uses a base IRI when given', done => {
+    it('uses a base IRI when given', async () => {
       const writer = new Writer({ baseIRI: 'http://example.org/foo/' });
       writer.addQuad(new Quad(
         new NamedNode('http://example.org/foo/'),
         new NamedNode('http://example.org/foo/#b'),
         new NamedNode('http://example.org/foo/cdeFgh/ijk')));
-      writer.end((error, output) => {
-        expect(output).toBe('<> <#b> <cdeFgh/ijk>.\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('<> <#b> <cdeFgh/ijk>.\n');
     });
 
-    it('uses a base IRI to relativize a graph to the empty IRI', done => {
+    it('uses a base IRI to relativize a graph to the empty IRI', async () => {
       const writer = new Writer({ baseIRI: 'http://example.org/foo/' });
       writer.addQuad(new Quad(
         new NamedNode('http://example.org/foo/a'),
         new NamedNode('http://example.org/foo/b'),
         new NamedNode('http://example.org/foo/c'),
         new NamedNode('http://example.org/foo/')));
-      writer.end((error, output) => {
-        expect(output).toBe('<> {\n<a> <b> <c>\n}\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('<> {\n<a> <b> <c>\n}\n');
     });
 
-    it('uses partially match base IRIs', done => {
+    it('uses partially match base IRIs', async () => {
       const writer = new Writer({ baseIRI: 'https://pod.example/profile/card' });
       writer.addQuad(new Quad(
           new NamedNode('https://pod.example/profile/card#me'),
           new NamedNode('http://www.w3.org/2002/07/owl#sameAs'),
           new NamedNode('https://pod.example/profile/card-1234.ttl')));
-      writer.end((error, output) => {
-        expect(output).toBe(
-            '<#me> <http://www.w3.org/2002/07/owl#sameAs> <card-1234.ttl>.\n',
-        );
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe(
+          '<#me> <http://www.w3.org/2002/07/owl#sameAs> <card-1234.ttl>.\n',
+      );
     });
 
-    it('does not write a base directive by default', done => {
+    it('does not write a base directive by default', async () => {
       const writer = new Writer({
         prefixes: { ex: 'http://other.example/ns#' },
         baseIRI: 'http://example.org/foo/',
@@ -604,42 +590,36 @@ describe('Writer', () => {
         new NamedNode('http://example.org/foo/bar'),
         new NamedNode('http://other.example/ns#p'),
         new NamedNode('http://example.org/foo/baz')));
-      writer.end((error, output) => {
-        expect(output).toBe('@prefix ex: <http://other.example/ns#>.\n\n' +
-                            '<bar> ex:p <baz>.\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('@prefix ex: <http://other.example/ns#>.\n\n' +
+                          '<bar> ex:p <baz>.\n');
     });
 
-    it('writes a base directive with the writeBase option', done => {
+    it('writes a base directive with the writeBase option', async () => {
       const writer = new Writer({ baseIRI: 'http://example.org/foo/', writeBase: true });
       writer.addQuad(new Quad(
         new NamedNode('http://example.org/foo/'),
         new NamedNode('http://example.org/foo/#b'),
         new NamedNode('http://example.org/foo/cdeFgh/ijk')));
-      writer.end((error, output) => {
-        expect(output).toBe('@base <http://example.org/foo/>.\n' +
-                            '<> <#b> <cdeFgh/ijk>.\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('@base <http://example.org/foo/>.\n' +
+                          '<> <#b> <cdeFgh/ijk>.\n');
     });
 
-    it('writes a base directive for a partially matching base IRI', done => {
+    it('writes a base directive for a partially matching base IRI', async () => {
       const writer = new Writer({ baseIRI: 'https://pod.example/profile/card', writeBase: true });
       writer.addQuad(new Quad(
           new NamedNode('https://pod.example/profile/card#me'),
           new NamedNode('http://www.w3.org/2002/07/owl#sameAs'),
           new NamedNode('https://pod.example/profile/card-1234.ttl')));
-      writer.end((error, output) => {
-        expect(output).toBe(
-            '@base <https://pod.example/profile/card>.\n' +
-            '<#me> <http://www.w3.org/2002/07/owl#sameAs> <card-1234.ttl>.\n',
-        );
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe(
+          '@base <https://pod.example/profile/card>.\n' +
+          '<#me> <http://www.w3.org/2002/07/owl#sameAs> <card-1234.ttl>.\n',
+      );
     });
 
-    it('writes the base directive before the prefixes', done => {
+    it('writes the base directive before the prefixes', async () => {
       const writer = new Writer({
         prefixes: { ex: 'http://other.example/ns#' },
         baseIRI: 'http://example.org/foo/',
@@ -649,132 +629,112 @@ describe('Writer', () => {
         new NamedNode('http://example.org/foo/bar'),
         new NamedNode('http://other.example/ns#p'),
         new NamedNode('http://example.org/foo/baz')));
-      writer.end((error, output) => {
-        expect(output).toBe('@base <http://example.org/foo/>.\n' +
-                            '@prefix ex: <http://other.example/ns#>.\n\n' +
-                            '<bar> ex:p <baz>.\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('@base <http://example.org/foo/>.\n' +
+                          '@prefix ex: <http://other.example/ns#>.\n\n' +
+                          '<bar> ex:p <baz>.\n');
     });
 
-    it('should not write a base directive in N-Triples mode', done => {
+    it('should not write a base directive in N-Triples mode', async () => {
       const writer = new Writer({ format: 'N-Triples', baseIRI: 'http://example.org/foo/', writeBase: true });
       writer.addQuad(new NamedNode('http://example.org/foo/bar'), new NamedNode('http://example.org/foo/#b'), new Literal('"c"'));
-      writer.end((error, output) => {
-        expect(output).toBe('<http://example.org/foo/bar> <http://example.org/foo/#b> "c" .\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('<http://example.org/foo/bar> <http://example.org/foo/#b> "c" .\n');
     });
 
-    it('should not write a base directive in N-Quads mode', done => {
+    it('should not write a base directive in N-Quads mode', async () => {
       const writer = new Writer({ format: 'N-Quads', baseIRI: 'http://example.org/foo/', writeBase: true });
       writer.addQuad(new NamedNode('http://example.org/foo/bar'), new NamedNode('http://example.org/foo/#b'), new Literal('"c"'), new NamedNode('http://example.org/foo/g'));
-      writer.end((error, output) => {
-        expect(output).toBe('<http://example.org/foo/bar> <http://example.org/foo/#b> "c" <http://example.org/foo/g> .\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('<http://example.org/foo/bar> <http://example.org/foo/#b> "c" <http://example.org/foo/g> .\n');
     });
 
-    it('should accept triples with separated components', done => {
+    it('should accept triples with separated components', async () => {
       const writer = new Writer();
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'));
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('d'));
-      writer.end((error, output) => {
-        expect(output).toBe('<a> <b> <c>, <d>.\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('<a> <b> <c>, <d>.\n');
     });
 
-    it('should accept quads with separated components', done => {
+    it('should accept quads with separated components', async () => {
       const writer = new Writer();
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g'));
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('d'), new NamedNode('g'));
-      writer.end((error, output) => {
-        expect(output).toBe('<g> {\n<a> <b> <c>, <d>\n}\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('<g> {\n<a> <b> <c>, <d>\n}\n');
     });
 
-    it('should serialize triples with an empty blank node as object', done => {
+    it('should serialize triples with an empty blank node as object', async () => {
       const writer = new Writer();
       writer.addQuad(new NamedNode('a1'), new NamedNode('b'), writer.blank());
       writer.addQuad(new NamedNode('a2'), new NamedNode('b'), writer.blank([]));
-      writer.end((error, output) => {
-        expect(output).toBe('<a1> <b> [].\n' +
-                            '<a2> <b> [].\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('<a1> <b> [].\n' +
+                          '<a2> <b> [].\n');
     });
 
-    it('should serialize triples with the same blank node as object', done => {
+    it('should serialize triples with the same blank node as object', async () => {
       const writer = new Writer();
       const blank = writer.blank();
       writer.addQuad(blank, new NamedNode('a'), new NamedNode('b'));
       writer.addQuad(blank, new NamedNode('c'), new NamedNode('d'));
-      writer.end((error, output) => {
-        expect(output).toBe('[] <a> <b>;\n' +
-                            '    <c> <d>.\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('[] <a> <b>;\n' +
+                          '    <c> <d>.\n');
     });
 
     it(
       'should serialize triples with a one-triple blank node as object',
-      done => {
+      async () => {
         const writer = new Writer();
         writer.addQuad(new NamedNode('a1'), new NamedNode('b'), writer.blank(new NamedNode('d'), new NamedNode('e')));
         writer.addQuad(new NamedNode('a2'), new NamedNode('b'), writer.blank({ predicate: new NamedNode('d'), object: new NamedNode('e') }));
         writer.addQuad(new NamedNode('a3'), new NamedNode('b'), writer.blank([{ predicate: new NamedNode('d'), object: new NamedNode('e') }]));
-        writer.end((error, output) => {
-          expect(output).toBe('<a1> <b> [ <d> <e> ].\n' +
-                              '<a2> <b> [ <d> <e> ].\n' +
-                              '<a3> <b> [ <d> <e> ].\n');
-          done(error);
-        });
+        const output = await end(writer);
+        expect(output).toBe('<a1> <b> [ <d> <e> ].\n' +
+                            '<a2> <b> [ <d> <e> ].\n' +
+                            '<a3> <b> [ <d> <e> ].\n');
       },
     );
 
     it(
       'should serialize triples with a two-triple blank node as object',
-      done => {
+      async () => {
         const writer = new Writer();
         writer.addQuad(new NamedNode('a'), new NamedNode('b'), writer.blank([
             { predicate: new NamedNode('d'), object: new NamedNode('e') },
             { predicate: new NamedNode('f'), object: new Literal('"g"') },
         ]));
-        writer.end((error, output) => {
-          expect(output).toBe('<a> <b> [\n' +
-                              '  <d> <e>;\n' +
-                              '  <f> "g"\n' +
-                              '].\n');
-          done(error);
-        });
+        const output = await end(writer);
+        expect(output).toBe('<a> <b> [\n' +
+                            '  <d> <e>;\n' +
+                            '  <f> "g"\n' +
+                            '].\n');
       },
     );
 
     it(
       'should serialize triples with a three-triple blank node as object',
-      done => {
+      async () => {
         const writer = new Writer();
         writer.addQuad(new NamedNode('a'), new NamedNode('b'), writer.blank([
           { predicate: new NamedNode('d'), object: new NamedNode('e') },
           { predicate: new NamedNode('f'), object: new Literal('"g"') },
           { predicate: new NamedNode('h'), object: new NamedNode('i') },
         ]));
-        writer.end((error, output) => {
-          expect(output).toBe('<a> <b> [\n' +
-                              '  <d> <e>;\n' +
-                              '  <f> "g";\n' +
-                              '  <h> <i>\n' +
-                              '].\n');
-          done(error);
-        });
+        const output = await end(writer);
+        expect(output).toBe('<a> <b> [\n' +
+                            '  <d> <e>;\n' +
+                            '  <f> "g";\n' +
+                            '  <h> <i>\n' +
+                            '].\n');
       },
     );
 
     it(
       'should serialize triples with predicate-sharing blank node triples as object',
-      done => {
+      async () => {
         const writer = new Writer();
         writer.addQuad(new NamedNode('a'), new NamedNode('b'), writer.blank([
           { predicate: new NamedNode('d'), object: new NamedNode('e') },
@@ -782,17 +742,15 @@ describe('Writer', () => {
           { predicate: new NamedNode('g'), object: new NamedNode('h') },
           { predicate: new NamedNode('g'), object: new NamedNode('i') },
         ]));
-        writer.end((error, output) => {
-          expect(output).toBe('<a> <b> [\n' +
-            '  <d> <e>, <f>;\n' +
-            '  <g> <h>, <i>\n' +
-            '].\n');
-          done(error);
-        });
+        const output = await end(writer);
+        expect(output).toBe('<a> <b> [\n' +
+          '  <d> <e>, <f>;\n' +
+          '  <g> <h>, <i>\n' +
+          '].\n');
       },
     );
 
-    it('should serialize triples with nested blank nodes as object', done => {
+    it('should serialize triples with nested blank nodes as object', async () => {
       const writer = new Writer();
       writer.addQuad(new NamedNode('a1'), new NamedNode('b'), writer.blank([
         { predicate: new NamedNode('d'), object: writer.blank() },
@@ -807,152 +765,128 @@ describe('Writer', () => {
           { predicate: new NamedNode('j'), object: writer.blank(new NamedNode('k'), new Literal('"l"')) },
         ]) },
       ]));
-      writer.end((error, output) => {
-        expect(output).toBe('<a1> <b> [\n' +
-          '  <d> []\n' +
-          '].\n' +
-          '<a2> <b> [\n' +
-          '  <d> [ <e> <f> ];\n' +
-          '  <g> [ <h> "i" ]\n' +
-          '].\n' +
-          '<a3> <b> [\n' +
-          '  <d> [\n' +
-          '  <g> [ <h> <i> ];\n' +
-          '  <j> [ <k> "l" ]\n' +
-          ']\n' +
-          '].\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('<a1> <b> [\n' +
+        '  <d> []\n' +
+        '].\n' +
+        '<a2> <b> [\n' +
+        '  <d> [ <e> <f> ];\n' +
+        '  <g> [ <h> "i" ]\n' +
+        '].\n' +
+        '<a3> <b> [\n' +
+        '  <d> [\n' +
+        '  <g> [ <h> <i> ];\n' +
+        '  <j> [ <k> "l" ]\n' +
+        ']\n' +
+        '].\n');
     });
 
-    it('should serialize triples with an empty blank node as subject', done => {
+    it('should serialize triples with an empty blank node as subject', async () => {
       const writer = new Writer();
       writer.addQuad(writer.blank(), new NamedNode('b'), new NamedNode('c'));
       writer.addQuad(writer.blank([]), new NamedNode('b'), new NamedNode('c'));
-      writer.end((error, output) => {
-        expect(output).toBe('[] <b> <c>.\n' +
-                            '[] <b> <c>.\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('[] <b> <c>.\n' +
+                          '[] <b> <c>.\n');
     });
 
     it(
       'should serialize triples with a one-triple blank node as subject',
-      done => {
+      async () => {
         const writer = new Writer();
         writer.addQuad(writer.blank(new NamedNode('a'), new NamedNode('b')), new NamedNode('c'), new NamedNode('d'));
         writer.addQuad(writer.blank({ predicate: new NamedNode('a'), object: new NamedNode('b') }), new NamedNode('c'), new NamedNode('d'));
         writer.addQuad(writer.blank([{ predicate: new NamedNode('a'), object: new NamedNode('b') }]), new NamedNode('c'), new NamedNode('d'));
-        writer.end((error, output) => {
-          expect(output).toBe('[ <a> <b> ] <c> <d>.\n' +
-                              '[ <a> <b> ] <c> <d>.\n' +
-                              '[ <a> <b> ] <c> <d>.\n');
-          done(error);
-        });
+        const output = await end(writer);
+        expect(output).toBe('[ <a> <b> ] <c> <d>.\n' +
+                            '[ <a> <b> ] <c> <d>.\n' +
+                            '[ <a> <b> ] <c> <d>.\n');
       },
     );
 
-    it('should serialize triples with an empty blank node as graph', done => {
+    it('should serialize triples with an empty blank node as graph', async () => {
       const writer = new Writer();
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), writer.blank());
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), writer.blank([]));
-      writer.end((error, output) => {
-        expect(output).toBe('[] {\n<a> <b> <c>\n}\n' +
-                            '[] {\n<a> <b> <c>\n}\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('[] {\n<a> <b> <c>\n}\n' +
+                          '[] {\n<a> <b> <c>\n}\n');
     });
 
-    it('should serialize triples with an empty list as object', done => {
+    it('should serialize triples with an empty list as object', async () => {
       const writer = new Writer();
       writer.addQuad(new NamedNode('a1'), new NamedNode('b'), writer.list());
       writer.addQuad(new NamedNode('a2'), new NamedNode('b'), writer.list([]));
-      writer.end((error, output) => {
-        expect(output).toBe('<a1> <b> ().\n' +
-                            '<a2> <b> ().\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('<a1> <b> ().\n' +
+                          '<a2> <b> ().\n');
     });
 
-    it('should serialize triples with a one-element list as object', done => {
+    it('should serialize triples with a one-element list as object', async () => {
       const writer = new Writer();
       writer.addQuad(new NamedNode('a1'), new NamedNode('b'), writer.list([new NamedNode('c')]));
       writer.addQuad(new NamedNode('a2'), new NamedNode('b'), writer.list([new Literal('"c"')]));
-      writer.end((error, output) => {
-        expect(output).toBe('<a1> <b> (<c>).\n' +
-                            '<a2> <b> ("c").\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('<a1> <b> (<c>).\n' +
+                          '<a2> <b> ("c").\n');
     });
 
-    it('should serialize triples with a three-element list as object', done => {
+    it('should serialize triples with a three-element list as object', async () => {
       const writer = new Writer();
       writer.addQuad(new NamedNode('a1'), new NamedNode('b'), writer.list([new NamedNode('c'), new NamedNode('d'), new NamedNode('e')]));
       writer.addQuad(new NamedNode('a2'), new NamedNode('b'), writer.list([new Literal('"c"'), new Literal('"d"'), new Literal('"e"')]));
-      writer.end((error, output) => {
-        expect(output).toBe('<a1> <b> (<c> <d> <e>).\n' +
-                            '<a2> <b> ("c" "d" "e").\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('<a1> <b> (<c> <d> <e>).\n' +
+                          '<a2> <b> ("c" "d" "e").\n');
     });
 
-    it('should serialize triples with an empty list as subject', done => {
+    it('should serialize triples with an empty list as subject', async () => {
       const writer = new Writer();
       writer.addQuad(writer.list(),   new NamedNode('b1'), new NamedNode('c'));
       writer.addQuad(writer.list([]), new NamedNode('b2'), new NamedNode('c'));
-      writer.end((error, output) => {
-        expect(output).toBe('() <b1> <c>.\n' +
-                            '() <b2> <c>.\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('() <b1> <c>.\n' +
+                          '() <b2> <c>.\n');
     });
 
-    it('should serialize triples with a one-element list as subject', done => {
+    it('should serialize triples with a one-element list as subject', async () => {
       const writer = new Writer();
       writer.addQuad(writer.list([new NamedNode('a')]), new NamedNode('b1'), new NamedNode('c'));
       writer.addQuad(writer.list([new NamedNode('a')]), new NamedNode('b2'), new NamedNode('c'));
-      writer.end((error, output) => {
-        expect(output).toBe('(<a>) <b1> <c>.\n' +
-                            '(<a>) <b2> <c>.\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('(<a>) <b1> <c>.\n' +
+                          '(<a>) <b2> <c>.\n');
     });
 
-    it('should serialize triples with a three-element list as subject', done => {
+    it('should serialize triples with a three-element list as subject', async () => {
       const writer = new Writer();
       writer.addQuad(writer.list([new NamedNode('a1'), new Literal('"b"'), new Literal('"c"')]), new NamedNode('d'), new NamedNode('e'));
-      writer.end((error, output) => {
-        expect(output).toBe('(<a1> "b" "c") <d> <e>.\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('(<a1> "b" "c") <d> <e>.\n');
     });
 
-    it('should serialize a blank node in an N3 list with a valid label when formulaScopedBlankNodes is set', done => {
+    it('should serialize a blank node in an N3 list with a valid label when formulaScopedBlankNodes is set', async () => {
       const quads = new Parser({ format: 'text/n3', formulaScopedBlankNodes: true }).parse('<a> <b> (_:x). _:x <c> <d>.');
       const writer = new Writer();
       writer.addQuads(quads);
-      writer.end((error, output) => {
-        // A label such as `_:.x` would fail to reparse (#332)
-        expect(() => new Parser().parse(output)).not.toThrow();
-        done(error);
-      });
+      const output = await end(writer);
+      // A label such as `_:.x` would fail to reparse (#332)
+      expect(() => new Parser().parse(output)).not.toThrow();
     });
 
-    it('should serialize a blank node in an N3 list with an invalid label by default', done => {
+    it('should serialize a blank node in an N3 list with an invalid label by default', async () => {
       const quads = new Parser({ format: 'text/n3' }).parse('<a> <b> (_:x). _:x <c> <d>.');
       const writer = new Writer();
       writer.addQuads(quads);
-      writer.end((error, output) => {
-        // The default rescoping produces the label `_:.x`,
-        // which fails to reparse (#332; the default flips in #630)
-        expect(() => new Parser().parse(output)).toThrow();
-        done(error);
-      });
+      const output = await end(writer);
+      // The default rescoping produces the label `_:.x`,
+      // which fails to reparse (#332; the default flips in #630)
+      expect(() => new Parser().parse(output)).toThrow();
     });
 
     it(
       'should serialize subject and object triples passed by options.listHeads',
-      done => {
+      async () => {
         const lists = {
           l1: [new NamedNode('c'), new NamedNode('d'), new NamedNode('e')],
           l2: [new Literal('c'), new Literal('d'), new Literal('e')],
@@ -961,83 +895,69 @@ describe('Writer', () => {
         const writer = new Writer({ lists });
         writer.addQuad(new BlankNode('l1'), new NamedNode('b'), new BlankNode('l2'));
         writer.addQuad(new NamedNode('a3'), new NamedNode('b'), new BlankNode('m3'));
-        writer.end((error, output) => {
-          expect(output).toBe('(<c> <d> <e>) <b> ("c" "d" "e").\n' +
-            '<a3> <b> _:m3.\n');
-          done(error);
-        });
+        const output = await end(writer);
+        expect(output).toBe('(<c> <d> <e>) <b> ("c" "d" "e").\n' +
+          '<a3> <b> _:m3.\n');
       },
     );
 
-    it('should accept triples in bulk', done => {
+    it('should accept triples in bulk', async () => {
       const writer = new Writer();
       writer.addQuads([new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')),
         new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('d'))]);
-      writer.end((error, output) => {
-        expect(output).toBe('<a> <b> <c>, <d>.\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('<a> <b> <c>, <d>.\n');
     });
 
-    it('should not allow writing after end', done => {
+    it('should not allow writing after end', async () => {
       const writer = new Writer();
       writer.addQuad(new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')));
       writer.end();
-      writer.addQuad(new Quad(new NamedNode('d'), new NamedNode('e'), new NamedNode('f')), error => {
-        expect(error).toBeInstanceOf(Error);
-        expect(error).toHaveProperty('message', 'Cannot write because the writer has been closed.');
-        done();
+      const error = await new Promise(resolve => {
+        writer.addQuad(new Quad(new NamedNode('d'), new NamedNode('e'), new NamedNode('f')), resolve);
       });
+      expect(error).toBeInstanceOf(Error);
+      expect(error).toHaveProperty('message', 'Cannot write because the writer has been closed.');
     });
 
-    it('should write simple triples in N-Quads mode', done => {
+    it('should write simple triples in N-Quads mode', async () => {
       const writer = new Writer({ format: 'N-Quads' });
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'));
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('d'));
-      writer.end((error, output) => {
-        expect(output).toBe('<a> <b> <c> .\n<a> <b> <d> .\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(output).toBe('<a> <b> <c> .\n<a> <b> <d> .\n');
     });
 
-    it('should write simple quads in N-Quads mode', done => {
+    it('should write simple quads in N-Quads mode', async () => {
       const writer = new Writer({ format: 'N-Quads' });
       let called = false;
       function callback() { called = true; }
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), callback);
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('d'), new NamedNode('g'));
-      writer.end((error, output) => {
-        expect(called).toBe(true);
-        expect(output).toBe('<a> <b> <c> .\n<a> <b> <d> <g> .\n');
-        done(error);
-      });
+      const output = await end(writer);
+      expect(called).toBe(true);
+      expect(output).toBe('<a> <b> <c> .\n<a> <b> <d> <g> .\n');
     });
 
-    it('should end when the end option is not set', done => {
+    it('should end when the end option is not set', async () => {
       const outputStream = new QuickStream(), writer = new Writer(outputStream, {});
       expect(outputStream).toHaveProperty('ended', false);
-      writer.end(() => {
-        expect(outputStream).toHaveProperty('ended', true);
-        done();
-      });
+      await new Promise(resolve => writer.end(resolve));
+      expect(outputStream).toHaveProperty('ended', true);
     });
 
-    it('should end when the end option is set to true', done => {
+    it('should end when the end option is set to true', async () => {
       const outputStream = new QuickStream(), writer = new Writer(outputStream, { end: true });
       expect(outputStream).toHaveProperty('ended', false);
-      writer.end(() => {
-        expect(outputStream).toHaveProperty('ended', true);
-        done();
-      });
+      await new Promise(resolve => writer.end(resolve));
+      expect(outputStream).toHaveProperty('ended', true);
     });
 
-    it('should not end when the end option is set to false', done => {
+    it('should not end when the end option is set to false', async () => {
       const outputStream = new QuickStream(), writer = new Writer(outputStream, { end: false });
       expect(outputStream).toHaveProperty('ended', false);
-      writer.end(() => {
-        expect(outputStream).toHaveProperty('ended', false);
-        done();
-      });
+      await new Promise(resolve => writer.end(resolve));
+      expect(outputStream).toHaveProperty('ended', false);
     });
 
     it(
@@ -1164,15 +1084,13 @@ describe('Writer', () => {
       ).toBe(`<a> "123"^^<${xsd.boolean}> <c> .\n`);
     });
 
-    it('should round-trip a triple with a literal as subject in N3 mode', done => {
+    it('should round-trip a triple with a literal as subject in N3 mode', async () => {
       const quad = new Quad(termFromId(`"1"^^${xsd.boolean}`),
         new NamedNode('http://example.com/p'), new NamedNode('http://example.com/o'));
       const writer = new Writer({ format: 'text/n3' });
       writer.addQuad(quad);
-      writer.end((error, output) => {
-        expect(new Parser({ format: 'text/n3' }).parse(output)).toEqual([quad]);
-        done(error);
-      });
+      const output = await end(writer);
+      expect(new Parser({ format: 'text/n3' }).parse(output)).toEqual([quad]);
     });
 
     it('should escape a literal subject in N3 mode',
@@ -1185,7 +1103,7 @@ describe('Writer', () => {
                       ['a', `"${rdf.type}"`, 'c'],
                       `<a> "${rdf.type}" <c>.\n`));
 
-    it('should round-trip literal subjects and predicates in N3 mode', done => {
+    it('should round-trip literal subjects and predicates in N3 mode', async () => {
       const quads = [
         new Quad(termFromId('"x"@en'), new NamedNode('http://example.com/p'), new NamedNode('http://example.com/o')),
         new Quad(new NamedNode('http://example.com/s'), termFromId(`"1"^^${xsd.integer}`), new NamedNode('http://example.com/o')),
@@ -1193,10 +1111,8 @@ describe('Writer', () => {
       ];
       const writer = new Writer({ format: 'text/n3' });
       writer.addQuads(quads);
-      writer.end((error, output) => {
-        expect(new Parser({ format: 'text/n3' }).parse(output)).toEqual(quads);
-        done(error);
-      });
+      const output = await end(writer);
+      expect(new Parser({ format: 'text/n3' }).parse(output)).toEqual(quads);
     });
 
     /*

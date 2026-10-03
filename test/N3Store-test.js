@@ -43,40 +43,40 @@ describe('Store', () => {
     });
 
     describe('when removing a stream of 2 quads', () => {
-      beforeAll(done => {
+      beforeAll(() => new Promise(resolve => {
         const stream = new ArrayReader([
           new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
           new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
         ]);
         const events = store.remove(stream);
-        events.on('end', done);
-      });
+        events.on('end', resolve);
+      }));
 
       it('should have size 0', () => { expect(store.size).toEqual(0); });
     });
 
     describe('when importing a stream of 2 nested quads', () => {
-      beforeAll(done => {
+      beforeAll(() => new Promise(resolve => {
         const stream = new ArrayReader([
           new Quad(new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')), new NamedNode('p2'), new NamedNode('o2')),
           new Quad(new NamedNode('s1'), new NamedNode('p1'), new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2'))),
         ]);
         const events = store.import(stream);
-        events.on('end', done);
-      });
+        events.on('end', resolve);
+      }));
 
       it('should have size 2', () => { expect(store.size).toEqual(2); });
     });
 
     describe('when removing a stream of 2 nested quads', () => {
-      beforeAll(done => {
+      beforeAll(() => new Promise(resolve => {
         const stream = new ArrayReader([
           new Quad(new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')), new NamedNode('p2'), new NamedNode('o2')),
           new Quad(new NamedNode('s1'), new NamedNode('p1'), new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2'))),
         ]);
         const events = store.remove(stream);
-        events.on('end', done);
-      });
+        events.on('end', resolve);
+      }));
 
       it('should have size 0', () => { expect(store.size).toEqual(0); });
     });
@@ -351,25 +351,21 @@ describe('Store', () => {
       expect(store.size).toEqual(4);
     });
 
-    it('should match RDF-star and normal quads at the same time', done => {
+    it('should match RDF-star and normal quads at the same time', async () => {
       const stream = store.removeMatches(null, 'p1', 'o2');
-      stream.on('end', () => {
-        expect(store.size).toEqual(2);
-        done();
-      });
+      await new Promise(resolve => stream.on('end', resolve));
+      expect(store.size).toEqual(2);
     });
 
-    it('should allow matching using a quad', done => {
+    it('should allow matching using a quad', async () => {
       const stream = store.removeMatches(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')));
-      stream.on('end', () => {
-        expect(store.size).toEqual(0);
-        done();
-      });
+      await new Promise(resolve => stream.on('end', resolve));
+      expect(store.size).toEqual(0);
     });
 
     it(
       'should allow matching using a quad and only match against relevant quads',
-      done => {
+      async () => {
         const s2 = new Store([
           ...allQuads,
           new Quad(
@@ -379,10 +375,8 @@ describe('Store', () => {
         ]);
 
         const stream = s2.removeMatches(new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')));
-        stream.on('end', () => {
-          expect(s2.size).toEqual(2);
-          done();
-        });
+        await new Promise(resolve => stream.on('end', resolve));
+        expect(s2.size).toEqual(2);
       },
     );
   });
@@ -1569,13 +1563,11 @@ describe('Store', () => {
           expect(store.has(first)).toBe(false);
         });
 
-        it('should write import() through to the parent', done => {
+        it('should write import() through to the parent', async () => {
           const events = view.import(new ArrayReader([q('s1', 'p1', 'oI')]));
-          events.on('end', () => {
-            expect(store.has(q('s1', 'p1', 'oI'))).toBe(true);
-            expect(view.has(q('s1', 'p1', 'oI'))).toBe(true);
-            done();
-          });
+          await new Promise(resolve => events.on('end', resolve));
+          expect(store.has(q('s1', 'p1', 'oI'))).toBe(true);
+          expect(view.has(q('s1', 'p1', 'oI'))).toBe(true);
         });
 
         it('should reject additions outside the view pattern', () => {
@@ -1911,7 +1903,7 @@ describe('Store', () => {
           expect([...view]).toHaveLength(1);
         });
 
-        it('should release iteration state when its stream is destroyed mid-read', done => {
+        it('should release iteration state when its stream is destroyed mid-read', async () => {
           store = new Store();
           for (let i = 0; i < 20; i++)
             store.addQuad(q('s1', 'p1', `o${i}`));
@@ -1919,24 +1911,22 @@ describe('Store', () => {
           expect(view.read()).not.toBeNull();
           const readers = view._readers;
           expect(readers.count).toBe(1);
-          view.once('close', () => {
-            expect(readers.count).toBe(0);
-            expect(view._readers).toBe(null);
-            store.addQuad(q('s1', 'p1', 'oNEW'));
-            const seen = valuesWithMutationAfterFirstQuad(view,
-              () => store.addQuad(q('s1', 'p1', 'oNEW2')));
-            expect(seen).toHaveLength(21);
-            done();
-          });
+          const closed = new Promise(resolve => view.once('close', resolve));
           view.destroy();
+          await closed;
+          expect(readers.count).toBe(0);
+          expect(view._readers).toBe(null);
+          store.addQuad(q('s1', 'p1', 'oNEW'));
+          const seen = valuesWithMutationAfterFirstQuad(view,
+            () => store.addQuad(q('s1', 'p1', 'oNEW2')));
+          expect(seen).toHaveLength(21);
         });
 
-        it('should support destroying its stream before any read', done => {
-          view.once('close', () => {
-            expect(view.size).toBe(5);
-            done();
-          });
+        it('should support destroying its stream before any read', async () => {
+          const closed = new Promise(resolve => view.once('close', resolve));
           view.destroy();
+          await closed;
+          expect(view.size).toBe(5);
         });
 
         it('should keep concurrent iterations stable', () => {
@@ -3931,14 +3921,14 @@ describe('Store', () => {
     });
 
     describe('#import', () => {
-      beforeEach(done => {
+      beforeEach(() => new Promise(resolve => {
         const stream = new ArrayReader([
           new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
           new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
         ]);
         const events = empty.import(stream);
-        events.on('end', done);
-      });
+        events.on('end', resolve);
+      }));
 
       it('should have size 2', () => { expect(empty.size).toEqual(2); });
     });
@@ -4080,16 +4070,16 @@ describe('Store', () => {
       expect(other.has(quoted)).toBe(true);
     });
 
-    it('should be written as <> by the Writer', done => {
+    it('should be written as <> by the Writer', async () => {
       const writer = new Writer();
       writer.addQuads(store.getQuads());
-      writer.end((error, output) => {
-        expect(output).toBe(
-          '<> <http://example.org/p> <http://example.org/o>.\n' +
-          '<http://example.org/o> <http://example.org/p> <>.\n' +
-          '<> {\n<http://example.org/o> <http://example.org/p> <http://example.org/o>\n}\n');
-        done(error);
+      const output = await new Promise((resolve, reject) => {
+        writer.end((error, result) => error ? reject(error) : resolve(result));
       });
+      expect(output).toBe(
+        '<> <http://example.org/p> <http://example.org/o>.\n' +
+        '<http://example.org/o> <http://example.org/p> <>.\n' +
+        '<> {\n<http://example.org/o> <http://example.org/p> <http://example.org/o>\n}\n');
     });
   });
 });

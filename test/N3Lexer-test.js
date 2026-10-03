@@ -126,28 +126,30 @@ describe('Lexer', () => {
 
     it(
       'should not tokenize an IRI with a non-numeric 4-digit unicode escapes',
-      done => {
+      () => new Promise(resolve => {
         const stream = new EventEmitter(), lexer = new Lexer();
         lexer.tokenize(stream, (error, token) => {
           expect(error).toBeInstanceOf(Error);
           expect(error.message).toBe('Unexpected "<\\uz234>" on line 1.');
-          done(token);
+          expect(token).toBeUndefined();
+          resolve();
         });
         stream.emit('data', '<\\uz234>');
-      },
+      }),
     );
 
     it(
       'should not tokenize an IRI with a non-numeric 8-digit unicode escapes',
-      done => {
+      () => new Promise(resolve => {
         const stream = new EventEmitter(), lexer = new Lexer();
         lexer.tokenize(stream, (error, token) => {
           expect(error).toBeInstanceOf(Error);
           expect(error.message).toBe('Unexpected "<\\Uz2345678>" on line 1.');
-          done(token);
+          expect(token).toBeUndefined();
+          resolve();
         });
         stream.emit('data', '<\\Uz2345678>');
-      },
+      }),
     );
 
     it(
