@@ -1388,7 +1388,7 @@ describe('Parser', () => {
       expect(() => new Parser().parse('')).not.toThrow();
     });
 
-    it('should return prefixes through a callback', done => {
+    it('should return prefixes through a callback', () => new Promise(resolve => {
       const prefixes = {};
       new Parser().parse('@prefix a: <http://a.org/#>. a:a a:b a:c. @prefix b: <http://b.org/#>.',
                            tripleCallback, prefixCallback);
@@ -1403,7 +1403,7 @@ describe('Parser', () => {
           expect(prefixes).toHaveProperty('b');
           expect(prefixes.b).toEqual(new NamedNode('http://b.org/#'));
           /* eslint-enable jest/no-conditional-expect */
-          done();
+          resolve();
         }
       }
 
@@ -1412,11 +1412,11 @@ describe('Parser', () => {
         expect(iri).toBeDefined();
         prefixes[prefix] = iri;
       }
-    });
+    }));
 
     it(
       'should return prefixes through a callback without triple callback',
-      done => {
+      () => new Promise(resolve => {
         const prefixes = {};
         new Parser().parse('@prefix a: <IRIa>. a:a a:b a:c. @prefix b: <IRIb>.',
                              null, prefixCallback);
@@ -1426,12 +1426,12 @@ describe('Parser', () => {
           expect(iri).toBeDefined();
           prefixes[prefix] = iri;
           if (Object.keys(prefixes).length === 2)
-            done();
+            resolve();
         }
-      },
+      }),
     );
 
-    it('should return prefixes at the last triple callback', done => {
+    it('should return prefixes at the last triple callback', () => new Promise(resolve => {
       new Parser({ baseIRI: BASE_IRI })
         .parse('@prefix a: <IRIa>. a:a a:b a:c. @prefix b: <IRIb>.', tripleCallback);
 
@@ -1445,11 +1445,11 @@ describe('Parser', () => {
           expect(Object.keys(prefixes)).toHaveLength(2);
           expect(prefixes).toHaveProperty('a', 'http://example.org/IRIa');
           expect(prefixes).toHaveProperty('b', 'http://example.org/IRIb');
-          done();
+          resolve();
         }
         /* eslint-enable jest/no-conditional-expect */
       }
-    });
+    }));
 
     it('should parse a string synchronously if no callback is given', () => {
       const triples = new Parser().parse('@prefix a: <urn:a:>. a:a a:b a:c.');
@@ -3823,7 +3823,7 @@ describe('Parser', () => {
         for (let predicateDepth = 0; predicateDepth < 4; predicateDepth++) {
           for (let objectDepth = subjectDepth || predicateDepth ? 0 : 1; objectDepth < 4; objectDepth++) {
             it(`should parse lists of depths ${subjectDepth}, ${predicateDepth}, and ${objectDepth
-                } in the subject, predicate, and object`, done => {
+                } in the subject, predicate, and object`, async () => {
               const doc = `${nested(subjectDepth, 's')} ${nested(predicateDepth, 'p')} ${nested(objectDepth, 'o')}.`;
               const quads = new Parser({ baseIRI: BASE_IRI, format: 'N3' }).parse(doc);
 
@@ -3863,11 +3863,10 @@ describe('Parser', () => {
               // The parsed quads survive a round trip through the writer
               const writer = new Writer({ format: 'text/n3' });
               writer.addQuads(quads);
-              writer.end((error, output) => {
-                expect(error).toBeFalsy();
-                expect(isomorphic(new Parser({ baseIRI: BASE_IRI, format: 'N3' }).parse(output), quads)).toBe(true);
-                done();
+              const output = await new Promise((resolve, reject) => {
+                writer.end((error, result) => error ? reject(error) : resolve(result));
               });
+              expect(isomorphic(new Parser({ baseIRI: BASE_IRI, format: 'N3' }).parse(output), quads)).toBe(true);
             });
           }
         }
@@ -5542,17 +5541,16 @@ function shouldNotParseWithComments(parser, input, expectedError, expectedContex
 function itShouldResolve(baseIRI, relativeIri, expected) {
   let result;
   describe(`resolving <${relativeIri}> against <${baseIRI}>`, () => {
-    beforeAll(done => {
-      try {
-        const doc = `<urn:ex:s> <urn:ex:p> <${relativeIri}>.`;
-        new Parser({ baseIRI }).parse(doc, (error, triple) => {
-          if (done)
-            result = triple, done(error);
-          done = null;
-        });
-      }
-      catch (error) { done(error); }
-    });
+    // Only the first callback counts; a parse error rejects
+    beforeAll(() => new Promise((resolve, reject) => {
+      const doc = `<urn:ex:s> <urn:ex:p> <${relativeIri}>.`;
+      new Parser({ baseIRI }).parse(doc, (error, triple) => {
+        if (error)
+          reject(error);
+        else if (!result)
+          result = triple, resolve();
+      });
+    }));
     it(`should result in ${expected}`, () => {
       expect(result.object.value).toBe(expected);
     });
