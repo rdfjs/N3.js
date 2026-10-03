@@ -3738,6 +3738,19 @@ describe('Store', () => {
         expect(store1.contains(storeb)).toBe(false);
         expect(storeb.contains(store1)).toBe(false);
       });
+
+      it('should return false for a quad that differs only in its object', () => {
+        const other = new Store([q[1]], options);
+        expect(store.contains(other)).toBe(false);
+        expect(other.contains(store)).toBe(false);
+      });
+
+      it('should test the quads of a dataset without a size', () => {
+        const quads = [...store1];
+        const dataset = { every: callback => quads.every(callback) };
+        expect(store1.contains(dataset)).toBe(true);
+        expect(store.contains(dataset)).toBe(false);
+      });
     });
 
     describe('#union', () => {

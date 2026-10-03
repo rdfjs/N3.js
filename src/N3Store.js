@@ -1072,19 +1072,25 @@ export default class N3Store {
     if (other === this)
       return true;
 
-    if (!(other instanceof N3Store) || this._entityIndex !== other._entityIndex)
+    if (!(other instanceof N3Store) || this._entityIndex !== other._entityIndex) {
+      // A larger set cannot be a subset
+      if (typeof other.size === 'number' && other.size > this.size)
+        return false;
       return other.every(quad => this.has(quad));
+    }
 
+    // At every level, the index of the subset cannot have more entries
     const g1 = this._graphs, g2 = other._graphs;
-    let s1, s2, p1, p2, o1;
+    let s1, s2, p1, p2, o1, o2;
     for (const graph in g2) {
       if (!(s1 = g1[graph])) return false;
       s1 = s1.subjects;
-      for (const subject in (s2 = g2[graph].subjects)) {
-        if (!(p1 = s1[subject])) return false;
-        for (const predicate in (p2 = s2[subject])) {
-          if (!(o1 = p1[predicate])) return false;
-          for (const object in p2[predicate])
+      if ((s2 = g2[graph].subjects)[SIZE] > s1[SIZE]) return false;
+      for (const subject in s2) {
+        if (!(p1 = s1[subject]) || (p2 = s2[subject])[SIZE] > p1[SIZE]) return false;
+        for (const predicate in p2) {
+          if (!(o1 = p1[predicate]) || (o2 = p2[predicate])[SIZE] > o1[SIZE]) return false;
+          for (const object in o2)
             if (!(object in o1)) return false;
         }
       }
@@ -1180,6 +1186,14 @@ export default class N3Store {
       return store;
     }
 
+    // Test the quads of the smaller dataset against the larger one
+    if (typeof other.size === 'number' && other.size < this.size && typeof other[Symbol.iterator] === 'function') {
+      const store = new N3Store({ entityIndex: this._entityIndex });
+      for (const quad of other)
+        if (this.has(quad))
+          store.add(quad);
+      return store;
+    }
     return this.filter(quad => other.has(quad));
   }
 
