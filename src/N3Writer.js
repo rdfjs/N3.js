@@ -152,13 +152,10 @@ export default class N3Writer {
       // If it is a list head, pretty-print it
       if (this._lists && (entity.value in this._lists))
         entity = this.list(this._lists[entity.value]);
-      const termType = entity.termType;
-      if (termType === 'Quad')
-        return this._encodeQuad(entity);
       // Terms from this library already hold their serialization as id
       if (entity instanceof Term)
         return entity.id;
-      return termType === 'Variable' ? `?${entity.value}` : `_:${entity.value}`;
+      return entity.termType === 'Variable' ? `?${entity.value}` : `_:${entity.value}`;
     }
     let iri = entity.value;
     // Use relative IRIs if requested and possible
