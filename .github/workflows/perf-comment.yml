@@ -1,0 +1,49 @@
+name: Performance comment
+
+# Posts (or updates) the result of perf.yml as a comment on the pull request.
+# Runs in the base repository's context so it can comment on pull requests
+# from forks. It never checks out or runs pull request code, and treats the
+# downloaded artifact as untrusted input.
+on:
+  workflow_run:
+    workflows: [Performance]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  comment:
+    if: github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      pull-requests: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: perf-comment
+          path: perf-comment
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - name: Post comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          pr=$(cat perf-comment/pr-number)
+          if ! [[ "$pr" =~ ^[0-9]+$ ]]; then echo "Bad PR number"; exit 1; fi
+          marker='<!-- n3-perf-comparison -->'
+          {
+            echo "$marker"
+            head -c 60000 perf-comment/perf-results.md
+            echo
+            echo "<sub>Updated for ${{ github.event.workflow_run.head_sha }} by the [Performance workflow](${{ github.event.workflow_run.html_url }}).</sub>"
+          } > body.md
+          id=$(gh api "repos/$REPO/issues/$pr/comments" --paginate \
+            --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$marker\"))) | .id" | head -n1)
+          if [ -n "$id" ]; then
+            gh api --method PATCH "repos/$REPO/issues/comments/$id" -F body=@body.md > /dev/null
+          else
+            gh api --method POST "repos/$REPO/issues/$pr/comments" -F body=@body.md > /dev/null
+          fi

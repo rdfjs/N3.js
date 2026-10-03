@@ -667,3 +667,4 @@ N3.js is released under the [MIT License](https://github.com/rdfjs/N3.js/blob/ma
 
 Contributions are welcome, and bug reports or pull requests are always helpful.
 If you plan to implement a larger feature, it's best to contact us first.
+Pull requests are benchmarked against the base branch; see [perf/README.md](perf/README.md) for what that covers.
