@@ -23,10 +23,12 @@ read with the [Conventional Commits](https://www.conventionalcommits.org/) prese
 ## Keeping `next-major` current
 
 [`sync-next-major.yml`](.github/workflows/sync-next-major.yml) merges `main` into
-`next-major` after every push to `main`. That push runs CI on `next-major`, which
-publishes a new alpha whenever the merge brought in a `fix` or `feat`. It pushes with
-the `DEPENDABOT_AUTOMERGE_TOKEN` PAT, because pushes made with `GITHUB_TOKEN` don't
-trigger CI.
+`next-major` once CI on `main`, including its release, has passed. That push runs CI on
+`next-major`, which publishes a new alpha whenever the merge brought in a `fix` or
+`feat`. It pushes with the `DEPENDABOT_AUTOMERGE_TOKEN` PAT, because pushes made with
+`GITHUB_TOKEN` don't trigger CI. That token needs Contents, Pull requests and Workflows
+write. Without Workflows write, GitHub rejects any sync that brings in a change to
+`.github/workflows`.
 
 It merges rather than rebases, for two reasons:
 
@@ -53,14 +55,19 @@ and only fix what the alphas turn up.
 
 **How.**
 
-1. Open a pull request from `next-major` into `main`, titled `feat!: release N3.js vN`.
-2. Merge it through the merge queue like any other pull request. `main` requires linear
+1. Merge or close every open pull request into `next-major`. Step 5 restarts the branch,
+   so a pull request left open would show the whole old major in its diff. If one has to
+   stay open, its author rebases it afterwards onto the new branch with
+   `git rebase --onto origin/next-major <old next-major sha>`.
+2. Open a pull request from `next-major` into `main`, titled `feat!: release N3.js vN`.
+3. Merge it through the merge queue like any other pull request. `main` requires linear
    history, so the major lands as one squashed commit.
-3. CI on `main` publishes `vN.0.0` to `latest`. Its generated notes cover only the one
+4. CI on `main` publishes `vN.0.0` to `latest`. Its generated notes cover only the one
    squashed commit, so edit the GitHub release to collect the changes from the alpha
    release notes, along with the migration guide.
-4. The sync sees that `next-major` now has nothing `main` lacks and resets it to `main`,
-   which publishes nothing. Merging instead would count the old breaking commits again
+5. Once that release has passed, the sync sees that `next-major` has nothing `main`
+   lacks and resets it to `main`. Because `vN.0.0` is already tagged, this publishes
+   nothing. Merging instead would count the old breaking commits again
    and publish a stray `vN+1.0.0-alpha.1`. The old alpha tags stay where they are.
    The branch is ready for the following major, whose first breaking change publishes
    `vN+1.0.0-alpha.1`.
