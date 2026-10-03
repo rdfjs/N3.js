@@ -90,12 +90,8 @@ export default class N3Writer {
   // ### `_writeQuad` writes the quad to the output stream
   _writeQuad(subject, predicate, object, graph, done) {
     // Refuse to write a quad in a named graph if the `graphs` option demands it
-    if (this._graphs === 'error' && !isDefaultGraph(graph)) {
-      const error = new Error('The chosen serialization settings do not support triples in a non-default graph.');
-      if (!done)
-        throw error;
-      return done(error);
-    }
+    if (this._graphs === 'error' && !isDefaultGraph(graph))
+      return this._rejectNamedGraph(done);
     try {
       // Write the graph's label if it has changed
       // (the id-based fast path of `equals` would conflate
@@ -133,15 +129,19 @@ export default class N3Writer {
   _writeQuadLine(subject, predicate, object, graph, done) {
     // Write the quad without prefixes
     delete this._prefixMatch;
-    try {
-      this._write(this.quadToString(subject, predicate, object, graph), done);
-    }
-    catch (error) {
-      // Without a callback, the error can only be reported by throwing
-      if (!done)
-        throw error;
-      done(error);
-    }
+    // Refuse to write a quad in a named graph if the `graphs` option demands it
+    if (this._graphs === 'error' && !isDefaultGraph(graph))
+      return this._rejectNamedGraph(done);
+    this._write(this.quadToString(subject, predicate, object, graph), done);
+  }
+
+  // ### `_rejectNamedGraph` reports a quad in a named graph under `graphs: 'error'`
+  _rejectNamedGraph(done) {
+    const error = new Error('The chosen serialization settings do not support triples in a non-default graph.');
+    // Without a callback, the error can only be reported by throwing
+    if (!done)
+      throw error;
+    done(error);
   }
 
   // ### `quadToString` serializes a quad as a string
