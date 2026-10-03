@@ -180,6 +180,19 @@ module.exports = {
     }
     if (!n) throw new Error('nothing created');
   },
+  'datafactory: literals from numbers, booleans and dates': N3 => {
+    const values = [];
+    for (let i = 0; i < 1000; i++)
+      values.push(i, -i * 7919, i / 7, i * 1e19, i * 1e22, i % 2 === 0, new Date(Date.UTC(2020, 0, 1 + i)));
+    values.push(Infinity, -Infinity, NaN);
+    return () => {
+      const { literal } = N3.DataFactory;
+      let n = 0;
+      for (let r = 0; r < 30; r++)
+        for (const value of values) n += literal(value).datatype.value.length;
+      if (!n) throw new Error('nothing created');
+    };
+  },
   'datafactory: term getters and equals': N3 => {
     const { namedNode, literal, quad } = N3.DataFactory;
     const dt = namedNode('http://www.w3.org/2001/XMLSchema#integer');
