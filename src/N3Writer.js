@@ -78,7 +78,7 @@ export default class N3Writer {
       if (options.baseIRI) {
         this._baseIri = new BaseIRI(options.baseIRI);
         if (options.writeBase)
-          this._write(`@base <${options.baseIRI}>.\n`);
+          this._write(`@base <${escapeIriValue(options.baseIRI)}>.\n`);
       }
       options.prefixes && this.addPrefixes(options.prefixes);
     }
@@ -180,9 +180,11 @@ export default class N3Writer {
       iri = this._baseIri.toRelative(iri);
     }
     // Escape IRIREF-forbidden characters so a term value cannot break out of
-    // its angle brackets and inject forged triples (RDF-injection)
+    // its angle brackets and inject forged triples (RDF-injection).
+    // An escaped IRI is never written as a prefixed name,
+    // since prefixed names do not allow UCHAR escapes.
     if (escapeIri.test(iri))
-      iri = iri.replace(escapeIriAll, iriCharacterReplacer);
+      return `<${iri.replace(escapeIriAll, iriCharacterReplacer)}>`;
     // Try to represent the IRI as prefixed name, unless no prefixes were added
     const prefixMatch = this._hasPrefixes ? this._prefixRegex.exec(iri) : null;
     return !prefixMatch ? `<${iri}>` :
@@ -316,9 +318,7 @@ export default class N3Writer {
       // Store and write the prefix (escaping the written IRI so a hostile
       // prefix target cannot break out of its angle brackets)
       this._prefixIRIs[iri] = (prefix += ':');
-      const escapedIri = escapeIri.test(iri) ?
-        iri.replace(escapeIriAll, iriCharacterReplacer) : iri;
-      this._write(`@prefix ${prefix} <${escapedIri}>.\n`);
+      this._write(`@prefix ${prefix} <${escapeIriValue(iri)}>.\n`);
     }
     // Recreate the prefix matcher
     if (hasPrefixes) {
@@ -426,6 +426,11 @@ function characterReplacer(character) {
     }
   }
   return result;
+}
+
+// Escapes IRIREF-forbidden characters in an IRI written between angle brackets
+function escapeIriValue(iri) {
+  return escapeIri.test(iri) ? iri.replace(escapeIriAll, iriCharacterReplacer) : iri;
 }
 
 // Replaces an IRI character by its UCHAR escape (\uXXXX / \UXXXXXXXX).

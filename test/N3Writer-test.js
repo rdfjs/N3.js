@@ -5959,6 +5959,40 @@ describe('Writer term-serialisation safety (#659)', () => {
     expect(out).not.toContain('> <http://ex/s>');
     expect(out).toContain(uEscape(0x3e));
   });
+
+  it('escapes a hostile base IRI in the @base declaration', () => {
+    const hostileBase = `http://evil/> <http://ex/s> <http://ex/p> <http://ex/o> .${NL}`;
+    const writer = new Writer({ baseIRI: hostileBase, writeBase: true });
+    let out;
+    writer.end((error, result) => { out = result; });
+    expect(out).not.toContain('> <http://ex/s>');
+    expect(out).toBe(`@base <http://evil/${uEscape(0x3e)}${uEscape(0x20)}${uEscape(0x3c)}http://ex/s` +
+      `${uEscape(0x3e)}${uEscape(0x20)}${uEscape(0x3c)}http://ex/p${uEscape(0x3e)}${uEscape(0x20)}` +
+      `${uEscape(0x3c)}http://ex/o${uEscape(0x3e)}${uEscape(0x20)}.${uEscape(0x0a)}>.${NL}`);
+  });
+
+  it('writes an escaped IRI in full instead of as a prefixed name', () => {
+    const writer = new Writer({ prefixes: { ex: 'http://ex/' } });
+    const out = writer.quadToString(
+      new NamedNode('ex:a> <http://ex/s2'),
+      new NamedNode('http://ex/p'),
+      new NamedNode('http://ex/a b'),
+    );
+    expect(out).toBe(`<ex:a${uEscape(0x3e)}${uEscape(0x20)}${uEscape(0x3c)}http://ex/s2> ex:p ` +
+      `<http://ex/a${uEscape(0x20)}b> .${NL}`);
+  });
+
+  it('escapes a hostile graph IRI in N-Quads', () => {
+    const writer = new Writer({ format: 'N-Quads' });
+    const out = writer.quadToString(
+      new NamedNode('http://ex/s'),
+      new NamedNode('http://ex/p'),
+      new NamedNode('http://ex/o'),
+      new NamedNode(`http://ex/g> .${NL}<http://ex/s2> <http://ex/p2> <http://ex/o2`),
+    );
+    expect(out).not.toContain(`${NL}<http://ex/s2>`);
+    expect(out.split(NL)).toHaveLength(2);
+  });
 });
 
 function shouldSerialize(/* prefixes?, tripleArrays..., expectedResult */) {
