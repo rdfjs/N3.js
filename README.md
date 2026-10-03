@@ -220,6 +220,16 @@ the `emptyFormulaAsTrue` flag enables that behavior:
 const parser = new N3.Parser({ format: 'text/n3', emptyFormulaAsTrue: true });
 ```
 
+In N3 documents, the parser by default rescopes blank node labels
+in lists and blank node property lists, in addition to formulas,
+so `_:a` inside a list does not co-reference `_:a` outside of it.
+The `formulaScopedBlankNodes` flag scopes blank node labels to formulas only,
+matching N3's formula-scoped blank node semantics
+(this will become the default in the next major version):
+```JavaScript
+const parser = new N3.Parser({ format: 'N3', formulaScopedBlankNodes: true });
+```
+
 ### From an RDF stream to quads
 
 `N3.Parser` can parse [Node.js streams](http://nodejs.org/api/stream.html) as they grow,
@@ -667,4 +677,3 @@ N3.js is released under the [MIT License](https://github.com/rdfjs/N3.js/blob/ma
 
 Contributions are welcome, and bug reports or pull requests are always helpful.
 If you plan to implement a larger feature, it's best to contact us first.
-Pull requests are benchmarked against the base branch; see [perf/README.md](perf/README.md) for what that covers.
