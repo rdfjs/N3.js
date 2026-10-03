@@ -1561,6 +1561,47 @@ describe('Parser', () => {
     );
 
     it(
+        'should parse a reified triple with an empty reifier in subject',
+        shouldParse('<<<a> <b> <c> ~>> <b> <c>.',
+            ['_:b0', 'b', 'c'],
+            ['_:b0', reifies, ['a', 'b', 'c']],
+        ),
+    );
+
+    it(
+        'should parse a reified triple with an empty reifier in object',
+        shouldParse('<a> <b> <<<a> <b> <c> ~ >>.',
+            ['a', 'b', '_:b0'],
+            ['_:b0', reifies, ['a', 'b', 'c']],
+        ),
+    );
+
+    it(
+        'should parse nested reified triples with empty reifiers',
+        shouldParse('<< << <a> <b> <c> ~ >> <d> <e> ~ >> <f> <g>.',
+            ['_:b1', 'f', 'g'],
+            ['_:b0', reifies, ['a', 'b', 'c']],
+            ['_:b1', reifies, ['_:b0', 'd', 'e']],
+        ),
+    );
+
+    it(
+        'should parse a reified triple with an empty reifier in a list',
+        shouldParse('<a> <b> (<< <a> <b> <c> ~ >>).',
+            ['_:b1', reifies, ['a', 'b', 'c']],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+            ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+            ['a', 'b', '_:b0'],
+        ),
+    );
+
+    it(
+        'should not parse a reified triple with two reifiers',
+        shouldNotParse('<< <a> <b> <c> ~ ~ >> <d> <e>.',
+            'Expected entity but got ~ on line 1.'),
+    );
+
+    it(
       'should parse a triple term with a triple as object correctly',
       shouldParse('<a> <b> <<(<a> <b> <c>)>>.',
         ['a', 'b', ['a', 'b', 'c']]),
