@@ -2669,6 +2669,7 @@ describe('Parser', () => {
       return new Parser({ baseIRI: 'http://example.com/doc#old', format: 'N3', implicitEmptyPrefix: true });
     }
     function parserIsImpliedBy() { return new Parser({ baseIRI: BASE_IRI, format: 'N3', isImpliedBy: true }); }
+    function parserFormulaScoped() { return new Parser({ baseIRI: BASE_IRI, format: 'N3', formulaScopedBlankNodes: true }); }
 
     it(
       'should bind the empty prefix to the document local namespace',
@@ -3152,6 +3153,116 @@ describe('Parser', () => {
                   ['_:b2', 'http://www.w3.org/2000/10/swap/log#implies', '_:b3', '_:b1'],
                   ['_:b2.a', '_:b2.b', '_:b2.c', '_:b2'],
                   ['_:b3.a', '_:b3.b', '_:b3.c', '_:b3']),
+    );
+
+    // The tests below pin the default behaviour of rescoping blank node
+    // labels in lists and blank node property lists (#332, #660);
+    // the default flips to `formulaScopedBlankNodes` in a next major version (#630)
+
+    it(
+      'should rescope a blank node in a list by default',
+      shouldParse(parser, '<s> <p> (_:a).',
+                  ['s', 'p', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:.a'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+    );
+
+    it(
+      'should not reuse identifiers of blank nodes within and outside of lists by default',
+      shouldParse(parser, '<s> <p> (_:a). _:a <b> <c>.',
+                  ['s', 'p', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:.a'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b0_a', 'b', 'c']),
+    );
+
+    it(
+      'should not reuse identifiers of blank nodes within and outside of blank node property lists by default',
+      shouldParse(parser, '_:a <p> [ <q> _:a ].',
+                  ['_:b0_a', 'p', '_:b0'],
+                  ['_:b0', 'q', '_:.a']),
+    );
+
+    it(
+      'should scope blank nodes in a list to the enclosing formula by default',
+      shouldParse(parser, '_:a <p> <o>. { <s> <q> (_:a). _:a <r> <o2>. } <d> <e>.',
+                  ['_:b0_a', 'p', 'o'],
+                  ['s', 'q', '_:b1', '_:b0'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b0.a', '_:b0'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b0'],
+                  ['_:b0.a', 'r', 'o2', '_:b0'],
+                  ['_:b0', 'd', 'e']),
+    );
+
+    it(
+      'should parse a blank node in a list with formulaScopedBlankNodes',
+      shouldParse(parserFormulaScoped, '<s> <p> (_:a).',
+                  ['s', 'p', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b0_a'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+    );
+
+    it(
+      'should reuse identifiers of blank nodes within and outside of lists with formulaScopedBlankNodes',
+      shouldParse(parserFormulaScoped, '<s> <p> (_:a). _:a <b> <c>.',
+                  ['s', 'p', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b0_a'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b0_a', 'b', 'c']),
+    );
+
+    it(
+      'should reuse identifiers of blank nodes within and outside of blank node property lists with formulaScopedBlankNodes',
+      shouldParse(parserFormulaScoped, '_:a <p> [ <q> _:a ].',
+                  ['_:b0_a', 'p', '_:b0'],
+                  ['_:b0', 'q', '_:b0_a']),
+    );
+
+    it(
+      'should reuse identifiers of blank nodes in nested lists and blank node property lists with formulaScopedBlankNodes (#660)',
+      shouldParse(parserFormulaScoped, '_:a <p> ([ <q> _:a ] (_:a)).',
+                  ['_:b0_a', 'p', '_:b0'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b1'],
+                  ['_:b1', 'q', '_:b0_a'],
+                  ['_:b0', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', '_:b2'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b3'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b0_a'],
+                  ['_:b3', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil'],
+                  ['_:b2', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil']),
+    );
+
+    it(
+      'should reuse identifiers of blank nodes within and outside of reified triples with formulaScopedBlankNodes',
+      shouldParse(parserFormulaScoped, '_:a <p> << _:a <q> <o> >>.',
+                  ['_:b0', reifies, ['_:b0_a', 'q', 'o']],
+                  ['_:b0_a', 'p', '_:b0']),
+    );
+
+    it(
+      'should reuse identifiers of blank nodes within and outside of triple terms with formulaScopedBlankNodes',
+      shouldParse(parserFormulaScoped, '_:a <p> <<( _:a <q> <o> )>>.',
+                  ['_:b0_a', 'p', ['_:b0_a', 'q', 'o']]),
+    );
+
+    it(
+      'should scope blank nodes in reified triples and triple terms to the enclosing formula with formulaScopedBlankNodes',
+      shouldParse(parserFormulaScoped, '_:a <p> <o>. { _:a <p> << _:a <q> <o> >>. _:a <p> <<( _:a <q> <o> )>>. } <d> <e>.',
+                  ['_:b0_a', 'p', 'o'],
+                  ['_:b1', reifies, ['_:b0.a', 'q', 'o'], '_:b0'],
+                  ['_:b0.a', 'p', '_:b1', '_:b0'],
+                  ['_:b0.a', 'p', ['_:b0.a', 'q', 'o'], '_:b0'],
+                  ['_:b0', 'd', 'e']),
+    );
+
+    it(
+      'should scope blank nodes in a list to the enclosing formula with formulaScopedBlankNodes',
+      shouldParse(parserFormulaScoped, '_:a <p> <o>. { <s> <q> (_:a). _:a <r> <o2>. } <d> <e>.',
+                  ['_:b0_a', 'p', 'o'],
+                  ['s', 'q', '_:b1', '_:b0'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first', '_:b0.a', '_:b0'],
+                  ['_:b1', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', '_:b0'],
+                  ['_:b0.a', 'r', 'o2', '_:b0'],
+                  ['_:b0', 'd', 'e']),
     );
 
     it(
