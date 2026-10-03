@@ -9,7 +9,7 @@ import {
 } from '../src';
 import namespaces from '../src/IRIs';
 
-const { xsd } = namespaces;
+const { xsd, rdf } = namespaces;
 
 describe('Writer', () => {
   describe('The Writer export', () => {
@@ -1140,6 +1140,30 @@ describe('Writer', () => {
       writer.addQuad(quad);
       writer.end((error, output) => {
         expect(new Parser({ format: 'text/n3' }).parse(output)).toEqual([quad]);
+        done(error);
+      });
+    });
+
+    it('should escape a literal subject in N3 mode',
+      shouldSerialize({ format: 'text/n3' },
+                      ['"a"b"', 'b', 'c'],
+                      '"a\\"b" <b> <c>.\n'));
+
+    it('should not abbreviate a literal predicate whose value is rdf:type',
+      shouldSerialize({ format: 'text/n3' },
+                      ['a', `"${rdf.type}"`, 'c'],
+                      `<a> "${rdf.type}" <c>.\n`));
+
+    it('should round-trip literal subjects and predicates in N3 mode', done => {
+      const quads = [
+        new Quad(termFromId('"x"@en'), new NamedNode('http://example.com/p'), new NamedNode('http://example.com/o')),
+        new Quad(new NamedNode('http://example.com/s'), termFromId(`"1"^^${xsd.integer}`), new NamedNode('http://example.com/o')),
+        new Quad(termFromId('"a"b"'), termFromId(`"${rdf.type}"`), termFromId('"c"')),
+      ];
+      const writer = new Writer({ format: 'text/n3' });
+      writer.addQuads(quads);
+      writer.end((error, output) => {
+        expect(new Parser({ format: 'text/n3' }).parse(output)).toEqual(quads);
         done(error);
       });
     });

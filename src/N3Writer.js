@@ -129,7 +129,8 @@ export default class N3Writer {
   // ### `quadToString` serializes a quad as a string
   quadToString(subject, predicate, object, graph) {
     return  `${this._encodeSubject(subject)} ${
-            this._encodeTerm(predicate)} ${
+            predicate.termType === 'Literal' ?
+              this._encodeLiteral(predicate) : this._encodeIriOrBlank(predicate)} ${
             this._encodeObject(object)
             }${graph && !isDefaultGraph(graph) ? ` ${this._encodeIriOrBlank(graph)} .\n` : ' .\n'}`;
   }
@@ -144,7 +145,15 @@ export default class N3Writer {
 
   // ### `_encodeSubject` represents a subject
   _encodeSubject(entity) {
-    return this._encodeTerm(entity);
+    switch (entity.termType) {
+    case 'Quad':
+      return this._encodeQuad(entity);
+    // Literal subjects are only valid in N3
+    case 'Literal':
+      return this._encodeLiteral(entity);
+    default:
+      return this._encodeIriOrBlank(entity);
+    }
   }
 
   // ### `_encodeIriOrBlank` represents an IRI or blank node
@@ -222,23 +231,26 @@ export default class N3Writer {
 
   // ### `_encodePredicate` represents a predicate
   _encodePredicate(predicate) {
-    return predicate.value === rdf.type ? 'a' : this._encodeTerm(predicate);
+    switch (predicate.termType) {
+    case 'NamedNode':
+      return predicate.value === rdf.type ? 'a' : this._encodeIriOrBlank(predicate);
+    // Literal predicates are only valid in N3
+    case 'Literal':
+      return this._encodeLiteral(predicate);
+    default:
+      return this._encodeIriOrBlank(predicate);
+    }
   }
 
   // ### `_encodeObject` represents an object
   _encodeObject(object) {
-    return this._encodeTerm(object);
-  }
-
-  // ### `_encodeTerm` represents an arbitrary term
-  _encodeTerm(term) {
-    switch (term.termType) {
+    switch (object.termType) {
     case 'Quad':
-      return this._encodeQuad(term);
+      return this._encodeQuad(object);
     case 'Literal':
-      return this._encodeLiteral(term);
+      return this._encodeLiteral(object);
     default:
-      return this._encodeIriOrBlank(term);
+      return this._encodeIriOrBlank(object);
     }
   }
 
