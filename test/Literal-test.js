@@ -910,4 +910,78 @@ describe('Literal', () => {
       });
     });
   });
+
+  describe('Literal getter caching', () => {
+    const cases = {
+      'a plain string': ['"abc"', 'abc', '', '', 'http://www.w3.org/2001/XMLSchema#string'],
+      'the empty string': ['""', '', '', '', 'http://www.w3.org/2001/XMLSchema#string'],
+      'a language-tagged string': ['"abc"@en-US', 'abc', 'en-us', '', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString'],
+      'a directional string': ['"abc"@en-US--RTL', 'abc', 'en-us', 'rtl', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#dirLangString'],
+      'a typed literal': ['"1"^^http://www.w3.org/2001/XMLSchema#integer', '1', '', '', 'http://www.w3.org/2001/XMLSchema#integer'],
+    };
+
+    for (const [name, [id, value, language, direction, datatype]] of Object.entries(cases)) {
+      describe(`for ${name}`, () => {
+        it('should start with empty caches', () => {
+          const literal = new Literal(id);
+          expect(literal._value).toBeUndefined();
+          expect(literal._language).toBeUndefined();
+          expect(literal._direction).toBeUndefined();
+          expect(literal._datatype).toBeUndefined();
+        });
+
+        it('should cache each getter on first access', () => {
+          const literal = new Literal(id);
+          expect(literal.value).toBe(value);
+          expect(literal._value).toBe(value);
+          expect(literal.language).toBe(language);
+          expect(literal._language).toBe(language);
+          expect(literal.direction).toBe(direction);
+          expect(literal._direction).toBe(direction);
+          expect(literal.datatype.value).toBe(datatype);
+          expect(literal._datatype).toBe(literal.datatype);
+        });
+
+        it('should return the same values on repeated access', () => {
+          const literal = new Literal(id);
+          for (let i = 0; i < 3; i++) {
+            expect(literal.value).toBe(value);
+            expect(literal.language).toBe(language);
+            expect(literal.direction).toBe(direction);
+            expect(literal.datatypeString).toBe(datatype);
+            expect(literal.datatype.value).toBe(datatype);
+          }
+        });
+
+        it('should return a stable datatype instance', () => {
+          const literal = new Literal(id);
+          const first = literal.datatype;
+          expect(first).toBeInstanceOf(NamedNode);
+          expect(literal.datatype).toBe(first);
+          expect(literal.datatypeString).toBe(datatype);
+        });
+
+        it('should still equal a fresh literal after access', () => {
+          const literal = new Literal(id);
+          expect([literal.value, literal.language, literal.direction, literal.datatype.value])
+            .toEqual([value, language, direction, datatype]);
+          expect(literal.equals(new Literal(id))).toBe(true);
+          expect(new Literal(id).equals(literal)).toBe(true);
+          expect(literal.toJSON()).toEqual(new Literal(id).toJSON());
+        });
+
+        it('should compute values for frozen literals without caching', () => {
+          const literal = Object.freeze(new Literal(id));
+          for (let i = 0; i < 2; i++) {
+            expect(literal.value).toBe(value);
+            expect(literal.language).toBe(language);
+            expect(literal.direction).toBe(direction);
+            expect(literal.datatype.value).toBe(datatype);
+          }
+          expect(literal._value).toBeUndefined();
+          expect(literal._datatype).toBeUndefined();
+        });
+      });
+    }
+  });
 });

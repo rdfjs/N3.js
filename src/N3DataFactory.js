@@ -92,6 +92,12 @@ export class Literal extends Term {
    */
   constructor(id) {
     super(id);
+    // Caches for the getters below, filled on first access
+    // (frozen literals skip caching and recompute on every access)
+    this._value = undefined;
+    this._language = undefined;
+    this._direction = undefined;
+    this._datatype = undefined;
   }
 
   // ### The term type of this term
@@ -101,35 +107,61 @@ export class Literal extends Term {
 
   // ### The text value of this literal
   get value() {
-    return this.id.substring(1, this.id.lastIndexOf('"'));
+    let value = this._value;
+    if (value === undefined) {
+      value = this.id.substring(1, this.id.lastIndexOf('"'));
+      if (!Object.isFrozen(this))
+        this._value = value;
+    }
+    return value;
   }
 
   // ### The language of this literal
   get language() {
-    // Find the last quotation mark (e.g., '"abc"@en-us')
-    const id = this.id;
-    let atPos = id.lastIndexOf('"') + 1;
-    const dirPos = id.lastIndexOf('--');
-    // If "@" it follows, return the remaining substring; empty otherwise
-    return atPos < id.length && id[atPos++] === '@' ? (dirPos > atPos ? id.substr(0, dirPos) : id).substr(atPos).toLowerCase() : '';
+    let language = this._language;
+    if (language === undefined) {
+      // Find the last quotation mark (e.g., '"abc"@en-us')
+      const id = this.id;
+      let atPos = id.lastIndexOf('"') + 1;
+      const dirPos = id.lastIndexOf('--');
+      // If "@" it follows, return the remaining substring; empty otherwise
+      language = atPos < id.length && id[atPos++] === '@' ? (dirPos > atPos ? id.substr(0, dirPos) : id).substr(atPos).toLowerCase() : '';
+      if (!Object.isFrozen(this))
+        this._language = language;
+    }
+    return language;
   }
 
   // ### The direction of this literal
   get direction() {
-    // Find the last double dash after the closing quote (e.g., '"abc"@en-us--ltr')
-    const id = this.id;
-    const endPos = id.lastIndexOf('"');
-    const dirPos = id.lastIndexOf('--');
-    return dirPos > endPos && dirPos + 2 < id.length ? id.substr(dirPos + 2).toLowerCase() : '';
+    let direction = this._direction;
+    if (direction === undefined) {
+      // Find the last double dash after the closing quote (e.g., '"abc"@en-us--ltr')
+      const id = this.id;
+      const endPos = id.lastIndexOf('"');
+      const dirPos = id.lastIndexOf('--');
+      direction = dirPos > endPos && dirPos + 2 < id.length ? id.substr(dirPos + 2).toLowerCase() : '';
+      if (!Object.isFrozen(this))
+        this._direction = direction;
+    }
+    return direction;
   }
 
   // ### The datatype IRI of this literal
   get datatype() {
-    return new NamedNode(this.datatypeString);
+    let datatype = this._datatype;
+    if (datatype === undefined) {
+      datatype = new NamedNode(this.datatypeString);
+      if (!Object.isFrozen(this))
+        this._datatype = datatype;
+    }
+    return datatype;
   }
 
   // ### The datatype string of this literal
   get datatypeString() {
+    if (this._datatype !== undefined)
+      return this._datatype.id;
     // Find the last quotation mark (e.g., '"abc"^^http://ex.org/types#t')
     const id = this.id, dtPos = id.lastIndexOf('"') + 1;
     const char = dtPos < id.length ? id[dtPos] : '';
