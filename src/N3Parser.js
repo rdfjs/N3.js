@@ -365,10 +365,14 @@ export default class N3Parser {
     case 'inversePredicate':
       this._inversePredicate = true;
       return this._readPredicateAfterVerb;
+    case '|}':
+      // Expected predicate didn't come, must have been trailing semicolon
+      // or an empty annotation block
+      this._subject = null;
+      return this._readAnnotationBlockPunctuation(token);
     case '.':
     case ']':
     case '}':
-    case '|}':
       // Expected predicate didn't come, must have been trailing semicolon.
       // In N3 mode, a subject (such as a path) can be a statement by itself.
       if (this._predicate === null && !this._n3Mode)
@@ -946,7 +950,7 @@ export default class N3Parser {
 
   // ### `_readPunctuation` reads punctuation between quads or quad parts
   _readPunctuation(token) {
-    let next, graph = this._graph, startingAnnotation = false;
+    let next, graph = this._graph;
     const subject = this._subject, inversePredicate = this._inversePredicate;
     switch (token.type) {
     // A closing brace ends a graph
@@ -972,38 +976,13 @@ export default class N3Parser {
     case ',':
       next = this._readObject;
       break;
-    // ~ is allowed in the annotation syntax
+    // A reifier or annotation block annotates the triple just read
     case '~':
-      // Only invalidate the cache for a genuinely new triple - chained annotation blocks on the
-      // same triple (subject already null from a preceding annotation) must keep reusing it.
-      if (subject !== null)
-        this._tripleTerm = null;
-      next = this._readReifierInAnnotation;
-      startingAnnotation = true;
-      break;
-    // {| means that the current triple is annotated with predicate-object pairs.
     case '{|':
-      // Continue using the last triple as reified triple subject for the predicate-object pairs.
-      // Same staleness rule as ~ above.
-      if (subject !== null)
-        this._tripleTerm = null;
-      this._subject = this._readTripleTerm();
-      this._inversePredicate = false;
-      this._validAnnotation = false;
-      startingAnnotation = true;
-      next = this._readPredicate;
-      break;
-    // |} means that the current reified triple in annotation syntax is finalized.
+      return this._readAnnotationStart(token);
+    // An annotation block can only be closed from within one
     case '|}':
-      if (!this._annotation)
-        return this._error('Unexpected annotation syntax closing', token);
-      if (!this._validAnnotation)
-        return this._error('Annotation block can not be empty', token);
-      this._subject = null;
-      this._annotation = false;
-      this._inversePredicate = false;
-      next = this._getContextEndReader();
-      break;
+      return this._error('Unexpected annotation syntax closing', token);
     default:
       // An entity means this is a quad (only allowed if not already inside a graph)
       if (this._supportsQuads && this._graph === null && (graph = this._readEntity(token)) !== undefined) {
@@ -1013,12 +992,9 @@ export default class N3Parser {
       return this._error(`Expected punctuation to follow "${this._object.id}"`, token);
     }
     // A quad has been completed now, so return it
-    if (subject !== null && (!startingAnnotation || (startingAnnotation && !this._annotation))) {
+    if (subject !== null) {
       const predicate = this._predicate, object = this._object;
       this._emit(subject, predicate, object, graph, inversePredicate);
-    }
-    if (startingAnnotation) {
-      this._annotation = true;
     }
     return next;
   }
@@ -1037,20 +1013,15 @@ export default class N3Parser {
       next = this._readObject;
       break;
     // Annotation syntax applies to the quad just read, exactly as it does
-    // outside of a blank node property list.  `|}` arrives here too, because
-    // the objects inside the annotation block are themselves read within the
-    // enclosing blank node context.
+    // outside of a blank node property list
     case '~':
     case '{|':
+      return this._readAnnotationStart(token);
     case '|}':
-      return this._readPunctuation(token);
+      return this._error('Unexpected annotation syntax closing', token);
     default:
       return this._error(`Expected punctuation to follow "${this._object.id}"`, token);
     }
-    // An annotation block consumes the subject it annotates, so there is
-    // nothing left to share with a following predicate-object pair
-    if (this._subject === null)
-      return this._error('Expected ] to follow annotation', token);
     // A quad has been completed now, so return it
     this._emitCurrent(this._subject, this._predicate, this._object, this._graph);
     if (resetInversePredicate)
@@ -1350,34 +1321,27 @@ export default class N3Parser {
     return this._readReifiedTripleTail;
   }
 
-  // ### `_readReifier` reads the optional triple term identifier after a tilde when in annotation syntax.
-  _readReifierInAnnotation(token) {
-    // If next token is a reifier, read it as such.
-    if (token.type === 'IRI' || token.type === 'typeIRI' || token.type === 'type' || token.type === 'prefixed' || token.type === 'blank' || token.type === 'var') {
-      this._reifier = this._readEntity(token);
-      return this._readAnnotationBlockOrPunctuation;
-    }
-    // Otherwise, emit and assert triple term.
-    this._readTripleTerm();
-    this._subject = null;
-    return this._getContextEndReader().call(this, token);
+  // ### `_readAnnotationStart` reads the first reifier or annotation block after an object,
+  // which completes the annotated quad
+  _readAnnotationStart(token) {
+    this._emitCurrent(this._subject, this._predicate, this._object, this._graph);
+    // A new triple is annotated, so its triple term cannot be reused
+    this._tripleTerm = null;
+    return this._readAnnotation(token);
   }
 
-  // ### `_readAnnotationBlockOrPunctuation` reads what follows an explicit reifier:
-  // either an annotation block, which reuses the reifier as its subject,
-  // or punctuation, in which case the reifier stands alone and its triple
-  // term still needs to be asserted here.
-  _readAnnotationBlockOrPunctuation(token) {
-    if (token.type === '{|')
-      return this._readPunctuation(token);
-
-    this._readTripleTerm();
-    this._annotation = false;
-    // A shared subject or predicate goes on to reify a *different* triple,
-    // so the term just asserted must not be reused for the next one.
+  // ### `_readAnnotation` reads what follows an annotated quad:
+  // further reifiers or annotation blocks for that same quad, or punctuation
+  _readAnnotation(token) {
+    switch (token.type) {
+    case '~':
+      return this._readReifierInAnnotation;
+    case '{|':
+      return this._readAnnotationBlockHead(token);
+    }
+    // The annotated quad was already emitted when its annotation started,
+    // so continue without emitting it a second time
     this._tripleTerm = null;
-    // The annotated triple was already emitted when the tilde was read,
-    // so continue without letting `_readPunctuation` emit it a second time.
     switch (token.type) {
     // The subject stays shared with the next predicate-object pair
     case ';':
@@ -1388,10 +1352,71 @@ export default class N3Parser {
       return this._readObject;
     default:
       this._subject = null;
-      // Resume in the enclosing context, which is top-level punctuation
-      // unless the reified triple sits inside a blank node property list
+      // Resume in the enclosing context
       return this._getContextEndReader().call(this, token);
     }
+  }
+
+  // ### `_readReifierInAnnotation` reads the optional reifier after a tilde in annotation syntax
+  _readReifierInAnnotation(token) {
+    switch (token.type) {
+    case 'IRI':
+    case 'typeIRI':
+    case 'type':
+    case 'prefixed':
+    case 'blank':
+    case 'var':
+      this._reifier = this._readEntity(token);
+      return this._readAnnotationBlockOrReifier;
+    }
+    // Without an identifier, the reifier is a fresh blank node
+    this._reifier = this._factory.blankNode();
+    return this._readAnnotationBlockOrReifier(token);
+  }
+
+  // ### `_readAnnotationBlockOrReifier` reads what follows a reifier:
+  // either an annotation block, which uses the reifier as its subject,
+  // or anything else, in which case the reifier stands alone
+  _readAnnotationBlockOrReifier(token) {
+    if (token.type === '{|')
+      return this._readAnnotationBlockHead(token);
+    this._readTripleTerm();
+    return this._readAnnotation(token);
+  }
+
+  // ### `_readAnnotationBlockHead` opens an annotation block,
+  // whose predicate-object pairs describe the reifier of the annotated quad
+  _readAnnotationBlockHead(token) {
+    const reifier = this._readTripleTerm();
+    this._saveContext('annotation', this._graph, this._subject, this._predicate, this._object);
+    // Restored when the block closes, so further annotations reuse the same triple term
+    this._contextStack[this._contextStack.length - 1].tripleTerm = this._tripleTerm;
+    this._subject = reifier;
+    this._predicate = this._object = this._tripleTerm = null;
+    this._inversePredicate = false;
+    this._validAnnotation = false;
+    return this._readPredicate;
+  }
+
+  // ### `_readAnnotationBlockPunctuation` reads punctuation inside an annotation block
+  _readAnnotationBlockPunctuation(token) {
+    const stack = this._contextStack;
+    if (token.type === '|}') {
+      if (!stack.length || stack[stack.length - 1].type !== 'annotation')
+        return this._error('Unexpected annotation syntax closing', token);
+      if (!this._validAnnotation)
+        return this._error('Annotation block can not be empty', token);
+      // Emit the last quad of the block, unless a trailing semicolon already did
+      if (this._subject !== null)
+        this._emitCurrent(this._subject, this._predicate, this._object, this._graph);
+      // Return to the annotated quad, which can be followed by more annotations
+      const { tripleTerm } = stack[stack.length - 1];
+      this._restoreContext('annotation', token);
+      this._tripleTerm = tripleTerm;
+      return this._readAnnotation;
+    }
+    // Otherwise, punctuation inside a block works like inside a blank node property list
+    return this._readBlankNodePunctuation(token);
   }
 
   _readTripleTerm() {
@@ -1423,6 +1448,8 @@ export default class N3Parser {
       return this._readTripleTermTail;
     case '<<':
       return this._readReifiedTripleTailOrReifier;
+    case 'annotation':
+      return this._readAnnotationBlockPunctuation;
     }
   }
 
