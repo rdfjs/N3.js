@@ -1,7 +1,12 @@
 // Benchmarks run by perf/ci/compare.js against a base and a head build.
 // Each entry's setup(N3) does untimed preparation and returns the function
-// whose run time is measured (it may return a promise). Size each one so a single call takes roughly
-// 20–150ms on a CI runner.
+// whose run time is measured (it may return a promise). Size each one so a
+// single call takes roughly 20–150ms on a CI runner.
+//
+// A benchmark for a feature the base branch does not have yet can be written
+// as { available: N3 => <does this build have the feature>, setup }; it is
+// then reported as new instead of failing. Any other failure on either build
+// fails the comparison.
 const data = require('./data');
 
 const { EX } = data;

@@ -18,17 +18,35 @@ const fs = require('fs');
 const path = require('path');
 const benchmarks = require('./benchmarks');
 
-const args = { rounds: 5, iterations: 7, threshold: 0.1 };
-for (let i = 2; i < process.argv.length; i += 2)
-  args[process.argv[i].replace(/^--/, '')] = process.argv[i + 1];
-if (!args.base || !args.head) {
-  console.error('Usage: compare.js --base <lib dir> --head <lib dir> [options]');
+function usage(message) {
+  console.error(`${message}\nUsage: compare.js --base <lib dir> --head <lib dir> [--rounds n] [--iterations n] ` +
+    '[--threshold fraction] [--filter text] [--markdown file] [--json file]');
   process.exit(2);
 }
+
+const options = ['base', 'head', 'rounds', 'iterations', 'threshold', 'filter', 'markdown', 'json'];
+const args = { rounds: '5', iterations: '7', threshold: '0.1' };
+for (let i = 2; i < process.argv.length; i += 2) {
+  const option = process.argv[i].replace(/^--/, '');
+  if (!options.includes(option) || process.argv[i + 1] === undefined)
+    usage(`Invalid argument: ${process.argv[i]}`);
+  args[option] = process.argv[i + 1];
+}
+if (!args.base || !args.head)
+  usage('Both --base and --head are required.');
+// Reject values that would make the comparison pass without measuring anything
+for (const option of ['rounds', 'iterations']) {
+  if (!/^[1-9]\d*$/.test(args[option]))
+    usage(`--${option} must be a positive integer.`);
+}
 const rounds = Number(args.rounds), threshold = Number(args.threshold);
+if (!(threshold > 0 && threshold < 10))
+  usage('--threshold must be a number above 0, such as 0.1 for 10%.');
 // A plain substring match, so command-line input never becomes a regular expression
 const filter = args.filter ? args.filter.toLowerCase() : null;
 const names = Object.keys(benchmarks).filter(name => !filter || name.toLowerCase().includes(filter));
+if (!names.length)
+  usage(`No benchmark name contains "${args.filter}".`);
 
 function median(values) {
   const sorted = [...values].sort((a, b) => a - b), mid = sorted.length >> 1;
@@ -40,7 +58,12 @@ function measure(lib, name) {
     const output = execFileSync(process.execPath,
       ['--expose-gc', path.join(__dirname, 'run-one.js'), path.resolve(lib), name, String(args.iterations)],
       { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-    return median(JSON.parse(output).times);
+    const { skipped, times } = JSON.parse(output);
+    if (skipped)
+      return { skipped: true };
+    if (!Array.isArray(times) || !times.length || !times.every(t => Number.isFinite(t) && t > 0))
+      return { error: `Malformed benchmark output: ${output.slice(0, 200)}` };
+    return median(times);
   }
   catch (error) {
     return { error: (error.stderr || error.message).trim().split('\n').slice(0, 5).join('\n') };
@@ -50,13 +73,17 @@ function measure(lib, name) {
 const results = names.map(name => ({ name, base: [], head: [], ratios: [] }));
 for (let round = 0; round < rounds; round++) {
   results.forEach((result, index) => {
-    if (result.baseError || result.headError) return;
+    if (result.baseError || result.headError || result.skipped) return;
     const order = (round + index) % 2 ? ['head', 'base'] : ['base', 'head'];
     const times = {};
     for (const side of order) times[side] = measure(args[side], result.name);
     if (times.base.error) result.baseError = times.base.error;
     if (times.head.error) result.headError = times.head.error;
-    if (result.baseError || result.headError) return;
+    // Only a benchmark whose available() check says the base lacks the
+    // feature is skipped; any other base failure fails the comparison
+    if (times.head.skipped) result.headError = 'available() returned false on head';
+    else if (times.base.skipped) result.skipped = true;
+    if (result.baseError || result.headError || result.skipped) return;
     result.base.push(times.base);
     result.head.push(times.head);
     result.ratios.push(times.head / times.base);
@@ -66,8 +93,8 @@ for (let round = 0; round < rounds; round++) {
 
 const required = Math.max(1, Math.ceil(rounds * 0.8));
 for (const result of results) {
-  if (result.headError) result.status = 'error';
-  else if (result.baseError) result.status = 'new';
+  if (result.headError || result.baseError) result.status = 'error';
+  else if (result.skipped) result.status = 'new';
   else {
     result.ratio = median(result.ratios);
     const slower = result.ratios.filter(r => r > 1).length;
@@ -106,6 +133,8 @@ lines.push('');
 lines.push(regressions.length ?
   `**${regressions.length} regression(s) above ${Math.round(threshold * 100)}%.**` :
   `No regressions above ${Math.round(threshold * 100)}%.`);
+if (errors.length)
+  lines.push('', `**${errors.length} benchmark(s) failed to run, so they were not compared.**`);
 for (const r of results) {
   for (const side of ['base', 'head']) {
     const error = r[`${side}Error`];

@@ -7,12 +7,18 @@ const benchmarks = require('./benchmarks');
 const [libPath, name, iterations = '7'] = process.argv.slice(2);
 // eslint-disable-next-line import-x/no-dynamic-require
 const N3 = require(path.resolve(libPath));
-const setup = benchmarks[name];
-if (!setup) throw new Error(`Unknown benchmark: ${name}`);
+const benchmark = benchmarks[name];
+if (!benchmark) throw new Error(`Unknown benchmark: ${name}`);
+const { setup, available = () => true } = typeof benchmark === 'function' ? { setup: benchmark } : benchmark;
 
 const gc = global.gc || (() => {});
 
 (async () => {
+  // A benchmark for a feature this build does not have yet
+  if (!available(N3)) {
+    process.stdout.write(JSON.stringify({ name, skipped: true }));
+    return;
+  }
   const run = await setup(N3);
 
   // Warm up so the JIT has settled before anything is measured

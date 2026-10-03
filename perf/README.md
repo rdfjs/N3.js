@@ -9,7 +9,7 @@ a fresh process; base and head are interleaved over 5 rounds so drift on the
 shared runner hits both equally. A benchmark is flagged when head is more
 than 10% slower in the median and in at least 4 of 5 rounds. The results
 appear in the job summary and as a comment on the pull request, and the job
-fails on a regression.
+fails on a regression or when a benchmark fails to run on either build.
 
 Run it locally against any other build of N3.js:
 
