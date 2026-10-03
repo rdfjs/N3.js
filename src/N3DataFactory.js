@@ -448,7 +448,10 @@ function literal(value, languageOrDataType) {
     // Convert an integer or double
     else if (typeof value === 'number') {
       if (Number.isFinite(value))
-        datatype = Number.isInteger(value) ? xsd.integer : xsd.double;
+        // From 1e21 upward, a number's string form turns exponential ("1e+21"),
+        // which is not a valid xsd:integer lexical, so type it as xsd:double
+        // (the same cut-off as JSON-LD 1.1's Object to RDF Conversion)
+        datatype = Number.isInteger(value) && Math.abs(value) < 1e21 ? xsd.integer : xsd.double;
       else {
         datatype = xsd.double;
         if (!Number.isNaN(value))
