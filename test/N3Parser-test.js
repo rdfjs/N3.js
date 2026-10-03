@@ -3232,6 +3232,29 @@ describe('Parser', () => {
     );
 
     it(
+      'should reuse identifiers of blank nodes within and outside of reified triples with formulaScopedBlankNodes',
+      shouldParse(parserFormulaScoped, '_:a <p> << _:a <q> <o> >>.',
+                  ['_:b0', reifies, ['_:b0_a', 'q', 'o']],
+                  ['_:b0_a', 'p', '_:b0']),
+    );
+
+    it(
+      'should reuse identifiers of blank nodes within and outside of triple terms with formulaScopedBlankNodes',
+      shouldParse(parserFormulaScoped, '_:a <p> <<( _:a <q> <o> )>>.',
+                  ['_:b0_a', 'p', ['_:b0_a', 'q', 'o']]),
+    );
+
+    it(
+      'should scope blank nodes in reified triples and triple terms to the enclosing formula with formulaScopedBlankNodes',
+      shouldParse(parserFormulaScoped, '_:a <p> <o>. { _:a <p> << _:a <q> <o> >>. _:a <p> <<( _:a <q> <o> )>>. } <d> <e>.',
+                  ['_:b0_a', 'p', 'o'],
+                  ['_:b1', reifies, ['_:b0.a', 'q', 'o'], '_:b0'],
+                  ['_:b0.a', 'p', '_:b1', '_:b0'],
+                  ['_:b0.a', 'p', ['_:b0.a', 'q', 'o'], '_:b0'],
+                  ['_:b0', 'd', 'e']),
+    );
+
+    it(
       'should scope blank nodes in a list to the enclosing formula with formulaScopedBlankNodes',
       shouldParse(parserFormulaScoped, '_:a <p> <o>. { <s> <q> (_:a). _:a <r> <o2>. } <d> <e>.',
                   ['_:b0_a', 'p', 'o'],
