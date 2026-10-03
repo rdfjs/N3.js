@@ -74,9 +74,13 @@ export class NamedNode extends Term {
    * the constructor assumes an already-validated IRI.
    */
   constructor(iri) {
-    super(iri === '' ? EMPTY_IRI_ID : iri);
-    if (iri === '')
+    if (iri !== '')
+      super(iri);
+    // The empty IRI gets a distinct ID, since '' is the ID of the default graph
+    else {
+      super(EMPTY_IRI_ID);
       Object.defineProperty(this, 'value', { value: '' });
+    }
   }
 
   // ### The term type of this term
@@ -321,7 +325,7 @@ export function termToId(term, nested) {
 
   // Term instantiated with another library
   switch (term.termType) {
-  case 'NamedNode':    return term.value || EMPTY_IRI_ID;
+  case 'NamedNode':    return term.value !== '' ? term.value : EMPTY_IRI_ID;
   case 'BlankNode':    return `_:${term.value}`;
   case 'Variable':     return `?${term.value}`;
   case 'DefaultGraph': return '';
