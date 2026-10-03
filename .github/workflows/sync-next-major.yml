@@ -51,8 +51,14 @@ jobs:
             echo "next-major already contains main."
             exit 0
           fi
-          # Fast-forwards when next-major has nothing of its own, such as right
-          # after the major was merged into main.
+          # Once the major is squash-merged into main, next-major has nothing main
+          # lacks. Merging would make its old breaking commits count again and
+          # publish a stray alpha of the following major, so start it over from
+          # main instead. Its alpha tags are already released, so nothing is lost.
+          if git diff --quiet origin/main HEAD; then
+            git push --force-with-lease="refs/heads/next-major:$(git rev-parse HEAD)" origin origin/main:refs/heads/next-major
+            exit 0
+          fi
           if git merge --no-edit -m 'chore: merge main into next-major' origin/main; then
             git push origin next-major
           else
@@ -86,7 +92,7 @@ jobs:
           git push origin next-major
           ```
 
-          Pushing the merge marks this pull request as merged. If the repository allows merge commits, the conflict editor plus "Create a merge commit" works too.
+          Pushing the merge marks this pull request as merged.
           EOF
           )"
           echo "::warning::main conflicts with next-major; opened a pull request to resolve it."

@@ -41,8 +41,8 @@ The cost of merging is a merge commit per sync in `next-major`'s history. It doe
 reach `main`'s changelog, because those commits carry no `fix` or `feat`.
 
 When `main` conflicts with `next-major`, the workflow opens a pull request from
-`sync/main-into-next-major` and stops syncing until it is resolved. Resolve it with a
-merge, locally or with "Create a merge commit", never with a squash.
+`sync/main-into-next-major` and stops syncing until it is resolved. Resolve it locally
+with a merge, never a squash.
 
 ## Releasing the major
 
@@ -54,11 +54,13 @@ and only fix what the alphas turn up.
 **How.**
 
 1. Open a pull request from `next-major` into `main`, titled `feat!: release N3.js vN`.
-2. Merge it with **"Create a merge commit"**, not a squash. That keeps every change as
-   its own commit, so the release notes list them individually, and it leaves the
-   alpha tags in `main`'s history. If the repository only allows squash merges,
-   allow merge commits for this one merge.
-3. CI on `main` publishes `vN.0.0` to `latest`.
-4. The sync then fast-forwards `next-major` to `main`, which publishes nothing.
-   The branch is ready for the following major, whose first breaking change
-   publishes `vN+1.0.0-alpha.1`.
+2. Merge it through the merge queue like any other pull request. `main` requires linear
+   history, so the major lands as one squashed commit.
+3. CI on `main` publishes `vN.0.0` to `latest`. Its generated notes cover only the one
+   squashed commit, so edit the GitHub release to collect the changes from the alpha
+   release notes, along with the migration guide.
+4. The sync sees that `next-major` now has nothing `main` lacks and resets it to `main`,
+   which publishes nothing. Merging instead would count the old breaking commits again
+   and publish a stray `vN+1.0.0-alpha.1`. The old alpha tags stay where they are.
+   The branch is ready for the following major, whose first breaking change publishes
+   `vN+1.0.0-alpha.1`.
