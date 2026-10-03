@@ -1,6 +1,9 @@
 // **N3Writer** writes N3 documents.
 import namespaces from './IRIs';
-import { default as N3DataFactory, Term } from './N3DataFactory';
+import {
+  default as N3DataFactory, Term, Literal,
+  literalValue, literalLanguage, literalDirection, literalDatatypeString,
+} from './N3DataFactory';
 import { isDefaultGraph } from './N3Util';
 import BaseIRI from './BaseIRI';
 import { escapeRegex } from './Util';
@@ -158,7 +161,11 @@ export default class N3Writer {
       return entity.termType === 'Variable' ? `?${entity.value}` :
              'id' in entity ? entity.id : `_:${entity.value}`;
     }
-    let iri = entity.value;
+    return this._encodeIri(entity.value);
+  }
+
+  // ### `_encodeIri` represents an IRI
+  _encodeIri(iri) {
     // Use relative IRIs if requested and possible
     if (this._baseIri) {
       iri = this._baseIri.toRelative(iri);
@@ -174,28 +181,33 @@ export default class N3Writer {
 
   // ### `_encodeLiteral` represents a literal
   _encodeLiteral(literal) {
+    // Read N3.js literals straight from their id,
+    // so writing does not fill their getter caches
+    const id = literal instanceof Literal ? literal.id : null;
+
     // Escape special characters
-    let value = literal.value;
+    let value = id !== null ? literalValue(id) : literal.value;
     if (escape.test(value))
       value = value.replace(escapeAll, characterReplacer);
 
     // Write a language-tagged literal
-    const language = literal.language;
+    const language = id !== null ? literalLanguage(id) : literal.language;
     if (language) {
-      const literalDirection = literal.direction;
-      const direction = literalDirection ? `--${literalDirection}` : '';
+      const literalDir = id !== null ? literalDirection(id) : literal.direction;
+      const direction = literalDir ? `--${literalDir}` : '';
       return `"${value}"@${language}${direction}`;
     }
 
     // Write dedicated literals per data type
+    const datatype = id !== null ? literalDatatypeString(id) : literal.datatype.value;
     if (this._lineMode) {
       // Only abbreviate strings in N-Triples or N-Quads
-      if (literal.datatype.value === xsd.string)
+      if (datatype === xsd.string)
         return `"${value}"`;
     }
     else {
       // Use common datatype abbreviations in Turtle or TriG
-      switch (literal.datatype.value) {
+      switch (datatype) {
       case xsd.string:
         return `"${value}"`;
       case xsd.boolean:
@@ -218,7 +230,7 @@ export default class N3Writer {
     }
 
     // Write a regular datatyped literal
-    return `"${value}"^^${this._encodeIriOrBlank(literal.datatype)}`;
+    return `"${value}"^^${id !== null ? this._encodeIri(datatype) : this._encodeIriOrBlank(literal.datatype)}`;
   }
 
   // ### `_encodePredicate` represents a predicate

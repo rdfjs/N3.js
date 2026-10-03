@@ -109,7 +109,7 @@ export class Literal extends Term {
   get value() {
     let value = this._value;
     if (value === undefined) {
-      value = this.id.substring(1, this.id.lastIndexOf('"'));
+      value = literalValue(this.id);
       if (!Object.isFrozen(this))
         this._value = value;
     }
@@ -120,12 +120,7 @@ export class Literal extends Term {
   get language() {
     let language = this._language;
     if (language === undefined) {
-      // Find the last quotation mark (e.g., '"abc"@en-us')
-      const id = this.id;
-      let atPos = id.lastIndexOf('"') + 1;
-      const dirPos = id.lastIndexOf('--');
-      // If "@" it follows, return the remaining substring; empty otherwise
-      language = atPos < id.length && id[atPos++] === '@' ? (dirPos > atPos ? id.substr(0, dirPos) : id).substr(atPos).toLowerCase() : '';
+      language = literalLanguage(this.id);
       if (!Object.isFrozen(this))
         this._language = language;
     }
@@ -136,11 +131,7 @@ export class Literal extends Term {
   get direction() {
     let direction = this._direction;
     if (direction === undefined) {
-      // Find the last double dash after the closing quote (e.g., '"abc"@en-us--ltr')
-      const id = this.id;
-      const endPos = id.lastIndexOf('"');
-      const dirPos = id.lastIndexOf('--');
-      direction = dirPos > endPos && dirPos + 2 < id.length ? id.substr(dirPos + 2).toLowerCase() : '';
+      direction = literalDirection(this.id);
       if (!Object.isFrozen(this))
         this._direction = direction;
     }
@@ -151,7 +142,7 @@ export class Literal extends Term {
   get datatype() {
     let datatype = this._datatype;
     if (datatype === undefined) {
-      datatype = new NamedNode(this.datatypeString);
+      datatype = new NamedNode(literalDatatypeString(this.id));
       if (!Object.isFrozen(this))
         this._datatype = datatype;
     }
@@ -160,15 +151,7 @@ export class Literal extends Term {
 
   // ### The datatype string of this literal
   get datatypeString() {
-    if (this._datatype !== undefined)
-      return this._datatype.id;
-    // Find the last quotation mark (e.g., '"abc"^^http://ex.org/types#t')
-    const id = this.id, dtPos = id.lastIndexOf('"') + 1;
-    const char = dtPos < id.length ? id[dtPos] : '';
-    // If "^" it follows, return the remaining substring
-    return char === '^' ? id.substr(dtPos + 2) :
-           // If "@" follows, return rdf:langString or rdf:dirLangString; xsd:string otherwise
-           (char !== '@' ? xsd.string : (id.indexOf('--', dtPos) > 0 ? rdf.dirLangString : rdf.langString));
+    return this._datatype !== undefined ? this._datatype.id : literalDatatypeString(this.id);
   }
 
   // ### Returns whether this object represents the same term as the other
@@ -195,6 +178,43 @@ export class Literal extends Term {
       datatype: { termType: 'NamedNode', value: this.datatypeString },
     };
   }
+}
+
+// ## Literal id parsers
+// These compute the parts of a literal from its id without caching,
+// for callers such as the writer that read each part only once.
+
+// ### The text value of a literal id
+export function literalValue(id) {
+  return id.substring(1, id.lastIndexOf('"'));
+}
+
+// ### The language of a literal id
+export function literalLanguage(id) {
+  // Find the last quotation mark (e.g., '"abc"@en-us')
+  let atPos = id.lastIndexOf('"') + 1;
+  const dirPos = id.lastIndexOf('--');
+  // If "@" it follows, return the remaining substring; empty otherwise
+  return atPos < id.length && id[atPos++] === '@' ? (dirPos > atPos ? id.substr(0, dirPos) : id).substr(atPos).toLowerCase() : '';
+}
+
+// ### The direction of a literal id
+export function literalDirection(id) {
+  // Find the last double dash after the closing quote (e.g., '"abc"@en-us--ltr')
+  const endPos = id.lastIndexOf('"');
+  const dirPos = id.lastIndexOf('--');
+  return dirPos > endPos && dirPos + 2 < id.length ? id.substr(dirPos + 2).toLowerCase() : '';
+}
+
+// ### The datatype string of a literal id
+export function literalDatatypeString(id) {
+  // Find the last quotation mark (e.g., '"abc"^^http://ex.org/types#t')
+  const dtPos = id.lastIndexOf('"') + 1;
+  const char = dtPos < id.length ? id[dtPos] : '';
+  // If "^" it follows, return the remaining substring
+  return char === '^' ? id.substr(dtPos + 2) :
+         // If "@" follows, return rdf:langString or rdf:dirLangString; xsd:string otherwise
+         (char !== '@' ? xsd.string : (id.indexOf('--', dtPos) > 0 ? rdf.dirLangString : rdf.langString));
 }
 
 // ## BlankNode constructor

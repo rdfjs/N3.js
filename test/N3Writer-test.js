@@ -30,6 +30,48 @@ describe('Writer', () => {
       ).toBe('<a> <b> <c> .\n');
     });
 
+    it('should serialize literals without filling their getter caches', () => {
+      const writer = new Writer({ prefixes: { ex: 'http://ex.org/' } });
+      const literals = [
+        new Literal('"a"'),
+        new Literal('"b"@en-us--ltr'),
+        new Literal('"1"^^http://www.w3.org/2001/XMLSchema#integer'),
+        new Literal('"c"^^http://ex.org/dt'),
+      ];
+      expect(literals.map(l => writer.quadToString(new NamedNode('s'), new NamedNode('p'), l))).toEqual([
+        '<s> <p> "a" .\n',
+        '<s> <p> "b"@en-us--ltr .\n',
+        '<s> <p> 1 .\n',
+        '<s> <p> "c"^^ex:dt .\n',
+      ]);
+      for (const literal of literals) {
+        expect(literal._value).toBeUndefined();
+        expect(literal._language).toBeUndefined();
+        expect(literal._direction).toBeUndefined();
+        expect(literal._datatype).toBeUndefined();
+      }
+    });
+
+    it('should serialize literals from other data factories', () => {
+      const writer = new Writer({ prefixes: { ex: 'http://ex.org/' } });
+      function literal(value, language, direction, datatype) {
+        return { termType: 'Literal', value, language, direction, datatype: { termType: 'NamedNode', value: datatype } };
+      }
+      expect([
+        literal('a', '', '', xsd.string),
+        literal('b', 'en', '', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString'),
+        literal('b', 'en', 'rtl', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#dirLangString'),
+        literal('1', '', '', xsd.integer),
+        literal('c', '', '', 'http://ex.org/dt'),
+      ].map(l => writer.quadToString(new NamedNode('s'), new NamedNode('p'), l))).toEqual([
+        '<s> <p> "a" .\n',
+        '<s> <p> "b"@en .\n',
+        '<s> <p> "b"@en--rtl .\n',
+        '<s> <p> 1 .\n',
+        '<s> <p> "c"^^ex:dt .\n',
+      ]);
+    });
+
     it('should serialize a single quad', () => {
       const writer = new Writer();
       expect(
