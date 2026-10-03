@@ -2,6 +2,7 @@ import { makeRng, pick } from './util';
 import {
   Store,
   Parser,
+  Writer,
   termFromId, termToId,
   EntityIndex,
   DataFactory,
@@ -3982,6 +3983,67 @@ describe('Store', () => {
     const store = new Store(quads);
     expect(store.size).toEqual(2);
     expect(store.getQuads()).toHaveLength(2);
+  });
+
+  describe('A Store containing the empty IRI', () => {
+    const p = namedNode('http://example.org/p');
+    const o = namedNode('http://example.org/o');
+    const emptyIri = namedNode('');
+    const quads = [
+      quad(emptyIri, p, o),
+      quad(o, p, emptyIri),
+      quad(o, p, o, emptyIri),
+    ];
+    let store;
+    beforeEach(() => { store = new Store(quads); });
+
+    it('should return the empty IRI as a NamedNode', () => {
+      expect(store.getQuads().map(q => q.toJSON())).toEqual(quads.map(q => q.toJSON()));
+    });
+
+    it('should not match the empty IRI as the default graph', () => {
+      expect(store.getQuads(null, null, null, DataFactory.defaultGraph())).toHaveLength(2);
+      expect(store.getQuads(null, null, null, emptyIri)).toHaveLength(1);
+      expect(store.getGraphs().map(g => g.termType).sort()).toEqual(['DefaultGraph', 'NamedNode']);
+    });
+
+    it('should match the empty IRI as subject and object', () => {
+      expect(store.getQuads(emptyIri)).toHaveLength(1);
+      expect(store.getQuads(null, null, emptyIri)).toHaveLength(1);
+      expect(store.has(quad(emptyIri, p, o))).toBe(true);
+    });
+
+    it('should match the empty IRI from another library', () => {
+      const foreign = { termType: 'NamedNode', value: '' };
+      expect(store.getQuads(foreign)).toHaveLength(1);
+      expect(store.getQuads(null, null, null, foreign)).toHaveLength(1);
+    });
+
+    it('should store the empty IRI from another library', () => {
+      const foreign = { termType: 'NamedNode', value: '' };
+      const other = new Store();
+      other.addQuad(foreign, p, o, foreign);
+      expect(other.getQuads().map(q => q.toJSON())).toEqual([quad(emptyIri, p, o, emptyIri).toJSON()]);
+    });
+
+    it('should keep the empty IRI inside quoted triples', () => {
+      const quoted = quad(quad(emptyIri, p, o), p, o);
+      const other = new Store([quoted]);
+      expect(other.getQuads()[0].subject.subject.toJSON()).toEqual(emptyIri.toJSON());
+      expect(other.has(quoted)).toBe(true);
+    });
+
+    it('should be written as <> by the Writer', done => {
+      const writer = new Writer();
+      writer.addQuads(store.getQuads());
+      writer.end((error, output) => {
+        expect(output).toBe(
+          '<> <http://example.org/p> <http://example.org/o>.\n' +
+          '<http://example.org/o> <http://example.org/p> <>.\n' +
+          '<> {\n<http://example.org/o> <http://example.org/p> <http://example.org/o>\n}\n');
+        done(error);
+      });
+    });
   });
 });
 
