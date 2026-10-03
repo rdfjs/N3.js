@@ -24,7 +24,9 @@ read with the [Conventional Commits](https://www.conventionalcommits.org/) prese
 
 [`sync-next-major.yml`](.github/workflows/sync-next-major.yml) merges `main` into
 `next-major` after every push to `main`. That push runs CI on `next-major`, which
-publishes a new alpha whenever the merge brought in a `fix` or `feat`.
+publishes a new alpha whenever the merge brought in a `fix` or `feat`. It pushes with
+the `DEPENDABOT_AUTOMERGE_TOKEN` PAT, because pushes made with `GITHUB_TOKEN` don't
+trigger CI.
 
 It merges rather than rebases, for two reasons:
 
@@ -60,15 +62,3 @@ and only fix what the alphas turn up.
 4. The sync then fast-forwards `next-major` to `main`, which publishes nothing.
    The branch is ready for the following major, whose first breaking change
    publishes `vN+1.0.0-alpha.1`.
-
-## One-off setup
-
-- Create `next-major` from `main`.
-- Add the `NEXT_MAJOR_SYNC_TOKEN` Actions secret: a fine-grained token for this repository
-  with Contents: write and Pull requests: write. `GITHUB_TOKEN` won't do, because its
-  pushes don't trigger CI, so the alpha would never publish. The token's owner must be
-  allowed to push to `next-major` directly.
-- Protect `next-major` like `main` (pull requests, the `summary` check), with the token's
-  owner as a bypass actor so the sync can push.
-- npm publishing uses trusted publishing from `ci.yml`, which covers both branches, so it
-  needs no new npm token.
