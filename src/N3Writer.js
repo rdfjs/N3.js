@@ -38,6 +38,8 @@ export default class N3Writer {
       options = outputStream, outputStream = null;
     options = options || {};
     this._lists = options.lists;
+    // Variables only exist in N3, so reject them when another format was requested
+    this._variablesAllowed = !(/turtle|trig|triple|quad/i).test(options.format);
 
     // If no output stream given, send the output as string through the end callback
     if (!outputStream) {
@@ -123,7 +125,14 @@ export default class N3Writer {
   _writeQuadLine(subject, predicate, object, graph, done) {
     // Write the quad without prefixes
     delete this._prefixMatch;
-    this._write(this.quadToString(subject, predicate, object, graph), done);
+    let line;
+    try { line = this.quadToString(subject, predicate, object, graph); }
+    catch (error) {
+      // Report serialization errors through the callback if there is one
+      if (!done) throw error;
+      return done(error);
+    }
+    this._write(line, done);
   }
 
   // ### `quadToString` serializes a quad as a string
@@ -155,8 +164,12 @@ export default class N3Writer {
       // If it is a list head, pretty-print it
       if (this._lists && (entity.value in this._lists))
         entity = this.list(this._lists[entity.value]);
-      return entity.termType === 'Variable' ? `?${entity.value}` :
-             'id' in entity ? entity.id : `_:${entity.value}`;
+      if (entity.termType === 'Variable') {
+        if (!this._variablesAllowed)
+          throw new Error(`Cannot serialize variable ?${entity.value}: variables are only supported in N3`);
+        return `?${entity.value}`;
+      }
+      return 'id' in entity ? entity.id : `_:${entity.value}`;
     }
     let iri = entity.value;
     // Use relative IRIs if requested and possible

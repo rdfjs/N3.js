@@ -315,6 +315,10 @@ const writer1 = new N3.Writer({ format: 'N-Triples' });
 const writer2 = new N3.Writer({ format: 'application/trig' });
 ```
 
+Variables are written as `?name`, which is Notation3 syntax.
+When the `format` names Turtle, TriG, N-Triples or N-Quads, which have no variables, writing a quad that contains a variable fails with an error
+(passed to the `addQuad` callback, emitted by `N3.StreamWriter`, or thrown by `quadToString`).
+
 A `baseIRI` argument makes the writer abbreviate IRIs relative to that base in Turtle/TriG serializations. Pass `writeBase: true` to also write the base as an `@base` directive at the top of the document (N-Triples and N-Quads remain directive-free).
 
 ```JavaScript

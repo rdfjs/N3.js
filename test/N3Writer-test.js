@@ -5,6 +5,7 @@ import {
   BlankNode,
   Literal,
   Quad,
+  Variable,
   termFromId,
 } from '../src';
 import namespaces from '../src/IRIs';
@@ -64,6 +65,44 @@ describe('Writer', () => {
       expect(
         writer.quadToString(variable, new NamedNode('b'), variable),
       ).toBe('?v <b> ?v .\n');
+    });
+
+    it('should serialize variables in N3 mode', () => {
+      const writer = new Writer({ format: 'N3' });
+      const variable = new Variable('v');
+      expect(
+        writer.quadToString(variable, new NamedNode('b'), variable),
+      ).toBe('?v <b> ?v .\n');
+    });
+
+    for (const format of ['Turtle', 'text/turtle', 'TriG', 'application/trig',
+      'N-Triples', 'application/n-triples', 'N-Quads', 'application/n-quads']) {
+      it(`should refuse to serialize a variable in ${format} mode`, () => {
+        const writer = new Writer({ format });
+        expect(() => writer.quadToString(new Variable('v'), new NamedNode('b'), new NamedNode('c')))
+          .toThrow('Cannot serialize variable ?v: variables are only supported in N3');
+        expect(() => writer.quadToString(new NamedNode('a'), new Variable('p'), new NamedNode('c')))
+          .toThrow('Cannot serialize variable ?p');
+        expect(() => writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Variable('o')))
+          .toThrow('Cannot serialize variable ?o');
+        expect(() => writer.quadToString(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new Variable('g')))
+          .toThrow('Cannot serialize variable ?g');
+      });
+
+      it(`should report a variable through the addQuad callback in ${format} mode`, done => {
+        const writer = new Writer({ format });
+        writer.addQuad(new Quad(new NamedNode('a'), new NamedNode('b'), new Variable('o')), error => {
+          expect(error).toBeInstanceOf(Error);
+          expect(error.message).toBe('Cannot serialize variable ?o: variables are only supported in N3');
+          done();
+        });
+      });
+    }
+
+    it('should throw for a variable in N-Triples mode without addQuad callback', () => {
+      const writer = new Writer({ format: 'N-Triples' });
+      expect(() => writer.addQuad(new NamedNode('a'), new NamedNode('b'), new Variable('o')))
+        .toThrow('Cannot serialize variable ?o');
     });
 
     it('should serialize 0 triples', shouldSerialize(''));

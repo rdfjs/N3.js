@@ -125,6 +125,19 @@ describe('StreamWriter', () => {
       writer.write(new Quad(termFromId('d'), termFromId('e'), null));
     });
 
+    it('should emit an error for a variable in N-Triples mode', done => {
+      const writer = new StreamWriter({ format: 'N-Triples' });
+      let data = '';
+      writer.on('data', chunk => { data += chunk; });
+      writer.on('error', error => {
+        expect(error.message).toBe('Cannot serialize variable ?v: variables are only supported in N3');
+        expect(data).toBe('<a> <b> <c> .\n');
+        done();
+      });
+      writer.write(new Quad(termFromId('a'), termFromId('b'), termFromId('c')));
+      writer.write(new Quad(termFromId('d'), termFromId('e'), termFromId('?v')));
+    });
+
     it('should emit buffered output before an input stream error', done => {
       const input = new Readable({ objectMode: true, read() {} });
       const writer = new StreamWriter().import(input);
