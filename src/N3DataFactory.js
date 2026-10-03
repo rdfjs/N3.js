@@ -65,6 +65,16 @@ export class Term {
 
 // ## NamedNode constructor
 export class NamedNode extends Term {
+  // ### Creates a named node
+  /**
+   * @deprecated Create named nodes through a data factory instead
+   * (`DataFactory.namedNode(iri)`), so that term validation can be applied;
+   * the constructor assumes an already-validated IRI.
+   */
+  constructor(iri) {
+    super(iri);
+  }
+
   // ### The term type of this term
   get termType() {
     return 'NamedNode';
@@ -73,6 +83,17 @@ export class NamedNode extends Term {
 
 // ## Literal constructor
 export class Literal extends Term {
+  // ### Creates a literal
+  /**
+   * @deprecated Create literals through a data factory instead
+   * (`DataFactory.literal(value, languageOrDatatype)`), so that term
+   * validation can be applied; the constructor takes the internal
+   * id representation and assumes it is already valid.
+   */
+  constructor(id) {
+    super(id);
+  }
+
   // ### The term type of this term
   get termType() {
     return 'Literal';
@@ -146,6 +167,12 @@ export class Literal extends Term {
 
 // ## BlankNode constructor
 export class BlankNode extends Term {
+  // ### Creates a blank node
+  /**
+   * @deprecated Create blank nodes through a data factory instead
+   * (`DataFactory.blankNode(name)`), so that term validation can be applied;
+   * the constructor assumes an already-validated name.
+   */
   constructor(name) {
     super(`_:${name}`);
   }
@@ -162,6 +189,12 @@ export class BlankNode extends Term {
 }
 
 export class Variable extends Term {
+  // ### Creates a variable
+  /**
+   * @deprecated Create variables through a data factory instead
+   * (`DataFactory.variable(name)`), so that term validation can be applied;
+   * the constructor assumes an already-validated name.
+   */
   constructor(name) {
     super(`?${name}`);
   }
@@ -179,6 +212,11 @@ export class Variable extends Term {
 
 // ## DefaultGraph constructor
 export class DefaultGraph extends Term {
+  // ### Creates the default graph
+  /**
+   * @deprecated Obtain the default graph through a data factory instead
+   * (`DataFactory.defaultGraph()`).
+   */
   constructor() {
     super('');
     return DEFAULTGRAPH || this;
@@ -299,6 +337,12 @@ export function termToId(term, nested) {
 
 // ## Quad constructor
 export class Quad extends Term {
+  // ### Creates a quad
+  /**
+   * @deprecated Create quads through a data factory instead
+   * (`DataFactory.quad(subject, predicate, object, graph)`), so that term
+   * validation can be applied; the constructor assumes already-validated terms.
+   */
   constructor(subject, predicate, object, graph) {
     super('');
     this._subject   = subject;
@@ -380,7 +424,7 @@ function literal(value, languageOrDataType) {
     return new Literal(`"${value}"@${languageOrDataType.language.toLowerCase()}${languageOrDataType.direction ? `--${languageOrDataType.direction.toLowerCase()}` : ''}`);
   }
 
-  // Automatically determine datatype for booleans and numbers
+  // Automatically determine datatype for booleans, numbers, and dates
   let datatype = languageOrDataType ? languageOrDataType.value : '';
   if (datatype === '') {
     // Convert a boolean
@@ -395,6 +439,11 @@ function literal(value, languageOrDataType) {
         if (!Number.isNaN(value))
           value = value > 0 ? 'INF' : '-INF';
       }
+    }
+    // Convert a valid date
+    else if (value instanceof Date && !Number.isNaN(value.getTime())) {
+      datatype = xsd.dateTime;
+      value = value.toISOString();
     }
   }
 
