@@ -1323,6 +1323,9 @@ export default class N3Parser {
 
   // ### `_readReifier` reads the triple term identifier after a tilde when in a reifying triple.
   _readReifier(token) {
+    // Without an identifier, the reifier is a fresh blank node
+    if (token.type === '>>')
+      return this._readReifiedTripleTail(token);
     this._reifier = this._readEntity(token);
     return this._readReifiedTripleTail;
   }
