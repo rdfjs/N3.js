@@ -1878,9 +1878,160 @@ describe('Parser', () => {
     );
 
     it(
-        'should not parse a predicate-object pair after an annotation inside a blank node property list',
-        shouldNotParse('<s> <p> [ <b> <c> {| <d> <e> |} ; <f> <g> ].',
-            'Expected ] to follow annotation on line 1.'),
+        'should parse a predicate-object pair after an annotation inside a blank node property list',
+        shouldParse('<s> <p> [ <b> <c> {| <d> <e> |} ; <f> <g> ].',
+            ['_:b0', 'b', 'c'],
+            ['_:b1', reifies, ['_:b0', 'b', 'c']],
+            ['_:b1', 'd', 'e'],
+            ['_:b0', 'f', 'g'],
+            ['s', 'p', '_:b0']),
+    );
+
+    it(
+        'should parse a predicate-object pair after an annotation',
+        shouldParse('<s> <p> <o> {| <a> <b> |} ; <p2> <o2> .',
+            ['s', 'p', 'o'],
+            ['_:b0', reifies, ['s', 'p', 'o']],
+            ['_:b0', 'a', 'b'],
+            ['s', 'p2', 'o2']),
+    );
+
+    it(
+        'should parse an object after an annotation',
+        shouldParse('<s> <p> <o> {| <a> <b> |} , <o2> .',
+            ['s', 'p', 'o'],
+            ['_:b0', reifies, ['s', 'p', 'o']],
+            ['_:b0', 'a', 'b'],
+            ['s', 'p', 'o2']),
+    );
+
+    it(
+        'should parse a predicate-object pair after an annotation with a reifier',
+        shouldParse('<s> <p> <o> ~ <r> {| <a> <b> |} ; <p2> <o2> .',
+            ['s', 'p', 'o'],
+            ['r', reifies, ['s', 'p', 'o']],
+            ['r', 'a', 'b'],
+            ['s', 'p2', 'o2']),
+    );
+
+    it(
+        'should parse annotations on predicate and object lists',
+        shouldParse('<s> <p> <o> {| <a> <b> |} ; <p2> <o2> {| <a2> <b2> |} , <o3> {| <a3> <b3> |} .',
+            ['s', 'p', 'o'],
+            ['_:b0', reifies, ['s', 'p', 'o']],
+            ['_:b0', 'a', 'b'],
+            ['s', 'p2', 'o2'],
+            ['_:b1', reifies, ['s', 'p2', 'o2']],
+            ['_:b1', 'a2', 'b2'],
+            ['s', 'p2', 'o3'],
+            ['_:b2', reifies, ['s', 'p2', 'o3']],
+            ['_:b2', 'a3', 'b3']),
+    );
+
+    it(
+        'should parse a nested annotation',
+        shouldParse('<s> <p> <o> {| <a> <b> {| <c> <d> |} |} .',
+            ['s', 'p', 'o'],
+            ['_:b0', reifies, ['s', 'p', 'o']],
+            ['_:b0', 'a', 'b'],
+            ['_:b1', reifies, ['_:b0', 'a', 'b']],
+            ['_:b1', 'c', 'd']),
+    );
+
+    it(
+        'should parse predicate-object pairs after a nested annotation',
+        shouldParse('<s> <p> <o> {| <a> <b> {| <c> <d> |} ; <e> <f> |} ; <p2> <o2> .',
+            ['s', 'p', 'o'],
+            ['_:b0', reifies, ['s', 'p', 'o']],
+            ['_:b0', 'a', 'b'],
+            ['_:b1', reifies, ['_:b0', 'a', 'b']],
+            ['_:b1', 'c', 'd'],
+            ['_:b0', 'e', 'f'],
+            ['s', 'p2', 'o2']),
+    );
+
+    it(
+        'should parse a doubly nested annotation with a reifier',
+        shouldParse('<s> <p> <o> {| <a> <b> ~ <r> {| <c> <d> {| <e> <f> |} |} |} .',
+            ['s', 'p', 'o'],
+            ['_:b0', reifies, ['s', 'p', 'o']],
+            ['_:b0', 'a', 'b'],
+            ['r', reifies, ['_:b0', 'a', 'b']],
+            ['r', 'c', 'd'],
+            ['_:b1', reifies, ['r', 'c', 'd']],
+            ['_:b1', 'e', 'f']),
+    );
+
+    it(
+        'should parse a nested annotation inside a blank node in an annotation',
+        shouldParse('<s> <p> <o> {| <a> [ <b> <c> {| <d> <e> |} ] |} .',
+            ['s', 'p', 'o'],
+            ['_:b0', reifies, ['s', 'p', 'o']],
+            ['_:b1', 'b', 'c'],
+            ['_:b2', reifies, ['_:b1', 'b', 'c']],
+            ['_:b2', 'd', 'e'],
+            ['_:b0', 'a', '_:b1']),
+    );
+
+    it(
+        'should parse consecutive annotation blocks with separate reifiers',
+        shouldParse('<s> <p> <o> {| <a> <b> |} {| <c> <d> |} .',
+            ['s', 'p', 'o'],
+            ['_:b0', reifies, ['s', 'p', 'o']],
+            ['_:b0', 'a', 'b'],
+            ['_:b1', reifies, ['s', 'p', 'o']],
+            ['_:b1', 'c', 'd']),
+    );
+
+    it(
+        'should parse an annotation block after an empty reifier',
+        shouldParse('<s> <p> <o> ~ {| <a> <b> |} .',
+            ['s', 'p', 'o'],
+            ['_:b0', reifies, ['s', 'p', 'o']],
+            ['_:b0', 'a', 'b']),
+    );
+
+    it(
+        'should parse a reifier after an annotation block',
+        shouldParse('<s> <p> <o> {| <a> <b> |} ~ <r> .',
+            ['s', 'p', 'o'],
+            ['_:b0', reifies, ['s', 'p', 'o']],
+            ['_:b0', 'a', 'b'],
+            ['r', reifies, ['s', 'p', 'o']]),
+    );
+
+    it(
+        'should parse alternating reifiers and annotation blocks',
+        shouldParse('<s> <p> <o> ~ <r1> {| <a> <b> |} ~ <r2> {| <c> <d> |} .',
+            ['s', 'p', 'o'],
+            ['r1', reifies, ['s', 'p', 'o']],
+            ['r1', 'a', 'b'],
+            ['r2', reifies, ['s', 'p', 'o']],
+            ['r2', 'c', 'd']),
+    );
+
+    it(
+        'should not parse an empty nested annotation',
+        shouldNotParse('<s> <p> <o> {| <a> <b> {| |} |} .',
+            'Annotation block can not be empty on line 1.'),
+    );
+
+    it(
+        'should not parse an annotation closing after a trailing semicolon',
+        shouldNotParse('<s> <p> <o> ; |}',
+            'Unexpected annotation syntax closing on line 1.'),
+    );
+
+    it(
+        'should not parse an annotation closing inside a blank node property list',
+        shouldNotParse('<s> <p> [ <b> <c> |} ] .',
+            'Unexpected annotation syntax closing on line 1.'),
+    );
+
+    it(
+        'should not parse an unclosed outer annotation',
+        shouldNotParse('<s> <p> <o> {| <a> <b> {| <c> <d> |} .',
+            'Expected punctuation to follow "http://example.org/b" on line 1.'),
     );
 
     it(
@@ -2072,13 +2223,13 @@ describe('Parser', () => {
     it(
       'should not parse a reified triple using an incomplete annotation syntax that misses |}',
       shouldNotParse('<a> <b> <c> {| <b1> <c1>',
-          'Expected entity but got eof on line 1.'),
+          'Expected punctuation to follow "http://example.org/c1" on line 1.'),
     );
 
     it(
       'should not parse a reified triple using an incomplete annotation syntax that misses |} and starts a new subject',
       shouldNotParse('<a> <b> <c> {| <b1> <c1>. <a2> <b2> <c2>',
-          'Expected entity but got eof on line 1.'),
+          'Expected punctuation to follow "http://example.org/c1" on line 1.'),
     );
 
     it('should not parse an out of place |}', shouldNotParse('<a> <b> <c> |}',
@@ -2362,6 +2513,17 @@ describe('Parser', () => {
 
   describe('A Parser instance for the TriG format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'TriG' }); }
+
+    it(
+      'should parse a nested annotation followed by a predicate-object pair in a graph',
+      shouldParse(parser, '<g> { <s> <p> <o> {| <a> <b> {| <c> <d> |} |} ; <p2> <o2> }',
+          ['s', 'p', 'o', 'g'],
+          ['_:b0', reifies, ['s', 'p', 'o'], 'g'],
+          ['_:b0', 'a', 'b', 'g'],
+          ['_:b1', reifies, ['_:b0', 'a', 'b'], 'g'],
+          ['_:b1', 'c', 'd', 'g'],
+          ['s', 'p2', 'o2', 'g']),
+    );
 
     it(
       'should parse a single triple',
