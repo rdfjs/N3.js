@@ -517,6 +517,27 @@ A sub-view inherits its parent's `matchSemantics`.
 For `'snapshot'` and `'forwarded'`, an iteration (synchronous or via the
 stream) that is already in progress keeps a stable view of the quads as of when it started.
 
+### Matching with variables
+
+By default, `match()` treats a `Variable` like any other term, so it only matches quads that contain that variable.
+With `matchVariables: true`, set as a store-wide default or per call, variables become wildcards,
+and a variable that occurs in more than one position must match the same term in each of them:
+
+```JavaScript
+import { Store, DataFactory } from 'n3';
+const { namedNode, variable } = DataFactory;
+
+const store = new Store([], { matchVariables: true });
+const x = variable('x');
+// Quads whose subject equals their object
+const selfLoops = store.match(x, null, x);
+// The same, on a store without the default
+const alsoSelfLoops = new Store().match(x, null, x, null, { matchVariables: true });
+```
+
+A sub-view inherits its parent's `matchVariables` setting, and keeps the parent's repeated-variable constraints.
+Other search methods, such as `getQuads` and `deleteMatches`, always match variables exactly.
+
 
 ## Reasoning
 

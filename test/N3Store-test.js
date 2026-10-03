@@ -2972,6 +2972,130 @@ describe('Store', () => {
     });
   });
 
+  describe('match with matchVariables', () => {
+    const { variable } = DataFactory;
+    const x = variable('x'), y = variable('y');
+    function ex(name) { return namedNode(`http://ex.org/${name}`); }
+    function ids(quads) { return [...quads].map(termToId).sort(); }
+    function buildStore(options) {
+      return new Store([
+        quad(ex('a'), ex('p'), ex('a')),
+        quad(ex('a'), ex('p'), ex('b')),
+        quad(ex('b'), ex('b'), ex('c')),
+        quad(ex('c'), ex('p'), ex('c'), ex('g')),
+        quad(ex('g'), ex('q'), ex('d'), ex('g')),
+        quad(ex('a'), ex('q'), literal('a')),
+      ], options);
+    }
+    const on = { matchVariables: true };
+    const selfLoops = [quad(ex('a'), ex('p'), ex('a')), quad(ex('c'), ex('p'), ex('c'), ex('g'))];
+
+    it('should match variables exactly by default', () => {
+      const store = buildStore();
+      expect(store.match(x, null, x).size).toBe(0);
+      expect(store.match(x, null, null, null, { matchVariables: false }).size).toBe(0);
+    });
+
+    it('should treat distinct variables as wildcards', () => {
+      const store = buildStore();
+      expect(ids(store.match(x, ex('p'), y, null, on))).toEqual(ids(store.getQuads(null, ex('p'))));
+      expect(ids(store.match(x, y, variable('z'), variable('w'), on))).toEqual(ids(store.getQuads()));
+    });
+
+    it('should require a repeated variable to bind to one term', () => {
+      const store = buildStore();
+      expect(ids(store.match(x, null, x, null, on))).toEqual(ids(selfLoops));
+      expect(ids(store.match(x, x, y, null, on))).toEqual(ids([quad(ex('b'), ex('b'), ex('c'))]));
+      expect(ids(store.match(x, null, null, x, on))).toEqual(ids([quad(ex('g'), ex('q'), ex('d'), ex('g'))]));
+      expect(ids(store.match(variable('x'), ex('p'), variable('x'), DataFactory.defaultGraph(), on)))
+        .toEqual(ids([quad(ex('a'), ex('p'), ex('a'))]));
+      expect(store.match(x, ex('q'), x, null, on).size).toBe(0);
+      store.addQuad(ex('e'), ex('e'), ex('e'));
+      expect(ids(store.match(x, x, x, null, on))).toEqual(ids([quad(ex('e'), ex('e'), ex('e'))]));
+    });
+
+    it('should be configurable on the Store and overridable per call', () => {
+      const store = buildStore(on);
+      expect(ids(store.match(x, null, x))).toEqual(ids(selfLoops));
+      expect(store.match(x, null, x, null, { matchVariables: false }).size).toBe(0);
+    });
+
+    it('should keep deleteMatches exact on a Store with matchVariables', () => {
+      const store = buildStore(on);
+      store.deleteMatches(x, null, x);
+      expect(store.size).toBe(6);
+    });
+
+    it('should support the DatasetCore and stream methods of a lazy view', async () => {
+      const store = buildStore(on);
+      const view = store.match(x, null, x);
+      expect(view.has(selfLoops[0])).toBe(true);
+      expect(view.has(quad(ex('a'), ex('p'), ex('b')))).toBe(false);
+      expect(ids(view.toArray())).toEqual(ids(selfLoops));
+      expect(ids(await arrayifyStream(view.toStream()))).toEqual(ids(selfLoops));
+      expect(ids(await arrayifyStream(store.match(x, null, x)))).toEqual(ids(selfLoops));
+      expect(ids(view.union([quad(ex('z'), ex('z'), ex('y'))])))
+        .toEqual(ids([...selfLoops, quad(ex('z'), ex('z'), ex('y'))]));
+      expect(ids(view.toArray())).toEqual(ids(selfLoops));
+      store.addQuad(ex('d'), ex('p'), ex('d'));
+      store.addQuad(ex('d'), ex('p'), ex('e'));
+      expect(store.match(x, null, x).size).toBe(3);
+    });
+
+    it('should match nothing when a bound term is unknown', () => {
+      const store = buildStore(on);
+      expect(store.match(x, ex('unknown'), x).size).toBe(0);
+    });
+
+    it('should keep snapshot views constrained while the store changes', () => {
+      const store = buildStore({ matchVariables: true, matchSemantics: 'snapshot' });
+      const view = store.match(x, null, x);
+      const seen = [];
+      for (const quad of view) {
+        seen.push(quad);
+        if (seen.length === 1) {
+          store.addQuad(ex('d'), ex('p'), ex('d'));
+          store.addQuad(ex('d'), ex('p'), ex('e'));
+        }
+      }
+      expect(ids(seen)).toEqual(ids(selfLoops));
+      expect(ids(view)).toEqual(ids(selfLoops));
+    });
+
+    it('should only forward quads that bind repeated variables to one term', () => {
+      const store = buildStore({ matchVariables: true, matchSemantics: 'forwarded' });
+      const view = store.match(x, null, x);
+      expect(view.size).toBe(2);
+      store.addQuad(ex('d'), ex('p'), ex('e'));
+      expect(view.size).toBe(2);
+      store.addQuad(ex('d'), ex('p'), ex('d'));
+      expect(view.size).toBe(3);
+      view.add(quad(ex('f'), ex('p'), ex('f')));
+      expect(store.has(quad(ex('f'), ex('p'), ex('f')))).toBe(true);
+      expect(() => view.add(quad(ex('f'), ex('p'), ex('g')))).toThrow('Quad does not match the forwarded view pattern');
+      view.deleteMatches(null, ex('p'));
+      expect(view.size).toBe(0);
+      expect(store.has(quad(ex('a'), ex('p'), ex('b')))).toBe(true);
+      expect(store.has(quad(ex('d'), ex('p'), ex('e')))).toBe(true);
+    });
+
+    it('should combine variables in nested forwarded views', () => {
+      const store = buildStore({ matchVariables: true, matchSemantics: 'forwarded' });
+      store.addQuad(ex('p'), ex('p'), ex('p'));
+      expect(ids(store.match(x, null, x).match(y, y))).toEqual(ids([quad(ex('p'), ex('p'), ex('p'))]));
+      expect(ids(store.match(x, null, x).match(ex('a')))).toEqual(ids([selfLoops[0]]));
+      expect(ids(store.match(ex('a')).match(x, null, x))).toEqual(ids([selfLoops[0]]));
+      expect(store.match(ex('a')).match(x, null, x, null, { matchVariables: false }).size).toBe(0);
+    });
+
+    it('should apply variables in nested snapshot views', () => {
+      const store = buildStore({ matchSemantics: 'snapshot' });
+      const view = store.match(null, ex('p'), null, null, on);
+      expect(ids(view.match(x, null, x))).toEqual(ids(selfLoops));
+      expect(store.match(null, ex('p')).match(x, null, x).size).toBe(0);
+    });
+  });
+
   describe('A Store with an object recurring under multiple predicates', () => {
     const store = new Store([
       new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
