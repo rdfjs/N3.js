@@ -1,0 +1,64 @@
+name: Performance
+
+# Benchmarks the pull request against its base branch in the same job, so
+# both builds see the same runner. See perf/README.md for what is covered.
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: Ref to compare against
+        default: main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: perf-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: head
+      - uses: actions/checkout@v7
+        with:
+          path: base
+          ref: ${{ github.event.pull_request.base.sha || inputs.base }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+      - name: Build head
+        working-directory: head
+        run: npm ci --ignore-scripts && npm run build:node
+      - name: Build base
+        working-directory: base
+        run: npm ci --ignore-scripts && npm run build:node
+      - name: Compare
+        id: compare
+        working-directory: head
+        run: >-
+          node perf/ci/compare.js --base ../base/lib --head lib
+          --markdown ../perf-results.md --json ../perf-results.json
+      - name: Publish summary
+        if: always() && hashFiles('perf-results.md') != ''
+        run: cat perf-results.md >> "$GITHUB_STEP_SUMMARY"
+      # perf-comment.yml posts this on the pull request. It runs separately
+      # because this workflow has no write access on pull requests from forks.
+      - name: Save results for the PR comment
+        if: always() && github.event_name == 'pull_request' && hashFiles('perf-results.md') != ''
+        run: |
+          mkdir perf-comment
+          cp perf-results.md perf-comment/
+          echo "${{ github.event.pull_request.number }}" > perf-comment/pr-number
+          echo "${{ steps.compare.outcome }}" > perf-comment/outcome
+      - uses: actions/upload-artifact@v7
+        if: always() && github.event_name == 'pull_request' && hashFiles('perf-comment/perf-results.md') != ''
+        with:
+          name: perf-comment
+          path: perf-comment
+          retention-days: 7
