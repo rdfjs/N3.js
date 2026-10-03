@@ -4887,6 +4887,12 @@ describe('Parser', () => {
     );
 
     it(
+      'should parse N3 existentially quantified IRIs',
+      shouldParse(parserN3, '@forSome <urn:a:x>. <urn:a:x> <urn:a:p> <urn:a:o>.',
+                  ['_:b0', 'urn:a:p', 'urn:a:o']),
+    );
+
+    it(
       // N3 scopes labels with a dot-separated prefix, which term validation must accept
       'should parse N3 blank nodes with scoped labels',
       shouldParse(parserN3, '<urn:a:s> <urn:a:p> [ <urn:a:q> _:x ].',

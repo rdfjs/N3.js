@@ -1454,9 +1454,10 @@ export default class N3Parser {
     if (value !== undefined) {
       if (value.termType === 'NamedNode' && !isValidIRI(value.value))
         return this._error(`Invalid IRI "${value.value}"`, token);
-      if (value.termType === 'BlankNode') {
-        // In N3, labels carry a scope prefix with a dot separator by design,
-        // so only the label as written in the document is checked
+      // In N3, labels carry a scope prefix with a dot separator by design,
+      // so only the label as written in the document is checked;
+      // blank nodes that replace quantified IRIs have parser-generated labels
+      if (value.termType === 'BlankNode' && (!this._n3Mode || token.type === 'blank')) {
         const label = this._n3Mode ? token.value : value.value;
         if (!isValidBlankNodeLabel(label))
           return this._error(`Invalid blank node label "${label}"`, token);

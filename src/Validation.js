@@ -31,7 +31,7 @@ const IPV6 = `(?:(?:${H16}:){6}${LS32}` +
   `|(?:(?:${H16}:){0,4}${H16})?::${LS32}` +
   `|(?:(?:${H16}:){0,5}${H16})?::${H16}` +
   `|(?:(?:${H16}:){0,6}${H16})?::)`;
-const IP_LITERAL = `\\[(?:${IPV6}|v[0-9A-Fa-f]+\\.[A-Za-z0-9\\-._~!$&'()*+,;=:]+)\\]`;
+const IP_LITERAL = `\\[(?:${IPV6}|[vV][0-9A-Fa-f]+\\.[A-Za-z0-9\\-._~!$&'()*+,;=:]+)\\]`;
 const IREG_NAME = `(?:${IUNRESERVED}|${PCT_ENCODED}|${SUB_DELIMS})*`;
 const IHOST = `(?:${IP_LITERAL}|${IPV4}|${IREG_NAME})`;
 const IUSERINFO = `(?:${IUNRESERVED}|${PCT_ENCODED}|${SUB_DELIMS}|:)*`;
@@ -65,7 +65,7 @@ const LANGUAGE_TAG = new RegExp(
   '|x(?:-[a-z0-9]{1,8})+' +
   // irregular grandfathered tags (the regular ones match the langtag rule)
   '|en-GB-oed|sgn-BE-FR|sgn-BE-NL|sgn-CH-DE' +
-  '|i-(?:ami|bnn|default|enochian|hak|klingon|lur|mingo|navajo|pwn|tao|tay|tsu))$',
+  '|i-(?:ami|bnn|default|enochian|hak|klingon|lux|mingo|navajo|pwn|tao|tay|tsu))$',
   'i');
 
 // ### Base directions of directional language-tagged strings, as per RDF 1.2

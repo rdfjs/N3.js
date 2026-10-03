@@ -16,6 +16,7 @@ describe('Validation', () => {
       ['http://[::ffff:127.0.0.1]/'],
       ['http://[2001:db8:0:1:1:1:1:1]/'],
       ['http://[v7.futuristic:address]/'],
+      ['http://[V7.futuristic:address]/'],
       ['http://例え.テスト/パス?クエリ#フラグメント'],
       ['http://example.org/%2F%af'],
       ['urn:isbn:0451450523'],
@@ -104,6 +105,10 @@ describe('Validation', () => {
       ['en-a-bbb-x-a-cccc'],
       ['x-private-use'],
       ['i-klingon'],
+      ['i-lux'],
+      // Duplicate variants and singletons are well-formed, though not valid (RFC 5646 section 2.2.9)
+      ['de-1901-1901'],
+      ['en-a-foo-a-bar'],
       ['en-GB-oed'],
       ['hy-Latn-IT-arevela'],
       ['abcdefgh'],
@@ -118,6 +123,7 @@ describe('Validation', () => {
       ['en-a'],
       ['en-GB-'],
       ['i-notgrandfathered'],
+      ['i-lur'],
       ['x'],
       ['en-x'],
     ])('rejects %s', tag => {
