@@ -19,8 +19,8 @@ npm run build:node
 node perf/ci/compare.js --base ../n3-main/lib --head lib
 ```
 
-`--filter <regex>` runs a subset, and `--rounds`, `--iterations` and
-`--threshold` tune the comparison.
+`--filter <text>` runs only the benchmarks whose name contains that text,
+and `--rounds`, `--iterations` and `--threshold` tune the comparison.
 
 ### Covered
 

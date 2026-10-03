@@ -4,7 +4,7 @@
 //
 // Usage:
 //   node perf/ci/compare.js --base <base lib dir> --head <head lib dir>
-//     [--rounds 5] [--iterations 7] [--threshold 0.1] [--filter <regex>]
+//     [--rounds 5] [--iterations 7] [--threshold 0.1] [--filter <text>]
 //     [--markdown <file>] [--json <file>]
 //
 // Every measurement runs in a fresh Node.js process. Base and head are
@@ -26,8 +26,9 @@ if (!args.base || !args.head) {
   process.exit(2);
 }
 const rounds = Number(args.rounds), threshold = Number(args.threshold);
-const filter = args.filter ? new RegExp(args.filter) : null;
-const names = Object.keys(benchmarks).filter(name => !filter || filter.test(name));
+// A plain substring match, so command-line input never becomes a regular expression
+const filter = args.filter ? args.filter.toLowerCase() : null;
+const names = Object.keys(benchmarks).filter(name => !filter || name.toLowerCase().includes(filter));
 
 function median(values) {
   const sorted = [...values].sort((a, b) => a - b), mid = sorted.length >> 1;
