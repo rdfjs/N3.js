@@ -36,18 +36,28 @@ class SerializedTerm extends Term {
 // ## Placeholder class to represent formulas created by `formula`
 class SerializedFormula extends SerializedTerm {}
 
-// Identifies RDF terms by equality, and pretty-printed nodes by identity
+// Identifies RDF terms by equality, and pretty-printed nodes by identity.
+// Only keys of terms with pretty-printed nodes start with a NUL character.
 const serializedTermKeys = new WeakMap();
 let serializedTermCount = 0;
 function termKey(term) {
-  return hasSerializedTerm(term) ? serializedTermKey(term) : termToId(term);
+  if (hasSerializedTerm(term))
+    return serializedTermKey(term);
+  const id = termToId(term);
+  return id.charCodeAt(0) > 1 ? id : `\x01${id}`;
 }
-// Keys a term containing pretty-printed nodes component by component
+// Keys a term containing pretty-printed nodes component by component,
+// prefixing each component with its length so that no two terms share a key
 function serializedTermKey(term) {
   switch (term.termType) {
-  case 'Quad':
-    return `\0<<${serializedTermKey(term.subject)}\0${serializedTermKey(term.predicate)
-    }\0${serializedTermKey(term.object)}\0${serializedTermKey(term.graph)}>>`;
+  case 'Quad': {
+    let key = '\0<<';
+    for (const component of [term.subject, term.predicate, term.object, term.graph]) {
+      const componentKey = serializedTermKey(component);
+      key += `${componentKey.length}:${componentKey}`;
+    }
+    return key;
+  }
   default:
     if (!(term instanceof SerializedTerm))
       return termToId(term);
@@ -56,6 +66,17 @@ function serializedTermKey(term) {
       serializedTermKeys.set(term, key = `\0${serializedTermCount++}`);
     return key;
   }
+}
+// Checks whether the term is or contains a node from `blank` or `list`
+function hasHelperNode(term) {
+  return term instanceof SerializedTerm && !(term instanceof SerializedFormula) || term.termType === 'Quad' &&
+    (hasHelperNode(term.subject) || hasHelperNode(term.predicate) || hasHelperNode(term.object));
+}
+// Refuses nodes from `blank` and `list` in statements with formulas,
+// since they cannot be kept apart from or together with other occurrences
+function checkHelperNodes(terms) {
+  if (terms.some(hasHelperNode))
+    throw new Error('Cannot use nodes created by blank() or list() in statements with formulas');
 }
 // Checks whether the term is or contains a pretty-printed node
 function hasSerializedTerm(term) {
@@ -140,14 +161,12 @@ export default class N3Writer {
     if (this._formulaStatements && DEFAULTGRAPH.equals(graph)) {
       let holdBack;
       try {
-        // Once statements are held back, so are those about pretty-printed nodes,
-        // so that all statements about such a node are written together
+        // Once statements are held back, so are those about lists,
+        // so that all statements about a list are written together
         holdBack = this._findFormulas([object, predicate, subject]).length > 0 ||
-          this._formulaStatements.length > 0 && (this._isPrettyPrinted(subject) || this._isPrettyPrinted(object));
-        // A pretty-printed node that was already written cannot be written again,
-        // since it would then denote a different blank node
-        if (holdBack && [subject, predicate, object].some(term => this._hasWrittenNode(term)))
-          throw new Error('Cannot write a pretty-printed node that was already written in a statement with formulas');
+          this._formulaStatements.length > 0 && (this._isList(subject) || this._isList(object));
+        if (holdBack)
+          checkHelperNodes([subject, predicate, object]);
       }
       catch (error) {
         if (done)
@@ -159,11 +178,6 @@ export default class N3Writer {
         done && done();
         return;
       }
-    }
-    // Remember pretty-printed nodes that are written before statements with formulas
-    if (this._formulaStatements) {
-      for (const term of [subject, predicate, object])
-        this._markWrittenNodes(term);
     }
     try {
       // Write the graph's label if it has changed
@@ -196,28 +210,6 @@ export default class N3Writer {
                     this._encodeObject(object)}`, done);
     }
     catch (error) { done && done(error); }
-  }
-
-  // ### `_isPrettyPrinted` checks whether the term is or contains a pretty-printed node or list
-  _isPrettyPrinted(term) {
-    return hasSerializedTerm(term) || this._isList(term);
-  }
-
-  // ### `_markWrittenNodes` remembers the pretty-printed nodes in the term
-  _markWrittenNodes(term) {
-    if (term instanceof SerializedTerm)
-      (this._writtenNodes || (this._writtenNodes = new WeakSet())).add(term);
-    else if (term.termType === 'Quad') {
-      this._markWrittenNodes(term.subject);
-      this._markWrittenNodes(term.predicate);
-      this._markWrittenNodes(term.object);
-    }
-  }
-
-  // ### `_hasWrittenNode` checks whether the term contains a pretty-printed node that was written
-  _hasWrittenNode(term) {
-    return !!this._writtenNodes && (this._writtenNodes.has(term) || term.termType === 'Quad' &&
-      (this._hasWrittenNode(term.subject) || this._hasWrittenNode(term.predicate) || this._hasWrittenNode(term.object)));
   }
 
   // ### `_writeQuadLine` writes the quad to the output stream as a single line
@@ -620,7 +612,13 @@ export default class N3Writer {
 
   // ### `formula` creates an N3 formula with the given quads
   formula(quads) {
-    const statements = this._encodeStatements(quads || []);
+    quads = quads || [];
+    for (const quad of quads)
+      checkHelperNodes([quad.subject, quad.predicate, quad.object]);
+    // Hold back statements with formulas from now on, so each can be written once
+    if (!this._formulaStatements)
+      this._formulaStatements = [];
+    const statements = this._encodeStatements(quads);
     return new SerializedFormula(statements.length ? `{ ${statements.join('. ')} }` : '{}');
   }
 
