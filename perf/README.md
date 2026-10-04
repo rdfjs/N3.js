@@ -44,8 +44,9 @@ the function to time, or `{ before, run }` when each run needs fresh input
 can measure fewer runs by also setting `warmup` and `iterations`. Setting
 `memory: 'retained'` measures the heap that the run's result still uses after
 garbage collection instead of time, and `memory: 'peak'` how far the run
-raised the process's peak memory use; memory is measured once per process
-and reported in MB. A benchmark for a
+raised the process's peak memory use, with V8's young generation fixed at
+4 MB so that peak memory follows what the run keeps alive rather than how far
+V8 grew its heap; memory is measured once per process and reported in MB. A benchmark for a
 feature the base branch lacks declares `available(N3)`; it is reported as new
 until the base has the feature, or as not available while neither build has
 it. Inputs come from `ci/data.js` and `ci/helpers.js`, which generate them

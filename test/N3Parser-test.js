@@ -1,4 +1,4 @@
-import { Parser, Writer, Store, NamedNode, BlankNode, Quad, termFromId, DataFactory as DF } from '../src';
+import { Lexer, Parser, Writer, Store, NamedNode, BlankNode, Quad, termFromId, DataFactory as DF } from '../src';
 import rdfDataModel from '@rdfjs/data-model';
 import { isomorphic } from 'rdf-isomorphic';
 
@@ -5281,6 +5281,81 @@ describe('Parser', () => {
       expect(error.message).toMatch(/^Undefined prefix "a+…/);
       expect(error.message.length).toBeLessThanOrEqual(200);
       expect(error.context.token.prefix).toBe(bigPrefix);
+    });
+
+    it('reports the first error in the document when parsing synchronously', () => {
+      expect(() => new Parser().parse('<s> . <p> <o>.\n"unterminated'))
+        .toThrow('Unexpected . on line 1.');
+      expect(() => new Parser().parse('<s> <p> <o>.\n<s> <p> "unterminated'))
+        .toThrow('Unexpected ""unterminated" on line 2.');
+    });
+
+    it('calls no prefix or version callbacks when lexing fails later', () => {
+      const parser = new Parser({ format: 'text/turtle' });
+      const onPrefix = jest.fn(), onVersion = jest.fn();
+      expect(() => parser.parse('VERSION "1.2" @prefix ex: <http://ex.org/>. ex:s ex:p "unterminated',
+        { onPrefix, onVersion })).toThrow('Unexpected ""unterminated" on line 1.');
+      expect(onPrefix).not.toHaveBeenCalled();
+      expect(onVersion).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['application/trig', '<g> { <s> <p> "unterminated'],
+      ['text/n3', '<s> <p> { <a> <b> ( <c> "unterminated'],
+      ['text/turtle', '<s> <p> [ <q> ( <a> "unterminated'],
+    ])('can parse again after lexing fails inside a scope in %s', (format, input) => {
+      const parser = new Parser({ format });
+      expect(() => parser.parse(input)).toThrow('Unexpected ""unterminated" on line 1.');
+      expect(parser.parse('<s> <p> <o>.')).toHaveLength(1);
+    });
+
+    it('restores the base of a formula when lexing fails inside it', () => {
+      const parser = new Parser({ format: 'text/n3', baseIRI: 'http://outer.example/' });
+      expect(() => parser.parse('<s> <p> { @base <http://inner.example/>. <a> <b> "unterminated'))
+        .toThrow('Unexpected ""unterminated" on line 1.');
+      expect(parser.parse('<s> <p> <o>.')[0].subject.value).toBe('http://outer.example/s');
+    });
+
+    it('restores the base when lexing fails after a base declaration', () => {
+      const parser = new Parser({ baseIRI: 'http://outer.example/' });
+      expect(() => parser.parse('BASE <http://inner.example/> <s> <p> "unterminated'))
+        .toThrow('Unexpected ""unterminated" on line 1.');
+      expect(parser.parse('<s> <p> <o>.')[0].subject.value).toBe('http://outer.example/s');
+    });
+
+    it('does not reuse a reifier when lexing fails after it', () => {
+      const parser = new Parser();
+      expect(() => parser.parse('<s> <p> <o> ~ <r> "unterminated'))
+        .toThrow('Unexpected ""unterminated" on line 1.');
+      const [, reifies] = parser.parse('<a> <b> <c> {| <d> <e> |}.');
+      expect(reifies.subject.termType).toBe('BlankNode');
+    });
+
+    it('parses synchronously through a lexer that overrides tokenize', () => {
+      class UppercaseLexer extends Lexer {
+        tokenize(input, callback) {
+          return super.tokenize(input.replace('<o>', '<O>'), callback);
+        }
+      }
+      const quads = new Parser({ lexer: new UppercaseLexer() }).parse('<s> <p> <o>.');
+      expect(quads.map(q => q.object.value)).toEqual(['O']);
+    });
+
+    it('lexes and parses together again after a parse with onComment', () => {
+      const parser = new Parser();
+      const comments = [];
+      parser.parse('<s> <p> <o>. # c', { onComment: c => comments.push(c) });
+      expect(comments).toEqual([' c']);
+      const tokenizeString = jest.spyOn(parser._lexer, '_tokenizeString');
+      expect(parser.parse('<s> <p> <o>. # c')).toHaveLength(1);
+      expect(tokenizeString).toHaveBeenCalledTimes(1);
+    });
+
+    it('parses synchronously with a lexer that only provides tokenize', () => {
+      const lexer = new Lexer();
+      lexer._tokenizeString = undefined;
+      expect(new Parser({ lexer }).parse('<s> <p> <o>.')).toHaveLength(1);
+      expect(() => new Parser({ lexer }).parse('<s> . "unterminated')).toThrow('Unexpected ""unterminated" on line 1.');
     });
   });
 

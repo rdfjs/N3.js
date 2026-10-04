@@ -1,4 +1,4 @@
-import { Lexer } from '../src';
+import { Lexer, Parser } from '../src';
 
 import { EventEmitter } from 'events';
 
@@ -2663,6 +2663,11 @@ describe('Lexer', () => {
         });
         expect(error.message).toBe('Token too long on line 2.');
         expect(error.context.line).toBe(2);
+      });
+
+      it('reports a syntax error when the parser parses a string synchronously', () => {
+        const parser = new Parser({ lexer: overflowingLexer() });
+        expect(() => parser.parse('<a> <p> <b\\u0063>.')).toThrow('Token too long on line 1.');
       });
 
       it('reports a syntax error through the callback for a stream', () => {
