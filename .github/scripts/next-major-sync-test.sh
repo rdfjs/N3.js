@@ -14,7 +14,7 @@ git init --quiet
 git config user.name test
 git config user.email test@example.org
 git config commit.gpgSign false
-eval "$(sed -n '/^commit_record()/,/^}/p;/^no_empty_tree()/,/^}/p;/^files_of()/,/^}/p;/^same_change()/,/^}/p;/^compare_change()/,/^}/p;/^same_commits()/,/^}/p;/^compare_commits()/,/^}/p' "$script")"
+eval "$(sed -n '/^commit_record()/,/^}/p;/^well_formed()/,/^}/p;/^no_empty_tree()/,/^}/p;/^files_of()/,/^}/p;/^same_change()/,/^}/p;/^compare_change()/,/^}/p;/^same_commits()/,/^}/p;/^compare_commits()/,/^}/p' "$script")"
 
 failures=0
 lines() { printf '%s\n' "$@"; }
@@ -190,5 +190,22 @@ change=$(GIT_AUTHOR_DATE=$(git log -1 --format=%aD "$two~1") git commit-tree "$(
 dropped_e=$(GIT_AUTHOR_DATE=$(git log -1 --format=%aD "$two~1") git commit-tree "$two~1^{tree}" -p "$parent" \
   -m "$(git log -1 --format=%B "$two~1")")
 expect refused 'an empty directory in the parent deleted' same_commits "$parent..$change" "$parent..$dropped_e"
+
+# Malformed trees that ls-tree shows as normal ones: a mode-only change to 100664, left out of
+# the rebased commit, and a file listed twice, where only the last copy would be compared
+raw_tree() { # <mode> <name> <object>...: the entries exactly as given, unchecked
+  while [ $# -gt 0 ]; do printf '%s %s\0' "$1" "$2" && perl -e 'print pack("H*", $ARGV[0])' "$3"; shift 3; done |
+    git hash-object -t tree --literally -w --stdin
+}
+raw_commit() { GIT_AUTHOR_DATE="1700000000 +0000" git commit-tree "$1" -p "$base" -m "$2"; }
+f_blob=$(git rev-parse "$base:f") g_blob=$(git rev-parse "$base:g") g2_blob=$(blob "$(lines g2)")
+odd_mode=$(raw_commit "$(raw_tree 100644 f "$f_blob" 100664 g "$g_blob")" 'feat!: mode')
+[ "$(git ls-tree "$odd_mode")" = "$(git ls-tree "$base")" ] || { echo 'FAIL: odd mode setup'; exit 1; }
+expect refused 'a 100664 mode-only change left out' same_commits "$base..$odd_mode" "$base..$(raw_commit "$base^{tree}" 'feat!: mode')"
+twice=$(raw_commit "$(raw_tree 100644 f "$f_blob" 100644 g "$g_blob" 100644 g "$g2_blob")" 'feat!: g2')
+[ "$(git ls-tree "$twice" | wc -l)" = 3 ] || { echo 'FAIL: duplicate entry setup'; exit 1; }
+honest=$(raw_commit "$(raw_tree 100644 f "$f_blob" 100644 g "$g2_blob")" 'feat!: g2')
+expect refused 'a file listed twice' same_commits "$base..$twice" "$base..$honest"
+expect accepted 'the same change, well formed' same_commits "$base..$honest" "$base..$(raw_commit "$honest^{tree}" 'feat!: g2')"
 
 exit "$failures"

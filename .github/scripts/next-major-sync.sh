@@ -59,6 +59,21 @@ files_of() {
   done < "$3"
 }
 
+# Fails unless every commit listed in the file $2, its parent and their trees and files pass git's
+# object checks with no error or warning: ls-tree hides a malformed tree, showing an odd mode as
+# a normal one and keeping both copies of a duplicated entry. The objects are copied as a pack
+# into a fresh repository in $1, checked with no global or system configuration to relax it.
+well_formed() {
+  local c
+  while IFS= read -r c; do printf '%s\n%s^\n' "$c" "$c"; done < "$2" > "$1/heads" &&
+    git rev-list --objects --no-walk --stdin < "$1/heads" > "$1/objects" &&
+    git pack-objects -q --stdout < "$1/objects" > "$1/pack" &&
+    git init --quiet --bare "$1/check.git" &&
+    GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null \
+      git --git-dir="$1/check.git" index-pack --stdin --fsck-objects < "$1/pack" > /dev/null 2> "$1/fsck" &&
+    [ ! -s "$1/fsck" ]
+}
+
 # Fails if a commit's tree holds an empty directory, which no checkout makes and which the file
 # listings and an index cannot show; uses the file $2
 no_empty_tree() {
@@ -148,7 +163,8 @@ same_commits() {
 compare_commits() {
   local dir=$1 i
   local -a a b
-  git rev-list --reverse "$2" > "$dir/a" && git rev-list --reverse "$3" > "$dir/b" || return 1
+  git rev-list --reverse "$2" > "$dir/a" && git rev-list --reverse "$3" > "$dir/b" &&
+    cat "$dir/a" "$dir/b" > "$dir/all" && well_formed "$dir" "$dir/all" || return 1
   mapfile -t a < "$dir/a"
   mapfile -t b < "$dir/b"
   shift 3
