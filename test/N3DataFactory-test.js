@@ -284,6 +284,19 @@ describe('DataFactory', () => {
       expect(DataFactory.fromTerm(DM.literal('abc')).equals(DM.literal('abc'))).toBe(true);
     });
 
+    it('with a directional language-tagged literal from another library', () => {
+      const external = {
+        termType: 'Literal', value: 'abc', language: 'he', direction: 'rtl',
+        datatype: { termType: 'NamedNode', value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#dirLangString' },
+      };
+      const term = DataFactory.fromTerm(external);
+      expect(term.language).toBe('he');
+      expect(term.direction).toBe('rtl');
+      expect(term.datatype.value).toBe('http://www.w3.org/1999/02/22-rdf-syntax-ns#dirLangString');
+      expect(term.equals(DataFactory.literal('abc', { language: 'he', direction: 'rtl' }))).toBe(true);
+      expect(DataFactory.fromTerm({ ...external, direction: '' }).equals(DataFactory.literal('abc', 'he'))).toBe(true);
+    });
+
     it('with a variable', () => {
       const variable = new Variable('abc');
       expect(DataFactory.fromTerm(new Variable('abc'))).toEqual(new Variable('abc'));
