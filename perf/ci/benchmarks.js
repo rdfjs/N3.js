@@ -11,9 +11,9 @@ const data = require('./data');
 
 const { EX } = data;
 
-function parseBench(format, text) {
+function parseBench(format, text, options) {
   return N3 => () => {
-    const quads = new N3.Parser({ format, baseIRI: 'http://example.org/doc' }).parse(text);
+    const quads = new N3.Parser({ format, baseIRI: 'http://example.org/doc', ...options }).parse(text);
     if (!quads.length) throw new Error('nothing parsed');
   };
 }
@@ -79,6 +79,7 @@ module.exports = {
   'parser: TriG': parseBench('TriG', trig),
   'parser: N3': parseBench('text/n3', n3),
   'parser: Turtle 1.2 (triple terms, reifiers)': parseBench('Turtle', turtleStar),
+  'parser: Turtle with directives registered': parseBench('Turtle', turtle, { directives: ['message'] }),
 
   // Writer
   'writer: N-Triples': writeBench('N-Triples', () => ntriples, 'N-Triples'),

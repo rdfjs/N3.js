@@ -113,6 +113,9 @@ export default class N3Lexer {
           throw new Error(`Invalid directive name: "${name}"`);
       }
       this._directive = new RegExp(`(?:${options.directives.join('|')})(?=[\\s#<])`, 'iy');
+      this._directiveMaxLength = Math.max(...options.directives.map(name => name.length));
+      // The first characters of directive names, so other words skip the regular expression
+      this._directiveStarts = options.directives.map(name => name[0].toLowerCase() + name[0].toUpperCase()).join('');
     }
     // Don't output comment tokens by default
     this.comments = !!options.comments;
@@ -498,8 +501,11 @@ export default class N3Lexer {
             (match = execAt(this._prefix, input, pos)))
           type = 'prefix', value = match[1] || '';
         // Try to find an additional directive keyword
-        else if (this._directive !== null && ((match = execAt(this._directive, input, pos)) ||
-                 inputFinished && (match = execAtEnd(this._directive, input, pos))))
+        // (at the end of the input, only a short final word can be one)
+        else if (this._directive !== null && this._directiveStarts.includes(firstChar) &&
+                 ((match = execAt(this._directive, input, pos)) ||
+                 inputFinished && input.length - pos <= this._directiveMaxLength &&
+                 (match = execAtEnd(this._directive, input, pos))))
           type = match[0].toUpperCase();
         // Try to find a prefixed name. Since it can contain (but not end with) a dot,
         // we always need a non-dot character before deciding it is a prefixed name.
