@@ -210,7 +210,7 @@ export default class N3Writer {
     if (this._escape.test(iri))
       iri = iri.replace(this._escapeAll, this._characterReplacer);
     // Try to represent the IRI as prefixed name, unless no prefixes were added
-    const prefixMatch = this._hasPrefixes ? this._prefixRegex.exec(iri) : null;
+    const prefixMatch = this._hasPrefixes ? (this._prefixRegex || this._createPrefixRegex()).exec(iri) : null;
     return !prefixMatch ? `<${iri}>` :
            (!prefixMatch[1] ? iri : this._prefixIRIs[prefixMatch[1]] + prefixMatch[2]);
   }
@@ -351,20 +351,26 @@ export default class N3Writer {
       this._prefixPatterns[iri] = [escapeRegex(iri), escapeRegex(prefix)];
       this._write(`@prefix ${prefix} <${iri}>.\n`);
     }
-    // Recreate the prefix matcher
+    // Recreate the prefix matcher when it is next needed, so that adding
+    // prefixes one by one does not rebuild it for every prefix
     if (hasPrefixes) {
       this._hasPrefixes = true;
-      let IRIlist = '', prefixList = '';
-      for (const prefixIRI in this._prefixPatterns) {
-        const [IRIpattern, prefixPattern] = this._prefixPatterns[prefixIRI];
-        IRIlist += IRIlist ? `|${IRIpattern}` : IRIpattern;
-        prefixList += prefixList ? `|${prefixPattern}` : prefixPattern;
-      }
-      this._prefixRegex = new RegExp(`^(?:${prefixList})[^/]*$|` +
-                                     `^(${IRIlist})([_a-zA-Z0-9](?:\\.?[\\-_a-zA-Z0-9])*)$`);
+      this._prefixRegex = null;
     }
     // End a prefix block with a newline
     this._write(hasPrefixes ? '\n' : '', done);
+  }
+
+  // ### `_createPrefixRegex` creates the matcher for the current prefixes
+  _createPrefixRegex() {
+    let IRIlist = '', prefixList = '';
+    for (const prefixIRI in this._prefixPatterns) {
+      const [IRIpattern, prefixPattern] = this._prefixPatterns[prefixIRI];
+      IRIlist += IRIlist ? `|${IRIpattern}` : IRIpattern;
+      prefixList += prefixList ? `|${prefixPattern}` : prefixPattern;
+    }
+    return this._prefixRegex = new RegExp(`^(?:${prefixList})[^/]*$|` +
+                                          `^(${IRIlist})([_a-zA-Z0-9](?:\\.?[\\-_a-zA-Z0-9])*)$`);
   }
 
   // ### `blank` creates a blank node with the given content
