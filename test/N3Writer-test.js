@@ -326,7 +326,7 @@ describe('Writer', () => {
       expect(await end(writer)).toBe('[] <urn:p> <urn:o>.\n<<([] <urn:p> <urn:o>)>> <urn:p> <urn:o>.\n[] <urn:q> {}.\n');
     });
 
-    it('should hold back statements after a statement with formulas', async () => {
+    it('should hold back statements about pretty-printed nodes after a statement with formulas', async () => {
       const [p, q, o] = ['p', 'q', 'o'].map(name => new NamedNode(`urn:${name}`));
       const writer = new Writer({ format: 'N3', formulas: { f: [], g: [] } });
       const b = writer.blank(), l = writer.list([o]);
@@ -335,8 +335,48 @@ describe('Writer', () => {
       writer.addQuad(l, p, new BlankNode('g'));
       writer.addQuad(l, q, o);
       writer.addQuad(o, q, o, new NamedNode('urn:g'));
-      expect(await end(writer)).toBe('<urn:g> {\n<urn:o> <urn:q> <urn:o>\n}\n' +
-        '[] <urn:p> {}; <urn:q> <urn:o>.\n(<urn:o>) <urn:p> {}; <urn:q> <urn:o>.\n');
+      writer.addQuad(o, p, o);
+      writer.addQuad(o, q, new Quad(b, p, o));
+      expect(await end(writer)).toBe('<urn:g> {\n<urn:o> <urn:q> <urn:o>\n}\n<urn:o> <urn:p> <urn:o>.\n' +
+        '[] <urn:p> {}; <urn:q> <urn:o>.\n(<urn:o>) <urn:p> {}; <urn:q> <urn:o>.\n<urn:o> <urn:q> <<([] <urn:p> <urn:o>)>>.\n');
+    });
+
+    it('should refuse a list that contains itself', async () => {
+      const p = new NamedNode('urn:p'), l = new BlankNode('l');
+      const writer = new Writer({ format: 'N3', formulas: { f: [] }, lists: { l: [new BlankNode('m')], m: [l] } });
+      let error;
+      writer.addQuad(new NamedNode('urn:s'), p, l, new DefaultGraph(), e => { error = e; });
+      expect(error).toEqual(new Error('Cannot write list _:l, which contains itself'));
+      expect(() => writer.addQuad(l, p, p)).toThrow('Cannot write list _:l, which contains itself');
+      writer.addQuad(new NamedNode('urn:s'), p, new BlankNode('f'));
+      expect(await end(writer)).toBe('<urn:s> <urn:p> {}.\n');
+    });
+
+    it('should refuse a formula created by formula() that is written more than once', async () => {
+      const [a, p, q] = ['a', 'p', 'q'].map(name => new NamedNode(`urn:${name}`));
+      const writer = new Writer({ format: 'N3', formulas: { g: [] } });
+      const f = writer.formula([new Quad(a, a, a)]);
+      const message = 'Cannot write a formula created by formula() more than once; use the formulas option to share it';
+      expect(() => writer.formula([new Quad(a, p, new Quad(a, p, f)), new Quad(a, q, new Quad(a, q, f))])).toThrow(message);
+      expect(writer.formula([new Quad(a, p, f), new Quad(a, q, f)]).id)
+        .toBe('{ { <urn:a> <urn:a> <urn:a> } is <urn:p> of <urn:a>; is <urn:q> of <urn:a> }');
+      writer.addQuad(a, p, f);
+      writer.addQuad(a, q, new Quad(a, p, f));
+      await expect(end(writer)).rejects.toThrow(message);
+    });
+
+    it('should stream plain statements after a statement with formulas', async () => {
+      const p = new NamedNode('urn:p'), chunks = [];
+      const outputStream = { write: (chunk, encoding, callback) => { chunks.push(chunk); callback && callback(); },
+        end: callback => callback() };
+      const writer = new Writer(outputStream, { format: 'N3', formulas: { f: [] } });
+      writer.addQuad(p, p, new BlankNode('f'));
+      for (let i = 0; i < 1000; i++)
+        writer.addQuad(new NamedNode(`urn:s${i}`), p, p);
+      expect(writer._formulaStatements).toHaveLength(1);
+      expect(chunks.join('')).toContain('<urn:s999> <urn:p> <urn:p>');
+      await new Promise((resolve, reject) => writer.end(error => error ? reject(error) : resolve()));
+      expect(chunks.join('').endsWith('<urn:p> <urn:p> {}.\n')).toBe(true);
     });
 
     it('should write a list with a formula that heads several statements', async () => {

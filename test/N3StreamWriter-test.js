@@ -18,7 +18,7 @@ describe('StreamWriter', () => {
     it('should serialize statements about N3 formulas', shouldSerialize(
       { format: 'N3', formulas: { f: [new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))] } },
       ['_:f', 'p', 'o'], ['x', 'y', 'z'], ['_:f', 'q', 'r'],
-      '{ <a> <b> <c> } <p> <o>; <q> <r>.\n<x> <y> <z>.\n'));
+      '<x> <y> <z>.\n{ <a> <b> <c> } <p> <o>; <q> <r>.\n'));
 
     it('should serialize 1 triple', shouldSerialize(['abc', 'def', 'ghi'],
                     '<abc> <def> <ghi>.\n'));

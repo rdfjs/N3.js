@@ -33,6 +33,9 @@ class SerializedTerm extends Term {
   }
 }
 
+// ## Placeholder class to represent formulas created by `formula`
+class SerializedFormula extends SerializedTerm {}
+
 // Identifies RDF terms by equality, and pretty-printed nodes by identity
 const serializedTermKeys = new WeakMap();
 let serializedTermCount = 0;
@@ -133,21 +136,29 @@ export default class N3Writer {
 
   // ### `_writeQuad` writes the quad to the output stream
   _writeQuad(subject, predicate, object, graph, done) {
-    // Once a statement with formulas is held back, hold back all later
-    // statements in the default graph too, so they can be grouped with it
-    if (this._formulaStatements && DEFAULTGRAPH.equals(graph) && (this._formulaStatements.length ||
-        this._findFormulas([object, predicate, subject]).length)) {
-      // A pretty-printed node that was already written cannot be written again,
-      // since it would then denote a different blank node
-      if ([subject, predicate, object].some(term => this._hasWrittenNode(term))) {
-        const error = new Error('Cannot write a pretty-printed node that was already written in a statement with formulas');
+    // Statements with formulas are held back until the end, so every formula can be written once
+    if (this._formulaStatements && DEFAULTGRAPH.equals(graph)) {
+      let holdBack;
+      try {
+        // Once statements are held back, so are those about pretty-printed nodes,
+        // so that all statements about such a node are written together
+        holdBack = this._findFormulas([object, predicate, subject]).length > 0 ||
+          this._formulaStatements.length > 0 && (this._isPrettyPrinted(subject) || this._isPrettyPrinted(object));
+        // A pretty-printed node that was already written cannot be written again,
+        // since it would then denote a different blank node
+        if (holdBack && [subject, predicate, object].some(term => this._hasWrittenNode(term)))
+          throw new Error('Cannot write a pretty-printed node that was already written in a statement with formulas');
+      }
+      catch (error) {
         if (done)
           return done(error);
         throw error;
       }
-      this._formulaStatements.push({ subject, predicate, object });
-      done && done();
-      return;
+      if (holdBack) {
+        this._formulaStatements.push({ subject, predicate, object });
+        done && done();
+        return;
+      }
     }
     // Remember pretty-printed nodes that are written before statements with formulas
     if (this._formulaStatements) {
@@ -185,6 +196,11 @@ export default class N3Writer {
                     this._encodeObject(object)}`, done);
     }
     catch (error) { done && done(error); }
+  }
+
+  // ### `_isPrettyPrinted` checks whether the term is or contains a pretty-printed node or list
+  _isPrettyPrinted(term) {
+    return hasSerializedTerm(term) || this._isList(term);
   }
 
   // ### `_markWrittenNodes` remembers the pretty-printed nodes in the term
@@ -233,23 +249,33 @@ export default class N3Writer {
     return !!this._formulas && term.termType === 'BlankNode' && hasOwnProperty.call(this._formulas, term.value);
   }
 
-  // ### `_findFormulas` lists the labels of the formulas in the terms, last term first,
-  // including inside quoted triples, and inside lists unless `inLists` is false
+  // ### `_findFormulas` lists the formulas in the terms, last term first,
+  // including inside quoted triples, and inside lists unless `inLists` is false.
+  // Formulas from the `formulas` option are listed by label, and those created by `formula` as terms.
   _findFormulas(terms, inLists = true) {
-    const formulas = [];
+    const formulas = [], openLists = new Set();
     terms = terms.slice();
     while (terms.length) {
       const term = terms.pop();
-      if (term.termType === 'Quad')
+      // A marker that all items of an open list were visited
+      if (typeof term === 'string')
+        openLists.delete(term);
+      else if (term.termType === 'Quad')
         terms.push(term.object, term.predicate, term.subject);
       else if (this._isList(term)) {
         if (!inLists) continue; // eslint-disable-line no-continue
+        if (openLists.has(term.value))
+          throw new Error(`Cannot write list _:${term.value}, which contains itself`);
         const list = this._lists[term.value];
+        openLists.add(term.value);
+        terms.push(term.value);
         for (let i = list.length - 1; i >= 0; i--)
           terms.push(list[i]);
       }
       else if (this._isFormula(term))
         formulas.push(term.value);
+      else if (term instanceof SerializedFormula)
+        formulas.push(term);
     }
     return formulas;
   }
@@ -269,6 +295,8 @@ export default class N3Writer {
     for (const label of this._findFormulas(terms, false))
       outsideLists.set(label, (outsideLists.get(label) || 0) + 1);
     for (const [label, count] of all) {
+      if (count > 1 && label instanceof SerializedFormula)
+        throw new Error('Cannot write a formula created by formula() more than once; use the formulas option to share it');
       if (count > 1 && count > (outsideLists.get(label) || 0))
         throw new Error(`Cannot write formula _:${label}, which a list shares with other terms`);
     }
@@ -294,7 +322,7 @@ export default class N3Writer {
         let nested = null;
         while (!nested && frame.position < frame.nested.length) {
           const candidate = frame.nested[frame.position++];
-          if (!this._openFormulas.has(candidate) && !cache.has(candidate))
+          if (typeof candidate === 'string' && !this._openFormulas.has(candidate) && !cache.has(candidate))
             nested = candidate;
         }
         if (nested) {
@@ -593,7 +621,7 @@ export default class N3Writer {
   // ### `formula` creates an N3 formula with the given quads
   formula(quads) {
     const statements = this._encodeStatements(quads || []);
-    return new SerializedTerm(statements.length ? `{ ${statements.join('. ')} }` : '{}');
+    return new SerializedFormula(statements.length ? `{ ${statements.join('. ')} }` : '{}');
   }
 
   // ### `_encodeStatements` serializes N3 statements, so that every formula is written once.
