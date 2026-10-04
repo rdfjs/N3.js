@@ -3,6 +3,8 @@
 # Run it with `bash .github/scripts/next-major-sync-test.sh`; it prints one line per case and
 # exits non-zero if any case gives the wrong answer.
 set -uo pipefail
+((BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 3))) 2> /dev/null ||
+  { echo "next-major-sync-test.sh needs bash 4.3 or later."; exit 1; }
 
 script=$(cd "$(dirname "$0")" && pwd)/next-major-sync.sh
 work=$(mktemp -d)
@@ -124,5 +126,44 @@ git checkout --quiet --detach "$letters"
 commit 'fix: b' k "$(lines A b C D E F G H)"
 git rebase --quiet HEAD "$lower" 2> /dev/null || git cherry-pick --quiet "$lower" > /dev/null
 expect accepted 'a clean rebase next to a change on main' same_commits "$letters..$lower" "HEAD~1..HEAD"
+
+# Index entries that are not regular files: <mode> <object> <path>, committed with a message
+entry() { git update-index --add --cacheinfo "$1,$2,$3"; }
+blob() { printf '%s' "$1" | git hash-object -w --stdin; }
+link_commit() { git commit --quiet --allow-empty --cleanup=verbatim -m "$1"; }
+
+# Submodule pointers that .gitmodules tells git to ignore must still be checked
+git checkout --quiet --detach "$base"
+commit 'chore: submodule' .gitmodules "$(lines '[submodule "sub"]' '	path = sub' '	url = ./sub' '	ignore = all')"
+entry 160000 "$base" sub && link_commit 'chore: pointer'
+pointer=$(git rev-parse HEAD)
+entry 160000 "$main" sub && link_commit 'feat!: move the pointer'
+moved_pointer=$(git rev-parse HEAD)
+git checkout --quiet --detach "$pointer"
+GIT_AUTHOR_DATE=$(git log -1 --format=%aD "$moved_pointer") link_commit "$(git log -1 --format=%B "$moved_pointer")"
+expect refused 'a submodule update left out' same_commits "$pointer..$moved_pointer" "$pointer..HEAD"
+git checkout --quiet --detach "$pointer"
+entry 160000 "$main" sub
+GIT_AUTHOR_DATE=$(git log -1 --format=%aD "$moved_pointer") link_commit "$(git log -1 --format=%B "$moved_pointer")"
+expect accepted 'the same submodule update' same_commits "$pointer..$moved_pointer" "$pointer..HEAD"
+commit 'feat!: g3' g "$(lines g3)"
+g3=$(git rev-parse HEAD)
+git checkout --quiet --detach "$g3~1"
+entry 160000 "$base" sub
+GIT_AUTHOR_DATE=$(git log -1 --format=%aD "$g3") commit "$(git log -1 --format=%B "$g3")" g "$(lines g3)"
+expect refused 'an extra submodule update' same_commits "$g3~1..$g3" "$g3~1..HEAD"
+
+# A symlink whose target spans lines is taken whole, never merged line by line
+git checkout --quiet --detach "$base"
+entry 120000 "$(blob "$(lines t1 t2 t3 t4 t5 t6)")" link && link_commit 'chore: link'
+link_base=$(git rev-parse HEAD)
+entry 120000 "$(blob "$(lines t1 t2 t3 t4 t5 T6)")" link && link_commit 'feat!: retarget the link'
+link_change=$(git rev-parse HEAD)
+git checkout --quiet --detach "$link_base"
+entry 120000 "$(blob "$(lines T1 t2 t3 t4 t5 t6)")" link && link_commit 'fix: main retargets the link'
+link_main=$(git rev-parse HEAD)
+entry 120000 "$(blob "$(lines T1 t2 t3 t4 t5 T6)")" link
+GIT_AUTHOR_DATE=$(git log -1 --format=%aD "$link_change") link_commit "$(git log -1 --format=%B "$link_change")"
+expect refused 'a symlink target merged line by line' same_commits "$link_base..$link_change" "$link_main..HEAD"
 
 exit "$failures"

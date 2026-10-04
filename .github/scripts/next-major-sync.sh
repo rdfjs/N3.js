@@ -17,6 +17,9 @@
 # note moved to the rebased commit, and the commit that alpha was published from kept under
 # refs/archive.
 set -euo pipefail
+# The commit check needs associative arrays and namerefs; an older bash would let it fail open
+((BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 3))) 2> /dev/null ||
+  { echo "::error::next-major-sync.sh needs bash 4.3 or later."; exit 1; }
 
 repo=${GITHUB_REPOSITORY:-rdfjs/N3.js}
 git config user.name 'github-actions[bot]'
@@ -46,7 +49,7 @@ commit_record() {
 # Loads a commit's files into the associative array named by $1, as path to "<mode> <object>",
 # through the file $3; fails if git does
 files_of() {
-  local -n files=$1
+  local -n files=$1 || return 1
   local line meta
   git ls-tree -r -z --full-tree "$2" > "$3" || return 1
   files=()
@@ -72,24 +75,25 @@ same_change() {
 }
 compare_change() {
   local dir=$1 a=$2 b=$3 path r base ours theirs want
-  local -A skip base_files theirs_files ours_files new_files changed
+  local -A skip base_files theirs_files ours_files new_files changed || return 1
   shift 3
-  for r in "$@"; do skip[$r]=1; done
+  for r in "$@"; do skip[$r]=1 || return 1; done
   files_of base_files "$a^" "$dir/list" && files_of theirs_files "$a" "$dir/list" &&
     files_of ours_files "$b^" "$dir/list" && files_of new_files "$b" "$dir/list" &&
-    git diff-tree -r -z --no-renames --name-only "$a^" "$a" > "$dir/a-paths" &&
-    git diff-tree -r -z --no-renames --name-only "$b^" "$b" > "$dir/b-paths" || return 1
+    git diff-tree -r -z --no-renames --ignore-submodules=none --name-only "$a^" "$a" > "$dir/a-paths" &&
+    git diff-tree -r -z --no-renames --ignore-submodules=none --name-only "$b^" "$b" > "$dir/b-paths" || return 1
   while IFS= read -r -d '' path; do
     [ -z "${skip[$path]:-}" ] || continue
-    changed[$path]=1
+    changed[$path]=1 || return 1
     base=${base_files[$path]:-} theirs=${theirs_files[$path]:-} ours=${ours_files[$path]:-}
     if [ "$ours" = "$base" ]; then
       want=$theirs
     elif [ "$ours" = "$theirs" ]; then
       want=$ours
     elif [ -n "$base" ] && [ -n "$ours" ] && [ -n "$theirs" ] && [ "${base%% *}" = "${ours%% *}" ] &&
-      [ "${base%% *}" = "${theirs%% *}" ] && [ "${base%% *}" != 160000 ]; then
-      # Both sides changed the same file's content: a line-by-line merge, which must be clean
+      [ "${base%% *}" = "${theirs%% *}" ] && { [ "${base%% *}" = 100644 ] || [ "${base%% *}" = 100755 ]; }; then
+      # Both sides changed the same regular file's content: a line-by-line merge, which must be
+      # clean. Symlinks and submodules are only ever taken whole.
       git cat-file blob "${base#* }" > "$dir/base" && git cat-file blob "${ours#* }" > "$dir/ours" &&
         git cat-file blob "${theirs#* }" > "$dir/theirs" &&
         git merge-file -p --quiet "$dir/ours" "$dir/base" "$dir/theirs" > "$dir/merged" &&
