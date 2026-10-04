@@ -3845,6 +3845,14 @@ describe('Store', () => {
         const custom = new Store([q[0]], { factory });
         expect(store1.intersection(custom).size).toBe(1);
       });
+
+      it('should intersect with a smaller store whose entity index factory creates other quads', () => {
+        const factory = Object.assign({}, DataFactory, { quad: (s, p, o, g) => ({ s, p, o, g }) });
+        const tripleTerm = new Quad(new NamedNode('s1'), new NamedNode('p1'), new Quad(q[0].subject, q[0].predicate, q[0].object));
+        const larger = new Store([tripleTerm, q[0], q[1]]);
+        const custom = new Store([tripleTerm], { entityIndex: new EntityIndex({ factory }) });
+        expect(larger.intersection(custom).size).toBe(1);
+      });
     });
 
     describe('#deleteMatches', () => {

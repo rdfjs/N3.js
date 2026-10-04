@@ -1187,9 +1187,11 @@ export default class N3Store {
     }
 
     // Test the quads of the smaller dataset against the larger one,
-    // unless it is a store whose custom factory may not create RDF/JS quads
+    // unless it is a store whose custom factories may not create RDF/JS quads,
+    // either for its quads or, through its entity index, for their terms
     if (typeof other.size === 'number' && other.size < this.size && typeof other[Symbol.iterator] === 'function' &&
-        (!(other instanceof N3Store) || other._factory === N3DataFactory)) {
+        (!(other instanceof N3Store) ||
+         other._factory === N3DataFactory && other._entityIndex._factory === N3DataFactory)) {
       const store = new N3Store({ entityIndex: this._entityIndex });
       for (const quad of other)
         if (this.has(quad))
