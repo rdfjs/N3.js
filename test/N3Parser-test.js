@@ -5138,6 +5138,13 @@ describe('Parser', () => {
       expect(parser.parse('<s> <p> <o>.')[0].subject.value).toBe('http://outer.example/s');
     });
 
+    it('restores the base when lexing fails after a base declaration', () => {
+      const parser = new Parser({ baseIRI: 'http://outer.example/' });
+      expect(() => parser.parse('BASE <http://inner.example/> <s> <p> "unterminated'))
+        .toThrow('Unexpected ""unterminated" on line 1.');
+      expect(parser.parse('<s> <p> <o>.')[0].subject.value).toBe('http://outer.example/s');
+    });
+
     it('does not reuse a reifier when lexing fails after it', () => {
       const parser = new Parser();
       expect(() => parser.parse('<s> <p> <o> ~ <r> "unterminated'))

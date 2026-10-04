@@ -1653,9 +1653,6 @@ export default class N3Parser {
     // We start reading in the top context.
     this._readCallback = this._readBeforeTopContext;
     // A parse that failed part-way can have left scopes and a statement open
-    const formula = this._contextStack.find(context => context.base);
-    if (formula)
-      [this._base, this._basePath, this._baseRoot, this._baseScheme] = formula.base;
     this._contextStack = [];
     this._graph = this._subject = this._predicate = this._object = null;
     this._tripleTerm = this._reifier = null;
@@ -1725,11 +1722,18 @@ export default class N3Parser {
       // collected into an array first. A lexer that replaces the built-in
       // tokenize keeps going through its own implementation.
       if (!onPrefix && !onVersion && !onComment && !onToken && !onTokenEnd &&
-          lexer.tokenize === N3Lexer.prototype.tokenize && typeof lexer._tokenizeString === 'function')
+          lexer.tokenize === N3Lexer.prototype.tokenize && typeof lexer._tokenizeString === 'function') {
+        // A lexical error used to stop the parse before any token was read,
+        // so undo base declarations that were read before it
+        const base = [this._base, this._basePath, this._baseRoot, this._baseScheme];
         lexer._tokenizeString(input, (e, token) => {
-          if (e) this._callback(e), this._callback = noop;
+          if (e) {
+            [this._base, this._basePath, this._baseRoot, this._baseScheme] = base;
+            this._callback(e), this._callback = noop;
+          }
           else if (this._readCallback) readToken(token);
         });
+      }
       else
         lexer.tokenize(input).every(readToken);
       if (error) throw error;
