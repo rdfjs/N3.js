@@ -4264,6 +4264,30 @@ describe('Store', () => {
       expect(solutions([])).toEqual([{}]);
     });
 
+    it('should backtrack through branching joins', () => {
+      const branching = new Store([
+        quad(ex('r'), ex('parent'), ex('p1')), quad(ex('r'), ex('parent'), ex('p2')), quad(ex('r'), ex('parent'), ex('p3')),
+        quad(ex('p1'), ex('kid'), ex('c1')), quad(ex('p1'), ex('kid'), ex('c2')), quad(ex('p3'), ex('kid'), ex('c3')),
+        quad(ex('c1'), ex('age'), literal('1')), quad(ex('c1'), ex('age'), literal('2')),
+        quad(ex('c2'), ex('age'), literal('3')), quad(ex('c3'), ex('age'), literal('4')),
+      ]);
+      const [x, p, c, a] = ['x', 'p', 'c', 'a'].map(name => variable(name));
+      const iterator = branching.matchBGP([quad(x, ex('parent'), p), quad(p, ex('kid'), c), quad(c, ex('age'), a)]);
+      // Read solutions one at a time, so each read resumes the join after a yield
+      function read() {
+        const { value, done } = iterator.next();
+        return done ? null : Object.fromEntries([...value].map(([key, term]) => [key.value, term.value]));
+      }
+      const r = 'http://example.org/r', p1 = 'http://example.org/p1', p3 = 'http://example.org/p3';
+      const c1 = 'http://example.org/c1', c2 = 'http://example.org/c2', c3 = 'http://example.org/c3';
+      // Each child iterator restarts with the new parent, and the parent without kids leaves no bindings behind
+      expect(read()).toEqual({ x: r, p: p1, c: c1, a: '1' });
+      expect(read()).toEqual({ x: r, p: p1, c: c1, a: '2' });
+      expect(read()).toEqual({ x: r, p: p1, c: c2, a: '3' });
+      expect(read()).toEqual({ x: r, p: p3, c: c3, a: '4' });
+      expect(read()).toBe(null);
+    });
+
     it('should match many patterns without exhausting the call stack', () => {
       const ground = quad(ex('alice'), ex('knows'), ex('bob'));
       expect(solutions(new Array(20000).fill(ground))).toEqual([{}]);
