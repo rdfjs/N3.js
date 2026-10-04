@@ -2621,6 +2621,15 @@ describe('A Lexer instance tokenizing names', () => {
                    { type: 'blank', prefix: '_', value: 'd﻿', line: 1 },
                    { type: 'eof', line: 1 }),
   );
+
+  it(
+    'should tokenize a variable with a name character that is also whitespace at the end of a chunk',
+    shouldTokenize(streamOf('?a ?b﻿', 'c ?d﻿ '),
+                   { type: 'var', value: '?a', line: 1 },
+                   { type: 'var', value: '?b﻿c', line: 1 },
+                   { type: 'var', value: '?d﻿', line: 1 },
+                   { type: 'eof', line: 1 }),
+  );
 });
 
 describe('A Lexer instance with the n3 option set to false', () => {
