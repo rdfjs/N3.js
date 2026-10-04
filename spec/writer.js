@@ -7,6 +7,8 @@ const parser = require('./parser');
 // is valid and carries the same quads as the original document.
 module.exports = {
   parse: async function (data, baseIRI, options) {
+    const format = options && options.format || parser.inferFormat(baseIRI);
+    options = Object.assign({}, options, { format });
     const prefixes = {};
     const quads = await new Promise((resolve, reject) => {
       const result = [];
@@ -17,7 +19,7 @@ module.exports = {
         });
     });
     const written = await new Promise((resolve, reject) => {
-      const writer = new Writer({ format: options && options.format, prefixes });
+      const writer = new Writer({ format, prefixes });
       writer.addQuads(quads);
       writer.end((error, result) => error ? reject(error) : resolve(result));
     });

@@ -90,8 +90,10 @@ export default class BaseIRI {
       // Don't abbreviate unsupported path
       if (parentPath !== QUERY && !SUFFIX_SUPPORTED.test(suffix))
         return iri;
-      // Omit ./ with fragment or query string
-      if (parentPath === CURRENT && /^[^?#]/.test(suffix))
+      // Omit ./ with fragment or query string,
+      // unless the first segment has a colon and would be read as a scheme
+      if (parentPath === CURRENT && /^[^?#]/.test(suffix) &&
+          (suffix.indexOf(':') < 0 || !/^[^/?#]*:/.test(suffix)))
         return suffix;
       // Append suffix to relative parent path
       return parentPath + suffix;
