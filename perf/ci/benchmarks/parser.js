@@ -88,7 +88,16 @@ function commentedTurtle(count) {
   return `${lines.join('\n')}\n`;
 }
 
+// Relative IRIs against a long base IRI, whose path resolution must not rescan for every IRI
+function longBaseTurtle(count) {
+  const lines = [`@base <http://example.org/${'segment/'.repeat(2500)}> .`];
+  for (let i = 0; i < count; i++)
+    lines.push(`<s${i}> <p${i % 7}> <o${i}?q/../${i}> .`);
+  return `${lines.join('\n')}\n`;
+}
+
 const relative = lazy(() => relativeTurtle(15000));
+const longBase = lazy(() => longBaseTurtle(2500));
 const escaped = lazy(() => escapedTurtle(2500));
 const commented = lazy(() => commentedTurtle(15000));
 const bigTurtle = lazy(() => data.turtle(12000));
@@ -102,7 +111,16 @@ module.exports = {
   'parser: TriG': parseBench('TriG', trig),
   'parser: N3': parseBench('text/n3', n3),
   'parser: Turtle 1.2 (triple terms, reifiers)': parseBench('Turtle', turtleStar),
+  'parser: Turtle with directives registered': parseBench('Turtle', turtle, { directives: ['message'] }),
   'parser: relative IRIs against baseIRI': parseBench('Turtle', relative),
+  'parser: relative IRIs against a long @base': parseBench('Turtle', longBase),
+  'memory: parser relative IRIs against a long @base (peak)': {
+    memory: 'peak',
+    setup: N3 => {
+      const input = longBase();
+      return () => check(new N3.Parser({ format: 'Turtle' }).parse(input).length === 2500, 'wrong count');
+    },
+  },
   'parser: escapes, long literals and many prefixes': parseBench('Turtle', escaped),
   'parser: blankNodePrefix': parseBench('N-Triples', ntriples, { blankNodePrefix: 'x' }),
   'parser: N3 with explicitQuantifiers': parseBench('text/n3', n3, { explicitQuantifiers: true }),

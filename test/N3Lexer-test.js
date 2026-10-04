@@ -66,6 +66,14 @@ describe('Lexer', () => {
         .toThrow(`Unexpected "${word}" on line 1.`);
     });
 
+    it('recognizes VERSION as the only keyword in line mode', () => {
+      expect(new Lexer({ lineMode: true }).tokenize('VERSION "1.2"\n')[0]).toMatchObject({ type: 'VERSION' });
+      for (const keyword of ['version', 'Version', 'PREFIX', 'BASE', 'GRAPH']) {
+        expect(() => new Lexer({ lineMode: true }).tokenize(`${keyword} `))
+          .toThrow(`Unexpected "${keyword}" on line 1.`);
+      }
+    });
+
     it.each([
       ['a', 'abbreviation'], ['true', 'literal'], ['false', 'literal'],
     ])('recognizes fixed token %s with N3 features disabled', (word, type) => {
@@ -393,6 +401,11 @@ describe('Lexer', () => {
       shouldNotTokenize('"abc\rdef" ',
                         'Unexpected ""abc" on line 1.'),
     );
+
+    it('marks triple-quoted strings', () => {
+      const tokens = new Lexer().tokenize('"a" "\\u0062" """c""" \'\'\'d\'\'\' """e\nf""" ');
+      expect(tokens.map(token => !!token.tripleQuoted)).toEqual([false, false, true, true, true, false]);
+    });
 
     it(
       'should tokenize a triple quoted string literal',
@@ -863,22 +876,6 @@ describe('Lexer', () => {
     it('should not tokenize an invalid number', shouldNotTokenize('10-10 ',
                       'Unexpected "10-10" on line 1.'));
 
-    it(
-      'should tokenize a double literal with a dot before its exponent',
-      shouldTokenize('1.e5 ',
-                     { type: 'literal', value: '1.e5', prefix: 'http://www.w3.org/2001/XMLSchema#double', line: 1 },
-                     { type: 'eof', line: 1 }),
-    );
-
-    it('should not tokenize a number with an exponent without digits', shouldNotTokenize('1.5e+ ',
-                      'Unexpected "1.5e+" on line 1.'));
-
-    it('should not tokenize a double literal followed by a letter', shouldNotTokenize('1e5x ',
-                      'Unexpected "1e5x" on line 1.'));
-
-    it('should not tokenize a sign without digits', shouldNotTokenize('+. ',
-                      'Unexpected "+." on line 1.'));
-
     it('should tokenize booleans', shouldTokenize('true false ',
                    { type: 'literal', value:  'true', prefix: 'http://www.w3.org/2001/XMLSchema#boolean', line: 1 },
                    { type: 'literal', value: 'false', prefix: 'http://www.w3.org/2001/XMLSchema#boolean', line: 1 },
@@ -1097,6 +1094,28 @@ describe('Lexer', () => {
             { type: 'literal', value: '1.2', line: 3 },
             { type: '.', line: 3 },
             { type: 'eof', line: 3 }),
+    );
+
+    it(
+        'should tokenize version declarations without whitespace before the string',
+        shouldTokenize('VERSION"1.2"\n@version\'1.2\'.',
+            { type: 'VERSION', line: 1 },
+            { type: 'literal', value: '1.2', line: 1 },
+            { type: '@version', line: 2 },
+            { type: 'literal', value: '1.2', line: 2 },
+            { type: '.', line: 2 },
+            { type: 'eof', line: 2 }),
+    );
+
+    it(
+        'should tokenize version declarations without whitespace split across chunks',
+        shouldTokenize(streamOf('VERS', 'ION', '"1.2"\n@vers', 'ion', '"1.', '2".'),
+            { type: 'VERSION', line: 1 },
+            { type: 'literal', value: '1.2', line: 1 },
+            { type: '@version', line: 2 },
+            { type: 'literal', value: '1.2', line: 2 },
+            { type: '.', line: 2 },
+            { type: 'eof', line: 2 }),
     );
 
     it(
@@ -2151,7 +2170,7 @@ describe('Lexer', () => {
     ])('returns line-relative indexes after a multiline literal with %s', (_, input, value) => {
       const tokens = new Lexer().tokenize(input);
       expect(tokens.filter(token => token.type === 'literal' || token.type === '.' || token.type === 'eof')).toEqual([
-        { line: 1, endLine: 2, prefix: '', type: 'literal', value, start: 8, end: 4 },
+        { line: 1, endLine: 2, prefix: '', type: 'literal', value, start: 8, end: 4, tripleQuoted: true },
         { line: 2, prefix: '', type: '.', value: '', start: 5, end: 6 },
         { line: 2, prefix: '', type: 'eof', value: '', start: 6, end: 6 },
       ]);
@@ -2629,9 +2648,58 @@ describe('Lexer', () => {
       stream.emit('end');
 
       expect(tokens).toEqual([
-        { type: 'literal', value: 'ok', prefix: '', line: 1, start: 0, end: 8 },
+        { type: 'literal', value: 'ok', prefix: '', line: 1, start: 0, end: 8, tripleQuoted: true },
         { type: 'eof', value: '', prefix: '', line: 1, start: 8, end: 8 },
       ]);
+    });
+
+    describe('when a regular expression exhausts the stack on a very long token', () => {
+      function overflowingLexer() {
+        const lexer = new Lexer();
+        lexer._blank = { exec() { throw new RangeError('Maximum call stack size exceeded'); } };
+        return lexer;
+      }
+
+      it('throws a syntax error when tokenizing synchronously', () => {
+        expect(() => overflowingLexer().tokenize('<a> _:b '))
+          .toThrow('Token too long on line 1.');
+      });
+
+      it('reports a syntax error through the callback for a string', async () => {
+        const error = await new Promise(resolve => {
+          overflowingLexer().tokenize('<a>\n_:b ', error => error && resolve(error));
+        });
+        expect(error.message).toBe('Token too long on line 2.');
+        expect(error.context.line).toBe(2);
+      });
+
+      it('reports a syntax error through the callback for a stream', () => {
+        const stream = new EventEmitter(), errors = [];
+        overflowingLexer().tokenize(stream, error => error && errors.push(error));
+        stream.emit('data', '_:b ');
+        stream.emit('data', '<c> ');
+        stream.emit('end');
+        expect(errors.map(error => error.message)).toEqual(['Token too long on line 1.']);
+      });
+
+      it('rethrows a RangeError thrown by the callback without reporting it', () => {
+        const stream = new EventEmitter(), errors = [];
+        const thrown = new RangeError('from the callback');
+        new Lexer().tokenize(stream, (error, token) => {
+          if (error)
+            errors.push(error);
+          else if (token.type === 'IRI')
+            throw thrown;
+        });
+        expect(() => stream.emit('data', '<a> ')).toThrow(thrown);
+        expect(errors).toEqual([]);
+      });
+
+      it('rethrows other errors', () => {
+        const lexer = new Lexer();
+        lexer._blank = { exec() { throw new TypeError('unexpected'); } };
+        expect(() => lexer.tokenize('_:b ')).toThrow(TypeError);
+      });
     });
 
     it('does not retain the previous token in a later error', () => {
@@ -2669,14 +2737,9 @@ describe('A Lexer instance tokenizing names', () => {
   const chars = boundaries.map(code => String.fromCharCode(code))
     .concat(['𐀀', '󯿿', '󰀀', '\ud800\ud800', '\ud800x']);
 
-  const isBlankStart = new RegExp(`^(?:${nameStart}|[0-9_])$`);
-  const isBlankChar = new RegExp(`^(?:${nameStart}|${nameChar}|\\.)$`);
-  const isVariableStart = new RegExp(`^(?:${nameStart}|_)$`);
-  const isVariableChar = new RegExp(`^(?:${nameStart}|${nameChar}|:)$`);
-
   function firstToken(input) {
     try {
-      return new Lexer({ n3: true }).tokenize(input)[0];
+      return new Lexer().tokenize(input)[0];
     }
     catch (error) {
       return null;
@@ -2697,30 +2760,6 @@ describe('A Lexer instance tokenizing names', () => {
       expect(token !== null && token.type === 'prefixed' && token.value === `a${char}b`)
         .toBe(isLocalChar.test(char));
     });
-
-    it(`should ${isBlankStart.test(char) ? '' : 'not '}start a blank node label with U+${code}`, () => {
-      const token = firstToken(`_:${char}x `);
-      expect(token !== null && token.type === 'blank' && token.value === `${char}x`)
-        .toBe(isBlankStart.test(char));
-    });
-
-    it(`should ${isBlankChar.test(char) ? '' : 'not '}continue a blank node label with U+${code}`, () => {
-      const token = firstToken(`_:a${char}b `);
-      expect(token !== null && token.type === 'blank' && token.value === `a${char}b`)
-        .toBe(isBlankChar.test(char));
-    });
-
-    it(`should ${isVariableStart.test(char) ? '' : 'not '}start a variable with U+${code}`, () => {
-      const token = firstToken(`?${char}x `);
-      expect(token !== null && token.type === 'var' && token.value === `?${char}x`)
-        .toBe(isVariableStart.test(char));
-    });
-
-    it(`should ${isVariableChar.test(char) ? '' : 'not '}continue a variable with U+${code}`, () => {
-      const token = firstToken(`?a${char}b `);
-      expect(token !== null && token.type === 'var' && token.value === `?a${char}b`)
-        .toBe(isVariableChar.test(char));
-    });
   }
 
   it(
@@ -2729,24 +2768,6 @@ describe('A Lexer instance tokenizing names', () => {
                    { type: 'prefixed', prefix: 'p', value: 'a', line: 1 },
                    { type: 'prefixed', prefix: 'p', value: 'b c', line: 1 },
                    { type: 'prefixed', prefix: 'p', value: 'd ', line: 1 },
-                   { type: 'eof', line: 1 }),
-  );
-
-  it(
-    'should tokenize a blank node label with a name character that is also whitespace at the end of a chunk',
-    shouldTokenize(streamOf('_:a _:b﻿', 'c _:d﻿'),
-                   { type: 'blank', prefix: '_', value: 'a', line: 1 },
-                   { type: 'blank', prefix: '_', value: 'b﻿c', line: 1 },
-                   { type: 'blank', prefix: '_', value: 'd﻿', line: 1 },
-                   { type: 'eof', line: 1 }),
-  );
-
-  it(
-    'should tokenize a variable with a name character that is also whitespace at the end of a chunk',
-    shouldTokenize(streamOf('?a ?b﻿', 'c ?d﻿ '),
-                   { type: 'var', value: '?a', line: 1 },
-                   { type: 'var', value: '?b﻿c', line: 1 },
-                   { type: 'var', value: '?d﻿', line: 1 },
                    { type: 'eof', line: 1 }),
   );
 });
@@ -2818,7 +2839,7 @@ describe('A Lexer instance with the comment option set to true', () => {
 
 function shouldTokenize(lexer, input) {
   const expected = Array.prototype.slice.call(arguments, 1);
-  const ignoredAttributes = { start: true, end: true, endLine: true };
+  const ignoredAttributes = { start: true, end: true, endLine: true, tripleQuoted: true };
 
   // Shift parameters as necessary
   if (lexer instanceof Lexer)

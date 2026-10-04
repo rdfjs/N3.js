@@ -8,6 +8,7 @@ import { escapeRegex } from './Util';
 const DEFAULTGRAPH = N3DataFactory.defaultGraph();
 
 const { rdf, xsd } = namespaces;
+const { hasOwnProperty } = Object.prototype;
 
 // Characters that require escaping in Turtle, TriG, and N3,
 // where characters outside the Basic Multilingual Plane are escaped as well
@@ -22,6 +23,19 @@ const escape    = /["\\\t\n\r\b\f\u0000-\u0019\ud800-\udbff]/,
       '\\': '\\\\', '"': '\\"', '\t': '\\t',
       '\n': '\\n', '\r': '\\r', '\b': '\\b', '\f': '\\f',
     };
+
+// Characters that a version label cannot contain
+const invalidVersionLabel = /["\\\u0000-\u001f\u007f]|[\ud800-\udbff](?![\udc00-\udfff])|(?:^|[^\ud800-\udbff])[\udc00-\udfff]/;
+
+// A local name (PN_LOCAL) as written in a prefixed name, without backslash escapes,
+// so that it denotes the same characters as the IRI it is taken from.
+// Characters outside the Basic Multilingual Plane are escaped before matching, so they never occur.
+const localNameStart = 'A-Za-z\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02FF\\u0370-\\u037D\\u037F-\\u1FFF' +
+                       '\\u200C\\u200D\\u2070-\\u218F\\u2C00-\\u2FEF\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD_:0-9',
+    localNameChar = `${localNameStart}\\-\\u00B7\\u0300-\\u036F\\u203F\\u2040`,
+    percent = '%[0-9A-Fa-f]{2}',
+    localName = new RegExp(`^(?:(?:[${localNameStart}]|${percent})` +
+                           `(?:(?:[${localNameChar}.]|${percent})*(?:[${localNameChar}]|${percent}))?)?$`);
 
 // ## Placeholder class to represent already pretty-printed terms
 class SerializedTerm extends Term {
@@ -59,12 +73,19 @@ export default class N3Writer {
       this._endStream = options.end === undefined ? true : !!options.end;
     }
 
+    // A version label is written as-is, so it cannot contain characters that need escaping,
+    // nor unpaired surrogates (which cannot be encoded)
+    if (options.version && invalidVersionLabel.test(options.version))
+      throw new Error(`Invalid version label: ${JSON.stringify(options.version)}`);
+
     // Initialize writer, depending on the format
     this._subject = null;
     if (!(/triple|quad/i).test(options.format)) {
       this._lineMode = false;
       this._escape = escape, this._escapeAll = escapeAll, this._characterReplacer = characterReplacer;
       this._graph = DEFAULTGRAPH;
+      if (options.version)
+        this._write(`@version "${options.version}".\n`);
       this._prefixIRIs = Object.create(null);
       // Escaped prefix IRIs and names for the prefix matcher, computed once per prefix
       this._prefixPatterns = Object.create(null);
@@ -81,6 +102,8 @@ export default class N3Writer {
       // N-Triples and N-Quads are written in their canonical form
       this._escape = canonicalEscape, this._escapeAll = canonicalEscapeAll;
       this._characterReplacer = canonicalCharacterReplacer;
+      if (options.version)
+        this._write(`VERSION "${options.version}"\n`);
     }
   }
 
@@ -94,6 +117,15 @@ export default class N3Writer {
   // ### `_write` writes the argument to the output stream
   _write(string, callback) {
     this._outputStream.write(string, 'utf8', callback);
+  }
+
+  // ### `_endStatement` finishes a pending statement and closes an open graph block
+  _endStatement() {
+    if (this._subject !== null) {
+      this._write(this._inDefaultGraph ? '.\n' : '\n}\n');
+      this._subject = null;
+      this._graph = DEFAULTGRAPH;
+    }
   }
 
   // ### `_writeQuad` writes the quad to the output stream
@@ -173,7 +205,7 @@ export default class N3Writer {
     // A blank node or list is represented as-is
     if (entity.termType !== 'NamedNode') {
       // If it is a list head, pretty-print it
-      if (this._lists && (entity.value in this._lists))
+      if (this._lists && hasOwnProperty.call(this._lists, entity.value))
         entity = this.list(this._lists[entity.value]);
       // Terms from this library already hold their serialization as id
       if (entity instanceof Term)
@@ -190,8 +222,13 @@ export default class N3Writer {
       iri = iri.replace(this._escapeAll, this._characterReplacer);
     // Try to represent the IRI as prefixed name, unless no prefixes were added
     const prefixMatch = this._hasPrefixes ? (this._prefixRegex || this._createPrefixRegex()).exec(iri) : null;
-    return !prefixMatch ? `<${iri}>` :
-           (!prefixMatch[1] ? iri : this._prefixIRIs[prefixMatch[1]] + prefixMatch[2]);
+    if (!prefixMatch)
+      return `<${iri}>`;
+    // An IRI that starts with a registered prefix IRI
+    if (prefixMatch[1])
+      return this._prefixIRIs[prefixMatch[1]] + prefixMatch[2];
+    // An IRI that already looks like a prefixed name, if the rest is a valid local name
+    return localName.test(iri.slice(prefixMatch[0].length)) ? iri : `<${iri}>`;
   }
 
   // ### `_encodeLiteral` represents a literal
@@ -324,10 +361,7 @@ export default class N3Writer {
         iri = iri.value;
       hasPrefixes = true;
       // Finish a possible pending quad
-      if (this._subject !== null) {
-        this._write(this._inDefaultGraph ? '.\n' : '\n}\n');
-        this._subject = null, this._graph = '';
-      }
+      this._endStatement();
       // Store and write the prefix
       this._prefixIRIs[iri] = (prefix += ':');
       this._prefixPatterns[iri] = [escapeRegex(iri), escapeRegex(prefix)];
@@ -351,8 +385,8 @@ export default class N3Writer {
       IRIlist += IRIlist ? `|${IRIpattern}` : IRIpattern;
       prefixList += prefixList ? `|${prefixPattern}` : prefixPattern;
     }
-    return this._prefixRegex = new RegExp(`^(?:${prefixList})[^/]*$|` +
-                                          `^(${IRIlist})([_a-zA-Z0-9](?:\\.?[\\-_a-zA-Z0-9])*)$`);
+    return this._prefixRegex = new RegExp(`^(${IRIlist})([_a-zA-Z0-9](?:\\.?[\\-_a-zA-Z0-9])*)$|` +
+                                          `^(?:${prefixList})`);
   }
 
   // ### `blank` creates a blank node with the given content
@@ -410,10 +444,7 @@ export default class N3Writer {
   // ### `end` signals the end of the output stream
   end(done) {
     // Finish a possible pending quad
-    if (this._subject !== null) {
-      this._write(this._inDefaultGraph ? '.\n' : '\n}\n');
-      this._subject = null;
-    }
+    this._endStatement();
     // Disallow further writing
     this._write = this._blockedWrite;
 
