@@ -1,4 +1,6 @@
+const crypto = require('crypto');
 const fs = require('fs');
+const path = require('path');
 const { Parser, Writer } = require('..');
 
 // Runs the RDF 1.2 canonical N-Triples and N-Quads suites, which rdf-test-suite does not support:
@@ -8,6 +10,8 @@ const MANIFESTS = {
   'https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-n-triples/c14n/manifest.ttl': 'N-Triples',
   'https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-n-quads/c14n/manifest.ttl': 'N-Quads',
 };
+// Fetched documents live in the CI fixture cache, which rotates with spec/cache-key.txt.
+const CACHE = path.join('.rdf-test-suite-cache', 'c14n');
 const MF = 'http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#';
 const RDFT = 'http://www.w3.org/ns/rdftest#';
 
@@ -17,10 +21,16 @@ const [mappedUrl, mappedPath] = mappingIndex < 0 ? [] : process.argv[mappingInde
 async function load(url) {
   if (mappedUrl && url.startsWith(mappedUrl))
     return fs.readFileSync(mappedPath + url.slice(mappedUrl.length), 'utf8');
+  const cached = path.join(CACHE, crypto.createHash('sha256').update(url).digest('hex'));
+  if (fs.existsSync(cached))
+    return fs.readFileSync(cached, 'utf8');
   const response = await fetch(url);
   if (!response.ok)
     throw new Error(`Could not fetch ${url}: ${response.status}`);
-  return response.text();
+  const text = await response.text();
+  fs.mkdirSync(CACHE, { recursive: true });
+  fs.writeFileSync(cached, text);
+  return text;
 }
 
 function objectOf(manifest, subject, predicate) {
