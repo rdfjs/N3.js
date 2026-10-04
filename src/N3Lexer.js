@@ -4,7 +4,7 @@ import namespaces from './IRIs';
 
 const { xsd } = namespaces;
 const SPACE = 0x20, TAB = 0x09, LF = 0x0A, CR = 0x0D, HASH = 0x23,
-    DOT = 0x2E, PLUS = 0x2B, MINUS = 0x2D, COLON = 0x3A, ZERO = 0x30, NINE = 0x39,
+    DOT = 0x2E, LT = 0x3C, GT = 0x3E, LBRACE = 0x7B, RBRACE = 0x7D, PLUS = 0x2B, MINUS = 0x2D, COLON = 0x3A, ZERO = 0x30, NINE = 0x39,
     PERCENT = 0x25, BACKSLASH = 0x5C;
 
 // Whitespace as matched by `\s`
@@ -33,6 +33,17 @@ function canEndName(input, pos, inputFinished, colonCanFollow) {
     return inputFinished;
   return colonCanFollow && charCode === COLON || isDelimiter(charCode);
 }
+// Returns the position of the closing quote of the string without escape sequences
+// or line breaks at the given position, or -1 if there is no such string
+function findSimpleStringEnd(input, pos) {
+  const quote = input.charCodeAt(pos);
+  let end = pos + 1, charCode = input.charCodeAt(end);
+  while (charCode !== quote && charCode !== BACKSLASH && charCode !== LF && charCode !== CR && end < input.length)
+    charCode = input.charCodeAt(++end);
+  // The closing quote must be followed by something other than a quote,
+  // as two quotes could be the start of a triple-quoted string
+  return charCode === quote && end + 1 < input.length && input.charCodeAt(end + 1) !== quote ? end : -1;
+}
 // Returns the position after the digits starting at the given position
 function skipDigits(input, pos) {
   let charCode = input.charCodeAt(pos);
@@ -52,7 +63,22 @@ const localNameEscapeReplacements = {
   "'": "'", '(': '(', ')': ')', '*': '*', '+': '+', ',': ',', ';': ';',
   '=': '=', '/': '/', '?': '?', '#': '#', '@': '@', '%': '%',
 };
-const illegalIriChars = /[\x00-\x20<>\\"\{\}\|\^\`]/;
+// Characters that cannot occur in IRIs, not even through escape sequences
+const asciiIllegalIriChars = new Uint8Array(0x80);
+for (let charCode = 0; charCode <= 0x20; charCode++)
+  asciiIllegalIriChars[charCode] = 1;
+for (const char of '<>\\"{}|^`')
+  asciiIllegalIriChars[char.charCodeAt(0)] = 1;
+function isIllegalIriChar(charCode) {
+  return charCode < 0x80 && asciiIllegalIriChars[charCode] === 1;
+}
+function hasIllegalIriChar(iri) {
+  for (let i = 0; i < iri.length; i++) {
+    if (isIllegalIriChar(iri.charCodeAt(i)))
+      return true;
+  }
+  return false;
+}
 
 // Character classes of names, as bit flags for ASCII characters
 const PREFIX_START = 1, // PN_CHARS_BASE
@@ -168,9 +194,6 @@ function isValidCodePoint(charCode) {
 }
 
 const lineModeRegExps = {
-  _iri: true,
-  _unescapedIri: true,
-  _simpleQuotedString: true,
   _langcode: true,
   _blank: true,
   _commentLine: true,
@@ -195,10 +218,6 @@ export default class N3Lexer {
     // ## Regular expressions
     // It's slightly faster to have these as properties than as in-scope variables.
     // They are sticky, so they only match at the `lastIndex` set by `execAt`.
-    this._iri = /<((?:[^ <>{}\\]|\\[uU])+)>[ \t]*/y; // IRI with escape sequences; needs sanity check after unescaping
-    this._unescapedIri = /<([^\x00-\x20<>\\"\{\}\|\^\`]*)>[ \t]*/y; // IRI without escape sequences; no unescaping
-    this._simpleQuotedString = /"([^"\\\r\n]*)"(?=[^"])/y; // string without escape sequences
-    this._simpleApostropheString = /'([^'\\\r\n]*)'(?=[^'])/y;
     this._langcode = /@([a-z]+(?:-[a-z0-9]+)*)(?=[^a-z0-9])/iy;
     this._boolean = /(?:true|false)(?=[.,;!\^\s#()\[\]\{\}"'<>])/y;
     this._atKeyword = /@[a-z]+(?=[\s#<:])/iy;
@@ -311,7 +330,7 @@ export default class N3Lexer {
       // Look for specific token types based on the first character
       const line = this._line, firstChar = input[pos];
       let type = '', value = '', prefix = '',
-          match = null, matchLength = 0, lexicalLength = 0,
+          match = null, matchLength = 0,
           finalLineLength = 0, inconclusive = false;
       switch (firstChar) {
       case '^':
@@ -338,19 +357,11 @@ export default class N3Lexer {
         }
         // Fall through in case the type is an IRI
       case '<':
-        // Try to find a full IRI without escape sequences
-        if (match = execAt(this._unescapedIri, input, pos)) {
-          type = 'IRI', value = match[1];
-          lexicalLength = match[1].length + 2;
-        }
-        // Try to find a full IRI with escape sequences
-        else if (match = execAt(this._iri, input, pos)) {
-          value = this._unescape(match[1], stringEscapeReplacements);
-          if (value === null || illegalIriChars.test(value))
-            return reportSyntaxError(this, input, pos);
-          type = 'IRI';
-          lexicalLength = match[1].length + 2;
-        }
+        // Try to find a full IRI
+        if ((type = this._scanIri(input, pos)) === null)
+          return reportSyntaxError(this, input, pos);
+        if (type !== '')
+          value = this._iriValue, matchLength = this._iriEnd - pos;
         // Try to find a triple term
         else if (input.length - pos > 2 && input[pos + 1] === '<' && input[pos + 2] === '(')
           type = '<<(', matchLength = 3;
@@ -387,39 +398,29 @@ export default class N3Lexer {
         }
         break;
 
-      case '"':
+      case "'":
+        if (this._lineMode)
+          break;
+        // Fall through, as single quotes behave like double quotes
+      case '"': {
         // Try to find a literal without escape sequences
-        if (match = execAt(this._simpleQuotedString, input, pos))
-          value = match[1];
+        const end = findSimpleStringEnd(input, pos);
+        if (end >= 0) {
+          value = input.slice(pos + 1, end);
+          matchLength = end + 1 - pos;
+        }
         // Try to find a literal wrapped in three pairs of quotes
         else {
           ({ value, matchLength, finalLineLength } = this._parseLiteral(input, pos));
           if (value === null)
             return reportSyntaxError(this, input, pos);
         }
-        if (match !== null || matchLength !== 0) {
+        if (matchLength !== 0) {
           type = 'literal';
           this._literalClosingPos = 0;
         }
         break;
-
-      case "'":
-        if (!this._lineMode) {
-          // Try to find a literal without escape sequences
-          if (match = execAt(this._simpleApostropheString, input, pos))
-            value = match[1];
-          // Try to find a literal wrapped in three pairs of quotes
-          else {
-            ({ value, matchLength, finalLineLength } = this._parseLiteral(input, pos));
-            if (value === null)
-              return reportSyntaxError(this, input, pos);
-          }
-          if (match !== null || matchLength !== 0) {
-            type = 'literal';
-            this._literalClosingPos = 0;
-          }
-        }
-        break;
+      }
 
       case '?':
         // Try to find a variable
@@ -643,8 +644,6 @@ export default class N3Lexer {
       }
 
       // Emit the parsed token
-      // Consumption includes separator whitespace; lexicalLength excludes it
-      // and any synthetic EOF space. Consumption is clamped to the input below.
       const length = matchLength || match[0].length;
       const start = currentLineLength - (input.length - pos);
       let token;
@@ -656,7 +655,7 @@ export default class N3Lexer {
         callback(null, token);
       }
       else
-        token = emitToken(type, value, prefix, line, start, lexicalLength || length);
+        token = emitToken(type, value, prefix, line, start, length);
       this.previousToken = token;
       this._previousMarker = type;
 
@@ -712,6 +711,41 @@ export default class N3Lexer {
     if (!inputFinished && skipName(input, pos, PREFIX_START) === input.length)
       return null;
     return verb;
+  }
+
+  // ### `_scanIri` finds an IRI at the given position, returning 'IRI' and storing
+  // its value and end in `_iriValue` and `_iriEnd`, returning '' if there is no IRI,
+  // or returning null if the IRI is invalid
+  _scanIri(input, pos) {
+    // Try to find a full IRI without escape sequences
+    let end = pos + 1, charCode = input.charCodeAt(end);
+    while (end < input.length && !isIllegalIriChar(charCode))
+      charCode = input.charCodeAt(++end);
+    if (charCode === GT) {
+      this._iriValue = input.slice(pos + 1, end);
+      this._iriEnd = end + 1;
+      return 'IRI';
+    }
+
+    // Try to find a full IRI with escape sequences, which needs a check after unescaping
+    while (end < input.length && charCode !== SPACE && charCode !== LT && charCode !== GT &&
+           charCode !== LBRACE && charCode !== RBRACE) {
+      if (charCode === BACKSLASH) {
+        const escapeChar = input.charCodeAt(end + 1);
+        if (escapeChar !== 0x75 && escapeChar !== 0x55) // u or U
+          break;
+        end++;
+      }
+      charCode = input.charCodeAt(++end);
+    }
+    if (charCode !== GT || end === pos + 1)
+      return '';
+    const value = this._unescape(input.slice(pos + 1, end), stringEscapeReplacements);
+    if (value === null || hasIllegalIriChar(value))
+      return null;
+    this._iriValue = value;
+    this._iriEnd = end + 1;
+    return 'IRI';
   }
 
   // ### `_scanNumber` finds a number at the given position,
@@ -820,16 +854,25 @@ export default class N3Lexer {
         // means these are actual, non-escaped closing quotes
         if (backslashCount % 2 === 0) {
           // Extract and unescape the value
-          const raw = input.substring(pos + openingLength, closingPos),
-              lines = raw.split(/\r\n|\r|\n/),
-              lineCount = lines.length - 1;
+          const raw = input.substring(pos + openingLength, closingPos);
+          // Count the line breaks and find the start of the last line
+          let lineCount = 0, lastLineStart = 0;
+          for (let i = 0; i < raw.length; i++) {
+            const charCode = raw.charCodeAt(i);
+            if (charCode === LF || charCode === CR) {
+              if (charCode === CR && raw.charCodeAt(i + 1) === LF)
+                i++;
+              lineCount++;
+              lastLineStart = i + 1;
+            }
+          }
           const matchLength = closingPos - pos + openingLength;
           // Only triple-quoted strings can be multi-line
           if (openingLength === 1 && lineCount !== 0 ||
               openingLength === 3 && this._lineMode)
             break;
           this._line += lineCount;
-          const finalLineLength = lineCount === 0 ? 0 : lines[lines.length - 1].length + openingLength;
+          const finalLineLength = lineCount === 0 ? 0 : raw.length - lastLineStart + openingLength;
           return { value: this._unescape(raw, stringEscapeReplacements), matchLength, finalLineLength };
         }
         closingPos++;
