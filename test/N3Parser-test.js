@@ -5465,6 +5465,15 @@ describe('Parser', () => {
       itShouldResolve('http://abc?q', '../g', 'http://abc/g');
     });
 
+    describe('RFC3986 examples with empty host and path in base IRI', () => {
+      itShouldResolve('file://', 'g',    'file:///g');
+      itShouldResolve('file://', './g',  'file:///g');
+      itShouldResolve('file://', '../g', 'file:///g');
+      itShouldResolve('file://', '?y',   'file://?y');
+      itShouldResolve('file://', '#s',   'file://#s');
+      itShouldResolve('file://?q', 'g',  'file:///g');
+    });
+
     describe('RFC3986 examples with empty path and fragment in base IRI', () => {
       itShouldResolve('http://abc#top', 'g',  'http://abc/g');
       itShouldResolve('http://abc#top', '#s', 'http://abc#s');

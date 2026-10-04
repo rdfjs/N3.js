@@ -80,12 +80,13 @@ export default class N3Parser {
       this._base = baseIRI;
       this._basePath   = baseIRI.indexOf('/') < 0 ? baseIRI :
                          baseIRI.replace(/[^\/?]*(?:\?.*)?$/, '');
-      baseIRI = baseIRI.match(/^(?:([a-z][a-z0-9+.-]*:))?(?:\/\/[^\/?#]*)?/i);
+      const base = baseIRI;
+      baseIRI = baseIRI.match(/^(?:([a-z][a-z0-9+.-]*:))?(\/\/[^\/?#]*)?/i);
       this._baseRoot   = baseIRI[0];
       this._baseScheme = baseIRI[1];
       // If the base has an authority but an empty path,
-      // relative IRIs merge under the path '/' (RFC 3986 §5.3)
-      if (this._basePath.length < this._baseRoot.length)
+      // relative IRIs merge under the path '/' (RFC 3986 §5.2.3)
+      if (baseIRI[2] !== undefined && (base.length === this._baseRoot.length || base[this._baseRoot.length] === '?'))
         this._basePath = `${this._baseRoot}/`;
     }
   }
