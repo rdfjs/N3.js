@@ -34,6 +34,7 @@ export default class N3Reasoner {
       if (!store._addToIndex(graphItem.subjects,   subject,   predicate, object)) return;
       store._addToIndex(graphItem.predicates, predicate, object,    subject);
       store._addToIndex(graphItem.objects,    object,    subject,   predicate);
+      this._indexed++;
     }
     // Count genuinely new derivations and fail past the budget. The check comes
     // after all three indexes are updated, so a caught error leaves the store
@@ -175,7 +176,7 @@ export default class N3Reasoner {
   }
 
   reason(rules) {
-    this._derivations = 0;
+    this._derivations = this._indexed = 0;
     if (!Array.isArray(rules)) {
       rules = getRulesFromDataset(rules);
     }
@@ -242,9 +243,10 @@ export default class N3Reasoner {
       }
     }
     finally {
-      // Invalidate the cached size even if a derivation budget was exceeded,
-      // so a caught budget error leaves the store fully consistent.
-      this._store._size = null;
+      // Count the quads added directly to the indexes, even if a derivation
+      // budget was exceeded, so a caught budget error leaves the store consistent
+      if (this._store._size !== null)
+        this._store._size += this._indexed;
     }
   }
 }
