@@ -238,17 +238,32 @@ describe('Writer', () => {
       expect(error).toEqual(new Error('Cannot write because the writer has been closed.'));
     });
 
-    it('should refuse formulas inside nodes created by blank() or list()', () => {
-      const p = new NamedNode('urn:p'), message = 'Cannot use formulas inside nodes created by blank() or list()';
-      const writer = new Writer({ format: 'N3' }), f = writer.formula([new Quad(p, p, p)]);
-      expect(() => writer.list([f, f])).toThrow(message);
-      expect(() => writer.blank(p, f)).toThrow(message);
-      expect(() => writer.blank([{ predicate: p, object: p }, { predicate: p, object: new Quad(p, p, f) }])).toThrow(message);
-      const labelled = new Writer({ format: 'N3', formulas: { g: [] } });
-      expect(() => labelled.list([new BlankNode('g')])).toThrow(message);
+    it('should refuse blank() and list() once formulas are in use', () => {
+      const p = new NamedNode('urn:p'), message = 'Cannot use nodes created by blank() or list() once formulas are in use';
+      const writer = new Writer({ format: 'N3' });
       expect(writer.list([p]).id).toBe('(<urn:p>)');
       expect(writer.blank(p, p).id).toBe('[ <urn:p> <urn:p> ]');
+      writer.formula([new Quad(p, p, p)]);
+      expect(() => writer.list([p])).toThrow(message);
+      expect(() => writer.list()).toThrow(message);
+      expect(() => writer.blank(p, p)).toThrow(message);
+      expect(() => writer.blank()).toThrow(message);
+      const labelled = new Writer({ format: 'N3', formulas: { g: [] } });
+      expect(() => labelled.list([new BlankNode('g')])).toThrow(message);
+      expect(() => labelled.blank()).toThrow(message);
       expect(new Writer().list().id).toBe('()');
+    });
+
+    it('should refuse nodes created by blank() or list() before formula() in later statements', async () => {
+      const [b, p] = [new BlankNode('b'), new NamedNode('urn:p')];
+      const message = 'Cannot use nodes created by blank() or list() once formulas are in use';
+      const writer = new Writer({ format: 'N3' }), node = writer.blank(p, b), list = writer.list([b]);
+      const f = writer.formula([new Quad(b, p, p)]);
+      expect(() => writer.addQuad(p, p, node)).toThrow(message);
+      expect(() => writer.addQuad(new Quad(p, p, list), p, p)).toThrow(message);
+      expect(() => writer.formula([new Quad(p, p, node)])).toThrow(message);
+      writer.addQuad(p, p, f);
+      expect(await end(writer)).toBe('<urn:p> <urn:p> { _:b <urn:p> <urn:p> }.\n');
     });
 
     it('should stay closed after a failed end', async () => {
@@ -381,18 +396,44 @@ describe('Writer', () => {
 
     it('should refuse nodes created by blank() or list() in statements with formulas', async () => {
       const [p, q, o] = ['p', 'q', 'o'].map(name => new NamedNode(`urn:${name}`));
+      const message = 'Cannot use nodes created by blank() or list() once formulas are in use';
+      const helpers = new Writer({ format: 'N3' }), node = helpers.blank(p, o), list = helpers.list([o]);
       const writer = new Writer({ format: 'N3', formulas: { f: [] } });
-      const message = 'Cannot use nodes created by blank() or list() in statements with formulas';
-      expect(() => writer.addQuad(writer.blank(), q, new BlankNode('f'))).toThrow(message);
-      expect(() => writer.addQuad(o, writer.blank(p, o), new BlankNode('f'))).toThrow(message);
+      expect(() => writer.addQuad(node, q, new BlankNode('f'))).toThrow(message);
+      expect(() => writer.addQuad(o, node, p)).toThrow(message);
       let error;
-      writer.addQuad(new Quad(o, p, writer.list([o])), q, new BlankNode('f'), new DefaultGraph(), e => { error = e; });
+      writer.addQuad(new Quad(o, p, list), q, new BlankNode('f'), new DefaultGraph(), e => { error = e; });
       expect(error).toEqual(new Error(message));
-      expect(() => writer.formula([new Quad(writer.blank(), p, o)])).toThrow(message);
-      writer.addQuad(writer.blank(), p, o);
-      writer.addQuad(o, q, new BlankNode('f'));
+      expect(() => writer.formula([new Quad(node, p, o)])).toThrow(message);
+      writer.addQuad(o, q, new BlankNode('f'), new DefaultGraph(), e => { error = e; });
+      expect(error).toBeUndefined();
       writer.addQuad(o, p, writer.formula());
-      expect(await end(writer)).toBe('[] <urn:p> <urn:o>.\n<urn:o> <urn:q> {}; <urn:p> {}.\n');
+      expect(await end(writer)).toBe('<urn:o> <urn:q> {}; <urn:p> {}.\n');
+    });
+
+    it('should throw scope errors without a callback', () => {
+      const [b, p] = [new BlankNode('b'), new NamedNode('urn:p')];
+      const message = 'Cannot write blank node _:b both inside and outside a formula';
+      const writer = new Writer({ format: 'N3' });
+      writer.formula([new Quad(b, p, p)]);
+      expect(() => writer.addQuad(b, p, p)).toThrow(message);
+      expect(() => writer.addQuad(new Quad(b, p, p))).toThrow(message);
+      expect(() => writer.addQuads([new Quad(b, p, p)])).toThrow(message);
+      expect(() => writer.addQuad(p, p, p, b)).toThrow(message);
+    });
+
+    it('should refuse to write a formula created by formula() again inside another formula', async () => {
+      const [b, p] = [new BlankNode('b'), new NamedNode('urn:p')];
+      const message = 'Cannot write a formula created by formula() more than once; use the formulas option to share it';
+      const writer = new Writer({ format: 'N3' }), f = writer.formula([new Quad(b, p, p)]);
+      const g = writer.formula([new Quad(p, p, f)]), h = writer.formula([new Quad(p, p, g)]);
+      expect(() => writer.formula([new Quad(f, p, g)])).toThrow(message);
+      expect(() => writer.formula([new Quad(h, p, new Quad(p, p, f))])).toThrow(message);
+      writer.addQuad(f, p, h);
+      await expect(end(writer)).rejects.toThrow(message);
+      const other = new Writer({ format: 'N3' }), f2 = other.formula([new Quad(p, p, p)]);
+      other.addQuad(p, p, other.formula([new Quad(p, p, f2)]));
+      expect(await end(other)).toBe('<urn:p> <urn:p> { <urn:p> <urn:p> { <urn:p> <urn:p> <urn:p> } }.\n');
     });
 
     it('should write each formula created by formula() once without the formulas option', async () => {
