@@ -125,7 +125,7 @@ describe('Store', () => {
 
       expect(store.addQuad('_:b0', '_:b1', '_:b2')).toBe(true);
       expect(store.createBlankNode().value).toEqual('b3');
-      store.removeQuads(store.getQuads());
+      expect(store.removeQuads(store.getQuads())).toBe(true);
     });
 
     it('should be able to generate named blank nodes', () => {
@@ -148,7 +148,18 @@ describe('Store', () => {
         store.addQuad(store.createBlankNode('x'), new NamedNode('b'), new NamedNode('c')),
       ).toBe(true);
       shouldIncludeAll(store.getQuads(null, new NamedNode('b')), ['_:x', 'b', 'c'])();
-      store.removeQuads(store.getQuads());
+      const quads = [...store.getQuads()];
+      expect(store.removeQuads([quad(namedNode('p'), namedNode('q'), namedNode('r'))])).toBe(false);
+      expect(store.removeQuads(quads)).toBe(true);
+      expect(store.removeQuads(quads)).toBe(false);
+    });
+
+    it('should keep removing quads after one that is not in the store', () => {
+      const existing = quad(namedNode('s'), namedNode('p'), namedNode('o'));
+      const missing = quad(namedNode('p'), namedNode('q'), namedNode('r'));
+      expect(store.addQuad(existing)).toBe(true);
+      expect(store.removeQuads([missing, existing])).toBe(false);
+      expect(store.has(existing)).toBe(false);
     });
   });
 
