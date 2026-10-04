@@ -558,35 +558,51 @@ export default class N3Store {
   import(stream) {
     stream.on('data', quad => { this.addQuad(quad); });
 
+    // Track completion from the start, since native streams before Node.js 18 lack `errored`
     const store = this;
-    let promise = null, error = null;
-    // Record errors from the start, since native streams before Node.js 18 lack `errored`
-    function recordError(streamError) {
+    let promise = null, settle = null, error = null, finished = false;
+    function onError(streamError) {
       error = streamError;
+      if (promise)
+        complete();
       // Without other listeners, keep the stream's usual unhandled error behavior
-      if (!promise && stream.listenerCount('error') === 1) {
-        stream.removeListener('error', recordError);
+      else if (stream.listenerCount('error') === 1) {
+        stopTracking();
         stream.emit('error', streamError);
       }
     }
-    stream.on('error', recordError);
+    function onFinish() {
+      finished = true;
+      complete();
+    }
+    // Later errors are no longer this import's concern
+    function stopTracking() {
+      // Minimal sources may lack removeListener
+      if (!stream.removeListener)
+        return;
+      stream.removeListener('error', onError);
+      stream.removeListener('end', onFinish);
+      stream.removeListener('close', onFinish);
+    }
+    function complete() {
+      stopTracking();
+      if (settle)
+        settle();
+    }
+    stream.on('error', onError);
+    stream.on('end', onFinish);
+    stream.on('close', onFinish);
 
     function trackCompletion() {
       return promise || (promise = new Promise((resolve, reject) => {
-        // A stream that has already errored rejects,
-        // even if it was destroyed or has stopped being readable
-        if (error || stream.errored)
-          reject(error || stream.errored);
-        // A stream that has already ended resolves immediately
-        else if (stream.readableEnded || stream.destroyed || stream.readable === false)
-          resolve(store);
-        // An active stream resolves or rejects upon completion,
-        // including when it is destroyed before it ends
-        else {
-          stream.once('end', () => resolve(store));
-          stream.once('error', reject);
-          stream.once('close', () => error ? reject(error) : resolve(store));
-        }
+        settle = () => error ? reject(error) : resolve(store);
+        const state = stream._readableState;
+        error = error || stream.errored;
+        // Settle streams that already errored or completed; a destroyed stream
+        // that has not closed yet may still deliver its error
+        if (error || finished || stream.readableEnded || state && state.closeEmitted ||
+            stream.readable === false && !stream.destroyed)
+          complete();
       }));
     }
 

@@ -4019,10 +4019,20 @@ describe('Store', () => {
         await expect(store.import(stream)).rejects.toBe(error);
       });
 
-      it('should not attach end listeners unless awaited', () => {
-        store.import(stream);
-        expect(stream.listenerCount('data')).toEqual(1);
+      it('should stop tracking the stream once it has ended', async () => {
+        const imported = store.import(stream);
+        await imported;
         expect(stream.listenerCount('end')).toEqual(0);
+        expect(stream.listenerCount('close')).toEqual(0);
+        expect(stream.listenerCount('error')).toEqual(0);
+        // Later errors keep the default unhandled error behavior
+        expect(() => stream.emit('error', new Error('Late error'))).toThrow('Late error');
+      });
+
+      it('should stop tracking an unawaited stream once it has ended', async () => {
+        store.import(stream);
+        await new Promise(resolve => stream.on('end', resolve));
+        expect(stream.listenerCount('error')).toEqual(0);
       });
 
       it('should keep throwing on unhandled stream errors unless awaited', () => {
@@ -4045,17 +4055,20 @@ describe('Store', () => {
         await expect(imported).rejects.toBe(error);
       });
 
-      it('should reject when a stream without errored state closes after an error', async () => {
+      it('should reject a stream without errored state awaited between destroy and its error', async () => {
+        // Native streams before Node.js 18 do not expose `errored`
         Object.defineProperty(stream, 'errored', { value: undefined });
-        const imported = store.import(stream);
-        const completion = imported.then(result => result);
-        // Leave only the close listener to settle the import
-        const [, rejectOnError] = stream.rawListeners('error');
-        stream.removeListener('error', rejectOnError);
-        stream.on('error', () => { /* the caller handles the stream error */ });
         const error = new Error('Test error');
         stream.destroy(error);
-        await expect(completion).rejects.toBe(error);
+        expect(stream.destroyed).toBe(true);
+        await expect(store.import(stream)).rejects.toBe(error);
+      });
+
+      it('should resolve an already closed stream that was destroyed without an error', async () => {
+        Object.defineProperty(stream, 'errored', { value: undefined });
+        stream.destroy();
+        await new Promise(resolve => setImmediate(resolve));
+        await expect(store.import(stream)).resolves.toBe(store);
       });
 
       it('should not cause an unhandled rejection when an erroring stream is not awaited', async () => {
