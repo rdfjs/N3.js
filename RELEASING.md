@@ -36,18 +36,20 @@ sync that brings in a change to `.github/workflows`. When the token expires, the
 it is renewed.
 
 The sync shares CI's release concurrency group for `next-major`, so no alpha is tagged on
-`next-major` while it is being rebased.
+`next-major` while it is being rebased. GitHub keeps only one pending job per group, so a sync or
+release that was waiting can be cancelled by a newer one. Re-run a cancelled sync from the Actions
+tab; a cancelled release is published by the next push to `next-major`, or by re-running it.
 
 **Alpha tags.** semantic-release finds the last alpha through the tags reachable from the branch
 (`git tag --merged`), and a rebase rewrites the commit the newest alpha tag points at. So the
 rebased `next-major` is pushed in one atomic push, every ref leased to the value the sync checked,
-that also:
+that also moves that tag and its `refs/notes/semantic-release-<tag>` channel note to the same
+commit's rebased counterpart. The first time a tag moves, the commit it was published from is kept
+under `refs/archive/<tag>`, so the published source stays in the repository.
 
-1. keeps that commit under `refs/archive/<tag>`, so the published source stays in the repository;
-2. moves the tag and its `refs/notes/semantic-release-<tag>` channel note to the `main` commit
-   the branch now starts from.
-
-Each alpha's release notes therefore list every breaking change in the major so far.
+The tag never moves onto a commit that carries another tag, such as a release on `main`:
+semantic-release reads all the channel notes on a commit as one, so the alpha would read as a
+stable release.
 
 **Open pull requests into `next-major`.** A rebase leaves them based on the old `next-major`.
 Their branches are rebased by hand: `git rebase --onto origin/next-major <old next-major sha>`.
@@ -67,7 +69,9 @@ maintainer before it reaches `next-major`:
 3. A maintainer reviews that pull request and merges it. It never auto-merges.
 4. The maintainer then runs
    [`apply-next-major-resolution.yml`](.github/workflows/apply-next-major-resolution.yml) from
-   `main`, with the pull request's number and merge commit sha. Only an admin or maintainer can.
+   `main`, with the pull request's number and merge commit sha. Only an admin or maintainer can,
+   and that run is the approval: whoever merged the pull request, nothing reaches `next-major`
+   until a maintainer applies it.
    It pushes `sync/next-major-rebased` as `next-major`, but only if all of these hold:
    - the pull request was merged as that sha into the conflict the sync shows for the current
      `next-major` and `<main sha>`, which the workflow regenerates and compares, and `<main sha>`

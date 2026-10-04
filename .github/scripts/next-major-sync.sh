@@ -14,7 +14,8 @@
 # Run from a full clone whose origin can push to next-major, with GH_TOKEN for the gh CLI.
 # semantic-release finds the last alpha through the tags reachable from next-major (see
 # RELEASING.md), so a rebased next-major is pushed together with its newest alpha tag and channel
-# note moved to main, and the commit that alpha was published from kept under refs/archive.
+# note moved to the rebased commit, and the commit that alpha was published from kept under
+# refs/archive.
 set -euo pipefail
 
 repo=${GITHUB_REPOSITORY:-rdfjs/N3.js}
@@ -35,8 +36,19 @@ fetch() {
   old=$(git rev-parse origin/next-major)
 }
 
-# Author, email and full message of each commit in a range, oldest first
-commits() { git log --reverse --format='%an%n%ae%n%B%n--' "$1"; }
+# Succeeds if two ranges hold the same number of commits, pairwise with the same author, author
+# date and full message. Each pair is compared on its own, so no commit can pose as another.
+same_commits() {
+  local -a a b
+  local i
+  mapfile -t a < <(git rev-list --reverse "$1")
+  mapfile -t b < <(git rev-list --reverse "$2")
+  [ "${#a[@]}" -eq "${#b[@]}" ] || return 1
+  for i in "${!a[@]}"; do
+    cmp -s <(git show -s --format='%an%x00%ae%x00%at%x00%B' "${a[$i]}") \
+      <(git show -s --format='%an%x00%ae%x00%at%x00%B' "${b[$i]}") || return 1
+  done
+}
 
 # main_sha merged into next-major, conflict markers committed as they are
 show_conflicts() {
@@ -47,32 +59,43 @@ show_conflicts() {
   git diff --cached --quiet || git commit --quiet --no-verify -m "chore: merge main ${main_sha:0:7} into next-major, conflicts unresolved"
 }
 
-# Pushes HEAD as next-major in one atomic push, every ref leased to the value checked here. If
-# next-major's newest alpha was published from one of its own commits, that tag and its channel
-# note move to main_sha, and the commit is kept under refs/archive.
+# Pushes HEAD, next-major's own commits rebased onto main_sha, as next-major in one atomic push,
+# every ref leased to the value checked here. If next-major's newest alpha was published from one
+# of its own commits, that tag and its channel note move with it to the same commit's rebased
+# counterpart. Never to a main commit: semantic-release reads all channel notes on a commit as
+# one, so an alpha sharing a commit with a stable tag would read as stable. The first time a tag
+# moves, the commit it was published from is kept under refs/archive.
 publish() {
-  local new own_base tag tag_value tag_commit note_ref old_note archive archived
+  local new own_base tag tag_value tag_commit anchor note_ref old_note archive i
+  local -a olds news
   new=$(git rev-parse HEAD)
-  local args=(--atomic "--force-with-lease=refs/heads/next-major:$old") refs=("$new:refs/heads/next-major")
   own_base=$(git merge-base "$old" origin/main)
+  same_commits "$own_base..$old" "$main_sha..$new" ||
+    fail "the rebase changed next-major's commits, probably because one is already on main; rebase it by hand."
+  local args=(--atomic "--force-with-lease=refs/heads/next-major:$old") refs=("$new:refs/heads/next-major")
   tag=$(git for-each-ref --count=1 --sort=-v:refname --format='%(refname:short)' 'refs/tags/v*-alpha.*')
   if [ -n "$tag" ] && ! git merge-base --is-ancestor "$tag" "$new"; then
     tag_commit=$(git rev-parse "$tag^{commit}")
-    git rev-list "$own_base..$old" | grep -Fx "$tag_commit" > /dev/null ||
-      fail "$tag is not on one of next-major's own commits; fix the tags by hand."
+    mapfile -t olds < <(git rev-list --reverse "$own_base..$old")
+    mapfile -t news < <(git rev-list --reverse "$main_sha..$new")
+    anchor=
+    for i in "${!olds[@]}"; do
+      [ "${olds[$i]}" != "$tag_commit" ] || anchor=${news[$i]}
+    done
+    [ -n "$anchor" ] || fail "$tag is not on one of next-major's own commits; fix the tags by hand."
+    [ -z "$(git tag --points-at "$anchor" | grep -vFx "$tag" || true)" ] ||
+      fail "$anchor already carries another tag, so $tag cannot move there."
     tag_value=$(git rev-parse "refs/tags/$tag")
     note_ref=refs/notes/semantic-release-$tag
     old_note=$(git rev-parse --verify --quiet "$note_ref") || fail "$tag has no channel note."
     git notes --ref "semantic-release-$tag" show "$tag_commit" | grep '"alpha"' > /dev/null ||
       fail "$tag's note is not on the alpha channel."
-    archive=refs/archive/$tag
-    archived=$(remote_ref "$archive")
-    [ -z "$archived" ] || [ "$archived" = "$tag_commit" ] || fail "$archive already exists and is not $tag_commit."
-    git update-ref "refs/tags/$tag" "$main_sha"
-    git notes --ref "semantic-release-$tag" add -f -m '{"channels":["alpha"]}' "$main_sha"
+    git update-ref "refs/tags/$tag" "$anchor"
+    git notes --ref "semantic-release-$tag" add -f -m '{"channels":["alpha"]}' "$anchor"
     args+=("--force-with-lease=refs/tags/$tag:$tag_value" "--force-with-lease=$note_ref:$old_note")
     refs+=("refs/tags/$tag" "$note_ref")
-    if [ -z "$archived" ]; then
+    archive=refs/archive/$tag
+    if [ -z "$(remote_ref "$archive")" ]; then
       args+=("--force-with-lease=$archive:")
       refs+=("$tag_commit:$archive")
     fi
@@ -136,7 +159,7 @@ apply)
   [ "$(git rev-parse "HEAD^{tree}")" = "$(git rev-parse "$conflict^{tree}")" ] ||
     fail "$base_ref is not the conflict the sync shows for next-major and main ${main_sha:0:7}."
   [ "$(git merge-base "$main_sha" "$rebased")" = "$main_sha" ] && [ -z "$(git rev-list --merges "$main_sha..$rebased")" ] &&
-    cmp -s <(commits "$main_sha..$rebased") <(commits "$(git merge-base "$old" origin/main)..$old") ||
+    same_commits "$(git merge-base "$old" origin/main)..$old" "$main_sha..$rebased" ||
     fail "sync/next-major-rebased must be next-major's own commits, with the same authors and messages, rebased onto ${main_sha:0:7}."
   [ "$(git rev-parse "$rebased^{tree}")" = "$(git rev-parse "$merge_sha^{tree}")" ] ||
     fail "sync/next-major-rebased differs from what #$pr merged."

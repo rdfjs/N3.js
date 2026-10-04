@@ -33,6 +33,8 @@ jobs:
       PULL_REQUEST: ${{ inputs.pull_request }}
       MERGE_SHA: ${{ inputs.merge_sha }}
     steps:
+      # This run is the approval, whoever merged the pull request, so only an admin or
+      # maintainer may start it
       - name: Check that a maintainer started this
         run: |
           role=$(gh api "repos/$GITHUB_REPOSITORY/collaborators/$GITHUB_ACTOR/permission" --jq .role_name)

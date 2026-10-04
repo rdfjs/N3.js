@@ -28,7 +28,8 @@ jobs:
     # group. At workflow level it would still replace a pending sync for a
     # green commit, and that commit would never be synced. The group is CI's
     # release group for next-major, so an alpha is never tagged on next-major
-    # while it is being rebased.
+    # while it is being rebased. A newer pending job in the group cancels an older
+    # pending one; re-run a cancelled sync (see RELEASING.md).
     concurrency:
       group: release-refs/heads/next-major
       cancel-in-progress: false
