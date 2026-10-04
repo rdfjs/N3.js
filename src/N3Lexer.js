@@ -34,6 +34,11 @@ const lineModeRegExps = {
 };
 const invalidRegExp = /$0^/;
 
+// Whitespace or the start of a comment
+function isSeparatorCode(code) {
+  return code === SPACE || code === TAB || code === LF || code === CR || code === HASH;
+}
+
 // ## Constructor
 export default class N3Lexer {
   constructor(options) {
@@ -176,11 +181,10 @@ export default class N3Lexer {
           this._previousMarker = '^^';
           // Move to type IRI or prefixed name
           input = input.slice(2);
-          // Whitespace and comments may separate the marker from the type
-          const next = input.charCodeAt(0);
-          if (next === SPACE || next === TAB || next === LF || next === CR || next === HASH)
-            continue; // eslint-disable-line no-continue
           if (input[0] !== '<') {
+            // Whitespace and comments may separate the marker from the type
+            if (isSeparatorCode(input.charCodeAt(0)))
+              continue; // eslint-disable-line no-continue
             inconclusive = true;
             break;
           }
