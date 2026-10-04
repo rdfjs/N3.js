@@ -557,7 +557,8 @@ export default class N3Lexer {
       else
         token = emitToken(type, value, prefix, line, start, lexicalLength || length);
       this.previousToken = token;
-      this._previousMarker = type;
+      // The string of a version declaration cannot take a language tag, so a following @keyword is a keyword
+      this._previousMarker = type === 'literal' && (this._previousMarker === 'VERSION' || this._previousMarker === '@version') ? 'version' : type;
 
       // Advance to next part to tokenize
       pos = Math.min(pos + length, input.length);

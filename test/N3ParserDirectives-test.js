@@ -96,6 +96,10 @@ describe('Parser directives', () => {
       expect(versions).toEqual(['1.2']);
       expect(quads).toHaveLength(1);
     });
+    it('reads an @-style directive after a SPARQL-style version declaration', () => {
+      expect(parseEvents('VERSION "1.2"\n@message .\n<a:s> <a:p> "o" @message .'))
+        .toEqual(['message()', 'quad o']);
+    });
   });
 
   describe('in TriG', () => {
@@ -134,6 +138,11 @@ describe('Parser directives', () => {
     it('reads a directive split across chunks', async () => {
       expect(await parseChunks(['<a:s> <a:p> <a:1>.\nMES', 'SAGE', '\n<a:s> <a:p> <a:2>.\n@mess', 'age .']))
         .toEqual(['quad a:1', 'message', 'quad a:2', 'message']);
+    });
+
+    it('reads a directive after a version declaration split across chunks', async () => {
+      expect(await parseChunks(['VERSION "1.2"', '\n@mess', 'age .\nVERSION "1.2"\n', '@message .']))
+        .toEqual(['message', 'message']);
     });
 
     it('reads a directive at the end of the stream', async () => {
