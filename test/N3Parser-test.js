@@ -5493,6 +5493,11 @@ describe('Parser', () => {
       itShouldResolve('http://a/b/c/d;p?q', '//host#x/../g',  'http://host#x/../g');
       itShouldResolve('http://a/b/c/d;p?q', '//host?x/./g',   'http://host?x/./g');
       itShouldResolve('http://a/b/c/d;p?q', '//host/a/..?x/../g', 'http://host/?x/../g');
+      itShouldResolve('//base/a/b',         '//host/../g',    '//host/g');
+      itShouldResolve('//base/a/b',         '//host',         '//host');
+      itShouldResolve('//base/a/b',         '//host?x/../g',  '//host?x/../g');
+      itShouldResolve('//base/a/b',         '/../g',          '//base/g');
+      itShouldResolve('./a/b',              '//host/./g/../h', '//host/h');
     });
   });
 });

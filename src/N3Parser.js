@@ -1536,9 +1536,11 @@ export default class N3Parser {
     case '/':
       // Resolve scheme-relative IRIs to the scheme,
       // keeping the reference's authority intact (RFC 3986 §5.2.4)
-      return iri[1] === '/' ?
-        this._removeDotSegments(this._baseScheme + iri) :
-        this._baseRoot + this._removeDotSegments(iri);
+      if (iri[1] !== '/')
+        return this._baseRoot + this._removeDotSegments(iri);
+      // Without a base scheme, a leading ':' marks where the authority starts
+      return this._baseScheme ? this._removeDotSegments(this._baseScheme + iri) :
+        this._removeDotSegments(`:${iri}`).substr(1);
     // Resolve all other IRIs at the base IRI's path
     default:
       // Relative IRIs cannot contain a colon in the first path segment
