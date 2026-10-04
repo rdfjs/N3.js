@@ -4,28 +4,34 @@ import namespaces from './IRIs';
 
 const { xsd } = namespaces;
 const SPACE = 0x20, TAB = 0x09, LF = 0x0A, CR = 0x0D, HASH = 0x23,
-    DOT = 0x2E, PLUS = 0x2B, MINUS = 0x2D, COLON = 0x3A, ZERO = 0x30, NINE = 0x39;
+    DOT = 0x2E, PLUS = 0x2B, MINUS = 0x2D, COLON = 0x3A, ZERO = 0x30, NINE = 0x39,
+    PERCENT = 0x25, BACKSLASH = 0x5C;
 
+// Whitespace as matched by `\s`
+function isWhitespace(charCode) {
+  return charCode === SPACE || charCode >= TAB && charCode <= CR ||
+    charCode >= 0xA0 && (charCode === 0xA0 || charCode === 0x1680 ||
+      charCode >= 0x2000 && charCode <= 0x200A || charCode === 0x2028 || charCode === 0x2029 ||
+      charCode === 0x202F || charCode === 0x205F || charCode === 0x3000 || charCode === 0xFEFF);
+}
 // Characters that can directly follow a name or number: whitespace and punctuation
 // (the lookahead `[,;!\^\s#()\[\]\{\}"'<>]` of the former regular expressions)
 const asciiDelimiters = new Uint8Array(0x80);
 for (const char of ',;!^#()[]{}"\'<> \t\n\v\f\r')
   asciiDelimiters[char.charCodeAt(0)] = 1;
 function isDelimiter(charCode) {
-  if (charCode < 0x80)
-    return asciiDelimiters[charCode] === 1;
-  // Non-ASCII whitespace as matched by `\s`
-  return charCode === 0xA0 || charCode === 0x1680 ||
-    charCode >= 0x2000 && charCode <= 0x200A || charCode === 0x2028 || charCode === 0x2029 ||
-    charCode === 0x202F || charCode === 0x205F || charCode === 0x3000 || charCode === 0xFEFF;
+  return charCode < 0x80 ? asciiDelimiters[charCode] === 1 : isWhitespace(charCode);
 }
-// Whether a number can end before the given position: it must be followed by a delimiter
-// or colon, optionally after a dot. At the end of finished input, it can always end.
-function canEndNumber(input, pos, inputFinished) {
+// Whether a name or number can end before the given position: it must be followed by
+// a delimiter (or colon, if allowed), optionally after a dot.
+// At the end of finished input, it can always end.
+function canEndName(input, pos, inputFinished, colonCanFollow) {
   let charCode = input.charCodeAt(pos);
   if (charCode === DOT)
     charCode = input.charCodeAt(++pos);
-  return pos >= input.length ? inputFinished : charCode === COLON || isDelimiter(charCode);
+  if (pos >= input.length)
+    return inputFinished;
+  return colonCanFollow && charCode === COLON || isDelimiter(charCode);
 }
 // Returns the position after the digits starting at the given position
 function skipDigits(input, pos) {
@@ -47,6 +53,100 @@ const localNameEscapeReplacements = {
   '=': '=', '/': '/', '?': '?', '#': '#', '@': '@', '%': '%',
 };
 const illegalIriChars = /[\x00-\x20<>\\"\{\}\|\^\`]/;
+
+// Character classes of names, as bit flags for ASCII characters
+const PREFIX_START = 1, // PN_CHARS_BASE
+    LOCAL_START = 2,      // PN_CHARS_U, digits, and colon
+    NAME_CHAR = 4,        // PN_CHARS
+    LOCAL_CHAR = 8,       // PN_CHARS and colon
+    LOCAL_ESCAPE = 16;    // characters that can be escaped in local names (PN_LOCAL_ESC)
+const asciiNameClasses = new Uint8Array(0x80);
+for (let charCode = 0; charCode < 0x80; charCode++) {
+  const char = String.fromCharCode(charCode);
+  const letter = char >= 'A' && char <= 'Z' || char >= 'a' && char <= 'z';
+  const nameChar = letter || char === '_' || char === '-' || char >= '0' && char <= '9';
+  asciiNameClasses[charCode] =
+    (letter ? PREFIX_START : 0) |
+    (nameChar && char !== '-' || char === ':' ? LOCAL_START : 0) |
+    (nameChar ? NAME_CHAR : 0) |
+    (nameChar || char === ':' ? LOCAL_CHAR : 0) |
+    (char in localNameEscapeReplacements ? LOCAL_ESCAPE : 0);
+}
+// Returns the length (0, 1, or 2 code units) of the character at the given position
+// if it is in the given name character class
+function nameCharLength(input, pos, charClass) {
+  const charCode = input.charCodeAt(pos);
+  if (charCode < 0x80)
+    return (asciiNameClasses[charCode] & charClass) !== 0 ? 1 : 0;
+  // Characters from U+10000 to U+EFFFF consist of a surrogate pair
+  if (charCode >= 0xD800 && charCode <= 0xDB7F) {
+    const low = input.charCodeAt(pos + 1);
+    return low >= 0xDC00 && low <= 0xDFFF ? 2 : 0;
+  }
+  // PN_CHARS has some characters that PN_CHARS_BASE does not
+  if (charClass >= NAME_CHAR && (charCode === 0xB7 || charCode >= 0x300 && charCode <= 0x36F ||
+                                 charCode === 0x203F || charCode === 0x2040))
+    return 1;
+  // PN_CHARS_BASE
+  return charCode >= 0xC0 && charCode <= 0x1FFF && charCode !== 0xD7 && charCode !== 0xF7 &&
+           (charCode < 0x300 || charCode >= 0x370 && charCode !== 0x37E) ||
+         charCode >= 0x200C && charCode <= 0x200D || charCode >= 0x2070 && charCode <= 0x218F ||
+         charCode >= 0x2C00 && charCode <= 0x2FEF || charCode >= 0x3001 && charCode <= 0xD7FF ||
+         charCode >= 0xF900 && charCode <= 0xFDCF || charCode >= 0xFDF0 && charCode <= 0xFFFD ? 1 : 0;
+}
+function isLocalEscape(charCode) {
+  return charCode < 0x80 && (asciiNameClasses[charCode] & LOCAL_ESCAPE) !== 0;
+}
+function isHexDigit(charCode) {
+  return charCode >= ZERO && charCode <= NINE ||
+    charCode >= 0x41 && charCode <= 0x46 || charCode >= 0x61 && charCode <= 0x66;
+}
+// Returns the end of the prefix (PN_PREFIX) at the given position,
+// which can contain single dots, but not start or end with one
+function skipPrefix(input, pos) {
+  let length = nameCharLength(input, pos, PREFIX_START);
+  while (length !== 0) {
+    pos += length;
+    const next = input.charCodeAt(pos) === DOT ? pos + 1 : pos;
+    length = nameCharLength(input, next, NAME_CHAR);
+    if (length !== 0)
+      pos = next;
+  }
+  return pos;
+}
+// Returns the end of the local name (PN_LOCAL) at the given position,
+// which can contain dots, but not start or end with one
+function skipLocalName(input, pos) {
+  let end = pos, charClass = LOCAL_START;
+  while (true) {
+    const charCode = input.charCodeAt(pos);
+    let length = nameCharLength(input, pos, charClass);
+    // Percent-encoded character (PERCENT)
+    if (length === 0 && charCode === PERCENT &&
+        isHexDigit(input.charCodeAt(pos + 1)) && isHexDigit(input.charCodeAt(pos + 2)))
+      length = 3;
+    // Escaped character (PN_LOCAL_ESC)
+    else if (length === 0 && charCode === BACKSLASH && isLocalEscape(input.charCodeAt(pos + 1)))
+      length = 2;
+    if (length !== 0) {
+      end = pos += length;
+      charClass = LOCAL_CHAR;
+    }
+    // Dots are allowed after the first character, but not at the end
+    else if (charCode === DOT && charClass === LOCAL_CHAR)
+      pos++;
+    else
+      return end;
+  }
+}
+// Returns the end of the prefixed name at the given position, or -1 if there is none
+function skipPrefixedName(input, pos, inputFinished) {
+  const colon = skipPrefix(input, pos);
+  if (input.charCodeAt(colon) !== COLON)
+    return -1;
+  const end = skipLocalName(input, colon + 1);
+  return canEndName(input, end, inputFinished, false) ? end : -1;
+}
 
 // A valid code point is a Unicode scalar value: at most U+10FFFF and not a surrogate
 function isValidCodePoint(charCode) {
@@ -92,8 +192,6 @@ export default class N3Lexer {
     this._simpleQuotedString = /"([^"\\\r\n]*)"(?=[^"])/y; // string without escape sequences
     this._simpleApostropheString = /'([^'\\\r\n]*)'(?=[^'])/y;
     this._langcode = /@([a-z]+(?:-[a-z0-9]+)*)(?=[^a-z0-9])/iy;
-    this._prefix = /((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:(?=[#\s<])/y;
-    this._prefixed = /((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:((?:(?:[0-9:A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])(?:(?:[\.\-0-9:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])*(?:[\-0-9:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~]))?)?)(?:[ \t]+|(?=\.?[,;!\^\s#()\[\]\{\}"'<>]))/y;
     this._variable = /\?(?:(?:[A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:[\-0-9:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?=[.,;!\^\s#()\[\]\{\}"'<>])/y;
     this._blank = /_:((?:[0-9A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?:[ \t]+|(?=\.?[,;:!\^\s#()\[\]\{\}"'<>]))/y;
     this._boolean = /(?:true|false)(?=[.,;!\^\s#()\[\]\{\}"'<>])/y;
@@ -488,19 +586,24 @@ export default class N3Lexer {
       }
 
       // Some first characters do not allow an immediate decision, so inspect more
-      if (inconclusive) {
+      if (inconclusive && !this._lineMode) {
         // Try to find a prefix
+        let end;
         if ((this._previousMarker === '@prefix' || this._previousMarker === 'PREFIX') &&
-            (match = execAt(this._prefix, input, pos)))
-          type = 'prefix', value = match[1] || '';
+            input.charCodeAt(end = skipPrefix(input, pos)) === COLON &&
+            end + 1 < input.length && (input[end + 1] === '#' || input[end + 1] === '<' ||
+                                       isWhitespace(input.charCodeAt(end + 1)))) {
+          type = 'prefix', value = input.slice(pos, end);
+          matchLength = end + 1 - pos;
+        }
         // Try to find a prefixed name. Since it can contain (but not end with) a dot,
-        // we always need a non-dot character before deciding it is a prefixed name.
-        // Therefore, try inserting a space if we're at the end of the input.
-        else if ((match = execAt(this._prefixed, input, pos)) ||
-                 inputFinished && (match = execAtEnd(this._prefixed, input, pos))) {
-          type = 'prefixed', prefix = match[1] || '';
-          value = this._unescape(match[2], localNameEscapeReplacements);
-          lexicalLength = prefix.length + match[2].length + 1;
+        // we always need a non-dot character before deciding it is a prefixed name,
+        // except at the end of the input.
+        else if ((end = skipPrefixedName(input, pos, inputFinished)) >= 0) {
+          const colon = input.indexOf(':', pos);
+          type = 'prefixed', prefix = input.slice(pos, colon);
+          value = this._unescape(input.slice(colon + 1, end), localNameEscapeReplacements);
+          matchLength = end - pos;
         }
       }
 
@@ -587,17 +690,13 @@ export default class N3Lexer {
 
     // A prefix can start with a verb and continue with characters that are also
     // valid verb boundaries. Prefer the longer prefixed name when it is complete.
-    if (execAt(this._prefixed, input, pos) || execAtEnd(this._prefixed, input, pos))
+    if (skipPrefixedName(input, pos, true) >= 0)
       return null;
 
-    // If a stream chunk ends partway through such a prefix, wait for the colon
-    // instead of prematurely emitting the verb. Appending ": " lets the prefix
-    // grammar determine whether all input seen so far can be a complete prefix.
-    if (!inputFinished) {
-      const prefix = execAt(this._prefix, `${input.slice(pos)}: `, 0);
-      if (prefix)
-        return null;
-    }
+    // If a stream chunk ends partway through such a prefix,
+    // wait for the colon instead of prematurely emitting the verb.
+    if (!inputFinished && skipPrefix(input, pos) === input.length)
+      return null;
     return verb;
   }
 
@@ -626,13 +725,13 @@ export default class N3Lexer {
       const exponentEnd = skipDigits(input, exponentStart);
       if (exponentEnd > exponentStart) {
         this._numberEnd = exponentEnd;
-        return canEndNumber(input, exponentEnd, inputFinished) ? xsd.double : null;
+        return canEndName(input, exponentEnd, inputFinished, true) ? xsd.double : null;
       }
     }
 
     // A decimal needs fractional digits; otherwise, a trailing dot is not part of the integer
     this._numberEnd = hasFraction ? fractionEnd : integerEnd;
-    if (!canEndNumber(input, this._numberEnd, inputFinished))
+    if (!canEndName(input, this._numberEnd, inputFinished, true))
       return null;
     return hasFraction ? xsd.decimal : xsd.integer;
   }
