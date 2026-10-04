@@ -1051,8 +1051,8 @@ describe('Writer', () => {
       expect(output).toBe('(<a1> "b" "c") <d> <e>.\n');
     });
 
-    it('should serialize a blank node in an N3 list with a valid label when formulaScopedBlankNodes is set', async () => {
-      const quads = new Parser({ format: 'text/n3', formulaScopedBlankNodes: true }).parse('<a> <b> (_:x). _:x <c> <d>.');
+    it('should serialize a blank node in an N3 list with a valid label by default', async () => {
+      const quads = new Parser({ format: 'text/n3' }).parse('<a> <b> (_:x). _:x <c> <d>.');
       const writer = new Writer();
       writer.addQuads(quads);
       const output = await end(writer);
@@ -1060,13 +1060,13 @@ describe('Writer', () => {
       expect(() => new Parser().parse(output)).not.toThrow();
     });
 
-    it('should serialize a blank node in an N3 list with an invalid label by default', async () => {
-      const quads = new Parser({ format: 'text/n3' }).parse('<a> <b> (_:x). _:x <c> <d>.');
+    it('should serialize a blank node in an N3 list with an invalid label when formulaScopedBlankNodes is false', async () => {
+      const quads = new Parser({ format: 'text/n3', formulaScopedBlankNodes: false }).parse('<a> <b> (_:x). _:x <c> <d>.');
       const writer = new Writer();
       writer.addQuads(quads);
       const output = await end(writer);
-      // The default rescoping produces the label `_:.x`,
-      // which fails to reparse (#332; the default flips in #630)
+      // The legacy rescoping produces the label `_:.x`,
+      // which fails to reparse (#332, #630)
       expect(() => new Parser().parse(output)).toThrow();
     });
 
