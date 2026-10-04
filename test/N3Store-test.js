@@ -3698,6 +3698,24 @@ describe('Store', () => {
     });
 
     describe('#contains', () => {
+      it('should not count the quads of a store from another entity index', () => {
+        const larger = new Store([q[2], q[0], q[1]], { entityIndex: new EntityIndex() });
+        // As after merging in another store, its size is not known without counting
+        larger._size = null;
+        expect(new Store([q[0], q[1]]).contains(larger)).toBe(false);
+        expect(larger._size).toBe(null);
+      });
+
+      it('should not contain a larger dataset of another kind', () => {
+        const dataset = { size: 2, every: () => { throw new Error('should not iterate'); } };
+        expect(new Store([q[0]]).contains(dataset)).toBe(false);
+      });
+
+      it('should contain a dataset without a size', () => {
+        const dataset = { every: callback => [q[0]].every(callback) };
+        expect(new Store([q[0]]).contains(dataset)).toBe(true);
+      });
+
       it('empty set is contained in all sets', () => {
         expect(empty.contains(empty)).toBe(true);
         expect(store.contains(empty)).toBe(true);

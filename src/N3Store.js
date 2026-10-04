@@ -191,6 +191,13 @@ export class N3EntityIndex {
   }
 }
 
+// Returns the size of a dataset if it is known without counting, or null otherwise
+function knownSize(dataset) {
+  if (dataset instanceof N3Store)
+    return dataset._size;
+  return typeof dataset.size === 'number' ? dataset.size : null;
+}
+
 // ## Constructor
 export default class N3Store {
   constructor(quads, options) {
@@ -517,8 +524,8 @@ export default class N3Store {
     this._addToIndex(graphItem.predicates, predicate, object,    subject);
     this._addToIndex(graphItem.objects,    object,    subject,   predicate);
 
-    // The cached quad count is now invalid
-    this._size = null;
+    // Keep the cached quad count, so sizes stay known without counting
+    if (this._size !== null) this._size++;
     return true;
   }
 
@@ -1073,8 +1080,9 @@ export default class N3Store {
       return true;
 
     if (!(other instanceof N3Store) || this._entityIndex !== other._entityIndex) {
-      // A larger set cannot be a subset
-      if (typeof other.size === 'number' && other.size > this.size)
+      // A larger set cannot be a subset, but only compare sizes that are known without counting
+      const otherSize = knownSize(other), thisSize = this._size;
+      if (otherSize !== null && thisSize !== null && otherSize > thisSize)
         return false;
       return other.every(quad => this.has(quad));
     }
@@ -1186,10 +1194,12 @@ export default class N3Store {
       return store;
     }
 
-    // Test the quads of the smaller dataset against the larger one,
-    // unless it is a store whose custom factories may not create RDF/JS quads,
-    // either for its quads or, through its entity index, for their terms
-    if (typeof other.size === 'number' && other.size < this.size && typeof other[Symbol.iterator] === 'function' &&
+    // Test the quads of the smaller dataset against the larger one
+    // when both sizes are known without counting
+    const otherSize = knownSize(other), thisSize = this._size;
+    if (otherSize !== null && thisSize !== null && otherSize < thisSize && typeof other[Symbol.iterator] === 'function' &&
+        // unless it is a store whose custom factories may not create RDF/JS quads,
+        // either for its quads or, through its entity index, for their terms
         (!(other instanceof N3Store) ||
          other._factory === N3DataFactory && other._entityIndex._factory === N3DataFactory)) {
       const store = new N3Store({ entityIndex: this._entityIndex });
