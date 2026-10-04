@@ -460,9 +460,9 @@ describe('Writer', () => {
     });
 
     it(
-      'should output characters outside the Basic Multilingual Plane unescaped',
+      'should output 8-bit unicode characters as escape sequences',
       shouldSerialize(['\ud835\udc00', '\ud835\udc00', '"\ud835\udc00"^^\ud835\udc00', '\ud835\udc00'],
-                      '<\ud835\udc00> {\n<\ud835\udc00> <\ud835\udc00> "\ud835\udc00"^^<\ud835\udc00>\n}\n'),
+                      '<\\U0001d400> {\n<\\U0001d400> <\\U0001d400> "\\U0001d400"^^<\\U0001d400>\n}\n'),
     );
 
     it(
@@ -470,11 +470,20 @@ describe('Writer', () => {
       shouldSerialize(['a\u0001b', 'b', 'c'], '<a\\u0001b> <b> <c>.\n'),
     );
 
-    it(
-      'should escape the characters canonical N-Triples escapes, in upper case',
-      shouldSerialize(['a', 'b', new Literal('"\u0000\u0007\b\t\n\u000b\f\r\u000e\u001f\u007f\ufffe\uffff\u0080 \\\""')],
-                      '<a> <b> "\\u0000\\u0007\\b\\t\\n\\u000B\\f\\r\\u000E\\u001F\\u007F\\uFFFE\\uFFFF\u0080 \\\\\\"".\n'),
-    );
+    it('should write canonical escapes in N-Triples', async () => {
+      const writer = new Writer({ format: 'N-Triples' });
+      writer.addQuad(new NamedNode('a\u0001b'), new NamedNode('b'), new Literal(
+        '"\u0000\u0007\b\t\n\u000b\f\r\u000e\u001f\u007f\ufffe\uffff\u0080\ud835\udc00 \\\""'));
+      expect(await end(writer)).toBe('<a\\u0001b> <b> "\\u0000\\u0007\\b\\t\\n\\u000B\\f\\r\\u000E\\u001F' +
+        '\\u007F\\uFFFE\\uFFFF\u0080\ud835\udc00 \\\\\\"" .\n');
+    });
+
+    it('should write canonical triple terms in N-Quads', async () => {
+      const writer = new Writer({ format: 'N-Quads' });
+      writer.addQuad(new NamedNode('a'), new NamedNode('b'),
+        new Quad(new NamedNode('c'), new NamedNode('d'), new NamedNode('e')), new NamedNode('g'));
+      expect(await end(writer)).toBe('<a> <b> <<( <c> <d> <e> )>> <g> .\n');
+    });
 
     it(
       'should not use escape sequences in blank nodes',
@@ -977,7 +986,7 @@ describe('Writer', () => {
         const writer = new Writer();
         expect(
           writer.quadToString(new Quad(new BlankNode('b1'), new NamedNode('b'), new Literal('l1')), new NamedNode('b'), new NamedNode('c')),
-        ).toBe('<<( _:b1 <b> "l" )>> <b> <c> .\n');
+        ).toBe('<<(_:b1 <b> "l")>> <b> <c> .\n');
       },
     );
 
@@ -985,7 +994,7 @@ describe('Writer', () => {
       const writer = new Writer();
       expect(
         writer.quadToString(new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')), new NamedNode('b'), new NamedNode('c')),
-      ).toBe('<<( <a> <b> <c> )>> <b> <c> .\n');
+      ).toBe('<<(<a> <b> <c>)>> <b> <c> .\n');
     });
 
     it(
@@ -994,7 +1003,7 @@ describe('Writer', () => {
         const writer = new Writer();
         expect(
           writer.quadToString(new Quad(new BlankNode('b1'), new BlankNode('b2'), new BlankNode('b3')), new NamedNode('b'), new NamedNode('c')),
-        ).toBe('<<( _:b1 _:b2 _:b3 )>> <b> <c> .\n');
+        ).toBe('<<(_:b1 _:b2 _:b3)>> <b> <c> .\n');
       },
     );
 
@@ -1002,14 +1011,14 @@ describe('Writer', () => {
       const writer = new Writer();
       expect(
         writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new BlankNode('b1'), new NamedNode('b'), new Literal('l1'))),
-      ).toBe('<a> <b> <<( _:b1 <b> "l" )>> .\n');
+      ).toBe('<a> <b> <<(_:b1 <b> "l")>> .\n');
     });
 
     it('should serialize a triple with a triple with iris as object', () => {
       const writer = new Writer();
       expect(
         writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))),
-      ).toBe('<a> <b> <<( <a> <b> <c> )>> .\n');
+      ).toBe('<a> <b> <<(<a> <b> <c>)>> .\n');
     });
 
     it(
@@ -1018,7 +1027,7 @@ describe('Writer', () => {
         const writer = new Writer();
         expect(
           writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new BlankNode('b1'), new BlankNode('b2'), new BlankNode('b3'))),
-        ).toBe('<a> <b> <<( _:b1 _:b2 _:b3 )>> .\n');
+        ).toBe('<a> <b> <<(_:b1 _:b2 _:b3)>> .\n');
       },
     );
 
@@ -1028,7 +1037,7 @@ describe('Writer', () => {
         const writer = new Writer();
         expect(
           writer.quadToString(new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')),
-        ).toBe('<<( <a> <b> <c> )>> <b> <c> <g> .\n');
+        ).toBe('<<(<a> <b> <c>)>> <b> <c> <g> .\n');
       },
     );
 
@@ -1036,35 +1045,35 @@ describe('Writer', () => {
       const writer = new Writer();
       expect(
         writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c')), new NamedNode('g')),
-      ).toBe('<a> <b> <<( <a> <b> <c> )>> <g> .\n');
+      ).toBe('<a> <b> <<(<a> <b> <c>)>> <g> .\n');
     });
 
     it('should serialize a quad with a quad as subject', () => {
       const writer = new Writer();
       expect(
         writer.quadToString(new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')),
-      ).toBe('<<( <a> <b> <c> <g> )>> <b> <c> <g> .\n');
+      ).toBe('<<(<a> <b> <c> <g>)>> <b> <c> <g> .\n');
     });
 
     it('should serialize a quad with a quad as object', () => {
       const writer = new Writer();
       expect(
         writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')), new NamedNode('g')),
-      ).toBe('<a> <b> <<( <a> <b> <c> <g> )>> <g> .\n');
+      ).toBe('<a> <b> <<(<a> <b> <c> <g>)>> <g> .\n');
     });
 
     it('should serialize a triple with a quad as subject', () => {
       const writer = new Writer();
       expect(
         writer.quadToString(new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g')), new NamedNode('b'), new NamedNode('c')),
-      ).toBe('<<( <a> <b> <c> <g> )>> <b> <c> .\n');
+      ).toBe('<<(<a> <b> <c> <g>)>> <b> <c> .\n');
     });
 
     it('should serialize a triple with a quad as object', () => {
       const writer = new Writer();
       expect(
         writer.quadToString(new NamedNode('a'), new NamedNode('b'), new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g'))),
-      ).toBe('<a> <b> <<( <a> <b> <c> <g> )>> .\n');
+      ).toBe('<a> <b> <<(<a> <b> <c> <g>)>> .\n');
     });
 
     it('should serialize a triple with a literal as subject',
