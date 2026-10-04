@@ -3729,11 +3729,11 @@ describe('Store', () => {
         const second = new Store([q[1], q[2], q[3]], { entityIndex });
         function count(store) { return [...store].length; }
         first.addAll(second);
-        expect(first._size).toBe(4);
-        expect(first._size).toBe(count(first));
+        expect(first._count).toBe(4);
+        expect(first._count).toBe(count(first));
         for (const result of [first.intersection(second), first.difference(second), first.union(second),
           first.match(q[0].subject).filtered])
-          expect(result._size).toBe(count(result));
+          expect(result._count).toBe(count(result));
       });
 
       it('should not contain a larger dataset of another kind', () => {
@@ -3896,6 +3896,21 @@ describe('Store', () => {
         expect(result.size).toBe(1);
         expect(result.has(q[0])).toBe(true);
         expect(result.has(missing)).toBe(false);
+      });
+
+      it('should intersect with a smaller store from another copy of N3 whose factory creates other quads', () => {
+        let OtherStore;
+        jest.isolateModules(() => { OtherStore = require('../src').Store; });
+        const factory = Object.assign({}, DataFactory, { quad: (s, p, o, g) => ({ s, p, o, g }) });
+        const custom = new OtherStore([q[0]], { factory });
+        expect(store1.intersection(custom).size).toBe(1);
+      });
+
+      it('should not count the quads of a store from an earlier version of N3', () => {
+        const earlier = { _entityIndex: {}, get size() { throw new Error('counted'); },
+          every: fn => [q[0]].every(fn), has: quad => quad.equals(q[0]) };
+        expect(store1.contains(earlier)).toBe(true);
+        expect(store1.intersection(earlier).size).toBe(1);
       });
 
       it('should intersect with a smaller store whose factory creates other quads', () => {

@@ -245,9 +245,11 @@ export default class N3Reasoner {
     finally {
       // Count the quads added directly to the indexes, even if a derivation
       // budget was exceeded, so a caught budget error leaves the store consistent
-      // (stores from other N3 versions may not track their size)
-      if (typeof this._store._size === 'number')
-        this._store._size += this._indexed;
+      if (typeof this._store._count === 'number')
+        this._store._count += this._indexed;
+      // Stores from earlier versions of N3 count their quads again instead
+      else
+        this._store._size = null;
     }
   }
 }

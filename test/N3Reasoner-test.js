@@ -357,12 +357,30 @@ describe('Reasoner', () => {
       expect(store.getQuads()).toHaveLength(55);
     });
 
-    it('Should leave the size of a store that does not track it untouched', () => {
+    it('Should mark the size of a store from an earlier version of N3 as stale', () => {
       const store = chainStore(10);
-      store._size = null;
+      // Earlier versions cache the size in `_size`, and count again when it is null
+      store._size = 10;
+      delete store._count;
       new Reasoner(store).reason(transitiveRule());
       expect(store._size).toBe(null);
       expect(store.getQuads()).toHaveLength(55);
+    });
+
+    it('Should keep the size of a store used by a reasoner from an earlier version of N3', () => {
+      const store = chainStore(10);
+      // Earlier reasoners add to the indexes directly, then set `_size` to null
+      const graph = store._graphs[Object.keys(store._graphs)[0]];
+      const [s, p, o] = [0, 1, 2].map(i => store._termToNewNumericId(new NamedNode(`http://example.org/new${i}`)));
+      store._addToIndex(graph.subjects, s, p, o);
+      store._addToIndex(graph.predicates, p, o, s);
+      store._addToIndex(graph.objects, o, s, p);
+      store._size = null;
+      store.addQuad(new NamedNode('http://example.org/a'), new NamedNode('http://example.org/b'), new NamedNode('http://example.org/c'));
+      expect(store.size).toBe(12);
+      store.addQuad(new NamedNode('http://example.org/a'), new NamedNode('http://example.org/b'), new NamedNode('http://example.org/d'));
+      expect(store.size).toBe(13);
+      expect(store.getQuads()).toHaveLength(13);
     });
 
     it('Should fail when reasoning exceeds maxDerivations', () => {
