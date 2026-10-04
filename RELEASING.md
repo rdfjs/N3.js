@@ -44,8 +44,8 @@ The cost of merging is a merge commit per sync in `next-major`'s history. It doe
 reach `main`'s changelog, because those commits carry no `fix` or `feat`.
 
 When `main` conflicts with `next-major`, the workflow opens a pull request from
-`sync/main-into-next-major` and stops syncing until it is resolved. Resolve it locally
-with a merge, never a squash.
+`sync/main-into-next-major` and stops syncing, failing each run, until it is resolved.
+Resolve it locally with a merge, never a squash.
 
 ## Releasing the major
 

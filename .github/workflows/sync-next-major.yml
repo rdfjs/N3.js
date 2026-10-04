@@ -88,8 +88,8 @@ jobs:
           branch=sync/main-into-next-major
           open=$(gh pr list --repo "$REPO" --head "$branch" --base next-major --state open --json number --jq length)
           if [ "$open" != 0 ]; then
-            echo "::warning::main conflicts with next-major and a sync pull request is already open; resolve it to resume syncing."
-            exit 0
+            echo "::error::main conflicts with next-major and a sync pull request is already open; resolve it to resume syncing."
+            exit 1
           fi
           git push --force origin "$MAIN_SHA:refs/heads/$branch"
           gh pr create --repo "$REPO" --base next-major --head "$branch" \
@@ -110,4 +110,6 @@ jobs:
           Pushing the merge marks this pull request as merged.
           EOF
           )"
-          echo "::warning::main conflicts with next-major; opened a pull request to resolve it."
+          echo "::error::main conflicts with next-major; opened a pull request to resolve it."
+          # Fail the run, so a sync that pushed nothing never reads as a success.
+          exit 1
