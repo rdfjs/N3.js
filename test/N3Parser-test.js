@@ -2685,6 +2685,12 @@ describe('Parser', () => {
     );
 
     it(
+      'should parse a datatype separated from its marker by whitespace',
+      shouldParse(parser, '_:a <http://ex.org/b> "c"  ^^  <http://ex.org/t> .',
+                          ['_:b0_a', 'http://ex.org/b', '"c"^^http://ex.org/t']),
+    );
+
+    it(
       'should parse a single triple starting with Bom',
       shouldParse(parser, '\ufeff_:a <http://ex.org/b> "c".',
           ['_:b0_a', 'http://ex.org/b', '"c"']),
@@ -5531,6 +5537,71 @@ describe('Parser', () => {
       // base path with slashes in query string
       itShouldResolve('http://abc/def/ghi?q=xx/yyy/z', 'jjj', 'http://abc/def/jjj');
       itShouldResolve('http://abc/def/ghi?q=xx/y?y/z', 'jjj', 'http://abc/def/jjj');
+    });
+
+    describe('RFC3986 examples with empty path in base IRI', () => {
+      itShouldResolve('http://abc', 'g:h',    'g:h');
+      itShouldResolve('http://abc', 'g',      'http://abc/g');
+      itShouldResolve('http://abc', './g',    'http://abc/g');
+      itShouldResolve('http://abc', 'g/',     'http://abc/g/');
+      itShouldResolve('http://abc', 'g/h',    'http://abc/g/h');
+      itShouldResolve('http://abc', '/g',     'http://abc/g');
+      itShouldResolve('http://abc', '//g',    'http://g');
+      itShouldResolve('http://abc', '?y',     'http://abc?y');
+      itShouldResolve('http://abc', 'g?y',    'http://abc/g?y');
+      itShouldResolve('http://abc', '#s',     'http://abc#s');
+      itShouldResolve('http://abc', 'g#s',    'http://abc/g#s');
+      itShouldResolve('http://abc', 'g?y#s',  'http://abc/g?y#s');
+      itShouldResolve('http://abc', '',       'http://abc');
+      itShouldResolve('http://abc', '.',      'http://abc/');
+      itShouldResolve('http://abc', './',     'http://abc/');
+      itShouldResolve('http://abc', '..',     'http://abc/');
+      itShouldResolve('http://abc', '../',    'http://abc/');
+      itShouldResolve('http://abc', '../g',   'http://abc/g');
+      itShouldResolve('http://abc', '../../g', 'http://abc/g');
+    });
+
+    describe('RFC3986 examples with empty path and query in base IRI', () => {
+      itShouldResolve('http://abc?q', 'g',    'http://abc/g');
+      itShouldResolve('http://abc?q', '?y',   'http://abc?y');
+      itShouldResolve('http://abc?q', '#s',   'http://abc?q#s');
+      itShouldResolve('http://abc?q', '',     'http://abc?q');
+      itShouldResolve('http://abc?q', '../g', 'http://abc/g');
+    });
+
+    describe('RFC3986 examples with empty host and path in base IRI', () => {
+      itShouldResolve('file://', 'g',    'file:///g');
+      itShouldResolve('file://', './g',  'file:///g');
+      itShouldResolve('file://', '../g', 'file:///g');
+      itShouldResolve('file://', '?y',   'file://?y');
+      itShouldResolve('file://', '#s',   'file://#s');
+      itShouldResolve('file://?q', 'g',  'file:///g');
+    });
+
+    describe('RFC3986 examples with empty path and fragment in base IRI', () => {
+      itShouldResolve('http://abc#top', 'g',  'http://abc/g');
+      itShouldResolve('http://abc#top', '#s', 'http://abc#s');
+    });
+
+    describe('scheme-relative references with dot segments', () => {
+      itShouldResolve('http://a/b/c/d;p?q', '//host',         'http://host');
+      itShouldResolve('http://a/b/c/d;p?q', '//host/',        'http://host/');
+      itShouldResolve('http://a/b/c/d;p?q', '//host/../g',    'http://host/g');
+      itShouldResolve('http://a/b/c/d;p?q', '//host/../../g', 'http://host/g');
+      itShouldResolve('http://a/b/c/d;p?q', '//host/..',      'http://host/');
+      itShouldResolve('http://a/b/c/d;p?q', '//host/../..',   'http://host/');
+      itShouldResolve('http://a/b/c/d;p?q', '//host/./g',     'http://host/g');
+      itShouldResolve('http://a/b/c/d;p?q', '//host/g/../h',  'http://host/h');
+      itShouldResolve('http://abc/def/ghi', '//host/../..',   'http://host/');
+      itShouldResolve('http://a/b/c/d;p?q', '//host?x/../g',  'http://host?x/../g');
+      itShouldResolve('http://a/b/c/d;p?q', '//host#x/../g',  'http://host#x/../g');
+      itShouldResolve('http://a/b/c/d;p?q', '//host?x/./g',   'http://host?x/./g');
+      itShouldResolve('http://a/b/c/d;p?q', '//host/a/..?x/../g', 'http://host/?x/../g');
+      itShouldResolve('//base/a/b',         '//host/../g',    '//host/g');
+      itShouldResolve('//base/a/b',         '//host',         '//host');
+      itShouldResolve('//base/a/b',         '//host?x/../g',  '//host?x/../g');
+      itShouldResolve('//base/a/b',         '/../g',          '//base/g');
+      itShouldResolve('./a/b',              '//host/./g/../h', '//host/h');
     });
   });
 });
