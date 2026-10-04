@@ -4612,6 +4612,16 @@ describe('Set operations between stores sharing an EntityIndex', () => {
     expect(c.match(null, null, null, ex('g2')).intersection(c).size).toBe(1);
   });
 
+  it('intersects without counting either store', () => {
+    const size = jest.spyOn(Store.prototype, 'size', 'get');
+    const empty = new Store({ entityIndex });
+    a.addQuad(q('s5', 'p', 'o5'));
+    const results = [a.intersection(empty), empty.intersection(a)];
+    expect(size).not.toHaveBeenCalled();
+    size.mockRestore();
+    expect(results.map(contents)).toEqual([[], []]);
+  });
+
   it('notifies forwarded views when adding a store to an empty store', () => {
     // A forwarded view compares the numeric ids it is notified with to its pattern
     const empty = new Store({ entityIndex });

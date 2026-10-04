@@ -1186,7 +1186,9 @@ export default class N3Store {
     }
     else if ((other instanceof N3Store) && this._entityIndex === other._entityIndex) {
       const store = new N3Store({ entityIndex: this._entityIndex });
-      store._addIntersectionFromIndex(this._graphs, other._graphs);
+      // Starting a loop over no graphs costs more than checking for an empty store
+      if (this._size !== 0 && other._size !== 0)
+        store._addIntersectionFromIndex(this._graphs, other._graphs);
       return store;
     }
 

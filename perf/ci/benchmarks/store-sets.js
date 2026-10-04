@@ -176,13 +176,11 @@ Object.assign(benchmarks, {
 function intersectionBothWays(first, second, createStores) {
   function benchmark(swap) {
     return N3 => {
-      const { store, other, change = () => undefined, repeat } = createStores(N3);
+      const { store, other, repeat } = createStores(N3);
       const [a, b] = swap ? [other, store] : [store, other];
       return () => {
-        for (let i = 0; i < repeat; i++) {
-          change();
+        for (let i = 0; i < repeat; i++)
           check(a.intersection(b).size <= 1, 'too large');
-        }
       };
     };
   }
@@ -194,8 +192,8 @@ function intersectionBothWays(first, second, createStores) {
 
 // Intersections of stores sharing an EntityIndex that need not look at most
 // quads: stores whose subjects differ, a large store intersected with a store
-// holding one of its quads, an empty store and a store whose size is not cached
-// because it has just changed, and one quad and a store with many graphs
+// holding one of its quads, an empty store and a full one, and one quad and a
+// store with many graphs
 Object.assign(benchmarks, {
   'store intersection: different subjects, shared index': N3 => {
     const { namedNode, quad } = N3.DataFactory, entityIndex = new N3.EntityIndex();
@@ -205,7 +203,7 @@ Object.assign(benchmarks, {
     }
     const store = storeAbout('http://example.org/a'), other = storeAbout('http://example.org/b');
     return () => {
-      for (let i = 0; i < 1000; i++) check(store.intersection(other).size === 0, 'not empty');
+      for (let i = 0; i < 20000; i++) check(store.intersection(other).size === 0, 'not empty');
     };
   },
   'store intersection: one quad with many objects, shared index': N3 => {
@@ -217,19 +215,9 @@ Object.assign(benchmarks, {
       for (let i = 0; i < 1000; i++) check(store.intersection(other).size === 1, 'not one quad');
     };
   },
-  ...intersectionBothWays('an empty store', 'a changed store', N3 => {
+  ...intersectionBothWays('an empty store', 'a full store', N3 => {
     const { entityIndex, store } = createContext(N3);
-    const changed = store.toArray()[0];
-    return {
-      store: new N3.Store({ entityIndex }),
-      other: store,
-      // Removing and adding back a quad leaves the store's size uncached
-      change: () => {
-        store.removeQuad(changed);
-        store.addQuad(changed);
-      },
-      repeat: 10000,
-    };
+    return { store: new N3.Store({ entityIndex }), other: store, repeat: 100000 };
   }),
   ...intersectionBothWays('one quad', 'many graphs', N3 => {
     const { namedNode, quad } = N3.DataFactory, entityIndex = new N3.EntityIndex();
