@@ -29,6 +29,10 @@ jobs:
             rdf/rdf12/rdf-n-quads/syntax
             rdf/rdf12/rdf-turtle/syntax
             rdf/rdf12/rdf-trig/syntax
+            rdf/rdf12/rdf-turtle/eval
+            rdf/rdf12/rdf-trig/eval
+            rdf/rdf12/rdf-n-triples/c14n
+            rdf/rdf12/rdf-n-quads/c14n
           )
           for path in "${paths[@]}"; do
             sha=$(gh api repos/w3c/rdf-tests/commits \
@@ -54,7 +58,7 @@ jobs:
           commit-message: 'chore(ci): refetch upstream spec suites'
           title: 'chore(ci): refetch upstream spec suites'
           body: >-
-            One or more of the exact w3c/rdf-tests syntax suites or the
+            One or more of the exact w3c/rdf-tests suites or the
             w3c-cg/N3 suites exercised by N3.js changed upstream. Merging
             updates their pinned revisions and rotates the spec jobs' fixture
             cache key so they refetch the suites cold.
