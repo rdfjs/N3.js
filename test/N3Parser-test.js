@@ -987,6 +987,21 @@ describe('Parser', () => {
     );
 
     it(
+        'should handle @prefix and @base after a SPARQL-style version declaration',
+        shouldParse('VERSION "1.2"\n' +
+            '@prefix ex: <ex:>.\n' +
+            'VERSION "1.2" @base <ex:>.\n' +
+            'ex:a ex:b <c> .',
+            ['ex:a', 'ex:b', 'ex:c']),
+    );
+
+    it(
+        'should still read a language tag after whitespace',
+        shouldParse('<ex:a> <ex:b> "c" @en .',
+            ['ex:a', 'ex:b', '"c"@en']),
+    );
+
+    it(
         'should not allow VERSION with an IRI',
         shouldNotParse('VERSION <ex:abc>',
             'Expected literal to follow version declaration on line 1.'),
