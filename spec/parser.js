@@ -27,7 +27,6 @@ module.exports = {
       new StreamParser(Object.assign({
         baseIRI: baseIRI,
         format,
-        implicitEmptyPrefix: true,
         parseUnsupportedVersions: true,
       }, options, { format }))));
   },
