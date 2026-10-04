@@ -64,17 +64,27 @@ same_change() {
 
 # Succeeds if two ranges hold the same number of commits and each pair, compared on its own, has
 # the same author, message and other raw fields, and makes the same change outside the paths
-# given after the ranges (the hand-resolved ones)
+# given after the ranges (the hand-resolved ones). Every git command must succeed: outputs go to
+# files rather than through process substitutions, whose failures would go unseen.
 same_commits() {
+  local dir status
+  dir=$(mktemp -d)
+  compare_commits "$dir" "$@"
+  status=$?
+  rm -rf "$dir"
+  return "$status"
+}
+compare_commits() {
+  local dir=$1 i
   local -a a b
-  local i
-  mapfile -t a < <(git rev-list --reverse "$1")
-  mapfile -t b < <(git rev-list --reverse "$2")
-  shift 2
+  git rev-list --reverse "$2" > "$dir/a" && git rev-list --reverse "$3" > "$dir/b" || return 1
+  mapfile -t a < "$dir/a"
+  mapfile -t b < "$dir/b"
+  shift 3
   [ "${#a[@]}" -eq "${#b[@]}" ] || return 1
   for i in "${!a[@]}"; do
-    cmp -s <(commit_record "${a[$i]}") <(commit_record "${b[$i]}") &&
-      same_change "${a[$i]}" "${b[$i]}" "$@" || return 1
+    commit_record "${a[$i]}" > "$dir/record-a" && commit_record "${b[$i]}" > "$dir/record-b" &&
+      cmp -s "$dir/record-a" "$dir/record-b" && same_change "${a[$i]}" "${b[$i]}" "$@" || return 1
   done
 }
 

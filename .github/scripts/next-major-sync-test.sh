@@ -12,7 +12,7 @@ git init --quiet
 git config user.name test
 git config user.email test@example.org
 git config commit.gpgSign false
-eval "$(sed -n '/^commit_record()/,/^}/p;/^same_change()/,/^}/p;/^same_commits()/,/^}/p' "$script")"
+eval "$(sed -n '/^commit_record()/,/^}/p;/^same_change()/,/^}/p;/^same_commits()/,/^}/p;/^compare_commits()/,/^}/p' "$script")"
 
 failures=0
 lines() { printf '%s\n' "$@"; }
@@ -94,5 +94,8 @@ expect refused 'a changed message' same_commits "$base..$moved" "$main..HEAD"
 git checkout --quiet --detach "$main"
 recommit "$moved" f "$(lines L x x x 'A ' R y y y B x x x Z)"
 expect refused 'a whitespace change' same_commits "$base..$moved" "$main..HEAD"
+
+# A range git cannot list is refused, even when the other one cannot be listed either
+expect refused 'ranges that cannot be listed' same_commits "$base..no-such-commit" "$main..no-such-commit"
 
 exit "$failures"
