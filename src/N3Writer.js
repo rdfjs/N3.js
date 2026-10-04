@@ -47,6 +47,8 @@ class SerializedTerm extends Term {
 }
 
 const HELPERS_WITH_FORMULAS = 'Cannot use nodes created by blank() or list() in statements with formulas';
+// The scope of blank nodes outside formulas
+const TOP_SCOPE = {};
 const LISTS_WITH_FORMULAS = 'Cannot write formulas with the lists option; write lists as rdf:first and rdf:rest statements instead';
 
 // ## Placeholder class to represent formulas created by `formula`
@@ -114,6 +116,11 @@ export default class N3Writer {
     // Statements with formulas are held back until the end, to group them by formula
     this._formulaStatements = this._formulas ? [] : null;
     this._prefixesFixed = false;
+    // N3 scopes blank node labels to their formula, so each blank node is written in one scope only.
+    // `_blankScopes` maps the labels of blank nodes to their scope once formulas are in use.
+    this._blankScopes = this._formulas ? new Map() : null;
+    this._blankScopesIncomplete = false;
+    this._wroteStatements = false;
 
     // If no output stream given, send the output as string through the end callback
     if (!outputStream) {
@@ -191,8 +198,12 @@ export default class N3Writer {
     // Statements with formulas are held back until the end, so every formula can be written once
     if (this._formulaStatements && DEFAULTGRAPH.equals(graph) &&
         this._findFormulas([object, predicate, subject]).length) {
-      if ([subject, predicate, object].some(hasHelperNode)) {
-        const error = new Error(HELPERS_WITH_FORMULAS);
+      try {
+        if ([subject, predicate, object].some(hasHelperNode))
+          throw new Error(HELPERS_WITH_FORMULAS);
+        this._addBlankScopes([subject, predicate, object, graph], TOP_SCOPE);
+      }
+      catch (error) {
         if (done)
           return done(error);
         throw error;
@@ -203,6 +214,9 @@ export default class N3Writer {
       return;
     }
     try {
+      this._wroteStatements = true;
+      if (this._blankScopes)
+        this._addBlankScopes([subject, predicate, object, graph], TOP_SCOPE);
       // Write the graph's label if it has changed
       // (the id-based fast path of `equals` would conflate
       // the empty named node `<>` with the default graph)
@@ -279,6 +293,27 @@ export default class N3Writer {
         formulas.push(term);
     }
     return formulas;
+  }
+
+  // ### `_addBlankScopes` records the scope of the blank nodes in the terms,
+  // rejecting blank nodes that were written in another scope
+  _addBlankScopes(terms, scope) {
+    terms = terms.slice();
+    while (terms.length) {
+      const term = terms.pop();
+      if (term.termType === 'Quad')
+        terms.push(term.subject, term.predicate, term.object, term.graph);
+      else if (term.termType === 'BlankNode' && !this._isFormula(term)) {
+        const previous = this._blankScopes.get(term.value);
+        if (previous === undefined) {
+          if (scope !== TOP_SCOPE && this._blankScopesIncomplete)
+            throw new Error(`Cannot write blank node _:${term.value} in a formula created after statements without formulas`);
+          this._blankScopes.set(term.value, scope);
+        }
+        else if (previous !== scope)
+          throw new Error(`Cannot write blank node _:${term.value} both inside and outside a formula`);
+      }
+    }
   }
 
   // ### `_refuseFormulas` rejects formulas inside nodes created by `blank` or `list`
@@ -643,6 +678,14 @@ export default class N3Writer {
     if (this._formulaStatements === null)
       this._formulaStatements = [];
     this._prefixesFixed = true;
+    // Blank nodes in statements written before formulas were in use are unknown
+    if (!this._blankScopes) {
+      this._blankScopes = new Map();
+      this._blankScopesIncomplete = this._wroteStatements;
+    }
+    const scope = {};
+    for (const quad of quads)
+      this._addBlankScopes([quad.subject, quad.predicate, quad.object], scope);
     const statements = this._encodeStatements(quads);
     return new SerializedFormula(statements.length ? `{ ${statements.join('. ')} }` : '{}');
   }
@@ -724,9 +767,14 @@ export default class N3Writer {
         this._write(`${this._encodeStatements(formulaStatements).join('.\n')}.\n`);
       }
       catch (error) {
-        // Disallow further writing, and report the same error on later ends
+        // Disallow further writing, report the same error on later ends,
+        // and close the output stream unless it should stay open
         this._write = this._blockedWrite;
         this._endError = error;
+        if (this._endStream) {
+          try { this._outputStream.end(); }
+          catch (endError) { /* error closing stream */ }
+        }
         return done && done(error);
       }
     }

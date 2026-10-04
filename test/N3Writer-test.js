@@ -263,6 +263,52 @@ describe('Writer', () => {
       writer.end();
     });
 
+    it('should refuse a blank node shared by a formula and its surroundings', async () => {
+      const quads = new Parser({ format: 'N3' }).parse('@forSome <urn:x>. <urn:x> <urn:p> { <urn:x> <urn:q> <urn:o> }.');
+      const { formulas, statements } = splitFormulas(quads);
+      const writer = new Writer({ format: 'N3', formulas });
+      writer.addQuads(statements);
+      await expect(end(writer)).rejects.toThrow(/^Cannot write blank node _:\S+ both inside and outside a formula$/);
+    });
+
+    it('should refuse a blank node in a formula created by formula() and outside it', () => {
+      const [p, b, c] = [new NamedNode('urn:p'), new BlankNode('b'), new BlankNode('c')];
+      const writer = new Writer({ format: 'N3' });
+      writer.formula([new Quad(b, p, new Quad(c, p, p))]);
+      let error;
+      writer.addQuad(c, p, p, new DefaultGraph(), e => { error = e; });
+      expect(error).toEqual(new Error('Cannot write blank node _:c both inside and outside a formula'));
+      expect(() => writer.addQuad(p, p, writer.formula([new Quad(b, p, p)])))
+        .toThrow('Cannot write blank node _:b both inside and outside a formula');
+      const f = writer.formula([new Quad(new BlankNode('d'), p, p)]);
+      expect(() => writer.addQuad(new BlankNode('d'), p, f)).toThrow('Cannot write blank node _:d both inside and outside a formula');
+    });
+
+    it('should refuse blank nodes in formulas created after statements without formulas', async () => {
+      const p = new NamedNode('urn:p'), writer = new Writer({ format: 'N3' });
+      writer.addQuad(new BlankNode('b'), p, p);
+      expect(() => writer.formula([new Quad(new BlankNode('c'), p, p)]))
+        .toThrow('Cannot write blank node _:c in a formula created after statements without formulas');
+      writer.addQuad(new BlankNode('b'), p, writer.formula([new Quad(p, p, p)]));
+      expect(await end(writer)).toBe('_:b <urn:p> <urn:p>.\n_:b <urn:p> { <urn:p> <urn:p> <urn:p> }.\n');
+    });
+
+    it('should end the output stream after a failed end, unless asked not to', async () => {
+      const p = new NamedNode('urn:p');
+      for (const end of [undefined, false]) {
+        const outputStream = { write: (chunk, encoding, callback) => callback && callback(), end: jest.fn() };
+        const writer = new Writer(outputStream, { format: 'N3', end }), f = writer.formula([new Quad(p, p, p)]);
+        writer.addQuad(f, p, new Quad(p, p, f));
+        const error = await new Promise(resolve => writer.end(resolve));
+        expect(error).toBeInstanceOf(Error);
+        expect(outputStream.end).toHaveBeenCalledTimes(end === false ? 0 : 1);
+      }
+      const throwing = { write: (chunk, encoding, callback) => callback && callback(), end: () => { throw new Error('closed'); } };
+      const writer = new Writer(throwing, { format: 'N3' }), f = writer.formula([new Quad(p, p, p)]);
+      writer.addQuad(f, p, new Quad(p, p, f));
+      expect(await new Promise(resolve => writer.end(resolve))).toBeInstanceOf(Error);
+    });
+
     it('should refuse the lists option together with formulas', () => {
       const message = 'Cannot write formulas with the lists option; write lists as rdf:first and rdf:rest statements instead';
       expect(() => new Writer({ format: 'N3', formulas: {}, lists: {} })).toThrow(message);
