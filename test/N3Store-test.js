@@ -4427,7 +4427,7 @@ describe('Set operations between stores sharing an EntityIndex', () => {
     return DataFactory.quad(ex(s), ex(p), ex(o), g ? ex(g) : DataFactory.defaultGraph());
   }
   function ids(quads) {
-    return quads.map(termToId).sort();
+    return quads.map(quad => termToId(quad)).sort();
   }
   let entityIndex, a, b;
   beforeEach(() => {
