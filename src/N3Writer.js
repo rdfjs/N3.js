@@ -281,6 +281,12 @@ export default class N3Writer {
     return formulas;
   }
 
+  // ### `_refuseFormulas` rejects formulas inside nodes created by `blank` or `list`
+  _refuseFormulas(terms) {
+    if (this._findFormulas(terms).length)
+      throw new Error('Cannot use formulas inside nodes created by blank() or list()');
+  }
+
   // ### `_checkFormulas` rejects formulas created by `formula` that would be written more than once,
   // since each copy would denote a different formula
   _checkFormulas(terms) {
@@ -572,6 +578,13 @@ export default class N3Writer {
     // Blank node passed as blank({ predicate: predicate, object: object })
     else if (!('length' in predicate))
       children = [predicate];
+    // Formulas inside pretty-printed nodes could not be written once
+    if (this._formulas || this._formulaStatements !== null) {
+      const terms = [];
+      for (const { predicate, object } of children)
+        terms.push(predicate, object);
+      this._refuseFormulas(terms);
+    }
 
     switch (length = children.length) {
     // Generate an empty blank node
@@ -607,6 +620,9 @@ export default class N3Writer {
   // ### `list` creates a list node with the given content
   list(elements) {
     const length = elements && elements.length || 0, contents = new Array(length);
+    // Formulas inside pretty-printed nodes could not be written once
+    if (length && (this._formulas || this._formulaStatements !== null))
+      this._refuseFormulas(elements);
     for (let i = 0; i < length; i++)
       contents[i] = this._encodeObject(elements[i]);
     return new SerializedTerm(`(${contents.join(' ')})`);
@@ -694,6 +710,9 @@ export default class N3Writer {
 
   // ### `end` signals the end of the output stream
   end(done) {
+    // Report the error of an earlier end
+    if (this._endError)
+      return done && done(this._endError);
     // Finish a possible pending quad
     this._endStatement();
     // Write the statements with formulas, which were held back
@@ -705,6 +724,9 @@ export default class N3Writer {
         this._write(`${this._encodeStatements(formulaStatements).join('.\n')}.\n`);
       }
       catch (error) {
+        // Disallow further writing, and report the same error on later ends
+        this._write = this._blockedWrite;
+        this._endError = error;
         return done && done(error);
       }
     }

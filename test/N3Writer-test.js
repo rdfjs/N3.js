@@ -238,6 +238,31 @@ describe('Writer', () => {
       expect(error).toEqual(new Error('Cannot write because the writer has been closed.'));
     });
 
+    it('should refuse formulas inside nodes created by blank() or list()', () => {
+      const p = new NamedNode('urn:p'), message = 'Cannot use formulas inside nodes created by blank() or list()';
+      const writer = new Writer({ format: 'N3' }), f = writer.formula([new Quad(p, p, p)]);
+      expect(() => writer.list([f, f])).toThrow(message);
+      expect(() => writer.blank(p, f)).toThrow(message);
+      expect(() => writer.blank([{ predicate: p, object: p }, { predicate: p, object: new Quad(p, p, f) }])).toThrow(message);
+      const labelled = new Writer({ format: 'N3', formulas: { g: [] } });
+      expect(() => labelled.list([new BlankNode('g')])).toThrow(message);
+      expect(writer.list([p]).id).toBe('(<urn:p>)');
+      expect(writer.blank(p, p).id).toBe('[ <urn:p> <urn:p> ]');
+      expect(new Writer().list().id).toBe('()');
+    });
+
+    it('should stay closed after a failed end', async () => {
+      const p = new NamedNode('urn:p'), writer = new Writer({ format: 'N3' }), f = writer.formula([new Quad(p, p, p)]);
+      writer.addQuad(f, p, new Quad(p, p, f));
+      const message = 'Cannot write a formula created by formula() more than once; use the formulas option to share it';
+      await expect(end(writer)).rejects.toThrow(message);
+      let error;
+      writer.addQuad(p, p, p, new DefaultGraph(), e => { error = e; });
+      expect(error).toEqual(new Error('Cannot write because the writer has been closed.'));
+      await expect(end(writer)).rejects.toThrow(message);
+      writer.end();
+    });
+
     it('should refuse the lists option together with formulas', () => {
       const message = 'Cannot write formulas with the lists option; write lists as rdf:first and rdf:rest statements instead';
       expect(() => new Writer({ format: 'N3', formulas: {}, lists: {} })).toThrow(message);
