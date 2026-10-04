@@ -392,6 +392,18 @@ describe('Writer', () => {
     );
 
     it(
+      'should keep IRIs that look like prefixed names with any valid local name as prefixed names',
+      shouldSerialize({ prefixes: { a: 'http://a.org/' } },
+                      ['a:é', 'a:b:c', 'a:b%20c'],
+                      ['a:b..c', 'a:-b', 'a:%2'],
+                      ['a:b\u00B7c', 'a:%41.b', 'a:b.-'],
+                      '@prefix a: <http://a.org/>.\n\n' +
+                      'a:é a:b:c a:b%20c.\n' +
+                      'a:b..c <a:-b> <a:%2>.\n' +
+                      'a:b\u00B7c a:%41.b a:b.-.\n'),
+    );
+
+    it(
       'should not repeat the same subjects',
       shouldSerialize(['abc', 'def', 'ghi'],
                       ['abc', 'mno', 'pqr'],
