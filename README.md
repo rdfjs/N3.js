@@ -351,10 +351,9 @@ const writer = new N3.Writer({ version: '1.2' });
 ```
 
 Packages that add their own syntax can extend `N3.Writer`.
-A subclass can call `this._endStatement()` to finish the pending statement (and close an open graph block),
-then `this._write(text, done)` to write its own text;
-`this._lineMode` tells whether the output is N-Triples or N-Quads.
-These protected members are kept stable for subclasses.
+`this._endStatement()` finishes the pending statement (and closes an open graph block),
+`this._write(text, done)` writes text to the output,
+and `this._lineMode` tells whether the output is N-Triples or N-Quads.
 
 ```JavaScript
 class GroupWriter extends N3.Writer {

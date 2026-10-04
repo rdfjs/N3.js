@@ -104,13 +104,11 @@ export default class N3Writer {
   }
 
   // ### `_write` writes the argument to the output stream
-  // (protected: subclasses may use it to write their own syntax)
   _write(string, callback) {
     this._outputStream.write(string, 'utf8', callback);
   }
 
   // ### `_endStatement` finishes a pending statement and closes an open graph block
-  // (protected: subclasses may call it before writing their own directives)
   _endStatement() {
     if (this._subject !== null) {
       this._write(this._inDefaultGraph ? '.\n' : '\n}\n');
