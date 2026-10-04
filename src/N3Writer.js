@@ -24,6 +24,9 @@ const escape    = /["\\\t\n\r\b\f\u0000-\u0019\ud800-\udbff]/,
       '\n': '\\n', '\r': '\\r', '\b': '\\b', '\f': '\\f',
     };
 
+// Characters that a version label cannot contain
+const invalidVersionLabel = /["\\\u0000-\u001f\u007f]|[\ud800-\udbff](?![\udc00-\udfff])|(?:^|[^\ud800-\udbff])[\udc00-\udfff]/;
+
 // A local name (PN_LOCAL) as written in a prefixed name, without backslash escapes,
 // so that it denotes the same characters as the IRI it is taken from.
 // Characters outside the Basic Multilingual Plane are escaped before matching, so they never occur.
@@ -70,12 +73,19 @@ export default class N3Writer {
       this._endStream = options.end === undefined ? true : !!options.end;
     }
 
+    // A version label is written as-is, so it cannot contain characters that need escaping,
+    // nor unpaired surrogates (which cannot be encoded)
+    if (options.version && invalidVersionLabel.test(options.version))
+      throw new Error(`Invalid version label: ${JSON.stringify(options.version)}`);
+
     // Initialize writer, depending on the format
     this._subject = null;
     if (!(/triple|quad/i).test(options.format)) {
       this._lineMode = false;
       this._escape = escape, this._escapeAll = escapeAll, this._characterReplacer = characterReplacer;
       this._graph = DEFAULTGRAPH;
+      if (options.version)
+        this._write(`@version "${options.version}".\n`);
       this._prefixIRIs = Object.create(null);
       // Escaped prefix IRIs and names for the prefix matcher, computed once per prefix
       this._prefixPatterns = Object.create(null);
@@ -92,6 +102,8 @@ export default class N3Writer {
       // N-Triples and N-Quads are written in their canonical form
       this._escape = canonicalEscape, this._escapeAll = canonicalEscapeAll;
       this._characterReplacer = canonicalCharacterReplacer;
+      if (options.version)
+        this._write(`VERSION "${options.version}"\n`);
     }
   }
 
@@ -105,6 +117,15 @@ export default class N3Writer {
   // ### `_write` writes the argument to the output stream
   _write(string, callback) {
     this._outputStream.write(string, 'utf8', callback);
+  }
+
+  // ### `_endStatement` finishes a pending statement and closes an open graph block
+  _endStatement() {
+    if (this._subject !== null) {
+      this._write(this._inDefaultGraph ? '.\n' : '\n}\n');
+      this._subject = null;
+      this._graph = DEFAULTGRAPH;
+    }
   }
 
   // ### `_writeQuad` writes the quad to the output stream
@@ -340,10 +361,7 @@ export default class N3Writer {
         iri = iri.value;
       hasPrefixes = true;
       // Finish a possible pending quad
-      if (this._subject !== null) {
-        this._write(this._inDefaultGraph ? '.\n' : '\n}\n');
-        this._subject = null, this._graph = '';
-      }
+      this._endStatement();
       // Store and write the prefix
       this._prefixIRIs[iri] = (prefix += ':');
       this._prefixPatterns[iri] = [escapeRegex(iri), escapeRegex(prefix)];
@@ -426,10 +444,7 @@ export default class N3Writer {
   // ### `end` signals the end of the output stream
   end(done) {
     // Finish a possible pending quad
-    if (this._subject !== null) {
-      this._write(this._inDefaultGraph ? '.\n' : '\n}\n');
-      this._subject = null;
-    }
+    this._endStatement();
     // Disallow further writing
     this._write = this._blockedWrite;
 

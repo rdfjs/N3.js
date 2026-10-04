@@ -101,6 +101,8 @@ export default class N3Lexer {
         if (!(key in lineModeRegExps) && this[key] instanceof RegExp)
           this[key] = invalidRegExp;
       }
+      // The only keyword in N-Triples and N-Quads is VERSION, which is case-sensitive
+      this._keyword = /VERSION(?=[\s#<])/y;
     }
     // When not in line mode, enable N3 functionality by default
     else {

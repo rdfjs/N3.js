@@ -356,6 +356,30 @@ A `baseIRI` argument makes the writer abbreviate IRIs relative to that base in T
 const writer = new N3.Writer({ baseIRI: 'http://example.org/', writeBase: true });
 ```
 
+A `version` argument writes an RDF 1.2 version directive at the top of the document,
+as `@version "1.2".` in Turtle/TriG or `VERSION "1.2"` in N-Triples/N-Quads.
+The constructor throws for a label that contains quotes, backslashes, control characters, or unpaired surrogates.
+
+```JavaScript
+const writer = new N3.Writer({ version: '1.2' });
+```
+
+Packages that add their own syntax can extend `N3.Writer`.
+`this._endStatement()` finishes the pending statement (and closes an open graph block),
+`this._write(text, done)` writes text to the output,
+and `this._lineMode` tells whether the output is N-Triples or N-Quads.
+
+```JavaScript
+class GroupWriter extends N3.Writer {
+  addGroup(quads, done) {
+    for (const quad of quads)
+      this.addQuad(quad);
+    this._endStatement();
+    this._write(this._lineMode ? 'GROUP\n' : '@group .\n', done);
+  }
+}
+```
+
 ### From quads to an RDF stream
 
 `N3.Writer` can also write quads to a Node.js stream through `addQuad`.

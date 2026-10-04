@@ -2756,6 +2756,32 @@ describe('Parser', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N-Triples' }); }
 
     it(
+      'should parse a version directive',
+      shouldParse(parser, 'VERSION "1.2"\n_:a <http://ex.org/b> "c".',
+                          ['_:b0_a', 'http://ex.org/b', '"c"']),
+    );
+
+    it(
+      'should not parse a lowercase version directive',
+      shouldNotParse(parser, 'version "1.2"', 'Unexpected "version" on line 1.'),
+    );
+
+    it(
+      'should not parse a mixed-case version directive',
+      shouldNotParse(parser, 'Version "1.2"', 'Unexpected "Version" on line 1.'),
+    );
+
+    it(
+      'should not parse an @version directive',
+      shouldNotParse(parser, '@version "1.2".', 'Unexpected "@version" on line 1.'),
+    );
+
+    it(
+      'should not parse a SPARQL-style prefix declaration',
+      shouldNotParse(parser, 'PREFIX ex: <http://ex.org/>', 'Unexpected "PREFIX" on line 1.'),
+    );
+
+    it(
       'should parse a single triple',
       shouldParse(parser, '_:a <http://ex.org/b> "c".',
                           ['_:b0_a', 'http://ex.org/b', '"c"']),
@@ -2872,6 +2898,32 @@ describe('Parser', () => {
 
   describe('A Parser instance for the N-Quads format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N-Quads' }); }
+
+    it(
+      'should parse a version directive',
+      shouldParse(parser, 'VERSION "1.2"\n_:a <http://ex.org/b> "c".',
+                          ['_:b0_a', 'http://ex.org/b', '"c"']),
+    );
+
+    it(
+      'should not parse a lowercase version directive',
+      shouldNotParse(parser, 'version "1.2"', 'Unexpected "version" on line 1.'),
+    );
+
+    it(
+      'should not parse a mixed-case version directive',
+      shouldNotParse(parser, 'Version "1.2"', 'Unexpected "Version" on line 1.'),
+    );
+
+    it(
+      'should not parse an @version directive',
+      shouldNotParse(parser, '@version "1.2".', 'Unexpected "@version" on line 1.'),
+    );
+
+    it(
+      'should not parse a SPARQL-style prefix declaration',
+      shouldNotParse(parser, 'PREFIX ex: <http://ex.org/>', 'Unexpected "PREFIX" on line 1.'),
+    );
 
     it(
       'should parse a single triple',
