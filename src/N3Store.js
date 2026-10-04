@@ -1123,7 +1123,7 @@ export default class N3Store {
       this.addQuads(quads);
     // Index merging bypasses observer notifications
     else if (this._observers === null && quads instanceof N3Store && quads._entityIndex === this._entityIndex) {
-      if (quads._count !== 0) {
+      if (quads.size !== 0) {
         // Each new quad adds one leaf to each of the three indexes
         mergedLeaves = 0;
         this._graphs = merge(this._graphs, quads._graphs);
