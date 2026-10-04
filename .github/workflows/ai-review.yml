@@ -1,0 +1,130 @@
+name: GPT review
+
+# Reviews pull requests with OpenAI's GPT-6.1 Sol through openai/codex-action and
+# posts the findings as an inline review. Off until the GPT_REVIEW_ENABLED
+# repository variable is "true" and the OPENAI_API_KEY Actions secret is set.
+#
+# pull_request_target lets reviews run on pull requests from forks with the secret
+# available. The pull request's code is checked out for Codex to read, but never
+# built or run by this workflow; Codex runs in a read-only sandbox without sudo, and
+# codex-action only runs for actors with write access to the repository.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main, next-major]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gpt-review-${{ github.event.pull_request.number || inputs.pr }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: >-
+      github.repository == 'rdfjs/N3.js' &&
+      vars.GPT_REVIEW_ENABLED == 'true' &&
+      (github.event_name == 'workflow_dispatch' ||
+       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association))
+    runs-on: ubuntu-latest
+    outputs:
+      result: ${{ steps.codex.outputs.final-message }}
+      pr: ${{ steps.pr.outputs.number }}
+      head: ${{ steps.pr.outputs.head }}
+    steps:
+      - name: Resolve pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number || inputs.pr }}
+        run: |
+          if ! [[ "$PR" =~ ^[0-9]+$ ]]; then echo "Bad PR number"; exit 1; fi
+          gh api "repos/$REPO/pulls/$PR" --jq '"number=\(.number)\nhead=\(.head.sha)\nbase=\(.base.sha)"' >> "$GITHUB_OUTPUT"
+      # Trusted copies of the prompt and schema, from the base branch.
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github/ai-review
+          path: trusted
+          persist-credentials: false
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.pr.outputs.head }}
+          path: pr
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Fetch base
+        working-directory: pr
+        run: git fetch --no-tags origin "${{ steps.pr.outputs.base }}"
+      - name: Build prompt
+        run: |
+          cp trusted/.github/ai-review/prompt.md "$RUNNER_TEMP/prompt.md"
+          printf '\nBASE_SHA=%s\nHEAD_SHA=%s\n' \
+            "$(git -C pr merge-base "${{ steps.pr.outputs.base }}" "${{ steps.pr.outputs.head }}")" \
+            "${{ steps.pr.outputs.head }}" >> "$RUNNER_TEMP/prompt.md"
+      - name: Review with GPT-6.1 Sol
+        id: codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          model: gpt-6.1-sol
+          effort: high
+          working-directory: pr
+          sandbox: read-only
+          prompt-file: ${{ runner.temp }}/prompt.md
+          output-schema-file: trusted/.github/ai-review/schema.json
+
+  post:
+    needs: review
+    if: needs.review.outputs.result != ''
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Post review
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ needs.review.outputs.pr }}
+          HEAD_SHA: ${{ needs.review.outputs.head }}
+          RESULT: ${{ needs.review.outputs.result }}
+        run: |
+          # Skip if the pull request moved on; the newer push gets its own review.
+          if [ "$(gh api "repos/$REPO/pulls/$PR" --jq .head.sha)" != "$HEAD_SHA" ]; then
+            echo "PR $PR moved past $HEAD_SHA; not posting"
+            exit 0
+          fi
+          # Model output is untrusted: strip @ so it cannot mention anyone.
+          printf '%s' "$RESULT" | jq 'walk(if type == "string" then gsub("@"; "@​") else . end)' > result.json
+          jq --arg sha "$HEAD_SHA" '{
+            commit_id: $sha,
+            event: "COMMENT",
+            body: ("**GPT-6.1 Sol review** for " + $sha[0:7] + "\n\n" + .summary
+              + (if (.findings | length) == 0 then "\n\nNo findings." else "" end)),
+            comments: [.findings[] | {path, line, side: "RIGHT",
+              body: ("**" + .severity + "**: " + .body)}]
+          }' result.json > review.json
+          if ! gh api --method POST "repos/$REPO/pulls/$PR/reviews" --input review.json > /dev/null; then
+            # A finding outside the diff makes GitHub reject the whole review.
+            # Post the rest inline and list the others in the review body.
+            echo "Inline review rejected; retrying one comment at a time"
+            jq '.comments = []' review.json > base.json
+            extra=""
+            while read -r c; do
+              if ! jq --argjson c "$c" '.comments = [$c] | .body = "GPT-6.1 Sol finding"' base.json \
+                  | gh api --method POST "repos/$REPO/pulls/$PR/reviews" --input - > /dev/null 2>&1; then
+                extra+=$'\n'"- $(jq -r '"`\(.path):\(.line)` \(.body)"' <<< "$c")"
+              fi
+            done < <(jq -c '.comments[]' review.json)
+            if [ -n "$extra" ]; then
+              jq --arg extra "$extra" '.body += "\n\nFindings outside the diff:" + $extra' base.json > base2.json
+              mv base2.json base.json
+            fi
+            gh api --method POST "repos/$REPO/pulls/$PR/reviews" --input base.json > /dev/null
+          fi
