@@ -79,7 +79,11 @@ console.log(myQuad.object.language);       // en
 ```
 
 When no language or datatype is supplied, `literal` automatically assigns XSD datatypes
-to JavaScript booleans, numbers, and valid `Date` objects. Dates are converted to UTC
+to JavaScript booleans, numbers, BigInts, and valid `Date` objects.
+Integer-valued numbers below 1e21 and all BigInts become `xsd:integer`,
+so use a BigInt when an integer must stay exact beyond `Number.MAX_SAFE_INTEGER`;
+other numbers become `xsd:double`.
+Dates are converted to UTC
 using `Date.prototype.toISOString()` and receive the `xsd:dateTime` datatype:
 
 ```JavaScript
@@ -186,13 +190,15 @@ This is done by passing a `baseIRI` argument upon creation:
 const parser = new N3.Parser({ baseIRI: 'http://example.org/' });
 ```
 
-In N3 mode, `implicitEmptyPrefix` can bind an undeclared empty prefix to the
-document IRI with a `#` fragment:
+In N3 mode, an undeclared empty prefix is bound to the
+document IRI with a `#` fragment, so `:term` parses as `<http://example.org/document#term>`
+(see [w3c-cg/N3#235](https://github.com/w3c-cg/N3/issues/235)).
+Setting `implicitEmptyPrefix` to `false` requires an explicit `@prefix :` declaration instead:
 ```JavaScript
 const parser = new N3.Parser({
   format: 'text/n3',
   baseIRI: 'http://example.org/document',
-  implicitEmptyPrefix: true,
+  implicitEmptyPrefix: false,
 });
 ```
 
@@ -211,13 +217,12 @@ The parser can output a backwards chaining rule such as `_:q <= _:p.` in two way
 const parser = new N3.Parser({ isImpliedBy: true });
 ```
 
-By default, an empty formula `{}` is kept as a blank node graph term.
-The [N3 spec tests](https://w3c-cg.github.io/N3/tests/)
-(and the direction discussed in [w3c-cg/N3#185](https://github.com/w3c-cg/N3/issues/185))
-read it as the boolean literal `"true"^^xsd:boolean` instead;
-the `emptyFormulaAsTrue` flag enables that behavior:
+An empty formula `{}` is read as the boolean literal `"true"^^xsd:boolean`,
+following the [N3 spec tests](https://w3c-cg.github.io/N3/tests/)
+(and the direction discussed in [w3c-cg/N3#185](https://github.com/w3c-cg/N3/issues/185)).
+Setting the `emptyFormulaAsTrue` flag to `false` keeps it as a blank node graph term instead:
 ```JavaScript
-const parser = new N3.Parser({ format: 'text/n3', emptyFormulaAsTrue: true });
+const parser = new N3.Parser({ format: 'text/n3', emptyFormulaAsTrue: false });
 ```
 
 In N3 documents, the parser by default rescopes blank node labels

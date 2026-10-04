@@ -439,7 +439,7 @@ function literal(value, languageOrDataType) {
     return new Literal(`"${value}"@${languageOrDataType.language.toLowerCase()}${languageOrDataType.direction ? `--${languageOrDataType.direction.toLowerCase()}` : ''}`);
   }
 
-  // Automatically determine datatype for booleans, numbers, and dates
+  // Automatically determine datatype for booleans, numbers, BigInts, and dates
   let datatype = languageOrDataType ? languageOrDataType.value : '';
   if (datatype === '') {
     // Convert a boolean
@@ -458,6 +458,9 @@ function literal(value, languageOrDataType) {
           value = value > 0 ? 'INF' : '-INF';
       }
     }
+    // Convert a BigInt, whose decimal string is always a valid xsd:integer lexical
+    else if (typeof value === 'bigint')
+      datatype = xsd.integer;
     // Convert a valid date
     else if (value instanceof Date && !Number.isNaN(value.getTime())) {
       datatype = xsd.dateTime;
@@ -496,7 +499,8 @@ export function fromTerm(term) {
   case 'BlankNode':    return blankNode(term.value);
   case 'Variable':     return variable(term.value);
   case 'DefaultGraph': return DEFAULTGRAPH;
-  case 'Literal':      return literal(term.value, term.language || term.datatype);
+  case 'Literal':      return literal(term.value, !term.language ? term.datatype :
+    term.direction ? { language: term.language, direction: term.direction } : term.language);
   case 'Quad':         return fromQuad(term);
   default:             throw new Error(`Unexpected termType: ${term.termType}`);
   }

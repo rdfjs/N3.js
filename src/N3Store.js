@@ -30,8 +30,10 @@ function merge(target, source, depth = 4) {
       size++;
       target[key] = depth === 0 ? null : merge(Object.create(null), source[key], depth - 1);
     }
+    // Merge into the existing object in place,
+    // as graph objects are frozen and cannot be reassigned
     else if (depth !== 0)
-      target[key] = merge(target[key], source[key], depth - 1);
+      merge(target[key], source[key], depth - 1);
   }
   // Depth 2 is the level of the `subjects`, `predicates`, and `objects` indexes.
   if (depth <= 2)
@@ -1010,7 +1012,7 @@ export default class N3Store {
         if (!first)
           malformed = onError(current, 'has no list head');
         else
-          items.unshift(first.object);
+          items.push(first.object);
         current = parent && parent.subject;
       }
 
@@ -1018,12 +1020,16 @@ export default class N3Store {
       if (malformed)
         remove = false;
       else {
+        // Items were collected from the tail to the head
+        items.reverse();
         // Store the list under the value of its head
         if (head)
           lists[head[headPos].value] = items;
         // Leave lists with extra arcs fully intact; otherwise queue this list once.
-        if (remove && !extraArcs)
-          toRemove.push(...listQuads);
+        if (remove && !extraArcs) {
+          for (let i = 0; i < listQuads.length; i++)
+            toRemove.push(listQuads[i]);
+        }
       }
     });
 
