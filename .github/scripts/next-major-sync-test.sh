@@ -12,7 +12,7 @@ git init --quiet
 git config user.name test
 git config user.email test@example.org
 git config commit.gpgSign false
-eval "$(sed -n '/^commit_record()/,/^}/p;/^same_change()/,/^}/p;/^same_commits()/,/^}/p;/^compare_commits()/,/^}/p' "$script")"
+eval "$(sed -n '/^commit_record()/,/^}/p;/^files_of()/,/^}/p;/^same_change()/,/^}/p;/^compare_change()/,/^}/p;/^same_commits()/,/^}/p;/^compare_commits()/,/^}/p' "$script")"
 
 failures=0
 lines() { printf '%s\n' "$@"; }
@@ -97,5 +97,32 @@ expect refused 'a whitespace change' same_commits "$base..$moved" "$main..HEAD"
 
 # A range git cannot list is refused, even when the other one cannot be listed either
 expect refused 'ranges that cannot be listed' same_commits "$base..no-such-commit" "$main..no-such-commit"
+
+# Two identical blocks, and main changes a context line of the block next-major changed: the
+# change must stay in its own block, even where its patch would also apply to the other one
+git checkout --quiet --detach "$base"
+commit 'chore: blocks' h "$(lines c1 c2 c3 A c4 c5 c6 c1 c2 c3 A c4 c5 c6)"
+blocks=$(git rev-parse HEAD)
+commit 'feat!: A to B in the first block' h "$(lines c1 c2 c3 B c4 c5 c6 c1 c2 c3 A c4 c5 c6)"
+first=$(git rev-parse HEAD)
+git checkout --quiet --detach "$blocks"
+commit 'fix: main changes the first block' h "$(lines c1 C2 c3 A c4 c5 c6 c1 c2 c3 A c4 c5 c6)"
+blocks_main=$(git rev-parse HEAD)
+recommit "$first" h "$(lines c1 C2 c3 A c4 c5 c6 c1 c2 c3 B c4 c5 c6)"
+expect refused 'the change applied to the other identical block' same_commits "$blocks..$first" "$blocks_main..HEAD"
+git checkout --quiet --detach "$blocks_main"
+recommit "$first" h "$(lines c1 C2 c3 B c4 c5 c6 c1 c2 c3 A c4 c5 c6)"
+expect accepted 'the change kept in its own block' same_commits "$blocks..$first" "$blocks_main..HEAD"
+
+# Main changes a line next to next-major's change: the rebase merges both, so the check must too
+git checkout --quiet --detach "$base"
+commit 'chore: letters' k "$(lines A B C D E F G H)"
+letters=$(git rev-parse HEAD)
+commit 'feat!: d' k "$(lines A B C d E F G H)"
+lower=$(git rev-parse HEAD)
+git checkout --quiet --detach "$letters"
+commit 'fix: b' k "$(lines A b C D E F G H)"
+git rebase --quiet HEAD "$lower" 2> /dev/null || git cherry-pick --quiet "$lower" > /dev/null
+expect accepted 'a clean rebase next to a change on main' same_commits "$letters..$lower" "HEAD~1..HEAD"
 
 exit "$failures"

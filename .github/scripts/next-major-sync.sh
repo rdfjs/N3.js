@@ -43,23 +43,65 @@ commit_record() {
     print join("\n", grep { !/^(?:tree|parent|committer|gpgsig|gpgsig-sha256) / } split /\n(?! )/, $head), "\n\n", $body'
 }
 
-# Succeeds if commit b is commit a's change applied to b's parent: a's patch, with full context and
-# without the given paths (the hand-resolved ones), applies to b's parent, and the result is b's
-# tree outside those paths. git apply refuses a patch unless every removed and context line is
-# there, so commit by commit from main, b can differ from a only in the resolved paths. Unlike a
-# comparison of diff texts, this does not depend on how git aligns a diff.
+# Loads a commit's files into the associative array named by $1, as path to "<mode> <object>",
+# through the file $3; fails if git does
+files_of() {
+  local -n files=$1
+  local line meta
+  git ls-tree -r -z --full-tree "$2" > "$3" || return 1
+  files=()
+  while IFS= read -r -d '' line; do
+    meta=${line%%$'\t'*}
+    files[${line#*$'\t'}]="${meta%% *} ${meta##* }"
+  done < "$3"
+}
+
+# Succeeds if commit b is commit a's change carried onto b's parent, file by file, with a's
+# parent as the base: every path a changes merges cleanly with git merge-file (line by line, no
+# renames, no attributes) into exactly b's version, and b changes nothing else. Only the given
+# paths (the hand-resolved ones) are skipped. The three-way merge, not the diff text or patch
+# context, decides where a's change lands, so commit by commit from main the rebased history can
+# differ only in the resolved paths.
 same_change() {
-  local a=$1 b=$2 index tree status
-  shift 2
-  index=$(mktemp)
-  GIT_INDEX_FILE=$index git read-tree "$b^" &&
-    git diff-tree -p --binary --full-index --no-renames "$a^" "$a" -- . "${@/#/:(exclude,literal)}" > "$index.patch" &&
-    { [ ! -s "$index.patch" ] || GIT_INDEX_FILE=$index git -c apply.whitespace=nowarn apply --cached "$index.patch"; } &&
-    tree=$(GIT_INDEX_FILE=$index git write-tree) &&
-    git diff-tree -r --quiet --no-renames "$tree" "$b^{tree}" -- . "${@/#/:(exclude,literal)}"
+  local dir status
+  dir=$(mktemp -d)
+  compare_change "$dir" "$@"
   status=$?
-  rm -f "$index" "$index.patch"
+  rm -rf "$dir"
   return "$status"
+}
+compare_change() {
+  local dir=$1 a=$2 b=$3 path r base ours theirs want
+  local -A skip base_files theirs_files ours_files new_files changed
+  shift 3
+  for r in "$@"; do skip[$r]=1; done
+  files_of base_files "$a^" "$dir/list" && files_of theirs_files "$a" "$dir/list" &&
+    files_of ours_files "$b^" "$dir/list" && files_of new_files "$b" "$dir/list" &&
+    git diff-tree -r -z --no-renames --name-only "$a^" "$a" > "$dir/a-paths" &&
+    git diff-tree -r -z --no-renames --name-only "$b^" "$b" > "$dir/b-paths" || return 1
+  while IFS= read -r -d '' path; do
+    [ -z "${skip[$path]:-}" ] || continue
+    changed[$path]=1
+    base=${base_files[$path]:-} theirs=${theirs_files[$path]:-} ours=${ours_files[$path]:-}
+    if [ "$ours" = "$base" ]; then
+      want=$theirs
+    elif [ "$ours" = "$theirs" ]; then
+      want=$ours
+    elif [ -n "$base" ] && [ -n "$ours" ] && [ -n "$theirs" ] && [ "${base%% *}" = "${ours%% *}" ] &&
+      [ "${base%% *}" = "${theirs%% *}" ] && [ "${base%% *}" != 160000 ]; then
+      # Both sides changed the same file's content: a line-by-line merge, which must be clean
+      git cat-file blob "${base#* }" > "$dir/base" && git cat-file blob "${ours#* }" > "$dir/ours" &&
+        git cat-file blob "${theirs#* }" > "$dir/theirs" &&
+        git merge-file -p --quiet "$dir/ours" "$dir/base" "$dir/theirs" > "$dir/merged" &&
+        want="${base%% *} $(git hash-object --stdin < "$dir/merged")" || return 1
+    else
+      return 1
+    fi
+    [ "${new_files[$path]:-}" = "$want" ] || return 1
+  done < "$dir/a-paths"
+  while IFS= read -r -d '' path; do
+    [ -n "${skip[$path]:-}" ] || [ -n "${changed[$path]:-}" ] || return 1
+  done < "$dir/b-paths"
 }
 
 # Succeeds if two ranges hold the same number of commits and each pair, compared on its own, has
