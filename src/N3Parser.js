@@ -83,10 +83,11 @@ export default class N3Parser {
       this._base = baseIRI;
       this._basePath   = baseIRI.indexOf('/') < 0 ? baseIRI :
                          baseIRI.replace(/[^\/?]*(?:\?.*)?$/, '');
-      this._basePathHasDotSegments = dotSegments.test(this._basePath);
       baseIRI = baseIRI.match(/^(?:([a-z][a-z0-9+.-]*:))?(?:\/\/[^\/]*)?/i);
       this._baseRoot   = baseIRI[0];
       this._baseScheme = baseIRI[1];
+      // Check once whether resolving against the base path needs to remove dot segments
+      this._basePathHasDotSegments = dotSegments.test(this._basePath);
     }
   }
 
