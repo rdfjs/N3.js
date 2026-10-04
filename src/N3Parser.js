@@ -1652,6 +1652,9 @@ export default class N3Parser {
     // The read callback is the next function to be executed when a token arrives.
     // We start reading in the top context.
     this._readCallback = this._readBeforeTopContext;
+    // A parse that failed part-way can have left scopes open
+    this._contextStack = [];
+    this._graph = null;
     this._sparqlStyle = false;
     this._prefixes = Object.create(null);
     this._prefixes._ = this._blankNodePrefix ? this._blankNodePrefix.substr(2)

@@ -5121,6 +5121,16 @@ describe('Parser', () => {
       expect(onVersion).not.toHaveBeenCalled();
     });
 
+    it.each([
+      ['application/trig', '<g> { <s> <p> "unterminated'],
+      ['text/n3', '<s> <p> { <a> <b> ( <c> "unterminated'],
+      ['text/turtle', '<s> <p> [ <q> ( <a> "unterminated'],
+    ])('can parse again after lexing fails inside a scope in %s', (format, input) => {
+      const parser = new Parser({ format });
+      expect(() => parser.parse(input)).toThrow('Unexpected ""unterminated" on line 1.');
+      expect(parser.parse('<s> <p> <o>.')).toHaveLength(1);
+    });
+
     it('parses synchronously through a lexer that overrides tokenize', () => {
       class UppercaseLexer extends Lexer {
         tokenize(input, callback) {
