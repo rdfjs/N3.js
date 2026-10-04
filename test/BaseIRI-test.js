@@ -120,6 +120,15 @@ describe('BaseIRI', () => {
     relativizes('an IRI containing ../', 'http://example.org/foo/',
       'http://example.org/foo/bar/../baz');
 
+    relativizes('an IRI whose first segment contains a colon', 'http://example.org/foo/',
+      'http://example.org/foo/a:b', './a:b');
+
+    relativizes('an IRI whose first segment contains a colon before a slash', 'http://example.org/foo/',
+      'http://example.org/foo/ex:foo/bar', './ex:foo/bar');
+
+    relativizes('an IRI whose later segment contains a colon', 'http://example.org/foo/',
+      'http://example.org/foo/bar/a:b', 'bar/a:b');
+
     relativizes('an IRI containing // in its query string', 'http://example.org/foo/',
       'http://example.org/foo/baz?bar//baz', 'baz?bar//baz');
 
