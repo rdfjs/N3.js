@@ -491,6 +491,26 @@ describe('Writer', () => {
     );
 
     it(
+      'should escape control characters in IRIs',
+      shouldSerialize(['a\u0001b', 'b', 'c'], '<a\\u0001b> <b> <c>.\n'),
+    );
+
+    it('should write canonical escapes in N-Triples', async () => {
+      const writer = new Writer({ format: 'N-Triples' });
+      writer.addQuad(new NamedNode('a\u0001b'), new NamedNode('b'), new Literal(
+        '"\u0000\u0007\b\t\n\u000b\f\r\u000e\u001f\u007f\ufffe\uffff\u0080\ud835\udc00 \\\""'));
+      expect(await end(writer)).toBe('<a\\u0001b> <b> "\\u0000\\u0007\\b\\t\\n\\u000B\\f\\r\\u000E\\u001F' +
+        '\\u007F\\uFFFE\\uFFFF\u0080\ud835\udc00 \\\\\\"" .\n');
+    });
+
+    it('should write canonical triple terms in N-Quads', async () => {
+      const writer = new Writer({ format: 'N-Quads' });
+      writer.addQuad(new NamedNode('a'), new NamedNode('b'),
+        new Quad(new NamedNode('c'), new NamedNode('d'), new NamedNode('e')), new NamedNode('g'));
+      expect(await end(writer)).toBe('<a> <b> <<( <c> <d> <e> )>> <g> .\n');
+    });
+
+    it(
       'should not use escape sequences in blank nodes',
       shouldSerialize(['_:\ud835\udc00', '_:\ud835\udc00', '_:\ud835\udc00', '_:\ud835\udc00'],
                       '_:\ud835\udc00 {\n_:\ud835\udc00 _:\ud835\udc00 _:\ud835\udc00\n}\n'),
