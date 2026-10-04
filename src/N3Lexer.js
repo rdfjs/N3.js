@@ -645,10 +645,23 @@ export default class N3Lexer {
     return { value: '', matchLength: 0, finalLineLength: 0 };
   }
 
+  // ### `_tryTokenizeToEnd` tokenizes as far as possible, reporting failures through the callback
+  _tryTokenizeToEnd(callback, inputFinished) {
+    try {
+      this._tokenizeToEnd(callback, inputFinished);
+    }
+    catch (error) {
+      // Matching an extremely long token can exhaust the regular expression stack
+      if (!(error instanceof RangeError))
+        throw error;
+      callback(this._syntaxError(null, `Token too long on line ${this._line}.`));
+    }
+  }
+
   // ### `_syntaxError` creates a syntax error for the given issue
-  _syntaxError(issue) {
+  _syntaxError(issue, message = `Unexpected "${issue}" on line ${this._line}.`) {
     this._input = null;
-    const err = new Error(`Unexpected "${issue}" on line ${this._line}.`);
+    const err = new Error(message);
     err.context = {
       token: undefined,
       line: this._line,
@@ -691,13 +704,13 @@ export default class N3Lexer {
       if (typeof callback === 'function')
         queueMicrotask(() => {
           if (this._tokenization === tokenization)
-            this._tokenizeToEnd(callback, true);
+            this._tryTokenizeToEnd(callback, true);
         });
       // If no callback was passed, tokenize synchronously and return
       else {
         const tokens = [];
         let error;
-        this._tokenizeToEnd((e, t) => e ? (error = e) : tokens.push(t), true);
+        this._tryTokenizeToEnd((e, t) => e ? (error = e) : tokens.push(t), true);
         if (error) throw error;
         return tokens;
       }
@@ -726,14 +739,14 @@ export default class N3Lexer {
               this._input = this._readStartingBom(typeof data === 'string' ? data : data.toString());
             else
               this._input += data;
-            this._tokenizeToEnd(callback, false);
+            this._tryTokenizeToEnd(callback, false);
           }
         }
       });
       // Parses until the end
       input.on('end', () => {
         if (this._tokenization === tokenization && typeof this._input === 'string')
-          this._tokenizeToEnd(callback, true);
+          this._tryTokenizeToEnd(callback, true);
       });
       input.on('error', error => {
         if (this._tokenization === tokenization)
