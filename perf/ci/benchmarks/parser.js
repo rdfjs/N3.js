@@ -102,6 +102,7 @@ module.exports = {
   'parser: TriG': parseBench('TriG', trig),
   'parser: N3': parseBench('text/n3', n3),
   'parser: Turtle 1.2 (triple terms, reifiers)': parseBench('Turtle', turtleStar),
+  'parser: Turtle with directives registered': parseBench('Turtle', turtle, { directives: ['message'] }),
   'parser: relative IRIs against baseIRI': parseBench('Turtle', relative),
   'parser: escapes, long literals and many prefixes': parseBench('Turtle', escaped),
   'parser: blankNodePrefix': parseBench('N-Triples', ntriples, { blankNodePrefix: 'x' }),
