@@ -3460,6 +3460,31 @@ describe('Store', () => {
     });
   });
 
+  describe('A Store containing an rdf:Collection with an external reference to its second node', () => {
+    const rdfFirst = new NamedNode(namespaces.rdf.first), rdfRest = new NamedNode(namespaces.rdf.rest);
+    const nil = new NamedNode(namespaces.rdf.nil);
+    function listQuads(l1, l2) {
+      return [
+        new Quad(l1, rdfFirst, new NamedNode('a')),
+        new Quad(l1, rdfRest, l2),
+        new Quad(l2, rdfFirst, new NamedNode('b')),
+        new Quad(l2, rdfRest, nil),
+      ];
+    }
+
+    it.each([
+      ['after', true],
+      ['before', false],
+    ])('extractLists rejects it when the reference is added %s the list', (_, listFirst) => {
+      const l1 = new NamedNode('l1'), l2 = new NamedNode('l2');
+      const link = new Quad(new NamedNode('root'), new NamedNode('link'), l2);
+      const store = new Store(listFirst ? [...listQuads(l1, l2), link] : [link, ...listQuads(l1, l2)]);
+      expect(() => store.extractLists({ remove: true })).toThrow('l2 can\'t have coreferences');
+      expect(store.extractLists({ remove: true, ignoreErrors: true })).toEqual({});
+      expect(store.size).toBe(5);
+    });
+  });
+
   describe('A Store containing an rdf:Collection spread across graphs', () => {
     const member0 = new NamedNode('element1');
     const member1 = new Literal('"element2"');
@@ -4646,10 +4671,11 @@ describe('shared entity registry', () => {
       quad(namedNode('s'), namedNode('p'), namedNode('o2')),
     )).toBeUndefined();
     const registryOnlyTerm = quad(namedNode('s'), namedNode('p'), namedNode('o2'));
-    const registryOnlyId = right._entityIndex._termToNewNumericId(registryOnlyTerm);
+    expect(right._entityIndex._termToNewNumericId(registryOnlyTerm)).toBeGreaterThan(1);
+    // Identifiers owned only by another scope are not valid for this one
     expect(left._entityIndex._termToNumericId(
       quad(namedNode('s'), namedNode('p'), namedNode('o2')),
-    )).toBe(registryOnlyId);
+    )).toBeUndefined();
     const graphTerm = quad(namedNode('s'), namedNode('p'), namedNode('o'), namedNode('g'));
     const graphTermId = left._entityIndex._termToNewNumericId(graphTerm);
     expect(left._entityIndex._termToNumericId(
@@ -4660,6 +4686,19 @@ describe('shared entity registry', () => {
     )).toBeUndefined();
     expect(left.contains(right)).toBe(true);
     expect(left.intersection(right).equals(left)).toBe(true);
+  });
+
+  it('should not cache view pattern identifiers owned only by another store', () => {
+    const term = namedNode('http://example.org/only-in-other');
+    const other = new Store([quad(term, namedNode('p'), namedNode('o'))]);
+    const parent = new Store();
+    const view = parent.match(term, null, null, null, { matchSemantics: 'forwarded' });
+    expect(view.size).toBe(0);
+    parent.addQuad(namedNode('unrelated'), namedNode('p'), namedNode('o'));
+    expect(view._subjectId).toBeUndefined();
+    parent.addQuad(term, namedNode('p'), namedNode('o2'));
+    expect(view.size).toBe(1);
+    expect(other.size).toBe(1);
   });
 
   it('should preserve set-operation correctness across compatibility entity indices', () => {

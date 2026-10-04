@@ -56,14 +56,23 @@ function add(shared, cardinality) {
   return duration;
 }
 
+function isolatedIntersection(left, right) {
+  const result = new N3.Store([], { entityIndex: left._entityIndex });
+  for (const quad of left) {
+    if (right.has(quad))
+      result.add(quad);
+  }
+  return result;
+}
+
 function intersection(shared, rightSize = size) {
   const [leftOptions, rightOptions] = createOptions(shared);
   const left = fill(new N3.Store([], leftOptions), 'high');
   const right = fill(new N3.Store([], rightOptions), 'high', size / 2, rightSize);
   collect();
   const start = performance.now();
-  // Force the pre-registry per-quad path for the benchmark-only isolated indices.
-  const result = shared ? left.intersection(right) : left.intersection({ has: right.has.bind(right) });
+  // Isolated indices use the pre-registry per-quad path, enumerating into the left legacy index.
+  const result = shared ? left.intersection(right) : isolatedIntersection(left, right);
   const duration = performance.now() - start;
   const expectedSize = Math.min(size / 2, rightSize);
   if (result.size !== expectedSize)

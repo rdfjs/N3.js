@@ -240,12 +240,10 @@ class N3EntityScope {
 
       if (!(s && p && o && (isDefaultGraph(term.graph) || (g = this._termToNumericId(term.graph)))))
         return undefined;
-      const value = g ? `.${s}.${p}.${o}.${g}` : `.${s}.${p}.${o}`;
-      return this._ids[value] || this._registry._lookup(value);
+      return this._ids[g ? `.${s}.${p}.${o}.${g}` : `.${s}.${p}.${o}`];
     }
-
-    const value = termToId(term);
-    return this._ids[value] || this._registry._lookup(value);
+    // Only owned identifiers stay valid for as long as this scope lives
+    return this._ids[termToId(term)];
   }
 
   _termToNewNumericId(term) {
@@ -1111,6 +1109,9 @@ export default class N3Store {
             else
               parent = quad;
           }
+          // an external reference to a node that is also another node's rdf:rest
+          else if (parent)
+            malformed = onError(current, 'can\'t have coreferences');
           else {
             head = quad; // e.g. { :s :p (1 2) }
             headPos = 'object';
