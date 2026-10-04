@@ -4040,7 +4040,8 @@ describe('Store', () => {
       store.addQuad(s, p, namedNode('http://example.org/o'));
       const quoted = quad(s, p, namedNode('http://example.org/o'));
       store.addQuad(quoted, p, s);
-      store.addQuad(namedNode('.1.2.3'), p, s);
+      // The quoted triple's key is built from the ids of s, p and o, which are 2, 3 and 4
+      store.addQuad(namedNode('.2.3.4'), p, s);
       expect(store.size).toBe(3);
       expect(store.getQuads(null, null, s).map(q => q.subject.termType).sort()).toEqual(['NamedNode', 'Quad']);
     });
@@ -4052,6 +4053,44 @@ describe('Store', () => {
       expect(store.getQuads(namedNode('?x')).map(q => q.subject.termType)).toEqual(['NamedNode']);
       expect([...store.match(namedNode('?x'))].map(q => q.subject.termType)).toEqual(['NamedNode']);
       expect([...store.match(namedNode('?x')).match(DataFactory.variable('x'))]).toHaveLength(0);
+    });
+
+    it('should keep quoted triples with such IRIs distinct from quoted triples with other terms', () => {
+      const o = namedNode('http://example.org/o');
+      const withIri = quad(namedNode('?x'), p, o);
+      const withVariable = quad(DataFactory.variable('x'), p, o);
+      function nested(term) { return quad(quad(term, p, o), p, o); }
+      const store = new Store([quad(withIri, p, o), quad(withVariable, p, o), quad(nested(namedNode('?x')), p, o)]);
+      expect(store.size).toBe(3);
+      expect(store.getQuads(withIri).map(q => q.subject.subject.termType)).toEqual(['NamedNode']);
+      expect(store.getQuads(nested(DataFactory.variable('x')))).toHaveLength(0);
+      expect([...store.match(withIri).match(withVariable)]).toHaveLength(0);
+      expect([...store.match(nested(namedNode('?x'))).match(nested(DataFactory.variable('x')))]).toHaveLength(0);
+      expect([...store.match(withIri).match(withIri)]).toHaveLength(1);
+      expect([...store.match(nested(namedNode('?x'))).match(nested(namedNode('?x')))]).toHaveLength(1);
+    });
+
+    it('should keep quoted triples with such IRIs apart in forwarded views', () => {
+      const o = namedNode('http://example.org/o');
+      const quoted = quad(namedNode('?x'), p, o, namedNode('?g'));
+      const other = quad(DataFactory.variable('x'), p, o, DataFactory.variable('g'));
+      function nested(term) { return quad(term, p, o); }
+      const store = new Store([quad(quoted, p, o), quad(other, p, o), quad(nested(quoted), p, o)]);
+      const view = store.match(quoted, null, null, null, { matchSemantics: 'forwarded' });
+      expect([...view]).toHaveLength(1);
+      expect([...view.match(other)]).toHaveLength(0);
+      expect([...view.match(quoted)]).toHaveLength(1);
+      expect(() => view.add(quad(other, p, p))).toThrow('Quad does not match the forwarded view pattern');
+      expect(() => view.deleteMatches(other)).toThrow('Deletion pattern does not match the forwarded view pattern');
+      const nestedView = store.match(nested(quoted), null, null, null, { matchSemantics: 'forwarded' });
+      expect([...nestedView.match(nested(other))]).toHaveLength(0);
+      expect(() => nestedView.add(quad(nested(other), p, p))).toThrow('Quad does not match the forwarded view pattern');
+      const foreign = { termType: 'Quad', subject: namedNode('?x'), predicate: p, object: o };
+      expect([...store.match(quad(namedNode('?x'), p, o), null, null, null, { matchSemantics: 'forwarded' })
+        .match(foreign)]).toHaveLength(0);
+      view.add(quad(quoted, p, p));
+      expect(store.size).toBe(4);
+      expect(store.getQuads(other)).toHaveLength(1);
     });
 
     it('should store such IRIs from another library', () => {

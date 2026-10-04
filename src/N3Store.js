@@ -126,8 +126,23 @@ function entityKey(term) {
     return term.charCodeAt(0) !== 0x3C || term === '<>' ? term : `<${term}>`;
   // IDs of IRIs usually start with a lowercase scheme letter, which never marks a term type
   const id = termToId(term);
-  return id.charCodeAt(0) >= 0x61 || !term || term.termType !== 'NamedNode' || !markedIRI.test(term.value) ?
-    id : `<${term.value}>`;
+  if (id.charCodeAt(0) >= 0x61 || !term)
+    return id;
+  // Keys of quoted triples are built from the keys of their components
+  if (term.termType === 'Quad')
+    return JSON.stringify(quadKeyParts(term));
+  return term.termType !== 'NamedNode' || !markedIRI.test(term.value) ? id : `<${term.value}>`;
+}
+
+// Returns the keys of the components of a quad, nested like the parts of its internal id
+function quadKeyParts(quad) {
+  const parts = [nestedKey(quad.subject), nestedKey(quad.predicate), nestedKey(quad.object)];
+  if (quad.graph && !isDefaultGraph(quad.graph))
+    parts.push(nestedKey(quad.graph));
+  return parts;
+}
+function nestedKey(term) {
+  return term.termType === 'Quad' ? quadKeyParts(term) : entityKey(term);
 }
 
 // ## Constructor
