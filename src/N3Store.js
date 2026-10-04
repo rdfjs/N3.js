@@ -23,11 +23,15 @@ function hasInIndex(index0, key0, key1, key2) {
   return !!index2 && key2 in index2;
 }
 
+// The number of index leaves that the last `merge` call added
+let mergedLeaves = 0;
+
 function merge(target, source, depth = 4) {
   let size = target[SIZE] || 0;
   for (const key in source) {
     if (!(key in target)) {
       size++;
+      if (depth === 0) mergedLeaves++;
       target[key] = depth === 0 ? null : merge(Object.create(null), source[key], depth - 1);
     }
     // Merge into the existing object in place,
@@ -193,6 +197,16 @@ export class N3EntityIndex {
   }
 }
 
+// Counts the quads in the given graphs from the sizes of their deepest index level
+export function countQuads(graphs) {
+  let size = 0, subjects, subject;
+  for (const graphKey in graphs)
+    for (const subjectKey in (subjects = graphs[graphKey].subjects))
+      for (const predicateKey in (subject = subjects[subjectKey]))
+        size += subject[predicateKey][SIZE];
+  return size;
+}
+
 // Returns the size of a dataset if it is known without counting, or null otherwise
 function knownSize(dataset) {
   if (dataset instanceof N3Store)
@@ -231,20 +245,8 @@ export default class N3Store {
 
   // ### `size` returns the number of quads in the store
   get size() {
-    // Return the quad count if if was cached
-    let size = this._size;
-    if (size !== null)
-      return size;
-
-    // Calculate the number of quads by counting to the deepest level
-    size = 0;
-    const graphs = this._graphs;
-    let subjects, subject;
-    for (const graphKey in graphs)
-      for (const subjectKey in (subjects = graphs[graphKey].subjects))
-        for (const predicateKey in (subject = subjects[subjectKey]))
-          size += subject[predicateKey][SIZE];
-    return this._size = size;
+    // The quad count is kept up to date by every change
+    return this._size;
   }
 
   // ## Private methods
@@ -526,8 +528,7 @@ export default class N3Store {
     this._addToIndex(graphItem.predicates, predicate, object,    subject);
     this._addToIndex(graphItem.objects,    object,    subject,   predicate);
 
-    // Keep the cached quad count, so sizes stay known without counting
-    if (this._size !== null) this._size++;
+    this._size++;
     return true;
   }
 
@@ -598,7 +599,7 @@ export default class N3Store {
     this._removeFromIndex(graphItem.subjects,   subject,   predicate, object);
     this._removeFromIndex(graphItem.predicates, predicate, object,    subject);
     this._removeFromIndex(graphItem.objects,    object,    subject,   predicate);
-    if (this._size !== null) this._size--;
+    this._size--;
 
     // Remove the graph if it is empty
     if (graphItem.subjects[SIZE] === 0)
@@ -1061,8 +1062,10 @@ export default class N3Store {
     // Index merging bypasses observer notifications
     else if (this._observers === null && quads instanceof N3Store && quads._entityIndex === this._entityIndex) {
       if (quads._size !== 0) {
+        // Each new quad adds one leaf to each of the three indexes
+        mergedLeaves = 0;
         this._graphs = merge(this._graphs, quads._graphs);
-        this._size = null; // Invalidate the cached size
+        this._size += mergedLeaves / 3;
       }
     }
     else {
@@ -1144,7 +1147,7 @@ export default class N3Store {
       const graphs = difference(this._graphs, other._graphs);
       if (graphs) {
         store._graphs = graphs;
-        store._size = null;
+        store._size = countQuads(graphs);
       }
       return store;
     }
@@ -1195,7 +1198,7 @@ export default class N3Store {
       const graphs = intersect(other._graphs, this._graphs);
       if (graphs) {
         store._graphs = graphs;
-        store._size = null;
+        store._size = countQuads(graphs);
       }
       return store;
     }
@@ -1555,7 +1558,7 @@ class DatasetCoreAndReadableStream extends Readable {
             newStore._graphs[graphKey] = { subjects, predicates, objects };
         }
       }
-      newStore._size = null;
+      newStore._size = countQuads(newStore._graphs);
     }
     return this._filtered;
   }

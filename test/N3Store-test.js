@@ -3716,12 +3716,24 @@ describe('Store', () => {
     });
 
     describe('#contains', () => {
-      it('should not count the quads of a store from another entity index', () => {
+      it('should not contain a larger store from another entity index', () => {
         const larger = new Store([q[2], q[0], q[1]], { entityIndex: new EntityIndex() });
-        // As after merging in another store, its size is not known without counting
-        larger._size = null;
+        jest.spyOn(larger, 'every');
         expect(new Store([q[0], q[1]]).contains(larger)).toBe(false);
-        expect(larger._size).toBe(null);
+        expect(larger.every).not.toHaveBeenCalled();
+      });
+
+      it('should keep an exact size through bulk operations', () => {
+        const entityIndex = new EntityIndex();
+        const first = new Store([q[0], q[1], q[2]], { entityIndex });
+        const second = new Store([q[1], q[2], q[3]], { entityIndex });
+        function count(store) { return [...store].length; }
+        first.addAll(second);
+        expect(first._size).toBe(4);
+        expect(first._size).toBe(count(first));
+        for (const result of [first.intersection(second), first.difference(second), first.union(second),
+          first.match(q[0].subject).filtered])
+          expect(result._size).toBe(count(result));
       });
 
       it('should not contain a larger dataset of another kind', () => {

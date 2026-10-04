@@ -1,4 +1,5 @@
 import DF from './N3DataFactory';
+import { countQuads } from './N3Store';
 
 /**
  * Gets rules from a dataset. This will only collect horn rules declared using log:implies.
@@ -242,9 +243,9 @@ export default class N3Reasoner {
       }
     }
     finally {
-      // Invalidate the cached size even if a derivation budget was exceeded,
+      // Recount the derivations even if a derivation budget was exceeded,
       // so a caught budget error leaves the store fully consistent.
-      this._store._size = null;
+      this._store._size = countQuads(graphs);
     }
   }
 }
