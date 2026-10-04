@@ -2565,7 +2565,7 @@ describe('A Lexer instance tokenizing names', () => {
   }
 
   for (const char of chars) {
-    const code = [...char].map(c => c.charCodeAt(0).toString(16)).join(' ');
+    const code = [...char].map(c => c.codePointAt(0).toString(16).toUpperCase()).join(' ');
 
     it(`should ${isNameStart.test(char) ? '' : 'not '}start a prefix with U+${code}`, () => {
       const token = firstToken(`${char}x:y `);
@@ -2619,6 +2619,15 @@ describe('A Lexer instance tokenizing names', () => {
                    { type: 'blank', prefix: '_', value: 'a', line: 1 },
                    { type: 'blank', prefix: '_', value: 'b﻿c', line: 1 },
                    { type: 'blank', prefix: '_', value: 'd﻿', line: 1 },
+                   { type: 'eof', line: 1 }),
+  );
+
+  it(
+    'should tokenize a variable with a name character that is also whitespace at the end of a chunk',
+    shouldTokenize(streamOf('?a ?b﻿', 'c ?d﻿ '),
+                   { type: 'var', value: '?a', line: 1 },
+                   { type: 'var', value: '?b﻿c', line: 1 },
+                   { type: 'var', value: '?d﻿', line: 1 },
                    { type: 'eof', line: 1 }),
   );
 });
