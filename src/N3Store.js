@@ -915,29 +915,92 @@ export default class N3Store {
   // Each solution is a Map from variable name to the term it is bound to.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   *matchBGP(patterns) {
-    yield* this._matchSteps(planBGP(Array.from(patterns)), 0, new Map());
+    const steps = planBGP(Array.from(patterns));
+    // Join on internal ids; a constant the store has never seen matches nothing
+    for (const { terms } of steps) {
+      for (let i = 0; i < 4; i++) {
+        if (terms[i] && !(terms[i] = this._termToNumericId(terms[i])))
+          return;
+      }
+    }
+    yield* this._matchSteps(steps, 0, new Map(), new Map());
   }
 
-  *_matchSteps(steps, index, bindings) {
+  *_matchSteps(steps, index, bindings, terms) {
     if (index === steps.length) {
-      yield new Map(bindings);
+      // Cache terms by id, since solutions often share them
+      const solution = new Map();
+      for (const [name, id] of bindings) {
+        let term = terms.get(id);
+        if (term === undefined)
+          terms.set(id, term = this._termFromId(this._entities[id]));
+        solution.set(name, term);
+      }
+      yield solution;
       return;
     }
-    const { terms, bound, binds, checks } = steps[index];
+    const { terms: keys, bound, binds, checks } = steps[index];
     for (let i = 0; i < bound.length; i += 2)
-      terms[bound[i]] = bindings.get(bound[i + 1]);
-    for (const quad of this.readQuads(terms[0], terms[1], terms[2], terms[3])) {
+      keys[bound[i]] = bindings.get(bound[i + 1]);
+    for (const ids of this._readIds(keys[0], keys[1], keys[2], keys[3])) {
       for (let i = 0; i < binds.length; i += 2)
-        bindings.set(binds[i + 1], quad[QUAD_POSITIONS[binds[i]]]);
+        bindings.set(binds[i + 1], ids[binds[i]]);
       let consistent = true;
       for (let i = 0; consistent && i < checks.length; i += 2)
-        consistent = bindings.get(checks[i + 1]).equals(quad[QUAD_POSITIONS[checks[i]]]);
+        consistent = bindings.get(checks[i + 1]) === ids[checks[i]];
       if (consistent)
-        yield* this._matchSteps(steps, index + 1, bindings);
+        yield* this._matchSteps(steps, index + 1, bindings, terms);
     }
     // Each quad overwrites this step's bindings; drop them once the step is exhausted
     for (let i = 0; i < binds.length; i += 2)
       bindings.delete(binds[i + 1]);
+  }
+
+  // ### `_readIds` yields the subject, predicate, object, and graph ids of matching quads.
+  // Zero or undefined ids are wildcards. The yielded array is reused between results.
+  *_readIds(subjectId, predicateId, objectId, graphId) {
+    // Choose the index as readQuads does
+    let indexName, key0, key1, key2, positions;
+    if (objectId && (subjectId || !predicateId))
+      indexName = 'objects', key0 = objectId, key1 = subjectId, key2 = predicateId, positions = [2, 0, 1];
+    else if (!subjectId && predicateId)
+      indexName = 'predicates', key0 = predicateId, key1 = objectId, key2 = subjectId, positions = [1, 2, 0];
+    else
+      indexName = 'subjects', key0 = subjectId, key1 = predicateId, key2 = objectId, positions = [0, 1, 2];
+
+    const graphs = this._graphs, ids = [0, 0, 0, 0];
+    const graphKeys = graphId ? [graphId] : Object.keys(graphs);
+    for (let g = 0; g < graphKeys.length; g++) {
+      // Mutations can remove keys captured before an earlier yield
+      const index0 = graphs[graphKeys[g]] && graphs[graphKeys[g]][indexName];
+      if (!index0) continue; // eslint-disable-line no-continue
+      ids[3] = +graphKeys[g];
+      const keys0 = key0 ? [key0] : Object.keys(index0);
+      for (let i0 = 0; i0 < keys0.length; i0++) {
+        const index1 = index0[keys0[i0]];
+        if (!index1) continue; // eslint-disable-line no-continue
+        ids[positions[0]] = +keys0[i0];
+        const keys1 = key1 ? [key1] : Object.keys(index1);
+        for (let i1 = 0; i1 < keys1.length; i1++) {
+          const index2 = index1[keys1[i1]];
+          if (!index2) continue; // eslint-disable-line no-continue
+          ids[positions[1]] = +keys1[i1];
+          if (key2) {
+            if (key2 in index2) {
+              ids[positions[2]] = key2;
+              yield ids;
+            }
+          }
+          else {
+            const keys2 = Object.keys(index2);
+            for (let i2 = 0; i2 < keys2.length; i2++) {
+              ids[positions[2]] = +keys2[i2];
+              yield ids;
+            }
+          }
+        }
+      }
+    }
   }
 
   // ### `createBlankNode` creates a new blank node, returning its name

@@ -4149,6 +4149,43 @@ describe('Store', () => {
       expect(solutions([quad(s, ex('unknown'), o, defaultGraph())])).toEqual([]);
     });
 
+    it('should bind terms from a custom factory whose quads have other keys', () => {
+      const factory = Object.assign({}, DataFactory, {
+        quad: (s, p, o, g) => ({ s, p, o, g }),
+        namedNode: value => `named:${value}`,
+      });
+      const custom = new Store(store.getQuads(), { factory });
+      const results = [...custom.matchBGP([quad(s, ex('knows'), s), quad(s, ex('knows'), o)])];
+      expect(results.map(bindings => Object.fromEntries(bindings))).toEqual([
+        { s: 'named:http://example.org/carol', o: 'named:http://example.org/carol' },
+      ]);
+    });
+
+    it('should use every index', () => {
+      expect(solutions([quad(s, variable('p'), literal('Alice'))]))
+        .toEqual([{ s: 'http://example.org/alice', p: 'http://example.org/name' }]);
+      expect(solutions([quad(ex('alice'), variable('p'), ex('bob'))])).toEqual([{ p: 'http://example.org/knows' }]);
+      expect(solutions([quad(ex('alice'), ex('knows'), ex('carol'))])).toEqual([]);
+      expect(solutions([quad(ex('alice'), ex('name'), ex('bob'))])).toEqual([]);
+      expect(solutions([quad(ex('alice'), ex('knows'), ex('bob'))])).toEqual([{}]);
+      expect(solutions([quad(literal('Alice'), variable('p'), o)])).toEqual([]);
+      expect(solutions([quad(ex('alice'), ex('g1'), o)])).toEqual([]);
+      expect(solutions([quad(s, variable('p'), o, g)])).toHaveLength(6);
+      expect(solutions([quad(s, variable('p'), ex('carol'))])).toHaveLength(2);
+    });
+
+    it('should yield nothing for a graph that is a term but not a graph', () => {
+      expect(solutions([quad(s, ex('knows'), o, ex('alice'))])).toEqual([]);
+    });
+
+    it('should match triple terms', () => {
+      const triple = quad(ex('alice'), ex('knows'), ex('bob'));
+      store.addQuad(ex('claim'), ex('about'), triple);
+      expect(solutions([quad(variable('c'), ex('about'), variable('t'))]))
+        .toEqual([{ c: 'http://example.org/claim', t: termToId(triple) }]);
+      expect(solutions([quad(variable('c'), ex('about'), triple)])).toEqual([{ c: 'http://example.org/claim' }]);
+    });
+
     it('should accept any iterable of patterns', () => {
       expect(solutions(new Set([quad(s, ex('knows'), ex('bob'))])))
         .toEqual([{ s: 'http://example.org/alice' }]);
