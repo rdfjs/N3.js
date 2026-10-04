@@ -1,0 +1,27 @@
+# CodeRabbit (free for public repositories) reviews every pull request.
+# Reference: https://docs.coderabbit.ai/reference/configuration
+language: en-US
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: false
+  poem: false
+  review_status: true
+  auto_review:
+    enabled: true
+    # Pull requests start as drafts here, so review them before they are ready.
+    drafts: true
+    # Re-review on every push.
+    auto_incremental_review: true
+    base_branches:
+      - next-major
+  path_instructions:
+    - path: "src/**"
+      instructions: >-
+        N3.js is a hot-path RDF library. Flag changes that allocate or add work
+        per token, quad or term, and any behaviour change that is not covered by
+        a test in test/. The Writer assumes valid RDF/JS terms; do not ask for
+        validation of invalid input.
+chat:
+  # Answer replies in its own threads without needing a mention.
+  auto_reply: true
