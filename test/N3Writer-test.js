@@ -134,6 +134,38 @@ describe('Writer', () => {
       }
     });
 
+    it('should write a formula that is the object of several statements once', async () => {
+      const documents = [
+        '{ <urn:a> <urn:b> <urn:c> } is <urn:p> of <urn:s>, <urn:t>.',
+        '{ <urn:a> <urn:b> <urn:c> } is a of <urn:s>, <urn:t>; <urn:q> <urn:r>.',
+        '<urn:x> <urn:y> { { <urn:a> <urn:b> <urn:c> } is <urn:p> of { <urn:d> <urn:e> <urn:f> }, <urn:t> }.',
+      ];
+      for (const document of documents) {
+        for (let seed = 0; seed <= 10; seed++) {
+          const { quads, output, reparsed } = await roundTrip(document, seed);
+          expect(output.match(/<urn:a>/g)).toHaveLength(1);
+          expect(reparsed).toHaveLength(quads.length);
+          expect(isomorphic(reparsed, quads)).toBe(true);
+        }
+      }
+    });
+
+    it('should write deeply nested formulas in predicate position', async () => {
+      const depth = 20000, formulas = {}, p = new NamedNode('urn:p');
+      for (let i = 0; i < depth; i++)
+        formulas[`f${i}`] = [new Quad(p, i + 1 < depth ? new BlankNode(`f${i + 1}`) : p, p)];
+      const writer = new Writer({ format: 'N3', formulas });
+      writer.addQuad(p, new BlankNode('f0'), p);
+      const output = await end(writer);
+      expect(output).toBe(`<urn:p> ${'{ <urn:p> '.repeat(depth)}<urn:p>${' <urn:p> }'.repeat(depth)} <urn:p>.\n`);
+    });
+
+    it('should not group distinct pretty-printed subjects in a formula', () => {
+      const writer = new Writer({ format: 'N3' }), p = new NamedNode('urn:p');
+      const formula = writer.formula([new Quad(writer.blank(), p, p), new Quad(writer.blank(), p, p)]);
+      expect(formula.id).toBe('{ [] <urn:p> <urn:p>. [] <urn:p> <urn:p> }');
+    });
+
     it('should write deeply nested formulas', async () => {
       const depth = 20000, formulas = {}, p = new NamedNode('urn:p');
       for (let i = 0; i < depth; i++)
