@@ -1737,7 +1737,7 @@ export default class N3Parser {
       // has lexed, so tokens can be parsed as they are lexed instead of being
       // collected into an array first. A lexer that replaces the built-in
       // tokenize keeps going through its own implementation.
-      if (!onPrefix && !onVersion && !onComment && !onToken && !onTokenEnd &&
+      if (!onPrefix && !onVersion && !onDirective && !onComment && !onToken && !onTokenEnd &&
           lexer.tokenize === N3Lexer.prototype.tokenize && typeof lexer._tokenizeString === 'function') {
         // A lexical error used to stop the parse before any token was read,
         // so undo base declarations that were read before it
