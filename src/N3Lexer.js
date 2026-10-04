@@ -81,8 +81,8 @@ export default class N3Lexer {
     this._blank = /_:((?:[0-9A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?:[ \t]+|(?=\.?[,;:!\^\s#()\[\]\{\}"'<>]))/y;
     this._number = /[\-+]?(?:(\d+\.\d*|\.?\d+)[eE][\-+]?\d+|(?=\.?\d)\d*(?:(\.)\d+)?)(?=\.?[,;:!\^\s#()\[\]\{\}"'<>])/y;
     this._boolean = /(?:true|false)(?=[.,;!\^\s#()\[\]\{\}"'<>])/y;
-    this._atKeyword = /@[a-z]+(?=[\s#<:])/iy;
-    this._keyword = /(?:PREFIX|BASE|VERSION|GRAPH)(?=[\s#<])/iy;
+    this._atKeyword = /@[a-z]+(?=[\s#<:"'])/iy;
+    this._keyword = /(?:PREFIX|BASE|VERSION|GRAPH)(?=[\s#<"'])/iy;
     this._n3Verb = /(?:has|is|of)(?=[\s#()\[\]\{\}"'<>?_+\-0-9])/y;
     this._n3Id = /id(?=[\s#<])/y;
     this._shortPredicates = /a(?=[\s#()\[\]\{\}"'<>])/y;
@@ -208,7 +208,7 @@ export default class N3Lexer {
       const line = this._line, firstChar = input[pos];
       let type = '', value = '', prefix = '',
           match = null, matchLength = 0, lexicalLength = 0,
-          finalLineLength = 0, inconclusive = false;
+          finalLineLength = 0, inconclusive = false, tripleQuoted = false;
       switch (firstChar) {
       case '^':
         // A datatype marker separated from its type cannot be followed by another marker
@@ -293,7 +293,7 @@ export default class N3Lexer {
           value = match[1];
         // Try to find a literal wrapped in three pairs of quotes
         else {
-          ({ value, matchLength, finalLineLength } = this._parseLiteral(input, pos));
+          ({ value, matchLength, finalLineLength, tripleQuoted } = this._parseLiteral(input, pos));
           if (value === null)
             return reportSyntaxError(this, input, pos);
         }
@@ -310,7 +310,7 @@ export default class N3Lexer {
             value = match[1];
           // Try to find a literal wrapped in three pairs of quotes
           else {
-            ({ value, matchLength, finalLineLength } = this._parseLiteral(input, pos));
+            ({ value, matchLength, finalLineLength, tripleQuoted } = this._parseLiteral(input, pos));
             if (value === null)
               return reportSyntaxError(this, input, pos);
           }
@@ -550,8 +550,13 @@ export default class N3Lexer {
       if (finalLineLength) {
         token = {
           type, value, prefix, line, start,
-          end: finalLineLength, endLine: this._line,
+          end: finalLineLength, endLine: this._line, tripleQuoted,
         };
+        callback(null, token);
+      }
+      // Triple-quoted strings are marked, since version declarations do not allow them
+      else if (tripleQuoted) {
+        token = { type, value, prefix, line, start, end: start + length, tripleQuoted };
         callback(null, token);
       }
       else
@@ -705,13 +710,16 @@ export default class N3Lexer {
             break;
           this._line += lineCount;
           const finalLineLength = lineCount === 0 ? 0 : lines[lines.length - 1].length + openingLength;
-          return { value: this._unescape(raw, stringEscapeReplacements), matchLength, finalLineLength };
+          return {
+            value: this._unescape(raw, stringEscapeReplacements), matchLength, finalLineLength,
+            tripleQuoted: openingLength === 3,
+          };
         }
         closingPos++;
       }
       this._literalClosingPos = input.length - pos - openingLength + 1;
     }
-    return { value: '', matchLength: 0, finalLineLength: 0 };
+    return { value: '', matchLength: 0, finalLineLength: 0, tripleQuoted: false };
   }
 
   // ### `_tryTokenizeToEnd` tokenizes as far as possible, reporting failures through the callback

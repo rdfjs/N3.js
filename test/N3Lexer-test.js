@@ -394,6 +394,11 @@ describe('Lexer', () => {
                         'Unexpected ""abc" on line 1.'),
     );
 
+    it('marks triple-quoted strings', () => {
+      const tokens = new Lexer().tokenize('"a" "\\u0062" """c""" \'\'\'d\'\'\' """e\nf""" ');
+      expect(tokens.map(token => !!token.tripleQuoted)).toEqual([false, false, true, true, true, false]);
+    });
+
     it(
       'should tokenize a triple quoted string literal',
       shouldTokenize('"""string"""',
@@ -1081,6 +1086,28 @@ describe('Lexer', () => {
             { type: 'literal', value: '1.2', line: 3 },
             { type: '.', line: 3 },
             { type: 'eof', line: 3 }),
+    );
+
+    it(
+        'should tokenize version declarations without whitespace before the string',
+        shouldTokenize('VERSION"1.2"\n@version\'1.2\'.',
+            { type: 'VERSION', line: 1 },
+            { type: 'literal', value: '1.2', line: 1 },
+            { type: '@version', line: 2 },
+            { type: 'literal', value: '1.2', line: 2 },
+            { type: '.', line: 2 },
+            { type: 'eof', line: 2 }),
+    );
+
+    it(
+        'should tokenize version declarations without whitespace split across chunks',
+        shouldTokenize(streamOf('VERS', 'ION', '"1.2"\n@vers', 'ion', '"1.', '2".'),
+            { type: 'VERSION', line: 1 },
+            { type: 'literal', value: '1.2', line: 1 },
+            { type: '@version', line: 2 },
+            { type: 'literal', value: '1.2', line: 2 },
+            { type: '.', line: 2 },
+            { type: 'eof', line: 2 }),
     );
 
     it(
@@ -2126,7 +2153,7 @@ describe('Lexer', () => {
     ])('returns line-relative indexes after a multiline literal with %s', (_, input, value) => {
       const tokens = new Lexer().tokenize(input);
       expect(tokens.filter(token => token.type === 'literal' || token.type === '.' || token.type === 'eof')).toEqual([
-        { line: 1, endLine: 2, prefix: '', type: 'literal', value, start: 8, end: 4 },
+        { line: 1, endLine: 2, prefix: '', type: 'literal', value, start: 8, end: 4, tripleQuoted: true },
         { line: 2, prefix: '', type: '.', value: '', start: 5, end: 6 },
         { line: 2, prefix: '', type: 'eof', value: '', start: 6, end: 6 },
       ]);
@@ -2604,7 +2631,7 @@ describe('Lexer', () => {
       stream.emit('end');
 
       expect(tokens).toEqual([
-        { type: 'literal', value: 'ok', prefix: '', line: 1, start: 0, end: 8 },
+        { type: 'literal', value: 'ok', prefix: '', line: 1, start: 0, end: 8, tripleQuoted: true },
         { type: 'eof', value: '', prefix: '', line: 1, start: 8, end: 8 },
       ]);
     });
@@ -2740,7 +2767,7 @@ describe('A Lexer instance with the comment option set to true', () => {
 
 function shouldTokenize(lexer, input) {
   const expected = Array.prototype.slice.call(arguments, 1);
-  const ignoredAttributes = { start: true, end: true, endLine: true };
+  const ignoredAttributes = { start: true, end: true, endLine: true, tripleQuoted: true };
 
   // Shift parameters as necessary
   if (lexer instanceof Lexer)

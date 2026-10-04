@@ -1111,7 +1111,8 @@ export default class N3Parser {
   _readVersion(token) {
     if (token.type !== 'literal')
       return this._error('Expected literal to follow version declaration', token);
-    if ((token.end - token.start) !== token.value.length + 2)
+    // Only short strings are allowed, so no numbers or booleans (which have a datatype prefix)
+    if (token.prefix !== '' || token.tripleQuoted)
       return this._error('Version declarations must use single quotes', token);
     this._versionCallback(token.value);
     if (!this._isValidVersion(token.value))
