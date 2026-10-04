@@ -1,7 +1,9 @@
 name: Performance
 
-# Benchmarks the pull request against its base branch in the same job, so
-# both builds see the same runner. See perf/README.md for what is covered.
+# Benchmarks the pull request against its base branch. The benchmarks are
+# split over parallel shards; each shard builds both head and base and runs
+# its benchmarks against both, so every comparison is made on one runner.
+# The report job merges the shards. See perf/README.md for what is covered.
 on:
   pull_request:
   workflow_dispatch:
@@ -19,8 +21,13 @@ concurrency:
 
 jobs:
   compare:
+    name: compare (shard ${{ matrix.shard }}/6)
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
     steps:
       # On pull requests this checks out the merge of the PR into the current
       # base branch, so the base to compare against is that merge commit's
@@ -60,18 +67,58 @@ jobs:
         working-directory: base
         run: npm ci --ignore-scripts && npm run build:node
       - name: Compare
-        id: compare
         working-directory: head
         run: >-
           node perf/ci/compare.js --base ../base/lib --head lib
-          --markdown ../perf-results.md --json ../perf-results.json
+          --shard ${{ matrix.shard }}/6 --json ../perf-results.json
       - name: Record compared commits
-        if: always() && hashFiles('perf-results.md') != ''
+        if: always()
+        run: >-
+          echo "Compared $(git -C head rev-parse --short HEAD) (head)
+          with $(git -C base rev-parse --short HEAD) (base)." > compared.txt
+      - uses: actions/upload-artifact@v7
+        if: always() && hashFiles('perf-results.json') != ''
+        with:
+          name: perf-shard-${{ matrix.shard }}
+          path: |
+            perf-results.json
+            compared.txt
+          retention-days: 7
+
+  report:
+    needs: compare
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: perf/ci
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: perf-shard-*
+          path: shards
+      - name: Report
+        id: report
         run: |
-          {
-            echo
-            echo "Compared $(git -C head rev-parse --short HEAD) (head) with $(git -C base rev-parse --short HEAD) (base)."
-          } >> perf-results.md
+          shopt -s nullglob
+          files=(shards/*/perf-results.json)
+          node perf/ci/report.js --markdown perf-results.md "${files[@]}" > /dev/null || status=$?
+          if [ -f perf-results.md ]; then
+            echo >> perf-results.md
+            cat "$(ls shards/*/compared.txt | head -n1)" >> perf-results.md
+          fi
+          if [ "${#files[@]}" != 6 ]; then
+            echo "::error::Only ${#files[@]} of 6 shards produced results"
+            if [ -f perf-results.md ]; then
+              printf '\n**Only %s of 6 shards produced results, so some benchmarks were not compared.**\n' "${#files[@]}" >> perf-results.md
+            fi
+            exit 1
+          fi
+          exit "${status:-0}"
       - name: Publish summary
         if: always() && hashFiles('perf-results.md') != ''
         run: cat perf-results.md >> "$GITHUB_STEP_SUMMARY"
@@ -83,7 +130,7 @@ jobs:
           mkdir perf-comment
           cp perf-results.md perf-comment/
           echo "${{ github.event.pull_request.number }}" > perf-comment/pr-number
-          echo "${{ steps.compare.outcome }}" > perf-comment/outcome
+          echo "${{ steps.report.outcome }}" > perf-comment/outcome
       - uses: actions/upload-artifact@v7
         if: always() && github.event_name == 'pull_request' && hashFiles('perf-comment/perf-results.md') != ''
         with:
