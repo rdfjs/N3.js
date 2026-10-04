@@ -348,13 +348,25 @@ describe('Writer', () => {
     });
 
     it(
-      'should expand prefixes when possible',
+      'should not write IRIs that look like prefixed names as prefixed names',
       shouldSerialize({ prefixes: { a: 'http://a.org/', b: 'http://a.org/b#' } },
                       ['a:bc', 'b:ef', 'c:bhi'],
                       '@prefix a: <http://a.org/>.\n' +
                       '@prefix b: <http://a.org/b#>.\n\n' +
-                      'a:bc b:ef <c:bhi>.\n'),
+                      '<a:bc> <b:ef> <c:bhi>.\n'),
     );
+
+    it('should round-trip IRIs whose scheme matches a prefix name', async () => {
+      const writer = new Writer({ prefixes: { ex: 'http://example.org/', urn: 'http://example.org/urn/' } });
+      const quad = new Quad(new NamedNode('ex:foo'), new NamedNode('http://example.org/p'),
+                            new NamedNode('urn:isbn:0451450523'));
+      writer.addQuad(quad);
+      const output = await new Promise(resolve => writer.end((error, result) => resolve(result)));
+      expect(output).toBe('@prefix ex: <http://example.org/>.\n' +
+                          '@prefix urn: <http://example.org/urn/>.\n\n' +
+                          '<ex:foo> ex:p <urn:isbn:0451450523>.\n');
+      expect(new Parser().parse(output)).toStrictEqual([quad]);
+    });
 
     it(
       'should not repeat the same subjects',

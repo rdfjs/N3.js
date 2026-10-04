@@ -178,8 +178,7 @@ export default class N3Writer {
       iri = iri.replace(escapeAll, characterReplacer);
     // Try to represent the IRI as prefixed name, unless no prefixes were added
     const prefixMatch = this._hasPrefixes ? this._prefixRegex.exec(iri) : null;
-    return !prefixMatch ? `<${iri}>` :
-           (!prefixMatch[1] ? iri : this._prefixIRIs[prefixMatch[1]] + prefixMatch[2]);
+    return !prefixMatch ? `<${iri}>` : this._prefixIRIs[prefixMatch[1]] + prefixMatch[2];
   }
 
   // ### `_encodeLiteral` represents a literal
@@ -321,14 +320,11 @@ export default class N3Writer {
     // Recreate the prefix matcher
     if (hasPrefixes) {
       this._hasPrefixes = true;
-      let IRIlist = '', prefixList = '';
-      for (const prefixIRI in this._prefixIRIs) {
+      let IRIlist = '';
+      for (const prefixIRI in this._prefixIRIs)
         IRIlist += IRIlist ? `|${prefixIRI}` : prefixIRI;
-        prefixList += (prefixList ? '|' : '') + this._prefixIRIs[prefixIRI];
-      }
       IRIlist = escapeRegex(IRIlist, /[\]\/\(\)\*\+\?\.\\\$]/g, '\\$&');
-      this._prefixRegex = new RegExp(`^(?:${prefixList})[^\/]*$|` +
-                                     `^(${IRIlist})([_a-zA-Z0-9](?:\\.?[\\-_a-zA-Z0-9])*)$`);
+      this._prefixRegex = new RegExp(`^(${IRIlist})([_a-zA-Z0-9](?:\\.?[\\-_a-zA-Z0-9])*)$`);
     }
     // End a prefix block with a newline
     this._write(hasPrefixes ? '\n' : '', done);
