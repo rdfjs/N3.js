@@ -628,7 +628,7 @@ describe('Writer', () => {
     });
 
     it('uses a base IRI when given', async () => {
-      const writer = new Writer({ baseIRI: 'http://example.org/foo/' });
+      const writer = new Writer({ baseIRI: 'http://example.org/foo/', writeBase: false });
       writer.addQuad(new Quad(
         new NamedNode('http://example.org/foo/'),
         new NamedNode('http://example.org/foo/#b'),
@@ -638,7 +638,7 @@ describe('Writer', () => {
     });
 
     it('uses a base IRI to relativize a graph to the empty IRI', async () => {
-      const writer = new Writer({ baseIRI: 'http://example.org/foo/' });
+      const writer = new Writer({ baseIRI: 'http://example.org/foo/', writeBase: false });
       writer.addQuad(new Quad(
         new NamedNode('http://example.org/foo/a'),
         new NamedNode('http://example.org/foo/b'),
@@ -649,7 +649,7 @@ describe('Writer', () => {
     });
 
     it('uses partially match base IRIs', async () => {
-      const writer = new Writer({ baseIRI: 'https://pod.example/profile/card' });
+      const writer = new Writer({ baseIRI: 'https://pod.example/profile/card', writeBase: false });
       writer.addQuad(new Quad(
           new NamedNode('https://pod.example/profile/card#me'),
           new NamedNode('http://www.w3.org/2002/07/owl#sameAs'),
@@ -660,10 +660,11 @@ describe('Writer', () => {
       );
     });
 
-    it('does not write a base directive by default', async () => {
+    it('does not write a base directive when writeBase is false', async () => {
       const writer = new Writer({
         prefixes: { ex: 'http://other.example/ns#' },
         baseIRI: 'http://example.org/foo/',
+        writeBase: false,
       });
       writer.addQuad(new Quad(
         new NamedNode('http://example.org/foo/bar'),
@@ -674,8 +675,8 @@ describe('Writer', () => {
                           '<bar> ex:p <baz>.\n');
     });
 
-    it('writes a base directive with the writeBase option', async () => {
-      const writer = new Writer({ baseIRI: 'http://example.org/foo/', writeBase: true });
+    it('writes a base directive by default when a base IRI is given', async () => {
+      const writer = new Writer({ baseIRI: 'http://example.org/foo/' });
       writer.addQuad(new Quad(
         new NamedNode('http://example.org/foo/'),
         new NamedNode('http://example.org/foo/#b'),
@@ -5977,8 +5978,8 @@ describe('Writer', () => {
         // the written base directive must suffice to restore the IRIs
         const baselessParser = new Parser();
         for (const { input, expected } of cases) {
-          const writer = new Writer({ baseIRI });
-          const baseWriter = new Writer({ baseIRI, writeBase: true });
+          const writer = new Writer({ baseIRI, writeBase: false });
+          const baseWriter = new Writer({ baseIRI });
           const quad = new Quad(new NamedNode('urn:ex:s'), new NamedNode('urn:ex:p'), new NamedNode(input));
           it(`relativizes <${input}> to <${expected}>`, async () => {
             writer.addQuad(quad);
