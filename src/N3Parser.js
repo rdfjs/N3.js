@@ -41,7 +41,8 @@ export default class N3Parser {
     // Whether the log:isImpliedBy predicate is supported
     this._isImpliedBy = options.isImpliedBy;
     // Whether an undeclared empty prefix resolves against the document IRI
-    this._implicitEmptyPrefix = !!options.implicitEmptyPrefix;
+    // (enabled unless explicitly disabled)
+    this._implicitEmptyPrefix = options.implicitEmptyPrefix !== false;
     // Whether an empty formula is read as the boolean literal true,
     // as in the N3 spec tests (opt-in until the next major version)
     this._emptyFormulaAsTrue = !!options.emptyFormulaAsTrue;
