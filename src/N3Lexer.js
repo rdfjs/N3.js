@@ -714,10 +714,32 @@ export default class N3Lexer {
     return { value: '', matchLength: 0, finalLineLength: 0 };
   }
 
+  // ### `_tryTokenizeToEnd` tokenizes as far as possible, reporting failures through the callback
+  _tryTokenizeToEnd(callback, inputFinished) {
+    // Keep track of errors thrown by the callback, which must reach the caller unchanged
+    let callbackError;
+    try {
+      this._tokenizeToEnd((error, token) => {
+        try {
+          return callback(error, token);
+        }
+        catch (thrown) {
+          throw (callbackError = thrown);
+        }
+      }, inputFinished);
+    }
+    catch (error) {
+      // Matching an extremely long token can exhaust the regular expression stack
+      if (error === callbackError || !(error instanceof RangeError))
+        throw error;
+      callback(this._syntaxError(null, `Token too long on line ${this._line}.`));
+    }
+  }
+
   // ### `_syntaxError` creates a syntax error for the given issue
-  _syntaxError(issue) {
+  _syntaxError(issue, message = `Unexpected "${issue}" on line ${this._line}.`) {
     this._input = null;
-    const err = new Error(`Unexpected "${issue}" on line ${this._line}.`);
+    const err = new Error(message);
     err.context = {
       token: undefined,
       line: this._line,
@@ -760,13 +782,13 @@ export default class N3Lexer {
       if (typeof callback === 'function')
         queueMicrotask(() => {
           if (this._tokenization === tokenization)
-            this._tokenizeToEnd(callback, true);
+            this._tryTokenizeToEnd(callback, true);
         });
       // If no callback was passed, tokenize synchronously and return
       else {
         const tokens = [];
         let error;
-        this._tokenizeToEnd((e, t) => e ? (error = e) : tokens.push(t), true);
+        this._tryTokenizeToEnd((e, t) => e ? (error = e) : tokens.push(t), true);
         if (error) throw error;
         return tokens;
       }
@@ -793,7 +815,7 @@ export default class N3Lexer {
           // Tokenize as far as possible. When a previous attempt left a long unfinished token,
           // wait until the buffered input has doubled, so the token is not rescanned for every chunk.
           if (this._input.length >= retryLength) {
-            this._tokenizeToEnd(callback, false);
+            this._tryTokenizeToEnd(callback, false);
             retryLength = this._input !== null && this._input.length > MIN_RESCAN_LENGTH ?
               2 * this._input.length : 0;
           }
@@ -807,7 +829,7 @@ export default class N3Lexer {
           if (rest)
             this._input = typeof this._input === 'string' ? this._input + rest : rest;
           if (typeof this._input === 'string')
-            this._tokenizeToEnd(callback, true);
+            this._tryTokenizeToEnd(callback, true);
         }
       });
       input.on('error', error => {

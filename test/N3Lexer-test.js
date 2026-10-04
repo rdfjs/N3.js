@@ -2609,6 +2609,55 @@ describe('Lexer', () => {
       ]);
     });
 
+    describe('when a regular expression exhausts the stack on a very long token', () => {
+      function overflowingLexer() {
+        const lexer = new Lexer();
+        lexer._iri = { exec() { throw new RangeError('Maximum call stack size exceeded'); } };
+        return lexer;
+      }
+
+      it('throws a syntax error when tokenizing synchronously', () => {
+        expect(() => overflowingLexer().tokenize('<a> <b\\u0063>'))
+          .toThrow('Token too long on line 1.');
+      });
+
+      it('reports a syntax error through the callback for a string', async () => {
+        const error = await new Promise(resolve => {
+          overflowingLexer().tokenize('<a>\n<b\\u0063>', error => error && resolve(error));
+        });
+        expect(error.message).toBe('Token too long on line 2.');
+        expect(error.context.line).toBe(2);
+      });
+
+      it('reports a syntax error through the callback for a stream', () => {
+        const stream = new EventEmitter(), errors = [];
+        overflowingLexer().tokenize(stream, error => error && errors.push(error));
+        stream.emit('data', '<b\\u0063> ');
+        stream.emit('data', '<c> ');
+        stream.emit('end');
+        expect(errors.map(error => error.message)).toEqual(['Token too long on line 1.']);
+      });
+
+      it('rethrows a RangeError thrown by the callback without reporting it', () => {
+        const stream = new EventEmitter(), errors = [];
+        const thrown = new RangeError('from the callback');
+        new Lexer().tokenize(stream, (error, token) => {
+          if (error)
+            errors.push(error);
+          else if (token.type === 'IRI')
+            throw thrown;
+        });
+        expect(() => stream.emit('data', '<a> ')).toThrow(thrown);
+        expect(errors).toEqual([]);
+      });
+
+      it('rethrows other errors', () => {
+        const lexer = new Lexer();
+        lexer._iri = { exec() { throw new TypeError('unexpected'); } };
+        expect(() => lexer.tokenize('<b\\u0063>')).toThrow(TypeError);
+      });
+    });
+
     it('does not retain the previous token in a later error', () => {
       const lexer = new Lexer();
       let laterError;
