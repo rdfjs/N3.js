@@ -4060,6 +4060,30 @@ describe('Store', () => {
       expect(store.getQuads().map(q => q.toJSON())).toEqual([quad(namedNode('.2.3.4'), p, namedNode('?x')).toJSON()]);
     });
 
+    it('should treat a string id starting with < as the same IRI', () => {
+      const store = new Store();
+      store.addQuad('<a>', p, '<b>');
+      store.addQuad(namedNode('<a>'), p, namedNode('<b>'));
+      expect(store.size).toBe(1);
+      expect(store.getQuads().map(q => [q.subject.value, q.object.value])).toEqual([['<a>', '<b>']]);
+      expect(store.getQuads('<a>')).toHaveLength(1);
+      expect(store.getQuads(namedNode('<a>'), null, '<b>')).toHaveLength(1);
+      expect(store.getQuads('a')).toHaveLength(0);
+      store.addQuad(namedNode('.x'), p, p);
+      expect(store.getQuads('<.x>')).toHaveLength(0);
+      expect(store.getQuads('.x')).toHaveLength(0);
+      store.addQuad('<.x>', p, p);
+      expect(store.getQuads().map(q => q.subject.value).sort()).toEqual(['.x', '<.x>', '<a>']);
+      expect(store.has(quad(namedNode('<a>'), p, namedNode('<b>')))).toBe(true);
+    });
+
+    it('should keep the string id <> as the empty IRI', () => {
+      const store = new Store();
+      store.addQuad('<>', p, p);
+      expect(store.getQuads().map(q => q.subject.toJSON())).toEqual([namedNode('').toJSON()]);
+      expect(store.getQuads(namedNode(''))).toHaveLength(1);
+    });
+
     it('should store relative IRIs parsed without a base IRI', () => {
       const store = new Store(new Parser().parse('<.2.3.4> <?x> <_b> .'));
       expect(store.getQuads().map(q => [q.subject.value, q.predicate.value, q.object.value]))

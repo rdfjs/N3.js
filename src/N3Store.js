@@ -121,9 +121,9 @@ function difference(s1, s2, depth = 4) {
 // that starts with such a marker (as relative IRIs can) is wrapped in < and >.
 const markedIRI = /^[?_"[.<]/;
 function entityKey(term) {
-  // Strings are internal ids already
+  // Strings are term ids, which only need wrapping when they are IRIs starting with <
   if (typeof term === 'string')
-    return term;
+    return term.charCodeAt(0) !== 0x3C || term === '<>' ? term : `<${term}>`;
   // IDs of IRIs usually start with a lowercase scheme letter, which never marks a term type
   const id = termToId(term);
   return id.charCodeAt(0) >= 0x61 || !term || term.termType !== 'NamedNode' || !markedIRI.test(term.value) ?
@@ -175,10 +175,22 @@ export class N3EntityIndex {
       return s && p && o && (isDefaultGraph(term.graph) || (g = this._termToNumericId(term.graph))) &&
         this._ids[g ? `.${s}.${p}.${o}.${g}` : `.${s}.${p}.${o}`];
     }
-    return this._ids[entityKey(term)];
+    return typeof term === 'string' ? this._stringToNumericId(term) : this._ids[entityKey(term)];
+  }
+
+  // Returns the numeric id of a term given as a string id
+  _stringToNumericId(term) {
+    // The string is the key unless it is an IRI starting with <. Read the first character
+    // from the stored key after a match, which is cheaper than from a concatenated string.
+    const id = this._ids[term];
+    if (id ? this._entities[id].charCodeAt(0) !== 0x3C : term.charCodeAt(0) !== 0x3C)
+      return id;
+    return term === '<>' ? id : this._ids[`<${term}>`];
   }
 
   _termToNewNumericId(term) {
+    if (typeof term === 'string')
+      return this._stringToNumericId(term) || this._addEntity(entityKey(term));
     // This assumes that no graph term is present - we may wish to error if there is one
     const str = term && term.termType === 'Quad' ?
       `.${this._termToNewNumericId(term.subject)}.${this._termToNewNumericId(term.predicate)}.${this._termToNewNumericId(term.object)}${
@@ -186,7 +198,11 @@ export class N3EntityIndex {
       }`
       : entityKey(term);
 
-    return this._ids[str] || (this._ids[this._entities[++this._id] = str] = this._id);
+    return this._ids[str] || this._addEntity(str);
+  }
+
+  _addEntity(key) {
+    return this._ids[this._entities[++this._id] = key] = this._id;
   }
 
   createBlankNode(suggestedName) {
