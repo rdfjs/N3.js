@@ -4022,6 +4022,51 @@ describe('Store', () => {
     expect(store.getQuads()).toHaveLength(2);
   });
 
+  describe('A Store containing IRIs that start like other term ids', () => {
+    const p = namedNode('http://example.org/p');
+    const iris = ['?x', '_:b', '"a"', '[1,2,3]', '.2.3.4', '.1.1.1', '<a>'];
+
+    it('should return the quads unchanged', () => {
+      const quads = iris.map(iri => quad(namedNode(iri), p, namedNode(iri), namedNode(iri)));
+      const store = new Store(quads);
+      expect(store.getQuads().map(q => q.toJSON())).toEqual(quads.map(q => q.toJSON()));
+      for (const q of quads)
+        expect(store.has(q)).toBe(true);
+    });
+
+    it('should keep an IRI distinct from a quoted triple with the same internal key', () => {
+      const store = new Store();
+      const s = namedNode('http://example.org/s');
+      store.addQuad(s, p, namedNode('http://example.org/o'));
+      const quoted = quad(s, p, namedNode('http://example.org/o'));
+      store.addQuad(quoted, p, s);
+      store.addQuad(namedNode('.1.2.3'), p, s);
+      expect(store.size).toBe(3);
+      expect(store.getQuads(null, null, s).map(q => q.subject.termType).sort()).toEqual(['NamedNode', 'Quad']);
+    });
+
+    it('should keep an IRI distinct from a variable', () => {
+      const store = new Store([quad(namedNode('?x'), p, p), quad(DataFactory.variable('x'), p, p)]);
+      expect(store.size).toBe(2);
+      expect(store.getQuads().map(q => q.subject.termType).sort()).toEqual(['NamedNode', 'Variable']);
+      expect(store.getQuads(namedNode('?x')).map(q => q.subject.termType)).toEqual(['NamedNode']);
+      expect([...store.match(namedNode('?x'))].map(q => q.subject.termType)).toEqual(['NamedNode']);
+      expect([...store.match(namedNode('?x')).match(DataFactory.variable('x'))]).toHaveLength(0);
+    });
+
+    it('should store such IRIs from another library', () => {
+      const store = new Store();
+      store.addQuad({ termType: 'NamedNode', value: '.2.3.4' }, p, { termType: 'NamedNode', value: '?x' });
+      expect(store.getQuads().map(q => q.toJSON())).toEqual([quad(namedNode('.2.3.4'), p, namedNode('?x')).toJSON()]);
+    });
+
+    it('should store relative IRIs parsed without a base IRI', () => {
+      const store = new Store(new Parser().parse('<.2.3.4> <?x> <_b> .'));
+      expect(store.getQuads().map(q => [q.subject.value, q.predicate.value, q.object.value]))
+        .toEqual([['.2.3.4', '?x', '_b']]);
+    });
+  });
+
   describe('A Store containing the empty IRI', () => {
     const p = namedNode('http://example.org/p');
     const o = namedNode('http://example.org/o');
