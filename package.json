@@ -60,33 +60,17 @@
     "test": "jest",
     "lint": "eslint src perf test spec",
     "prepare": "npm run build",
-    "spec": "npm run spec-1-1 && npm run spec-1-2 && npm run spec-n3",
-    "spec-1-1": "npm run spec-1-1-turtle && npm run spec-1-1-ntriples && npm run spec-1-1-nquads && npm run spec-1-1-trig",
+    "spec": "node spec/run.js",
     "spec-1-1-earl": "npm run spec-1-1-earl-turtle && npm run spec-1-1-earl-ntriples && npm run spec-1-1-earl-nquads && npm run spec-1-1-earl-trig",
-    "spec-1-1-ntriples": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-n-triples/manifest.ttl -i '{ \"format\": \"n-triples\" }' -c .rdf-test-suite-cache/",
-    "spec-1-1-nquads": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-n-quads/manifest.ttl -i '{ \"format\": \"n-quads\" }' -c .rdf-test-suite-cache/",
-    "spec-1-1-turtle": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-turtle/manifest.ttl -i '{ \"format\": \"turtle\" }' -c .rdf-test-suite-cache/ --skip \"(bad-numeric-escape|bareword_decimal)\"",
-    "spec-1-1-trig": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-trig/manifest.ttl -i '{ \"format\": \"trig\" }' -c .rdf-test-suite-cache/  --skip \"(bad-numeric-escape|IRI-resolution-01)\"",
     "spec-1-1-earl-ntriples": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-n-triples/manifest.ttl -i '{ \"format\": \"n-triples\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-ntriples.ttl",
     "spec-1-1-earl-nquads": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-n-quads/manifest.ttl -i '{ \"format\": \"n-quads\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-nquads.ttl",
     "spec-1-1-earl-turtle": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-turtle/manifest.ttl -i '{ \"format\": \"turtle\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-turtle.ttl",
     "spec-1-1-earl-trig": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-trig/manifest.ttl -i '{ \"format\": \"trig\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-trig.ttl",
-    "spec-1-2": "npm run spec-1-2-turtle && npm run spec-1-2-ntriples && npm run spec-1-2-nquads && npm run spec-1-2-trig && npm run spec-1-2-turtle-eval && npm run spec-1-2-trig-eval",
     "spec-1-2-earl": "npm run spec-1-2-earl-turtle && npm run spec-1-2-earl-ntriples && npm run spec-1-2-earl-nquads && npm run spec-1-2-earl-trig",
-    "spec-1-2-ntriples": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-n-triples/syntax/manifest.ttl -i '{ \"format\": \"n-triples\" }' -c .rdf-test-suite-cache/",
-    "spec-1-2-nquads": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-n-quads/syntax/manifest.ttl -i '{ \"format\": \"n-quads\" }' -c .rdf-test-suite-cache/",
-    "spec-1-2-turtle": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-turtle/syntax/manifest.ttl -i '{ \"format\": \"turtle\" }' -c .rdf-test-suite-cache/",
-    "spec-1-2-trig": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-trig/syntax/manifest.ttl -i '{ \"format\": \"trig\" }' -c .rdf-test-suite-cache/",
-    "spec-1-2-turtle-eval": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-turtle/eval/manifest.ttl -i '{ \"format\": \"turtle\" }' -c .rdf-test-suite-cache/",
-    "spec-1-2-trig-eval": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-trig/eval/manifest.ttl -i '{ \"format\": \"trig\" }' -c .rdf-test-suite-cache/",
     "spec-1-2-earl-ntriples": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-n-triples/syntax/manifest.ttl -i '{ \"format\": \"n-triples\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-ntriples.ttl",
     "spec-1-2-earl-nquads": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-n-quads/syntax/manifest.ttl -i '{ \"format\": \"n-quads\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-nquads.ttl",
     "spec-1-2-earl-turtle": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-turtle/syntax/manifest.ttl -i '{ \"format\": \"turtle\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-turtle.ttl",
     "spec-1-2-earl-trig": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-trig/syntax/manifest.ttl -i '{ \"format\": \"trig\" }' -c .rdf-test-suite-cache/ -o earl -p spec/earl-meta.json > spec/earl-trig.ttl",
-    "spec-n3": "npm run spec-n3-parser && npm run spec-n3-extended",
-    "spec-n3-fetch": "sh scripts/fetch-n3-tests.sh",
-    "spec-n3-parser": "npm run spec-n3-fetch && rdf-test-suite spec/parser.js https://w3c-cg.github.io/N3/tests/N3Tests/manifest-parser.ttl -i '{ \"format\": \"text/n3\" }' -m 'https://w3c-cg.github.io/N3/tests/~.n3-tests/tests/'",
-    "spec-n3-extended": "npm run spec-n3-fetch && rdf-test-suite spec/parser.js https://w3c-cg.github.io/N3/tests/N3Tests/manifest-extended.ttl -i '{ \"format\": \"text/n3\" }' -m 'https://w3c-cg.github.io/N3/tests/~.n3-tests/tests/'",
     "spec-clean": "rm -rf .rdf-test-suite-cache/ .n3-tests/",
     "docs": "cd src && docco *.js -o ../docs && cd .."
   },
@@ -126,7 +110,28 @@
   },
   "release": {
     "branches": [
-      "main"
+      "main",
+      {
+        "name": "next-major",
+        "prerelease": "alpha",
+        "channel": "alpha"
+      }
+    ],
+    "plugins": [
+      [
+        "@semantic-release/commit-analyzer",
+        {
+          "preset": "conventionalcommits"
+        }
+      ],
+      [
+        "@semantic-release/release-notes-generator",
+        {
+          "preset": "conventionalcommits"
+        }
+      ],
+      "@semantic-release/npm",
+      "@semantic-release/github"
     ]
   },
   "publishConfig": {
