@@ -202,6 +202,12 @@ f_blob=$(git rev-parse "$base:f") g_blob=$(git rev-parse "$base:g") g2_blob=$(bl
 odd_mode=$(raw_commit "$(raw_tree 100644 f "$f_blob" 100664 g "$g_blob")" 'feat!: mode')
 [ "$(git ls-tree "$odd_mode")" = "$(git ls-tree "$base")" ] || { echo 'FAIL: odd mode setup'; exit 1; }
 expect refused 'a 100664 mode-only change left out' same_commits "$base..$odd_mode" "$base..$(raw_commit "$base^{tree}" 'feat!: mode')"
+# Modes that git's object checks read as 16 bits, as 100644 itself
+for mode in 300644 0100644; do
+  odd_mode=$(raw_commit "$(raw_tree 100644 f "$f_blob" "$mode" g "$g_blob")" 'feat!: mode')
+  [ "$(git ls-tree "$odd_mode")" = "$(git ls-tree "$base")" ] || { echo "FAIL: $mode setup"; exit 1; }
+  expect refused "a $mode mode-only change left out" same_commits "$base..$odd_mode" "$base..$(raw_commit "$base^{tree}" 'feat!: mode')"
+done
 twice=$(raw_commit "$(raw_tree 100644 f "$f_blob" 100644 g "$g_blob" 100644 g "$g2_blob")" 'feat!: g2')
 [ "$(git ls-tree "$twice" | wc -l)" = 3 ] || { echo 'FAIL: duplicate entry setup'; exit 1; }
 honest=$(raw_commit "$(raw_tree 100644 f "$f_blob" 100644 g "$g2_blob")" 'feat!: g2')

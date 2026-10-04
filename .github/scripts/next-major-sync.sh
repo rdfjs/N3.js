@@ -63,12 +63,28 @@ files_of() {
 # object checks with no error or warning: ls-tree hides a malformed tree, showing an odd mode as
 # a normal one and keeping both copies of a duplicated entry. The objects are copied as a pack
 # into a fresh repository in $1, checked with no global or system configuration to relax it.
+# Those checks read a mode as 16 bits, so every tree's raw entries must also use exactly one of
+# git's five modes.
 well_formed() {
   local c
   while IFS= read -r c; do printf '%s\n%s^\n' "$c" "$c"; done < "$2" > "$1/heads" &&
-    git rev-list --objects --no-walk --stdin < "$1/heads" > "$1/objects" &&
+    git rev-list --objects --no-object-names --no-walk --stdin < "$1/heads" > "$1/objects" &&
+    git cat-file --batch-check='%(objecttype) %(objectname)' < "$1/objects" > "$1/types" &&
+    awk '$1 == "tree" { print $2; next } $1 != "commit" && $1 != "blob" { exit 1 }' "$1/types" > "$1/trees" &&
+    [ -s "$1/trees" ] &&
+    git cat-file --batch < "$1/trees" > "$1/raw-trees" &&
+    perl -e '
+      binmode STDIN;
+      while (defined(my $header = <STDIN>)) {
+        my ($oid, $type, $size) = $header =~ /\A([0-9a-f]+) (\S+) (\d+)\n\z/ or exit 1;
+        $type eq "tree" && read(STDIN, my $tree, $size) == $size && read(STDIN, my $nl, 1) == 1 or exit 1;
+        my $length = length($oid) / 2;
+        while (length $tree) {
+          $tree =~ s/\A(100644|100755|120000|160000|40000) [^\0]+\0.{$length}//s or exit 1;
+        }
+      }' < "$1/raw-trees" &&
     git pack-objects -q --stdout < "$1/objects" > "$1/pack" &&
-    git init --quiet --bare "$1/check.git" &&
+    git init --quiet --bare --object-format="$(git rev-parse --show-object-format)" "$1/check.git" &&
     GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null \
       git --git-dir="$1/check.git" index-pack --stdin --fsck-objects < "$1/pack" > /dev/null 2> "$1/fsck" &&
     [ ! -s "$1/fsck" ]
