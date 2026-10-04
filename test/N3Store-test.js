@@ -3729,11 +3729,11 @@ describe('Store', () => {
         const second = new Store([q[1], q[2], q[3]], { entityIndex });
         function count(store) { return [...store].length; }
         first.addAll(second);
-        expect(first._count).toBe(4);
-        expect(first._count).toBe(count(first));
+        expect(first._size).toBe(4);
+        expect(first._size).toBe(count(first));
         for (const result of [first.intersection(second), first.difference(second), first.union(second),
           first.match(q[0].subject).filtered])
-          expect(result._count).toBe(count(result));
+          expect(result._size).toBe(count(result));
       });
 
       it('should check a larger dataset of another kind quad by quad', () => {

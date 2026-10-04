@@ -266,9 +266,7 @@ function knownSize(dataset) {
 export default class N3Store {
   constructor(quads, options) {
     // The number of quads is initially zero
-    this._count = 0;
-    // Reasoners from earlier versions of N3 set `_size` to null after adding quads
-    this._size = undefined;
+    this._size = 0;
     // `_graphs` contains subject, predicate, and object indexes per graph
     this._graphs = Object.create(null);
     // `_observers` contains weak references to views notified before every mutation
@@ -296,12 +294,10 @@ export default class N3Store {
   // ### `size` returns the number of quads in the store
   get size() {
     // The quad count is kept up to date by every change,
-    // except by reasoners from earlier versions of N3
-    if (this._size === null) {
-      this._count = countQuads(this._graphs);
-      this._size = undefined;
-    }
-    return this._count;
+    // except by reasoners from earlier versions of N3, which set it to null
+    if (this._size === null)
+      this._size = countQuads(this._graphs);
+    return this._size;
   }
 
   // ## Private methods
@@ -583,7 +579,7 @@ export default class N3Store {
     this._addToIndex(graphItem.predicates, predicate, object,    subject);
     this._addToIndex(graphItem.objects,    object,    subject,   predicate);
 
-    this._count++;
+    if (this._size !== null) this._size++;
     return true;
   }
 
@@ -654,7 +650,7 @@ export default class N3Store {
     this._removeFromIndex(graphItem.subjects,   subject,   predicate, object);
     this._removeFromIndex(graphItem.predicates, predicate, object,    subject);
     this._removeFromIndex(graphItem.objects,    object,    subject,   predicate);
-    this._count--;
+    if (this._size !== null) this._size--;
 
     // Remove the graph if it is empty
     if (graphItem.subjects[SIZE] === 0)
@@ -1120,7 +1116,7 @@ export default class N3Store {
         // Each new quad adds one leaf to each of the three indexes
         mergedLeaves = 0;
         this._graphs = merge(this._graphs, quads._graphs);
-        this._count += mergedLeaves / 3;
+        if (this._size !== null) this._size += mergedLeaves / 3;
       }
     }
     else {
@@ -1202,7 +1198,7 @@ export default class N3Store {
       const graphs = difference(this._graphs, other._graphs);
       if (graphs) {
         store._graphs = graphs;
-        store._count = countQuads(graphs);
+        store._size = countQuads(graphs);
       }
       return store;
     }
@@ -1245,7 +1241,7 @@ export default class N3Store {
     if (other === this) {
       const store = new N3Store({ entityIndex: this._entityIndex });
       store._graphs = merge(Object.create(null), this._graphs);
-      store._count = this.size;
+      store._size = this.size;
       return store;
     }
     else if ((other instanceof N3Store) && this._entityIndex === other._entityIndex) {
@@ -1253,7 +1249,7 @@ export default class N3Store {
       const graphs = intersect(other._graphs, this._graphs);
       if (graphs) {
         store._graphs = graphs;
-        store._count = countQuads(graphs);
+        store._size = countQuads(graphs);
       }
       return store;
     }
@@ -1342,7 +1338,7 @@ export default class N3Store {
   union(quads) {
     const store = new N3Store({ entityIndex: this._entityIndex });
     store._graphs = merge(Object.create(null), this._graphs);
-    store._count = this.size;
+    store._size = this.size;
 
     store.addAll(quads);
     return store;
@@ -1612,7 +1608,7 @@ class DatasetCoreAndReadableStream extends Readable {
             newStore._graphs[graphKey] = { subjects, predicates, objects };
         }
       }
-      newStore._count = countQuads(newStore._graphs);
+      newStore._size = countQuads(newStore._graphs);
     }
     return this._filtered;
   }

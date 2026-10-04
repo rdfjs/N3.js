@@ -357,13 +357,13 @@ describe('Reasoner', () => {
       expect(store.getQuads()).toHaveLength(55);
     });
 
-    it('Should mark the size of a store from an earlier version of N3 as stale', () => {
+    it('Should keep the size of a store whose size an earlier version of N3 marked as stale', () => {
       const store = chainStore(10);
-      // Earlier versions cache the size in `_size`, and count again when it is null
-      store._size = 10;
-      delete store._count;
+      // Earlier versions set `_size` to null after changes, and count again when it is read
+      store._size = null;
       new Reasoner(store).reason(transitiveRule());
       expect(store._size).toBe(null);
+      expect(store.size).toBe(55);
       expect(store.getQuads()).toHaveLength(55);
     });
 
@@ -381,6 +381,15 @@ describe('Reasoner', () => {
       store.addQuad(new NamedNode('http://example.org/a'), new NamedNode('http://example.org/b'), new NamedNode('http://example.org/d'));
       expect(store.size).toBe(13);
       expect(store.getQuads()).toHaveLength(13);
+    });
+
+    it('Should count a store marked as stale by an earlier version of N3 after merging into it', () => {
+      const [a, p, b, c] = ['a', 'p', 'b', 'c'].map(name => new NamedNode(`http://example.org/${name}`));
+      const store = new Store([new Quad(a, p, b)]);
+      store._size = null;
+      store.addAll(new Store([new Quad(b, p, c)], { entityIndex: store._entityIndex }));
+      expect(store._size).toBe(null);
+      expect(store.size).toBe(2);
     });
 
     it('Should keep quads from a reasoner from an earlier version of N3 when merging stores', () => {
