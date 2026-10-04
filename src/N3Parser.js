@@ -18,7 +18,7 @@ export default class N3Parser {
 
     // Set supported features depending on the format
     const format = (typeof options.format === 'string') ?
-                 options.format.match(/\w*$/)[0].toLowerCase() : '',
+                 options.format.match(/(?:^|\W)(\w*)$/)[1].toLowerCase() : '',
         isTurtle = /turtle/.test(format), isTriG = /trig/.test(format),
         isNTriples = /triple/.test(format), isNQuads = /quad/.test(format),
         isN3 = this._n3Mode = /n3/.test(format),
@@ -78,8 +78,10 @@ export default class N3Parser {
         baseIRI = baseIRI.substr(0, fragmentPos);
       // Set base IRI and its components
       this._base = baseIRI;
+      const queryPos = baseIRI.indexOf('?');
+      const path = queryPos < 0 ? baseIRI : baseIRI.substr(0, queryPos);
       this._basePath   = baseIRI.indexOf('/') < 0 ? baseIRI :
-                         baseIRI.replace(/[^\/?]*(?:\?.*)?$/, '');
+                         path.substr(0, path.lastIndexOf('/') + 1);
       const base = baseIRI;
       baseIRI = baseIRI.match(/^(?:([a-z][a-z0-9+.-]*:))?(\/\/[^\/?#]*)?/i);
       this._baseRoot   = baseIRI[0];
@@ -1526,7 +1528,10 @@ export default class N3Parser {
     // Resolve relative fragment IRIs against the base IRI
     case '#': return this._base + iri;
     // Resolve relative query string IRIs by replacing the query string
-    case '?': return this._base.replace(/(?:\?.*)?$/, iri);
+    case '?': {
+      const queryPos = this._base.indexOf('?');
+      return (queryPos < 0 ? this._base : this._base.substr(0, queryPos)) + iri;
+    }
     // Resolve root-relative IRIs at the root of the base IRI
     case '/':
       // Resolve scheme-relative IRIs to the scheme,

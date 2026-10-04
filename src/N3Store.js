@@ -1010,7 +1010,7 @@ export default class N3Store {
         if (!first)
           malformed = onError(current, 'has no list head');
         else
-          items.unshift(first.object);
+          items.push(first.object);
         current = parent && parent.subject;
       }
 
@@ -1018,12 +1018,16 @@ export default class N3Store {
       if (malformed)
         remove = false;
       else {
+        // Items were collected from the tail to the head
+        items.reverse();
         // Store the list under the value of its head
         if (head)
           lists[head[headPos].value] = items;
         // Leave lists with extra arcs fully intact; otherwise queue this list once.
-        if (remove && !extraArcs)
-          toRemove.push(...listQuads);
+        if (remove && !extraArcs) {
+          for (let i = 0; i < listQuads.length; i++)
+            toRemove.push(listQuads[i]);
+        }
       }
     });
 
