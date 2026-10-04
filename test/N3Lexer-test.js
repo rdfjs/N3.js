@@ -825,6 +825,22 @@ describe('Lexer', () => {
     it('should not tokenize an invalid number', shouldNotTokenize('10-10 ',
                       'Unexpected "10-10" on line 1.'));
 
+    it(
+      'should tokenize a double literal with a dot before its exponent',
+      shouldTokenize('1.e5 ',
+                     { type: 'literal', value: '1.e5', prefix: 'http://www.w3.org/2001/XMLSchema#double', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it('should not tokenize a number with an exponent without digits', shouldNotTokenize('1.5e+ ',
+                      'Unexpected "1.5e+" on line 1.'));
+
+    it('should not tokenize a double literal followed by a letter', shouldNotTokenize('1e5x ',
+                      'Unexpected "1e5x" on line 1.'));
+
+    it('should not tokenize a sign without digits', shouldNotTokenize('+. ',
+                      'Unexpected "+." on line 1.'));
+
     it('should tokenize booleans', shouldTokenize('true false ',
                    { type: 'literal', value:  'true', prefix: 'http://www.w3.org/2001/XMLSchema#boolean', line: 1 },
                    { type: 'literal', value: 'false', prefix: 'http://www.w3.org/2001/XMLSchema#boolean', line: 1 },

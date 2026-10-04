@@ -3,7 +3,37 @@ import { Buffer } from 'buffer';
 import namespaces from './IRIs';
 
 const { xsd } = namespaces;
-const SPACE = 0x20, TAB = 0x09, LF = 0x0A, CR = 0x0D, HASH = 0x23;
+const SPACE = 0x20, TAB = 0x09, LF = 0x0A, CR = 0x0D, HASH = 0x23,
+    DOT = 0x2E, PLUS = 0x2B, MINUS = 0x2D, COLON = 0x3A, ZERO = 0x30, NINE = 0x39;
+
+// Characters that can directly follow a name or number: whitespace and punctuation
+// (the lookahead `[,;!\^\s#()\[\]\{\}"'<>]` of the former regular expressions)
+const asciiDelimiters = new Uint8Array(0x80);
+for (const char of ',;!^#()[]{}"\'<> \t\n\v\f\r')
+  asciiDelimiters[char.charCodeAt(0)] = 1;
+function isDelimiter(charCode) {
+  if (charCode < 0x80)
+    return asciiDelimiters[charCode] === 1;
+  // Non-ASCII whitespace as matched by `\s`
+  return charCode === 0xA0 || charCode === 0x1680 ||
+    charCode >= 0x2000 && charCode <= 0x200A || charCode === 0x2028 || charCode === 0x2029 ||
+    charCode === 0x202F || charCode === 0x205F || charCode === 0x3000 || charCode === 0xFEFF;
+}
+// Whether a number can end before the given position: it must be followed by a delimiter
+// or colon, optionally after a dot. At the end of finished input, it can always end.
+function canEndNumber(input, pos, inputFinished) {
+  let charCode = input.charCodeAt(pos);
+  if (charCode === DOT)
+    charCode = input.charCodeAt(++pos);
+  return pos >= input.length ? inputFinished : charCode === COLON || isDelimiter(charCode);
+}
+// Returns the position after the digits starting at the given position
+function skipDigits(input, pos) {
+  let charCode = input.charCodeAt(pos);
+  while (charCode >= ZERO && charCode <= NINE)
+    charCode = input.charCodeAt(++pos);
+  return pos;
+}
 
 // Fixed escape sequences allowed in string literals (ECHAR)
 const stringEscapeReplacements = {
@@ -66,7 +96,6 @@ export default class N3Lexer {
     this._prefixed = /((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:((?:(?:[0-9:A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])(?:(?:[\.\-0-9:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])*(?:[\-0-9:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~]))?)?)(?:[ \t]+|(?=\.?[,;!\^\s#()\[\]\{\}"'<>]))/y;
     this._variable = /\?(?:(?:[A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:[\-0-9:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?=[.,;!\^\s#()\[\]\{\}"'<>])/y;
     this._blank = /_:((?:[0-9A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?:[ \t]+|(?=\.?[,;:!\^\s#()\[\]\{\}"'<>]))/y;
-    this._number = /[\-+]?(?:(\d+\.\d*|\.?\d+)[eE][\-+]?\d+|(?=\.?\d)\d*(?:(\.)\d+)?)(?=\.?[,;:!\^\s#()\[\]\{\}"'<>])/y;
     this._boolean = /(?:true|false)(?=[.,;!\^\s#()\[\]\{\}"'<>])/y;
     this._atKeyword = /@[a-z]+(?=[\s#<:])/iy;
     this._keyword = /(?:PREFIX|BASE|VERSION|GRAPH)(?=[\s#<])/iy;
@@ -342,14 +371,11 @@ export default class N3Lexer {
           break;
         }
 
-        // Try to find a number. Since it can contain (but not end with) a dot,
-        // we always need a non-dot character before deciding it is a number.
-        // Therefore, try inserting a space if we're at the end of the input.
-        if (match = execAt(this._number, input, pos) ||
-            inputFinished && (match = execAtEnd(this._number, input, pos))) {
-          type = 'literal', value = match[0];
-          prefix = (typeof match[1] === 'string' ? xsd.double :
-                    (typeof match[2] === 'string' ? xsd.decimal : xsd.integer));
+        // Try to find a number
+        if (!this._lineMode && (prefix = this._scanNumber(input, pos, inputFinished))) {
+          type = 'literal';
+          matchLength = this._numberEnd - pos;
+          value = input.slice(pos, this._numberEnd);
         }
         break;
 
@@ -573,6 +599,42 @@ export default class N3Lexer {
         return null;
     }
     return verb;
+  }
+
+  // ### `_scanNumber` finds a number at the given position,
+  // returning its datatype and storing its end in `_numberEnd`.
+  // Since a number can contain (but not end with) a dot,
+  // a non-dot character must follow before deciding it is a number.
+  _scanNumber(input, pos, inputFinished) {
+    // Optional sign, integer digits, and optionally a dot with fractional digits
+    let charCode = input.charCodeAt(pos);
+    const start = charCode === PLUS || charCode === MINUS ? pos + 1 : pos;
+    const integerEnd = skipDigits(input, start);
+    const hasDot = input.charCodeAt(integerEnd) === DOT;
+    const fractionEnd = hasDot ? skipDigits(input, integerEnd + 1) : integerEnd;
+    const hasFraction = fractionEnd > integerEnd + 1;
+    if (integerEnd === start && !hasFraction)
+      return null;
+
+    // A double has an exponent with at least one digit
+    charCode = input.charCodeAt(fractionEnd);
+    if (charCode === 0x65 || charCode === 0x45) { // e or E
+      let exponentStart = fractionEnd + 1;
+      charCode = input.charCodeAt(exponentStart);
+      if (charCode === PLUS || charCode === MINUS)
+        exponentStart++;
+      const exponentEnd = skipDigits(input, exponentStart);
+      if (exponentEnd > exponentStart) {
+        this._numberEnd = exponentEnd;
+        return canEndNumber(input, exponentEnd, inputFinished) ? xsd.double : null;
+      }
+    }
+
+    // A decimal needs fractional digits; otherwise, a trailing dot is not part of the integer
+    this._numberEnd = hasFraction ? fractionEnd : integerEnd;
+    if (!canEndNumber(input, this._numberEnd, inputFinished))
+      return null;
+    return hasFraction ? xsd.decimal : xsd.integer;
   }
 
   // ### `_unescape` replaces N3 escape codes by their corresponding characters,
