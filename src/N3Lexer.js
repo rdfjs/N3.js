@@ -1,6 +1,7 @@
 // **N3Lexer** tokenizes N3 documents.
 import { Buffer } from 'buffer';
 import namespaces from './IRIs';
+import { checkDirectiveName } from './Util';
 
 const { xsd } = namespaces;
 const SPACE = 0x20, TAB = 0x09, LF = 0x0A, CR = 0x0D, HASH = 0x23;
@@ -79,10 +80,8 @@ export default class N3Lexer {
     // (the @-form of a directive is always tokenized as an @-keyword)
     this._directive = null;
     if (options.directives && options.directives.length !== 0) {
-      for (const name of options.directives) {
-        if (!/^[a-z]+$/i.test(name))
-          throw new Error(`Invalid directive name: "${name}"`);
-      }
+      for (const name of options.directives)
+        checkDirectiveName(name);
       this._directive = new RegExp(`^(?:${options.directives.join('|')})(?=[\\s#<])`, 'i');
     }
     // Don't output comment tokens by default

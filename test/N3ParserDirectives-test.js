@@ -112,6 +112,17 @@ describe('Parser directives', () => {
       ]);
     });
 
+    it('passes numbers and booleans as typed literals', () => {
+      const directives = [];
+      new Parser(options).parse('@source 42 true .\nSOURCE 1.5 "x"\n',
+        { onDirective: (name, args) => directives.push(args.map(arg => `${arg.value} ${arg.datatype.value}`)) });
+      const xsd = 'http://www.w3.org/2001/XMLSchema#';
+      expect(directives).toEqual([
+        [`42 ${xsd}integer`, `true ${xsd}boolean`],
+        [`1.5 ${xsd}decimal`, `x ${xsd}string`],
+      ]);
+    });
+
     it('resolves relative IRIs against the base IRI', () => {
       const directives = [];
       new Parser({ ...options, baseIRI: 'http://ex.org/' }).parse('@source <a> <b> .',
@@ -183,13 +194,19 @@ describe('Parser directives', () => {
   });
 
   describe('names', () => {
-    it.each(['prefix', 'BASE', 'version', 'graph', 'forSome', 'forAll', 'IRI', 'mes-sage', 'm1', ''])(
+    it.each(['prefix', 'BASE', 'version', 'graph', 'forSome', 'forAll', 'IRI', 'a', 'True', 'false',
+      'has', 'is', 'of', 'id', 'mes-sage', 'm1', ''])(
       'rejects the name "%s"', name => {
         expect(() => new Parser({ directives: { [name]: 0 } })).toThrow(`Invalid directive name: "${name}"`);
       });
 
-    it('rejects invalid names in the lexer', () => {
-      expect(() => new Lexer({ directives: ['a|b'] })).toThrow('Invalid directive name: "a|b"');
+    it.each(['a|b', 'a', 'TRUE'])('rejects the name "%s" in the lexer', name => {
+      expect(() => new Lexer({ directives: [name] })).toThrow(`Invalid directive name: "${name}"`);
+    });
+
+    it.each([-1, 1.5, '1', null, undefined, NaN])('rejects %p as a number of arguments', count => {
+      expect(() => new Parser({ directives: { message: count } }))
+        .toThrow(`Invalid number of arguments for directive "message": ${count}`);
     });
 
     it('lexes registered names as keywords', () => {

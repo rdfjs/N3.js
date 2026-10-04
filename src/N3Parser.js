@@ -2,11 +2,9 @@
 import N3Lexer from './N3Lexer';
 import N3DataFactory from './N3DataFactory';
 import namespaces from './IRIs';
+import { checkDirectiveName } from './Util';
 
 let blankNodePrefix = 0;
-
-// Directive names that are built into the grammar
-const builtInDirectives = /^(?:prefix|base|version|graph|forsome|forall|iri)$/i;
 
 // ## Constructor
 export default class N3Parser {
@@ -56,9 +54,11 @@ export default class N3Parser {
       directiveNames = Object.keys(options.directives);
       this._directives = Object.create(null);
       for (const name of directiveNames) {
-        if (!/^[a-z]+$/i.test(name) || builtInDirectives.test(name))
-          throw new Error(`Invalid directive name: "${name}"`);
-        const directive = { name, arguments: options.directives[name] };
+        checkDirectiveName(name);
+        const argumentCount = options.directives[name];
+        if (!Number.isInteger(argumentCount) || argumentCount < 0)
+          throw new Error(`Invalid number of arguments for directive "${name}": ${argumentCount}`);
+        const directive = { name, arguments: argumentCount };
         this._directives[`@${name.toLowerCase()}`] = this._directives[name.toUpperCase()] = directive;
       }
     }
@@ -241,7 +241,9 @@ export default class N3Parser {
     if (first !== true) {
       let argument;
       if (token.type === 'literal')
-        argument = this._factory.literal(token.value);
+        // Numbers and booleans carry their datatype in the prefix
+        argument = token.prefix ? this._factory.literal(token.value, this._factory.namedNode(token.prefix)) :
+                                  this._factory.literal(token.value);
       else if ((argument = this._readEntity(token)) === undefined)
         return;
       args.push(argument);
