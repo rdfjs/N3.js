@@ -2873,6 +2873,7 @@ describe('Parser', () => {
     }
     function parserIsImpliedBy() { return new Parser({ baseIRI: BASE_IRI, format: 'N3', isImpliedBy: true }); }
     function parserFormulaScoped() { return new Parser({ baseIRI: BASE_IRI, format: 'N3', formulaScopedBlankNodes: true }); }
+    function parserEmptyFormulaAsBlankNode() { return new Parser({ baseIRI: BASE_IRI, format: 'N3', emptyFormulaAsTrue: false }); }
 
     it(
       'should bind the empty prefix to the document local namespace by default',
@@ -2949,6 +2950,14 @@ describe('Parser', () => {
                   ['s1', 'p', '_:b0'],
                   ['http://outer.example/s', 'http://outer.example/p', 'http://outer.example/o', '_:b1'],
                   ['s2', 'p', '_:b1']),
+    );
+
+    it(
+      'should not keep a prefix first declared inside a formula',
+      shouldNotParse(parser,
+                     '<s> <p> { @prefix in: <http://inner.example/>. in:s in:p in:o. }.\n' +
+                     'in:s in:p in:o.',
+                     'Undefined prefix "in:" on line 2.'),
     );
 
     it(
@@ -3316,34 +3325,34 @@ describe('Parser', () => {
     );
 
     it(
-      'should parse an empty formula in the subject position as a blank node graph term',
-      shouldParse(parser, '{} <b> <c>.',
+      'should parse an empty formula in the subject position as a blank node graph term when emptyFormulaAsTrue is false',
+      shouldParse(parserEmptyFormulaAsBlankNode, '{} <b> <c>.',
                   ['_:b0', 'b', 'c']),
     );
 
     it(
-      'should parse an empty formula in the object position as a blank node graph term',
-      shouldParse(parser, '<a> <b> {}.',
+      'should parse an empty formula in the object position as a blank node graph term when emptyFormulaAsTrue is false',
+      shouldParse(parserEmptyFormulaAsBlankNode, '<a> <b> {}.',
                   ['a', 'b', '_:b0']),
     );
 
     it(
-      'should parse an empty formula mid-document without leaking the previous subject into it',
-      shouldParse(parser, '<p> <q> <r>. {} <b> <c>.',
+      'should parse an empty formula mid-document without leaking the previous subject into it when emptyFormulaAsTrue is false',
+      shouldParse(parserEmptyFormulaAsBlankNode, '<p> <q> <r>. {} <b> <c>.',
                   ['p', 'q', 'r'],
                   ['_:b0', 'b', 'c']),
     );
 
     it(
-      'should parse empty formulas in the subject and object positions as distinct blank node graph terms',
-      shouldParse(parser, '{} <b> {}.',
+      'should parse empty formulas in the subject and object positions as distinct blank node graph terms when emptyFormulaAsTrue is false',
+      shouldParse(parserEmptyFormulaAsBlankNode, '{} <b> {}.',
                   ['_:b0', 'b', '_:b1']),
     );
 
     it(
       // Regression test for https://github.com/rdfjs/N3.js/issues/356
-      'should parse an empty formula after a list subject without emitting a garbage quad',
-      shouldParse(parser, '() <http://www.w3.org/2000/10/swap/log#onNegativeSurface> { }.',
+      'should parse an empty formula after a list subject without emitting a garbage quad when emptyFormulaAsTrue is false',
+      shouldParse(parserEmptyFormulaAsBlankNode, '() <http://www.w3.org/2000/10/swap/log#onNegativeSurface> { }.',
                   ['http://www.w3.org/1999/02/22-rdf-syntax-ns#nil', 'http://www.w3.org/2000/10/swap/log#onNegativeSurface', '_:b0']),
     );
 
@@ -4618,11 +4627,10 @@ describe('Parser', () => {
   });
 
   // The N3 spec tests read an empty formula as the boolean literal true
-  // (a direction discussed in https://github.com/w3c-cg/N3/issues/185, not yet a settled decision),
-  // so this behavior is opt-in until the next major version (https://github.com/rdfjs/N3.js/issues/632)
-  describe('A Parser instance for the N3 format with the emptyFormulaAsTrue option', () => {
-    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3', emptyFormulaAsTrue: true }); }
-    function parserIsImpliedBy() { return new Parser({ baseIRI: BASE_IRI, format: 'N3', emptyFormulaAsTrue: true, isImpliedBy: true }); }
+  // (see https://github.com/w3c-cg/N3/issues/185 and https://github.com/rdfjs/N3.js/issues/632)
+  describe('A Parser instance for the N3 format reading empty formulas', () => {
+    function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N3' }); }
+    function parserIsImpliedBy() { return new Parser({ baseIRI: BASE_IRI, format: 'N3', isImpliedBy: true }); }
 
     it(
       'should parse an empty formula in the subject position as the boolean literal true',

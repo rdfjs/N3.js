@@ -30,8 +30,10 @@ function merge(target, source, depth = 4) {
       size++;
       target[key] = depth === 0 ? null : merge(Object.create(null), source[key], depth - 1);
     }
+    // Merge into the existing object in place,
+    // as graph objects are frozen and cannot be reassigned
     else if (depth !== 0)
-      target[key] = merge(target[key], source[key], depth - 1);
+      merge(target[key], source[key], depth - 1);
   }
   // Depth 2 is the level of the `subjects`, `predicates`, and `objects` indexes.
   if (depth <= 2)
