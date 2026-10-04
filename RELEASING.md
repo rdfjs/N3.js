@@ -25,10 +25,11 @@ read with the [Conventional Commits](https://www.conventionalcommits.org/) prese
 [`sync-next-major.yml`](.github/workflows/sync-next-major.yml) merges `main` into
 `next-major` once CI on `main`, including its release, has passed. That push runs CI on
 `next-major`, which publishes a new alpha whenever the merge brought in a `fix` or
-`feat`. It pushes with the `DEPENDABOT_AUTOMERGE_TOKEN` PAT, because pushes made with
-`GITHUB_TOKEN` don't trigger CI. That token needs Contents, Pull requests and Workflows
-write. Without Workflows write, GitHub rejects any sync that brings in a change to
-`.github/workflows`.
+`feat`. It pushes with the `NEXT_MAJOR_SYNC_TOKEN` secret, because pushes made with
+`GITHUB_TOKEN` don't trigger CI. That secret is a fine-grained token for this repository
+with Contents, Pull requests and Workflows write, owned by a maintainer the `next-major`
+ruleset lets bypass. Without Workflows write, GitHub rejects any sync that brings in a
+change to `.github/workflows`. When the token expires, the sync fails until it is renewed.
 
 It merges rather than rebases, for two reasons:
 

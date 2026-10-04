@@ -30,10 +30,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # A push made with GITHUB_TOKEN does not trigger CI, so next-major would
-      # never release. This reuses the auto-merge PAT, which needs Contents,
-      # Pull requests and Workflows write (main's commits can change
-      # .github/workflows); its owner must be allowed to push to next-major.
-      GH_TOKEN: ${{ secrets.DEPENDABOT_AUTOMERGE_TOKEN }}
+      # never release. Set this Actions secret to a fine-grained PAT for this
+      # repo with Contents, Pull requests and Workflows write (main's commits
+      # can change .github/workflows), owned by an actor allowed to push to
+      # next-major.
+      GH_TOKEN: ${{ secrets.NEXT_MAJOR_SYNC_TOKEN }}
       # The main commit whose CI and release succeeded. Later commits sync
       # after their own runs.
       MAIN_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
@@ -41,14 +42,14 @@ jobs:
       - name: Check the token
         run: |
           if [ -z "$GH_TOKEN" ]; then
-            echo "::error::Set the DEPENDABOT_AUTOMERGE_TOKEN Actions secret to a token with Contents, Pull requests and Workflows write. See RELEASING.md."
+            echo "::error::Set the NEXT_MAJOR_SYNC_TOKEN Actions secret to a token with Contents, Pull requests and Workflows write. See RELEASING.md."
             exit 1
           fi
       - uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 0
-          token: ${{ secrets.DEPENDABOT_AUTOMERGE_TOKEN }}
+          token: ${{ secrets.NEXT_MAJOR_SYNC_TOKEN }}
       - name: Merge main into next-major
         id: merge
         run: |
