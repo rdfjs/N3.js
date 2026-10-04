@@ -55,6 +55,10 @@ export default class N3Parser {
     // Disable parsing of unsupported versions by default
     this._parseUnsupportedVersions = !!options.parseUnsupportedVersions;
     this._version = options.version;
+    // Maximum nesting depth of triple terms (default 1024; Infinity disables the limit)
+    const maxTripleTermDepth = options.maxTripleTermDepth;
+    this._maxTripleTermDepth = maxTripleTermDepth === Infinity ||
+      Number.isInteger(maxTripleTermDepth) && maxTripleTermDepth >= 0 ? maxTripleTermDepth : 1024;
   }
 
   // ## Static class methods
@@ -87,6 +91,19 @@ export default class N3Parser {
       this._baseRoot   = baseIRI[0];
       this._baseScheme = baseIRI[1];
     }
+  }
+
+  // ### `_enterTripleTerm` stores the current parsing context when entering a triple term,
+  // failing if triple terms nest deeper than the maximum depth
+  _enterTripleTerm(type, subject, predicate, token) {
+    if (this._tripleTermDepth >= this._maxTripleTermDepth) {
+      this._error(`Triple terms nested deeper than ${this._maxTripleTermDepth} level${this._maxTripleTermDepth === 1 ? '' : 's'}`, token);
+      return false;
+    }
+    this._tripleTermDepth++;
+    this._saveContext(type, this._graph, subject, predicate, null);
+    this._graph = null;
+    return true;
   }
 
   // ### `_saveContext` stores the current parsing context
@@ -339,13 +356,9 @@ export default class N3Parser {
     case '<<(':
       if (!this._n3Mode)
         return this._error('Disallowed triple term as subject', token);
-      this._saveContext('<<(', this._graph, null, null, null);
-      this._graph = null;
-      return this._readSubject;
+      return this._enterTripleTerm('<<(', null, null, token) && this._readSubject;
     case '<<':
-      this._saveContext('<<', this._graph, null, null, null);
-      this._graph = null;
-      return this._readSubject;
+      return this._enterTripleTerm('<<', null, null, token) && this._readSubject;
     default:
       // Read the subject entity
       if ((this._subject = this._readEntity(token)) === undefined)
@@ -490,13 +503,9 @@ export default class N3Parser {
                         this._graph = this._factory.blankNode());
       return this._readInFormulaContext;
     case '<<(':
-      this._saveContext('<<(', this._graph, this._subject, this._predicate, null);
-      this._graph = null;
-      return this._readSubject;
+      return this._enterTripleTerm('<<(', this._subject, this._predicate, token) && this._readSubject;
     case '<<':
-      this._saveContext('<<', this._graph, this._subject, this._predicate, null);
-      this._graph = null;
-      return this._readSubject;
+      return this._enterTripleTerm('<<', this._subject, this._predicate, token) && this._readSubject;
     default:
       // Read the object entity
       if ((this._object = this._readEntity(token)) === undefined)
@@ -716,13 +725,9 @@ export default class N3Parser {
       this._subject = null;
       return this._readInFormulaContext;
     case '<<(':
-      this._saveContext('<<(', this._graph, null, null, null);
-      this._graph = null;
-      next = this._readSubject;
-      break;
     case '<<':
-      this._saveContext('<<', this._graph, null, null, null);
-      this._graph = null;
+      if (!this._enterTripleTerm(token.type, null, null, token))
+        return;
       next = this._readSubject;
       break;
     default:
@@ -1272,6 +1277,7 @@ export default class N3Parser {
     const quad = this._createQuad(this._subject, this._predicate, this._object,
         this._graph, this._inversePredicate);
     this._restoreContext('<<(', token);
+    this._tripleTermDepth--;
 
     // If we're in a list, continue processing that list
     const stack = this._contextStack, parent = stack.length && stack[stack.length - 1];
@@ -1307,6 +1313,7 @@ export default class N3Parser {
     this._tripleTerm = null;
     const reifier = this._readTripleTerm();
     this._restoreContext('<<', token);
+    this._tripleTermDepth--;
 
     // // If we're in a list, continue processing that list
     const stack = this._contextStack, parent = stack.length && stack[stack.length - 1];
@@ -1652,6 +1659,7 @@ export default class N3Parser {
     this._prefixChanges = null;
     this._quantifiedChanges = null;
     this._emptyFormula = false;
+    this._tripleTermDepth = 0;
 
     let readToken = token => {
       return this._readCallback = this._readCallback(token);
