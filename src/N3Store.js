@@ -198,7 +198,7 @@ export class N3EntityIndex {
 }
 
 // Counts the quads in the given graphs from the sizes of their deepest index level
-export function countQuads(graphs) {
+function countQuads(graphs) {
   let size = 0, subjects, subject;
   for (const graphKey in graphs)
     for (const subjectKey in (subjects = graphs[graphKey].subjects))

@@ -1,5 +1,4 @@
 import DF from './N3DataFactory';
-import { countQuads } from './N3Store';
 
 /**
  * Gets rules from a dataset. This will only collect horn rules declared using log:implies.
@@ -35,6 +34,7 @@ export default class N3Reasoner {
       if (!store._addToIndex(graphItem.subjects,   subject,   predicate, object)) return;
       store._addToIndex(graphItem.predicates, predicate, object,    subject);
       store._addToIndex(graphItem.objects,    object,    subject,   predicate);
+      this._indexed++;
     }
     // Count genuinely new derivations and fail past the budget. The check comes
     // after all three indexes are updated, so a caught error leaves the store
@@ -176,7 +176,7 @@ export default class N3Reasoner {
   }
 
   reason(rules) {
-    this._derivations = 0;
+    this._derivations = this._indexed = 0;
     if (!Array.isArray(rules)) {
       rules = getRulesFromDataset(rules);
     }
@@ -243,9 +243,11 @@ export default class N3Reasoner {
       }
     }
     finally {
-      // Recount the derivations even if a derivation budget was exceeded,
-      // so a caught budget error leaves the store fully consistent.
-      this._store._size = countQuads(graphs);
+      // Count the quads added directly to the indexes, even if a derivation
+      // budget was exceeded, so a caught budget error leaves the store consistent
+      // (stores from other N3 versions may not track their size)
+      if (typeof this._store._size === 'number')
+        this._store._size += this._indexed;
     }
   }
 }

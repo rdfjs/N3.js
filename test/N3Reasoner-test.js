@@ -345,6 +345,26 @@ describe('Reasoner', () => {
         '@prefix : <http://example.org/>. { ?x :r ?y. ?y :r ?z } => { ?x :r ?z }.')));
     }
 
+    it('Should keep the size of a store from another copy of N3', () => {
+      let OtherStore;
+      jest.isolateModules(() => { OtherStore = require('../src').Store; });
+      const store = new OtherStore(chainStore(10).getQuads());
+      expect(store).not.toBeInstanceOf(Store);
+      new Reasoner(store).reason([]);
+      expect(store.size).toBe(10);
+      new Reasoner(store).reason(transitiveRule());
+      expect(store.size).toBe(55);
+      expect(store.getQuads()).toHaveLength(55);
+    });
+
+    it('Should leave the size of a store that does not track it untouched', () => {
+      const store = chainStore(10);
+      store._size = null;
+      new Reasoner(store).reason(transitiveRule());
+      expect(store._size).toBe(null);
+      expect(store.getQuads()).toHaveLength(55);
+    });
+
     it('Should fail when reasoning exceeds maxDerivations', () => {
       const store = chainStore(400);
       expect(() => new Reasoner(store, { maxDerivations: 1000 }).reason(transitiveRule()))

@@ -3888,6 +3888,16 @@ describe('Store', () => {
         expect(storeb.intersection(store1).size).toBe(1);
       });
 
+      it('should intersect with a smaller dataset of another kind', () => {
+        const larger = new Store([q[0], q[1], q[2]]), missing = new Quad(new NamedNode('x'), q[0].predicate, q[0].object);
+        const dataset = { size: 2, has: jest.fn(), *[Symbol.iterator]() { yield q[0]; yield missing; } };
+        const result = larger.intersection(dataset);
+        expect(dataset.has).not.toHaveBeenCalled();
+        expect(result.size).toBe(1);
+        expect(result.has(q[0])).toBe(true);
+        expect(result.has(missing)).toBe(false);
+      });
+
       it('should intersect with a smaller store whose factory creates other quads', () => {
         const factory = Object.assign({}, DataFactory, { quad: (s, p, o, g) => ({ s, p, o, g }) });
         const custom = new Store([q[0]], { factory });
