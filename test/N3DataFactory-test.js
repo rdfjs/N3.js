@@ -92,6 +92,23 @@ describe('DataFactory', () => {
       expect(DataFactory.literal(999999999999999900000)).toEqual(new Literal('"999999999999999900000"^^http://www.w3.org/2001/XMLSchema#integer'));
     });
 
+    it('converts a BigInt to xsd:integer', () => {
+      expect(DataFactory.literal(123n)).toEqual(new Literal('"123"^^http://www.w3.org/2001/XMLSchema#integer'));
+      expect(DataFactory.literal(0n)).toEqual(new Literal('"0"^^http://www.w3.org/2001/XMLSchema#integer'));
+      expect(DataFactory.literal(-42n)).toEqual(new Literal('"-42"^^http://www.w3.org/2001/XMLSchema#integer'));
+    });
+
+    it('converts a BigInt beyond the range of a number to an exact xsd:integer', () => {
+      expect(DataFactory.literal(2n ** 53n + 1n)).toEqual(new Literal('"9007199254740993"^^http://www.w3.org/2001/XMLSchema#integer'));
+      expect(DataFactory.literal(10n ** 30n)).toEqual(new Literal('"1000000000000000000000000000000"^^http://www.w3.org/2001/XMLSchema#integer'));
+      expect(DataFactory.literal(-(10n ** 30n) - 7n)).toEqual(new Literal('"-1000000000000000000000000000007"^^http://www.w3.org/2001/XMLSchema#integer'));
+      expect(DataFactory.literal(10n ** 30n).value).toBe('1000000000000000000000000000000');
+    });
+
+    it('converts a BigInt with an explicit datatype', () => {
+      expect(DataFactory.literal(5n, new NamedNode('http://www.w3.org/2001/XMLSchema#long'))).toEqual(new Literal('"5"^^http://www.w3.org/2001/XMLSchema#long'));
+    });
+
     it('converts Infinity', () => {
       expect(DataFactory.literal(Infinity)).toEqual(new Literal('"INF"^^http://www.w3.org/2001/XMLSchema#double'));
     });
