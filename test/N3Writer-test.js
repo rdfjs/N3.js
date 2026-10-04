@@ -365,43 +365,37 @@ describe('Writer', () => {
     );
 
     it(
-      'should only treat IRIs with an exact prefix name as prefixed names',
-      shouldSerialize({ prefixes: { 'a.b': 'http://a.org/' } },
-                      ['a.b:s', 'axb:p', 'http://a.org/o'],
-                      '@prefix a.b: <http://a.org/>.\n\n' +
-                      'a.b:s <axb:p> a.b:o.\n'),
-    );
-
-    it(
-      'should expand prefixes when possible',
+      'should not write IRIs that look like prefixed names as prefixed names',
       shouldSerialize({ prefixes: { a: 'http://a.org/', b: 'http://a.org/b#' } },
                       ['a:bc', 'b:ef', 'c:bhi'],
                       '@prefix a: <http://a.org/>.\n' +
                       '@prefix b: <http://a.org/b#>.\n\n' +
-                      'a:bc b:ef <c:bhi>.\n'),
+                      '<a:bc> <b:ef> <c:bhi>.\n'),
     );
 
-    it(
-      'should only expand prefixes when the rest is a valid local name',
-      shouldSerialize({ prefixes: { a: 'http://a.org/' } },
-                      ['a:bc', 'a:d#e', 'a:f?g'],
-                      ['a:', 'a:h~i', 'a:j.'],
-                      '@prefix a: <http://a.org/>.\n\n' +
-                      'a:bc <a:d#e> <a:f?g>.\n' +
-                      'a: <a:h~i> <a:j.>.\n'),
-    );
+    it('should round-trip IRIs whose scheme matches a prefix name', async () => {
+      const writer = new Writer({ prefixes: { ex: 'http://example.org/', urn: 'http://example.org/urn/' } });
+      const quad = new Quad(new NamedNode('ex:foo'), new NamedNode('http://example.org/p'),
+                            new NamedNode('urn:isbn:0451450523'));
+      writer.addQuad(quad);
+      const output = await new Promise(resolve => writer.end((error, result) => resolve(result)));
+      expect(output).toBe('@prefix ex: <http://example.org/>.\n' +
+                          '@prefix urn: <http://example.org/urn/>.\n\n' +
+                          '<ex:foo> ex:p <urn:isbn:0451450523>.\n');
+      expect(new Parser().parse(output)).toStrictEqual([quad]);
+    });
 
-    it(
-      'should keep IRIs that look like prefixed names with any valid local name as prefixed names',
-      shouldSerialize({ prefixes: { a: 'http://a.org/' } },
-                      ['a:é', 'a:b:c', 'a:b%20c'],
-                      ['a:b..c', 'a:-b', 'a:%2'],
-                      ['a:b\u00B7c', 'a:%41.b', 'a:b.-'],
-                      '@prefix a: <http://a.org/>.\n\n' +
-                      'a:é a:b:c a:b%20c.\n' +
-                      'a:b..c <a:-b> <a:%2>.\n' +
-                      'a:b\u00B7c a:%41.b a:b.-.\n'),
-    );
+    it('should round-trip every IRI that looks like a prefixed name', async () => {
+      const prefixes = { 'a': 'http://a.org/', 'a.b': 'http://ab.org/', 'x': 'http://x.org/', 'm': 'http://m.org/' };
+      const iris = ['a:é', 'a:b:c', 'a:b%20c', 'a:b..c', 'a.b:c', 'x:y', 'm:foo', 'a:'];
+      const quads = iris.map(iri => new Quad(new NamedNode(iri), new NamedNode('http://a.org/p'), new NamedNode(iri)));
+      const writer = new Writer({ prefixes });
+      writer.addQuads(quads);
+      const output = await new Promise(resolve => writer.end((error, result) => resolve(result)));
+      for (const iri of iris)
+        expect(output).toContain(`<${iri}> a:p <${iri}>.`);
+      expect(new Parser().parse(output)).toStrictEqual(quads);
+    });
 
     it(
       'should not repeat the same subjects',
