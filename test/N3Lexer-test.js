@@ -68,6 +68,7 @@ describe('Lexer', () => {
 
     it('recognizes VERSION as the only keyword in line mode', () => {
       expect(new Lexer({ lineMode: true }).tokenize('VERSION "1.2"\n')[0]).toMatchObject({ type: 'VERSION' });
+      expect(new Lexer({ lineMode: true }).tokenize('VERSION"1.2"\n')[0]).toMatchObject({ type: 'VERSION' });
       for (const keyword of ['version', 'Version', 'PREFIX', 'BASE', 'GRAPH']) {
         expect(() => new Lexer({ lineMode: true }).tokenize(`${keyword} `))
           .toThrow(`Unexpected "${keyword}" on line 1.`);
