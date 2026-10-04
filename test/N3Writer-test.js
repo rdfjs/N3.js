@@ -248,16 +248,37 @@ describe('Writer', () => {
       expect(await end(writer)).toBe('<urn:p> <urn:p> { <urn:p> <urn:p> <<(<urn:p> <urn:p> { <urn:p> <urn:p> <urn:p> })>> }.\n');
     });
 
-    it('should write a formula shared by a list and a statement once', async () => {
+    it('should refuse a formula shared by a list and a statement', async () => {
       const p = new NamedNode('urn:p'), a = new NamedNode('urn:a');
       const writer = new Writer({ format: 'N3', formulas: { f: [new Quad(a, a, a)] }, lists: { l: [new BlankNode('f')] } });
       writer.addQuad(new NamedNode('urn:s'), p, new BlankNode('l'));
       writer.addQuad(new NamedNode('urn:t'), p, new BlankNode('f'));
-      const output = await end(writer);
-      expect(output.match(/<urn:a>/g)).toHaveLength(3);
-      expect(output).toBe('<urn:s> <urn:p> _:l.\n{ <urn:a> <urn:a> <urn:a> } is <urn:p> of <urn:t>; ' +
-        'is <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> of _:l.\n' +
-        '_:l <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> <http://www.w3.org/1999/02/22-rdf-syntax-ns#nil>.\n');
+      await expect(end(writer)).rejects.toThrow('Cannot write formula _:f, which a list shares with other terms');
+      expect(() => writer.formula([new Quad(a, p, new BlankNode('l')), new Quad(a, p, new BlankNode('l'))]))
+        .toThrow('Cannot write formula _:f, which a list shares with other terms');
+    });
+
+    it('should keep pretty-printed nodes inside quoted triples apart', () => {
+      const p = new NamedNode('urn:p'), writer = new Writer({ format: 'N3' });
+      const formula = writer.formula([new Quad(new Quad(writer.blank(), p, p), p, p), new Quad(new Quad(writer.blank(), p, p), p, p)]);
+      expect(formula.id).toBe('{ <<([] <urn:p> <urn:p>)>> <urn:p> <urn:p>. <<([] <urn:p> <urn:p>)>> <urn:p> <urn:p> }');
+    });
+
+    it('should write statements with formulas with the prefixes bound at the end', async () => {
+      const writer = new Writer({ format: 'N3', prefixes: { ex: 'urn:old:' }, formulas: { f: [] } });
+      writer.addQuad(new NamedNode('urn:old:s'), new NamedNode('urn:old:p'), new BlankNode('f'));
+      writer.addPrefix('ex', 'urn:new:');
+      writer.addQuad(new NamedNode('urn:old:s'), new NamedNode('urn:new:p'), new NamedNode('urn:new:o'));
+      expect(await end(writer)).toBe('@prefix ex: <urn:old:>.\n\n@prefix ex: <urn:new:>.\n\n' +
+        '<urn:old:s> ex:p ex:o.\n<urn:old:s> <urn:old:p> {}.\n');
+    });
+
+    it('should keep an IRI bound to another prefix when rebinding a prefix', async () => {
+      const writer = new Writer({ format: 'N3', prefixes: { ex: 'urn:old:', other: 'urn:old:' } });
+      writer.addPrefix('ex', 'urn:new:');
+      writer.addQuad(new NamedNode('urn:old:s'), new NamedNode('urn:new:p'), new NamedNode('urn:new:o'));
+      expect(await end(writer)).toBe('@prefix ex: <urn:old:>.\n@prefix other: <urn:old:>.\n\n@prefix ex: <urn:new:>.\n\n' +
+        'other:s ex:p ex:o.\n');
     });
 
     it('should write a formula shared as the predicate of equal literals once', async () => {
@@ -332,22 +353,6 @@ describe('Writer', () => {
       const formula = writer.formula([new Quad(new Literal('"x"'), p, p), new Quad(new Literal('"x"'), p, new Literal('"y"')),
         new Quad(new Quad(p, p, p), p, p)]);
       expect(formula.id).toBe('{ "x" <urn:p> <urn:p>, "y". <<(<urn:p> <urn:p> <urn:p>)>> <urn:p> <urn:p> }');
-    });
-
-    it('should write lists with shared formulas as statements in their own scope only', async () => {
-      const [a, p] = [new NamedNode('urn:a'), new NamedNode('urn:p')];
-      const [F, l, m] = [new BlankNode('F'), new BlankNode('l'), new BlankNode('m')];
-      const formulas = { F: [new Quad(a, a, a)], f: [new Quad(new NamedNode('urn:s'), p, l), new Quad(new NamedNode('urn:t'), p, l),
-        new Quad(new NamedNode('urn:u'), p, F), new Quad(new NamedNode('urn:v'), p, new Quad(a, a, m))] };
-      const writer = new Writer({ format: 'N3', formulas, lists: { l: [F, a], m: [F] } });
-      writer.addQuad(a, p, new BlankNode('f'));
-      writer.addQuad(new NamedNode('urn:x'), p, l);
-      const first = '<http://www.w3.org/1999/02/22-rdf-syntax-ns#first>', rest = '<http://www.w3.org/1999/02/22-rdf-syntax-ns#rest>';
-      const nil = '<http://www.w3.org/1999/02/22-rdf-syntax-ns#nil>';
-      expect(await end(writer)).toBe('<urn:a> <urn:p> { <urn:s> <urn:p> _:l. <urn:t> <urn:p> _:l. ' +
-        `{ <urn:a> <urn:a> <urn:a> } is <urn:p> of <urn:u>; is ${first} of _:m, _:l. <urn:v> <urn:p> <<(<urn:a> <urn:a> _:m)>>. ` +
-        `_:m ${rest} ${nil}. _:l ${rest} _:l.1. _:l.1 ${first} <urn:a>; ${rest} ${nil} }.\n` +
-        '<urn:x> <urn:p> ({ <urn:a> <urn:a> <urn:a> } <urn:a>).\n');
     });
 
     it('should repeat a formula whose occurrences N3 cannot share', async () => {

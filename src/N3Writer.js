@@ -8,8 +8,6 @@ import { escapeRegex } from './Util';
 const DEFAULTGRAPH = N3DataFactory.defaultGraph();
 
 const { rdf, xsd } = namespaces;
-const RDF_FIRST = N3DataFactory.namedNode(rdf.first), RDF_REST = N3DataFactory.namedNode(rdf.rest);
-const RDF_NIL = N3DataFactory.namedNode(rdf.nil);
 const { hasOwnProperty } = Object.prototype;
 
 // Characters that require escaping in Turtle, TriG, and N3,
@@ -35,9 +33,15 @@ class SerializedTerm extends Term {
   }
 }
 
-// Identifies RDF terms by equality, and pretty-printed nodes by identity
+// Identifies RDF terms by equality, and terms with pretty-printed nodes by identity
 function termKey(term) {
-  return term instanceof SerializedTerm ? term : termToId(term);
+  return hasSerializedTerm(term) ? term : termToId(term);
+}
+
+// Checks whether the term is or contains a pretty-printed node
+function hasSerializedTerm(term) {
+  return term instanceof SerializedTerm || term.termType === 'Quad' &&
+    (hasSerializedTerm(term.subject) || hasSerializedTerm(term.predicate) || hasSerializedTerm(term.object));
 }
 
 // ## Constructor
@@ -54,8 +58,6 @@ export default class N3Writer {
     this._lists = options.lists;
     this._formulas = options.formulas;
     this._openFormulas = new Set();
-    // The lists written as statements in the statements being serialized
-    this._unfoldedLists = new Set();
     this._formulaCache = null;
     // Statements with formulas are held back until the end, to group them by formula
     this._formulaStatements = this._formulas ? [] : null;
@@ -81,6 +83,8 @@ export default class N3Writer {
       this._escape = escape, this._escapeAll = escapeAll, this._characterReplacer = characterReplacer;
       this._graph = DEFAULTGRAPH;
       this._prefixIRIs = Object.create(null);
+      // `_prefixNames` maps each prefix to the IRI it is bound to
+      this._prefixNames = Object.create(null);
       // Escaped prefix IRIs and names for the prefix matcher, computed once per prefix
       this._prefixPatterns = Object.create(null);
       if (options.baseIRI) {
@@ -207,37 +211,20 @@ export default class N3Writer {
     return !!this._lists && term.termType !== 'NamedNode' && (term.value in this._lists);
   }
 
-  // ### `_unfoldLists` adds the statements of the lists in the quads
-  // that contain a formula occurring more than once, and returns these lists.
-  // Such lists are written as blank nodes, so that their formulas can be shared.
-  _unfoldLists(quads, unfolded) {
-    const terms = [], counts = new Map();
+  // ### `_checkLists` rejects lists that contain a formula occurring more than once,
+  // since N3 can only share a formula between statements, not with a list
+  _checkLists(quads) {
+    const terms = [], all = new Map(), outsideLists = new Map();
     for (const quad of quads)
       terms.push(quad.subject, quad.predicate, quad.object);
     for (const label of this._findFormulas(terms))
-      counts.set(label, counts.has(label));
-    let result = quads;
-    while (terms.length) {
-      const term = terms.pop();
-      if (term.termType === 'Quad')
-        terms.push(term.subject, term.predicate, term.object);
-      else if (this._isList(term) && !unfolded.has(term.value) &&
-               this._findFormulas(this._lists[term.value]).some(label => counts.get(label))) {
-        unfolded.add(term.value);
-        if (result === quads)
-          result = quads.slice();
-        const items = this._lists[term.value];
-        let node = term;
-        for (let i = 0; i < items.length; i++) {
-          const rest = i + 1 < items.length ? N3DataFactory.blankNode(`${term.value}.${i + 1}`) : RDF_NIL;
-          result.push({ subject: node, predicate: RDF_FIRST, object: items[i] },
-                      { subject: node, predicate: RDF_REST, object: rest });
-          terms.push(items[i]);
-          node = rest;
-        }
-      }
+      all.set(label, (all.get(label) || 0) + 1);
+    for (const label of this._findFormulas(terms, false))
+      outsideLists.set(label, (outsideLists.get(label) || 0) + 1);
+    for (const [label, count] of all) {
+      if (count > 1 && count > (outsideLists.get(label) || 0))
+        throw new Error(`Cannot write formula _:${label}, which a list shares with other terms`);
     }
-    return result;
   }
 
   // ### `_encodeFormula` serializes the formula with the given label.
@@ -303,7 +290,7 @@ export default class N3Writer {
     // A blank node or list is represented as-is
     if (entity.termType !== 'NamedNode') {
       // If it is a list head, pretty-print it
-      if (this._isList(entity) && !this._unfoldedLists.has(entity.value))
+      if (this._isList(entity))
         entity = this.list(this._lists[entity.value]);
       // If it labels an N3 formula, write the formula's contents,
       // unless that formula is already being written, which would never end
@@ -467,8 +454,14 @@ export default class N3Writer {
         this._write(this._inDefaultGraph ? '.\n' : '\n}\n');
         this._subject = null, this._graph = '';
       }
-      // Store and write the prefix
-      this._prefixIRIs[iri] = (prefix += ':');
+      // Store and write the prefix, forgetting the IRI it was bound to before,
+      // also for statements that are written later, such as those with formulas
+      prefix += ':';
+      const previous = this._prefixNames[prefix];
+      if (previous !== undefined && previous !== iri && this._prefixIRIs[previous] === prefix)
+        delete this._prefixIRIs[previous], delete this._prefixPatterns[previous];
+      this._prefixNames[prefix] = iri;
+      this._prefixIRIs[iri] = prefix;
       this._prefixPatterns[iri] = [escapeRegex(iri), escapeRegex(prefix)];
       this._write(`@prefix ${prefix} <${iri}>.\n`);
     }
@@ -557,18 +550,7 @@ export default class N3Writer {
   // using inverse `is … of` verbs where it is their object,
   // or the verb shared by a list of objects (or of subjects, with an inverse verb).
   _encodeStatements(quads) {
-    const outerLists = this._unfoldedLists;
-    quads = this._unfoldLists(quads, this._unfoldedLists = new Set());
-    try {
-      return this._encodeGroupedStatements(quads);
-    }
-    finally {
-      this._unfoldedLists = outerLists;
-    }
-  }
-
-  // ### `_encodeGroupedStatements` serializes N3 statements with formulas in shareable positions
-  _encodeGroupedStatements(quads) {
+    this._checkLists(quads);
     // Count the occurrences of terms that contain formulas, such as quoted triples
     const occurrences = new Map(), verbSubjects = new Map(), statements = new Map();
     for (const quad of quads) {
@@ -623,8 +605,14 @@ export default class N3Writer {
     // Write the statements with formulas, which were held back
     const formulaStatements = this._formulaStatements;
     this._formulaStatements = null;
-    if (formulaStatements && formulaStatements.length)
-      this._write(`${this._encodeStatements(formulaStatements).join('.\n')}.\n`);
+    if (formulaStatements && formulaStatements.length) {
+      try {
+        this._write(`${this._encodeStatements(formulaStatements).join('.\n')}.\n`);
+      }
+      catch (error) {
+        return done && done(error);
+      }
+    }
     // Disallow further writing
     this._write = this._blockedWrite;
 
