@@ -53,9 +53,10 @@ reads all the channel notes on a commit as one, so the alpha would read as a sta
 What this means for releases:
 - A sync on its own publishes no alpha. `main`'s changes sit below the moved tag, so they reach
   `@alpha` with the next release from `next-major` and are not listed in its notes.
-- If a sync conflicts and the resolution changes the commit the newest alpha is on, and that
-  commit is not the tip, its rebased counterpart can't be proven, so applying the resolution
-  stops before anything moves. Move the tag by hand, as in the first rebase.
+- A clean sync moves the tag to its commit's counterpart in the sync's own rebase, checked commit
+  for commit. After a conflict, only the tip of the hand-made history is proven, by its reviewed
+  tree, so applying a resolution moves the tag only if it was on `next-major`'s tip. Otherwise
+  it stops before anything moves; move the tag by hand, as in the first rebase.
 
 **Open pull requests into `next-major`.** A rebase leaves them based on the old `next-major`.
 Their branches are rebased by hand: `git rebase --onto origin/next-major <old next-major sha>`.
@@ -75,7 +76,8 @@ maintainer before it reaches `next-major`:
 3. A maintainer reviews that pull request and merges it. It never auto-merges.
 4. The maintainer then runs
    [`apply-next-major-resolution.yml`](.github/workflows/apply-next-major-resolution.yml) from
-   `main`, with the pull request's number and merge commit sha. Only an admin or maintainer can,
+   `main`, with the pull request's number, its merge commit sha and the sha of
+   `sync/next-major-rebased` they reviewed. Only an admin or maintainer can start or re-run it,
    and that run is the approval: whoever merged the pull request, nothing reaches `next-major`
    until a maintainer applies it.
    It pushes `sync/next-major-rebased` as `next-major`, but only if all of these hold:

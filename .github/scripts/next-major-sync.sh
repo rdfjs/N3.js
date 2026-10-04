@@ -5,7 +5,7 @@
 #     Rebases next-major onto <main sha>. A clean rebase is pushed straight away. A conflicting
 #     one moves nothing: it pushes main merged into next-major, conflict markers included, as
 #     sync/conflict-<main sha>-base, for a resolution pull request into that branch.
-#   next-major-sync.sh apply <pull request number> <merge commit sha>
+#   next-major-sync.sh apply <pull request number> <merge commit sha> <rebased sha>
 #     Run by a maintainer after merging that resolution pull request. Pushes
 #     sync/next-major-rebased as next-major, but only if it is next-major's commits, unchanged,
 #     on <main sha>, with exactly the merged tree, and the pull request resolved the conflict
@@ -43,13 +43,14 @@ commit_record() {
     print join("\n", grep { !/^(?:tree|parent|committer|gpgsig|gpgsig-sha256) / } split /\n(?! )/, $head), "\n\n", $body'
 }
 
-# The lines a commit adds and removes, outside the given paths, as a stable patch id. Without
-# context lines, a commit that rebases cleanly keeps the same id.
-change_id() {
+# The lines a commit adds and removes, byte for byte and in order, outside the given paths. Only
+# blob ids and hunk headers (line numbers and function context) are dropped, since a rebase onto
+# a newer main changes those.
+changes() {
   local commit=$1
   shift
-  git diff --unified=0 --no-color --no-ext-diff "$commit^" "$commit" -- . "${@/#/:(exclude,literal)}" |
-    git patch-id --stable | cut -d ' ' -f 1
+  git diff --unified=0 --no-color --no-ext-diff --no-renames "$commit^" "$commit" -- . "${@/#/:(exclude,literal)}" |
+    sed -E -e '/^index [0-9a-f]+\.\.[0-9a-f]+/d' -e 's/^@@ -[0-9]+(,[0-9]+)? \+[0-9]+(,[0-9]+)? @@.*/@@/'
 }
 
 # Succeeds if two ranges hold the same number of commits and each pair, compared on its own, has
@@ -64,7 +65,7 @@ same_commits() {
   [ "${#a[@]}" -eq "${#b[@]}" ] || return 1
   for i in "${!a[@]}"; do
     cmp -s <(commit_record "${a[$i]}") <(commit_record "${b[$i]}") &&
-      [ "$(change_id "${a[$i]}" "$@")" = "$(change_id "${b[$i]}" "$@")" ] || return 1
+      cmp -s <(changes "${a[$i]}" "$@") <(changes "${b[$i]}" "$@") || return 1
   done
 }
 
@@ -104,10 +105,11 @@ publish() {
       [ "${olds[$i]}" != "$tag_commit" ] || anchor=${news[$i]}
     done
     [ -n "$anchor" ] || fail "$tag is not on one of next-major's own commits; fix the tags by hand."
-    # The tips always correspond. Any other commit must change exactly the same lines, resolved
-    # paths included, so hunks moved between commits cannot carry the tag elsewhere.
-    [ "$tag_commit" = "$old" ] || [ "$(change_id "$tag_commit")" = "$(change_id "$anchor")" ] ||
-      fail "$tag's commit was changed by the conflict resolution, so its rebased counterpart can't be proven; move the tag by hand."
+    # The tips always correspond. Another commit is only proven by the sync's own rebase, which
+    # same_commits checked change for change; a hand-made history in apply mode proves only its
+    # tip, whose tree is the reviewed one.
+    [ "$tag_commit" = "$old" ] || [ "$mode" = sync ] ||
+      fail "$tag is not on next-major's tip, so it can only move with a sync's own rebase; move the tag by hand."
     ! git merge-base --is-ancestor "$anchor" origin/main || fail "$anchor is on main, so $tag cannot move there."
     [ -z "$(git tag --points-at "$anchor" | grep -vFx "$tag" || true)" ] ||
       fail "$anchor already carries another tag, so $tag cannot move there."
@@ -164,9 +166,10 @@ sync)
   fail "next-major does not rebase cleanly onto main ${main_sha:0:7}. Resolve it in a pull request into $base_branch and push the rebased next-major to sync/next-major-rebased (see RELEASING.md)."
   ;;
 apply)
-  pr=${2:-} merge_sha=${3:-}
+  pr=${2:-} merge_sha=${3:-} expected_rebased=${4:-}
   [[ $pr =~ ^[0-9]+$ ]] || fail "Expected a pull request number, got '$pr'."
   is_sha "$merge_sha" || fail "Expected the full merge commit sha, got '$merge_sha'."
+  is_sha "$expected_rebased" || fail "Expected the full sha of sync/next-major-rebased, got '$expected_rebased'."
   IFS=$'\t' read -r merged same_repo base_ref head_ref pr_merge_sha < <(gh api "repos/$repo/pulls/$pr" --jq \
     '[.merged, (.head.repo.full_name == .base.repo.full_name), .base.ref, .head.ref, .merge_commit_sha] | @tsv') ||
     fail "Could not read #$pr."
@@ -177,6 +180,7 @@ apply)
   fetch "+refs/heads/$base_ref:refs/remotes/origin/conflict-base" \
     '+refs/heads/sync/next-major-rebased:refs/remotes/origin/rebased'
   rebased=$(git rev-parse origin/rebased)
+  [ "$rebased" = "$expected_rebased" ] || fail "sync/next-major-rebased is $rebased, not the $expected_rebased given."
   [ "$(git rev-parse origin/conflict-base)" = "$merge_sha" ] || fail "$base_ref has moved past the merge of #$pr."
   git merge-base --is-ancestor "$main_sha" origin/main || fail "$main_sha is not on main."
   # The pull request was merged into exactly the conflict this script shows for the current
@@ -207,6 +211,6 @@ apply)
   git push "${args[@]}" origin "${refs[@]}" || echo "::warning::next-major is published, but the sync branches were not deleted."
   ;;
 *)
-  fail "Usage: next-major-sync.sh sync <main sha> | apply <pull request number> <merge commit sha>"
+  fail "Usage: next-major-sync.sh sync <main sha> | apply <pull request number> <merge commit sha> <rebased sha>"
   ;;
 esac

@@ -13,6 +13,9 @@ on:
       merge_sha:
         description: Its full merge commit sha, as shown on the pull request
         required: true
+      rebased_sha:
+        description: The full sha of sync/next-major-rebased you reviewed
+        required: true
 
 permissions:
   contents: read
@@ -32,14 +35,16 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       PULL_REQUEST: ${{ inputs.pull_request }}
       MERGE_SHA: ${{ inputs.merge_sha }}
+      REBASED_SHA: ${{ inputs.rebased_sha }}
     steps:
       # This run is the approval, whoever merged the pull request, so only an admin or
-      # maintainer may start it
+      # maintainer may start it. The triggering actor is checked, since a re-run keeps the
+      # original actor.
       - name: Check that a maintainer started this
         run: |
-          role=$(gh api "repos/$GITHUB_REPOSITORY/collaborators/$GITHUB_ACTOR/permission" --jq .role_name)
+          role=$(gh api "repos/$GITHUB_REPOSITORY/collaborators/$GITHUB_TRIGGERING_ACTOR/permission" --jq .role_name)
           if [ "$role" != admin ] && [ "$role" != maintain ]; then
-            echo "::error::Only an admin or maintainer can apply a next-major resolution; $GITHUB_ACTOR is '$role'."
+            echo "::error::Only an admin or maintainer can apply a next-major resolution; $GITHUB_TRIGGERING_ACTOR is '$role'."
             exit 1
           fi
       - uses: actions/checkout@v7
@@ -48,4 +53,4 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.NEXT_MAJOR_SYNC_TOKEN }}
       - name: Push the approved resolution as next-major
-        run: .github/scripts/next-major-sync.sh apply "$PULL_REQUEST" "$MERGE_SHA"
+        run: .github/scripts/next-major-sync.sh apply "$PULL_REQUEST" "$MERGE_SHA" "$REBASED_SHA"
