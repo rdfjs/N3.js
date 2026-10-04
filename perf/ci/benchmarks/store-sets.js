@@ -172,4 +172,19 @@ Object.assign(benchmarks, {
     view.contains(view) + view.equals(other) + view.filter(isLiteralQuad).size),
 });
 
+// addAll on a view, which adds to the view's own filtered store or, with
+// forwarded semantics, to the underlying store; each run gets a fresh store
+function viewAddAllBenchmark(matchSemantics) {
+  return N3 => {
+    const { own, quads, entityIndex } = createContext(N3);
+    const other = new N3.Store(quads, { entityIndex });
+    return {
+      before: () => new N3.Store(own, { entityIndex }).match(null, null, null, null, { matchSemantics }),
+      run: view => check(view.addAll(other).size >= SIZE, 'wrong size'),
+    };
+  };
+}
+benchmarks['store view: addAll'] = viewAddAllBenchmark(undefined);
+benchmarks['store view: addAll, forwarded'] = viewAddAllBenchmark('forwarded');
+
 module.exports = benchmarks;

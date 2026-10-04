@@ -11,9 +11,10 @@
 // interleaved within each round (alternating which goes first) so that
 // drift in the machine's speed affects both equally, and each round yields
 // a paired head/base ratio. A benchmark counts as a regression when the
-// median ratio and the ratio of the medians exceed 1 + threshold and 80% of
-// the rounds agree; a benchmark flagged that way runs as many rounds again
-// and must stay flagged over all of them.
+// median ratio and the ratio of the medians exceed 1 + threshold, or as an
+// improvement when both are below 1 - threshold, and 80% of the rounds
+// agree; a benchmark flagged that way runs as many rounds again and must
+// stay flagged over all of them.
 // --shard i/n runs every n-th benchmark starting at the i-th, so CI can
 // spread them over parallel jobs; report.js merges the shards' JSON output.
 // Exits with status 1 when there is a regression or a benchmark fails.
@@ -45,8 +46,8 @@ for (const option of ['rounds', 'iterations']) {
     usage(`--${option} must be a positive integer.`);
 }
 const rounds = Number(args.rounds), threshold = Number(args.threshold);
-if (!(threshold > 0 && threshold < 10))
-  usage('--threshold must be a number above 0, such as 0.1 for 10%.');
+if (!(threshold > 0 && threshold < 1))
+  usage('--threshold must be a number between 0 and 1, such as 0.1 for 10%.');
 // A plain substring match, so command-line input never becomes a regular expression
 const filter = args.filter ? args.filter.toLowerCase() : null;
 let names = Object.keys(benchmarks).filter(name => !filter || name.toLowerCase().includes(filter));
@@ -111,7 +112,7 @@ function classify(result) {
   const faster = result.ratios.filter(r => r < 1).length;
   if (result.ratio > 1 + threshold && overall > 1 + threshold && slower >= required)
     return 'regression';
-  if (result.ratio < 1 / (1 + threshold) && overall < 1 / (1 + threshold) && faster >= required)
+  if (result.ratio < 1 - threshold && overall < 1 - threshold && faster >= required)
     return 'improvement';
   return 'ok';
 }
