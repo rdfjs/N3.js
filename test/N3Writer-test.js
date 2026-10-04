@@ -368,6 +368,18 @@ describe('Writer', () => {
       expect(new Parser().parse(output)).toStrictEqual([quad]);
     });
 
+    it('should round-trip every IRI that looks like a prefixed name', async () => {
+      const prefixes = { 'a': 'http://a.org/', 'a.b': 'http://ab.org/', 'x': 'http://x.org/', 'm': 'http://m.org/' };
+      const iris = ['a:é', 'a:b:c', 'a:b%20c', 'a:b..c', 'a.b:c', 'x:y', 'm:foo', 'a:'];
+      const quads = iris.map(iri => new Quad(new NamedNode(iri), new NamedNode('http://a.org/p'), new NamedNode(iri)));
+      const writer = new Writer({ prefixes });
+      writer.addQuads(quads);
+      const output = await new Promise(resolve => writer.end((error, result) => resolve(result)));
+      for (const iri of iris)
+        expect(output).toContain(`<${iri}> a:p <${iri}>.`);
+      expect(new Parser().parse(output)).toStrictEqual(quads);
+    });
+
     it(
       'should not repeat the same subjects',
       shouldSerialize(['abc', 'def', 'ghi'],
