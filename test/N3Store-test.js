@@ -931,6 +931,117 @@ describe('Store', () => {
         });
       });
 
+      describe('in a fully bound `has` call', () => {
+        it('matches array patterns instead of taking the exact fast path', () => {
+          const dg = new DefaultGraph();
+          expect(store.has(r, reifies, pattern(s, wildcard, wildcard), dg)).toBe(true);
+          expect(store.has(r, reifies, pattern(un, wildcard, wildcard), dg)).toBe(false);
+          expect(store.has(r, reifies, pattern(s, wildcard, wildcard), un)).toBe(false);
+          store.addQuad(new Quad(defaultTerm, p, o2));
+          expect(store.has(pattern(s, p, wildcard), p, o2, dg)).toBe(true);
+          expect(store.has(pattern(s, p, wildcard), p, o, dg)).toBe(false);
+          expect(store.has(r, pattern(s, wildcard, wildcard), defaultTerm, dg)).toBe(false);
+          store.addQuad(new Quad(s, p, o2, defaultTerm));
+          expect(store.has(s, p, o2, pattern(s, wildcard, wildcard))).toBe(true);
+          expect(store.has(s, p, o, pattern(s, wildcard, wildcard))).toBe(false);
+        });
+      });
+
+      describe('in snapshot and forwarded views', () => {
+        const r3 = new NamedNode('r3');
+        const added = new Quad(r3, reifies, new Quad(s, p, o2));
+        const unrelated = new Quad(r3, reifies, new Quad(un, p, o));
+
+        describe.each(['snapshot', 'forwarded'])('with %s semantics', matchSemantics => {
+          const options = { matchSemantics };
+
+          it('handles parent mutations', () => {
+            const view = store.match(null, reifies, pattern(s, wildcard, wildcard), null, options);
+            store.addQuad(unrelated);
+            store.addQuad(added);
+            expect(view.size).toBe(matchSemantics === 'snapshot' ? 3 : 4);
+            store.removeQuad(added);
+            store.removeQuad(new Quad(r2, reifies, defaultTerm));
+            expect(view.size).toBe(matchSemantics === 'snapshot' ? 3 : 2);
+          });
+
+          it('keeps an active iteration stable across a matching mutation', () => {
+            const view = store.match(null, reifies, pattern(s, wildcard, wildcard), null, options);
+            const expected = store.getQuads(null, reifies, pattern(s, wildcard, wildcard));
+            const iterator = view[Symbol.iterator]();
+            const first = iterator.next().value;
+            store.addQuad(added);
+            const rest = [...{ [Symbol.iterator]: () => iterator }];
+            expect([first, ...rest]).toEqual(expected);
+          });
+
+          it('keeps an active iteration over graph candidates stable', () => {
+            store.addQuad(new Quad(s, p, o, defaultTerm));
+            store.addQuad(new Quad(s, p, o2, defaultTerm));
+            const view = store.match(null, null, null, pattern(s, wildcard, wildcard), options);
+            const iterator = view[Symbol.iterator]();
+            const first = iterator.next().value;
+            store.addQuad(new Quad(r3, p, o, defaultTerm));
+            const rest = [...{ [Symbol.iterator]: () => iterator }];
+            expect([first, ...rest]).toHaveLength(2);
+            expect(view.size).toBe(matchSemantics === 'snapshot' ? 2 : 3);
+          });
+        });
+
+        describe('with forwarded semantics', () => {
+          const options = { matchSemantics: 'forwarded' };
+
+          it('forwards writes that match the array pattern', () => {
+            const view = store.match(null, reifies, pattern(s, wildcard, wildcard), null, options);
+            view.add(added);
+            expect(store.has(added)).toBe(true);
+            view.delete(added);
+            expect(store.has(added)).toBe(false);
+            view.addAll([added]);
+            expect(store.has(added)).toBe(true);
+          });
+
+          it('rejects writes outside the array pattern', () => {
+            const view = store.match(null, reifies, pattern(s, wildcard, wildcard), null, options);
+            expect(() => view.add(unrelated)).toThrow('Quad does not match the forwarded view pattern');
+            expect(() => view.add(new Quad(r3, reifies, o))).toThrow('Quad does not match');
+            // Nested graph components must match too
+            expect(() => view.add(new Quad(r3, reifies, new Quad(s, p, o, g)))).toThrow('Quad does not match');
+            const graphView = store.match(null, null, null, pattern(s, wildcard, wildcard), options);
+            expect(() => graphView.add({ subject: s, predicate: p, object: o })).toThrow('Quad does not match');
+          });
+
+          it('intersects child patterns structurally', () => {
+            const view = store.match(null, reifies, pattern(s, wildcard, wildcard), null, options);
+            // Array with array
+            expect(view.match(null, null, pattern(wildcard, p, o)).size).toBe(2);
+            expect(view.match(null, null, pattern(un, wildcard, wildcard)).size).toBe(0);
+            // Array with term
+            expect(view.match(null, null, defaultTerm).size).toBe(2);
+            expect(view.match(null, null, inner2).size).toBe(0);
+            expect(view.match(null, null, o).size).toBe(0);
+            // Term with array
+            const exactView = store.match(null, null, nestedTerm, null, options);
+            expect(exactView.match(null, null, pattern(s, p, pattern(wildcard, wildcard, wildcard))).size).toBe(1);
+            expect(exactView.match(null, null, pattern(s, p, o)).size).toBe(0);
+            // Mutations reach structural children
+            const child = view.match(r3, null, pattern(wildcard, wildcard, o2));
+            store.addQuad(added);
+            expect(child.size).toBe(1);
+          });
+
+          it('deletes the intersection with an array pattern', () => {
+            const view = store.match(null, reifies, pattern(s, wildcard, wildcard), null, options);
+            view.deleteMatches(r, null, pattern(wildcard, wildcard, wildcard));
+            expect(store.getQuads(null, reifies, pattern(s, wildcard, wildcard))).toHaveLength(1);
+            expect(store.has(new Quad(r, reifies, inner2))).toBe(true);
+            expect(store.has(new Quad(r, reifies, graphTerm))).toBe(true);
+            expect(() => view.deleteMatches(null, null, pattern(un, wildcard, wildcard)))
+              .toThrow('Deletion pattern does not match the forwarded view pattern');
+          });
+        });
+      });
+
       describe('the structural per-id check `_quadIdMatches`', () => {
         it('matches decomposed triple terms against patterns', () => {
           const index = store._entityIndex;

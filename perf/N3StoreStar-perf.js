@@ -120,7 +120,7 @@ console.timeEnd(TEST);
 // ## Matching patterns inside triple terms (issue #633)
 // Workload: `ex:r{i} ex:reifies <<( ex:s{i%K} ex:p{i%16} ex:o{i} )>>`,
 // with K = N/100 (100 quads per inner subject)
-const { namedNode, variable, quad } = N3.DataFactory;
+const { namedNode, quad } = N3.DataFactory;
 const N = Number.parseInt(process.argv[3], 10) || 100000;
 const K = Math.max(N / 100, 1);
 const reifies = namedNode(`${prefix}reifies`);
@@ -155,13 +155,13 @@ console.timeEnd(TEST);
 TEST = `- Wildcard match <<( s0 ?p ?o )>>, ${N / K} results`;
 console.time(TEST);
 assert.equal(starStore.getQuads(null, null,
-  quad(namedNode(`${prefix}s0`), variable('p'), variable('o'))).length, N / K);
+  [namedNode(`${prefix}s0`), null, null, null]).length, N / K);
 console.timeEnd(TEST);
 
 TEST = `- Hard wildcard match <<( ?s p3 ?o )>>, ${Math.ceil((N - 3) / 16)} results`;
 console.time(TEST);
 assert.equal(starStore.getQuads(null, null,
-  quad(variable('s'), namedNode(`${prefix}p3`), variable('o'))).length, Math.ceil((N - 3) / 16));
+  [null, namedNode(`${prefix}p3`), null, null]).length, Math.ceil((N - 3) / 16));
 console.timeEnd(TEST);
 
 TEST = `- Scan workaround for <<( s0 ?p ?o )>>, ${N / K} results`;
