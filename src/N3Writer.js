@@ -69,6 +69,8 @@ export default class N3Writer {
       if (options.version)
         this._write(`@version "${options.version}".\n`);
       this._prefixIRIs = Object.create(null);
+      // Escaped prefix IRIs and names for the prefix matcher, computed once per prefix
+      this._prefixPatterns = Object.create(null);
       if (options.baseIRI) {
         this._baseIri = new BaseIRI(options.baseIRI);
         if (options.writeBase)
@@ -336,18 +338,19 @@ export default class N3Writer {
       this._endStatement();
       // Store and write the prefix
       this._prefixIRIs[iri] = (prefix += ':');
+      this._prefixPatterns[iri] = [escapeRegex(iri), escapeRegex(prefix)];
       this._write(`@prefix ${prefix} <${iri}>.\n`);
     }
     // Recreate the prefix matcher
     if (hasPrefixes) {
       this._hasPrefixes = true;
       let IRIlist = '', prefixList = '';
-      for (const prefixIRI in this._prefixIRIs) {
-        IRIlist += IRIlist ? `|${prefixIRI}` : prefixIRI;
-        prefixList += (prefixList ? '|' : '') + this._prefixIRIs[prefixIRI];
+      for (const prefixIRI in this._prefixPatterns) {
+        const [IRIpattern, prefixPattern] = this._prefixPatterns[prefixIRI];
+        IRIlist += IRIlist ? `|${IRIpattern}` : IRIpattern;
+        prefixList += prefixList ? `|${prefixPattern}` : prefixPattern;
       }
-      IRIlist = escapeRegex(IRIlist, /[\]\/\(\)\*\+\?\.\\\$]/g, '\\$&');
-      this._prefixRegex = new RegExp(`^(?:${prefixList})[^\/]*$|` +
+      this._prefixRegex = new RegExp(`^(?:${prefixList})[^/]*$|` +
                                      `^(${IRIlist})([_a-zA-Z0-9](?:\\.?[\\-_a-zA-Z0-9])*)$`);
     }
     // End a prefix block with a newline
