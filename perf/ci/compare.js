@@ -117,7 +117,7 @@ function classify(result) {
   return 'ok';
 }
 
-const results = names.map(name => ({ name, base: [], head: [], ratios: [] }));
+const results = names.map(name => ({ name, unit: benchmarks[name].memory ? 'MB' : 'ms', base: [], head: [], ratios: [] }));
 for (let round = 0; round < rounds; round++) {
   runRound(round, results);
   console.error(`Round ${round + 1}/${rounds} done`);

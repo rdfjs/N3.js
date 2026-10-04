@@ -1,10 +1,10 @@
 // DataFactory, terms, and the term id helpers
 const rdfDataModel = require('@rdfjs/data-model');
 const data = require('../data');
-const { check } = require('../helpers');
+const { lazy, check } = require('../helpers');
 
 const { EX } = data;
-const nquads = data.nquads(20000);
+const nquads = lazy(() => data.nquads(20000));
 
 module.exports = {
   'datafactory: create terms and quads': N3 => () => {
@@ -57,7 +57,7 @@ module.exports = {
     };
   },
   'datafactory: equals with terms from another library': N3 => {
-    const ours = new N3.Parser({ format: 'N-Quads' }).parse(nquads);
+    const ours = new N3.Parser({ format: 'N-Quads' }).parse(nquads());
     const theirs = ours.map(q => rdfDataModel.fromQuad ? rdfDataModel.fromQuad(q) : q);
     return () => {
       let n = 0;
@@ -90,13 +90,13 @@ module.exports = {
     };
   },
   'datafactory: toJSON': N3 => {
-    const quads = new N3.Parser({ format: 'N-Quads' }).parse(nquads);
+    const quads = new N3.Parser({ format: 'N-Quads' }).parse(nquads());
     return () => {
       check(JSON.stringify(quads).length, 'nothing serialized');
     };
   },
   'datafactory: termToId / termFromId': N3 => {
-    const quads = new N3.Parser({ format: 'N-Quads' }).parse(nquads);
+    const quads = new N3.Parser({ format: 'N-Quads' }).parse(nquads());
     return () => {
       let n = 0;
       for (let i = 0; i < 20; i++) {

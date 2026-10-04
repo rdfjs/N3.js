@@ -1,7 +1,7 @@
 // Writer and StreamWriter
 const { Readable } = require('stream');
 const data = require('../data');
-const { check, drain } = require('../helpers');
+const { lazy, check, drain } = require('../helpers');
 
 const { EX } = data;
 
@@ -29,7 +29,7 @@ function writeBench(format, makeText, inputFormat, options = {}) {
 
 function streamWriteBench(text, inputFormat, options) {
   return N3 => {
-    const quads = parsedQuads(N3, inputFormat, text);
+    const quads = parsedQuads(N3, inputFormat, text());
     return async () => {
       const writer = new N3.StreamWriter(options);
       check(await drain(Readable.from(quads).pipe(writer)), 'nothing written');
@@ -37,22 +37,22 @@ function streamWriteBench(text, inputFormat, options) {
   };
 }
 
-const ntriples = data.ntriples(20000);
-const nquads = data.nquads(20000);
-const turtle = data.turtle(4000);
-const trig = data.trig(4000);
-const n3 = data.n3(1500);
-const turtleStar = data.turtleStar(3000);
+const ntriples = lazy(() => data.ntriples(20000));
+const nquads = lazy(() => data.nquads(20000));
+const turtle = lazy(() => data.turtle(4000));
+const trig = lazy(() => data.trig(4000));
+const n3 = lazy(() => data.n3(1500));
+const turtleStar = lazy(() => data.turtleStar(3000));
 
 module.exports = {
-  'writer: N-Triples': writeBench('N-Triples', () => ntriples, 'N-Triples'),
-  'writer: N-Quads': writeBench('N-Quads', () => nquads, 'N-Quads'),
-  'writer: Turtle with prefixes': writeBench('Turtle', () => turtle, 'Turtle',
+  'writer: N-Triples': writeBench('N-Triples', ntriples, 'N-Triples'),
+  'writer: N-Quads': writeBench('N-Quads', nquads, 'N-Quads'),
+  'writer: Turtle with prefixes': writeBench('Turtle', turtle, 'Turtle',
     { prefixes: { ex: EX, xsd: 'http://www.w3.org/2001/XMLSchema#' } }),
-  'writer: TriG': writeBench('TriG', () => trig, 'TriG', { prefixes: { ex: EX } }),
-  'writer: Turtle 1.2': writeBench('Turtle', () => turtleStar, 'Turtle', { prefixes: { ex: EX } }),
-  'writer: N3 formulas and variables': writeBench('text/n3', () => n3, 'text/n3', { prefixes: { ex: EX } }),
-  'writer: relative IRIs against baseIRI': writeBench('Turtle', () => ntriples, 'N-Triples',
+  'writer: TriG': writeBench('TriG', trig, 'TriG', { prefixes: { ex: EX } }),
+  'writer: Turtle 1.2': writeBench('Turtle', turtleStar, 'Turtle', { prefixes: { ex: EX } }),
+  'writer: N3 formulas and variables': writeBench('text/n3', n3, 'text/n3', { prefixes: { ex: EX } }),
+  'writer: relative IRIs against baseIRI': writeBench('Turtle', ntriples, 'N-Triples',
     { baseIRI: `${EX.slice(0, -3)}/` }),
   'writer: blank nodes and lists': N3 => {
     const { namedNode, literal } = N3.DataFactory;
@@ -96,7 +96,7 @@ module.exports = {
     };
   },
   'writer: quadToString and quadsToString': N3 => {
-    const quads = parsedQuads(N3, 'N-Quads', nquads);
+    const quads = parsedQuads(N3, 'N-Quads', nquads());
     return () => {
       const writer = new N3.Writer({ format: 'N-Quads' });
       let n = 0;
@@ -109,7 +109,7 @@ module.exports = {
   'streamwriter: N-Triples': streamWriteBench(ntriples, 'N-Triples', { format: 'N-Triples' }),
   'streamwriter: Turtle with prefixes': streamWriteBench(turtle, 'Turtle', { prefixes: { ex: EX } }),
   'streamwriter: import()': N3 => {
-    const quads = parsedQuads(N3, 'N-Quads', nquads);
+    const quads = parsedQuads(N3, 'N-Quads', nquads());
     return async () => {
       const writer = new N3.StreamWriter({ format: 'N-Quads' });
       check(await drain(writer.import(Readable.from(quads))), 'nothing written');

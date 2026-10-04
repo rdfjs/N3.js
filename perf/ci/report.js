@@ -9,6 +9,8 @@ const fs = require('fs');
 
 const icon = { ok: '', regression: '🔴 slower', improvement: '🟢 faster', new: 'new (not on base)',
   unavailable: 'not available on either build', error: '❌ failed' };
+// Memory benchmarks use more or less memory rather than being slower or faster
+const memoryIcon = { regression: '🔴 more memory', improvement: '🟢 less memory' };
 const order = ['regression', 'error', 'improvement', 'new', 'unavailable', 'ok'];
 
 function median(values) {
@@ -16,8 +18,8 @@ function median(values) {
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
-function ms(values) {
-  return `${median(values).toFixed(1)} ms`;
+function format(values, unit = 'ms') {
+  return `${median(values).toFixed(1)} ${unit}`;
 }
 
 function table(results) {
@@ -31,7 +33,7 @@ function table(results) {
     else {
       const change = `${r.ratio >= 1 ? '+' : ''}${((r.ratio - 1) * 100).toFixed(1)}%`;
       const slower = r.ratios.filter(x => x > 1).length;
-      lines.push(`| ${r.name} | ${ms(r.base)} | ${ms(r.head)} | ${change} | ${slower}/${r.ratios.length} | ${icon[r.status]} |`);
+      lines.push(`| ${r.name} | ${format(r.base, r.unit)} | ${format(r.head, r.unit)} | ${change} | ${slower}/${r.ratios.length} | ${(r.unit === 'MB' && memoryIcon[r.status]) || icon[r.status]} |`);
     }
   }
   return lines.join('\n');
@@ -81,7 +83,8 @@ function render(runs) {
   lines.push(`Head vs base over ${rounds} interleaved rounds, each the median of ${iterations} runs after ` +
     'warm-up in a fresh process. Flagged when the median per-round change and the change in median time both ' +
     `exceed ${percent}% and at least 80% of the rounds agree; a benchmark that looks flagged runs ${rounds} ` +
-    'more rounds and has to stay flagged over all of them.');
+    'more rounds and has to stay flagged over all of them. Memory benchmarks are measured once per process, ' +
+    'on the first run, and report MB instead of ms.');
   for (const r of errors) {
     for (const side of ['base', 'head']) {
       const error = r[`${side}Error`];

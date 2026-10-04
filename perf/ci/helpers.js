@@ -2,6 +2,13 @@
 const { Readable } = require('stream');
 const { EX } = require('./data');
 
+// Wraps the generation of benchmark input so that it only runs in the
+// processes that measure a benchmark using it
+function lazy(create) {
+  let value;
+  return () => value === undefined ? (value = create()) : value;
+}
+
 // Throws when a benchmark did no work, so a broken build can't look fast
 function check(condition, message) {
   if (!condition) throw new Error(message);
@@ -105,4 +112,4 @@ class OtherDataset {
   [Symbol.iterator]() { return this._quads.values(); }
 }
 
-module.exports = { check, storeOf, chunksOf, bufferStream, drain, OtherDataset };
+module.exports = { lazy, check, storeOf, chunksOf, bufferStream, drain, OtherDataset };

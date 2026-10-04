@@ -1,35 +1,43 @@
 // Lexer, Parser and StreamParser
+const { Readable } = require('stream');
 const data = require('../data');
-const { check, chunksOf, bufferStream, drain } = require('../helpers');
+const { lazy, check, chunksOf, bufferStream, drain } = require('../helpers');
 
 const { EX } = data;
 
+// Each text argument is a function returning the input, see lazy()
 function parseBench(format, text, options = {}) {
-  return N3 => () => {
-    const quads = new N3.Parser({ format, baseIRI: 'http://example.org/doc', ...options }).parse(text);
-    check(quads.length, 'nothing parsed');
+  return N3 => {
+    const input = text();
+    return () => {
+      const quads = new N3.Parser({ format, baseIRI: 'http://example.org/doc', ...options }).parse(input);
+      check(quads.length, 'nothing parsed');
+    };
   };
 }
 
 function callbackParseBench(format, text, callbacks = {}) {
   // The callback API is what N3.StreamParser and most consumers sit on
-  return N3 => () => new Promise((resolve, reject) => {
-    let count = 0;
-    new N3.Parser({ format }).parse(text, {
-      ...callbacks,
-      onQuad: (error, quad) => {
-        if (error) reject(error);
-        else if (quad) count++;
-        else if (count) resolve();
-        else reject(new Error('nothing parsed'));
-      },
+  return N3 => {
+    const input = text();
+    return () => new Promise((resolve, reject) => {
+      let count = 0;
+      new N3.Parser({ format }).parse(input, {
+        ...callbacks,
+        onQuad: (error, quad) => {
+          if (error) reject(error);
+          else if (quad) count++;
+          else if (count) resolve();
+          else reject(new Error('nothing parsed'));
+        },
+      });
     });
-  });
+  };
 }
 
 function streamParseBench(format, text, chunkSize) {
   return N3 => {
-    const chunks = chunksOf(text, chunkSize);
+    const chunks = chunksOf(text(), chunkSize);
     return async () => {
       const parser = new N3.StreamParser({ format });
       check(await drain(bufferStream(chunks).pipe(parser)), 'nothing parsed');
@@ -38,17 +46,20 @@ function streamParseBench(format, text, chunkSize) {
 }
 
 function tokenizeBench(text, options) {
-  return N3 => () => {
-    check(new N3.Lexer(options).tokenize(text).length, 'nothing lexed');
+  return N3 => {
+    const input = text();
+    return () => {
+      check(new N3.Lexer(options).tokenize(input).length, 'nothing lexed');
+    };
   };
 }
 
-const ntriples = data.ntriples(20000);
-const nquads = data.nquads(20000);
-const turtle = data.turtle(4000);
-const trig = data.trig(4000);
-const n3 = data.n3(1500);
-const turtleStar = data.turtleStar(3000);
+const ntriples = lazy(() => data.ntriples(20000));
+const nquads = lazy(() => data.nquads(20000));
+const turtle = lazy(() => data.turtle(4000));
+const trig = lazy(() => data.trig(4000));
+const n3 = lazy(() => data.n3(1500));
+const turtleStar = lazy(() => data.turtleStar(3000));
 
 // Relative IRIs of each shape that resolution handles
 function relativeTurtle(count) {
@@ -77,11 +88,11 @@ function commentedTurtle(count) {
   return `${lines.join('\n')}\n`;
 }
 
-const relative = relativeTurtle(15000);
-const escaped = escapedTurtle(2500);
-const commented = commentedTurtle(15000);
-const bigTurtle = data.turtle(12000);
-const bigNTriples = data.ntriples(50000);
+const relative = lazy(() => relativeTurtle(15000));
+const escaped = lazy(() => escapedTurtle(2500));
+const commented = lazy(() => commentedTurtle(15000));
+const bigTurtle = lazy(() => data.turtle(12000));
+const bigNTriples = lazy(() => data.ntriples(50000));
 
 module.exports = {
   'parser: N-Triples': parseBench('N-Triples', ntriples),
@@ -120,8 +131,22 @@ module.exports = {
   'streamparser: Turtle (256-byte chunks)': streamParseBench('Turtle', turtle, 256),
   'streamparser: TriG (4 KB chunks)': streamParseBench('TriG', trig, 4096),
   'streamparser: N3 (4 KB chunks)': streamParseBench('text/n3', n3, 4096),
+  // Browsers and fetch() hand out WHATWG streams, which Node.js converts
+  'streamparser: from a web ReadableStream (64 KB chunks)': N3 => {
+    const chunks = chunksOf(bigNTriples(), 65536);
+    return async () => {
+      const input = new ReadableStream({
+        start(controller) {
+          for (const chunk of chunks) controller.enqueue(chunk);
+          controller.close();
+        },
+      });
+      const parser = new N3.StreamParser({ format: 'N-Triples' });
+      check(await drain(Readable.fromWeb(input).pipe(parser)), 'nothing parsed');
+    };
+  },
   'streamparser: import()': N3 => {
-    const chunks = chunksOf(ntriples, 16384);
+    const chunks = chunksOf(ntriples(), 16384);
     return async () => {
       const parser = new N3.StreamParser({ format: 'N-Triples' });
       check(await drain(parser.import(bufferStream(chunks))), 'nothing parsed');

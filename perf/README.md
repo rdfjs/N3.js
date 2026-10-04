@@ -17,7 +17,8 @@ rounds and has to stay flagged over all 10.
 A report job merges the shards into the job summary and a comment on the pull
 request. The comment lists regressions, failures and speedups, and folds the
 benchmarks that stayed within 10% into a collapsed section. The job fails on a
-regression or when a benchmark fails to run on either build. The whole run
+regression or when a benchmark fails to run on either build. Run one after
+the other, the shards would take about 15 minutes; in parallel the whole run
 takes about 5 minutes.
 
 Run it locally against any other build of N3.js:
@@ -39,11 +40,17 @@ run takes about 15–20 minutes. `--json <file>` saves the results, and
 Benchmarks live in `ci/benchmarks/<component>.js`, keyed by a name that
 starts with the component. `setup(N3)` does untimed preparation and returns
 the function to time, or `{ before, run }` when each run needs fresh input
-(`before()` is untimed). Size each run to take 10–100ms. A benchmark for a
+(`before()` is untimed). Size each run to take 10–100ms; a larger benchmark
+can measure fewer runs by also setting `warmup` and `iterations`. Setting
+`memory: 'retained'` measures the heap that the run's result still uses after
+garbage collection instead of time, and `memory: 'peak'` how far the run
+raised the process's peak memory use; memory is measured once per process
+and reported in MB. A benchmark for a
 feature the base branch lacks declares `available(N3)`; it is reported as new
 until the base has the feature, or as not available while neither build has
 it. Inputs come from `ci/data.js` and `ci/helpers.js`, which generate them
-without N3.js so both builds see identical data.
+without N3.js so both builds see identical data. Wrap generated input in
+`lazy()` so that only the processes measuring a benchmark generate it.
 
 ### Covered
 
@@ -55,7 +62,8 @@ Every public class, function and method of the package, including:
   `explicitQuantifiers`, and the `onComment`, `onToken` and `onTokenEnd`
   callbacks; `Lexer.tokenize` in each mode.
 - **StreamParser**: Turtle, N-Triples, TriG and N3 in Buffer chunks from 256
-  bytes to 64 KB, and `import()`.
+  bytes to 64 KB, input from a WHATWG `ReadableStream` (as `fetch()` returns)
+  converted with `Readable.fromWeb`, and `import()`.
 - **Writer** and **StreamWriter**: every format, prefixes, `baseIRI`,
   escaped literals, `blank()`/`list()`, `addPrefix`/`addPrefixes`,
   `quadToString`/`quadsToString`, N3 formulas, and `import()`.
@@ -79,11 +87,15 @@ Every public class, function and method of the package, including:
   `toRelative` and `supports`.
 - **Reasoner**: the deep taxonomy benchmark at depth 1000, RDFS-style rules,
   and `getRulesFromDataset`.
+- **Large documents** of about 200,000 triples: parsing N-Triples, streaming
+  N-Triples and Turtle, writing N-Triples, and loading and querying a Store.
+- **Memory use**: the peak while parsing 200,000 triples synchronously, while
+  streaming them, and while streaming them through a StreamWriter; and the
+  memory retained by 200,000 parsed quads and by a Store holding them.
 
 ### Not covered
 
-- Memory use, and very large documents.
-- Web Streams, and the browser bundles.
+- The browser bundles, which would need a headless browser in CI.
 
 ## Manual benchmarks
 

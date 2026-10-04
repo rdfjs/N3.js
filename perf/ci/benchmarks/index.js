@@ -10,6 +10,11 @@
 // then reported as new instead of failing. Any other failure on either build
 // fails the comparison.
 //
+// A benchmark object can also set warmup and iterations (the number of runs
+// measured), and memory: 'retained' to measure the heap its run's result
+// still uses, or 'peak' to measure how much it raised the peak memory use.
+// A memory benchmark is measured once per process and reports MB.
+//
 // Benchmark names start with the component they cover, which the comparison
 // report groups by and --filter matches on.
 module.exports = {
@@ -20,4 +25,5 @@ module.exports = {
   ...require('./datafactory'),
   ...require('./util'),
   ...require('./reasoner'),
+  ...require('./large'),
 };
