@@ -58,6 +58,9 @@ function isSeparatorCode(code) {
   return code === SPACE || code === TAB || code === LF || code === CR || code === HASH;
 }
 
+// Words with a fixed meaning in the grammar, which cannot name an additional directive
+const reservedWords = /^(?:prefix|base|version|graph|forsome|forall|iri|a|true|false|has|is|of|id)$/i;
+
 // Unfinished input in a stream up to this length is tokenized again with every chunk
 const MIN_RESCAN_LENGTH = 1024;
 
@@ -102,6 +105,19 @@ export default class N3Lexer {
     // When not in line mode, enable N3 functionality by default
     else {
       this._n3Mode = options.n3 !== false;
+    }
+    // Recognize additional directive keywords, such as MESSAGE
+    // (the @-form of a directive is always tokenized as an @-keyword)
+    this._directive = null;
+    if (options.directives && options.directives.length !== 0) {
+      for (const name of options.directives) {
+        if (!/^[a-z]+$/i.test(name) || reservedWords.test(name))
+          throw new Error(`Invalid directive name: "${name}"`);
+      }
+      this._directive = new RegExp(`(?:${options.directives.join('|')})(?=[\\s#<])`, 'iy');
+      this._directiveMaxLength = Math.max(...options.directives.map(name => name.length));
+      // The first characters of directive names, so other words skip the regular expression
+      this._directiveStarts = options.directives.map(name => name[0].toLowerCase() + name[0].toUpperCase()).join('');
     }
     // Don't output comment tokens by default
     this.comments = !!options.comments;
@@ -486,6 +502,13 @@ export default class N3Lexer {
         if ((this._previousMarker === '@prefix' || this._previousMarker === 'PREFIX') &&
             (match = execAt(this._prefix, input, pos)))
           type = 'prefix', value = match[1] || '';
+        // Try to find an additional directive keyword
+        // (at the end of the input, only a short final word can be one)
+        else if (this._directive !== null && this._directiveStarts.includes(firstChar) &&
+                 ((match = execAt(this._directive, input, pos)) ||
+                 inputFinished && input.length - pos <= this._directiveMaxLength &&
+                 (match = execAtEnd(this._directive, input, pos))))
+          type = match[0].toUpperCase();
         // Try to find a prefixed name. Since it can contain (but not end with) a dot,
         // we always need a non-dot character before deciding it is a prefixed name.
         // Therefore, try inserting a space if we're at the end of the input.
@@ -534,7 +557,8 @@ export default class N3Lexer {
       else
         token = emitToken(type, value, prefix, line, start, lexicalLength || length);
       this.previousToken = token;
-      this._previousMarker = type;
+      // The string of a version declaration cannot take a language tag, so a following @keyword is a keyword
+      this._previousMarker = type === 'literal' && (this._previousMarker === 'VERSION' || this._previousMarker === '@version') ? 'version' : type;
 
       // Advance to next part to tokenize
       pos = Math.min(pos + length, input.length);

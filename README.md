@@ -158,6 +158,20 @@ const quads = parser.parse('<a> <b> "hello"@en.', {
 });
 ```
 
+Packages that extend a format with their own directives can register their names with the `directives` option.
+Between statements (outside graph blocks and formulas), a registered directive is accepted
+as `@name .` in Turtle, TriG and N3, and as `NAME` (case-insensitive) in all formats, including N-Triples and N-Quads.
+`onDirective(name)` receives each one in order with the quads, and `N3.StreamParser` emits them as `directive` events.
+Names consist of letters only, and cannot be words that already have a meaning in the grammar, such as `prefix` or `a`.
+
+```JavaScript
+const parser = new N3.Parser({ format: 'N-Quads', directives: ['message'] });
+parser.parse('<a> <b> <c> .\nMESSAGE\n<a> <b> <d> .\n', {
+  onQuad: (error, quad) => { /* … */ },
+  onDirective: name => { console.log('end of a message'); },
+});
+```
+
 If no callbacks are provided, parsing happens synchronously returning an array of quads:
 
 ```JavaScript
