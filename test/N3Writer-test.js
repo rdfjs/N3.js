@@ -348,6 +348,31 @@ describe('Writer', () => {
     });
 
     it(
+      'should apply a prefix whose IRI contains a regular expression metacharacter',
+      shouldSerialize({ prefixes: { ex: 'http://ex/a[b' } },
+                      ['http://ex/a[bs', 'http://ex/a[bp', 'http://ex/a[bo'],
+                      '@prefix ex: <http://ex/a[b>.\n\n' +
+                      'ex:s ex:p ex:o.\n'),
+    );
+
+    it(
+      'should apply prefixes whose IRIs contain regular expression metacharacters',
+      shouldSerialize({ prefixes: { a: 'http://a.org/x[y', b: 'http://a.org/d{|^}-e' } },
+                      ['http://a.org/x[ys', 'http://a.org/d{|^}-ep', 'http://a.org/x[yo'],
+                      '@prefix a: <http://a.org/x[y>.\n' +
+                      '@prefix b: <http://a.org/d{|^}-e>.\n\n' +
+                      'a:s b:p a:o.\n'),
+    );
+
+    it(
+      'should only treat IRIs with an exact prefix name as prefixed names',
+      shouldSerialize({ prefixes: { 'a.b': 'http://a.org/' } },
+                      ['a.b:s', 'axb:p', 'http://a.org/o'],
+                      '@prefix a.b: <http://a.org/>.\n\n' +
+                      'a.b:s <axb:p> a.b:o.\n'),
+    );
+
+    it(
       'should expand prefixes when possible',
       shouldSerialize({ prefixes: { a: 'http://a.org/', b: 'http://a.org/b#' } },
                       ['a:bc', 'b:ef', 'c:bhi'],
@@ -464,6 +489,26 @@ describe('Writer', () => {
       shouldSerialize(['\ud835\udc00', '\ud835\udc00', '"\ud835\udc00"^^\ud835\udc00', '\ud835\udc00'],
                       '<\\U0001d400> {\n<\\U0001d400> <\\U0001d400> "\\U0001d400"^^<\\U0001d400>\n}\n'),
     );
+
+    it(
+      'should escape control characters in IRIs',
+      shouldSerialize(['a\u0001b', 'b', 'c'], '<a\\u0001b> <b> <c>.\n'),
+    );
+
+    it('should write canonical escapes in N-Triples', async () => {
+      const writer = new Writer({ format: 'N-Triples' });
+      writer.addQuad(new NamedNode('a\u0001b'), new NamedNode('b'), new Literal(
+        '"\u0000\u0007\b\t\n\u000b\f\r\u000e\u001f\u007f\ufffe\uffff\u0080\ud835\udc00 \\\""'));
+      expect(await end(writer)).toBe('<a\\u0001b> <b> "\\u0000\\u0007\\b\\t\\n\\u000B\\f\\r\\u000E\\u001F' +
+        '\\u007F\\uFFFE\\uFFFF\u0080\ud835\udc00 \\\\\\"" .\n');
+    });
+
+    it('should write canonical triple terms in N-Quads', async () => {
+      const writer = new Writer({ format: 'N-Quads' });
+      writer.addQuad(new NamedNode('a'), new NamedNode('b'),
+        new Quad(new NamedNode('c'), new NamedNode('d'), new NamedNode('e')), new NamedNode('g'));
+      expect(await end(writer)).toBe('<a> <b> <<( <c> <d> <e> )>> <g> .\n');
+    });
 
     it(
       'should not use escape sequences in blank nodes',
