@@ -81,8 +81,7 @@ describe('Writer', () => {
     it('should keep a blank node shared by two statements in one formula', async () => {
       const document = '@prefix : <http://ex.org/>. :a :says { _:x :p :o. _:x :q :r }.';
       const { quads, output, reparsed } = await roundTrip(document);
-      expect(output.match(/_:\w+/g)).toHaveLength(2);
-      expect(new Set(output.match(/_:\w+/g)).size).toBe(1);
+      expect(output).toMatch(/^<http:\/\/ex.org\/a> <http:\/\/ex.org\/says> \{ _:[^ ]+ <http:\/\/ex.org\/p> <http:\/\/ex.org\/o>; <http:\/\/ex.org\/q> <http:\/\/ex.org\/r> \}.\n$/);
       expect(isomorphic(reparsed, quads)).toBe(true);
       // A copy whose blank nodes are distinct is not isomorphic
       const [first, second] = reparsed.filter(quad => quad.subject.termType === 'BlankNode');
@@ -118,6 +117,46 @@ describe('Writer', () => {
         expect(output.match(/\{/g)).toHaveLength(1200);
         expect(isomorphic(reparsed, quads)).toBe(true);
       }
+    });
+
+    it('should write a formula that is the subject of several statements once', async () => {
+      const documents = [
+        '<urn:s> <urn:p> { { <urn:a> <urn:b> <urn:c> } <urn:p> <urn:d>; <urn:q> <urn:e> }.',
+        '{ <urn:a> <urn:b> <urn:c> } <urn:p> <urn:d>; <urn:q> <urn:e>. <urn:x> <urn:y> <urn:z>.',
+      ];
+      for (const document of documents) {
+        for (let seed = 0; seed <= 10; seed++) {
+          const { quads, output, reparsed } = await roundTrip(document, seed);
+          expect(output.match(/<urn:a>/g)).toHaveLength(1);
+          expect(reparsed).toHaveLength(quads.length);
+          expect(isomorphic(reparsed, quads)).toBe(true);
+        }
+      }
+    });
+
+    it('should write deeply nested formulas', async () => {
+      const depth = 20000, formulas = {}, p = new NamedNode('urn:p');
+      for (let i = 0; i < depth; i++)
+        formulas[`f${i}`] = [new Quad(p, p, i + 1 < depth ? new BlankNode(`f${i + 1}`) : p)];
+      const writer = new Writer({ format: 'N3', formulas });
+      writer.addQuad(p, p, new BlankNode('f0'));
+      const output = await end(writer);
+      expect(output).toBe(`<urn:p> <urn:p> ${'{ <urn:p> <urn:p> '.repeat(depth)}<urn:p>${' }'.repeat(depth)}.\n`);
+    });
+
+    it('should write formulas inside lists inside formulas', async () => {
+      const p = new NamedNode('urn:p');
+      const formulas = { f: [new Quad(p, p, new BlankNode('l'))], g: [new Quad(p, p, p)] };
+      const writer = new Writer({ format: 'N3', formulas, lists: { l: [new BlankNode('g')] } });
+      writer.addQuad(p, p, new BlankNode('f'));
+      expect(await end(writer)).toBe('<urn:p> <urn:p> { <urn:p> <urn:p> ({ <urn:p> <urn:p> <urn:p> }) }.\n');
+    });
+
+    it('should not group formula statements about literals or quoted triples', async () => {
+      const p = new NamedNode('urn:p'), writer = new Writer({ format: 'N3' });
+      const formula = writer.formula([new Quad(new Literal('"x"'), p, p), new Quad(new Literal('"x"'), p, p),
+        new Quad(new Quad(p, p, p), p, p)]);
+      expect(formula.id).toBe('{ "x" <urn:p> <urn:p>. "x" <urn:p> <urn:p>. <<(<urn:p> <urn:p> <urn:p>)>> <urn:p> <urn:p> }');
     });
 
     it('should create formulas manually', async () => {

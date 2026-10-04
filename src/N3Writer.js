@@ -41,6 +41,9 @@ export default class N3Writer {
     this._lists = options.lists;
     this._formulas = options.formulas;
     this._openFormulas = new Set();
+    this._formulaCache = null;
+    // Statements about formulas are held back until the end, grouped by formula
+    this._formulaStatements = this._formulas ? new Map() : null;
 
     // If no output stream given, send the output as string through the end callback
     if (!outputStream) {
@@ -89,6 +92,12 @@ export default class N3Writer {
 
   // ### `_writeQuad` writes the quad to the output stream
   _writeQuad(subject, predicate, object, graph, done) {
+    if (this._formulaStatements && this._isFormula(subject)) {
+      const statements = this._formulaStatements.get(subject.value);
+      if (statements) statements.push([subject, predicate, object, graph, done]);
+      else this._formulaStatements.set(subject.value, [[subject, predicate, object, graph, done]]);
+      return;
+    }
     try {
       // Write the graph's label if it has changed
       // (the id-based fast path of `equals` would conflate
@@ -146,6 +155,49 @@ export default class N3Writer {
     return quadsString;
   }
 
+  // ### `_isFormula` checks whether the term is a blank node labelling a given formula
+  _isFormula(term) {
+    return !!this._formulas && term.termType === 'BlankNode' && hasOwnProperty.call(this._formulas, term.value);
+  }
+
+  // ### `_encodeFormula` serializes the formula with the given label.
+  // Nested formulas are serialized first, depth-first with an explicit stack,
+  // so deeply nested formulas do not exhaust the call stack.
+  _encodeFormula(label) {
+    const owner = !this._formulaCache, frames = [{ label, position: 0 }];
+    const cache = this._formulaCache || (this._formulaCache = new Map());
+    this._openFormulas.add(label);
+    try {
+      while (frames.length) {
+        const frame = frames[frames.length - 1], quads = this._formulas[frame.label];
+        // Find the next nested formula in subject or object position that is not serialized yet
+        let nested = null;
+        while (!nested && frame.position < 2 * quads.length) {
+          const quad = quads[frame.position >> 1];
+          const term = frame.position++ & 1 ? quad.object : quad.subject;
+          if (this._isFormula(term) && !this._openFormulas.has(term.value) && !cache.has(term.value))
+            nested = term.value;
+        }
+        if (nested) {
+          this._openFormulas.add(nested);
+          frames.push({ label: nested, position: 0 });
+        }
+        else {
+          cache.set(frame.label, this.formula(quads));
+          this._openFormulas.delete(frame.label);
+          frames.pop();
+        }
+      }
+      return cache.get(label);
+    }
+    finally {
+      if (owner) {
+        this._formulaCache = null;
+        this._openFormulas.clear();
+      }
+    }
+  }
+
   // ### `_encodeSubject` represents a subject
   _encodeSubject(entity) {
     switch (entity.termType) {
@@ -168,17 +220,8 @@ export default class N3Writer {
         entity = this.list(this._lists[entity.value]);
       // If it labels an N3 formula, write the formula's contents,
       // unless that formula is already being written, which would never end
-      else if (this._formulas && entity.termType === 'BlankNode' &&
-               hasOwnProperty.call(this._formulas, entity.value) && !this._openFormulas.has(entity.value)) {
-        const label = entity.value;
-        this._openFormulas.add(label);
-        try {
-          entity = this.formula(this._formulas[label]);
-        }
-        finally {
-          this._openFormulas.delete(label);
-        }
-      }
+      else if (this._isFormula(entity) && !this._openFormulas.has(entity.value))
+        entity = this._formulaCache && this._formulaCache.get(entity.value) || this._encodeFormula(entity.value);
       // Terms from this library already hold their serialization as id
       if (entity instanceof Term)
         return entity.id;
@@ -404,17 +447,31 @@ export default class N3Writer {
 
   // ### `formula` creates an N3 formula with the given quads
   formula(quads) {
-    const length = quads && quads.length || 0, statements = new Array(length);
+    const length = quads && quads.length || 0, statements = new Map();
     for (let i = 0; i < length; i++) {
       const { subject, predicate, object } = quads[i];
-      statements[i] = `${this._encodeSubject(subject)} ${
-        this._encodePredicate(predicate)} ${this._encodeObject(object)}`;
+      // Group statements by subject, so a formula in subject position is written once
+      const key = subject.termType === 'Literal' || subject.termType === 'Quad' ? i :
+                  `${subject.termType} ${subject.value}`;
+      const statement = statements.get(key);
+      const predicateObject = `${this._encodePredicate(predicate)} ${this._encodeObject(object)}`;
+      statements.set(key, statement ? `${statement}; ${predicateObject}` :
+                                      `${this._encodeSubject(subject)} ${predicateObject}`);
     }
-    return new SerializedTerm(length ? `{ ${statements.join('. ')} }` : '{}');
+    return new SerializedTerm(length ? `{ ${[...statements.values()].join('. ')} }` : '{}');
   }
 
   // ### `end` signals the end of the output stream
   end(done) {
+    // Write the statements about formulas, which were held back
+    const formulaStatements = this._formulaStatements;
+    this._formulaStatements = null;
+    if (formulaStatements) {
+      for (const statements of formulaStatements.values()) {
+        for (const statement of statements)
+          this._writeQuad(...statement);
+      }
+    }
     // Finish a possible pending quad
     if (this._subject !== null) {
       this._write(this._inDefaultGraph ? '.\n' : '\n}\n');
