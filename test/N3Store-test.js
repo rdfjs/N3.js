@@ -4383,3 +4383,76 @@ function listsToJSON(lists) {
     lists[list] = lists[list].map(i => i.toJSON());
   return lists;
 }
+
+describe('Set operations between stores sharing an EntityIndex', () => {
+  function ex(name) {
+    return new NamedNode(`http://ex.org/${name}`);
+  }
+  function q(s, p, o, g) {
+    return DataFactory.quad(ex(s), ex(p), ex(o), g ? ex(g) : DataFactory.defaultGraph());
+  }
+  function ids(quads) {
+    return quads.map(termToId).sort();
+  }
+  let entityIndex, a, b;
+  beforeEach(() => {
+    entityIndex = new EntityIndex();
+    a = new Store([q('s1', 'p', 'o1'), q('s2', 'p', 'o2', 'g'), q('s3', 'p', 'o3')], { entityIndex });
+    b = new Store([q('s1', 'p', 'o1'), q('s2', 'p', 'o2', 'g'), q('s4', 'p', 'o4', 'g')], { entityIndex });
+  });
+
+  // Returns the store's quads after checking that every index has each of them
+  function contents(store) {
+    const quads = store.getQuads();
+    expect(store.size).toBe(quads.length);
+    for (const quad of quads) {
+      expect(store.countQuads(quad.subject, null, null, quad.graph)).toBeGreaterThan(0);
+      expect(store.countQuads(null, quad.predicate, quad.object, quad.graph)).toBeGreaterThan(0);
+      expect(store.countQuads(null, null, quad.object, quad.graph)).toBeGreaterThan(0);
+    }
+    return ids(quads);
+  }
+
+  it('adds a store into graphs the receiver already has', () => {
+    a.addAll(b);
+    expect(contents(a)).toEqual(ids([q('s1', 'p', 'o1'), q('s2', 'p', 'o2', 'g'), q('s3', 'p', 'o3'), q('s4', 'p', 'o4', 'g')]));
+  });
+
+  it('adds a store to itself', () => {
+    a.addAll(a);
+    expect(contents(a)).toEqual(ids([q('s1', 'p', 'o1'), q('s2', 'p', 'o2', 'g'), q('s3', 'p', 'o3')]));
+  });
+
+  it('notifies views when adding a store', () => {
+    const snapshot = a.match(null, null, null, null, { matchSemantics: 'snapshot' });
+    const lazy = a.match(null, null, null, ex('g'));
+    a.addAll(b);
+    expect(snapshot.size).toBe(3);
+    expect(lazy.size).toBe(2);
+  });
+
+  it('computes the union', () => {
+    expect(contents(a.union(b))).toEqual(ids([q('s1', 'p', 'o1'), q('s2', 'p', 'o2', 'g'), q('s3', 'p', 'o3'), q('s4', 'p', 'o4', 'g')]));
+    expect(a.size).toBe(3);
+  });
+
+  it('computes the intersection from either side', () => {
+    const expected = [q('s1', 'p', 'o1'), q('s2', 'p', 'o2', 'g')];
+    expect(contents(a.intersection(b))).toEqual(ids(expected));
+    b.addQuad(q('s5', 'p', 'o5'));
+    expect(contents(a.intersection(b))).toEqual(ids(expected));
+    expect(contents(b.intersection(a))).toEqual(ids(expected));
+  });
+
+  it('computes the intersection with a store that lacks a graph', () => {
+    const other = new Store([q('s2', 'p', 'o2', 'g')], { entityIndex });
+    expect(contents(a.intersection(other))).toEqual(ids([q('s2', 'p', 'o2', 'g')]));
+    expect(contents(other.intersection(new Store([q('s1', 'p', 'o1')], { entityIndex })))).toEqual(ids([]));
+  });
+
+  it('computes the difference', () => {
+    expect(contents(a.difference(b))).toEqual(ids([q('s3', 'p', 'o3')]));
+    expect(contents(b.difference(a))).toEqual(ids([q('s4', 'p', 'o4', 'g')]));
+    expect(contents(a.difference(new Store({ entityIndex })))).toEqual(ids([q('s1', 'p', 'o1'), q('s2', 'p', 'o2', 'g'), q('s3', 'p', 'o3')]));
+  });
+});
