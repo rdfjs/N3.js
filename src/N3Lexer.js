@@ -17,6 +17,9 @@ const localNameEscapeReplacements = {
   '=': '=', '/': '/', '?': '?', '#': '#', '@': '@', '%': '%',
 };
 const illegalIriChars = /[\x00-\x20<>\\"\{\}\|\^\`]/;
+// Characters that cannot occur in a prefixed name, not even escaped
+// (global, so that testAt searches the rest of the input from a position)
+const nonPrefixedNameChar = /[\s<>"{}|^`]/g;
 
 // A valid code point is a Unicode scalar value: at most U+10FFFF and not a surrogate
 function isValidCodePoint(charCode) {
@@ -561,7 +564,14 @@ export default class N3Lexer {
 
     // A prefix can start with a verb and continue with characters that are also
     // valid verb boundaries. Prefer the longer prefixed name when it is complete.
-    if (execAt(this._prefixed, input, pos) || execAtEnd(this._prefixed, input, pos))
+    if (execAt(this._prefixed, input, pos))
+      return null;
+    // Appending to the input only matters when a prefixed name could run up to
+    // its end, which a character that cannot occur in prefixed names rules out.
+    // This avoids copying the rest of the document for every such verb.
+    if (testAt(nonPrefixedNameChar, input, pos))
+      return verb;
+    if (execAtEnd(this._prefixed, input, pos))
       return null;
 
     // If a stream chunk ends partway through such a prefix, wait for the colon
