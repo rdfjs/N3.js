@@ -3854,6 +3854,23 @@ describe('Store', () => {
         store1.addAll([q[2]]);
         expect(store1.size).toEqual(3);
       });
+
+      it('should merge a store with the same entity index into an existing graph', () => {
+        const entityIndex = new EntityIndex();
+        const target = new Store({ entityIndex });
+        const source = new Store({ entityIndex });
+        const graph = new NamedNode('g');
+        target.addQuad(new NamedNode('s1'), new NamedNode('p'), new NamedNode('o1'), graph);
+        target.addQuad(new NamedNode('s2'), new NamedNode('p'), new NamedNode('o2'));
+        source.addQuad(new NamedNode('s1'), new NamedNode('p'), new NamedNode('o3'), graph);
+        source.addQuad(new NamedNode('s3'), new NamedNode('p'), new NamedNode('o4'));
+        expect(target.addAll(source)).toBe(target);
+        expect(target.size).toBe(4);
+        expect(target.countQuads(null, new NamedNode('p'), null, null)).toBe(4);
+        expect(target.getQuads(null, null, new NamedNode('o3'), graph)).toHaveLength(1);
+        expect(target.getQuads(new NamedNode('s3'), null, null, null)).toHaveLength(1);
+        expect(source.size).toBe(2);
+      });
     });
 
     describe('#map', () => {
