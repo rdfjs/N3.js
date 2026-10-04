@@ -2363,6 +2363,78 @@ describe('Lexer', () => {
       expect(tokens[1]).toEqual({ type: 'eof', value: '', prefix: '', line: 2, start: 0, end: 0 });
     });
 
+    describe('tokenizing a stream of bytes', () => {
+      function tokenizeChunks(chunks, lexer = new Lexer()) {
+        const stream = new EventEmitter(), tokens = [], errors = [];
+        lexer.tokenize(stream, (error, token) => error ? errors.push(error) : tokens.push(token));
+        for (const chunk of chunks)
+          stream.emit('data', Buffer.from(chunk));
+        return { tokens, errors, end: () => stream.emit('end') };
+      }
+
+      it('decodes characters that are split across chunks', () => {
+        const bytes = [...Buffer.from('<http://ex.org/é€𝄞> . ')];
+        const { tokens, errors, end } = tokenizeChunks(bytes.map(byte => [byte]));
+        end();
+        expect(errors).toEqual([]);
+        expect(tokens.map(t => t.value)).toEqual(['http://ex.org/é€𝄞', '', '']);
+      });
+
+      it('tokenizes a chunk that ends with a complete multi-byte character', () => {
+        const { tokens } = tokenizeChunks(['<a> <b> "é" . "é']);
+        expect(tokens.map(t => t.type)).toEqual(['IRI', 'IRI', 'literal', '.']);
+      });
+
+      it('strips a byte order mark that is split across chunks', () => {
+        const { tokens, end } = tokenizeChunks([[0xEF, 0xBB], [0xBF], '<a>']);
+        end();
+        expect(tokens[0]).toEqual({ type: 'IRI', value: 'a', prefix: '', line: 1, start: 1, end: 4 });
+      });
+
+      it('tokenizes chunks that end with invalid bytes instead of holding them', () => {
+        const { errors, end } = tokenizeChunks([[0x80], [0x20, 0x80]]);
+        end();
+        expect(errors).toHaveLength(1);
+        expect(errors[0].message).toMatch(/^Unexpected/);
+      });
+
+      it('decodes a character that is cut off at the end of the stream instead of dropping it', () => {
+        const { tokens, errors, end } = tokenizeChunks(['<a> <b> <c> . "', [0xE2, 0x82]]);
+        expect(tokens).toHaveLength(4);
+        expect(errors).toEqual([]);
+        end();
+        expect(errors).toHaveLength(1);
+        expect(errors[0].message).toMatch(/^Unexpected/);
+      });
+
+      it('decodes a stream that only contains a cut-off character', () => {
+        const { tokens, errors, end } = tokenizeChunks([[0xE2]]);
+        end();
+        expect(tokens).toEqual([]);
+        expect(errors).toHaveLength(1);
+      });
+
+      it('decodes invalid bytes as replacement characters, like Buffer#toString', () => {
+        const bytes = [...Buffer.from('<a> <b> "x'), 0xC3, 0x28, 0xE2, ...Buffer.from('" .')];
+        const { tokens, errors, end } = tokenizeChunks(bytes.map(byte => [byte]));
+        end();
+        expect(errors).toEqual([]);
+        expect(tokens[2].value).toBe(Buffer.from(bytes).toString().slice(9, -3));
+        expect(tokens[2].value).toBe('x\ufffd(\ufffd');
+      });
+
+      it('does not tokenize a long unfinished token again for every chunk', () => {
+        const lexer = new Lexer(), tokenizeToEnd = jest.spyOn(lexer, '_tokenizeToEnd');
+        const chunks = ['<http://ex.org/', ...new Array(4096).fill('a'.repeat(64)), '> .'];
+        const { tokens, errors, end } = tokenizeChunks(chunks, lexer);
+        end();
+        expect(errors).toEqual([]);
+        expect(tokens.map(t => t.type)).toEqual(['IRI', '.', 'eof']);
+        expect(tokens[0].value).toHaveLength(14 + 4096 * 64);
+        expect(tokenizeToEnd.mock.calls.length).toBeLessThan(100);
+      });
+    });
+
     describe('passing data after the stream has been finished', () => {
       const tokens = [];
       let error;
