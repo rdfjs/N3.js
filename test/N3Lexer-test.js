@@ -1246,6 +1246,27 @@ describe('Lexer', () => {
     );
 
     it(
+      'should keep numeric characters as N3 verb boundaries before further input',
+      shouldTokenize('of-1 <a> has1 "b"',
+                     { type: 'of', line: 1 },
+                     { type: 'literal', value: '-1', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                     { type: 'IRI', value: 'a', line: 1 },
+                     { type: 'has', line: 1 },
+                     { type: 'literal', value: '1', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                     { type: 'literal', value: 'b', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should emit an N3 verb at the end of a chunk when no prefix can follow',
+      shouldTokenize(streamOf('of-1.', '\n'),
+                     { type: 'of', line: 1 },
+                     { type: 'literal', value: '-1', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                     { type: '.', line: 1 },
+                     { type: 'eof', line: 2 }),
+    );
+
+    it(
       'should tokenize an IRI property list identifier split across chunks',
       shouldTokenize(streamOf('[ i', 'd <s> <p> <o> ]'),
                      { type: '[', line: 1 },

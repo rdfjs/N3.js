@@ -4,6 +4,8 @@ on:
   push:
     branches:
     - main
+    # Breaking changes for the next major; releases alphas. See RELEASING.md.
+    - next-major
   pull_request:
   merge_group:
     types: [checks_requested]
@@ -186,12 +188,16 @@ jobs:
           publish_dir: .
 
   release:
-    if: ${{ github.ref == 'refs/heads/main' }}
+    # main publishes to `latest`; next-major publishes prereleases to `alpha`
+    # (branch config in package.json "release").
+    if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/next-major' }}
     needs: [ audit, test, spec ]
     runs-on: ubuntu-latest
-    # Never run two release/publish jobs concurrently.
+    # Never run two releases of the same branch at once. Per-branch groups keep a
+    # pending next-major release from replacing a pending main one; a group
+    # holds only one pending job, and the newest run covers the older commits.
     concurrency:
-      group: release
+      group: release-${{ github.ref }}
       cancel-in-progress: false
     permissions:
       contents: write
@@ -211,4 +217,8 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           # Emit npm build provenance (SLSA) via the workflow's id-token.
           NPM_CONFIG_PROVENANCE: true
-        run: npx semantic-release@25
+        # The conventionalcommits preset reads `feat!:` squash titles as
+        # breaking; the default angular preset only sees BREAKING CHANGE footers.
+        # Stay on preset v9: v10 needs conventional-changelog-writer 9, but
+        # semantic-release 25's notes generator still loads writer 8.
+        run: npx -p semantic-release@25 -p conventional-changelog-conventionalcommits@9 semantic-release

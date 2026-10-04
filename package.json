@@ -110,7 +110,28 @@
   },
   "release": {
     "branches": [
-      "main"
+      "main",
+      {
+        "name": "next-major",
+        "prerelease": "alpha",
+        "channel": "alpha"
+      }
+    ],
+    "plugins": [
+      [
+        "@semantic-release/commit-analyzer",
+        {
+          "preset": "conventionalcommits"
+        }
+      ],
+      [
+        "@semantic-release/release-notes-generator",
+        {
+          "preset": "conventionalcommits"
+        }
+      ],
+      "@semantic-release/npm",
+      "@semantic-release/github"
     ]
   },
   "publishConfig": {
