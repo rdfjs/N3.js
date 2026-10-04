@@ -8,7 +8,6 @@ import { escapeRegex } from './Util';
 const DEFAULTGRAPH = N3DataFactory.defaultGraph();
 
 const { rdf, xsd } = namespaces;
-const QUAD_POSITIONS = ['subject', 'predicate', 'object'];
 const { hasOwnProperty } = Object.prototype;
 
 // Characters that require escaping in Turtle, TriG, and N3,
@@ -32,6 +31,12 @@ class SerializedTerm extends Term {
   equals(other) {
     return other === this;
   }
+}
+
+// Identifies named terms by value, and other terms such as pretty-printed nodes by identity
+function termKey(term) {
+  return term.termType === 'NamedNode' || term.termType === 'BlankNode' || term.termType === 'Variable' ?
+         `${term.termType} ${term.value}` : term;
 }
 
 // ## Constructor
@@ -105,8 +110,8 @@ export default class N3Writer {
 
   // ### `_writeQuad` writes the quad to the output stream
   _writeQuad(subject, predicate, object, graph, done) {
-    if (this._formulaStatements && (this._isFormula(subject) || this._isFormula(object)) &&
-        DEFAULTGRAPH.equals(graph)) {
+    if (this._formulaStatements && DEFAULTGRAPH.equals(graph) &&
+        (this._isFormula(subject) || this._isFormula(predicate) || this._isFormula(object))) {
       this._formulaStatements.push({ subject, predicate, object });
       done && done();
       return;
@@ -173,6 +178,21 @@ export default class N3Writer {
     return !!this._formulas && term.termType === 'BlankNode' && hasOwnProperty.call(this._formulas, term.value);
   }
 
+  // ### `_findFormulas` lists the labels of the formulas in the quads, including inside lists
+  _findFormulas(quads) {
+    const formulas = [], terms = [];
+    for (const quad of quads)
+      terms.push(quad.object, quad.predicate, quad.subject);
+    while (terms.length) {
+      const term = terms.pop();
+      if (this._lists && term.termType !== 'NamedNode' && (term.value in this._lists))
+        terms.push(...this._lists[term.value].slice().reverse());
+      else if (this._isFormula(term))
+        formulas.push(term.value);
+    }
+    return formulas;
+  }
+
   // ### `_encodeFormula` serializes the formula with the given label.
   // Nested formulas are serialized first, depth-first with an explicit stack,
   // so deeply nested formulas do not exhaust the call stack.
@@ -184,12 +204,12 @@ export default class N3Writer {
       while (frames.length) {
         const frame = frames[frames.length - 1], quads = this._formulas[frame.label];
         // Find the next nested formula that is not serialized yet
+        frame.nested = frame.nested || this._findFormulas(quads);
         let nested = null;
-        while (!nested && frame.position < 3 * quads.length) {
-          const quad = quads[Math.floor(frame.position / 3)];
-          const term = quad[QUAD_POSITIONS[frame.position++ % 3]];
-          if (this._isFormula(term) && !this._openFormulas.has(term.value) && !cache.has(term.value))
-            nested = term.value;
+        while (!nested && frame.position < frame.nested.length) {
+          const candidate = frame.nested[frame.position++];
+          if (!this._openFormulas.has(candidate) && !cache.has(candidate))
+            nested = candidate;
         }
         if (nested) {
           this._openFormulas.add(nested);
@@ -473,29 +493,47 @@ export default class N3Writer {
     return new SerializedTerm(statements.length ? `{ ${statements.join('. ')} }` : '{}');
   }
 
-  // ### `_encodeStatements` serializes N3 statements, grouped by subject.
-  // A formula that is the object of several statements becomes their subject
-  // through inverse `is … of` predicates, so every formula is written once.
+  // ### `_encodeStatements` serializes N3 statements, so that every formula is written once.
+  // A formula that occurs more than once becomes the subject of its statements,
+  // using inverse `is … of` verbs where it is their object,
+  // or the verb shared by a list of objects (or of subjects, with an inverse verb).
   _encodeStatements(quads) {
-    const shared = new Map(), statements = new Map();
-    for (const { object } of quads) {
-      if (this._isFormula(object))
-        shared.set(object.value, shared.has(object.value));
+    const occurrences = new Map(), formulaVerbSubjects = new Map(), statements = new Map();
+    for (const label of this._findFormulas(quads))
+      occurrences.set(label, occurrences.has(label));
+    const isShared = term => this._isFormula(term) && occurrences.get(term.value);
+    for (const { subject, predicate } of quads) {
+      if (isShared(predicate)) {
+        const subjects = formulaVerbSubjects.get(predicate.value);
+        formulaVerbSubjects.set(predicate.value, subjects === undefined ? termKey(subject) :
+                                                 subjects === termKey(subject) && subjects);
+      }
     }
     for (const { subject, predicate, object } of quads) {
-      const inverse = this._isFormula(object) && shared.get(object.value);
-      const head = inverse ? object : subject;
-      // Group named terms by value, and other terms such as pretty-printed nodes by identity
-      const key = head.termType === 'NamedNode' || head.termType === 'BlankNode' || head.termType === 'Variable' ?
-                  `${head.termType} ${head.value}` : head;
-      let part = this._encodePredicate(predicate);
-      part = inverse ? `is ${part === 'a' ? this._encodeIriOrBlank(predicate) : part} of ${this._encodeSubject(subject)}` :
-                       `${part} ${this._encodeObject(object)}`;
-      const statement = statements.get(key);
-      statements.set(key, statement ? `${statement}; ${part}` :
-                                      `${inverse ? this._encodeObject(object) : this._encodeSubject(subject)} ${part}`);
+      const inverse = !isShared(subject) && (isShared(object) ||
+                      isShared(predicate) && formulaVerbSubjects.get(predicate.value) === false);
+      const head = inverse ? object : subject, headKey = termKey(head);
+      let statement = statements.get(headKey);
+      if (!statement)
+        statements.set(headKey, statement = { head: this._encodeSubject(head), verbs: [new Map(), new Map()] });
+      const verbs = statement.verbs[inverse ? 1 : 0], verbKey = termKey(predicate);
+      let verb = verbs.get(verbKey);
+      if (!verb) {
+        verb = this._encodePredicate(predicate);
+        if (inverse)
+          verb = `is ${verb === 'a' ? this._encodeIriOrBlank(predicate) : verb} of`;
+        verbs.set(verbKey, verb = { verb, terms: [] });
+      }
+      verb.terms.push(inverse ? this._encodeSubject(subject) : this._encodeObject(object));
     }
-    return [...statements.values()];
+    const result = [];
+    for (const { head, verbs } of statements.values()) {
+      const parts = [];
+      for (const { verb, terms } of [...verbs[0].values(), ...verbs[1].values()])
+        parts.push(`${verb} ${terms.join(', ')}`);
+      result.push(`${head} ${parts.join('; ')}`);
+    }
+    return result;
   }
 
   // ### `end` signals the end of the output stream
@@ -506,8 +544,10 @@ export default class N3Writer {
       this._subject = null;
     }
     // Write the statements with formulas, which were held back
-    if (this._formulaStatements && this._formulaStatements.length)
-      this._write(`${this._encodeStatements(this._formulaStatements).join('.\n')}.\n`);
+    const formulaStatements = this._formulaStatements;
+    this._formulaStatements = null;
+    if (formulaStatements && formulaStatements.length)
+      this._write(`${this._encodeStatements(formulaStatements).join('.\n')}.\n`);
     // Disallow further writing
     this._write = this._blockedWrite;
 

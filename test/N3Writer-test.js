@@ -150,6 +150,96 @@ describe('Writer', () => {
       }
     });
 
+    // Generates a random N3 document with formulas in every position,
+    // inside lists, nested, and shared through inverse verbs and object lists
+    function randomDocument(random) {
+      function pick(n) { return Math.floor(random() * n); }
+      function iri() { return `<urn:${'abcdef'[pick(6)]}>`; }
+      function formula(depth) { return `{ ${statements(depth)} }`; }
+      function repeat(generate, separator) {
+        const items = [];
+        for (let i = pick(3); i >= 0; i--) items.push(generate());
+        return items.join(separator);
+      }
+      function term(depth, list = true) {
+        const r = random();
+        if (depth > 0 && r < 0.3) return formula(depth - 1);
+        if (list && r < 0.4) return `(${term(depth, false)} ${term(depth, false)})`;
+        return r < 0.5 ? `?${'xy'[pick(2)]}` : iri();
+      }
+      function verb(depth, inverse) {
+        const r = random();
+        if (depth > 0 && r < 0.15) return formula(depth - 1);
+        return !inverse && r < 0.3 ? 'a' : iri();
+      }
+      function objects(depth) { return repeat(() => random() < 0.2 ? '"l"' : term(depth), ', '); }
+      function predicateObjects(depth) {
+        return repeat(() => random() < 0.3 ?
+          `is ${verb(depth, true)} of ${objects(depth)}` : `${verb(depth)} ${objects(depth)}`, '; ');
+      }
+      function statements(depth) { return repeat(() => `${term(depth)} ${predicateObjects(depth)}`, '. '); }
+      return `${statements(2)}.`;
+    }
+
+    it('should write random documents with formulas in any order', async () => {
+      for (let seed = 1; seed <= 30; seed++) {
+        let state = seed;
+        const document = randomDocument(() => (state = (state * 1103515245 + 12345) % 2147483648) / 2147483648);
+        for (const order of [0, seed]) {
+          const { quads, output, reparsed } = await roundTrip(document, order);
+          // Every formula is written exactly once
+          const formulas = new Set(quads.filter(quad => quad.graph.termType === 'BlankNode').map(quad => quad.graph.value));
+          expect((output.match(/\{/g) || []).length).toBe(formulas.size);
+          expect(reparsed).toHaveLength(quads.length);
+          expect(isomorphic(reparsed, quads)).toBe(true);
+        }
+      }
+    });
+
+    it('should write a formula that is the subject and the object of statements once', async () => {
+      const documents = [
+        '{ <urn:a> <urn:b> <urn:c> } <urn:p> <urn:o>; is <urn:q> of <urn:s>.',
+        '<urn:s> is { <urn:a> <urn:b> <urn:c> } of <urn:o>, <urn:r>.',
+        '<urn:s> { <urn:a> <urn:b> <urn:c> } <urn:o>, <urn:r>.',
+      ];
+      for (const document of documents) {
+        for (let seed = 0; seed <= 10; seed++) {
+          const { quads, output, reparsed } = await roundTrip(document, seed);
+          expect(output.match(/<urn:a>/g)).toHaveLength(1);
+          expect(reparsed).toHaveLength(quads.length);
+          expect(isomorphic(reparsed, quads)).toBe(true);
+        }
+      }
+    });
+
+    it('should write deeply nested formulas inside lists', async () => {
+      const depth = 10000, formulas = {}, lists = {}, p = new NamedNode('urn:p');
+      for (let i = 0; i < depth; i++) {
+        formulas[`f${i}`] = [new Quad(p, p, i + 1 < depth ? new BlankNode(`l${i}`) : p)];
+        lists[`l${i}`] = [new BlankNode(`f${i + 1}`)];
+      }
+      const writer = new Writer({ format: 'N3', formulas, lists });
+      writer.addQuad(p, p, new BlankNode('f0'));
+      const output = await end(writer);
+      expect(output).toBe(`<urn:p> <urn:p> ${'{ <urn:p> <urn:p> ('.repeat(depth - 1)}{ <urn:p> <urn:p> <urn:p> }${') }'.repeat(depth - 1)}.\n`);
+    });
+
+    it('should write formulas inside quoted triples inside formulas', async () => {
+      const p = new NamedNode('urn:p');
+      const formulas = { f: [new Quad(p, p, new Quad(p, p, new BlankNode('g')))], g: [new Quad(p, p, p)] };
+      const writer = new Writer({ format: 'N3', formulas });
+      writer.addQuad(p, p, new BlankNode('f'));
+      expect(await end(writer)).toBe('<urn:p> <urn:p> { <urn:p> <urn:p> <<(<urn:p> <urn:p> { <urn:p> <urn:p> <urn:p> })>> }.\n');
+    });
+
+    it('should not accept statements with formulas after the end', async () => {
+      const writer = new Writer({ format: 'N3', formulas: { f: [] } });
+      await end(writer);
+      const done = jest.fn();
+      writer.addQuad(new BlankNode('f'), new NamedNode('urn:p'), new NamedNode('urn:o'), done);
+      expect(done).toHaveBeenCalledWith(new Error('Cannot write because the writer has been closed.'));
+    });
+
     it('should write deeply nested formulas in predicate position', async () => {
       const depth = 20000, formulas = {}, p = new NamedNode('urn:p');
       for (let i = 0; i < depth; i++)
