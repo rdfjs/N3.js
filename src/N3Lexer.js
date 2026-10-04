@@ -53,6 +53,11 @@ function execAtEnd(regExp, input, pos) {
   return regExp.exec(`${input.slice(pos)} `);
 }
 
+// Whitespace or the start of a comment
+function isSeparatorCode(code) {
+  return code === SPACE || code === TAB || code === LF || code === CR || code === HASH;
+}
+
 // Unfinished input in a stream up to this length is tokenized again with every chunk
 const MIN_RESCAN_LENGTH = 1024;
 
@@ -172,6 +177,9 @@ export default class N3Lexer {
         }
       }
       if (pos >= input.length) {
+        // A datatype marker needs a type
+        if (inputFinished && this._previousMarker === '^^')
+          return reportSyntaxError(this, input, pos);
         this._linePosition = currentLineLength;
         if (inputFinished) {
           emitToken('eof', '', '', this._line, currentLineLength, 0);
@@ -187,6 +195,9 @@ export default class N3Lexer {
           finalLineLength = 0, inconclusive = false;
       switch (firstChar) {
       case '^':
+        // A datatype marker separated from its type cannot be followed by another marker
+        if (this._previousMarker === '^^')
+          return reportSyntaxError(this, input, pos);
         // We need at least 3 tokens lookahead to distinguish ^^<IRI> and ^^pre:fixed
         if (input.length - pos < 3)
           break;
@@ -196,6 +207,9 @@ export default class N3Lexer {
           // Move to type IRI or prefixed name
           pos += 2;
           if (input[pos] !== '<') {
+            // Whitespace and comments may separate the marker from the type
+            if (isSeparatorCode(input.charCodeAt(pos)))
+              continue; // eslint-disable-line no-continue
             inconclusive = true;
             break;
           }
