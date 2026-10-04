@@ -184,4 +184,11 @@ describe('Parser directives', () => {
       expect(() => new Lexer({ directives: [] }).tokenize('MESSAGE ')).toThrow('Unexpected "MESSAGE" on line 1.');
     });
   });
+
+  it('calls no directive callback when lexing fails later', () => {
+    const onDirective = jest.fn();
+    expect(() => new Parser({ directives: ['message'] }).parse('MESSAGE "unterminated', { onDirective }))
+      .toThrow('Unexpected ""unterminated" on line 1.');
+    expect(onDirective).not.toHaveBeenCalled();
+  });
 });
