@@ -91,7 +91,7 @@ export default class N3Writer {
       this._prefixPatterns = Object.create(null);
       if (options.baseIRI) {
         this._baseIri = new BaseIRI(options.baseIRI);
-        if (options.writeBase)
+        if (options.writeBase !== false)
           this._write(`@base <${options.baseIRI}>.\n`);
       }
       options.prefixes && this.addPrefixes(options.prefixes);
