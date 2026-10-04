@@ -9,6 +9,7 @@ import {
   termFromId,
 } from '../src';
 import namespaces from '../src/IRIs';
+import { isomorphic } from 'rdf-isomorphic';
 
 const { xsd, rdf } = namespaces;
 
@@ -52,16 +53,10 @@ describe('Writer', () => {
       return { quads, output, reparsed: new Parser({ format: 'N3' }).parse(output) };
     }
 
-    function shape(quads) {
-      // Blank node labels differ between parses, so compare everything else
-      return quads.map(({ subject, predicate, object, graph }) =>
-        [subject, predicate, object, graph].map(t => t.termType === 'BlankNode' ? 'BlankNode' : t.id)).sort();
-    }
-
     it('should write the formulas of a rule', async () => {
       const { quads, output, reparsed } = await roundTrip('{ ?s a ?o } => { ?s a ?o }.');
       expect(output).toBe('{ ?s a ?o } <http://www.w3.org/2000/10/swap/log#implies> { ?s a ?o }.\n');
-      expect(shape(reparsed)).toEqual(shape(quads));
+      expect(isomorphic(reparsed, quads)).toBe(true);
     });
 
     it('should write nested formulas and formulas with several statements', async () => {
@@ -69,7 +64,21 @@ describe('Writer', () => {
       const { quads, output, reparsed } = await roundTrip(document);
       expect(output).toBe('<http://ex.org/a> <http://ex.org/says> { <http://ex.org/b> <http://ex.org/c> <http://ex.org/d>. ' +
         '<http://ex.org/e> <http://ex.org/f> { <http://ex.org/g> <http://ex.org/h> "i"@en } }.\n');
-      expect(shape(reparsed)).toEqual(shape(quads));
+      expect(isomorphic(reparsed, quads)).toBe(true);
+    });
+
+    it('should keep a blank node shared by two statements in one formula', async () => {
+      const document = '@prefix : <http://ex.org/>. :a :says { _:x :p :o. _:x :q :r }.';
+      const { quads, output, reparsed } = await roundTrip(document);
+      expect(output.match(/_:\w+/g)).toHaveLength(2);
+      expect(new Set(output.match(/_:\w+/g)).size).toBe(1);
+      expect(isomorphic(reparsed, quads)).toBe(true);
+      // A copy whose blank nodes are distinct is not isomorphic
+      const [first, second] = reparsed.filter(quad => quad.subject.termType === 'BlankNode');
+      const split = reparsed.map(quad => quad === second ?
+        new Quad(new BlankNode('other'), quad.predicate, quad.object, quad.graph) : quad);
+      expect(first).toBeDefined();
+      expect(isomorphic(split, quads)).toBe(false);
     });
 
     it('should create formulas manually', async () => {
