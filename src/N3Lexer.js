@@ -1,5 +1,4 @@
 // **N3Lexer** tokenizes N3 documents.
-import { Buffer } from 'buffer';
 import namespaces from './IRIs';
 
 const { xsd } = namespaces;
@@ -88,6 +87,9 @@ function execAtEnd(regExp, input, pos) {
 function isSeparatorCode(code) {
   return code === SPACE || code === TAB || code === LF || code === CR || code === HASH;
 }
+
+// Unfinished input in a stream up to this length is tokenized again with every chunk
+const MIN_RESCAN_LENGTH = 1024;
 
 // ## Constructor
 export default class N3Lexer {
@@ -809,36 +811,42 @@ export default class N3Lexer {
     }
     // Otherwise, the input must be a stream
     else {
-      this._pendingBuffer = null;
+      let decoder, retryLength = 0;
       if (typeof input.setEncoding === 'function')
         input.setEncoding('utf8');
       // Adds the data chunk to the buffer and parses as far as possible
       input.on('data', data => {
         if (this._tokenization === tokenization && this._input !== null && data.length !== 0) {
-          // Prepend any previous pending writes
-          if (this._pendingBuffer) {
-            data = Buffer.concat([this._pendingBuffer, data]);
-            this._pendingBuffer = null;
+          // Decode bytes, keeping an incomplete trailing character for the next chunk
+          if (typeof data !== 'string') {
+            decoder = decoder || new TextDecoder('utf-8', { ignoreBOM: true });
+            if (!(data = decoder.decode(data, { stream: true })))
+              return;
           }
-          // Hold if the buffer ends in an incomplete unicode sequence
-          if (data[data.length - 1] & 0x80) {
-            this._pendingBuffer = data;
-          }
-          // Otherwise, tokenize as far as possible
-          else {
-            // Only read a BOM at the start
-            if (typeof this._input === 'undefined')
-              this._input = this._readStartingBom(typeof data === 'string' ? data : data.toString());
-            else
-              this._input += data;
+          // Only read a BOM at the start
+          if (typeof this._input === 'undefined')
+            this._input = this._readStartingBom(data);
+          else
+            this._input += data;
+          // Tokenize as far as possible. When a previous attempt left a long unfinished token,
+          // wait until the buffered input has doubled, so the token is not rescanned for every chunk.
+          if (this._input.length >= retryLength) {
             this._tokenizeToEnd(callback, false);
+            retryLength = this._input !== null && this._input.length > MIN_RESCAN_LENGTH ?
+              2 * this._input.length : 0;
           }
         }
       });
       // Parses until the end
       input.on('end', () => {
-        if (this._tokenization === tokenization && typeof this._input === 'string')
-          this._tokenizeToEnd(callback, true);
+        if (this._tokenization === tokenization && this._input !== null) {
+          // Decode any incomplete character left at the end
+          const rest = decoder ? decoder.decode() : '';
+          if (rest)
+            this._input = typeof this._input === 'string' ? this._input + rest : rest;
+          if (typeof this._input === 'string')
+            this._tokenizeToEnd(callback, true);
+        }
       });
       input.on('error', error => {
         if (this._tokenization === tokenization)
