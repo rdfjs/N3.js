@@ -33,11 +33,27 @@ class SerializedTerm extends Term {
   }
 }
 
-// Identifies RDF terms by equality, and terms with pretty-printed nodes by identity
+// Identifies RDF terms by equality, and pretty-printed nodes by identity
+const serializedTermKeys = new WeakMap();
+let serializedTermCount = 0;
 function termKey(term) {
-  return hasSerializedTerm(term) ? term : termToId(term);
+  return hasSerializedTerm(term) ? serializedTermKey(term) : termToId(term);
 }
-
+// Keys a term containing pretty-printed nodes component by component
+function serializedTermKey(term) {
+  switch (term.termType) {
+  case 'Quad':
+    return `\0<<${serializedTermKey(term.subject)}\0${serializedTermKey(term.predicate)
+    }\0${serializedTermKey(term.object)}\0${serializedTermKey(term.graph)}>>`;
+  default:
+    if (!(term instanceof SerializedTerm))
+      return termToId(term);
+    let key = serializedTermKeys.get(term);
+    if (key === undefined)
+      serializedTermKeys.set(term, key = `\0${serializedTermCount++}`);
+    return key;
+  }
+}
 // Checks whether the term is or contains a pretty-printed node
 function hasSerializedTerm(term) {
   return term instanceof SerializedTerm || term.termType === 'Quad' &&
@@ -208,7 +224,8 @@ export default class N3Writer {
 
   // ### `_isList` checks whether the term is the head of a given list
   _isList(term) {
-    return !!this._lists && term.termType !== 'NamedNode' && (term.value in this._lists);
+    return !!this._lists && (term.termType === 'BlankNode' || term.termType === 'Variable') &&
+      (term.value in this._lists);
   }
 
   // ### `_checkLists` rejects lists that contain a formula occurring more than once,

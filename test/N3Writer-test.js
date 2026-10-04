@@ -264,6 +264,21 @@ describe('Writer', () => {
       expect(formula.id).toBe('{ <<([] <urn:p> <urn:p>)>> <urn:p> <urn:p>. <<([] <urn:p> <urn:p>)>> <urn:p> <urn:p> }');
     });
 
+    it('should not mistake a literal for a list', async () => {
+      const p = new NamedNode('urn:p'), a = new NamedNode('urn:a');
+      const writer = new Writer({ format: 'N3', formulas: { f: [new Quad(a, a, a)] }, lists: { l: [new BlankNode('f')] } });
+      writer.addQuad(new NamedNode('urn:s'), p, new Literal('"l"'));
+      writer.addQuad(new NamedNode('urn:t'), p, new BlankNode('l'));
+      expect(await end(writer)).toBe('<urn:s> <urn:p> "l".\n<urn:t> <urn:p> ({ <urn:a> <urn:a> <urn:a> }).\n');
+    });
+
+    it('should group quoted triples that share a pretty-printed node', () => {
+      const p = new NamedNode('urn:p'), o = new NamedNode('urn:o'), writer = new Writer({ format: 'N3' });
+      const b = writer.blank();
+      const formula = writer.formula([new Quad(new Quad(b, p, p), p, p), new Quad(new Quad(b, p, p), p, o)]);
+      expect(formula.id).toBe('{ <<([] <urn:p> <urn:p>)>> <urn:p> <urn:p>, <urn:o> }');
+    });
+
     it('should write statements with formulas with the prefixes bound at the end', async () => {
       const writer = new Writer({ format: 'N3', prefixes: { ex: 'urn:old:' }, formulas: { f: [] } });
       writer.addQuad(new NamedNode('urn:old:s'), new NamedNode('urn:old:p'), new BlankNode('f'));
