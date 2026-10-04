@@ -456,7 +456,7 @@ describe('Store', () => {
                        ['s1', 'p2', 'o2'],
                        ['s2', 'p1', 'o1'],
                        ['s1', 'p1', 'o1', 'c4'],
-                       [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3'],
+                       [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3'],
                        ['s2', 'p2', 'o2']));
     });
 
@@ -487,7 +487,7 @@ describe('Store', () => {
                          ['s1', 'p1', 'o2'],
                          ['s2', 'p1', 'o1'],
                          ['s1', 'p1', 'o1', 'c4'],
-                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3']),
+                         [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3']),
       );
     });
 
@@ -571,7 +571,7 @@ describe('Store', () => {
                          ['s1', 'p1', 'o2'],
                          ['s1', 'p2', 'o2'],
                          ['s2', 'p1', 'o1'],
-                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3'],
+                         [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3'],
                          ['s2', 'p2', 'o2']),
       );
     });
@@ -660,7 +660,7 @@ describe('Store', () => {
             ['s1', 'p2', 'o2'],
             ['s2', 'p1', 'o1'],
             ['s1', 'p1', 'o1', 'c4'],
-            [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3'],
+            [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3'],
             ['s2', 'p2', 'o2']),
         );
       });
@@ -2325,7 +2325,7 @@ describe('Store', () => {
                              ['s1', 'p1', 'o1', ''],
                              ['s1', 'p1', 'o2', ''],
                              ['s2', 'p1', 'o1', ''],
-                             [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']),
+                             [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3', '']),
         );
       });
 
@@ -2355,7 +2355,7 @@ describe('Store', () => {
                            ['s1', 'p1', 'o2', ''],
                            ['s2', 'p1', 'o1', ''],
                            ['s1', 'p1', 'o1', 'c4'],
-                           [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']),
+                           [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3', '']),
         );
       });
 
@@ -2378,7 +2378,7 @@ describe('Store', () => {
                            ['s1', 'p2', 'o2'],
                            ['s2', 'p1', 'o1'],
                            ['s2', 'p2', 'o2'],
-                           [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']),
+                           [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3', '']),
         );
       });
 
@@ -2392,7 +2392,7 @@ describe('Store', () => {
                            ['s2', 'p1', 'o1'],
                            ['s2', 'p2', 'o2'],
                            ['s1', 'p1', 'o1', 'c4'],
-                           [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']),
+                           [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3', '']),
         );
       });
     });
@@ -2588,7 +2588,7 @@ describe('Store', () => {
         ['s2', 'p1', 'o1'],
         ['s2', 'p2', 'o2'],
         ['s1', 'p1', 'o1', 'c4'],
-        [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3']));
+        [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3']));
     });
 
     describe('when iterated with for...of', () => {
@@ -2610,7 +2610,7 @@ describe('Store', () => {
         ['s1', 'p2', 'o2'],
         ['s2', 'p1', 'o1'],
         ['s1', 'p1', 'o1', 'c4'],
-        [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3'],
+        [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3'],
         ['s2', 'p2', 'o2']));
     });
 
@@ -2628,7 +2628,7 @@ describe('Store', () => {
         ['s2', 'p1', 'o1'],
         ['s2', 'p2', 'o2'],
         ['s1', 'p1', 'o1', 'c4'],
-        [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3']));
+        [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3']));
     });
 
     describe('when counted without parameters', () => {
@@ -2865,7 +2865,7 @@ describe('Store', () => {
                          ['s2', 'p1', 'o1'],
                          ['s2', 'p2', 'o2'],
                          ['s1', 'p1', 'o1', 'c4'],
-                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']),
+                         [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3', '']),
       );
     });
 
@@ -2897,7 +2897,7 @@ describe('Store', () => {
         shouldIncludeAll(() => { return store.getQuads(); },
                          ['s1', 'p1', 'o2'],
                          ['s2', 'p2', 'o2'],
-                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']),
+                         [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3', '']),
       );
     });
 
@@ -2969,6 +2969,31 @@ describe('Store', () => {
     it('should still match patterns with an unbound graph', () => {
       expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'))).toBe(true);
       expect(store.has(new NamedNode('s2'), new NamedNode('p1'), new NamedNode('o1'))).toBe(false);
+    });
+  });
+
+  describe('A forwarded view with a triple term in its pattern', () => {
+    const triple = quad(namedNode('s'), namedNode('p'), literal('o'));
+    const store = new Store([
+      quad(triple, namedNode('says'), namedNode('x')),
+      quad(namedNode('s'), namedNode('says'), triple),
+    ], { matchSemantics: 'forwarded' });
+
+    it('should only accept quads with an equal triple term', () => {
+      const view = store.match(triple);
+      expect(view.size).toBe(1);
+      view.add(quad(quad(namedNode('s'), namedNode('p'), literal('o')), namedNode('says'), namedNode('y')));
+      expect(view.size).toBe(2);
+      expect(() => view.add(quad(namedNode('s'), namedNode('says'), namedNode('y'))))
+        .toThrow('Quad does not match the forwarded view pattern');
+      expect(() => store.match(namedNode('s')).add(quad(triple, namedNode('says'), namedNode('y'))))
+        .toThrow('Quad does not match the forwarded view pattern');
+    });
+
+    it('should intersect triple terms in nested patterns', () => {
+      expect(store.match(null, null, triple).match(null, null, triple).size).toBe(1);
+      expect(store.match(null, null, triple).match(null, null, namedNode('x')).size).toBe(0);
+      expect(store.match(null, null, namedNode('x')).match(null, null, triple).size).toBe(0);
     });
   });
 
@@ -4329,9 +4354,14 @@ function itShouldBeEmpty(result) {
   });
 }
 
+// Test fixtures write terms as IDs, except for triple terms, which have no ID
+function toTerm(term) {
+  return typeof term === 'string' ? termFromId(term) : term;
+}
+
 function shouldIncludeAll(result) {
   const items = Array.prototype.slice.call(arguments, 1).map(arg => {
-    return new Quad(termFromId(arg[0]), termFromId(arg[1]), termFromId(arg[2]), termFromId(arg[3] || ''));
+    return new Quad(toTerm(arg[0]), toTerm(arg[1]), toTerm(arg[2]), toTerm(arg[3] || ''));
   });
   return function () {
     if (typeof result === 'function') result = result();

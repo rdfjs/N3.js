@@ -1369,6 +1369,12 @@ function validateMatchSemantics(semantics = 'lazy') {
   return semantics;
 }
 
+// Returns whether two terms or term IDs are the same; triple terms are compared by their components.
+function sameTerm(left, right) {
+  return left.termType === 'Quad' || right.termType === 'Quad' ?
+    left.termType === right.termType && left.equals(right) : termToId(left) === termToId(right);
+}
+
 // Returns the intersection of two quad patterns, or false if they conflict.
 function intersectMatchPatterns(left, right) {
   const result = new Array(4);
@@ -1376,7 +1382,7 @@ function intersectMatchPatterns(left, right) {
     const leftTerm = left[i], rightTerm = right[i];
     if (leftTerm === null || leftTerm === undefined)
       result[i] = rightTerm;
-    else if (rightTerm === null || rightTerm === undefined || termToId(leftTerm) === termToId(rightTerm))
+    else if (rightTerm === null || rightTerm === undefined || sameTerm(leftTerm, rightTerm))
       result[i] = leftTerm;
     else
       return false;
@@ -1427,10 +1433,10 @@ class DatasetCoreAndReadableStream extends Readable {
   _matchesQuad(quad) {
     const { subject, predicate, object, graph } = this;
     return !this._matchesNothing &&
-      (subject === null || subject === undefined || termToId(subject) === termToId(quad.subject)) &&
-      (predicate === null || predicate === undefined || termToId(predicate) === termToId(quad.predicate)) &&
-      (object === null || object === undefined || termToId(object) === termToId(quad.object)) &&
-      (graph === null || graph === undefined || termToId(graph) === termToId(quad.graph));
+      (subject === null || subject === undefined || sameTerm(subject, quad.subject)) &&
+      (predicate === null || predicate === undefined || sameTerm(predicate, quad.predicate)) &&
+      (object === null || object === undefined || sameTerm(object, quad.object)) &&
+      (graph === null || graph === undefined || sameTerm(graph, quad.graph));
   }
 
   // ### `_assertMatchesPattern` rejects a Quad outside this view.
