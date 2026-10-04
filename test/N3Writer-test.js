@@ -5,6 +5,7 @@ import {
   BlankNode,
   Literal,
   Quad,
+  Variable,
   termFromId,
 } from '../src';
 import namespaces from '../src/IRIs';
@@ -77,6 +78,21 @@ describe('Writer', () => {
         new NamedNode('http://ex.org/c'))]), new NamedNode('http://ex.org/is'), writer.formula([]));
       expect(await end(writer)).toBe('@prefix : <http://ex.org/>.\n\n{ :a :b :c } :is {}.\n');
       expect(writer.formula()).toEqual(writer.formula([]));
+    });
+
+    it('should only expand blank nodes whose labels are formulas of their own', async () => {
+      const writer = new Writer({ format: 'N3', formulas: { f: [] } });
+      writer.addQuad(new Variable('f'), new NamedNode('http://ex.org/p'), new BlankNode('toString'));
+      writer.addQuad(new BlankNode('constructor'), new NamedNode('http://ex.org/p'), new BlankNode('f'));
+      expect(await end(writer)).toBe('?f <http://ex.org/p> _:toString.\n_:constructor <http://ex.org/p> {}.\n');
+    });
+
+    it('should not expand a formula inside itself', async () => {
+      const p = new NamedNode('http://ex.org/p');
+      const formulas = { f: [new Quad(new Variable('f'), p, new BlankNode('f'))] };
+      const writer = new Writer({ format: 'N3', formulas });
+      writer.addQuad(new NamedNode('http://ex.org/s'), p, new BlankNode('f'));
+      expect(await end(writer)).toBe('<http://ex.org/s> <http://ex.org/p> { ?f <http://ex.org/p> _:f }.\n');
     });
 
     it('should leave blank nodes that are no formula unchanged', async () => {
