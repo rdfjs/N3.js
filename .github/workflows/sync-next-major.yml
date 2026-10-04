@@ -16,10 +16,6 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: sync-next-major
-  cancel-in-progress: false
-
 jobs:
   sync:
     if: >-
@@ -28,6 +24,12 @@ jobs:
           github.event.workflow_run.event == 'push' &&
           github.event.workflow_run.conclusion == 'success'))
     runs-on: ubuntu-latest
+    # Job-level, so a run whose job is skipped (its CI failed) never enters the
+    # group. At workflow level it would still replace a pending sync for a
+    # green commit, and that commit would never be synced.
+    concurrency:
+      group: sync-next-major
+      cancel-in-progress: false
     env:
       # A push made with GITHUB_TOKEN does not trigger CI, so next-major would
       # never release. Set this Actions secret to a fine-grained PAT for this
