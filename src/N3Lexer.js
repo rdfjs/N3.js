@@ -107,7 +107,6 @@ export default class N3Lexer {
     this.comments = !!options.comments;
     // Cache the last tested closing position of long literals
     this._literalClosingPos = 0;
-    this._longLiteral = false;
   }
 
   // ## Private methods
@@ -193,7 +192,7 @@ export default class N3Lexer {
       const line = this._line, firstChar = input[pos];
       let type = '', value = '', prefix = '',
           match = null, matchLength = 0, lexicalLength = 0,
-          finalLineLength = 0, inconclusive = false;
+          finalLineLength = 0, inconclusive = false, tripleQuoted = false;
       switch (firstChar) {
       case '^':
         // A datatype marker separated from its type cannot be followed by another marker
@@ -278,7 +277,7 @@ export default class N3Lexer {
           value = match[1];
         // Try to find a literal wrapped in three pairs of quotes
         else {
-          ({ value, matchLength, finalLineLength } = this._parseLiteral(input, pos));
+          ({ value, matchLength, finalLineLength, tripleQuoted } = this._parseLiteral(input, pos));
           if (value === null)
             return reportSyntaxError(this, input, pos);
         }
@@ -295,7 +294,7 @@ export default class N3Lexer {
             value = match[1];
           // Try to find a literal wrapped in three pairs of quotes
           else {
-            ({ value, matchLength, finalLineLength } = this._parseLiteral(input, pos));
+            ({ value, matchLength, finalLineLength, tripleQuoted } = this._parseLiteral(input, pos));
             if (value === null)
               return reportSyntaxError(this, input, pos);
           }
@@ -528,8 +527,13 @@ export default class N3Lexer {
       if (finalLineLength) {
         token = {
           type, value, prefix, line, start,
-          end: finalLineLength, endLine: this._line,
+          end: finalLineLength, endLine: this._line, tripleQuoted,
         };
+        callback(null, token);
+      }
+      // Triple-quoted strings are marked, since version declarations do not allow them
+      else if (tripleQuoted) {
+        token = { type, value, prefix, line, start, end: start + length, tripleQuoted };
         callback(null, token);
       }
       else
@@ -681,16 +685,17 @@ export default class N3Lexer {
               openingLength === 3 && this._lineMode)
             break;
           this._line += lineCount;
-          // Version declarations need to know whether the string was triple-quoted
-          this._longLiteral = openingLength === 3;
           const finalLineLength = lineCount === 0 ? 0 : lines[lines.length - 1].length + openingLength;
-          return { value: this._unescape(raw, stringEscapeReplacements), matchLength, finalLineLength };
+          return {
+            value: this._unescape(raw, stringEscapeReplacements), matchLength, finalLineLength,
+            tripleQuoted: openingLength === 3,
+          };
         }
         closingPos++;
       }
       this._literalClosingPos = input.length - pos - openingLength + 1;
     }
-    return { value: '', matchLength: 0, finalLineLength: 0 };
+    return { value: '', matchLength: 0, finalLineLength: 0, tripleQuoted: false };
   }
 
   // ### `_syntaxError` creates a syntax error for the given issue

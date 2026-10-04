@@ -1098,8 +1098,7 @@ export default class N3Parser {
     if (token.type !== 'literal')
       return this._error('Expected literal to follow version declaration', token);
     // Only short strings are allowed, so no numbers or booleans (which have a datatype prefix)
-    // and no triple-quoted strings (detected by the lexer when the string has escapes or quotes)
-    if (token.prefix !== '' || (token.end - token.start) !== token.value.length + 2 && this._lexer._longLiteral)
+    if (token.prefix !== '' || token.tripleQuoted)
       return this._error('Version declarations must use single quotes', token);
     this._versionCallback(token.value);
     if (!this._isValidVersion(token.value))

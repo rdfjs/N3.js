@@ -1035,6 +1035,38 @@ describe('Parser', () => {
     );
 
     it(
+        'should not allow VERSION with a long string followed by a short one when parsing synchronously',
+        () => {
+          expect(() => new Parser().parse('VERSION """1.2"""\nVERSION "1.2"'))
+            .toThrow('Version declarations must use single quotes on line 1.');
+          expect(() => new Parser().parse('VERSION \'\'\'1.2\'\'\'\nVERSION \'1.2\''))
+            .toThrow('Version declarations must use single quotes on line 1.');
+        },
+    );
+
+    it(
+        'should not allow VERSION with a multi-line long string',
+        async () => {
+          expect(() => new Parser().parse('VERSION """1.\n2"""'))
+            .toThrow('Version declarations must use single quotes on line 1.');
+          const error = await new Promise(resolve => {
+            new Parser().parse('VERSION """1.\n2"""', e => { if (e) resolve(e); });
+          });
+          expect(error.message).toBe('Version declarations must use single quotes on line 1.');
+        },
+    );
+
+    it(
+        'should allow VERSION with an escaped short string after a long literal when parsing synchronously',
+        () => {
+          const versions = [];
+          new Parser().parse('<ex:a> <ex:b> """c""".\nVERSION "1\\u002e2"\n<ex:a> <ex:b> """d""".',
+            { onVersion: version => versions.push(version) });
+          expect(versions).toEqual(['1.2']);
+        },
+    );
+
+    it(
         'should not allow unsupported VERSIONs',
         shouldNotParse('VERSION "1.2-unknown"',
             'Detected unsupported version: "1.2-unknown" on line 1.'),
