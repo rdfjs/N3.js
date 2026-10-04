@@ -23,6 +23,8 @@ const FETCH_OPTIONS = {
 
 async function load(url) {
   const { body } = await Util.fetchCached(url, FETCH_OPTIONS);
+  // Decode as one stream, so characters split across chunks stay intact
+  body.setEncoding('utf8');
   let text = '';
   for await (const chunk of body)
     text += chunk;
