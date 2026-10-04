@@ -579,7 +579,7 @@ They are maintained separately from N3.js; please report issues with them in the
 
 | Package | Description |
 | ------- | ----------- |
-| [n3.js-messages](https://www.npmjs.com/package/n3.js-messages) ([source](https://github.com/pietercolpaert/N3.js-message)) | Parses and writes [RDF Messages](https://w3c-cg.github.io/rsp/spec/messages) (message-delimited Turtle, TriG, N-Triples and N-Quads). |
+| [n3.js-messages](https://www.npmjs.com/package/n3.js-messages) | Parses and writes [RDF Messages](https://w3c-cg.github.io/rsp/spec/messages) (message-delimited Turtle, TriG, N-Triples and N-Quads). |
 | [@jeswr/n3-provenance](https://github.com/jeswr/n3-provenance) | Experimental. Maps the terms of parsed quads back to their source positions in the input document. Terms that the parser generates, such as list nodes and reification scaffolding, have no position. It builds on the parser's `onToken` and `onTokenEnd` callbacks, but also subclasses private parser and index internals, so it is pinned to a specific N3.js revision. |
 
 To list a package here, open a pull request that adds a row to this table.
