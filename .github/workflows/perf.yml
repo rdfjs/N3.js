@@ -1,0 +1,92 @@
+name: Performance
+
+# Benchmarks the pull request against its base branch in the same job, so
+# both builds see the same runner. See perf/README.md for what is covered.
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: Ref to compare against
+        default: main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: perf-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # On pull requests this checks out the merge of the PR into the current
+      # base branch, so the base to compare against is that merge commit's
+      # first parent. (pull_request.base.sha is not that commit: GitHub does
+      # not update it when the base branch moves, so it can be far behind.)
+      - uses: actions/checkout@v7
+        with:
+          path: head
+          fetch-depth: 2
+      - name: Find base commit
+        id: base
+        working-directory: head
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT_BASE: ${{ inputs.base }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then
+            if [ "$(git rev-list --parents -n 1 HEAD | wc -w)" != 3 ]; then
+              echo "::error::Expected a merge commit for the pull request"
+              exit 1
+            fi
+            echo "ref=$(git rev-parse HEAD^1)" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=$INPUT_BASE" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v7
+        with:
+          path: base
+          ref: ${{ steps.base.outputs.ref }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+      - name: Build head
+        working-directory: head
+        run: npm ci --ignore-scripts && npm run build:node
+      - name: Build base
+        working-directory: base
+        run: npm ci --ignore-scripts && npm run build:node
+      - name: Compare
+        id: compare
+        working-directory: head
+        run: >-
+          node perf/ci/compare.js --base ../base/lib --head lib
+          --markdown ../perf-results.md --json ../perf-results.json
+      - name: Record compared commits
+        if: always() && hashFiles('perf-results.md') != ''
+        run: |
+          {
+            echo
+            echo "Compared $(git -C head rev-parse --short HEAD) (head) with $(git -C base rev-parse --short HEAD) (base)."
+          } >> perf-results.md
+      - name: Publish summary
+        if: always() && hashFiles('perf-results.md') != ''
+        run: cat perf-results.md >> "$GITHUB_STEP_SUMMARY"
+      # perf-comment.yml posts this on the pull request. It runs separately
+      # because this workflow has no write access on pull requests from forks.
+      - name: Save results for the PR comment
+        if: always() && github.event_name == 'pull_request' && hashFiles('perf-results.md') != ''
+        run: |
+          mkdir perf-comment
+          cp perf-results.md perf-comment/
+          echo "${{ github.event.pull_request.number }}" > perf-comment/pr-number
+          echo "${{ steps.compare.outcome }}" > perf-comment/outcome
+      - uses: actions/upload-artifact@v7
+        if: always() && github.event_name == 'pull_request' && hashFiles('perf-comment/perf-results.md') != ''
+        with:
+          name: perf-comment
+          path: perf-comment
+          retention-days: 7

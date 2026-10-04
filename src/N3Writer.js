@@ -90,7 +90,8 @@ export default class N3Writer {
       // Write the graph's label if it has changed
       // (the id-based fast path of `equals` would conflate
       // the empty named node `<>` with the default graph)
-      if (!graph.equals(this._graph) || graph.termType !== this._graph.termType) {
+      if (graph !== this._graph &&
+          (!graph.equals(this._graph) || graph.termType !== this._graph.termType)) {
         // Close the previous graph and start the new one
         this._write((this._subject === null ? '' : (this._inDefaultGraph ? '.\n' : '\n}\n')) +
                     (DEFAULTGRAPH.equals(graph) ? '' : `${this._encodeIriOrBlank(graph)} {\n`));
@@ -98,9 +99,9 @@ export default class N3Writer {
         this._subject = null;
       }
       // Don't repeat the subject if it's the same
-      if (subject.equals(this._subject)) {
+      if (subject === this._subject || subject.equals(this._subject)) {
         // Don't repeat the predicate if it's the same
-        if (predicate.equals(this._predicate))
+        if (predicate === this._predicate || predicate.equals(this._predicate))
           this._write(`, ${this._encodeObject(object)}`, done);
         // Same subject, different predicate
         else
@@ -128,7 +129,8 @@ export default class N3Writer {
   // ### `quadToString` serializes a quad as a string
   quadToString(subject, predicate, object, graph) {
     return  `${this._encodeSubject(subject)} ${
-            this._encodeIriOrBlank(predicate)} ${
+            predicate.termType === 'Literal' ?
+              this._encodeLiteral(predicate) : this._encodeIriOrBlank(predicate)} ${
             this._encodeObject(object)
             }${graph && !isDefaultGraph(graph) ? ` ${this._encodeIriOrBlank(graph)} .\n` : ' .\n'}`;
   }
@@ -143,8 +145,15 @@ export default class N3Writer {
 
   // ### `_encodeSubject` represents a subject
   _encodeSubject(entity) {
-    return entity.termType === 'Quad' ?
-      this._encodeQuad(entity) : this._encodeIriOrBlank(entity);
+    switch (entity.termType) {
+    case 'Quad':
+      return this._encodeQuad(entity);
+    // Literal subjects are only valid in N3
+    case 'Literal':
+      return this._encodeLiteral(entity);
+    default:
+      return this._encodeIriOrBlank(entity);
+    }
   }
 
   // ### `_encodeIriOrBlank` represents an IRI or blank node
@@ -154,8 +163,10 @@ export default class N3Writer {
       // If it is a list head, pretty-print it
       if (this._lists && (entity.value in this._lists))
         entity = this.list(this._lists[entity.value]);
-      return entity.termType === 'Variable' ? `?${entity.value}` :
-             'id' in entity ? entity.id : `_:${entity.value}`;
+      // Terms from this library already hold their serialization as id
+      if (entity instanceof Term)
+        return entity.id;
+      return entity.termType === 'Variable' ? `?${entity.value}` : `_:${entity.value}`;
     }
     let iri = entity.value;
     // Use relative IRIs if requested and possible
@@ -179,9 +190,12 @@ export default class N3Writer {
       value = value.replace(escapeAll, characterReplacer);
 
     // Write a language-tagged literal
-    const direction = literal.direction ? `--${literal.direction}` : '';
-    if (literal.language)
-      return `"${value}"@${literal.language}${direction}`;
+    const language = literal.language;
+    if (language) {
+      const literalDirection = literal.direction;
+      const direction = literalDirection ? `--${literalDirection}` : '';
+      return `"${value}"@${language}${direction}`;
+    }
 
     // Write dedicated literals per data type
     if (this._lineMode) {
@@ -219,7 +233,15 @@ export default class N3Writer {
 
   // ### `_encodePredicate` represents a predicate
   _encodePredicate(predicate) {
-    return predicate.value === rdf.type ? 'a' : this._encodeIriOrBlank(predicate);
+    switch (predicate.termType) {
+    case 'NamedNode':
+      return predicate.value === rdf.type ? 'a' : this._encodeIriOrBlank(predicate);
+    // Literal predicates are only valid in N3
+    case 'Literal':
+      return this._encodeLiteral(predicate);
+    default:
+      return this._encodeIriOrBlank(predicate);
+    }
   }
 
   // ### `_encodeObject` represents an object
