@@ -3204,6 +3204,24 @@ describe('Store', () => {
     });
   });
 
+  describe('A Store containing a very long rdf:Collection', () => {
+    const store = new Store();
+    const length = 100000;
+    const items = [];
+    for (let i = 0; i < length; i++)
+      items.push(new Literal(`"${i}"`));
+    const head = addList(store, ...items)[0];
+    store.addQuad(new NamedNode('s'), new NamedNode('p'), head);
+
+    it('extractLists with remove returns the items in order and removes the list', () => {
+      const lists = store.extractLists({ remove: true });
+      expect(lists[head.value]).toHaveLength(length);
+      expect(lists[head.value][0].value).toBe('0');
+      expect(lists[head.value][length - 1].value).toBe(`${length - 1}`);
+      expect(store.size).toBe(1);
+    });
+  });
+
   describe('A Store containing a rdf:Collection without first', () => {
     const store = new Store();
     const added = store.addQuad(store.createBlankNode(), new NamedNode(namespaces.rdf.rest), namespaces.rdf.nil);
@@ -3853,6 +3871,23 @@ describe('Store', () => {
         expect(store1.size).toEqual(3);
         store1.addAll([q[2]]);
         expect(store1.size).toEqual(3);
+      });
+
+      it('should merge a store with the same entity index into an existing graph', () => {
+        const entityIndex = new EntityIndex();
+        const target = new Store({ entityIndex });
+        const source = new Store({ entityIndex });
+        const graph = new NamedNode('g');
+        target.addQuad(new NamedNode('s1'), new NamedNode('p'), new NamedNode('o1'), graph);
+        target.addQuad(new NamedNode('s2'), new NamedNode('p'), new NamedNode('o2'));
+        source.addQuad(new NamedNode('s1'), new NamedNode('p'), new NamedNode('o3'), graph);
+        source.addQuad(new NamedNode('s3'), new NamedNode('p'), new NamedNode('o4'));
+        expect(target.addAll(source)).toBe(target);
+        expect(target.size).toBe(4);
+        expect(target.countQuads(null, new NamedNode('p'), null, null)).toBe(4);
+        expect(target.getQuads(null, null, new NamedNode('o3'), graph)).toHaveLength(1);
+        expect(target.getQuads(new NamedNode('s3'), null, null, null)).toHaveLength(1);
+        expect(source.size).toBe(2);
       });
     });
 

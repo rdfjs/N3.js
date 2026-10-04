@@ -219,4 +219,6 @@ jobs:
           NPM_CONFIG_PROVENANCE: true
         # The conventionalcommits preset reads `feat!:` squash titles as
         # breaking; the default angular preset only sees BREAKING CHANGE footers.
-        run: npx -p semantic-release@25 -p conventional-changelog-conventionalcommits@10 semantic-release
+        # Stay on preset v9: v10 needs conventional-changelog-writer 9, but
+        # semantic-release 25's notes generator still loads writer 8.
+        run: npx -p semantic-release@25 -p conventional-changelog-conventionalcommits@9 semantic-release
