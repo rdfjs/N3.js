@@ -4,9 +4,7 @@
       "Bash(git push -q origin *:refs/heads/sync/*)",
       "Bash(git push -q origin *:refs/heads/perf/*)",
       "Bash(git push -q origin *:refs/heads/feat/*)",
-      "Bash(git push -q origin *:refs/heads/fix/*)",
-      "Bash(git push -q origin *:refs/heads/chore/*)",
-      "Bash(git push -q origin *:refs/heads/claude/*)"
+      "Bash(git push -q origin *:refs/heads/fix/*)"
     ]
   }
 }
