@@ -492,7 +492,8 @@ The store provides the following search methods
 
 ### Matching basic graph patterns
 `matchBGP` takes an array of quad patterns whose terms may be variables,
-and yields one `Map` from variable name to term for every way the patterns match the store together.
+and yields one [RDF/JS `Bindings`](https://rdf.js.org/query-spec/#bindings-interface) object
+for every way the patterns match the store together.
 A variable that occurs in several patterns, or several times in one pattern, must bind the same term everywhere.
 `null` or `undefined` in a pattern is a wildcard that binds nothing.
 
@@ -508,6 +509,11 @@ for (const bindings of store.matchBGP([
 ]))
   console.log(bindings.get('person').value, 'knows', bindings.get('friendName').value);
 ```
+
+`get` and `has` accept a variable or its name.
+To create the solutions with another implementation, such as Comunica's, pass its `BindingsFactory`:
+`store.matchBGP(patterns, { bindingsFactory })`.
+N3.js exports its own `Bindings` and `BindingsFactory` as well.
 
 A pattern created with `quad(s, p, o)` gets the default graph from the factory, so it matches the default graph only.
 A plain-object pattern without a `graph` treats it as a wildcard and also matches named graphs.

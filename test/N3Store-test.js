@@ -5,6 +5,7 @@ import {
   Writer,
   termFromId, termToId,
   EntityIndex,
+  Bindings,
   DataFactory,
 } from '../src';
 import {
@@ -4101,17 +4102,29 @@ describe('Store', () => {
 
     function solutions(patterns) {
       return [...store.matchBGP(patterns)].map(bindings =>
-        Object.fromEntries([...bindings].map(([name, term]) => [name, termToId(term)])));
+        Object.fromEntries([...bindings].map(([key, term]) => [key.value, termToId(term)])));
     }
 
     it('should yield one solution with no bindings for no patterns', () => {
       expect(solutions([])).toEqual([{}]);
     });
 
-    it('should yield Maps from variable names to terms', () => {
+    it('should yield RDF/JS Bindings from variables to terms', () => {
       const [bindings] = store.matchBGP([quad(s, ex('name'), literal('Alice'))]);
-      expect(bindings).toBeInstanceOf(Map);
+      expect(bindings).toBeInstanceOf(Bindings);
+      expect(bindings.type).toBe('bindings');
       expect(bindings.get('s').equals(ex('alice'))).toBe(true);
+      expect(bindings.get(s).equals(ex('alice'))).toBe(true);
+      expect([...bindings.keys()].map(key => key.equals(s))).toEqual([true]);
+    });
+
+    it('should create solutions with a given bindings factory', () => {
+      const created = [];
+      const bindingsFactory = { bindings: entries => (created.push(entries), entries) };
+      const results = [...store.matchBGP([quad(s, ex('knows'), o)], { bindingsFactory })];
+      expect(results).toHaveLength(3);
+      expect(results[0].map(([key]) => key)).toEqual(expect.arrayContaining([s, o]));
+      expect(created).toEqual(results);
     });
 
     it('should match a single pattern in the default graph', () => {
@@ -4156,7 +4169,7 @@ describe('Store', () => {
       });
       const custom = new Store(store.getQuads(), { factory });
       const results = [...custom.matchBGP([quad(s, ex('knows'), s), quad(s, ex('knows'), o)])];
-      expect(results.map(bindings => Object.fromEntries(bindings))).toEqual([
+      expect(results.map(bindings => Object.fromEntries([...bindings].map(([key, term]) => [key.value, term])))).toEqual([
         { s: 'named:http://example.org/carol', o: 'named:http://example.org/carol' },
       ]);
     });

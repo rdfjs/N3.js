@@ -4,6 +4,7 @@ import { default as N3DataFactory, termToId, termFromId } from './N3DataFactory'
 import namespaces from './IRIs';
 import { isDefaultGraph } from './N3Util';
 import N3Writer from './N3Writer';
+import { Bindings } from './N3Bindings';
 
 const ITERATOR = Symbol('iter');
 const SIZE = Symbol('size');
@@ -912,9 +913,11 @@ export default class N3Store {
 
   // ### `matchBGP` yields the solutions of a basic graph pattern.
   // `patterns` is an iterable of quads whose terms may be Variables.
-  // Each solution is a Map from variable name to the term it is bound to.
+  // Each solution is an RDF/JS Bindings object from variables to the terms they are bound to,
+  // created by `options.bindingsFactory` if given.
   // Setting any field to `undefined` or `null` indicates a wildcard.
-  *matchBGP(patterns) {
+  *matchBGP(patterns, options) {
+    const bindingsFactory = options && options.bindingsFactory;
     const steps = planBGP(Array.from(patterns));
     // Join on internal ids; a constant the store has never seen matches nothing
     for (const { terms } of steps) {
@@ -923,6 +926,7 @@ export default class N3Store {
           return;
       }
     }
+    steps.bindingsFactory = bindingsFactory;
     yield* this._matchSteps(steps, 0, new Map(), new Map());
   }
 
@@ -936,7 +940,16 @@ export default class N3Store {
           terms.set(id, term = this._termFromId(this._entities[id]));
         solution.set(name, term);
       }
-      yield solution;
+      const { bindingsFactory } = steps;
+      if (!bindingsFactory)
+        yield new Bindings(solution, this._factory);
+      else {
+        // A custom factory receives the variables of the patterns
+        const entries = [];
+        for (const [name, term] of solution)
+          entries.push([steps.variables.get(name), term]);
+        yield bindingsFactory.bindings(entries);
+      }
       return;
     }
     const { terms: keys, bound, binds, checks } = steps[index];
@@ -1372,6 +1385,8 @@ export default class N3Store {
 // the last three as flat lists of position and variable name pairs.
 function planBGP(patterns) {
   const steps = [], known = new Set();
+  // The variable term for each variable name
+  steps.variables = new Map();
   while (patterns.length) {
     let best = 0, bestKnown = -1;
     for (let i = 0; i < patterns.length; i++) {
@@ -1395,8 +1410,10 @@ function planBGP(patterns) {
         step.bound.push(position, term.value);
       else if (binding.has(term.value))
         step.checks.push(position, term.value);
-      else
+      else {
         step.binds.push(position, term.value), binding.add(term.value);
+        steps.variables.set(term.value, term);
+      }
     });
     for (const name of binding)
       known.add(name);

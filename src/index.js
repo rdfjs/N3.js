@@ -2,6 +2,7 @@ import Lexer from './N3Lexer';
 import Parser from './N3Parser';
 import Writer from './N3Writer';
 import Store, { N3EntityIndex as EntityIndex } from './N3Store';
+import { Bindings, BindingsFactory } from './N3Bindings';
 import StoreFactory from './N3StoreFactory';
 import Reasoner, { getRulesFromDataset } from './N3Reasoner';
 import StreamParser from './N3StreamParser';
@@ -33,6 +34,8 @@ export {
   Store,
   StoreFactory,
   EntityIndex,
+  Bindings,
+  BindingsFactory,
   StreamParser,
   StreamWriter,
   Util,
@@ -63,6 +66,8 @@ export default {
   Store,
   StoreFactory,
   EntityIndex,
+  Bindings,
+  BindingsFactory,
   StreamParser,
   StreamWriter,
   Util,
