@@ -8,6 +8,8 @@ const { rdf, xsd } = namespaces;
 // eslint-disable-next-line prefer-const
 let DEFAULTGRAPH;
 let _blankNodeCounter = 0;
+// The ID of the empty IRI, which cannot be '' as that is the ID of the default graph
+const EMPTY_IRI_ID = '<>';
 
 const escapedLiteral = /^"(.*".*)(?="[^"]*$)/;
 
@@ -72,7 +74,13 @@ export class NamedNode extends Term {
    * the constructor assumes an already-validated IRI.
    */
   constructor(iri) {
-    super(iri);
+    if (iri !== '')
+      super(iri);
+    // The empty IRI gets a distinct ID, since '' is the ID of the default graph
+    else {
+      super(EMPTY_IRI_ID);
+      Object.defineProperty(this, 'value', { value: '' });
+    }
   }
 
   // ### The term type of this term
@@ -285,6 +293,10 @@ export function termFromId(id, factory, nested) {
   case '[':
     id = JSON.parse(id);
     break;
+  case '<':
+    if (id === EMPTY_IRI_ID)
+      return factory.namedNode('');
+    // falls through
   default:
     if (!nested || !Array.isArray(id)) {
       return factory.namedNode(id);
@@ -313,7 +325,10 @@ export function termToId(term, nested) {
 
   // Term instantiated with another library
   switch (term.termType) {
-  case 'NamedNode':    return term.value;
+  case 'NamedNode': {
+    const iri = term.value;
+    return iri !== '' ? iri : EMPTY_IRI_ID;
+  }
   case 'BlankNode':    return `_:${term.value}`;
   case 'Variable':     return `?${term.value}`;
   case 'DefaultGraph': return '';
@@ -424,7 +439,7 @@ function literal(value, languageOrDataType) {
     return new Literal(`"${value}"@${languageOrDataType.language.toLowerCase()}${languageOrDataType.direction ? `--${languageOrDataType.direction.toLowerCase()}` : ''}`);
   }
 
-  // Automatically determine datatype for booleans, numbers, and dates
+  // Automatically determine datatype for booleans, numbers, BigInts, and dates
   let datatype = languageOrDataType ? languageOrDataType.value : '';
   if (datatype === '') {
     // Convert a boolean
@@ -433,13 +448,19 @@ function literal(value, languageOrDataType) {
     // Convert an integer or double
     else if (typeof value === 'number') {
       if (Number.isFinite(value))
-        datatype = Number.isInteger(value) ? xsd.integer : xsd.double;
+        // From 1e21 upward, a number's string form turns exponential ("1e+21"),
+        // which is not a valid xsd:integer lexical, so type it as xsd:double
+        // (the same cut-off as JSON-LD 1.1's Object to RDF Conversion)
+        datatype = Number.isInteger(value) && Math.abs(value) < 1e21 ? xsd.integer : xsd.double;
       else {
         datatype = xsd.double;
         if (!Number.isNaN(value))
           value = value > 0 ? 'INF' : '-INF';
       }
     }
+    // Convert a BigInt, whose decimal string is always a valid xsd:integer lexical
+    else if (typeof value === 'bigint')
+      datatype = xsd.integer;
     // Convert a valid date
     else if (value instanceof Date && !Number.isNaN(value.getTime())) {
       datatype = xsd.dateTime;

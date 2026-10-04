@@ -1,4 +1,4 @@
-import { NamedNode, Term } from '../src';
+import { NamedNode, DefaultGraph, Term } from '../src';
 
 describe('NamedNode', () => {
   describe('The NamedNode module', () => {
@@ -83,6 +83,36 @@ describe('NamedNode', () => {
         termType: 'NamedNode',
         value: 'http://example.org/foo#bar',
       });
+    });
+  });
+
+  describe('A NamedNode instance created from the empty IRI', () => {
+    let namedNode;
+    beforeAll(() => { namedNode = new NamedNode(''); });
+
+    it('should have the empty string as value', () => {
+      expect(namedNode).toHaveProperty('value', '');
+    });
+
+    it('should not have the empty string as id', () => {
+      expect(namedNode).toHaveProperty('id', '<>');
+    });
+
+    it('should equal a NamedNode instance with the empty IRI', () => {
+      expect(namedNode.equals(new NamedNode(''))).toBe(true);
+    });
+
+    it('should equal an object with term type "NamedNode" and the empty value', () => {
+      expect(namedNode.equals({ termType: 'NamedNode', value: '' })).toBe(true);
+    });
+
+    it('should not equal the default graph', () => {
+      expect(namedNode.equals(new DefaultGraph())).toBe(false);
+      expect(new DefaultGraph().equals(namedNode)).toBe(false);
+    });
+
+    it('should provide a JSON representation', () => {
+      expect(namedNode.toJSON()).toEqual({ termType: 'NamedNode', value: '' });
     });
   });
 });

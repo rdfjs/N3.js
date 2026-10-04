@@ -22,7 +22,7 @@ export default [
 
   // Base configuration (was the root .eslintrc), applied to all sources.
   {
-    files: ['**/*.js'],
+    files: ['**/*.js', '**/*.mjs'],
 
     plugins: {
       'import-x': importX,
@@ -316,9 +316,6 @@ export default [
         ],
       }],
 
-      'jest/no-standalone-expect': 0,
-      'jest/no-done-callback': 0,
-
       'max-nested-callbacks': 0, // Mocha works with deeply nested callbacks
       'new-cap': 0, // test constructors as regular functions
 
@@ -339,6 +336,15 @@ export default [
           'type',
         ],
       }],
+    },
+  },
+
+  // Browser bundle test runner: a standalone Node script executed outside
+  // jest (see test/browser/run.mjs), so console output is its interface.
+  {
+    files: ['test/browser/**'],
+    rules: {
+      'no-console': 0,
     },
   },
 

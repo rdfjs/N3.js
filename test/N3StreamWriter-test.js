@@ -52,7 +52,7 @@ describe('StreamWriter', () => {
                       'a:v1.0 a:a.b.c <http://a.org/d.>.\n'),
     );
 
-    it('should take over prefixes from the input stream', done => {
+    it('should take over prefixes from the input stream', () => new Promise((resolve, reject) => {
       const inputStream = new Readable(),
           writer = new StreamWriter(),
           outputStream = new StringWriter();
@@ -64,17 +64,17 @@ describe('StreamWriter', () => {
       inputStream.emit('prefix', 'b', new NamedNode('http://b.org/'));
       inputStream.push(null);
 
-      writer.on('error', done);
+      writer.on('error', reject);
       writer.on('end', () => {
         expect(outputStream.result).toBe('@prefix a: <http://a.org/>.\n\n' +
                                          '@prefix b: <http://b.org/>.\n\n');
-        done();
+        resolve();
       });
-    });
+    }));
   });
 
   describe('Output chunking', () => {
-    it('should serialize a small document as a single chunk', done => {
+    it('should serialize a small document as a single chunk', () => new Promise((resolve, reject) => {
       const inputStream = new ArrayReader([
         new Quad(termFromId('abc'), termFromId('def'), termFromId('ghi')),
         new Quad(termFromId('jkl'), termFromId('mno'), termFromId('pqr')),
@@ -82,14 +82,14 @@ describe('StreamWriter', () => {
       const writer = new StreamWriter().import(inputStream);
       const chunks = [];
       writer.on('data', chunk => { chunks.push(chunk); });
-      writer.on('error', done);
+      writer.on('error', reject);
       writer.on('end', () => {
         expect(chunks).toEqual(['<abc> <def> <ghi>.\n<jkl> <mno> <pqr>.\n']);
-        done();
+        resolve();
       });
-    });
+    }));
 
-    it('should coalesce a large document into chunks of at least 16 KiB', done => {
+    it('should coalesce a large document into chunks of at least 16 KiB', () => new Promise((resolve, reject) => {
       const quads = [];
       let expected = '';
       for (let i = 0; i < 4000; i++) {
@@ -101,31 +101,31 @@ describe('StreamWriter', () => {
       const writer = new StreamWriter().import(new ArrayReader(quads));
       const chunks = [];
       writer.on('data', chunk => { chunks.push(chunk); });
-      writer.on('error', done);
+      writer.on('error', reject);
       writer.on('end', () => {
         expect(chunks.join('')).toBe(expected);
         expect(chunks.length).toBeGreaterThan(1);
         expect(chunks.length).toBeLessThan(40);
         for (const chunk of chunks.slice(0, chunks.length - 1))
           expect(chunk.length).toBeGreaterThanOrEqual(16384);
-        done();
+        resolve();
       });
-    });
+    }));
 
-    it('should emit buffered output before a serialization error', done => {
+    it('should emit buffered output before a serialization error', () => new Promise(resolve => {
       const writer = new StreamWriter();
       let data = '';
       writer.on('data', chunk => { data += chunk; });
       writer.on('error', error => {
         expect(error).toBeInstanceOf(TypeError);
         expect(data).toBe('<a> <b> <c>');
-        done();
+        resolve();
       });
       writer.write(new Quad(termFromId('a'), termFromId('b'), termFromId('c')));
       writer.write(new Quad(termFromId('d'), termFromId('e'), null));
-    });
+    }));
 
-    it('should emit buffered output before an input stream error', done => {
+    it('should emit buffered output before an input stream error', () => new Promise(resolve => {
       const input = new Readable({ objectMode: true, read() {} });
       const writer = new StreamWriter().import(input);
       let data = '';
@@ -133,11 +133,11 @@ describe('StreamWriter', () => {
       writer.on('error', error => {
         expect(error.message).toBe('boom');
         expect(data).toBe('<a> <b> <c>');
-        done();
+        resolve();
       });
       writer.write(new Quad(termFromId('a'), termFromId('b'), termFromId('c')),
         () => { input.emit('error', new Error('boom')); });
-    });
+    }));
   });
 
   describe('Pause flushing', () => {
@@ -251,7 +251,7 @@ describe('StreamWriter', () => {
         writer.destroy();
       });
 
-      it('should tolerate timers without unref in browser environments', done => {
+      it('should tolerate timers without unref in browser environments', () => new Promise(resolve => {
         const timeout = jest.spyOn(global, 'setTimeout').mockReturnValue(0);
         const writer = createWriter();
         writer.write(new Quad(termFromId('a'), termFromId('b'), termFromId('c')));
@@ -259,10 +259,10 @@ describe('StreamWriter', () => {
         timeout.mockRestore();
         writer.on('end', () => {
           expect(writer.chunks).toEqual(['<a> <b> <c>.\n']);
-          done();
+          resolve();
         });
         writer.end();
-      });
+      }));
     });
   });
 

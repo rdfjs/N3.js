@@ -45,7 +45,7 @@ or
 [_Introduction to browserify_](https://writingjavascript.org/posts/introduction-to-browserify).
 You will need to create a "UMD bundle" and supply a name (e.g. with the `-s N3` option in browserify).
 
-You can also load it via CDN, either as a UMD bundle that exposes a global `N3`:
+You can also load it via CDN, either as a classic script that exposes a global `N3`:
 ```html
 <script src="https://unpkg.com/n3/browser/n3.min.js"></script>
 ```
@@ -79,7 +79,11 @@ console.log(myQuad.object.language);       // en
 ```
 
 When no language or datatype is supplied, `literal` automatically assigns XSD datatypes
-to JavaScript booleans, numbers, and valid `Date` objects. Dates are converted to UTC
+to JavaScript booleans, numbers, BigInts, and valid `Date` objects.
+Integer-valued numbers below 1e21 and all BigInts become `xsd:integer`,
+so use a BigInt when an integer must stay exact beyond `Number.MAX_SAFE_INTEGER`;
+other numbers become `xsd:double`.
+Dates are converted to UTC
 using `Date.prototype.toISOString()` and receive the `xsd:dateTime` datatype:
 
 ```JavaScript
@@ -129,17 +133,28 @@ the callback is invoked one last time with `null` for `quad`
 and a hash of prefixes as third argument.
 <br>
 
-Alternatively, an object can be supplied, where `onQuad`, `onPrefix` and `onComment` are used to listen for `quads`, `prefixes` and `comments` as follows:
+Alternatively, an object can be supplied with named callbacks for quads, prefixes, comments, and token processing:
 ```JavaScript
 const parser = new N3.Parser();
 
 parser.parse(tomAndJerry, {
-  // onQuad (required) accepts a listener of type (quad: RDF.Quad) => void
+  // onQuad (optional) receives errors, quads, and completion
   onQuad: (err, quad) => { console.log(quad); },
   // onPrefix (optional) accepts a listener of type (prefix: string, iri: NamedNode) => void
   onPrefix: (prefix, iri) => { console.log(prefix, 'expands to', iri.value); },
   // onComment (optional) accepts a listener of type (comment: string) => void
   onComment: (comment) => { console.log('#', comment); },
+});
+```
+
+`onToken(token)` runs immediately before a lexer token is processed, and
+`onTokenEnd(token)` runs immediately afterwards, including when processing throws.
+
+```JavaScript
+const tokens = [];
+const quads = parser.parse('<a> <b> "hello"@en.', {
+  onToken: token => tokens.push(token),
+  onTokenEnd: token => { /* Finish per-token bookkeeping here. */ },
 });
 ```
 
@@ -175,6 +190,18 @@ This is done by passing a `baseIRI` argument upon creation:
 const parser = new N3.Parser({ baseIRI: 'http://example.org/' });
 ```
 
+In N3 mode, an undeclared empty prefix is bound to the
+document IRI with a `#` fragment, so `:term` parses as `<http://example.org/document#term>`
+(see [w3c-cg/N3#235](https://github.com/w3c-cg/N3/issues/235)).
+Setting `implicitEmptyPrefix` to `false` requires an explicit `@prefix :` declaration instead:
+```JavaScript
+const parser = new N3.Parser({
+  format: 'text/n3',
+  baseIRI: 'http://example.org/document',
+  implicitEmptyPrefix: false,
+});
+```
+
 By default, `N3.Parser` will prefix blank node labels with a `b{digit}_` prefix.
 This is done to prevent collisions of unrelated blank nodes having identical
 labels. The `blankNodePrefix` constructor argument can be used to modify the
@@ -197,6 +224,16 @@ read it as the boolean literal `"true"^^xsd:boolean` instead;
 the `emptyFormulaAsTrue` flag enables that behavior:
 ```JavaScript
 const parser = new N3.Parser({ format: 'text/n3', emptyFormulaAsTrue: true });
+```
+
+In N3 documents, the parser by default rescopes blank node labels
+in lists and blank node property lists, in addition to formulas,
+so `_:a` inside a list does not co-reference `_:a` outside of it.
+The `formulaScopedBlankNodes` flag scopes blank node labels to formulas only,
+matching N3's formula-scoped blank node semantics
+(this will become the default in the next major version):
+```JavaScript
+const parser = new N3.Parser({ format: 'N3', formulaScopedBlankNodes: true });
 ```
 
 ### From an RDF stream to quads
@@ -454,6 +491,39 @@ The store provides the following search methods
 - `getGraphs` returns an array of unique graphs occurring in matching quad
 - `forGraphs` executes a callback on unique graphs occurring in matching quads
 
+### Configuring `match()` semantics
+
+The behaviour of `match()` can be configured as a store-wide default or per-call as follows:
+
+```JavaScript
+import { Store, DataFactory } from 'n3';
+const { namedNode } = DataFactory;
+
+const store = new Store([], { matchSemantics: 'snapshot' });
+const snapshot = store.match(namedNode('s'));
+const forwarded = store.match(namedNode('s'), null, null, null, { matchSemantics: 'forwarded' });
+```
+
+Supported values:
+
+- `'lazy'` (default) — the view (return value of `Store#match`) reflects the
+  parent store until the first operation that materializes it (a mutation, or a
+  materializing read such as `size` or `has`), after which it is frozen to a
+  snapshot. Parent mutations made before that point remain visible in the view.
+  In the next major version, only mutating operations will materialize a lazy
+  view.
+- `'snapshot'` — the view reflects the parent contents *at the time of*
+  `match()`. Later parent mutations never affect it. This is the most
+  spec-correct interpretation of an RDF/JS dataset and will become the default
+  in the next major version.
+- `'forwarded'` — the view always reflects the parent state, and mutations to the view are written through to the parent. Attempts to mutate on the view which do not match the views `#match` pattern result in an error.
+
+A sub-view inherits its parent's `matchSemantics`.
+
+For `'snapshot'` and `'forwarded'`, an iteration (synchronous or via the
+stream) that is already in progress keeps a stable view of the quads as of when it started.
+
+
 ## Reasoning
 
 N3.js supports reasoning as follows:
@@ -609,8 +679,7 @@ The N3.js submodules are compatible with the following [RDF.js](http://rdf.js.or
   [`DatasetCore`](https://rdf.js.org/dataset-spec/#datasetcore-interface)
 
 ## License and contributions
-The N3.js library is copyrighted by [Ruben Verborgh](https://ruben.verborgh.org/)
-and released under the [MIT License](https://github.com/rdfjs/N3.js/blob/master/LICENSE.md).
+N3.js is released under the [MIT License](https://github.com/rdfjs/N3.js/blob/master/LICENSE.md).
 
 Contributions are welcome, and bug reports or pull requests are always helpful.
-If you plan to implement a larger feature, it's best to contact me first.
+If you plan to implement a larger feature, it's best to contact us first.
