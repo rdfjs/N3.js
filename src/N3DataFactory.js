@@ -8,6 +8,8 @@ const { rdf, xsd } = namespaces;
 // eslint-disable-next-line prefer-const
 let DEFAULTGRAPH;
 let _blankNodeCounter = 0;
+// The ID of the empty IRI, which cannot be '' as that is the ID of the default graph
+const EMPTY_IRI_ID = '<>';
 
 const escapedLiteral = /^"(.*".*)(?="[^"]*$)/;
 
@@ -65,6 +67,22 @@ export class Term {
 
 // ## NamedNode constructor
 export class NamedNode extends Term {
+  // ### Creates a named node
+  /**
+   * @deprecated Create named nodes through a data factory instead
+   * (`DataFactory.namedNode(iri)`), so that term validation can be applied;
+   * the constructor assumes an already-validated IRI.
+   */
+  constructor(iri) {
+    if (iri !== '')
+      super(iri);
+    // The empty IRI gets a distinct ID, since '' is the ID of the default graph
+    else {
+      super(EMPTY_IRI_ID);
+      Object.defineProperty(this, 'value', { value: '' });
+    }
+  }
+
   // ### The term type of this term
   get termType() {
     return 'NamedNode';
@@ -73,6 +91,17 @@ export class NamedNode extends Term {
 
 // ## Literal constructor
 export class Literal extends Term {
+  // ### Creates a literal
+  /**
+   * @deprecated Create literals through a data factory instead
+   * (`DataFactory.literal(value, languageOrDatatype)`), so that term
+   * validation can be applied; the constructor takes the internal
+   * id representation and assumes it is already valid.
+   */
+  constructor(id) {
+    super(id);
+  }
+
   // ### The term type of this term
   get termType() {
     return 'Literal';
@@ -88,8 +117,18 @@ export class Literal extends Term {
     // Find the last quotation mark (e.g., '"abc"@en-us')
     const id = this.id;
     let atPos = id.lastIndexOf('"') + 1;
+    const dirPos = id.lastIndexOf('--');
     // If "@" it follows, return the remaining substring; empty otherwise
-    return atPos < id.length && id[atPos++] === '@' ? id.substr(atPos).toLowerCase() : '';
+    return atPos < id.length && id[atPos++] === '@' ? (dirPos > atPos ? id.substr(0, dirPos) : id).substr(atPos).toLowerCase() : '';
+  }
+
+  // ### The direction of this literal
+  get direction() {
+    // Find the last double dash after the closing quote (e.g., '"abc"@en-us--ltr')
+    const id = this.id;
+    const endPos = id.lastIndexOf('"');
+    const dirPos = id.lastIndexOf('--');
+    return dirPos > endPos && dirPos + 2 < id.length ? id.substr(dirPos + 2).toLowerCase() : '';
   }
 
   // ### The datatype IRI of this literal
@@ -104,8 +143,8 @@ export class Literal extends Term {
     const char = dtPos < id.length ? id[dtPos] : '';
     // If "^" it follows, return the remaining substring
     return char === '^' ? id.substr(dtPos + 2) :
-           // If "@" follows, return rdf:langString; xsd:string otherwise
-           (char !== '@' ? xsd.string : rdf.langString);
+           // If "@" follows, return rdf:langString or rdf:dirLangString; xsd:string otherwise
+           (char !== '@' ? xsd.string : (id.indexOf('--', dtPos) > 0 ? rdf.dirLangString : rdf.langString));
   }
 
   // ### Returns whether this object represents the same term as the other
@@ -119,14 +158,16 @@ export class Literal extends Term {
                       this.termType === other.termType &&
                       this.value    === other.value    &&
                       this.language === other.language &&
+                      ((this.direction === other.direction) || (this.direction === '' && !other.direction)) &&
                       this.datatype.value === other.datatype.value;
   }
 
   toJSON() {
     return {
-      termType: this.termType,
-      value:    this.value,
-      language: this.language,
+      termType:  this.termType,
+      value:     this.value,
+      language:  this.language,
+      direction: this.direction,
       datatype: { termType: 'NamedNode', value: this.datatypeString },
     };
   }
@@ -134,6 +175,12 @@ export class Literal extends Term {
 
 // ## BlankNode constructor
 export class BlankNode extends Term {
+  // ### Creates a blank node
+  /**
+   * @deprecated Create blank nodes through a data factory instead
+   * (`DataFactory.blankNode(name)`), so that term validation can be applied;
+   * the constructor assumes an already-validated name.
+   */
   constructor(name) {
     super(`_:${name}`);
   }
@@ -150,6 +197,12 @@ export class BlankNode extends Term {
 }
 
 export class Variable extends Term {
+  // ### Creates a variable
+  /**
+   * @deprecated Create variables through a data factory instead
+   * (`DataFactory.variable(name)`), so that term validation can be applied;
+   * the constructor assumes an already-validated name.
+   */
   constructor(name) {
     super(`?${name}`);
   }
@@ -167,6 +220,11 @@ export class Variable extends Term {
 
 // ## DefaultGraph constructor
 export class DefaultGraph extends Term {
+  // ### Creates the default graph
+  /**
+   * @deprecated Obtain the default graph through a data factory instead
+   * (`DataFactory.defaultGraph()`).
+   */
   constructor() {
     super('');
     return DEFAULTGRAPH || this;
@@ -216,12 +274,29 @@ export function termFromId(id, factory, nested) {
       return factory.literal(id.substr(1, id.length - 2));
     // Literal with datatype or language
     const endPos = id.lastIndexOf('"', id.length - 1);
+    let languageOrDatatype;
+    if (id[endPos + 1] === '@') {
+      languageOrDatatype = id.substr(endPos + 2);
+      const dashDashIndex = languageOrDatatype.lastIndexOf('--');
+      if (dashDashIndex > 0 && dashDashIndex < languageOrDatatype.length) {
+        languageOrDatatype = {
+          language: languageOrDatatype.substr(0, dashDashIndex),
+          direction: languageOrDatatype.substr(dashDashIndex + 2),
+        };
+      }
+    }
+    else {
+      languageOrDatatype = factory.namedNode(id.substr(endPos + 3));
+    }
     return factory.literal(id.substr(1, endPos - 1),
-            id[endPos + 1] === '@' ? id.substr(endPos + 2)
-                                   : factory.namedNode(id.substr(endPos + 3)));
+            languageOrDatatype);
   case '[':
     id = JSON.parse(id);
     break;
+  case '<':
+    if (id === EMPTY_IRI_ID)
+      return factory.namedNode('');
+    // falls through
   default:
     if (!nested || !Array.isArray(id)) {
       return factory.namedNode(id);
@@ -250,12 +325,15 @@ export function termToId(term, nested) {
 
   // Term instantiated with another library
   switch (term.termType) {
-  case 'NamedNode':    return term.value;
+  case 'NamedNode': {
+    const iri = term.value;
+    return iri !== '' ? iri : EMPTY_IRI_ID;
+  }
   case 'BlankNode':    return `_:${term.value}`;
   case 'Variable':     return `?${term.value}`;
   case 'DefaultGraph': return '';
   case 'Literal':      return `"${term.value}"${
-    term.language ? `@${term.language}` :
+    term.language ? `@${term.language}${term.direction ? `--${term.direction}` : ''}` :
       (term.datatype && term.datatype.value !== xsd.string ? `^^${term.datatype.value}` : '')}`;
   case 'Quad':
     const res = [
@@ -274,6 +352,12 @@ export function termToId(term, nested) {
 
 // ## Quad constructor
 export class Quad extends Term {
+  // ### Creates a quad
+  /**
+   * @deprecated Create quads through a data factory instead
+   * (`DataFactory.quad(subject, predicate, object, graph)`), so that term
+   * validation can be applied; the constructor assumes already-validated terms.
+   */
   constructor(subject, predicate, object, graph) {
     super('');
     this._subject   = subject;
@@ -350,7 +434,12 @@ function literal(value, languageOrDataType) {
   if (typeof languageOrDataType === 'string')
     return new Literal(`"${value}"@${languageOrDataType.toLowerCase()}`);
 
-  // Automatically determine datatype for booleans and numbers
+  // Create a language-tagged string with base direction
+  if (languageOrDataType !== undefined && !('termType' in languageOrDataType)) {
+    return new Literal(`"${value}"@${languageOrDataType.language.toLowerCase()}${languageOrDataType.direction ? `--${languageOrDataType.direction.toLowerCase()}` : ''}`);
+  }
+
+  // Automatically determine datatype for booleans, numbers, BigInts, and dates
   let datatype = languageOrDataType ? languageOrDataType.value : '';
   if (datatype === '') {
     // Convert a boolean
@@ -359,12 +448,23 @@ function literal(value, languageOrDataType) {
     // Convert an integer or double
     else if (typeof value === 'number') {
       if (Number.isFinite(value))
-        datatype = Number.isInteger(value) ? xsd.integer : xsd.double;
+        // From 1e21 upward, a number's string form turns exponential ("1e+21"),
+        // which is not a valid xsd:integer lexical, so type it as xsd:double
+        // (the same cut-off as JSON-LD 1.1's Object to RDF Conversion)
+        datatype = Number.isInteger(value) && Math.abs(value) < 1e21 ? xsd.integer : xsd.double;
       else {
         datatype = xsd.double;
         if (!Number.isNaN(value))
           value = value > 0 ? 'INF' : '-INF';
       }
+    }
+    // Convert a BigInt, whose decimal string is always a valid xsd:integer lexical
+    else if (typeof value === 'bigint')
+      datatype = xsd.integer;
+    // Convert a valid date
+    else if (value instanceof Date && !Number.isNaN(value.getTime())) {
+      datatype = xsd.dateTime;
+      value = value.toISOString();
     }
   }
 

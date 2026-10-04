@@ -2,6 +2,8 @@
 import namespaces from './IRIs';
 import { default as N3DataFactory, Term } from './N3DataFactory';
 import { isDefaultGraph } from './N3Util';
+import BaseIRI from './BaseIRI';
+import { escapeRegex } from './Util';
 
 const DEFAULTGRAPH = N3DataFactory.defaultGraph();
 
@@ -29,6 +31,7 @@ export default class N3Writer {
   constructor(outputStream, options) {
     // ### `_prefixRegex` matches a prefixed name or IRI that begins with one of the added prefixes
     this._prefixRegex = /$0^/;
+    this._hasPrefixes = false;
 
     // Shift arguments if the first argument is not a stream
     if (outputStream && typeof outputStream.write !== 'function')
@@ -56,12 +59,12 @@ export default class N3Writer {
       this._lineMode = false;
       this._graph = DEFAULTGRAPH;
       this._prefixIRIs = Object.create(null);
-      options.prefixes && this.addPrefixes(options.prefixes);
       if (options.baseIRI) {
-        this._baseMatcher = new RegExp(`^${escapeRegex(options.baseIRI)
-            }${options.baseIRI.endsWith('/') ? '' : '[#?]'}`);
-        this._baseLength = options.baseIRI.length;
+        this._baseIri = new BaseIRI(options.baseIRI);
+        if (options.writeBase)
+          this._write(`@base <${options.baseIRI}>.\n`);
       }
+      options.prefixes && this.addPrefixes(options.prefixes);
     }
     else {
       this._lineMode = true;
@@ -85,7 +88,10 @@ export default class N3Writer {
   _writeQuad(subject, predicate, object, graph, done) {
     try {
       // Write the graph's label if it has changed
-      if (!graph.equals(this._graph)) {
+      // (the id-based fast path of `equals` would conflate
+      // the empty named node `<>` with the default graph)
+      if (graph !== this._graph &&
+          (!graph.equals(this._graph) || graph.termType !== this._graph.termType)) {
         // Close the previous graph and start the new one
         this._write((this._subject === null ? '' : (this._inDefaultGraph ? '.\n' : '\n}\n')) +
                     (DEFAULTGRAPH.equals(graph) ? '' : `${this._encodeIriOrBlank(graph)} {\n`));
@@ -93,9 +99,9 @@ export default class N3Writer {
         this._subject = null;
       }
       // Don't repeat the subject if it's the same
-      if (subject.equals(this._subject)) {
+      if (subject === this._subject || subject.equals(this._subject)) {
         // Don't repeat the predicate if it's the same
-        if (predicate.equals(this._predicate))
+        if (predicate === this._predicate || predicate.equals(this._predicate))
           this._write(`, ${this._encodeObject(object)}`, done);
         // Same subject, different predicate
         else
@@ -123,9 +129,10 @@ export default class N3Writer {
   // ### `quadToString` serializes a quad as a string
   quadToString(subject, predicate, object, graph) {
     return  `${this._encodeSubject(subject)} ${
-            this._encodeIriOrBlank(predicate)} ${
+            predicate.termType === 'Literal' ?
+              this._encodeLiteral(predicate) : this._encodeIriOrBlank(predicate)} ${
             this._encodeObject(object)
-            }${graph && graph.value ? ` ${this._encodeIriOrBlank(graph)} .\n` : ' .\n'}`;
+            }${graph && !isDefaultGraph(graph) ? ` ${this._encodeIriOrBlank(graph)} .\n` : ' .\n'}`;
   }
 
   // ### `quadsToString` serializes an array of quads as a string
@@ -138,8 +145,15 @@ export default class N3Writer {
 
   // ### `_encodeSubject` represents a subject
   _encodeSubject(entity) {
-    return entity.termType === 'Quad' ?
-      this._encodeQuad(entity) : this._encodeIriOrBlank(entity);
+    switch (entity.termType) {
+    case 'Quad':
+      return this._encodeQuad(entity);
+    // Literal subjects are only valid in N3
+    case 'Literal':
+      return this._encodeLiteral(entity);
+    default:
+      return this._encodeIriOrBlank(entity);
+    }
   }
 
   // ### `_encodeIriOrBlank` represents an IRI or blank node
@@ -149,17 +163,21 @@ export default class N3Writer {
       // If it is a list head, pretty-print it
       if (this._lists && (entity.value in this._lists))
         entity = this.list(this._lists[entity.value]);
-      return 'id' in entity ? entity.id : `_:${entity.value}`;
+      // Terms from this library already hold their serialization as id
+      if (entity instanceof Term)
+        return entity.id;
+      return entity.termType === 'Variable' ? `?${entity.value}` : `_:${entity.value}`;
     }
     let iri = entity.value;
     // Use relative IRIs if requested and possible
-    if (this._baseMatcher && this._baseMatcher.test(iri))
-      iri = iri.substr(this._baseLength);
+    if (this._baseIri) {
+      iri = this._baseIri.toRelative(iri);
+    }
     // Escape special characters
     if (escape.test(iri))
       iri = iri.replace(escapeAll, characterReplacer);
-    // Try to represent the IRI as prefixed name
-    const prefixMatch = this._prefixRegex.exec(iri);
+    // Try to represent the IRI as prefixed name, unless no prefixes were added
+    const prefixMatch = this._hasPrefixes ? this._prefixRegex.exec(iri) : null;
     return !prefixMatch ? `<${iri}>` :
            (!prefixMatch[1] ? iri : this._prefixIRIs[prefixMatch[1]] + prefixMatch[2]);
   }
@@ -172,8 +190,12 @@ export default class N3Writer {
       value = value.replace(escapeAll, characterReplacer);
 
     // Write a language-tagged literal
-    if (literal.language)
-      return `"${value}"@${literal.language}`;
+    const language = literal.language;
+    if (language) {
+      const literalDirection = literal.direction;
+      const direction = literalDirection ? `--${literalDirection}` : '';
+      return `"${value}"@${language}${direction}`;
+    }
 
     // Write dedicated literals per data type
     if (this._lineMode) {
@@ -211,7 +233,15 @@ export default class N3Writer {
 
   // ### `_encodePredicate` represents a predicate
   _encodePredicate(predicate) {
-    return predicate.value === rdf.type ? 'a' : this._encodeIriOrBlank(predicate);
+    switch (predicate.termType) {
+    case 'NamedNode':
+      return predicate.value === rdf.type ? 'a' : this._encodeIriOrBlank(predicate);
+    // Literal predicates are only valid in N3
+    case 'Literal':
+      return this._encodeLiteral(predicate);
+    default:
+      return this._encodeIriOrBlank(predicate);
+    }
   }
 
   // ### `_encodeObject` represents an object
@@ -228,11 +258,11 @@ export default class N3Writer {
 
   // ### `_encodeQuad` encodes an RDF-star quad
   _encodeQuad({ subject, predicate, object, graph }) {
-    return `<<${
+    return `<<(${
       this._encodeSubject(subject)} ${
       this._encodePredicate(predicate)} ${
       this._encodeObject(object)}${
-      isDefaultGraph(graph) ? '' : ` ${this._encodeIriOrBlank(graph)}`}>>`;
+      isDefaultGraph(graph) ? '' : ` ${this._encodeIriOrBlank(graph)}`})>>`;
   }
 
   // ### `_blockedWrite` replaces `_write` after the writer has been closed
@@ -290,6 +320,7 @@ export default class N3Writer {
     }
     // Recreate the prefix matcher
     if (hasPrefixes) {
+      this._hasPrefixes = true;
       let IRIlist = '', prefixList = '';
       for (const prefixIRI in this._prefixIRIs) {
         IRIlist += IRIlist ? `|${prefixIRI}` : prefixIRI;
@@ -297,7 +328,7 @@ export default class N3Writer {
       }
       IRIlist = escapeRegex(IRIlist, /[\]\/\(\)\*\+\?\.\\\$]/g, '\\$&');
       this._prefixRegex = new RegExp(`^(?:${prefixList})[^\/]*$|` +
-                                     `^(${IRIlist})([_a-zA-Z0-9][\\-_a-zA-Z0-9]*)$`);
+                                     `^(${IRIlist})([_a-zA-Z0-9](?:\\.?[\\-_a-zA-Z0-9])*)$`);
     }
     // End a prefix block with a newline
     this._write(hasPrefixes ? '\n' : '', done);
@@ -393,8 +424,4 @@ function characterReplacer(character) {
     }
   }
   return result;
-}
-
-function escapeRegex(regex) {
-  return regex.replace(/[\]\/\(\)\*\+\?\.\\\$]/g, '\\$&');
 }

@@ -7,6 +7,7 @@ import Reasoner, { getRulesFromDataset } from './N3Reasoner';
 import StreamParser from './N3StreamParser';
 import StreamWriter from './N3StreamWriter';
 import * as Util from './N3Util';
+import BaseIRI from './BaseIRI';
 
 import {
   default as DataFactory,
@@ -36,6 +37,7 @@ export {
   StreamWriter,
   Util,
   Reasoner,
+  BaseIRI,
 
   DataFactory,
 
@@ -65,6 +67,7 @@ export default {
   StreamWriter,
   Util,
   Reasoner,
+  BaseIRI,
 
   DataFactory,
 

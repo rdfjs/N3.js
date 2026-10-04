@@ -4,7 +4,7 @@
 [![npm version](https://badge.fury.io/js/n3.svg)](https://www.npmjs.com/package/n3)
 [![DOI](https://zenodo.org/badge/3058202.svg)](https://zenodo.org/badge/latestdoi/3058202)
 
-The N3.js library is an implementation of the [RDF.js low-level specification](http://rdf.js.org/) that lets you handle [RDF](https://www.w3.org/TR/rdf-primer/) in JavaScript easily.
+The N3.js library is an implementation of the [RDF.js low-level specification](http://rdf.js.org/) that lets you handle [RDF 1.2](https://www.w3.org/TR/rdf-primer/) in JavaScript easily.
 It offers:
 
 - [**Parsing**](#parsing) triples/quads from
@@ -12,14 +12,12 @@ It offers:
   [TriG](https://www.w3.org/TR/trig/),
   [N-Triples](https://www.w3.org/TR/n-triples/),
   [N-Quads](https://www.w3.org/TR/n-quads/),
-  [RDF-star](https://www.w3.org/2021/12/rdf-star.html)
   and [Notation3 (N3)](https://www.w3.org/TeamSubmission/n3/)
 - [**Writing**](#writing) triples/quads to
   [Turtle](https://www.w3.org/TR/turtle/),
   [TriG](https://www.w3.org/TR/trig/),
   [N-Triples](https://www.w3.org/TR/n-triples/),
-  [N-Quads](https://www.w3.org/TR/n-quads/)
-  and [RDF-star](https://www.w3.org/2021/12/rdf-star.html)
+  and [N-Quads](https://www.w3.org/TR/n-quads/)
 - [**Storage**](#storing) of triples/quads in memory
 
 Parsing and writing is:
@@ -47,9 +45,15 @@ or
 [_Introduction to browserify_](https://writingjavascript.org/posts/introduction-to-browserify).
 You will need to create a "UMD bundle" and supply a name (e.g. with the `-s N3` option in browserify).
 
-You can also load it via CDN:
+You can also load it via CDN, either as a classic script that exposes a global `N3`:
 ```html
 <script src="https://unpkg.com/n3/browser/n3.min.js"></script>
+```
+or as an ES module that you can import directly:
+```html
+<script type="module">
+  import { Store, Parser, Writer } from 'https://unpkg.com/n3/browser/n3.esm.min.js';
+</script>
 ```
 
 ## Creating triples/quads
@@ -73,6 +77,30 @@ console.log(myQuad.object.value);          // Ruben
 console.log(myQuad.object.datatype.value); // http://www.w3.org/1999/02/22-rdf-syntax-ns#langString
 console.log(myQuad.object.language);       // en
 ```
+
+When no language or datatype is supplied, `literal` automatically assigns XSD datatypes
+to JavaScript booleans, numbers, BigInts, and valid `Date` objects.
+Integer-valued numbers below 1e21 and all BigInts become `xsd:integer`,
+so use a BigInt when an integer must stay exact beyond `Number.MAX_SAFE_INTEGER`;
+other numbers become `xsd:double`.
+Dates are converted to UTC
+using `Date.prototype.toISOString()` and receive the `xsd:dateTime` datatype:
+
+```JavaScript
+const created = literal(new Date('2017-04-27T14:39:48.901Z'));
+console.log(created.value);          // 2017-04-27T14:39:48.901Z
+console.log(created.datatype.value); // http://www.w3.org/2001/XMLSchema#dateTime
+```
+
+Always create terms through a data factory such as `N3.DataFactory`,
+and not by instantiating the term classes directly:
+direct construction is deprecated,
+because the factory functions are where term validation can be applied.
+In line with the [RDF/JS specification](http://rdf.js.org/data-model-spec/),
+N3.js assumes that the value of any RDF/JS term it receives —
+whether from its own factory or from another implementation —
+was already validated when the term was created,
+and does not re-validate terms.
 
 In the rest of this document, we will treat “triples” and “quads” equally:
 we assume that a quad is simply a triple in a named or default graph.
@@ -105,17 +133,28 @@ the callback is invoked one last time with `null` for `quad`
 and a hash of prefixes as third argument.
 <br>
 
-Alternatively, an object can be supplied, where `onQuad`, `onPrefix` and `onComment` are used to listen for `quads`, `prefixes` and `comments` as follows:
+Alternatively, an object can be supplied with named callbacks for quads, prefixes, comments, and token processing:
 ```JavaScript
 const parser = new N3.Parser();
 
 parser.parse(tomAndJerry, {
-  // onQuad (required) accepts a listener of type (quad: RDF.Quad) => void
+  // onQuad (optional) receives errors, quads, and completion
   onQuad: (err, quad) => { console.log(quad); },
   // onPrefix (optional) accepts a listener of type (prefix: string, iri: NamedNode) => void
   onPrefix: (prefix, iri) => { console.log(prefix, 'expands to', iri.value); },
   // onComment (optional) accepts a listener of type (comment: string) => void
   onComment: (comment) => { console.log('#', comment); },
+});
+```
+
+`onToken(token)` runs immediately before a lexer token is processed, and
+`onTokenEnd(token)` runs immediately afterwards, including when processing throws.
+
+```JavaScript
+const tokens = [];
+const quads = parser.parse('<a> <b> "hello"@en.', {
+  onToken: token => tokens.push(token),
+  onTokenEnd: token => { /* Finish per-token bookkeeping here. */ },
 });
 ```
 
@@ -151,12 +190,50 @@ This is done by passing a `baseIRI` argument upon creation:
 const parser = new N3.Parser({ baseIRI: 'http://example.org/' });
 ```
 
+In N3 mode, an undeclared empty prefix is bound to the
+document IRI with a `#` fragment, so `:term` parses as `<http://example.org/document#term>`
+(see [w3c-cg/N3#235](https://github.com/w3c-cg/N3/issues/235)).
+Setting `implicitEmptyPrefix` to `false` requires an explicit `@prefix :` declaration instead:
+```JavaScript
+const parser = new N3.Parser({
+  format: 'text/n3',
+  baseIRI: 'http://example.org/document',
+  implicitEmptyPrefix: false,
+});
+```
+
 By default, `N3.Parser` will prefix blank node labels with a `b{digit}_` prefix.
 This is done to prevent collisions of unrelated blank nodes having identical
 labels. The `blankNodePrefix` constructor argument can be used to modify the
 prefix or, if set to an empty string, completely disable prefixing:
 ```JavaScript
 const parser = new N3.Parser({ blankNodePrefix: '' });
+```
+
+The parser can output a backwards chaining rule such as `_:q <= _:p.` in two ways:
+- as `_:p log:implies _:q.` (default)
+- as `_:q log:isImpliedBy _:p.` (when the `isImpliedBy` flag is set to `true`)
+```JavaScript
+const parser = new N3.Parser({ isImpliedBy: true });
+```
+
+By default, an empty formula `{}` is kept as a blank node graph term.
+The [N3 spec tests](https://w3c-cg.github.io/N3/tests/)
+(and the direction discussed in [w3c-cg/N3#185](https://github.com/w3c-cg/N3/issues/185))
+read it as the boolean literal `"true"^^xsd:boolean` instead;
+the `emptyFormulaAsTrue` flag enables that behavior:
+```JavaScript
+const parser = new N3.Parser({ format: 'text/n3', emptyFormulaAsTrue: true });
+```
+
+In N3 documents, the parser by default rescopes blank node labels
+in lists and blank node property lists, in addition to formulas,
+so `_:a` inside a list does not co-reference `_:a` outside of it.
+The `formulaScopedBlankNodes` flag scopes blank node labels to formulas only,
+matching N3's formula-scoped blank node semantics
+(this will become the default in the next major version):
+```JavaScript
+const parser = new N3.Parser({ format: 'N3', formulaScopedBlankNodes: true });
 ```
 
 ### From an RDF stream to quads
@@ -193,6 +270,41 @@ function SlowConsumer() {
 A dedicated `prefix` event signals every prefix with `prefix` and `term` arguments.
 A dedicated `comment` event can be enabled by setting `comments: true` in the N3.StreamParser constructor.
 
+Note that `prefix` and `comment` events are emitted as soon as they are parsed,
+whereas quads can remain buffered until the consumer is ready to read them.
+The order of these events relative to `data` events is therefore
+not guaranteed to match the position of prefixes and comments in the document.
+If their position matters,
+use `N3.Parser` with the `onQuad`, `onPrefix` and `onComment` callbacks instead,
+which are invoked in document order.
+
+### From a Web Stream to quads
+
+N3.js consumes [Node.js streams](http://nodejs.org/api/stream.html) natively,
+but sources such as `fetch` produce [Web Streams](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API).
+On Node.js 17 or higher, convert such a stream into a Node.js stream:
+
+```JavaScript
+const streamParser = new N3.StreamParser(),
+      { Readable } = require('stream');
+Readable.fromWeb(response.body).pipe(streamParser);
+```
+
+In browsers (or anywhere without Node.js streams),
+write the chunks to the parser directly,
+since `N3.StreamParser` exposes a standard writable stream interface:
+
+```JavaScript
+const streamParser = new N3.StreamParser(),
+      reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+(async () => {
+  for (let result; !(result = await reader.read()).done;)
+    if (!streamParser.write(result.value))
+      await new Promise(resolve => streamParser.once('drain', resolve));
+  streamParser.end();
+})();
+```
+
 ## Writing
 
 ### From quads to a string
@@ -217,6 +329,12 @@ To write N-Triples (or N-Quads) instead, pass a `format` argument upon creation
 ```JavaScript
 const writer1 = new N3.Writer({ format: 'N-Triples' });
 const writer2 = new N3.Writer({ format: 'application/trig' });
+```
+
+A `baseIRI` argument makes the writer abbreviate IRIs relative to that base in Turtle/TriG serializations. Pass `writeBase: true` to also write the base as an `@base` directive at the top of the document (N-Triples and N-Quads remain directive-free).
+
+```JavaScript
+const writer = new N3.Writer({ baseIRI: 'http://example.org/', writeBase: true });
 ```
 
 ### From quads to an RDF stream
@@ -373,6 +491,39 @@ The store provides the following search methods
 - `getGraphs` returns an array of unique graphs occurring in matching quad
 - `forGraphs` executes a callback on unique graphs occurring in matching quads
 
+### Configuring `match()` semantics
+
+The behaviour of `match()` can be configured as a store-wide default or per-call as follows:
+
+```JavaScript
+import { Store, DataFactory } from 'n3';
+const { namedNode } = DataFactory;
+
+const store = new Store([], { matchSemantics: 'snapshot' });
+const snapshot = store.match(namedNode('s'));
+const forwarded = store.match(namedNode('s'), null, null, null, { matchSemantics: 'forwarded' });
+```
+
+Supported values:
+
+- `'lazy'` (default) — the view (return value of `Store#match`) reflects the
+  parent store until the first operation that materializes it (a mutation, or a
+  materializing read such as `size` or `has`), after which it is frozen to a
+  snapshot. Parent mutations made before that point remain visible in the view.
+  In the next major version, only mutating operations will materialize a lazy
+  view.
+- `'snapshot'` — the view reflects the parent contents *at the time of*
+  `match()`. Later parent mutations never affect it. This is the most
+  spec-correct interpretation of an RDF/JS dataset and will become the default
+  in the next major version.
+- `'forwarded'` — the view always reflects the parent state, and mutations to the view are written through to the parent. Attempts to mutate on the view which do not match the views `#match` pattern result in an error.
+
+A sub-view inherits its parent's `matchSemantics`.
+
+For `'snapshot'` and `'forwarded'`, an iteration (synchronous or via the
+stream) that is already in progress keeps a stable view of the quads as of when it started.
+
+
 ## Reasoning
 
 N3.js supports reasoning as follows:
@@ -395,10 +546,27 @@ const dataset = new Store(/* Dataset */)
 
 // Applies the rules to the store; mutating it
 const reasoner = new Reasoner(store);
-reasoner.reason(rules);
+reasoner.reason(rulesDataset);
 ```
 
 **Note**: N3.js currently only supports rules with [Basic Graph Patterns](https://www.w3.org/TR/sparql11-query/#BasicGraphPattern) in the premise and conclusion. Built-ins and backward-chaining are *not* supported. For an RDF/JS reasoner that supports all Notation3 reasoning features, see [eye-js](https://github.com/eyereasoner/eye-js/).
+
+### Limiting reasoning cost
+
+When reasoning over rules or data that are not fully trusted,
+optional budgets bound the work `reason()` may perform:
+
+```JavaScript
+const reasoner = new Reasoner(store, {
+  maxDerivations: 100000, // maximum number of quads reason() may derive
+  maxPremiseDepth: 10,    // maximum number of premise triples per rule
+});
+reasoner.reason(rulesDataset);
+```
+
+Both budgets are unbounded by default;
+`reason()` throws when one is exceeded,
+leaving any quads derived up to that point in the store.
 
 ## Compatibility
 ### Format specifications
@@ -411,19 +579,73 @@ The N3.js parser and writer is fully compatible with the following W3C specifica
   – [EARL report](https://raw.githubusercontent.com/rdfjs/N3.js/earl/n3js-earl-report-ntriples.ttl)
 - [RDF 1.1 N-Quads](https://www.w3.org/TR/n-quads/)
   – [EARL report](https://raw.githubusercontent.com/rdfjs/N3.js/earl/n3js-earl-report-nquads.ttl)
+- [RDF 1.2 Turtle](https://www.w3.org/TR/rdf12-turtle/)
+- [RDF 1.2 TriG](https://www.w3.org/TR/rdf12-trig/)
+- [RDF 1.2 N-Triples](https://www.w3.org/TR/rdf12-n-triples/)
+- [RDF 1.2 N-Quads](https://www.w3.org/TR/rdf12-n-quads/)
 
 In addition, the N3.js parser also supports [Notation3 (N3)](https://www.w3.org/TeamSubmission/n3/) (no official specification yet).
 
-The N3.js parser and writer are also fully compatible with the RDF-star variants
-of the W3C specifications.
-
 The default mode is permissive
-and allows a mixture of different syntaxes, including RDF-star.
+and allows a mixture of different syntaxes.
 Pass a `format` option to the constructor with the name or MIME type of a format
 for strict, fault-intolerant behavior.
-If a format string contains `star` or `*`
-(e.g., `turtlestar` or `TriG*`),
-RDF-star support for that format will be enabled.
+
+### Validation
+The **parser** validates the _syntax_ of the selected format's grammar, with the following exceptions:
+- IRIs are not checked for full [RFC 3987](https://www.rfc-editor.org/rfc/rfc3987) well-formedness
+  (`<http://example.org/%ZZ>` parses),
+  and relative IRIs remain relative when no `baseIRI` option is given;
+- literal values are not checked against their datatype (`"abc"^^xsd:integer` parses);
+- language tags are checked against the grammar, not against [BCP 47](https://www.rfc-editor.org/rfc/rfc5646);
+
+The **writer** trusts the terms it is given. Quads constructed with invalid term values are serialized as-is and can yield invalid documents.
+
+Therefore, term validation should be done post-parsing to ensure that valid RDF terms should be produced.
+
+One should also ensure that terms are valid prior to being passed into the writer; either by validation, or ensuring that valid RDF will always be produced by the application logic producing the terms.
+
+The following code snipped shows how to validate that NamedNodes and Literals are validly formed. Depending on your application you may wish to apply further validation: such as ensuring that nested Quad terms are valid in RDF 1.2, and ensuring that `termTypes` are only occuring in the positions that is valid for RDF 1.1 and RDF 1.2.
+```JavaScript
+const { Transform } = require('stream');
+const { validateIri, IriValidationStrategy } = require('validate-iri');
+const { validators } = require('rdf-validate-datatype');
+const { parse: parseLanguageTag } = require('bcp-47');
+
+function validateTerm(term) {
+  switch (term.termType) {
+  case 'NamedNode': // RDF requires absolute IRIs
+    return validateIri(term.value, IriValidationStrategy.Strict) || null;
+  case 'Literal':
+    if (term.language) {
+      let invalid = false;
+      parseLanguageTag(term.language, { warning: () => { invalid = true; } });
+      return invalid ? new Error(`Invalid language tag "${term.language}"`) : null;
+    }
+    const validate = validators.find(term.datatype);
+    return validate && !validate(term.value)
+      ? new Error(`Invalid value "${term.value}" for datatype ${term.datatype.value}`)
+      : null; // unknown datatypes cannot be judged
+  default:
+    return null;
+  }
+}
+
+const quadStream = fs.createReadStream('data.ttl')
+  .pipe(new N3.StreamParser())
+  .pipe(new Transform({
+    objectMode: true,
+    transform(quad, encoding, done) {
+      const error = validateTerm(quad.subject) || validateTerm(quad.predicate) ||
+                    validateTerm(quad.object) || validateTerm(quad.graph);
+      done(error, error ? undefined : quad); // or: skip/collect instead of failing
+    },
+  }));
+```
+
+
+Parser-level opt-in validation modes covering the term and version dimensions
+are proposed in [#634](https://github.com/rdfjs/N3.js/pull/634).
 
 ### Interface specifications
 The N3.js submodules are compatible with the following [RDF.js](http://rdf.js.org) interfaces:
@@ -457,8 +679,7 @@ The N3.js submodules are compatible with the following [RDF.js](http://rdf.js.or
   [`DatasetCore`](https://rdf.js.org/dataset-spec/#datasetcore-interface)
 
 ## License and contributions
-The N3.js library is copyrighted by [Ruben Verborgh](https://ruben.verborgh.org/)
-and released under the [MIT License](https://github.com/rdfjs/N3.js/blob/master/LICENSE.md).
+N3.js is released under the [MIT License](https://github.com/rdfjs/N3.js/blob/master/LICENSE.md).
 
 Contributions are welcome, and bug reports or pull requests are always helpful.
-If you plan to implement a larger feature, it's best to contact me first.
+If you plan to implement a larger feature, it's best to contact us first.

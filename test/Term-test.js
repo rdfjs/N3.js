@@ -94,6 +94,13 @@ describe('Term', () => {
       });
     });
 
+    it('should create a NamedNode with the empty IRI from <>', () => {
+      expect(termFromId('<>').toJSON()).toEqual({
+        termType: 'NamedNode',
+        value: '',
+      });
+    });
+
     it('should create a NamedNode from an IRI', () => {
       expect(termFromId('http://example.org/foo#bar').toJSON()).toEqual({
         termType: 'NamedNode',
@@ -128,12 +135,29 @@ describe('Term', () => {
           termType: 'Literal',
           value: 'abc',
           language: 'en-us',
+          direction: '',
           datatype: {
             termType: 'NamedNode',
             value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString',
           },
         });
       },
+    );
+
+    it(
+        /**/'should create a Literal from a string that starts with a quotation mark and has a direction',
+        () => {
+          expect(termFromId('"abc"@en-us--rtl').toJSON()).toEqual({
+            termType: 'Literal',
+            value: 'abc',
+            language: 'en-us',
+            direction: 'rtl',
+            datatype: {
+              termType: 'NamedNode',
+              value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#dirLangString',
+            },
+          });
+        },
     );
 
     it(
@@ -162,7 +186,7 @@ describe('Term', () => {
       },
     );
 
-    it('should create a Quad correctly', () => {
+    it('should create a Quad correctly with an implicit default graph', () => {
       const id = '["http://ex.org/a", "http://ex.org/b", "http://ex.org/c"]';
       expect(termFromId(id)).toEqual(new Quad(
         new NamedNode('http://ex.org/a'),
@@ -172,7 +196,7 @@ describe('Term', () => {
       ));
     });
 
-    it('should create a Quad correctly', () => {
+    it('should create a Quad correctly with a blank node graph', () => {
       const id = '["_:n3-123", "?var-a", "?var-b", "_:n3-000"]';
       expect(termFromId(id)).toEqual(new Quad(
         new BlankNode('n3-123'),
@@ -182,7 +206,7 @@ describe('Term', () => {
       ));
     });
 
-    it('should create a Quad correctly', () => {
+    it('should create a Quad correctly with a literal object', () => {
       const id = '["?var-a", "?var-b", "\\"abc\\"@en-us", "?var-d"]';
       expect(termFromId(id)).toEqual(new Quad(
         new Variable('var-a'),
@@ -192,7 +216,7 @@ describe('Term', () => {
       ));
     });
 
-    it('should create a Quad correctly', () => {
+    it('should create a Quad correctly with a named node graph', () => {
       const id = '["_:n3-000", "?var-b", "_:n3-123", "http://ex.org/d"]';
       expect(termFromId(id)).toEqual(new Quad(
         new BlankNode('n3-000'),
@@ -216,7 +240,7 @@ describe('Term', () => {
     );
 
     it(
-      'should create a Quad correctly from literal containing escaped quotes',
+      'should round-trip a Quad with a subject literal containing escaped quotes',
       () => {
         const q = new Quad(
           new Literal('"Hello "W"orl"d!"@en-us'),
@@ -277,6 +301,10 @@ describe('Term', () => {
         expect(termFromId('"abc"@en-us', factory)).toEqual(['l', 'abc', 'en-us']);
       });
 
+      it('should create a Literal with a language and direction', () => {
+        expect(termFromId('"abc"@en-us--rtl', factory)).toEqual(['l', 'abc', { language: 'en-us', direction: 'rtl' }]);
+      });
+
       it('should create a Literal with a datatype', () => {
         expect(termFromId('"abc"^^https://ex.org/type', factory)).toEqual(['l', 'abc', ['n', 'https://ex.org/type']]);
       });
@@ -293,6 +321,18 @@ describe('Term', () => {
     it('should create the empty string from the DefaultGraph', () => {
       expect(termToId(new DefaultGraph())).toBe('');
       expect(termToId(new DefaultGraph().toJSON())).toBe('');
+    });
+
+    it('should create a distinct id from the empty IRI', () => {
+      expect(termToId(new NamedNode(''))).toBe('<>');
+      expect(termToId(new NamedNode('').toJSON())).toBe('<>');
+    });
+
+    it('should distinguish the empty IRI from the DefaultGraph inside quads', () => {
+      const q = new Quad(new NamedNode(''), new NamedNode('p'), new NamedNode('o'), new NamedNode(''));
+      expect(termToId(q)).toBe('["<>","p","o","<>"]');
+      expect(termToId(q.toJSON())).toBe('["<>","p","o","<>"]');
+      expect(termFromId(termToId(q)).equals(q)).toBe(true);
     });
 
     it(
@@ -349,10 +389,25 @@ describe('Term', () => {
     );
 
     it(
+        'should create an id that starts with a quotation mark and language tag from a Literal with a language and direction',
+        () => {
+          expect(termToId(new Literal('"abc"@en-us--rtl'))).toBe('"abc"@en-us--rtl');
+          expect(termToId(new Literal('"abc"@en-us--rtl').toJSON())).toBe('"abc"@en-us--rtl');
+        },
+    );
+
+    it(
       'should create an id that starts with a quotation mark and language tag from a Literal string with a language',
       () => {
         expect(termToId('"abc"@en-us')).toBe('"abc"@en-us');
       },
+    );
+
+    it(
+        'should create an id that starts with a quotation mark and language tag from a Literal string with a language and direction',
+        () => {
+          expect(termToId('"abc"@en-us--rtl')).toBe('"abc"@en-us--rtl');
+        },
     );
 
     it(

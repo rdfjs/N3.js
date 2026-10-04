@@ -1,68 +1,141 @@
 name: CI
 
-on: [push]
+on:
+  push:
+    branches:
+    - main
+    # Breaking changes for the next major; releases alphas. See RELEASING.md.
+    - next-major
+  pull_request:
+  merge_group:
+    types: [checks_requested]
+
+# Least-privilege default for GITHUB_TOKEN; jobs opt into more only where needed.
+permissions:
+  contents: read
 
 jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+      - run: npm ci --ignore-scripts
+      - run: npm audit --omit=dev --audit-level=moderate
+
+  build:
+    # Build once on an LTS-class Node. babel 8's CLI build (@babel/code-frame ->
+    # util.styleText) requires Node >= 20.12; the resulting CJS lib/ is
+    # downleveled by babel and the browser bundles are esbuilt to es2017, so
+    # they run everywhere. Every other job consumes this artifact instead of
+    # rebuilding.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: build
+          path: |
+            lib
+            browser
+          retention-days: 1
+
   test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        node-version: [14.x, 16.x, 18.x, 20.x, 22.x]
+        # babel-jest require()s @babel/core, which is ESM in babel 8, so it needs
+        # Node >= 20.19; jest 30 additionally needs Node >= 18.14. The full jest
+        # suite transforms src/ via babel-jest at runtime, so it can only run on
+        # Node 20.19+. Node 18 is covered by the spec jobs.
+        node-version: [20.x, 22.x, 24.x, 26.x]
     steps:
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
-      - uses: actions/checkout@v4
       - run: npm ci --ignore-scripts
-      - run: npm run build
       - run: npm run test
-  
-  lint:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: [22.x]
-    steps:
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-      - uses: actions/checkout@v4
-      - run: npm ci --ignore-scripts
-      - run: npm run build
-      - run: npm run lint
-    
+
   spec:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        node-version: [12.x, 14.x, 16.x, 18.x, 20.x, 22.x]
+        node-version: [18.x, 20.x, 22.x, 24.x, 26.x]
+        spec: [1-1-turtle, 1-1-ntriples, 1-1-nquads, 1-1-trig, 1-2-turtle, 1-2-ntriples, 1-2-nquads, 1-2-trig, 1-2-turtle-eval, 1-2-trig-eval, n3-parser, n3-extended, writer]
+    needs: build
     steps:
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
-      - uses: actions/checkout@v4
-      - run: npm ci
-      - run: npm run spec-turtle
-      - run: npm run spec-ntriples
-      - run: npm run spec-nquads
-      - run: npm run spec-trig
+      - run: npm ci --ignore-scripts
+      # Do not rebuild: the babel CLI build crashes on Node 18. spec/parser.js
+      # does require('..') -> the built CJS lib/, so the downloaded artifact is
+      # exactly what it needs.
+      - uses: actions/download-artifact@v8
+        with:
+          name: build
+      - uses: actions/cache@v6
+        with:
+          path: .rdf-test-suite-cache
+          key: rdf-test-suite-cache-v1-${{ matrix.spec }}-${{ hashFiles('spec/cache-key.txt') }}-${{ hashFiles('package.json') }}
+          restore-keys: |
+            rdf-test-suite-cache-v1-${{ matrix.spec }}-${{ hashFiles('spec/cache-key.txt') }}-
+      - run: npm run spec-${{ matrix.spec }}
+
+  browser:
+    # Runs the built browser bundles in real engines (Chromium, Firefox,
+    # WebKit) via test/browser/run.mjs. Deliberately outside the jest
+    # coverage gate: it exercises the build artifacts, not src/.
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+      - run: npm ci --ignore-scripts
+      - uses: actions/download-artifact@v8
+        with:
+          name: build
+      - run: npx playwright install --with-deps chromium firefox webkit
+      - run: node test/browser/run.mjs
+
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [24.x]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npm run lint
 
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 14.x
+          node-version: 24.x
       - run: npm ci --ignore-scripts
       - run: npm run docs
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: docs
           path: |
@@ -70,41 +143,80 @@ jobs:
             docs
           retention-days: 1
 
+  summary:
+    # Summary job that can be used as a single required check in branch protection
+    if: always()
+    needs:
+      - audit
+      - build
+      - test
+      - spec
+      - browser
+      - lint
+      - docs
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Decide whether all required jobs succeeded or failed
+        # Pinned to a commit SHA: the action lives outside the actions/* org and
+        # `release/v1` is a mutable branch ref.
+        uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # release/v1
+        with:
+          jobs: ${{ toJSON(needs) }}
+
   gh-pages:
     needs:
+      - audit
+      - build
       - test
       - spec
       - docs
       - lint
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
+    # Publishing pages needs write access to contents (this job only).
+    permissions:
+      contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: docs
-      - uses: peaceiris/actions-gh-pages@v4
+      # Pinned to a commit SHA: third-party action with repo write access.
+      - uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: .
 
   release:
-    if: ${{ github.ref == 'refs/heads/main' }}
-    needs: [ test, spec ]
+    # main publishes to `latest`; next-major publishes prereleases to `alpha`
+    # (branch config in package.json "release").
+    if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/next-major' }}
+    needs: [ audit, test, spec ]
     runs-on: ubuntu-latest
+    # Never run two releases of the same branch at once. Per-branch groups keep a
+    # pending next-major release from replacing a pending main one; a group
+    # holds only one pending job, and the newest run covers the older commits.
+    concurrency:
+      group: release-${{ github.ref }}
+      cancel-in-progress: false
     permissions:
       contents: write
       packages: write
       issues: write
       pull-requests: write
+      id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22.x
+          node-version: 24.x
       - run: npm ci
       - run: npm run build
       - name: Release
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
-        run: npx semantic-release@22
+          # Emit npm build provenance (SLSA) via the workflow's id-token.
+          NPM_CONFIG_PROVENANCE: true
+        # The conventionalcommits preset reads `feat!:` squash titles as
+        # breaking; the default angular preset only sees BREAKING CHANGE footers.
+        run: npx -p semantic-release@25 -p conventional-changelog-conventionalcommits@10 semantic-release

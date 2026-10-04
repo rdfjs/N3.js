@@ -119,7 +119,7 @@ describe('Util', () => {
     });
 
     it('does not match a blank node', () => {
-      expect(Util.isNamedNode(blankNode('x'))).toBe(false);
+      expect(Util.isVariable(blankNode('x'))).toBe(false);
     });
 
     it('does not match null', () => {
@@ -128,6 +128,45 @@ describe('Util', () => {
 
     it('does not match undefined', () => {
       expect(Util.isVariable(undefined)).toBe(false);
+    });
+  });
+
+  describe('isQuad', () => {
+    it('matches a quad', () => {
+      expect(Util.isQuad(quad(null, null, null, null))).toBe(true);
+    });
+
+    it('matches a quad with iri content', () => {
+      expect(Util.isQuad(quad(
+        namedNode('http://example.org/'),
+        namedNode('http://example.org/'),
+        namedNode('http://example.org/'),
+        namedNode('http://example.org/'),
+      ))).toBe(true);
+    });
+
+    it('does not match an IRI', () => {
+      expect(Util.isQuad(namedNode('http://example.org/'))).toBe(false);
+    });
+
+    it('does not match a literal', () => {
+      expect(Util.isQuad(literal('http://example.org/'))).toBe(false);
+    });
+
+    it('does not match a blank node', () => {
+      expect(Util.isQuad(blankNode('x'))).toBe(false);
+    });
+
+    it('does not match a variable', () => {
+      expect(Util.isQuad(variable('x'))).toBe(false);
+    });
+
+    it('does not match null', () => {
+      expect(Util.isQuad(null)).toBe(false);
+    });
+
+    it('does not match undefined', () => {
+      expect(Util.isQuad(undefined)).toBe(false);
     });
   });
 
@@ -145,11 +184,11 @@ describe('Util', () => {
     });
 
     it('does not match null', () => {
-      expect(Util.isVariable(null)).toBe(false);
+      expect(Util.isDefaultGraph(null)).toBe(false);
     });
 
     it('does not match undefined', () => {
-      expect(Util.isVariable(undefined)).toBe(false);
+      expect(Util.isDefaultGraph(undefined)).toBe(false);
     });
   });
 
