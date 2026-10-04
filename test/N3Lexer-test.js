@@ -2332,14 +2332,14 @@ describe('Lexer', () => {
         expect(tokens[0]).toEqual({ type: 'IRI', value: 'a', prefix: '', line: 1, start: 1, end: 4 });
       });
 
-      it('reports chunks that end with invalid bytes', () => {
+      it('tokenizes chunks that end with invalid bytes instead of holding them', () => {
         const { errors, end } = tokenizeChunks([[0x80], [0x20, 0x80]]);
         end();
         expect(errors).toHaveLength(1);
         expect(errors[0].message).toMatch(/^Unexpected/);
       });
 
-      it('reports a character that is cut off at the end of the stream', () => {
+      it('decodes a character that is cut off at the end of the stream instead of dropping it', () => {
         const { tokens, errors, end } = tokenizeChunks(['<a> <b> <c> . "', [0xE2, 0x82]]);
         expect(tokens).toHaveLength(4);
         expect(errors).toEqual([]);
@@ -2348,11 +2348,20 @@ describe('Lexer', () => {
         expect(errors[0].message).toMatch(/^Unexpected/);
       });
 
-      it('reports a stream that only contains a cut-off character', () => {
+      it('decodes a stream that only contains a cut-off character', () => {
         const { tokens, errors, end } = tokenizeChunks([[0xE2]]);
         end();
         expect(tokens).toEqual([]);
         expect(errors).toHaveLength(1);
+      });
+
+      it('decodes invalid bytes as replacement characters, like Buffer#toString', () => {
+        const bytes = [...Buffer.from('<a> <b> "x'), 0xC3, 0x28, 0xE2, ...Buffer.from('" .')];
+        const { tokens, errors, end } = tokenizeChunks(bytes.map(byte => [byte]));
+        end();
+        expect(errors).toEqual([]);
+        expect(tokens[2].value).toBe(Buffer.from(bytes).toString().slice(9, -3));
+        expect(tokens[2].value).toBe('x\ufffd(\ufffd');
       });
 
       it('does not tokenize a long unfinished token again for every chunk', () => {
