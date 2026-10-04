@@ -684,8 +684,10 @@ export default class N3Lexer {
       return null;
 
     // Most verb boundaries cannot be part of a prefix, so keep the common path fast.
+    // U+1680 and U+FEFF are whitespace to the regular expression but name characters.
     const next = input[pos + verb[0].length];
-    if (next !== '-' && next !== '_' && (next < '0' || next > '9'))
+    if (next !== '-' && next !== '_' && (next < '0' || next > '9') &&
+        next !== '\u1680' && next !== '\ufeff')
       return verb;
 
     // A prefix can start with a verb and continue with characters that are also

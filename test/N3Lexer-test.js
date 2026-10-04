@@ -1275,6 +1275,15 @@ describe('Lexer', () => {
     );
 
     it(
+      'should keep keyword-like prefixes with name characters that are also whitespace as prefixed names',
+      shouldTokenize('has\u1680x:p is\ufeffx:p of\u1680:p',
+                     { type: 'prefixed', prefix: 'has\u1680x', value: 'p', line: 1 },
+                     { type: 'prefixed', prefix: 'is\ufeffx', value: 'p', line: 1 },
+                     { type: 'prefixed', prefix: 'of\u1680', value: 'p', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
       'should keep keyword-like prefixes split across chunks as prefixed names',
       shouldTokenize(streamOf('has', '1:p is', '_:p of-', 'foo:p'),
                      { type: 'prefixed', prefix: 'has1', value: 'p', line: 1 },
