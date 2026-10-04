@@ -71,7 +71,6 @@ jobs:
       fail-fast: false
       matrix:
         node-version: [18.x, 20.x, 22.x, 24.x, 26.x]
-        spec: [1-1-turtle, 1-1-ntriples, 1-1-nquads, 1-1-trig, 1-2-turtle, 1-2-ntriples, 1-2-nquads, 1-2-trig, 1-2-turtle-eval, 1-2-trig-eval, n3-parser, n3-extended, writer]
     needs: build
     steps:
       - uses: actions/checkout@v7
@@ -88,10 +87,11 @@ jobs:
       - uses: actions/cache@v6
         with:
           path: .rdf-test-suite-cache
-          key: rdf-test-suite-cache-v1-${{ matrix.spec }}-${{ hashFiles('spec/cache-key.txt') }}-${{ hashFiles('package.json') }}
+          key: rdf-test-suite-cache-v2-${{ hashFiles('spec/cache-key.txt') }}-${{ hashFiles('spec/run.js') }}
           restore-keys: |
-            rdf-test-suite-cache-v1-${{ matrix.spec }}-${{ hashFiles('spec/cache-key.txt') }}-
-      - run: npm run spec-${{ matrix.spec }}
+            rdf-test-suite-cache-v2-${{ hashFiles('spec/cache-key.txt') }}-
+      # One job runs every suite (see spec/run.js), so the list lives in one place
+      - run: npm run spec
 
   browser:
     # Runs the built browser bundles in real engines (Chromium, Firefox,
@@ -219,4 +219,6 @@ jobs:
           NPM_CONFIG_PROVENANCE: true
         # The conventionalcommits preset reads `feat!:` squash titles as
         # breaking; the default angular preset only sees BREAKING CHANGE footers.
-        run: npx -p semantic-release@25 -p conventional-changelog-conventionalcommits@10 semantic-release
+        # Stay on preset v9: v10 needs conventional-changelog-writer 9, but
+        # semantic-release 25's notes generator still loads writer 8.
+        run: npx -p semantic-release@25 -p conventional-changelog-conventionalcommits@9 semantic-release
