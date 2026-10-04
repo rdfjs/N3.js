@@ -112,7 +112,10 @@ function skipName(input, pos, startClass) {
   while (length !== 0) {
     pos += length;
     const next = input.charCodeAt(pos) === DOT ? pos + 1 : pos;
-    length = nameCharLength(input, next, NAME_CHAR);
+    // Most names are ASCII, so look those up without a call
+    const charCode = input.charCodeAt(next);
+    length = charCode < 0x80 ? (asciiNameClasses[charCode] & NAME_CHAR) !== 0 ? 1 : 0 :
+      nameCharLength(input, next, NAME_CHAR);
     if (length !== 0)
       pos = next;
   }
@@ -132,8 +135,10 @@ function skipVariableName(input, pos) {
 function skipLocalName(input, pos) {
   let end = pos, charClass = LOCAL_START;
   while (true) {
+    // Most names are ASCII, so look those up without a call
     const charCode = input.charCodeAt(pos);
-    let length = nameCharLength(input, pos, charClass);
+    let length = charCode < 0x80 ? (asciiNameClasses[charCode] & charClass) !== 0 ? 1 : 0 :
+      nameCharLength(input, pos, charClass);
     // Percent-encoded character (PERCENT)
     if (length === 0 && charCode === PERCENT &&
         isHexDigit(input.charCodeAt(pos + 1)) && isHexDigit(input.charCodeAt(pos + 2)))
