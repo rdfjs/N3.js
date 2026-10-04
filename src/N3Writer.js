@@ -321,13 +321,13 @@ export default class N3Writer {
     // Recreate the prefix matcher
     if (hasPrefixes) {
       this._hasPrefixes = true;
-      let IRIlist = '', prefixList = '';
+      const IRIparts = [], prefixParts = [];
       for (const prefixIRI in this._prefixIRIs) {
-        IRIlist += IRIlist ? `|${prefixIRI}` : prefixIRI;
-        prefixList += (prefixList ? '|' : '') + this._prefixIRIs[prefixIRI];
+        IRIparts.push(escapeRegex(prefixIRI));
+        prefixParts.push(escapeRegex(this._prefixIRIs[prefixIRI]));
       }
-      IRIlist = escapeRegex(IRIlist, /[\]\/\(\)\*\+\?\.\\\$]/g, '\\$&');
-      this._prefixRegex = new RegExp(`^(?:${prefixList})[^\/]*$|` +
+      const IRIlist = IRIparts.join('|'), prefixList = prefixParts.join('|');
+      this._prefixRegex = new RegExp(`^(?:${prefixList})[^/]*$|` +
                                      `^(${IRIlist})([_a-zA-Z0-9](?:\\.?[\\-_a-zA-Z0-9])*)$`);
     }
     // End a prefix block with a newline
