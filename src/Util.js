@@ -1,5 +1,5 @@
 export function escapeRegex(regex) {
-  return regex.replace(/[\]\/\(\)\*\+\?\.\\\$]/g, '\\$&');
+  return regex.replace(/[.*+?^${}()|[\]\\/-]/g, '\\$&');
 }
 
 // Words with a fixed meaning in the grammar, which cannot name an additional directive

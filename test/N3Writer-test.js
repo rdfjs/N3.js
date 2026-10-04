@@ -348,6 +348,31 @@ describe('Writer', () => {
     });
 
     it(
+      'should apply a prefix whose IRI contains a regular expression metacharacter',
+      shouldSerialize({ prefixes: { ex: 'http://ex/a[b' } },
+                      ['http://ex/a[bs', 'http://ex/a[bp', 'http://ex/a[bo'],
+                      '@prefix ex: <http://ex/a[b>.\n\n' +
+                      'ex:s ex:p ex:o.\n'),
+    );
+
+    it(
+      'should apply prefixes whose IRIs contain regular expression metacharacters',
+      shouldSerialize({ prefixes: { a: 'http://a.org/x[y', b: 'http://a.org/d{|^}-e' } },
+                      ['http://a.org/x[ys', 'http://a.org/d{|^}-ep', 'http://a.org/x[yo'],
+                      '@prefix a: <http://a.org/x[y>.\n' +
+                      '@prefix b: <http://a.org/d{|^}-e>.\n\n' +
+                      'a:s b:p a:o.\n'),
+    );
+
+    it(
+      'should only treat IRIs with an exact prefix name as prefixed names',
+      shouldSerialize({ prefixes: { 'a.b': 'http://a.org/' } },
+                      ['a.b:s', 'axb:p', 'http://a.org/o'],
+                      '@prefix a.b: <http://a.org/>.\n\n' +
+                      'a.b:s <axb:p> a.b:o.\n'),
+    );
+
+    it(
       'should expand prefixes when possible',
       shouldSerialize({ prefixes: { a: 'http://a.org/', b: 'http://a.org/b#' } },
                       ['a:bc', 'b:ef', 'c:bhi'],
