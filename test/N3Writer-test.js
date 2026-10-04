@@ -365,6 +365,14 @@ describe('Writer', () => {
     );
 
     it(
+      'should only treat IRIs with an exact prefix name as prefixed names',
+      shouldSerialize({ prefixes: { 'a.b': 'http://a.org/' } },
+                      ['a.b:s', 'axb:p', 'http://a.org/o'],
+                      '@prefix a.b: <http://a.org/>.\n\n' +
+                      'a.b:s <axb:p> a.b:o.\n'),
+    );
+
+    it(
       'should expand prefixes when possible',
       shouldSerialize({ prefixes: { a: 'http://a.org/', b: 'http://a.org/b#' } },
                       ['a:bc', 'b:ef', 'c:bhi'],
