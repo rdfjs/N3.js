@@ -122,7 +122,9 @@ console.timeEnd(TEST);
 // with K = N/100 (100 quads per inner subject)
 const { namedNode, quad } = N3.DataFactory;
 const N = Number.parseInt(process.argv[3], 10) || 100000;
-const K = Math.max(N / 100, 1);
+const K = Math.max(Math.floor(N / 100), 1);
+// Inner subject s0 appears for every i divisible by K
+const S0_HITS = Math.ceil(N / K);
 const reifies = namedNode(`${prefix}reifies`);
 
 const starStore = new N3.Store();
@@ -152,10 +154,10 @@ for (i = 0; i < K; i++)
     quad(namedNode(`${prefix}s${i % K}`), namedNode(`${prefix}p${i % 16}`), namedNode(`${prefix}o${i}`))).length, 1);
 console.timeEnd(TEST);
 
-TEST = `- Wildcard match <<( s0 ?p ?o )>>, ${N / K} results`;
+TEST = `- Wildcard match <<( s0 ?p ?o )>>, ${S0_HITS} results`;
 console.time(TEST);
 assert.equal(starStore.getQuads(null, null,
-  [namedNode(`${prefix}s0`), null, null, null]).length, N / K);
+  [namedNode(`${prefix}s0`), null, null, null]).length, S0_HITS);
 console.timeEnd(TEST);
 
 TEST = `- Hard wildcard match <<( ?s p3 ?o )>>, ${Math.ceil((N - 3) / 16)} results`;
@@ -164,12 +166,12 @@ assert.equal(starStore.getQuads(null, null,
   [null, namedNode(`${prefix}p3`), null, null]).length, Math.ceil((N - 3) / 16));
 console.timeEnd(TEST);
 
-TEST = `- Scan workaround for <<( s0 ?p ?o )>>, ${N / K} results`;
+TEST = `- Scan workaround for <<( s0 ?p ?o )>>, ${S0_HITS} results`;
 console.time(TEST);
 let found = 0;
 for (const starQuad of starStore) {
   if (starQuad.object.termType === 'Quad' && starQuad.object.subject.value === `${prefix}s0`)
     found++;
 }
-assert.equal(found, N / K);
+assert.equal(found, S0_HITS);
 console.timeEnd(TEST);
