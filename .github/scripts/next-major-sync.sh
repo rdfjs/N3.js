@@ -77,7 +77,8 @@ well_formed() {
       binmode STDIN;
       while (defined(my $header = <STDIN>)) {
         my ($oid, $type, $size) = $header =~ /\A([0-9a-f]+) (\S+) (\d+)\n\z/ or exit 1;
-        $type eq "tree" && read(STDIN, my $tree, $size) == $size && read(STDIN, my $nl, 1) == 1 or exit 1;
+        my ($tree, $nl);
+        $type eq "tree" && read(STDIN, $tree, $size) == $size && read(STDIN, $nl, 1) == 1 && $nl eq "\n" or exit 1;
         my $length = length($oid) / 2;
         while (length $tree) {
           $tree =~ s/\A(100644|100755|120000|160000|40000) [^\0]+\0.{$length}//s or exit 1;
