@@ -100,7 +100,12 @@ module.exports = {
     // Token callbacks are newer than the parser itself
     available: N3 => {
       let seen = false;
-      new N3.Parser().parse('<a> <b> <c>.', { onToken: () => { seen = true; } });
+      try {
+        new N3.Parser().parse('<a> <b> <c>.', { onToken: () => { seen = true; } });
+      }
+      catch (error) {
+        // Builds without token callbacks treat the object as a quad callback
+      }
       return seen;
     },
     setup: callbackParseBench('Turtle', turtle, { onToken: () => {}, onTokenEnd: () => {} }),
