@@ -138,8 +138,17 @@ describe('Parser directives', () => {
 
   describe.each(['N-Triples', 'N-Quads'])('in %s', format => {
     it('reads SPARQL-style directives in order with the quads', () => {
-      expect(parseEvents('<a:s> <a:p> <a:1> .\nMESSAGE\n<a:s> <a:p> <a:2> .\nMessage\n', { format }))
+      expect(parseEvents('<a:s> <a:p> <a:1> .\nMESSAGE\n<a:s> <a:p> <a:2> .\nMESSAGE\n', { format }))
         .toEqual(['quad a:1', 'message()', 'quad a:2', 'message()']);
+    });
+
+    it('reads a directive at the end of the input', () => {
+      expect(parseEvents('<a:s> <a:p> <a:1> .\nMESSAGE', { format })).toEqual(['quad a:1', 'message()']);
+    });
+
+    it('does not accept directives in another case, like VERSION', () => {
+      expect(parseError('Message\n', { format })).toBe('Unexpected "Message" on line 1.');
+      expect(parseError('message', { format })).toBe('Unexpected "message" on line 1.');
     });
 
     it('does not accept @-style directives', () => {
