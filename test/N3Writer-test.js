@@ -44,9 +44,20 @@ describe('Writer', () => {
       return { formulas, statements };
     }
 
-    async function roundTrip(document) {
+    // Shuffles quads deterministically for the given seed
+    function shuffle(quads, seed) {
+      const shuffled = quads.slice();
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        seed = (seed * 1103515245 + 12345) % 2147483648;
+        const j = seed % (i + 1);
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+
+    async function roundTrip(document, seed) {
       const quads = new Parser({ format: 'N3' }).parse(document);
-      const { formulas, statements } = splitFormulas(quads);
+      const { formulas, statements } = splitFormulas(seed ? shuffle(quads, seed) : quads);
       const writer = new Writer({ format: 'N3', formulas });
       writer.addQuads(statements);
       const output = await end(writer);
@@ -79,6 +90,34 @@ describe('Writer', () => {
         new Quad(new BlankNode('other'), quad.predicate, quad.object, quad.graph) : quad);
       expect(first).toBeDefined();
       expect(isomorphic(split, quads)).toBe(false);
+    });
+
+    it('should write formulas whose quads arrive in any order', async () => {
+      const documents = [
+        '@prefix : <http://ex.org/>. { ?x :p ?y. ?y :q ?z. { ?z :r ?x } => { ?x :s ?z } } => ' +
+          '{ ?x :t ?z. ?z :u { ?x :v "w"@en } }.',
+        '@prefix : <http://ex.org/>. :a :says { _:x :p :o. _:x :q { _:y :r _:x } }. ' +
+          '{ :c :d :e } :f { :g :h :i }. :j :k ({ :l :m :n } { :o :p :q }).',
+      ];
+      for (const document of documents) {
+        for (let seed = 1; seed <= 10; seed++) {
+          const { quads, reparsed } = await roundTrip(document, seed);
+          expect(isomorphic(reparsed, quads)).toBe(true);
+        }
+      }
+    });
+
+    it('should write a document with many formulas in any order', async () => {
+      let document = '@prefix : <http://ex.org/>.\n';
+      for (let i = 0; i < 200; i++) {
+        document += `{ ?x :p${i % 7} ?y. ?y :q :o${i} } => { ?x :r${i} ?y. :n${i} :says { ?y :s { :d${i} :e _:b${i} } } }.\n`;
+        document += `:s${i} :t { :a :b ${i}. :c :d { :e :f "x${i}" } }.\n`;
+      }
+      for (let seed = 1; seed <= 3; seed++) {
+        const { quads, output, reparsed } = await roundTrip(document, seed);
+        expect(output.match(/\{/g)).toHaveLength(1200);
+        expect(isomorphic(reparsed, quads)).toBe(true);
+      }
     });
 
     it('should create formulas manually', async () => {
