@@ -1563,8 +1563,8 @@ export default class N3Parser {
         if (pathStart < 0) {
           // Skip two slashes before the authority
           if (iri[++i] === '/' && iri[++i] === '/')
-            // Skip to slash after the authority
-            while ((pathStart = i + 1) < length && iri[pathStart] !== '/')
+            // Skip to the end of the authority
+            while ((pathStart = i + 1) < length && iri[pathStart] !== '/' && iri[pathStart] !== '?' && iri[pathStart] !== '#')
               i = pathStart;
         }
         break;

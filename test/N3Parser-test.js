@@ -5489,6 +5489,10 @@ describe('Parser', () => {
       itShouldResolve('http://a/b/c/d;p?q', '//host/./g',     'http://host/g');
       itShouldResolve('http://a/b/c/d;p?q', '//host/g/../h',  'http://host/h');
       itShouldResolve('http://abc/def/ghi', '//host/../..',   'http://host/');
+      itShouldResolve('http://a/b/c/d;p?q', '//host?x/../g',  'http://host?x/../g');
+      itShouldResolve('http://a/b/c/d;p?q', '//host#x/../g',  'http://host#x/../g');
+      itShouldResolve('http://a/b/c/d;p?q', '//host?x/./g',   'http://host?x/./g');
+      itShouldResolve('http://a/b/c/d;p?q', '//host/a/..?x/../g', 'http://host/?x/../g');
     });
   });
 });
