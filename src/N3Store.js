@@ -35,21 +35,7 @@ function entityKey(term) {
   const id = termToId(term);
   if (id.charCodeAt(0) >= 0x61 || !term)
     return id;
-  // Keys of quoted triples are built from the keys of their components
-  if (term.termType === 'Quad')
-    return JSON.stringify(quadKeyParts(term));
   return term.termType !== 'NamedNode' || !markedIRI.test(term.value) ? id : `<${term.value}>`;
-}
-
-// Returns the keys of the components of a quad, nested like the parts of its internal id
-function quadKeyParts(quad) {
-  const parts = [nestedKey(quad.subject), nestedKey(quad.predicate), nestedKey(quad.object)];
-  if (quad.graph && !isDefaultGraph(quad.graph))
-    parts.push(nestedKey(quad.graph));
-  return parts;
-}
-function nestedKey(term) {
-  return term.termType === 'Quad' ? quadKeyParts(term) : entityKey(term);
 }
 
 // ## Constructor
@@ -1453,6 +1439,17 @@ function validateMatchSemantics(semantics = 'lazy') {
   return semantics;
 }
 
+// Returns whether two terms or term IDs are the same; triple terms are compared by their components.
+function sameTerm(left, right) {
+  if (left.termType !== 'Quad' && right.termType !== 'Quad')
+    return entityKey(left) === entityKey(right);
+  // Compare components rather than with `equals`, which compares N3 term ids,
+  // and those collide for IRIs such as `?x` that start like other term ids
+  return left.termType === right.termType &&
+    sameTerm(left.subject, right.subject) && sameTerm(left.predicate, right.predicate) &&
+    sameTerm(left.object, right.object) && sameTerm(left.graph, right.graph);
+}
+
 // Returns the intersection of two quad patterns, or false if they conflict.
 function intersectMatchPatterns(left, right) {
   const result = new Array(4);
@@ -1460,7 +1457,7 @@ function intersectMatchPatterns(left, right) {
     const leftTerm = left[i], rightTerm = right[i];
     if (leftTerm === null || leftTerm === undefined)
       result[i] = rightTerm;
-    else if (rightTerm === null || rightTerm === undefined || entityKey(leftTerm) === entityKey(rightTerm))
+    else if (rightTerm === null || rightTerm === undefined || sameTerm(leftTerm, rightTerm))
       result[i] = leftTerm;
     else
       return false;
@@ -1511,10 +1508,10 @@ class DatasetCoreAndReadableStream extends Readable {
   _matchesQuad(quad) {
     const { subject, predicate, object, graph } = this;
     return !this._matchesNothing &&
-      (subject === null || subject === undefined || entityKey(subject) === entityKey(quad.subject)) &&
-      (predicate === null || predicate === undefined || entityKey(predicate) === entityKey(quad.predicate)) &&
-      (object === null || object === undefined || entityKey(object) === entityKey(quad.object)) &&
-      (graph === null || graph === undefined || entityKey(graph) === entityKey(quad.graph));
+      (subject === null || subject === undefined || sameTerm(subject, quad.subject)) &&
+      (predicate === null || predicate === undefined || sameTerm(predicate, quad.predicate)) &&
+      (object === null || object === undefined || sameTerm(object, quad.object)) &&
+      (graph === null || graph === undefined || sameTerm(graph, quad.graph));
   }
 
   // ### `_assertMatchesPattern` rejects a Quad outside this view.
