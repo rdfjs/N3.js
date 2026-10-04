@@ -1,0 +1,42 @@
+name: Apply next-major resolution
+
+# When a maintainer merges the pull request that resolves a sync conflict (into
+# sync/conflict-<main sha>-base), pushes the rebased next-major, but only if it
+# has exactly the tree they approved (see RELEASING.md). Nothing else moves
+# next-major after a conflict, so merging that pull request is the approval.
+on:
+  pull_request_target:
+    types: [closed]
+    branches: ['sync/conflict-*-base']
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    # pull_request_target runs this file from the base branch, never the pull
+    # request's version of it, and the job only runs git on the approved commits.
+    if: >-
+      github.repository == 'rdfjs/N3.js' &&
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    concurrency:
+      group: sync-next-major
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ secrets.NEXT_MAJOR_SYNC_TOKEN }}
+      BASE_REF: ${{ github.event.pull_request.base.ref }}
+      APPROVED_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.NEXT_MAJOR_SYNC_TOKEN }}
+      - name: Push the approved resolution as next-major
+        run: |
+          main_sha=${BASE_REF#sync/conflict-}
+          main_sha=${main_sha%-base}
+          git fetch --quiet origin "$APPROVED_SHA"
+          .github/scripts/next-major-sync.sh apply "$main_sha" "$APPROVED_SHA"
