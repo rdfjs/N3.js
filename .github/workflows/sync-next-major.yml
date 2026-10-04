@@ -4,7 +4,7 @@ name: Sync next-major
 # branch stays main plus one commit per breaking change, and CI publishes a fresh
 # alpha from it. It waits for CI, release included, so main's tags exist first.
 # A conflict moves nothing: it waits for a maintainer to merge a resolution pull
-# request (see RELEASING.md and apply-next-major-resolution.yml).
+# request and run apply-next-major-resolution.yml (see RELEASING.md).
 on:
   workflow_run:
     workflows: [CI]
@@ -23,11 +23,14 @@ jobs:
           github.event.workflow_run.event == 'push' &&
           github.event.workflow_run.conclusion == 'success'))
     runs-on: ubuntu-latest
+    environment: next-major-sync
     # Job-level, so a run whose job is skipped (its CI failed) never enters the
     # group. At workflow level it would still replace a pending sync for a
-    # green commit, and that commit would never be synced.
+    # green commit, and that commit would never be synced. The group is CI's
+    # release group for next-major, so an alpha is never tagged on next-major
+    # while it is being rebased.
     concurrency:
-      group: sync-next-major
+      group: release-refs/heads/next-major
       cancel-in-progress: false
     env:
       # A push made with GITHUB_TOKEN does not trigger CI, so next-major would

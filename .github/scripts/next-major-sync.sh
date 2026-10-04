@@ -5,75 +5,88 @@
 #     Rebases next-major onto <main sha>. A clean rebase is pushed straight away. A conflicting
 #     one moves nothing: it pushes main merged into next-major, conflict markers included, as
 #     sync/conflict-<main sha>-base, for a resolution pull request into that branch.
-#   next-major-sync.sh apply <main sha> <approved sha>
-#     After a maintainer merges that pull request, pushes sync/next-major-rebased as next-major,
-#     but only if it has exactly the approved tree and the same commits on top of <main sha>.
+#   next-major-sync.sh apply <pull request number> <merge commit sha>
+#     Run by a maintainer after merging that resolution pull request. Pushes
+#     sync/next-major-rebased as next-major, but only if it is next-major's commits, unchanged,
+#     on <main sha>, with exactly the merged tree, and the pull request resolved the conflict
+#     this script showed for the current next-major.
 #
 # Run from a full clone whose origin can push to next-major, with GH_TOKEN for the gh CLI.
 # semantic-release finds the last alpha through the tags reachable from next-major (see
-# RELEASING.md), so before a rebased next-major is pushed, the newest alpha tag and its
-# channel note move to main, and the commit it was published from is kept under refs/archive.
+# RELEASING.md), so a rebased next-major is pushed together with its newest alpha tag and channel
+# note moved to main, and the commit that alpha was published from kept under refs/archive.
 set -euo pipefail
 
-mode=$1 main_sha=$2
-if ! [[ $main_sha =~ ^[0-9a-f]{40}$ ]]; then
-  echo "::error::Expected a full main commit sha, got '$main_sha'."
-  exit 1
-fi
 repo=${GITHUB_REPOSITORY:-rdfjs/N3.js}
-conflict_branch=sync/conflict-$main_sha
-
 git config user.name 'github-actions[bot]'
 git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-git fetch --quiet origin '+refs/heads/main:refs/remotes/origin/main' \
-  '+refs/heads/next-major:refs/remotes/origin/next-major' \
-  '+refs/tags/*:refs/tags/*' '+refs/notes/*:refs/notes/*'
-old=$(git rev-parse origin/next-major)
+git config tag.gpgSign false
+git config commit.gpgSign false
+git config push.gpgSign false
 
-# The commits next-major has on top of main, as subjects, oldest first
-own_subjects() { git log --reverse --format=%s "$(git merge-base "$1" origin/main)..$1"; }
+fail() { echo "::error::$*"; exit 1; }
+is_sha() { [[ $1 =~ ^[0-9a-f]{40}$ ]]; }
+remote_ref() { git ls-remote origin "$1" | awk -v ref="$1" '$2 == ref { print $1 }'; }
 
-# Moves the newest alpha tag off the old next-major, then pushes HEAD as next-major
+fetch() {
+  git fetch --quiet origin '+refs/heads/main:refs/remotes/origin/main' \
+    '+refs/heads/next-major:refs/remotes/origin/next-major' \
+    '+refs/tags/*:refs/tags/*' '+refs/notes/*:refs/notes/*' "$@"
+  old=$(git rev-parse origin/next-major)
+}
+
+# Author, email and full message of each commit in a range, oldest first
+commits() { git log --reverse --format='%an%n%ae%n%B%n--' "$1"; }
+
+# main_sha merged into next-major, conflict markers committed as they are
+show_conflicts() {
+  git checkout --quiet --detach "$old"
+  git merge --no-edit "$main_sha" > /dev/null || true
+  git add --all
+  # A rebase can conflict where the merge does not; the merge commit then stands as it is
+  git diff --cached --quiet || git commit --quiet --no-verify -m "chore: merge main ${main_sha:0:7} into next-major, conflicts unresolved"
+}
+
+# Pushes HEAD as next-major in one atomic push, every ref leased to the value checked here. If
+# next-major's newest alpha was published from one of its own commits, that tag and its channel
+# note move to main_sha, and the commit is kept under refs/archive.
 publish() {
-  local tag base
-  tag=$(git tag -l 'v*-alpha.*' --sort=-v:refname | head -n 1)
-  base=$(git merge-base origin/main HEAD)
-  if [ -n "$tag" ] && ! git merge-base --is-ancestor "$tag" HEAD; then
-    if ! git merge-base --is-ancestor "$tag" "$old"; then
-      echo "::error::$tag is on neither the old nor the new next-major; fix the tags by hand."
-      exit 1
+  local new own_base tag tag_value tag_commit note_ref old_note archive archived
+  new=$(git rev-parse HEAD)
+  local args=(--atomic "--force-with-lease=refs/heads/next-major:$old") refs=("$new:refs/heads/next-major")
+  own_base=$(git merge-base "$old" origin/main)
+  tag=$(git for-each-ref --count=1 --sort=-v:refname --format='%(refname:short)' 'refs/tags/v*-alpha.*')
+  if [ -n "$tag" ] && ! git merge-base --is-ancestor "$tag" "$new"; then
+    tag_commit=$(git rev-parse "$tag^{commit}")
+    git rev-list "$own_base..$old" | grep -Fx "$tag_commit" > /dev/null ||
+      fail "$tag is not on one of next-major's own commits; fix the tags by hand."
+    tag_value=$(git rev-parse "refs/tags/$tag")
+    note_ref=refs/notes/semantic-release-$tag
+    old_note=$(git rev-parse --verify --quiet "$note_ref") || fail "$tag has no channel note."
+    git notes --ref "semantic-release-$tag" show "$tag_commit" | grep '"alpha"' > /dev/null ||
+      fail "$tag's note is not on the alpha channel."
+    archive=refs/archive/$tag
+    archived=$(remote_ref "$archive")
+    [ -z "$archived" ] || [ "$archived" = "$tag_commit" ] || fail "$archive already exists and is not $tag_commit."
+    git update-ref "refs/tags/$tag" "$main_sha"
+    git notes --ref "semantic-release-$tag" add -f -m '{"channels":["alpha"]}' "$main_sha"
+    args+=("--force-with-lease=refs/tags/$tag:$tag_value" "--force-with-lease=$note_ref:$old_note")
+    refs+=("refs/tags/$tag" "$note_ref")
+    if [ -z "$archived" ]; then
+      args+=("--force-with-lease=$archive:")
+      refs+=("$tag_commit:$archive")
     fi
-    git push origin "$(git rev-parse "$tag^{commit}"):refs/archive/$tag"
-    git tag -f "$tag" "$base"
-    git notes --ref "semantic-release-$tag" add -f -m '{"channels":["alpha"]}' "$base"
-    git push --force origin "refs/tags/$tag" "refs/notes/semantic-release-$tag"
   fi
-  git push --force-with-lease="refs/heads/next-major:$old" origin HEAD:refs/heads/next-major
-  rebase_pull_requests "$(git rev-parse HEAD)"
+  git push "${args[@]}" origin "${refs[@]}"
 }
 
-# Rebases open pull requests into next-major that were up to date with the old next-major
-rebase_pull_requests() {
-  local new=$1 number branch head
-  gh pr list --repo "$repo" --base next-major --state open \
-    --json number,headRefName,headRefOid,isCrossRepository \
-    --jq '.[] | select(.isCrossRepository | not) | "\(.number) \(.headRefName) \(.headRefOid)"' |
-  while read -r number branch head; do
-    git fetch --quiet origin "$head"
-    if ! git merge-base --is-ancestor "$old" "$head"; then
-      echo "::warning::#$number is not based on the latest next-major, so it was not rebased."
-    elif git checkout --quiet --detach "$head" && git rebase --quiet --onto "$new" "$old"; then
-      git push --force-with-lease="refs/heads/$branch:$head" origin "HEAD:refs/heads/$branch"
-    else
-      git rebase --abort
-      gh pr comment "$number" --repo "$repo" --body \
-        "next-major was rebased onto main, and this branch no longer rebases cleanly onto it. Rebase it onto next-major: \`git rebase --onto origin/next-major $old\`."
-    fi
-  done
-}
-
+mode=${1:-}
 case $mode in
 sync)
+  main_sha=${2:-}
+  is_sha "$main_sha" || fail "Expected a full main commit sha, got '$main_sha'."
+  fetch
+  git merge-base --is-ancestor "$main_sha" origin/main || fail "$main_sha is not on main."
   if git merge-base --is-ancestor "$main_sha" "$old"; then
     echo "next-major already contains main."
     exit 0
@@ -84,8 +97,7 @@ sync)
     exit 0
   fi
   if [ -n "$(git ls-remote --heads origin 'sync/conflict-*-base')" ]; then
-    echo "::error::A sync conflict is waiting for its resolution pull request; merge that first."
-    exit 1
+    fail "A sync conflict is waiting for its resolution pull request; finish that first."
   fi
   git checkout --quiet --detach "$old"
   if git rebase --quiet "$main_sha"; then
@@ -93,38 +105,54 @@ sync)
     exit 0
   fi
   git rebase --abort
-  # Show the conflicts as main merged into next-major, markers and all, so that a resolution
-  # pull request into this branch contains nothing but the hand-resolved hunks
-  git checkout --quiet --detach "$old"
-  git merge --no-edit "$main_sha" > /dev/null || true
-  git add --all
-  git commit --quiet --no-verify -m "chore: merge main ${main_sha:0:7} into next-major, conflicts unresolved"
-  git push origin "HEAD:refs/heads/$conflict_branch-base"
-  echo "::error::next-major does not rebase cleanly onto main ${main_sha:0:7}. Resolve it in a pull request into $conflict_branch-base and push the rebased next-major to sync/next-major-rebased (see RELEASING.md)."
-  exit 1
+  # A resolution pull request into this branch contains nothing but the hand-resolved hunks
+  show_conflicts
+  base_branch=sync/conflict-$main_sha-base
+  git push --force-with-lease="refs/heads/$base_branch:" origin "HEAD:refs/heads/$base_branch"
+  fail "next-major does not rebase cleanly onto main ${main_sha:0:7}. Resolve it in a pull request into $base_branch and push the rebased next-major to sync/next-major-rebased (see RELEASING.md)."
   ;;
 apply)
-  approved=$3
-  git fetch --quiet origin '+refs/heads/sync/next-major-rebased:refs/remotes/origin/sync/next-major-rebased'
-  rebased=$(git rev-parse origin/sync/next-major-rebased)
-  # The approved resolution builds on the conflict shown for this next-major and main;
-  # if next-major has moved since, start again
-  if ! git rev-list --parents --merges "$approved" | grep -q " $old $main_sha\$"; then
-    echo "::error::next-major has moved since the conflict was shown; run the sync again."
-    exit 1
-  fi
-  if [ "$(git merge-base "$main_sha" "$rebased")" != "$main_sha" ] ||
-     [ -n "$(git rev-list --merges "$main_sha..$rebased")" ] ||
-     [ "$(git log --reverse --format=%s "$main_sha..$rebased")" != "$(own_subjects "$old")" ]; then
-    echo "::error::sync/next-major-rebased must be next-major's own commits, unchanged in order and title, rebased onto ${main_sha:0:7}."
-    exit 1
-  fi
-  if [ "$(git rev-parse "$rebased^{tree}")" != "$(git rev-parse "$approved^{tree}")" ]; then
-    echo "::error::sync/next-major-rebased differs from the approved resolution."
-    exit 1
-  fi
+  pr=${2:-} merge_sha=${3:-}
+  [[ $pr =~ ^[0-9]+$ ]] || fail "Expected a pull request number, got '$pr'."
+  is_sha "$merge_sha" || fail "Expected the full merge commit sha, got '$merge_sha'."
+  IFS=$'\t' read -r merged same_repo base_ref head_ref pr_merge_sha < <(gh api "repos/$repo/pulls/$pr" --jq \
+    '[.merged, (.head.repo.full_name == .base.repo.full_name), .base.ref, .head.ref, .merge_commit_sha] | @tsv') ||
+    fail "Could not read #$pr."
+  [ "$merged" = true ] && [ "$same_repo" = true ] || fail "#$pr is not a merged pull request from this repository."
+  [ "$pr_merge_sha" = "$merge_sha" ] || fail "#$pr was merged as $pr_merge_sha, not $merge_sha."
+  [[ $base_ref =~ ^sync/conflict-([0-9a-f]{40})-base$ ]] || fail "#$pr does not target a sync/conflict-<main sha>-base branch."
+  main_sha=${BASH_REMATCH[1]}
+  fetch "+refs/heads/$base_ref:refs/remotes/origin/conflict-base" \
+    '+refs/heads/sync/next-major-rebased:refs/remotes/origin/rebased'
+  rebased=$(git rev-parse origin/rebased)
+  [ "$(git rev-parse origin/conflict-base)" = "$merge_sha" ] || fail "$base_ref has moved past the merge of #$pr."
+  git merge-base --is-ancestor "$main_sha" origin/main || fail "$main_sha is not on main."
+  # The pull request was merged into exactly the conflict this script shows for the current
+  # next-major and main_sha, regenerated here rather than trusted from the branch
+  conflict=$(git rev-parse "$merge_sha^1")
+  [ "$(git rev-list --parents -n 1 "$conflict")" = "$conflict $old $main_sha" ] ||
+    fail "#$pr was not merged into the conflict for the current next-major and main ${main_sha:0:7}; run the sync again."
+  show_conflicts
+  [ "$(git rev-parse "HEAD^{tree}")" = "$(git rev-parse "$conflict^{tree}")" ] ||
+    fail "$base_ref is not the conflict the sync shows for next-major and main ${main_sha:0:7}."
+  [ "$(git merge-base "$main_sha" "$rebased")" = "$main_sha" ] && [ -z "$(git rev-list --merges "$main_sha..$rebased")" ] &&
+    cmp -s <(commits "$main_sha..$rebased") <(commits "$(git merge-base "$old" origin/main)..$old") ||
+    fail "sync/next-major-rebased must be next-major's own commits, with the same authors and messages, rebased onto ${main_sha:0:7}."
+  [ "$(git rev-parse "$rebased^{tree}")" = "$(git rev-parse "$merge_sha^{tree}")" ] ||
+    fail "sync/next-major-rebased differs from what #$pr merged."
   git checkout --quiet --detach "$rebased"
   publish
-  git push origin --delete "$conflict_branch-base" "$conflict_branch" sync/next-major-rebased || true
+  # Tidy up, each branch leased to what was checked; a branch already deleted is skipped
+  args=(--atomic "--force-with-lease=refs/heads/$base_ref:$merge_sha" "--force-with-lease=refs/heads/sync/next-major-rebased:$rebased")
+  refs=(":refs/heads/$base_ref" ":refs/heads/sync/next-major-rebased")
+  head_sha=$(remote_ref "refs/heads/$head_ref")
+  if [ "$head_ref" = "sync/conflict-$main_sha" ] && [ -n "$head_sha" ]; then
+    args+=("--force-with-lease=refs/heads/$head_ref:$head_sha")
+    refs+=(":refs/heads/$head_ref")
+  fi
+  git push "${args[@]}" origin "${refs[@]}" || echo "::warning::next-major is published, but the sync branches were not deleted."
+  ;;
+*)
+  fail "Usage: next-major-sync.sh sync <main sha> | apply <pull request number> <merge commit sha>"
   ;;
 esac
