@@ -566,6 +566,17 @@ Both budgets are unbounded by default;
 `reason()` throws when one is exceeded,
 leaving any quads derived up to that point in the store.
 
+## Extensions
+The following packages build on N3.js to support formats or features beyond the W3C specifications listed under [Compatibility](#compatibility).
+They are maintained separately from N3.js; please report issues with them in their own repositories.
+
+| Package | Description |
+| ------- | ----------- |
+| [n3.js-messages](https://www.npmjs.com/package/n3.js-messages) ([source](https://github.com/pietercolpaert/N3.js-message)) | Parses and writes [RDF Messages](https://w3c-cg.github.io/rsp/spec/messages) (message-delimited Turtle, TriG, N-Triples and N-Quads). |
+| [@jeswr/n3-provenance](https://github.com/jeswr/n3-provenance) | Tracks the source location of each term of a parsed quad, using the parser's `onToken` and `onTokenEnd` callbacks. |
+
+To list a package here, open a pull request that adds a row to this table.
+
 ## Compatibility
 ### Format specifications
 The N3.js parser and writer is fully compatible with the following W3C specifications:
