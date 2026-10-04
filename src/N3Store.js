@@ -7,6 +7,7 @@ import N3Writer from './N3Writer';
 
 const ITERATOR = Symbol('iter');
 const SIZE = Symbol('size');
+const QUAD_POSITIONS = ['subject', 'predicate', 'object', 'graph'];
 
 // Neither a registration nor its cleanup record may keep a view or store alive.
 // Initialize lazily so importing N3 and using lazy views needs no weak-reference APIs.
@@ -909,6 +910,36 @@ export default class N3Store {
     }
   }
 
+  // ### `matchBGP` yields the solutions of a basic graph pattern.
+  // `patterns` is an iterable of quads whose terms may be Variables.
+  // Each solution is a Map from variable name to the term it is bound to.
+  // Setting any field to `undefined` or `null` indicates a wildcard.
+  *matchBGP(patterns) {
+    yield* this._matchSteps(planBGP(Array.from(patterns)), 0, new Map());
+  }
+
+  *_matchSteps(steps, index, bindings) {
+    if (index === steps.length) {
+      yield new Map(bindings);
+      return;
+    }
+    const { terms, bound, binds, checks } = steps[index];
+    for (let i = 0; i < bound.length; i += 2)
+      terms[bound[i]] = bindings.get(bound[i + 1]);
+    for (const quad of this.readQuads(terms[0], terms[1], terms[2], terms[3])) {
+      for (let i = 0; i < binds.length; i += 2)
+        bindings.set(binds[i + 1], quad[QUAD_POSITIONS[binds[i]]]);
+      let consistent = true;
+      for (let i = 0; consistent && i < checks.length; i += 2)
+        consistent = bindings.get(checks[i + 1]).equals(quad[QUAD_POSITIONS[checks[i]]]);
+      if (consistent)
+        yield* this._matchSteps(steps, index + 1, bindings);
+    }
+    // Each quad overwrites this step's bindings; drop them once the step is exhausted
+    for (let i = 0; i < binds.length; i += 2)
+      bindings.delete(binds[i + 1]);
+  }
+
   // ### `createBlankNode` creates a new blank node, returning its name
   createBlankNode(suggestedName) {
     return this._entityIndex.createBlankNode(suggestedName);
@@ -1272,6 +1303,45 @@ export default class N3Store {
  * `false` is returned when there are no matching indices; this should
  * *not* be set as the value for an index.
  */
+// ### `planBGP` orders patterns so each step has the most terms known from earlier steps.
+// For every step, `terms` holds the constants, `bound` the variables to fill from earlier steps,
+// `binds` the variables the step binds, and `checks` repeats of those within the same pattern,
+// the last three as flat lists of position and variable name pairs.
+function planBGP(patterns) {
+  const steps = [], known = new Set();
+  while (patterns.length) {
+    let best = 0, bestKnown = -1;
+    for (let i = 0; i < patterns.length; i++) {
+      let count = 0;
+      for (const name of QUAD_POSITIONS) {
+        const term = patterns[i][name];
+        if (term && (term.termType !== 'Variable' || known.has(term.value)))
+          count++;
+      }
+      if (count > bestKnown)
+        best = i, bestKnown = count;
+    }
+    const pattern = patterns.splice(best, 1)[0];
+    const step = { terms: [null, null, null, null], bound: [], binds: [], checks: [] };
+    const binding = new Set();
+    QUAD_POSITIONS.forEach((name, position) => {
+      const term = pattern[name];
+      if (!term || term.termType !== 'Variable')
+        step.terms[position] = term || null;
+      else if (known.has(term.value))
+        step.bound.push(position, term.value);
+      else if (binding.has(term.value))
+        step.checks.push(position, term.value);
+      else
+        step.binds.push(position, term.value), binding.add(term.value);
+    });
+    for (const name of binding)
+      known.add(name);
+    steps.push(step);
+  }
+  return steps;
+}
+
 function indexMatch(index, ids, depth = 0) {
   const ind = ids[depth];
   if (ind && !(ind in index))

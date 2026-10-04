@@ -4082,6 +4082,78 @@ describe('Store', () => {
         '<> {\n<http://example.org/o> <http://example.org/p> <http://example.org/o>\n}\n');
     });
   });
+
+  describe('matchBGP', () => {
+    const { variable, defaultGraph } = DataFactory;
+    function ex(name) { return namedNode(`http://example.org/${name}`); }
+    const [s, o, g] = [variable('s'), variable('o'), variable('g')];
+    let store;
+    beforeEach(() => {
+      store = new Store([
+        quad(ex('alice'), ex('knows'), ex('bob')),
+        quad(ex('bob'), ex('knows'), ex('carol')),
+        quad(ex('carol'), ex('knows'), ex('carol')),
+        quad(ex('alice'), ex('name'), literal('Alice')),
+        quad(ex('bob'), ex('name'), literal('Bob')),
+        quad(ex('bob'), ex('name'), literal('Bobby'), ex('g1')),
+      ]);
+    });
+
+    function solutions(patterns) {
+      return [...store.matchBGP(patterns)].map(bindings =>
+        Object.fromEntries([...bindings].map(([name, term]) => [name, termToId(term)])));
+    }
+
+    it('should yield one solution with no bindings for no patterns', () => {
+      expect(solutions([])).toEqual([{}]);
+    });
+
+    it('should yield Maps from variable names to terms', () => {
+      const [bindings] = store.matchBGP([quad(s, ex('name'), literal('Alice'))]);
+      expect(bindings).toBeInstanceOf(Map);
+      expect(bindings.get('s').equals(ex('alice'))).toBe(true);
+    });
+
+    it('should match a single pattern in the default graph', () => {
+      expect(solutions([quad(s, ex('name'), o)])).toEqual([
+        { s: 'http://example.org/alice', o: '"Alice"' },
+        { s: 'http://example.org/bob', o: '"Bob"' },
+      ]);
+    });
+
+    it('should join patterns on shared variables', () => {
+      expect(solutions([
+        quad(s, ex('knows'), o),
+        quad(o, ex('name'), literal('Bob')),
+      ])).toEqual([{ s: 'http://example.org/alice', o: 'http://example.org/bob' }]);
+    });
+
+    it('should require a repeated variable to bind the same term', () => {
+      expect(solutions([quad(s, ex('knows'), s)])).toEqual([{ s: 'http://example.org/carol' }]);
+    });
+
+    it('should bind graph variables', () => {
+      expect(solutions([quad(ex('bob'), ex('name'), o, g)])).toEqual([
+        { o: '"Bob"', g: '' },
+        { o: '"Bobby"', g: 'http://example.org/g1' },
+      ]);
+    });
+
+    it('should treat null and undefined as wildcards', () => {
+      expect(solutions([{ subject: s, predicate: ex('knows'), object: null }])).toHaveLength(3);
+      expect(solutions([{ subject: s, predicate: ex('name') }])).toHaveLength(3);
+    });
+
+    it('should yield nothing when a pattern has no matches', () => {
+      expect(solutions([quad(s, ex('knows'), o), quad(o, ex('age'), variable('age'))])).toEqual([]);
+      expect(solutions([quad(s, ex('unknown'), o, defaultGraph())])).toEqual([]);
+    });
+
+    it('should accept any iterable of patterns', () => {
+      expect(solutions(new Set([quad(s, ex('knows'), ex('bob'))])))
+        .toEqual([{ s: 'http://example.org/alice' }]);
+    });
+  });
 });
 
 describe('EntityIndex', () => {

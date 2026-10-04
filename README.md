@@ -488,6 +488,29 @@ The store provides the following search methods
 - `forObjects` executes a callback on unique objects occurring in matching quads
 - `getGraphs` returns an array of unique graphs occurring in matching quad
 - `forGraphs` executes a callback on unique graphs occurring in matching quads
+- `matchBGP` returns a generator of solutions to a basic graph pattern
+
+### Matching basic graph patterns
+`matchBGP` takes an array of quad patterns whose terms may be variables,
+and yields one `Map` from variable name to term for every way the patterns match the store together.
+A variable that occurs in several patterns, or several times in one pattern, must bind the same term everywhere.
+`null` or `undefined` in a pattern is a wildcard that binds nothing.
+
+```JavaScript
+const { namedNode, variable, quad } = N3.DataFactory;
+const knows = namedNode('http://xmlns.com/foaf/0.1/knows');
+const name = namedNode('http://xmlns.com/foaf/0.1/name');
+const [person, friend, friendName] = [variable('person'), variable('friend'), variable('friendName')];
+
+for (const bindings of store.matchBGP([
+  quad(person, knows, friend),
+  quad(friend, name, friendName),
+]))
+  console.log(bindings.get('person').value, 'knows', bindings.get('friendName').value);
+```
+
+A pattern without an explicit graph matches the default graph only, like other `Quad` terms;
+use a variable as the graph to match quads in any graph.
 
 ### Configuring `match()` semantics
 
