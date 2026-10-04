@@ -755,13 +755,13 @@ describe('Writer', () => {
       expect(output).toBe('@version "1.2-\ud83d\ude00".\n');
     });
 
-    it('produces a version directive that the parser reads back', () => {
-      const writer = new Writer({ version: '1.2' });
+    it.each(['Turtle', 'TriG', 'N-Triples', 'N-Quads'])('produces a version directive that the %s parser reads back', format => {
+      const writer = new Writer({ format, version: '1.2' });
       let output;
       writer.addQuad(new NamedNode('http://ex.org/a'), new NamedNode('http://ex.org/b'), new NamedNode('http://ex.org/c'));
       writer.end((error, result) => { output = result; });
       const versions = [];
-      const quads = new Parser({ format: 'Turtle' }).parse(output, { onVersion: version => versions.push(version) });
+      const quads = new Parser({ format }).parse(output, { onVersion: version => versions.push(version) });
       expect(versions).toEqual(['1.2']);
       expect(quads).toHaveLength(1);
     });

@@ -66,6 +66,14 @@ describe('Lexer', () => {
         .toThrow(`Unexpected "${word}" on line 1.`);
     });
 
+    it('recognizes VERSION as the only keyword in line mode', () => {
+      expect(new Lexer({ lineMode: true }).tokenize('version "1.2"\n')[0]).toMatchObject({ type: 'VERSION' });
+      for (const keyword of ['PREFIX', 'BASE', 'GRAPH']) {
+        expect(() => new Lexer({ lineMode: true }).tokenize(`${keyword} `))
+          .toThrow(`Unexpected "${keyword}" on line 1.`);
+      }
+    });
+
     it.each([
       ['a', 'abbreviation'], ['true', 'literal'], ['false', 'literal'],
     ])('recognizes fixed token %s with N3 features disabled', (word, type) => {
