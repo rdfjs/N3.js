@@ -17,6 +17,7 @@ import namespaces from '../src/IRIs';
 import { Readable } from 'readable-stream';
 import { arrayifyStream } from 'arrayify-stream';
 import { EventEmitter } from 'events';
+import { Readable as NativeReadable, Duplex as NativeDuplex } from 'stream';
 
 const { namedNode, literal, quad } = DataFactory;
 
@@ -4073,6 +4074,332 @@ describe('Store', () => {
       }));
 
       it('should have size 2', () => { expect(empty.size).toEqual(2); });
+    });
+
+    describe('#import as a promise', () => {
+      let store, stream;
+      beforeEach(() => {
+        store = new Store();
+        stream = new ArrayReader([
+          new Quad(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1')),
+          new Quad(new NamedNode('s1'), new NamedNode('p2'), new NamedNode('o2')),
+        ]);
+      });
+
+      it('should resolve to the store itself when awaited', async () => {
+        const result = await store.import(stream);
+        expect(result).toBe(store);
+        expect(result.size).toEqual(2);
+      });
+
+      it('should reuse the completion promise on repeated accesses', async () => {
+        const imported = store.import(stream);
+        await imported;
+        await expect(imported.finally(() => {})).resolves.toBe(store);
+      });
+
+      it('should resolve when importing an already-ended stream', async () => {
+        await new Promise(resolve => {
+          stream.on('data', () => {});
+          stream.on('end', resolve);
+        });
+        expect(stream.readableEnded).toBe(true);
+        await expect(store.import(stream)).resolves.toBe(store);
+      });
+
+      it('should reject when importing a stream that was destroyed before it ended', async () => {
+        stream.destroy();
+        expect(stream.destroyed).toBe(true);
+        await expect(store.import(stream)).rejects.toMatchObject({ code: 'ERR_STREAM_PREMATURE_CLOSE' });
+      });
+
+      it('should reject when an awaited stream is destroyed without an error before it ends', async () => {
+        const imported = store.import(stream);
+        const completion = imported.then(result => result);
+        stream.destroy();
+        await expect(completion).rejects.toMatchObject({ code: 'ERR_STREAM_PREMATURE_CLOSE' });
+        expect(stream.listenerCount('error')).toEqual(0);
+      });
+
+      it('should reject when an awaited stream is destroyed with an error before it ends', async () => {
+        const error = new Error('Test error');
+        const imported = store.import(stream);
+        const completion = imported.then(result => result);
+        stream.destroy(error);
+        await expect(completion).rejects.toBe(error);
+      });
+
+      it('should resolve when an RDF/JS stream that is not a Node.js stream ends', async () => {
+        const source = new EventEmitter();
+        source.read = () => null;
+        const completion = store.import(source).then(result => result);
+        source.emit('end');
+        await expect(completion).resolves.toBe(store);
+        expect(source.listenerCount('end')).toEqual(0);
+        expect(source.listenerCount('error')).toEqual(0);
+      });
+
+      it('should keep throwing on unhandled errors of an RDF/JS stream that is not a Node.js stream', () => {
+        const source = new EventEmitter();
+        source.read = () => null;
+        store.import(source);
+        expect(() => source.emit('error', new Error('Test error'))).toThrow('Test error');
+      });
+
+      it('should resolve when the readable side of a half-open duplex ends', async () => {
+        const duplex = new NativeDuplex({
+          objectMode: true,
+          allowHalfOpen: true,
+          read() { this.push(null); },
+          write(chunk, encoding, callback) { callback(); },
+        });
+        await expect(store.import(duplex)).resolves.toBe(store);
+        expect(duplex.writable).toBe(true);
+      });
+
+      it('should reject when an RDF/JS stream that is not a Node.js stream errors', async () => {
+        const source = new EventEmitter();
+        source.read = () => null;
+        const error = new Error('Test error');
+        const completion = store.import(source).then(result => result);
+        source.emit('error', error);
+        await expect(completion).rejects.toBe(error);
+      });
+
+      it('should resolve when a minimal source without removeListener ends', async () => {
+        const listeners = {};
+        const source = { on: (event, listener) => { listeners[event] = listener; } };
+        const completion = store.import(source).then(result => result);
+        listeners.end();
+        await expect(completion).resolves.toBe(store);
+      });
+
+      it('should reject a native stream destroyed with an error before being awaited', async () => {
+        const native = new NativeReadable({ objectMode: true, read() { /* no data */ } });
+        const error = new Error('Test error');
+        native.destroy(error);
+        await expect(store.import(native)).rejects.toBe(error);
+      });
+
+      it('should reject a native stream without close events destroyed before being awaited', async () => {
+        const native = new NativeReadable({ objectMode: true, emitClose: false, read() { /* no data */ } });
+        native.destroy();
+        await expect(store.import(native)).rejects.toMatchObject({ code: 'ERR_STREAM_PREMATURE_CLOSE' });
+        await new Promise(resolve => setTimeout(resolve, 10));
+        expect(native.listenerCount('error')).toEqual(0);
+        expect(native.listenerCount('close')).toEqual(0);
+        // Later errors keep the default unhandled error behavior
+        expect(() => native.emit('error', new Error('Late error'))).toThrow('Late error');
+      });
+
+      it('should not start tracking when the thenable methods are only read', async () => {
+        const rejections = [];
+        function onUnhandledRejection(reason) { rejections.push(reason); }
+        process.on('unhandledRejection', onUnhandledRejection);
+        try {
+          stream.on('error', () => { /* the caller handles the stream error */ });
+          const imported = store.import(stream);
+          expect(typeof imported.then).toBe('function');
+          expect(typeof imported.catch).toBe('function');
+          expect(typeof imported.finally).toBe('function');
+          expect(stream.listenerCount('error')).toEqual(1);
+          stream.destroy(new Error('Test error'));
+          await new Promise(resolve => setImmediate(resolve));
+          await new Promise(resolve => setImmediate(resolve));
+          expect(rejections).toHaveLength(0);
+        }
+        finally {
+          process.removeListener('unhandledRejection', onUnhandledRejection);
+        }
+      });
+
+      it('should reject when the stream emits an error', async () => {
+        const error = new Error('Test error');
+        const imported = store.import(stream);
+        const rejection = new Promise((resolve, reject) => {
+          imported.then(resolve, reject);
+        });
+        stream.emit('error', error);
+        await expect(rejection).rejects.toBe(error);
+      });
+
+      it('should reject through catch when the stream emits an error', async () => {
+        const error = new Error('Test error');
+        const imported = store.import(stream);
+        const caught = new Promise(resolve => {
+          imported.catch(resolve);
+        });
+        stream.emit('error', error);
+        await expect(caught).resolves.toBe(error);
+      });
+
+      it('should reject when the stream had already errored before being awaited', async () => {
+        stream.on('error', () => { /* the caller handles the stream error */ });
+        const error = new Error('Test error');
+        stream.destroy(error);
+        await new Promise(resolve => setImmediate(resolve));
+        expect(stream.destroyed).toBe(true);
+        await expect(store.import(stream)).rejects.toBe(error);
+      });
+
+      it('should stop tracking the stream once it has ended', async () => {
+        const imported = store.import(stream);
+        await imported;
+        expect(stream.listenerCount('end')).toEqual(0);
+        expect(stream.listenerCount('close')).toEqual(0);
+        expect(stream.listenerCount('error')).toEqual(0);
+        // Later errors keep the default unhandled error behavior
+        expect(() => stream.emit('error', new Error('Late error'))).toThrow('Late error');
+      });
+
+      it('should stop tracking an unawaited stream once it has ended', async () => {
+        store.import(stream);
+        await new Promise(resolve => stream.on('end', resolve));
+        expect(stream.listenerCount('error')).toEqual(0);
+      });
+
+      it('should keep throwing on unhandled stream errors unless awaited', () => {
+        // This preserves the default EventEmitter behavior for callers
+        // that use `import` in the RDF/JS Sink style, without awaiting
+        store.import(stream);
+        const error = new Error('Test error');
+        expect(() => stream.emit('error', error)).toThrow('Test error');
+      });
+
+      it('should reject an already closed native stream that was destroyed before it ended', async () => {
+        const native = new NativeReadable({ objectMode: true, read() { /* no data */ } });
+        native.destroy();
+        await new Promise(resolve => setImmediate(resolve));
+        await expect(store.import(native)).rejects.toMatchObject({ code: 'ERR_STREAM_PREMATURE_CLOSE' });
+      });
+
+      it('should reject with the pending error of a stream ended and then destroyed', async () => {
+        const native = new NativeReadable({ objectMode: true, autoDestroy: false, read() { this.push(null); } });
+        native.resume();
+        await new Promise(resolve => native.on('end', resolve));
+        const error = new Error('Test error');
+        native.destroy(error);
+        await expect(store.import(native)).rejects.toBe(error);
+        expect(native.listenerCount('error')).toEqual(0);
+      });
+
+      it('should not cause an unhandled rejection when an erroring stream is not awaited', async () => {
+        const rejections = [];
+        function onUnhandledRejection(reason) { rejections.push(reason); }
+        process.on('unhandledRejection', onUnhandledRejection);
+        try {
+          store.import(stream);
+          stream.on('error', () => { /* the caller handles the stream error */ });
+          stream.emit('error', new Error('Test error'));
+          await new Promise(resolve => setImmediate(resolve));
+          await new Promise(resolve => setImmediate(resolve));
+          expect(rejections).toHaveLength(0);
+        }
+        finally {
+          process.removeListener('unhandledRejection', onUnhandledRejection);
+        }
+      });
+
+      it('should reject without an unhandled error when awaited right after destroy with an error', async () => {
+        const error = new Error('Test error');
+        stream.destroy(error);
+        const caught = new Promise(resolve => {
+          store.import(stream).catch(resolve);
+        });
+        await expect(caught).resolves.toBe(error);
+        // The pending error event was absorbed before tracking stopped
+        await new Promise(resolve => setImmediate(resolve));
+        expect(stream.listenerCount('error')).toEqual(0);
+      });
+
+      it('should not treat a handled one-time error listener as missing', () => {
+        const handler = jest.fn();
+        stream.once('error', handler);
+        store.import(stream);
+        const error = new Error('Test error');
+        expect(() => stream.emit('error', error)).not.toThrow();
+        expect(handler).toHaveBeenCalledWith(error);
+      });
+
+      it('should not listen to a stream imported into several stores unawaited', () => {
+        const other = new Store();
+        store.import(stream);
+        other.import(stream);
+        expect(stream.listenerCount('error')).toEqual(0);
+        expect(() => stream.emit('error', new Error('Test error'))).toThrow('Test error');
+      });
+
+      it('should stop listening after awaiting a re-imported stream', async () => {
+        const first = store.import(stream);
+        const second = store.import(stream);
+        await second;
+        await first;
+        expect(stream.listenerCount('error')).toEqual(0);
+        expect(stream.listenerCount('close')).toEqual(0);
+      });
+
+      it('should reject every awaited import of a stream imported into several stores', async () => {
+        const other = new Store();
+        const error = new Error('Test error');
+        const first = store.import(stream).then(result => result);
+        const second = other.import(stream).then(result => result);
+        stream.emit('error', error);
+        await expect(first).rejects.toBe(error);
+        await expect(second).rejects.toBe(error);
+      });
+
+      it('should resolve each awaited import to its own store', async () => {
+        const other = new Store();
+        const first = store.import(stream);
+        const second = other.import(stream);
+        await expect(first).resolves.toBe(store);
+        await expect(second).resolves.toBe(other);
+        expect(other.size).toEqual(2);
+      });
+
+      it('should call stream methods on the stream itself', () => {
+        // Emulates private fields, which only work on the instance itself
+        const destroyedReaders = new WeakMap();
+        class PrivateReader extends Readable {
+          constructor(options) {
+            super(options);
+            destroyedReaders.set(this, false);
+          }
+          _read() { /* no data */ }
+          _destroy(error, callback) {
+            if (!destroyedReaders.has(this))
+              throw new TypeError('Not a PrivateReader');
+            destroyedReaders.set(this, true);
+            callback(error);
+          }
+          wasDestroyed() {
+            if (!destroyedReaders.has(this))
+              throw new TypeError('Not a PrivateReader');
+            return destroyedReaders.get(this);
+          }
+        }
+        const reader = new PrivateReader({ objectMode: true });
+        const imported = store.import(reader);
+        imported.destroy();
+        expect(imported.wasDestroyed()).toBe(true);
+      });
+
+      it('should still behave as the stream for RDF/JS Sink callers', async () => {
+        const imported = store.import(stream);
+        // The returned object forwards EventEmitter behavior to the stream
+        const received = [];
+        imported.on('custom', data => { received.push(data); });
+        stream.emit('custom', 'data');
+        expect(received).toEqual(['data']);
+        // The `end` event still signals completion, as before
+        await new Promise(resolve => {
+          imported.on('end', resolve);
+        });
+        expect(store.size).toEqual(2);
+        // Store methods are not mixed into the returned stream
+        expect(imported.addQuad).toBeUndefined();
+        expect(imported.readable).toBe(false);
+      });
     });
 
     describe('#forEach', () => {
