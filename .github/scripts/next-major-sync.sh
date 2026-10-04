@@ -36,17 +36,35 @@ fetch() {
   old=$(git rev-parse origin/next-major)
 }
 
-# Succeeds if two ranges hold the same number of commits, pairwise with the same author, author
-# date and full message. Each pair is compared on its own, so no commit can pose as another.
+# A commit's raw object without what a rebase rewrites: tree, parents, committer and signature
+commit_record() {
+  git cat-file commit "$1" | perl -0777 -ne '
+    my ($head, $body) = /\A(.*?)\n\n(.*)\z/s ? ($1, $2) : ($_, "");
+    print join("\n", grep { !/^(?:tree|parent|committer|gpgsig|gpgsig-sha256) / } split /\n(?! )/, $head), "\n\n", $body'
+}
+
+# The lines a commit adds and removes, outside the given paths, as a stable patch id. Without
+# context lines, a commit that rebases cleanly keeps the same id.
+change_id() {
+  local commit=$1
+  shift
+  git diff --unified=0 --no-color --no-ext-diff "$commit^" "$commit" -- . "${@/#/:(exclude,literal)}" |
+    git patch-id --stable | cut -d ' ' -f 1
+}
+
+# Succeeds if two ranges hold the same number of commits and each pair, compared on its own, has
+# the same author, message and other raw fields, and changes the same lines outside the paths
+# given after the ranges (the hand-resolved ones)
 same_commits() {
   local -a a b
   local i
   mapfile -t a < <(git rev-list --reverse "$1")
   mapfile -t b < <(git rev-list --reverse "$2")
+  shift 2
   [ "${#a[@]}" -eq "${#b[@]}" ] || return 1
   for i in "${!a[@]}"; do
-    cmp -s <(git show -s --format='%an%x00%ae%x00%at%x00%B' "${a[$i]}") \
-      <(git show -s --format='%an%x00%ae%x00%at%x00%B' "${b[$i]}") || return 1
+    cmp -s <(commit_record "${a[$i]}") <(commit_record "${b[$i]}") &&
+      [ "$(change_id "${a[$i]}" "$@")" = "$(change_id "${b[$i]}" "$@")" ] || return 1
   done
 }
 
@@ -62,15 +80,18 @@ show_conflicts() {
 # Pushes HEAD, next-major's own commits rebased onto main_sha, as next-major in one atomic push,
 # every ref leased to the value checked here. If next-major's newest alpha was published from one
 # of its own commits, that tag and its channel note move with it to the same commit's rebased
-# counterpart. Never to a main commit: semantic-release reads all channel notes on a commit as
+# counterpart. Never to a commit on main: semantic-release reads all channel notes on a commit as
 # one, so an alpha sharing a commit with a stable tag would read as stable. The first time a tag
-# moves, the commit it was published from is kept under refs/archive.
+# moves, the commit it was published from is kept under refs/archive. In apply mode, resolved
+# lists the hand-resolved paths, where a rebased commit may differ from its original.
 publish() {
   local new own_base tag tag_value tag_commit anchor note_ref old_note archive i
   local -a olds news
   new=$(git rev-parse HEAD)
   own_base=$(git merge-base "$old" origin/main)
-  same_commits "$own_base..$old" "$main_sha..$new" ||
+  [ "$(git rev-list --count "$main_sha..$new")" = "$(git rev-list --count "$main_sha..$new" --not origin/main)" ] ||
+    fail "the rebased next-major contains commits from main past ${main_sha:0:7}."
+  same_commits "$own_base..$old" "$main_sha..$new" "${resolved[@]}" ||
     fail "the rebase changed next-major's commits, probably because one is already on main; rebase it by hand."
   local args=(--atomic "--force-with-lease=refs/heads/next-major:$old") refs=("$new:refs/heads/next-major")
   tag=$(git for-each-ref --count=1 --sort=-v:refname --format='%(refname:short)' 'refs/tags/v*-alpha.*')
@@ -83,6 +104,11 @@ publish() {
       [ "${olds[$i]}" != "$tag_commit" ] || anchor=${news[$i]}
     done
     [ -n "$anchor" ] || fail "$tag is not on one of next-major's own commits; fix the tags by hand."
+    # The tips always correspond. Any other commit must change exactly the same lines, resolved
+    # paths included, so hunks moved between commits cannot carry the tag elsewhere.
+    [ "$tag_commit" = "$old" ] || [ "$(change_id "$tag_commit")" = "$(change_id "$anchor")" ] ||
+      fail "$tag's commit was changed by the conflict resolution, so its rebased counterpart can't be proven; move the tag by hand."
+    ! git merge-base --is-ancestor "$anchor" origin/main || fail "$anchor is on main, so $tag cannot move there."
     [ -z "$(git tag --points-at "$anchor" | grep -vFx "$tag" || true)" ] ||
       fail "$anchor already carries another tag, so $tag cannot move there."
     tag_value=$(git rev-parse "refs/tags/$tag")
@@ -102,6 +128,9 @@ publish() {
   fi
   git push "${args[@]}" origin "${refs[@]}"
 }
+
+# Paths the reviewed resolution changed; empty for a clean rebase
+resolved=()
 
 mode=${1:-}
 case $mode in
@@ -158,9 +187,11 @@ apply)
   show_conflicts
   [ "$(git rev-parse "HEAD^{tree}")" = "$(git rev-parse "$conflict^{tree}")" ] ||
     fail "$base_ref is not the conflict the sync shows for next-major and main ${main_sha:0:7}."
+  # Only in the paths the reviewed resolution changed may a rebased commit differ from its original
+  mapfile -d '' -t resolved < <(git diff -z --name-only "$conflict" "$merge_sha")
   [ "$(git merge-base "$main_sha" "$rebased")" = "$main_sha" ] && [ -z "$(git rev-list --merges "$main_sha..$rebased")" ] &&
-    same_commits "$(git merge-base "$old" origin/main)..$old" "$main_sha..$rebased" ||
-    fail "sync/next-major-rebased must be next-major's own commits, with the same authors and messages, rebased onto ${main_sha:0:7}."
+    same_commits "$(git merge-base "$old" origin/main)..$old" "$main_sha..$rebased" "${resolved[@]}" ||
+    fail "sync/next-major-rebased must be next-major's own commits rebased onto ${main_sha:0:7}: the same authors, messages and changes, except in the resolved paths."
   [ "$(git rev-parse "$rebased^{tree}")" = "$(git rev-parse "$merge_sha^{tree}")" ] ||
     fail "sync/next-major-rebased differs from what #$pr merged."
   git checkout --quiet --detach "$rebased"

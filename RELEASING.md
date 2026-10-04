@@ -47,9 +47,15 @@ that also moves that tag and its `refs/notes/semantic-release-<tag>` channel not
 commit's rebased counterpart. The first time a tag moves, the commit it was published from is kept
 under `refs/archive/<tag>`, so the published source stays in the repository.
 
-The tag never moves onto a commit that carries another tag, such as a release on `main`:
-semantic-release reads all the channel notes on a commit as one, so the alpha would read as a
-stable release.
+The tag never moves onto a commit on `main` or one that carries another tag: semantic-release
+reads all the channel notes on a commit as one, so the alpha would read as a stable release.
+
+What this means for releases:
+- A sync on its own publishes no alpha. `main`'s changes sit below the moved tag, so they reach
+  `@alpha` with the next release from `next-major` and are not listed in its notes.
+- If a sync conflicts and the resolution changes the commit the newest alpha is on, and that
+  commit is not the tip, its rebased counterpart can't be proven, so applying the resolution
+  stops before anything moves. Move the tag by hand, as in the first rebase.
 
 **Open pull requests into `next-major`.** A rebase leaves them based on the old `next-major`.
 Their branches are rebased by hand: `git rebase --onto origin/next-major <old next-major sha>`.
