@@ -590,6 +590,18 @@ describe('Writer', () => {
       },
     );
 
+    it('uses each prefix added between quads', async () => {
+      const writer = new Writer();
+      writer.addPrefix('a', 'b#');
+      writer.addPrefix('c', 'd#');
+      writer.addQuad(new Quad(new NamedNode('b#s'), new NamedNode('d#p'), new NamedNode('f#o')));
+      writer.addPrefix('e', 'f#');
+      writer.addQuad(new Quad(new NamedNode('b#s'), new NamedNode('d#p'), new NamedNode('f#o')));
+      const output = await end(writer);
+      expect(output).toBe('@prefix a: <b#>.\n\n@prefix c: <d#>.\n\na:s c:p <f#o>.\n' +
+                          '@prefix e: <f#>.\n\na:s c:p e:o.\n');
+    });
+
     it('should not write prefixes in N-Triples mode', async () => {
       const writer = new Writer({ format: 'N-Triples', prefixes: { a: 'b#' } });
       let called = false;
