@@ -1005,6 +1005,36 @@ describe('Parser', () => {
     );
 
     it(
+        'should handle version declarations without whitespace before the string',
+        shouldParse('VERSION"1.2"\n@version\'1.2\'.\n<ex:a> <ex:b> <ex:c> .',
+            ['ex:a', 'ex:b', 'ex:c']),
+    );
+
+    it(
+        'should handle version declarations with escapes',
+        shouldParse('VERSION "1\\u002e2"\n@version \'\\u0031.2\'.\n<ex:a> <ex:b> <ex:c> .',
+            ['ex:a', 'ex:b', 'ex:c']),
+    );
+
+    it(
+        'should not allow VERSION with a boolean',
+        shouldNotParse('VERSION true .',
+            'Version declarations must use single quotes on line 1.'),
+    );
+
+    it(
+        'should not allow VERSION with a long string with escapes',
+        shouldNotParse('VERSION """1\\u002e2"""',
+            'Version declarations must use single quotes on line 1.'),
+    );
+
+    it(
+        'should not allow VERSION with a long single-quoted string',
+        shouldNotParse("VERSION '''1.2'''",
+            'Version declarations must use single quotes on line 1.'),
+    );
+
+    it(
         'should not allow unsupported VERSIONs',
         shouldNotParse('VERSION "1.2-unknown"',
             'Detected unsupported version: "1.2-unknown" on line 1.'),

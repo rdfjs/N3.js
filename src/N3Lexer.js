@@ -78,8 +78,8 @@ export default class N3Lexer {
     this._blank = /_:((?:[0-9A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?:[ \t]+|(?=\.?[,;:!\^\s#()\[\]\{\}"'<>]))/y;
     this._number = /[\-+]?(?:(\d+\.\d*|\.?\d+)[eE][\-+]?\d+|(?=\.?\d)\d*(?:(\.)\d+)?)(?=\.?[,;:!\^\s#()\[\]\{\}"'<>])/y;
     this._boolean = /(?:true|false)(?=[.,;!\^\s#()\[\]\{\}"'<>])/y;
-    this._atKeyword = /@[a-z]+(?=[\s#<:])/iy;
-    this._keyword = /(?:PREFIX|BASE|VERSION|GRAPH)(?=[\s#<])/iy;
+    this._atKeyword = /@[a-z]+(?=[\s#<:"'])/iy;
+    this._keyword = /(?:PREFIX|BASE|VERSION|GRAPH)(?=[\s#<"'])/iy;
     this._n3Verb = /(?:has|is|of)(?=[\s#()\[\]\{\}"'<>?_+\-0-9])/y;
     this._n3Id = /id(?=[\s#<])/y;
     this._shortPredicates = /a(?=[\s#()\[\]\{\}"'<>])/y;
@@ -107,6 +107,7 @@ export default class N3Lexer {
     this.comments = !!options.comments;
     // Cache the last tested closing position of long literals
     this._literalClosingPos = 0;
+    this._longLiteral = false;
   }
 
   // ## Private methods
@@ -680,6 +681,8 @@ export default class N3Lexer {
               openingLength === 3 && this._lineMode)
             break;
           this._line += lineCount;
+          // Version declarations need to know whether the string was triple-quoted
+          this._longLiteral = openingLength === 3;
           const finalLineLength = lineCount === 0 ? 0 : lines[lines.length - 1].length + openingLength;
           return { value: this._unescape(raw, stringEscapeReplacements), matchLength, finalLineLength };
         }

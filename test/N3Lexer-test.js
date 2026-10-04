@@ -1084,6 +1084,28 @@ describe('Lexer', () => {
     );
 
     it(
+        'should tokenize version declarations without whitespace before the string',
+        shouldTokenize('VERSION"1.2"\n@version\'1.2\'.',
+            { type: 'VERSION', line: 1 },
+            { type: 'literal', value: '1.2', line: 1 },
+            { type: '@version', line: 2 },
+            { type: 'literal', value: '1.2', line: 2 },
+            { type: '.', line: 2 },
+            { type: 'eof', line: 2 }),
+    );
+
+    it(
+        'should tokenize version declarations without whitespace split across chunks',
+        shouldTokenize(streamOf('VERS', 'ION', '"1.2"\n@vers', 'ion', '"1.', '2".'),
+            { type: 'VERSION', line: 1 },
+            { type: 'literal', value: '1.2', line: 1 },
+            { type: '@version', line: 2 },
+            { type: 'literal', value: '1.2', line: 2 },
+            { type: '.', line: 2 },
+            { type: 'eof', line: 2 }),
+    );
+
+    it(
       'should tokenize PREFIX declarations',
       shouldTokenize('PREFIX : <http://iri.org/#>\npreFiX abc: <http://iri.org/#>',
                      { type: 'PREFIX', line: 1 },
