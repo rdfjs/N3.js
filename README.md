@@ -158,6 +158,20 @@ const quads = parser.parse('<a> <b> "hello"@en.', {
 });
 ```
 
+Packages that extend a format with their own directives can register their names with the `directives` option.
+Between statements (outside graph blocks and formulas), a registered directive is accepted
+as `@name .` in Turtle, TriG and N3, and as `NAME` (case-insensitive) in all formats, including N-Triples and N-Quads.
+`onDirective(name)` receives each one in order with the quads, and `N3.StreamParser` emits them as `directive` events.
+Names consist of letters only, and cannot be words that already have a meaning in the grammar, such as `prefix` or `a`.
+
+```JavaScript
+const parser = new N3.Parser({ format: 'N-Quads', directives: ['message'] });
+parser.parse('<a> <b> <c> .\nMESSAGE\n<a> <b> <d> .\n', {
+  onQuad: (error, quad) => { /* … */ },
+  onDirective: name => { console.log('end of a message'); },
+});
+```
+
 If no callbacks are provided, parsing happens synchronously returning an array of quads:
 
 ```JavaScript
@@ -340,6 +354,30 @@ A `baseIRI` argument makes the writer abbreviate IRIs relative to that base in T
 
 ```JavaScript
 const writer = new N3.Writer({ baseIRI: 'http://example.org/', writeBase: true });
+```
+
+A `version` argument writes an RDF 1.2 version directive at the top of the document,
+as `@version "1.2".` in Turtle/TriG or `VERSION "1.2"` in N-Triples/N-Quads.
+The constructor throws for a label that contains quotes, backslashes, control characters, or unpaired surrogates.
+
+```JavaScript
+const writer = new N3.Writer({ version: '1.2' });
+```
+
+Packages that add their own syntax can extend `N3.Writer`.
+`this._endStatement()` finishes the pending statement (and closes an open graph block),
+`this._write(text, done)` writes text to the output,
+and `this._lineMode` tells whether the output is N-Triples or N-Quads.
+
+```JavaScript
+class GroupWriter extends N3.Writer {
+  addGroup(quads, done) {
+    for (const quad of quads)
+      this.addQuad(quad);
+    this._endStatement();
+    this._write(this._lineMode ? 'GROUP\n' : '@group .\n', done);
+  }
+}
 ```
 
 ### From quads to an RDF stream
@@ -572,6 +610,17 @@ reasoner.reason(rulesDataset);
 Both budgets are unbounded by default;
 `reason()` throws when one is exceeded,
 leaving any quads derived up to that point in the store.
+
+## Extensions
+The following packages build on N3.js to support formats or features beyond the W3C specifications listed under [Compatibility](#compatibility).
+They are maintained separately from N3.js; please report issues with them in their own repositories.
+
+| Package | Description |
+| ------- | ----------- |
+| [n3.js-messages](https://www.npmjs.com/package/n3.js-messages) | Parses and writes [RDF Messages](https://w3c-cg.github.io/rsp/spec/messages) (message-delimited Turtle, TriG, N-Triples and N-Quads). |
+| [@jeswr/n3-provenance](https://github.com/jeswr/n3-provenance) | Experimental. Maps the terms of parsed quads back to their source positions in the input document. Terms that the parser generates, such as list nodes and reification scaffolding, have no position. It builds on the parser's `onToken` and `onTokenEnd` callbacks, but also subclasses private parser and index internals, so it is pinned to a specific N3.js revision. |
+
+To list a package here, open a pull request that adds a row to this table.
 
 ## Compatibility
 ### Format specifications

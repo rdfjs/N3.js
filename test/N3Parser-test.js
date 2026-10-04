@@ -868,6 +868,43 @@ describe('Parser', () => {
     );
 
     it(
+      'should remove dot segments from the base path or the relative IRI',
+      shouldParse('@base <http://ex.org/a/./b/../c/>.\n' +
+                  '<d> <./e> <../f>.',
+                  ['http://ex.org/a/c/d', 'http://ex.org/a/c/e', 'http://ex.org/a/f']),
+    );
+
+    it(
+      'should not treat dot segments in the query or fragment of a relative IRI as path segments',
+      shouldParse('@base <http://ex.org/a/>.\n' +
+                  '<g?y/../x> <h#s/../x> <i/../j?y/./x>.',
+                  ['http://ex.org/a/g?y/../x', 'http://ex.org/a/h#s/../x', 'http://ex.org/a/j?y/./x']),
+    );
+
+    it('should not rescan a long base path for relative IRIs without dot segments', () => {
+      // Resolving used to join and rescan the whole base path for every relative IRI,
+      // so time and memory grew with the base length times the number of IRIs
+      const basePath = `http://ex.org/${'segment/'.repeat(12500)}`;
+      let document = `@base <${basePath}>.\n`;
+      for (let i = 0; i < 2000; i++)
+        document += `<s${i}> <p> <o?q/../${i}>.\n`;
+      const parser = new Parser();
+      const removeDotSegments = jest.spyOn(parser, '_removeDotSegments');
+      const quads = parser.parse(document);
+      expect(quads).toHaveLength(2000);
+      expect(quads[1999].subject.value).toBe(`${basePath}s1999`);
+      expect(quads[1999].object.value).toBe(`${basePath}o?q/../1999`);
+      expect(removeDotSegments).not.toHaveBeenCalled();
+    });
+
+    it('should still remove dot segments when the base path has them', () => {
+      const parser = new Parser({ baseIRI: 'http://ex.org/a/../b/' });
+      const removeDotSegments = jest.spyOn(parser, '_removeDotSegments');
+      expect(parser.parse('<c> <d> <e>.')[0].subject.value).toBe('http://ex.org/b/c');
+      expect(removeDotSegments).toHaveBeenCalled();
+    });
+
+    it(
       'should not resolve IRIs against @BASE',
       shouldNotParse('@BASE <http://ex.org/>.',
                      'Expected entity but got @BASE on line 1.'),
@@ -987,6 +1024,21 @@ describe('Parser', () => {
     );
 
     it(
+        'should handle @prefix and @base after a SPARQL-style version declaration',
+        shouldParse('VERSION "1.2"\n' +
+            '@prefix ex: <ex:>.\n' +
+            'VERSION "1.2" @base <ex:>.\n' +
+            'ex:a ex:b <c> .',
+            ['ex:a', 'ex:b', 'ex:c']),
+    );
+
+    it(
+        'should still read a language tag after whitespace',
+        shouldParse('<ex:a> <ex:b> "c" @en .',
+            ['ex:a', 'ex:b', '"c"@en']),
+    );
+
+    it(
         'should not allow VERSION with an IRI',
         shouldNotParse('VERSION <ex:abc>',
             'Expected literal to follow version declaration on line 1.'),
@@ -1002,6 +1054,68 @@ describe('Parser', () => {
         'should not allow VERSION with a long string',
         shouldNotParse('VERSION """1.2"""',
             'Version declarations must use single quotes on line 1.'),
+    );
+
+    it(
+        'should handle version declarations without whitespace before the string',
+        shouldParse('VERSION"1.2"\n@version\'1.2\'.\n<ex:a> <ex:b> <ex:c> .',
+            ['ex:a', 'ex:b', 'ex:c']),
+    );
+
+    it(
+        'should handle version declarations with escapes',
+        shouldParse('VERSION "1\\u002e2"\n@version \'\\u0031.2\'.\n<ex:a> <ex:b> <ex:c> .',
+            ['ex:a', 'ex:b', 'ex:c']),
+    );
+
+    it(
+        'should not allow VERSION with a boolean',
+        shouldNotParse('VERSION true .',
+            'Version declarations must use single quotes on line 1.'),
+    );
+
+    it(
+        'should not allow VERSION with a long string with escapes',
+        shouldNotParse('VERSION """1\\u002e2"""',
+            'Version declarations must use single quotes on line 1.'),
+    );
+
+    it(
+        'should not allow VERSION with a long single-quoted string',
+        shouldNotParse("VERSION '''1.2'''",
+            'Version declarations must use single quotes on line 1.'),
+    );
+
+    it(
+        'should not allow VERSION with a long string followed by a short one when parsing synchronously',
+        () => {
+          expect(() => new Parser().parse('VERSION """1.2"""\nVERSION "1.2"'))
+            .toThrow('Version declarations must use single quotes on line 1.');
+          expect(() => new Parser().parse('VERSION \'\'\'1.2\'\'\'\nVERSION \'1.2\''))
+            .toThrow('Version declarations must use single quotes on line 1.');
+        },
+    );
+
+    it(
+        'should not allow VERSION with a multi-line long string',
+        async () => {
+          expect(() => new Parser().parse('VERSION """1.\n2"""'))
+            .toThrow('Version declarations must use single quotes on line 1.');
+          const error = await new Promise(resolve => {
+            new Parser().parse('VERSION """1.\n2"""', e => { if (e) resolve(e); });
+          });
+          expect(error.message).toBe('Version declarations must use single quotes on line 1.');
+        },
+    );
+
+    it(
+        'should allow VERSION with an escaped short string after a long literal when parsing synchronously',
+        () => {
+          const versions = [];
+          new Parser().parse('<ex:a> <ex:b> """c""".\nVERSION "1\\u002e2"\n<ex:a> <ex:b> """d""".',
+            { onVersion: version => versions.push(version) });
+          expect(versions).toEqual(['1.2']);
+        },
     );
 
     it(
@@ -2679,6 +2793,38 @@ describe('Parser', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N-Triples' }); }
 
     it(
+      'should parse a version directive',
+      shouldParse(parser, 'VERSION "1.2"\n_:a <http://ex.org/b> "c".',
+                          ['_:b0_a', 'http://ex.org/b', '"c"']),
+    );
+
+    it(
+      'should parse a version directive without whitespace before the string',
+      shouldParse(parser, 'VERSION"1.2"\n_:a <http://ex.org/b> "c".',
+                          ['_:b0_a', 'http://ex.org/b', '"c"']),
+    );
+
+    it(
+      'should not parse a lowercase version directive',
+      shouldNotParse(parser, 'version "1.2"', 'Unexpected "version" on line 1.'),
+    );
+
+    it(
+      'should not parse a mixed-case version directive',
+      shouldNotParse(parser, 'Version "1.2"', 'Unexpected "Version" on line 1.'),
+    );
+
+    it(
+      'should not parse an @version directive',
+      shouldNotParse(parser, '@version "1.2".', 'Unexpected "@version" on line 1.'),
+    );
+
+    it(
+      'should not parse a SPARQL-style prefix declaration',
+      shouldNotParse(parser, 'PREFIX ex: <http://ex.org/>', 'Unexpected "PREFIX" on line 1.'),
+    );
+
+    it(
       'should parse a single triple',
       shouldParse(parser, '_:a <http://ex.org/b> "c".',
                           ['_:b0_a', 'http://ex.org/b', '"c"']),
@@ -2795,6 +2941,38 @@ describe('Parser', () => {
 
   describe('A Parser instance for the N-Quads format', () => {
     function parser() { return new Parser({ baseIRI: BASE_IRI, format: 'N-Quads' }); }
+
+    it(
+      'should parse a version directive',
+      shouldParse(parser, 'VERSION "1.2"\n_:a <http://ex.org/b> "c".',
+                          ['_:b0_a', 'http://ex.org/b', '"c"']),
+    );
+
+    it(
+      'should parse a version directive without whitespace before the string',
+      shouldParse(parser, 'VERSION"1.2"\n_:a <http://ex.org/b> "c".',
+                          ['_:b0_a', 'http://ex.org/b', '"c"']),
+    );
+
+    it(
+      'should not parse a lowercase version directive',
+      shouldNotParse(parser, 'version "1.2"', 'Unexpected "version" on line 1.'),
+    );
+
+    it(
+      'should not parse a mixed-case version directive',
+      shouldNotParse(parser, 'Version "1.2"', 'Unexpected "Version" on line 1.'),
+    );
+
+    it(
+      'should not parse an @version directive',
+      shouldNotParse(parser, '@version "1.2".', 'Unexpected "@version" on line 1.'),
+    );
+
+    it(
+      'should not parse a SPARQL-style prefix declaration',
+      shouldNotParse(parser, 'PREFIX ex: <http://ex.org/>', 'Unexpected "PREFIX" on line 1.'),
+    );
 
     it(
       'should parse a single triple',
