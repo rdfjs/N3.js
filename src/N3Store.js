@@ -246,16 +246,6 @@ export class N3EntityIndex {
   }
 }
 
-// Counts the quads in the given graphs from the sizes of their deepest index level
-function countQuads(graphs) {
-  let size = 0, subjects, subject;
-  for (const graphKey in graphs)
-    for (const subjectKey in (subjects = graphs[graphKey].subjects))
-      for (const predicateKey in (subject = subjects[subjectKey]))
-        size += subject[predicateKey][SIZE];
-  return size;
-}
-
 // Returns the size of a store from this copy of N3, or null for other datasets,
 // whose size may not be known without counting
 function knownSize(dataset) {
@@ -296,7 +286,7 @@ export default class N3Store {
     // The quad count is kept up to date by every change,
     // except by reasoners from earlier versions of N3, which set it to null
     if (this._size === null)
-      this._size = countQuads(this._graphs);
+      this._size = this.countQuads();
     return this._size;
   }
 
@@ -1198,7 +1188,7 @@ export default class N3Store {
       const graphs = difference(this._graphs, other._graphs);
       if (graphs) {
         store._graphs = graphs;
-        store._size = countQuads(graphs);
+        store._size = null;
       }
       return store;
     }
@@ -1249,7 +1239,7 @@ export default class N3Store {
       const graphs = intersect(other._graphs, this._graphs);
       if (graphs) {
         store._graphs = graphs;
-        store._size = countQuads(graphs);
+        store._size = null;
       }
       return store;
     }
@@ -1608,7 +1598,7 @@ class DatasetCoreAndReadableStream extends Readable {
             newStore._graphs[graphKey] = { subjects, predicates, objects };
         }
       }
-      newStore._size = countQuads(newStore._graphs);
+      newStore._size = null;
     }
     return this._filtered;
   }

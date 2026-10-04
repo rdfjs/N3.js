@@ -3723,7 +3723,7 @@ describe('Store', () => {
         expect(larger.every).not.toHaveBeenCalled();
       });
 
-      it('should keep an exact size through bulk operations', () => {
+      it('should keep the size through bulk operations', () => {
         const entityIndex = new EntityIndex();
         const first = new Store([q[0], q[1], q[2]], { entityIndex });
         const second = new Store([q[1], q[2], q[3]], { entityIndex });
@@ -3733,7 +3733,7 @@ describe('Store', () => {
         expect(first._size).toBe(count(first));
         for (const result of [first.intersection(second), first.difference(second), first.union(second),
           first.match(q[0].subject).filtered])
-          expect(result._size).toBe(count(result));
+          expect(result.size).toBe(count(result));
       });
 
       it('should check a larger dataset of another kind quad by quad', () => {
