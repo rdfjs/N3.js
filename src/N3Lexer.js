@@ -176,6 +176,10 @@ export default class N3Lexer {
           this._previousMarker = '^^';
           // Move to type IRI or prefixed name
           input = input.slice(2);
+          // Whitespace and comments may separate the marker from the type
+          const next = input.charCodeAt(0);
+          if (next === SPACE || next === TAB || next === LF || next === CR || next === HASH)
+            continue; // eslint-disable-line no-continue
           if (input[0] !== '<') {
             inconclusive = true;
             break;

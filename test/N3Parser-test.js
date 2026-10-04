@@ -2685,6 +2685,12 @@ describe('Parser', () => {
     );
 
     it(
+      'should parse a datatype separated from its marker by whitespace',
+      shouldParse(parser, '_:a <http://ex.org/b> "c"  ^^  <http://ex.org/t> .',
+                          ['_:b0_a', 'http://ex.org/b', '"c"^^http://ex.org/t']),
+    );
+
+    it(
       'should parse a single triple starting with Bom',
       shouldParse(parser, '\ufeff_:a <http://ex.org/b> "c".',
           ['_:b0_a', 'http://ex.org/b', '"c"']),

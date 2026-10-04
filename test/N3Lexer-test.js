@@ -709,6 +709,24 @@ describe('Lexer', () => {
                      { type: 'eof', line: 1 }),
     );
 
+    it(
+      'should tokenize a type separated from its marker by whitespace and comments',
+      shouldTokenize('"stringA" ^^ <type> "stringB"^^\t# comment\n ns:mytype ',
+                     { type: 'literal', value: 'stringA', line: 1 },
+                     { type: 'typeIRI', value: 'type', line: 1 },
+                     { type: 'literal', value: 'stringB', line: 1 },
+                     { type: 'type', value: 'mytype', prefix: 'ns', line: 2 },
+                     { type: 'eof', line: 2 }),
+    );
+
+    it(
+      'should tokenize a type separated from its marker by whitespace across chunks',
+      shouldTokenize(streamOf('"string"^^', '  ', '<type> '),
+                     { type: 'literal', value: 'string', line: 1 },
+                     { type: 'typeIRI', value: 'type', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
     it('should not tokenize a single hat', shouldNotTokenize('^',
                       'Unexpected "^" on line 1.'));
 
