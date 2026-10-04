@@ -1707,7 +1707,6 @@ export default class N3Parser {
   }
 }
 
-// The empty function
 // ### `undoChanges` restores the entries of a map from a list of key and previous value pairs
 function undoChanges(map, changes) {
   for (let i = changes.length - 2; i >= 0; i -= 2) {
@@ -1718,6 +1717,7 @@ function undoChanges(map, changes) {
   }
 }
 
+// The empty function
 function noop() {}
 
 // Initializes the parser with the given data factory
