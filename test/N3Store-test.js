@@ -3839,6 +3839,12 @@ describe('Store', () => {
         expect(store1.intersection(storeb).size).toBe(1);
         expect(storeb.intersection(store1).size).toBe(1);
       });
+
+      it('should intersect with a smaller store whose factory creates other quads', () => {
+        const factory = Object.assign({}, DataFactory, { quad: (s, p, o, g) => ({ s, p, o, g }) });
+        const custom = new Store([q[0]], { factory });
+        expect(store1.intersection(custom).size).toBe(1);
+      });
     });
 
     describe('#deleteMatches', () => {
