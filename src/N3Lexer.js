@@ -742,8 +742,10 @@ export default class N3Lexer {
       return '';
 
     // Most verb boundaries cannot be part of a prefix, so keep the common path fast.
+    // U+1680 and U+FEFF are whitespace, but also name characters.
     const next = input.charCodeAt(pos + verb.length);
-    if (canEndWord(input, pos + verb.length, false) || next === 0x3F || next === PLUS) // ?
+    if (canEndWord(input, pos + verb.length, false) && next !== 0x1680 && next !== 0xFEFF ||
+        next === 0x3F || next === PLUS) // ?
       return verb;
     if (next !== MINUS && next !== 0x5F && (next < ZERO || next > NINE)) // _
       return '';
