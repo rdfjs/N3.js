@@ -382,6 +382,28 @@ describe('Writer', () => {
     );
 
     it(
+      'should only expand prefixes when the rest is a valid local name',
+      shouldSerialize({ prefixes: { a: 'http://a.org/' } },
+                      ['a:bc', 'a:d#e', 'a:f?g'],
+                      ['a:', 'a:h~i', 'a:j.'],
+                      '@prefix a: <http://a.org/>.\n\n' +
+                      'a:bc <a:d#e> <a:f?g>.\n' +
+                      'a: <a:h~i> <a:j.>.\n'),
+    );
+
+    it(
+      'should keep IRIs that look like prefixed names with any valid local name as prefixed names',
+      shouldSerialize({ prefixes: { a: 'http://a.org/' } },
+                      ['a:é', 'a:b:c', 'a:b%20c'],
+                      ['a:b..c', 'a:-b', 'a:%2'],
+                      ['a:b\u00B7c', 'a:%41.b', 'a:b.-'],
+                      '@prefix a: <http://a.org/>.\n\n' +
+                      'a:é a:b:c a:b%20c.\n' +
+                      'a:b..c <a:-b> <a:%2>.\n' +
+                      'a:b\u00B7c a:%41.b a:b.-.\n'),
+    );
+
+    it(
       'should not repeat the same subjects',
       shouldSerialize(['abc', 'def', 'ghi'],
                       ['abc', 'mno', 'pqr'],
@@ -706,6 +728,112 @@ describe('Writer', () => {
       expect(output).toBe('<http://example.org/foo/bar> <http://example.org/foo/#b> "c" <http://example.org/foo/g> .\n');
     });
 
+    it('writes a version directive with the version option', async () => {
+      const writer = new Writer({ version: '1.2' });
+      writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'));
+      const output = await end(writer);
+      expect(output).toBe('@version "1.2".\n<a> <b> <c>.\n');
+    });
+
+    it('writes the version directive before the base and the prefixes', async () => {
+      const writer = new Writer({
+        version: '1.2',
+        prefixes: { ex: 'http://other.example/ns#' },
+        baseIRI: 'http://example.org/foo/',
+        writeBase: true,
+      });
+      writer.addQuad(new NamedNode('http://example.org/foo/bar'), new NamedNode('http://other.example/ns#p'), new NamedNode('http://example.org/foo/baz'));
+      const output = await end(writer);
+      expect(output).toBe('@version "1.2".\n' +
+                          '@base <http://example.org/foo/>.\n' +
+                          '@prefix ex: <http://other.example/ns#>.\n\n' +
+                          '<bar> ex:p <baz>.\n');
+    });
+
+    it('writes a version directive in N-Triples mode', async () => {
+      const writer = new Writer({ format: 'N-Triples', version: '1.2' });
+      writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'));
+      const output = await end(writer);
+      expect(output).toBe('VERSION "1.2"\n<a> <b> <c> .\n');
+    });
+
+    it('writes a version directive in N-Quads mode', async () => {
+      const writer = new Writer({ format: 'N-Quads', version: '1.2' });
+      writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g'));
+      const output = await end(writer);
+      expect(output).toBe('VERSION "1.2"\n<a> <b> <c> <g> .\n');
+    });
+
+    it.each(['1.2"', '1.2\\', '1.2\n@prefix x: <y>.', '1.2\u0000', '1.2\u007f',
+      '1.2\ud83d', '\ud83d1.2', '1.2\ude00', '\ude001.2', '1.2\ude00\ud83d'])(
+      'rejects the version label %j', version => {
+        expect(() => new Writer({ version })).toThrow(`Invalid version label: ${JSON.stringify(version)}`);
+        expect(() => new Writer({ format: 'N-Triples', version })).toThrow('Invalid version label');
+      });
+
+    it('accepts a version label with characters outside the Basic Multilingual Plane', async () => {
+      const writer = new Writer({ version: '1.2-\ud83d\ude00' });
+      const output = await end(writer);
+      expect(output).toBe('@version "1.2-\ud83d\ude00".\n');
+    });
+
+    it.each(['Turtle', 'TriG', 'N-Triples', 'N-Quads'])('produces a version directive that the %s parser reads back', format => {
+      const writer = new Writer({ format, version: '1.2' });
+      let output;
+      writer.addQuad(new NamedNode('http://ex.org/a'), new NamedNode('http://ex.org/b'), new NamedNode('http://ex.org/c'));
+      writer.end((error, result) => { output = result; });
+      const versions = [];
+      const quads = new Parser({ format }).parse(output, { onVersion: version => versions.push(version) });
+      expect(versions).toEqual(['1.2']);
+      expect(quads).toHaveLength(1);
+    });
+
+    describe('when subclassed', () => {
+      // A subclass that writes a delimiter directive between groups of quads
+      class GroupWriter extends Writer {
+        addGroup(quads, done) {
+          for (const quad of quads)
+            this.addQuad(quad);
+          this._endStatement();
+          this._write(this._lineMode ? 'GROUP\n' : '@group .\n', done);
+        }
+      }
+
+      it('closes a pending statement before its own directive', async () => {
+        const writer = new GroupWriter();
+        writer.addGroup([new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'))]);
+        writer.addGroup([new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('d'))]);
+        const output = await end(writer);
+        expect(output).toBe('<a> <b> <c>.\n@group .\n<a> <b> <d>.\n@group .\n');
+      });
+
+      it('closes an open graph block before its own directive', async () => {
+        const writer = new GroupWriter();
+        writer.addGroup([new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g'))]);
+        writer.addGroup([
+          new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('d'), new NamedNode('g')),
+          new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('e')),
+        ]);
+        const output = await end(writer);
+        expect(output).toBe('<g> {\n<a> <b> <c>\n}\n@group .\n' +
+                            '<g> {\n<a> <b> <d>\n}\n<a> <b> <e>.\n@group .\n');
+      });
+
+      it('writes nothing extra for an empty group', async () => {
+        const writer = new GroupWriter();
+        writer.addGroup([]);
+        const output = await end(writer);
+        expect(output).toBe('@group .\n');
+      });
+
+      it('writes its own directive in line mode', async () => {
+        const writer = new GroupWriter({ format: 'N-Quads' });
+        writer.addGroup([new Quad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'), new NamedNode('g'))]);
+        const output = await end(writer);
+        expect(output).toBe('<a> <b> <c> <g> .\nGROUP\n');
+      });
+    });
+
     it('should accept triples with separated components', async () => {
       const writer = new Writer();
       writer.addQuad(new NamedNode('a'), new NamedNode('b'), new NamedNode('c'));
@@ -957,6 +1085,15 @@ describe('Writer', () => {
           '<a3> <b> _:m3.\n');
       },
     );
+
+    it('should only treat own properties of options.lists as list heads', async () => {
+      const writer = new Writer({ lists: { l1: [new NamedNode('c')] } });
+      writer.addQuad(new BlankNode('toString'), new NamedNode('b'), new BlankNode('constructor'));
+      writer.addQuad(new BlankNode('l1'), new NamedNode('b'), new BlankNode('__proto__'));
+      const output = await end(writer);
+      expect(output).toBe('_:toString <b> _:constructor.\n' +
+        '(<c>) <b> _:__proto__.\n');
+    });
 
     it('should accept triples in bulk', async () => {
       const writer = new Writer();

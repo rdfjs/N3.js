@@ -190,6 +190,9 @@ function isSeparatorCode(code) {
   return code === SPACE || code === TAB || code === LF || code === CR || code === HASH;
 }
 
+// Words with a fixed meaning in the grammar, which cannot name an additional directive
+const reservedWords = /^(?:prefix|base|version|graph|forsome|forall|iri|a|true|false|has|is|of|id)$/i;
+
 // Unfinished input in a stream up to this length is tokenized again with every chunk
 const MIN_RESCAN_LENGTH = 1024;
 
@@ -207,8 +210,8 @@ export default class N3Lexer {
     this._variable = /\?(?:(?:[A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:[\-0-9:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?=[.,;!\^\s#()\[\]\{\}"'<>])/y;
     this._blank = /_:((?:[0-9A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?:[ \t]+|(?=\.?[,;:!\^\s#()\[\]\{\}"'<>]))/y;
     this._boolean = /(?:true|false)(?=[.,;!\^\s#()\[\]\{\}"'<>])/y;
-    this._atKeyword = /@[a-z]+(?=[\s#<:])/iy;
-    this._keyword = /(?:PREFIX|BASE|VERSION|GRAPH)(?=[\s#<])/iy;
+    this._atKeyword = /@[a-z]+(?=[\s#<:"'])/iy;
+    this._keyword = /(?:PREFIX|BASE|VERSION|GRAPH)(?=[\s#<"'])/iy;
     this._n3Verb = /(?:has|is|of)(?=[\s#()\[\]\{\}"'<>?_+\-0-9])/y;
     this._n3Id = /id(?=[\s#<])/y;
     this._shortPredicates = /a(?=[\s#()\[\]\{\}"'<>])/y;
@@ -227,10 +230,25 @@ export default class N3Lexer {
         if (!(key in lineModeRegExps) && this[key] instanceof RegExp)
           this[key] = invalidRegExp;
       }
+      // The only keyword in N-Triples and N-Quads is VERSION, which is case-sensitive
+      this._keyword = /VERSION(?=[\s#<])/y;
     }
     // When not in line mode, enable N3 functionality by default
     else {
       this._n3Mode = options.n3 !== false;
+    }
+    // Recognize additional directive keywords, such as MESSAGE
+    // (the @-form of a directive is always tokenized as an @-keyword)
+    this._directive = null;
+    if (options.directives && options.directives.length !== 0) {
+      for (const name of options.directives) {
+        if (!/^[a-z]+$/i.test(name) || reservedWords.test(name))
+          throw new Error(`Invalid directive name: "${name}"`);
+      }
+      this._directive = new RegExp(`(?:${options.directives.join('|')})(?=[\\s#<])`, 'iy');
+      this._directiveMaxLength = Math.max(...options.directives.map(name => name.length));
+      // The first characters of directive names, so other words skip the regular expression
+      this._directiveStarts = options.directives.map(name => name[0].toLowerCase() + name[0].toUpperCase()).join('');
     }
     // Don't output comment tokens by default
     this.comments = !!options.comments;
@@ -321,7 +339,7 @@ export default class N3Lexer {
       const line = this._line, firstChar = input[pos];
       let type = '', value = '', prefix = '',
           match = null, matchLength = 0, lexicalLength = 0,
-          finalLineLength = 0, inconclusive = false;
+          finalLineLength = 0, inconclusive = false, tripleQuoted = false;
       switch (firstChar) {
       case '^':
         // A datatype marker separated from its type cannot be followed by another marker
@@ -406,7 +424,7 @@ export default class N3Lexer {
           value = match[1];
         // Try to find a literal wrapped in three pairs of quotes
         else {
-          ({ value, matchLength, finalLineLength } = this._parseLiteral(input, pos));
+          ({ value, matchLength, finalLineLength, tripleQuoted } = this._parseLiteral(input, pos));
           if (value === null)
             return reportSyntaxError(this, input, pos);
         }
@@ -423,7 +441,7 @@ export default class N3Lexer {
             value = match[1];
           // Try to find a literal wrapped in three pairs of quotes
           else {
-            ({ value, matchLength, finalLineLength } = this._parseLiteral(input, pos));
+            ({ value, matchLength, finalLineLength, tripleQuoted } = this._parseLiteral(input, pos));
             if (value === null)
               return reportSyntaxError(this, input, pos);
           }
@@ -607,7 +625,7 @@ export default class N3Lexer {
       }
 
       // Some first characters do not allow an immediate decision, so inspect more
-      if (inconclusive && !this._lineMode) {
+      if (inconclusive) {
         // Try to find a prefix
         let end;
         if ((this._previousMarker === '@prefix' || this._previousMarker === 'PREFIX') &&
@@ -617,10 +635,17 @@ export default class N3Lexer {
           type = 'prefix', value = input.slice(pos, end);
           matchLength = end + 1 - pos;
         }
+        // Try to find an additional directive keyword
+        // (at the end of the input, only a short final word can be one)
+        else if (this._directive !== null && this._directiveStarts.includes(firstChar) &&
+                 ((match = execAt(this._directive, input, pos)) ||
+                 inputFinished && input.length - pos <= this._directiveMaxLength &&
+                 (match = execAtEnd(this._directive, input, pos))))
+          type = match[0].toUpperCase();
         // Try to find a prefixed name. Since it can contain (but not end with) a dot,
         // we always need a non-dot character before deciding it is a prefixed name,
         // except at the end of the input.
-        else if ((end = skipPrefixedName(input, pos, inputFinished)) >= 0) {
+        else if (!this._lineMode && (end = skipPrefixedName(input, pos, inputFinished)) >= 0) {
           const colon = input.indexOf(':', pos);
           type = 'prefixed', prefix = input.slice(pos, colon);
           value = this._unescape(input.slice(colon + 1, end), localNameEscapeReplacements);
@@ -658,14 +683,20 @@ export default class N3Lexer {
       if (finalLineLength) {
         token = {
           type, value, prefix, line, start,
-          end: finalLineLength, endLine: this._line,
+          end: finalLineLength, endLine: this._line, tripleQuoted,
         };
+        callback(null, token);
+      }
+      // Triple-quoted strings are marked, since version declarations do not allow them
+      else if (tripleQuoted) {
+        token = { type, value, prefix, line, start, end: start + length, tripleQuoted };
         callback(null, token);
       }
       else
         token = emitToken(type, value, prefix, line, start, lexicalLength || length);
       this.previousToken = token;
-      this._previousMarker = type;
+      // The string of a version declaration cannot take a language tag, so a following @keyword is a keyword
+      this._previousMarker = type === 'literal' && (this._previousMarker === 'VERSION' || this._previousMarker === '@version') ? 'version' : type;
 
       // Advance to next part to tokenize
       pos = Math.min(pos + length, input.length);
@@ -839,19 +870,44 @@ export default class N3Lexer {
             break;
           this._line += lineCount;
           const finalLineLength = lineCount === 0 ? 0 : lines[lines.length - 1].length + openingLength;
-          return { value: this._unescape(raw, stringEscapeReplacements), matchLength, finalLineLength };
+          return {
+            value: this._unescape(raw, stringEscapeReplacements), matchLength, finalLineLength,
+            tripleQuoted: openingLength === 3,
+          };
         }
         closingPos++;
       }
       this._literalClosingPos = input.length - pos - openingLength + 1;
     }
-    return { value: '', matchLength: 0, finalLineLength: 0 };
+    return { value: '', matchLength: 0, finalLineLength: 0, tripleQuoted: false };
+  }
+
+  // ### `_tryTokenizeToEnd` tokenizes as far as possible, reporting failures through the callback
+  _tryTokenizeToEnd(callback, inputFinished) {
+    // Keep track of errors thrown by the callback, which must reach the caller unchanged
+    let callbackError;
+    try {
+      this._tokenizeToEnd((error, token) => {
+        try {
+          return callback(error, token);
+        }
+        catch (thrown) {
+          throw (callbackError = thrown);
+        }
+      }, inputFinished);
+    }
+    catch (error) {
+      // Matching an extremely long token can exhaust the regular expression stack
+      if (error === callbackError || !(error instanceof RangeError))
+        throw error;
+      callback(this._syntaxError(null, `Token too long on line ${this._line}.`));
+    }
   }
 
   // ### `_syntaxError` creates a syntax error for the given issue
-  _syntaxError(issue) {
+  _syntaxError(issue, message = `Unexpected "${issue}" on line ${this._line}.`) {
     this._input = null;
-    const err = new Error(`Unexpected "${issue}" on line ${this._line}.`);
+    const err = new Error(message);
     err.context = {
       token: undefined,
       line: this._line,
@@ -894,13 +950,13 @@ export default class N3Lexer {
       if (typeof callback === 'function')
         queueMicrotask(() => {
           if (this._tokenization === tokenization)
-            this._tokenizeToEnd(callback, true);
+            this._tryTokenizeToEnd(callback, true);
         });
       // If no callback was passed, tokenize synchronously and return
       else {
         const tokens = [];
         let error;
-        this._tokenizeToEnd((e, t) => e ? (error = e) : tokens.push(t), true);
+        this._tryTokenizeToEnd((e, t) => e ? (error = e) : tokens.push(t), true);
         if (error) throw error;
         return tokens;
       }
@@ -927,7 +983,7 @@ export default class N3Lexer {
           // Tokenize as far as possible. When a previous attempt left a long unfinished token,
           // wait until the buffered input has doubled, so the token is not rescanned for every chunk.
           if (this._input.length >= retryLength) {
-            this._tokenizeToEnd(callback, false);
+            this._tryTokenizeToEnd(callback, false);
             retryLength = this._input !== null && this._input.length > MIN_RESCAN_LENGTH ?
               2 * this._input.length : 0;
           }
@@ -941,7 +997,7 @@ export default class N3Lexer {
           if (rest)
             this._input = typeof this._input === 'string' ? this._input + rest : rest;
           if (typeof this._input === 'string')
-            this._tokenizeToEnd(callback, true);
+            this._tryTokenizeToEnd(callback, true);
         }
       });
       input.on('error', error => {

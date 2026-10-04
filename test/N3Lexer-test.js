@@ -66,6 +66,14 @@ describe('Lexer', () => {
         .toThrow(`Unexpected "${word}" on line 1.`);
     });
 
+    it('recognizes VERSION as the only keyword in line mode', () => {
+      expect(new Lexer({ lineMode: true }).tokenize('VERSION "1.2"\n')[0]).toMatchObject({ type: 'VERSION' });
+      for (const keyword of ['version', 'Version', 'PREFIX', 'BASE', 'GRAPH']) {
+        expect(() => new Lexer({ lineMode: true }).tokenize(`${keyword} `))
+          .toThrow(`Unexpected "${keyword}" on line 1.`);
+      }
+    });
+
     it.each([
       ['a', 'abbreviation'], ['true', 'literal'], ['false', 'literal'],
     ])('recognizes fixed token %s with N3 features disabled', (word, type) => {
@@ -393,6 +401,11 @@ describe('Lexer', () => {
       shouldNotTokenize('"abc\rdef" ',
                         'Unexpected ""abc" on line 1.'),
     );
+
+    it('marks triple-quoted strings', () => {
+      const tokens = new Lexer().tokenize('"a" "\\u0062" """c""" \'\'\'d\'\'\' """e\nf""" ');
+      expect(tokens.map(token => !!token.tripleQuoted)).toEqual([false, false, true, true, true, false]);
+    });
 
     it(
       'should tokenize a triple quoted string literal',
@@ -1097,6 +1110,28 @@ describe('Lexer', () => {
             { type: 'literal', value: '1.2', line: 3 },
             { type: '.', line: 3 },
             { type: 'eof', line: 3 }),
+    );
+
+    it(
+        'should tokenize version declarations without whitespace before the string',
+        shouldTokenize('VERSION"1.2"\n@version\'1.2\'.',
+            { type: 'VERSION', line: 1 },
+            { type: 'literal', value: '1.2', line: 1 },
+            { type: '@version', line: 2 },
+            { type: 'literal', value: '1.2', line: 2 },
+            { type: '.', line: 2 },
+            { type: 'eof', line: 2 }),
+    );
+
+    it(
+        'should tokenize version declarations without whitespace split across chunks',
+        shouldTokenize(streamOf('VERS', 'ION', '"1.2"\n@vers', 'ion', '"1.', '2".'),
+            { type: 'VERSION', line: 1 },
+            { type: 'literal', value: '1.2', line: 1 },
+            { type: '@version', line: 2 },
+            { type: 'literal', value: '1.2', line: 2 },
+            { type: '.', line: 2 },
+            { type: 'eof', line: 2 }),
     );
 
     it(
@@ -2151,7 +2186,7 @@ describe('Lexer', () => {
     ])('returns line-relative indexes after a multiline literal with %s', (_, input, value) => {
       const tokens = new Lexer().tokenize(input);
       expect(tokens.filter(token => token.type === 'literal' || token.type === '.' || token.type === 'eof')).toEqual([
-        { line: 1, endLine: 2, prefix: '', type: 'literal', value, start: 8, end: 4 },
+        { line: 1, endLine: 2, prefix: '', type: 'literal', value, start: 8, end: 4, tripleQuoted: true },
         { line: 2, prefix: '', type: '.', value: '', start: 5, end: 6 },
         { line: 2, prefix: '', type: 'eof', value: '', start: 6, end: 6 },
       ]);
@@ -2629,9 +2664,58 @@ describe('Lexer', () => {
       stream.emit('end');
 
       expect(tokens).toEqual([
-        { type: 'literal', value: 'ok', prefix: '', line: 1, start: 0, end: 8 },
+        { type: 'literal', value: 'ok', prefix: '', line: 1, start: 0, end: 8, tripleQuoted: true },
         { type: 'eof', value: '', prefix: '', line: 1, start: 8, end: 8 },
       ]);
+    });
+
+    describe('when a regular expression exhausts the stack on a very long token', () => {
+      function overflowingLexer() {
+        const lexer = new Lexer();
+        lexer._iri = { exec() { throw new RangeError('Maximum call stack size exceeded'); } };
+        return lexer;
+      }
+
+      it('throws a syntax error when tokenizing synchronously', () => {
+        expect(() => overflowingLexer().tokenize('<a> <b\\u0063>'))
+          .toThrow('Token too long on line 1.');
+      });
+
+      it('reports a syntax error through the callback for a string', async () => {
+        const error = await new Promise(resolve => {
+          overflowingLexer().tokenize('<a>\n<b\\u0063>', error => error && resolve(error));
+        });
+        expect(error.message).toBe('Token too long on line 2.');
+        expect(error.context.line).toBe(2);
+      });
+
+      it('reports a syntax error through the callback for a stream', () => {
+        const stream = new EventEmitter(), errors = [];
+        overflowingLexer().tokenize(stream, error => error && errors.push(error));
+        stream.emit('data', '<b\\u0063> ');
+        stream.emit('data', '<c> ');
+        stream.emit('end');
+        expect(errors.map(error => error.message)).toEqual(['Token too long on line 1.']);
+      });
+
+      it('rethrows a RangeError thrown by the callback without reporting it', () => {
+        const stream = new EventEmitter(), errors = [];
+        const thrown = new RangeError('from the callback');
+        new Lexer().tokenize(stream, (error, token) => {
+          if (error)
+            errors.push(error);
+          else if (token.type === 'IRI')
+            throw thrown;
+        });
+        expect(() => stream.emit('data', '<a> ')).toThrow(thrown);
+        expect(errors).toEqual([]);
+      });
+
+      it('rethrows other errors', () => {
+        const lexer = new Lexer();
+        lexer._iri = { exec() { throw new TypeError('unexpected'); } };
+        expect(() => lexer.tokenize('<b\\u0063>')).toThrow(TypeError);
+      });
     });
 
     it('does not retain the previous token in a later error', () => {
@@ -2771,7 +2855,7 @@ describe('A Lexer instance with the comment option set to true', () => {
 
 function shouldTokenize(lexer, input) {
   const expected = Array.prototype.slice.call(arguments, 1);
-  const ignoredAttributes = { start: true, end: true, endLine: true };
+  const ignoredAttributes = { start: true, end: true, endLine: true, tripleQuoted: true };
 
   // Shift parameters as necessary
   if (lexer instanceof Lexer)

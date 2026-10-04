@@ -4,6 +4,10 @@ import N3DataFactory from './N3DataFactory';
 import namespaces from './IRIs';
 
 let blankNodePrefix = 0;
+// Detects `.` and `..` path segments in an IRI
+const dotSegments = /(^|\/)\.\.?($|[/#?])/;
+// Detects `.` and `..` segments in the path of an IRI, ignoring its query and fragment
+const pathDotSegments = /^[^?#]*(?:^|\/)\.\.?(?:$|[/#?])/;
 
 // ## Constructor
 export default class N3Parser {
@@ -46,7 +50,16 @@ export default class N3Parser {
       this._resolveRelativeIRI = iri => { return null; };
     this._blankNodePrefix = typeof options.blankNodePrefix !== 'string' ? '' :
                               options.blankNodePrefix.replace(/^(?!_:)/, '_:');
-    this._lexer = options.lexer || new N3Lexer({ lineMode: isLineMode, n3: isN3, isImpliedBy: this._isImpliedBy });
+    // Map the token types of additional directives (@name and NAME) to their names
+    this._directives = null;
+    if (options.directives) {
+      this._directives = Object.create(null);
+      for (const name of options.directives)
+        this._directives[`@${name.toLowerCase()}`] = this._directives[name.toUpperCase()] = name;
+    }
+    this._lexer = options.lexer || new N3Lexer({
+      lineMode: isLineMode, n3: isN3, isImpliedBy: this._isImpliedBy, directives: options.directives,
+    });
     // Disable explicit quantifiers by default
     this._explicitQuantifiers = !!options.explicitQuantifiers;
     // Disable formula-only blank node scoping by default
@@ -74,6 +87,7 @@ export default class N3Parser {
     if (!baseIRI) {
       this._base = '';
       this._basePath = '';
+      this._basePathHasDotSegments = false;
     }
     else {
       // Remove fragment if present
@@ -94,6 +108,8 @@ export default class N3Parser {
       // relative IRIs merge under the path '/' (RFC 3986 §5.2.3)
       if (baseIRI[2] !== undefined && (base.length === this._baseRoot.length || base[this._baseRoot.length] === '?'))
         this._basePath = `${this._baseRoot}/`;
+      // Check once whether resolving against the base path needs to remove dot segments
+      this._basePathHasDotSegments = dotSegments.test(this._basePath);
     }
   }
 
@@ -131,7 +147,8 @@ export default class N3Parser {
     // Prefix and base declarations are scoped to their formula,
     // so record prefix changes to undo them when the formula ends
     if (type === 'formula') {
-      context.base = [this._base, this._basePath, this._baseRoot, this._baseScheme];
+      context.base = [this._base, this._basePath, this._baseRoot, this._baseScheme,
+        this._basePathHasDotSegments];
       this._prefixChanges = [];
     }
     this._contextStack.push(context);
@@ -173,7 +190,8 @@ export default class N3Parser {
       this._inversePredicate = context.inverse;
       this._expectOf = context.expectOf;
       if (type === 'formula')
-        [this._base, this._basePath, this._baseRoot, this._baseScheme] = context.base;
+        [this._base, this._basePath, this._baseRoot, this._baseScheme,
+          this._basePathHasDotSegments] = context.base;
       if (this._prefixChanges !== context.prefixChanges) {
         undoChanges(this._prefixes, this._prefixChanges);
         this._prefixChanges = context.prefixChanges;
@@ -228,8 +246,13 @@ export default class N3Parser {
     case 'GRAPH':
       if (this._supportsNamedGraphs)
         return this._readNamedGraphLabel;
-    // Otherwise, the next token must be a subject
+    // Otherwise, the next token must be a subject, unless it is an additional directive
     default:
+      if (this._directives !== null && token.type in this._directives && this._graph === null) {
+        this._sparqlStyle = token.type[0] !== '@';
+        this._directiveCallback(this._directives[token.type]);
+        return this._readDeclarationPunctuation;
+      }
       return this._readSubject(token);
     }
   }
@@ -1097,7 +1120,8 @@ export default class N3Parser {
   _readVersion(token) {
     if (token.type !== 'literal')
       return this._error('Expected literal to follow version declaration', token);
-    if ((token.end - token.start) !== token.value.length + 2)
+    // Only short strings are allowed, so no numbers or booleans (which have a datatype prefix)
+    if (token.prefix !== '' || token.tripleQuoted)
       return this._error('Version declarations must use single quotes', token);
     this._versionCallback(token.value);
     if (!this._isValidVersion(token.value))
@@ -1561,14 +1585,19 @@ export default class N3Parser {
     // Resolve all other IRIs at the base IRI's path
     default:
       // Relative IRIs cannot contain a colon in the first path segment
-      return (/^[^/:]*:/.test(iri)) ? null : this._removeDotSegments(this._basePath + iri);
+      if (/^[^/:]*:/.test(iri))
+        return null;
+      // Only scan the joined IRI for dot segments if either part can contain them,
+      // as the base path can be long and the joined IRI would need to be copied
+      return this._basePathHasDotSegments || pathDotSegments.test(iri) ?
+        this._removeDotSegments(this._basePath + iri) : this._basePath + iri;
     }
   }
 
   // ### `_removeDotSegments` resolves './' and '../' path segments in an IRI as per RFC3986
   _removeDotSegments(iri) {
     // Don't modify the IRI if it does not contain any dot segments
-    if (!/(^|\/)\.\.?($|[/#?])/.test(iri))
+    if (!dotSegments.test(iri))
       return iri;
 
     // Start with an imaginary slash before the IRI in order to resolve trailing './' and '../'
@@ -1634,13 +1663,14 @@ export default class N3Parser {
   parse(input, quadCallback, prefixCallback, versionCallback) {
     // The second parameter also accepts an object of named callbacks.
     // As a second and third parameter it still accepts a separate quadCallback and prefixCallback for backward compatibility as well
-    let onQuad, onPrefix, onComment, onVersion, onToken, onTokenEnd;
+    let onQuad, onPrefix, onComment, onVersion, onDirective, onToken, onTokenEnd;
     if (quadCallback && (quadCallback.onQuad || quadCallback.onPrefix || quadCallback.onComment || quadCallback.onVersion ||
-                         quadCallback.onToken || quadCallback.onTokenEnd)) {
+                         quadCallback.onDirective || quadCallback.onToken || quadCallback.onTokenEnd)) {
       onQuad = quadCallback.onQuad;
       onPrefix = quadCallback.onPrefix;
       onComment = quadCallback.onComment;
       onVersion = quadCallback.onVersion;
+      onDirective = quadCallback.onDirective;
       onToken = quadCallback.onToken;
       onTokenEnd = quadCallback.onTokenEnd;
     }
@@ -1661,6 +1691,7 @@ export default class N3Parser {
       this._prefixes[''] = this._resolveIRI('#');
     this._prefixCallback = onPrefix || noop;
     this._versionCallback = onVersion || noop;
+    this._directiveCallback = onDirective || noop;
     this._inversePredicate = false;
     this._expectOf = false;
     this._quantified = Object.create(null);
