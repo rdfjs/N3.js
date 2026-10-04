@@ -58,6 +58,10 @@ export default class N3Parser {
     // Disable parsing of unsupported versions by default
     this._parseUnsupportedVersions = !!options.parseUnsupportedVersions;
     this._version = options.version;
+    // Maximum nesting depth of triple terms (default 1024; Infinity disables the limit)
+    const maxTripleTermDepth = options.maxTripleTermDepth;
+    this._maxTripleTermDepth = maxTripleTermDepth === Infinity ||
+      Number.isInteger(maxTripleTermDepth) && maxTripleTermDepth >= 0 ? maxTripleTermDepth : 1024;
   }
 
   // ## Static class methods
@@ -87,12 +91,30 @@ export default class N3Parser {
       const path = queryPos < 0 ? baseIRI : baseIRI.substr(0, queryPos);
       this._basePath   = baseIRI.indexOf('/') < 0 ? baseIRI :
                          path.substr(0, path.lastIndexOf('/') + 1);
-      baseIRI = baseIRI.match(/^(?:([a-z][a-z0-9+.-]*:))?(?:\/\/[^\/]*)?/i);
+      const base = baseIRI;
+      baseIRI = baseIRI.match(/^(?:([a-z][a-z0-9+.-]*:))?(\/\/[^\/?#]*)?/i);
       this._baseRoot   = baseIRI[0];
       this._baseScheme = baseIRI[1];
+      // If the base has an authority but an empty path,
+      // relative IRIs merge under the path '/' (RFC 3986 §5.2.3)
+      if (baseIRI[2] !== undefined && (base.length === this._baseRoot.length || base[this._baseRoot.length] === '?'))
+        this._basePath = `${this._baseRoot}/`;
       // Check once whether resolving against the base path needs to remove dot segments
       this._basePathHasDotSegments = dotSegments.test(this._basePath);
     }
+  }
+
+  // ### `_enterTripleTerm` stores the current parsing context when entering a triple term,
+  // failing if triple terms nest deeper than the maximum depth
+  _enterTripleTerm(type, subject, predicate, token) {
+    if (this._tripleTermDepth >= this._maxTripleTermDepth) {
+      this._error(`Triple terms nested deeper than ${this._maxTripleTermDepth} level${this._maxTripleTermDepth === 1 ? '' : 's'}`, token);
+      return false;
+    }
+    this._tripleTermDepth++;
+    this._saveContext(type, this._graph, subject, predicate, null);
+    this._graph = null;
+    return true;
   }
 
   // ### `_saveContext` stores the current parsing context
@@ -347,13 +369,9 @@ export default class N3Parser {
     case '<<(':
       if (!this._n3Mode)
         return this._error('Disallowed triple term as subject', token);
-      this._saveContext('<<(', this._graph, null, null, null);
-      this._graph = null;
-      return this._readSubject;
+      return this._enterTripleTerm('<<(', null, null, token) && this._readSubject;
     case '<<':
-      this._saveContext('<<', this._graph, null, null, null);
-      this._graph = null;
-      return this._readSubject;
+      return this._enterTripleTerm('<<', null, null, token) && this._readSubject;
     default:
       // Read the subject entity
       if ((this._subject = this._readEntity(token)) === undefined)
@@ -498,13 +516,9 @@ export default class N3Parser {
                         this._graph = this._factory.blankNode());
       return this._readInFormulaContext;
     case '<<(':
-      this._saveContext('<<(', this._graph, this._subject, this._predicate, null);
-      this._graph = null;
-      return this._readSubject;
+      return this._enterTripleTerm('<<(', this._subject, this._predicate, token) && this._readSubject;
     case '<<':
-      this._saveContext('<<', this._graph, this._subject, this._predicate, null);
-      this._graph = null;
-      return this._readSubject;
+      return this._enterTripleTerm('<<', this._subject, this._predicate, token) && this._readSubject;
     default:
       // Read the object entity
       if ((this._object = this._readEntity(token)) === undefined)
@@ -724,13 +738,9 @@ export default class N3Parser {
       this._subject = null;
       return this._readInFormulaContext;
     case '<<(':
-      this._saveContext('<<(', this._graph, null, null, null);
-      this._graph = null;
-      next = this._readSubject;
-      break;
     case '<<':
-      this._saveContext('<<', this._graph, null, null, null);
-      this._graph = null;
+      if (!this._enterTripleTerm(token.type, null, null, token))
+        return;
       next = this._readSubject;
       break;
     default:
@@ -1280,6 +1290,7 @@ export default class N3Parser {
     const quad = this._createQuad(this._subject, this._predicate, this._object,
         this._graph, this._inversePredicate);
     this._restoreContext('<<(', token);
+    this._tripleTermDepth--;
 
     // If we're in a list, continue processing that list
     const stack = this._contextStack, parent = stack.length && stack[stack.length - 1];
@@ -1315,6 +1326,7 @@ export default class N3Parser {
     this._tripleTerm = null;
     const reifier = this._readTripleTerm();
     this._restoreContext('<<', token);
+    this._tripleTermDepth--;
 
     // // If we're in a list, continue processing that list
     const stack = this._contextStack, parent = stack.length && stack[stack.length - 1];
@@ -1548,8 +1560,13 @@ export default class N3Parser {
     }
     // Resolve root-relative IRIs at the root of the base IRI
     case '/':
-      // Resolve scheme-relative IRIs to the scheme
-      return (iri[1] === '/' ? this._baseScheme : this._baseRoot) + this._removeDotSegments(iri);
+      // Resolve scheme-relative IRIs to the scheme,
+      // keeping the reference's authority intact (RFC 3986 §5.2.4)
+      if (iri[1] !== '/')
+        return this._baseRoot + this._removeDotSegments(iri);
+      // Without a base scheme, a leading ':' marks where the authority starts
+      return this._baseScheme ? this._removeDotSegments(this._baseScheme + iri) :
+        this._removeDotSegments(`:${iri}`).substr(1);
     // Resolve all other IRIs at the base IRI's path
     default:
       // Relative IRIs cannot contain a colon in the first path segment
@@ -1579,8 +1596,8 @@ export default class N3Parser {
         if (pathStart < 0) {
           // Skip two slashes before the authority
           if (iri[++i] === '/' && iri[++i] === '/')
-            // Skip to slash after the authority
-            while ((pathStart = i + 1) < length && iri[pathStart] !== '/')
+            // Skip to the end of the authority
+            while ((pathStart = i + 1) < length && iri[pathStart] !== '/' && iri[pathStart] !== '?' && iri[pathStart] !== '#')
               i = pathStart;
         }
         break;
@@ -1665,6 +1682,7 @@ export default class N3Parser {
     this._prefixChanges = null;
     this._quantifiedChanges = null;
     this._emptyFormula = false;
+    this._tripleTermDepth = 0;
 
     let readToken = token => {
       return this._readCallback = this._readCallback(token);

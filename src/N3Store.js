@@ -118,6 +118,35 @@ function difference(s1, s2, depth = 4) {
   return target;
 }
 
+// Returns the key of a term in the entity index.
+// Keys mark the term type by their first character, so the IRI of a named node
+// that starts with such a marker (as relative IRIs can) is wrapped in < and >.
+const markedIRI = /^[?_"[.<]/;
+function entityKey(term) {
+  // Strings are term ids, which only need wrapping when they are IRIs starting with <
+  if (typeof term === 'string')
+    return term.charCodeAt(0) !== 0x3C || term === '<>' ? term : `<${term}>`;
+  // IDs of IRIs usually start with a lowercase scheme letter, which never marks a term type
+  const id = termToId(term);
+  if (id.charCodeAt(0) >= 0x61 || !term)
+    return id;
+  // Keys of quoted triples are built from the keys of their components
+  if (term.termType === 'Quad')
+    return JSON.stringify(quadKeyParts(term));
+  return term.termType !== 'NamedNode' || !markedIRI.test(term.value) ? id : `<${term.value}>`;
+}
+
+// Returns the keys of the components of a quad, nested like the parts of its internal id
+function quadKeyParts(quad) {
+  const parts = [nestedKey(quad.subject), nestedKey(quad.predicate), nestedKey(quad.object)];
+  if (quad.graph && !isDefaultGraph(quad.graph))
+    parts.push(nestedKey(quad.graph));
+  return parts;
+}
+function nestedKey(term) {
+  return term.termType === 'Quad' ? quadKeyParts(term) : entityKey(term);
+}
+
 // ## Constructor
 export class N3EntityIndex {
   constructor(options = {}) {
@@ -135,6 +164,10 @@ export class N3EntityIndex {
   }
 
   _termFromId(id) {
+    // A key in < and > is a named node
+    if (id[0] === '<')
+      return this._factory.namedNode(id.substring(1, id.length - 1));
+    // A key starting with . is a quoted triple
     if (id[0] === '.') {
       const entities = this._entities;
       const terms = id.split('.');
@@ -159,18 +192,34 @@ export class N3EntityIndex {
       return s && p && o && (isDefaultGraph(term.graph) || (g = this._termToNumericId(term.graph))) &&
         this._ids[g ? `.${s}.${p}.${o}.${g}` : `.${s}.${p}.${o}`];
     }
-    return this._ids[termToId(term)];
+    return typeof term === 'string' ? this._stringToNumericId(term) : this._ids[entityKey(term)];
+  }
+
+  // Returns the numeric id of a term given as a string id
+  _stringToNumericId(term) {
+    // The string is the key unless it is an IRI starting with <. Read the first character
+    // from the stored key after a match, which is cheaper than from a concatenated string.
+    const id = this._ids[term];
+    if (id ? this._entities[id].charCodeAt(0) !== 0x3C : term.charCodeAt(0) !== 0x3C)
+      return id;
+    return term === '<>' ? id : this._ids[`<${term}>`];
   }
 
   _termToNewNumericId(term) {
+    if (typeof term === 'string')
+      return this._stringToNumericId(term) || this._addEntity(entityKey(term));
     // This assumes that no graph term is present - we may wish to error if there is one
     const str = term && term.termType === 'Quad' ?
       `.${this._termToNewNumericId(term.subject)}.${this._termToNewNumericId(term.predicate)}.${this._termToNewNumericId(term.object)}${
         isDefaultGraph(term.graph) ? '' : `.${this._termToNewNumericId(term.graph)}`
       }`
-      : termToId(term);
+      : entityKey(term);
 
-    return this._ids[str] || (this._ids[this._entities[++this._id] = str] = this._id);
+    return this._ids[str] || this._addEntity(str);
+  }
+
+  _addEntity(key) {
+    return this._ids[this._entities[++this._id] = key] = this._id;
   }
 
   createBlankNode(suggestedName) {
@@ -1382,7 +1431,7 @@ function intersectMatchPatterns(left, right) {
     const leftTerm = left[i], rightTerm = right[i];
     if (leftTerm === null || leftTerm === undefined)
       result[i] = rightTerm;
-    else if (rightTerm === null || rightTerm === undefined || termToId(leftTerm) === termToId(rightTerm))
+    else if (rightTerm === null || rightTerm === undefined || entityKey(leftTerm) === entityKey(rightTerm))
       result[i] = leftTerm;
     else
       return false;
@@ -1433,10 +1482,10 @@ class DatasetCoreAndReadableStream extends Readable {
   _matchesQuad(quad) {
     const { subject, predicate, object, graph } = this;
     return !this._matchesNothing &&
-      (subject === null || subject === undefined || termToId(subject) === termToId(quad.subject)) &&
-      (predicate === null || predicate === undefined || termToId(predicate) === termToId(quad.predicate)) &&
-      (object === null || object === undefined || termToId(object) === termToId(quad.object)) &&
-      (graph === null || graph === undefined || termToId(graph) === termToId(quad.graph));
+      (subject === null || subject === undefined || entityKey(subject) === entityKey(quad.subject)) &&
+      (predicate === null || predicate === undefined || entityKey(predicate) === entityKey(quad.predicate)) &&
+      (object === null || object === undefined || entityKey(object) === entityKey(quad.object)) &&
+      (graph === null || graph === undefined || entityKey(graph) === entityKey(quad.graph));
   }
 
   // ### `_assertMatchesPattern` rejects a Quad outside this view.
