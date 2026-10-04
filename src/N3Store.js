@@ -256,17 +256,10 @@ function countQuads(graphs) {
   return size;
 }
 
-// Returns the size of a dataset if it is known without counting, or null otherwise
+// Returns the size of a store from this copy of N3, or null for other datasets,
+// whose size may not be known without counting
 function knownSize(dataset) {
-  // Stores from earlier versions of N3 may count their quads to find their size
-  if (isN3Store(dataset))
-    return typeof dataset._count === 'number' ? dataset.size : null;
-  return typeof dataset.size === 'number' ? dataset.size : null;
-}
-
-// Checks whether the dataset is a store from any copy or version of N3
-function isN3Store(dataset) {
-  return '_entityIndex' in dataset;
+  return dataset instanceof N3Store ? dataset.size : null;
 }
 
 // ## Constructor
@@ -1271,8 +1264,7 @@ export default class N3Store {
     if (otherSize !== null && thisSize !== null && otherSize < thisSize && typeof other[Symbol.iterator] === 'function' &&
         // unless it is a store whose custom factories may not create RDF/JS quads,
         // either for its quads or, through its entity index, for their terms
-        (!isN3Store(other) ||
-         other._factory === N3DataFactory && other._entityIndex._factory === N3DataFactory)) {
+        other._factory === N3DataFactory && other._entityIndex._factory === N3DataFactory) {
       const store = new N3Store({ entityIndex: this._entityIndex });
       for (const quad of other)
         if (this.has(quad))

@@ -3736,9 +3736,10 @@ describe('Store', () => {
           expect(result._count).toBe(count(result));
       });
 
-      it('should not contain a larger dataset of another kind', () => {
-        const dataset = { size: 2, every: () => { throw new Error('should not iterate'); } };
+      it('should check a larger dataset of another kind quad by quad', () => {
+        const dataset = { size: 2, every: jest.fn(callback => [q[0], q[1]].every(callback)) };
         expect(new Store([q[0]]).contains(dataset)).toBe(false);
+        expect(dataset.every).toHaveBeenCalled();
       });
 
       it('should contain a dataset without a size', () => {
@@ -3888,14 +3889,13 @@ describe('Store', () => {
         expect(storeb.intersection(store1).size).toBe(1);
       });
 
-      it('should intersect with a smaller dataset of another kind', () => {
-        const larger = new Store([q[0], q[1], q[2]]), missing = new Quad(new NamedNode('x'), q[0].predicate, q[0].object);
-        const dataset = { size: 2, has: jest.fn(), *[Symbol.iterator]() { yield q[0]; yield missing; } };
+      it('should intersect with a smaller dataset of another kind through its has method', () => {
+        const larger = new Store([q[0], q[1], q[2]]);
+        const dataset = { size: 2, has: jest.fn(quad => quad.equals(q[0])), *[Symbol.iterator]() { yield q[0]; } };
         const result = larger.intersection(dataset);
-        expect(dataset.has).not.toHaveBeenCalled();
+        expect(dataset.has).toHaveBeenCalled();
         expect(result.size).toBe(1);
         expect(result.has(q[0])).toBe(true);
-        expect(result.has(missing)).toBe(false);
       });
 
       it('should intersect with a smaller store from another copy of N3 whose factory creates other quads', () => {
