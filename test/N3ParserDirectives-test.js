@@ -65,6 +65,19 @@ describe('Parser directives', () => {
       expect(parseEvents('MESSAGE# a comment\n@message .# another\n')).toEqual(['message()', 'message()']);
     });
 
+    it('reads an @-style directive directly followed by its dot', () => {
+      expect(parseEvents('<a:s> <a:p> <a:1>.\n@message.\n<a:s> <a:p> <a:2>.@message.'))
+        .toEqual(['quad a:1', 'message()', 'quad a:2', 'message()']);
+    });
+
+    it('reads built-in @-keywords directly followed by a dot as keywords', () => {
+      expect(parseError('@prefix.')).toBe('Expected prefix to follow @prefix on line 1.');
+      expect(parseError('@base.')).toBe('Expected valid IRI to follow base declaration on line 1.');
+      expect(parseError('@version.')).toBe('Expected literal to follow version declaration on line 1.');
+      expect(parseError('@forAll.', { format: 'N3' })).toBe('Unexpected . on line 1.');
+      expect(parseError('@forSome.', { format: 'N3' })).toBe('Unexpected . on line 1.');
+    });
+
     it('requires a dot after an @-style directive', () => {
       expect(parseError('@message <a:s> <a:p> <a:o>.'))
         .toBe('Expected declaration to end with a dot on line 1.');
@@ -143,6 +156,11 @@ describe('Parser directives', () => {
     it('reads a directive after a version declaration split across chunks', async () => {
       expect(await parseChunks(['VERSION "1.2"', '\n@mess', 'age .\nVERSION "1.2"\n', '@message .']))
         .toEqual(['message', 'message']);
+    });
+
+    it('reads an @-style directive split before its dot', async () => {
+      expect(await parseChunks(['<a:s> <a:p> <a:1>.\n@message', '.\n<a:s> <a:p> <a:2>.']))
+        .toEqual(['quad a:1', 'message', 'quad a:2']);
     });
 
     it('reads a directive at the end of the stream', async () => {
