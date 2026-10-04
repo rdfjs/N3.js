@@ -8,8 +8,6 @@ import N3Writer from './N3Writer';
 
 const ITERATOR = Symbol('iter');
 const ENTITY_SCOPE = Symbol('entityScope');
-// Keep common lookups local without duplicating every registry entry per store.
-const ENTITY_CACHE_SIZE = 4096;
 const SIZE = Symbol('size');
 
 // Neither a registration nor its cleanup record may keep a view or store alive.
@@ -170,29 +168,25 @@ class N3EntityScope {
       get: () => this._registry._id,
     });
     this._ownership = this._registry._createOwnership(this);
-    this._owned = Object.create(null);
-    this._owned[1] = true;
 
-    // `_ids` maps entities such as `http://xmlns.com/foaf/0.1/name` to numbers,
-    // saving memory by using only numbers as keys in `_graphs`
+    // `_ids` maps the entities this scope owns, such as `http://xmlns.com/foaf/0.1/name`,
+    // to their shared numbers, saving memory by using only numbers as keys in `_graphs`
     this._ids = Object.create(null);
     this._ids[''] = 1;
     this._entities = this._registry._entities;
-    this._cacheSize = 1;
     // `_blankNodeIndex` is the index of the last automatically named blank node
     this._blankNodeIndex = 0;
     this._factory = options.factory || N3DataFactory;
   }
 
   _retain(id, value) {
-    if (!this._owned[id]) {
-      this._registry._retain(id, this._ownership);
-      this._owned[id] = true;
-    }
-    if (value !== undefined && this._cacheSize < ENTITY_CACHE_SIZE && this._ids[value] === undefined) {
-      this._ids[value] = id;
-      this._cacheSize++;
-    }
+    return this._ids[value] === undefined ? this._own(id, value) : id;
+  }
+
+  // Records ownership of an entity this scope does not own yet
+  _own(id, value) {
+    this._ids[value] = id;
+    this._registry._retain(id, this._ownership);
     return id;
   }
 
@@ -219,7 +213,7 @@ class N3EntityScope {
   }
 
   _owns(value) {
-    return this._owned[this._registry._lookup(value)];
+    return this._ids[value] !== undefined;
   }
 
   _termFromId(id) {
@@ -266,9 +260,7 @@ class N3EntityScope {
     else
       value = termToId(term);
 
-    if (this._ids[value])
-      return this._ids[value];
-    return this._retain(this._registry._intern(value), value);
+    return this._ids[value] || this._own(this._registry._intern(value), value);
   }
 
   createBlankNode(suggestedName) {
@@ -285,7 +277,7 @@ class N3EntityScope {
       while (this._owns(name));
     }
     // Add the blank node to the entities, avoiding the generation of duplicates
-    this._retain(this._registry._intern(name), name);
+    this._own(this._registry._intern(name), name);
     return this._factory.blankNode(name.substr(2));
   }
 }
