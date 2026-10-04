@@ -86,9 +86,14 @@ export default class N3Parser {
       const path = queryPos < 0 ? baseIRI : baseIRI.substr(0, queryPos);
       this._basePath   = baseIRI.indexOf('/') < 0 ? baseIRI :
                          path.substr(0, path.lastIndexOf('/') + 1);
-      baseIRI = baseIRI.match(/^(?:([a-z][a-z0-9+.-]*:))?(?:\/\/[^\/]*)?/i);
+      const base = baseIRI;
+      baseIRI = baseIRI.match(/^(?:([a-z][a-z0-9+.-]*:))?(\/\/[^\/?#]*)?/i);
       this._baseRoot   = baseIRI[0];
       this._baseScheme = baseIRI[1];
+      // If the base has an authority but an empty path,
+      // relative IRIs merge under the path '/' (RFC 3986 §5.2.3)
+      if (baseIRI[2] !== undefined && (base.length === this._baseRoot.length || base[this._baseRoot.length] === '?'))
+        this._basePath = `${this._baseRoot}/`;
     }
   }
 
@@ -1546,8 +1551,13 @@ export default class N3Parser {
     }
     // Resolve root-relative IRIs at the root of the base IRI
     case '/':
-      // Resolve scheme-relative IRIs to the scheme
-      return (iri[1] === '/' ? this._baseScheme : this._baseRoot) + this._removeDotSegments(iri);
+      // Resolve scheme-relative IRIs to the scheme,
+      // keeping the reference's authority intact (RFC 3986 §5.2.4)
+      if (iri[1] !== '/')
+        return this._baseRoot + this._removeDotSegments(iri);
+      // Without a base scheme, a leading ':' marks where the authority starts
+      return this._baseScheme ? this._removeDotSegments(this._baseScheme + iri) :
+        this._removeDotSegments(`:${iri}`).substr(1);
     // Resolve all other IRIs at the base IRI's path
     default:
       // Relative IRIs cannot contain a colon in the first path segment
@@ -1572,8 +1582,8 @@ export default class N3Parser {
         if (pathStart < 0) {
           // Skip two slashes before the authority
           if (iri[++i] === '/' && iri[++i] === '/')
-            // Skip to slash after the authority
-            while ((pathStart = i + 1) < length && iri[pathStart] !== '/')
+            // Skip to the end of the authority
+            while ((pathStart = i + 1) < length && iri[pathStart] !== '/' && iri[pathStart] !== '?' && iri[pathStart] !== '#')
               i = pathStart;
         }
         break;
