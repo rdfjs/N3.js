@@ -80,9 +80,13 @@ export default class N3Parser {
       this._base = baseIRI;
       this._basePath   = baseIRI.indexOf('/') < 0 ? baseIRI :
                          baseIRI.replace(/[^\/?]*(?:\?.*)?$/, '');
-      baseIRI = baseIRI.match(/^(?:([a-z][a-z0-9+.-]*:))?(?:\/\/[^\/]*)?/i);
+      baseIRI = baseIRI.match(/^(?:([a-z][a-z0-9+.-]*:))?(?:\/\/[^\/?#]*)?/i);
       this._baseRoot   = baseIRI[0];
       this._baseScheme = baseIRI[1];
+      // If the base has an authority but an empty path,
+      // relative IRIs merge under the path '/' (RFC 3986 §5.3)
+      if (this._basePath.length < this._baseRoot.length)
+        this._basePath = `${this._baseRoot}/`;
     }
   }
 
@@ -1524,8 +1528,11 @@ export default class N3Parser {
     case '?': return this._base.replace(/(?:\?.*)?$/, iri);
     // Resolve root-relative IRIs at the root of the base IRI
     case '/':
-      // Resolve scheme-relative IRIs to the scheme
-      return (iri[1] === '/' ? this._baseScheme : this._baseRoot) + this._removeDotSegments(iri);
+      // Resolve scheme-relative IRIs to the scheme,
+      // keeping the reference's authority intact (RFC 3986 §5.2.4)
+      return iri[1] === '/' ?
+        this._removeDotSegments(this._baseScheme + iri) :
+        this._baseRoot + this._removeDotSegments(iri);
     // Resolve all other IRIs at the base IRI's path
     default:
       // Relative IRIs cannot contain a colon in the first path segment
