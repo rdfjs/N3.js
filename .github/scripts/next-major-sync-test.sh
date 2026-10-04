@@ -14,7 +14,7 @@ git init --quiet
 git config user.name test
 git config user.email test@example.org
 git config commit.gpgSign false
-eval "$(sed -n '/^commit_record()/,/^}/p;/^files_of()/,/^}/p;/^same_change()/,/^}/p;/^compare_change()/,/^}/p;/^same_commits()/,/^}/p;/^compare_commits()/,/^}/p' "$script")"
+eval "$(sed -n '/^commit_record()/,/^}/p;/^no_empty_tree()/,/^}/p;/^files_of()/,/^}/p;/^same_change()/,/^}/p;/^compare_change()/,/^}/p;/^same_commits()/,/^}/p;/^compare_commits()/,/^}/p' "$script")"
 
 failures=0
 lines() { printf '%s\n' "$@"; }
@@ -181,5 +181,14 @@ forged=$(GIT_AUTHOR_NAME=test GIT_AUTHOR_EMAIL=test@example.org GIT_AUTHOR_DATE=
 forged=$(GIT_AUTHOR_NAME=test GIT_AUTHOR_EMAIL=test@example.org GIT_AUTHOR_DATE=$(git log -1 --format=%aD "$two") \
   git commit-tree "$two^{tree}" -p "$forged" -m "$(git log -1 --format=%B "$two")")
 expect refused 'an empty directory added and removed again' same_commits "$base..$two" "$base..$forged"
+expect refused 'an empty directory left out' same_commits "$base..$forged" "$base..$two"
+# The parent already holds an empty directory, and a forged commit deletes it with its change
+parent=$(GIT_AUTHOR_DATE=$(git log -1 --format=%aD "$base") git commit-tree "$(printf '040000 tree %s\te\n' "$empty" |
+  cat - <(git ls-tree "$base") | git mktree)" -p "$base" -m 'chore: parent')
+change=$(GIT_AUTHOR_DATE=$(git log -1 --format=%aD "$two~1") git commit-tree "$(printf '040000 tree %s\te\n' "$empty" |
+  cat - <(git ls-tree "$two~1") | git mktree)" -p "$parent" -m "$(git log -1 --format=%B "$two~1")")
+dropped_e=$(GIT_AUTHOR_DATE=$(git log -1 --format=%aD "$two~1") git commit-tree "$two~1^{tree}" -p "$parent" \
+  -m "$(git log -1 --format=%B "$two~1")")
+expect refused 'an empty directory in the parent deleted' same_commits "$parent..$change" "$parent..$dropped_e"
 
 exit "$failures"

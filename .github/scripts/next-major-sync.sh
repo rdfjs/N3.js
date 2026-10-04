@@ -59,13 +59,24 @@ files_of() {
   done < "$3"
 }
 
+# Fails if a commit's tree holds an empty directory, which no checkout makes and which the file
+# listings and an index cannot show; uses the file $2
+no_empty_tree() {
+  local line empty
+  empty=$(git hash-object -t tree /dev/null) && git ls-tree -r -t -z --full-tree "$1" > "$2" || return 1
+  while IFS= read -r -d '' line; do
+    [ "${line%%$'\t'*}" != "040000 tree $empty" ] || return 1
+  done < "$2"
+}
+
 # Succeeds if commit b is commit a's change carried onto b's parent, file by file, with a's
 # parent as the base: every path a changes merges cleanly with git merge-file (line by line, no
 # renames, no attributes) into exactly b's version, and b changes nothing else. Only the given
 # paths (the hand-resolved ones) are skipped. The three-way merge, not the diff text or patch
 # context, decides where a's change lands, so commit by commit from main the rebased history can
 # differ only in the resolved paths. Last, b's whole tree must be the tree those entries build
-# on b's parent, so nothing the file listings leave out, such as an empty directory, gets through.
+# on b's parent, so nothing else the file listings leave out gets through. None of the four
+# trees may hold an empty directory, which neither the listings nor that tree can account for.
 same_change() {
   local dir status
   dir=$(mktemp -d)
@@ -79,7 +90,9 @@ compare_change() {
   local -A skip base_files theirs_files ours_files new_files changed || return 1
   shift 3
   for r in "$@"; do skip[$r]=1 || return 1; done
-  files_of base_files "$a^" "$dir/list" && files_of theirs_files "$a" "$dir/list" &&
+  no_empty_tree "$a^" "$dir/list" && no_empty_tree "$a" "$dir/list" &&
+    no_empty_tree "$b^" "$dir/list" && no_empty_tree "$b" "$dir/list" &&
+    files_of base_files "$a^" "$dir/list" && files_of theirs_files "$a" "$dir/list" &&
     files_of ours_files "$b^" "$dir/list" && files_of new_files "$b" "$dir/list" &&
     git diff-tree -r -z --no-renames --ignore-submodules=none --name-only "$a^" "$a" > "$dir/a-paths" &&
     git diff-tree -r -z --no-renames --ignore-submodules=none --name-only "$b^" "$b" > "$dir/b-paths" || return 1
