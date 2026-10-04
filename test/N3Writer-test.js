@@ -319,13 +319,55 @@ describe('Writer', () => {
       expect(output).toBe(`<urn:p> <urn:p> ${'{ <urn:p> <urn:p> '.repeat(depth)}<urn:p>${' }'.repeat(depth)}.\n`);
     });
 
-    it('should repeat a formula whose occurrences N3 cannot share', async () => {
+    it('should refuse a formula whose occurrences N3 cannot share', async () => {
       const [a, b, c, p] = ['a', 'b', 'c', 'p'].map(name => new NamedNode(`urn:${name}`)), g = new BlankNode('g');
-      const formulas = { f: [new Quad(g, p, a), new Quad(b, g, c)], g: [new Quad(a, a, a)] };
+      for (const formulas of [
+        { f: [new Quad(g, p, a), new Quad(b, g, c)], g: [new Quad(a, a, a)] },
+        { f: [new Quad(p, p, new Quad(g, p, a)), new Quad(p, p, new Quad(g, p, b))], g: [] },
+      ]) {
+        const writer = new Writer({ format: 'N3', formulas });
+        writer.addQuad(a, p, new BlankNode('f'));
+        await expect(end(writer)).rejects.toThrow('Cannot write formula _:g more than once');
+      }
+    });
+
+    it('should refuse a formula inside two other formulas', async () => {
+      const p = new NamedNode('urn:p'), [f, g, h] = ['f', 'g', 'h'].map(label => new BlankNode(label));
+      const writer = new Writer({ format: 'N3', formulas: { f: [new Quad(p, p, g)], g: [], h: [new Quad(p, p, g)] } });
+      writer.addQuad(f, p, h);
+      await expect(end(writer)).rejects.toThrow('Cannot write formula _:g more than once');
+    });
+
+    it('should refuse named graphs on the quads of a formula', async () => {
+      const p = new NamedNode('urn:p'), f = new BlankNode('f');
+      const writer = new Writer({ format: 'N3', formulas: { f: [new Quad(p, p, p, new NamedNode('urn:g'))] } });
+      writer.addQuad(p, p, f);
+      await expect(end(writer)).rejects.toThrow('Cannot write named graphs once formulas are in use');
+      const quads = [new Quad(p, p, p), new Quad(p, p, new NamedNode('urn:o'), f), { subject: p, predicate: p, object: f }];
+      const labelled = new Writer({ format: 'N3', formulas: { f: [], g: quads } });
+      labelled.addQuad(p, p, new BlankNode('g'));
+      expect(await end(labelled)).toBe('<urn:p> <urn:p> { <urn:p> <urn:p> <urn:p>, <urn:o>, {} }.\n');
+    });
+
+    it('should not serialize formulas or check statements after the end', async () => {
+      const [b, p, g] = [new BlankNode('b'), new NamedNode('urn:p'), new NamedNode('urn:g')];
+      const writer = new Writer({ format: 'N3', formulas: { f: [new Quad(b, p, p)] } });
+      expect(await end(writer)).toBe('');
+      expect(() => writer.quadToString(p, p, new BlankNode('f'))).toThrow('Cannot serialize formulas outside of statements');
+      let error;
+      writer.addQuad(b, p, p, g, e => { error = e; });
+      expect(error).toEqual(new Error('Cannot write because the writer has been closed.'));
+      expect(writer._blankScopes.size).toBe(0);
+    });
+
+    it('should write deeply nested formulas with several statements in linear time', async () => {
+      const depth = 20000, formulas = {}, [a, p] = [new NamedNode('urn:a'), new NamedNode('urn:p')];
+      for (let i = 0; i < depth; i++)
+        formulas[`f${i}`] = [new Quad(a, a, a), new Quad(p, p, i + 1 < depth ? new BlankNode(`f${i + 1}`) : p), new Quad(a, p, a)];
       const writer = new Writer({ format: 'N3', formulas });
-      writer.addQuad(a, p, new BlankNode('f'));
-      expect(await end(writer)).toBe('<urn:a> <urn:p> { { <urn:a> <urn:a> <urn:a> } <urn:p> <urn:a>. ' +
-        '<urn:b> { <urn:a> <urn:a> <urn:a> } <urn:c> }.\n');
+      writer.addQuad(p, p, new BlankNode('f0'));
+      const output = await end(writer);
+      expect(output).toBe(`<urn:p> <urn:p> ${'{ <urn:a> <urn:a> <urn:a>; <urn:p> <urn:a>. <urn:p> <urn:p> '.repeat(depth)}<urn:p>${' }'.repeat(depth)}.\n`);
     });
 
     it('should only expand blank nodes whose labels are formulas of their own', async () => {

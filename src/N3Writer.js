@@ -64,6 +64,15 @@ function hasNamedGraph(term) {
   return term.termType === 'Quad' && (!isDefaultGraph(term.graph) ||
     hasNamedGraph(term.subject) || hasNamedGraph(term.predicate) || hasNamedGraph(term.object));
 }
+// Joins strings by concatenation, which unlike `Array#join` does not copy the strings,
+// so that nested formulas are not copied at every level
+function concat(strings, separator) {
+  let result = strings[0];
+  for (let i = 1; i < strings.length; i++)
+    result += separator + strings[i];
+  return result;
+}
+
 // ## Constructor
 export default class N3Writer {
   constructor(outputStream, options) {
@@ -91,6 +100,9 @@ export default class N3Writer {
     // N3 scopes blank node labels to their formula, so each blank node is written in one scope only.
     // `_blankScopes` maps the labels of blank nodes to their scope when formulas are in use.
     this._blankScopes = this._formulas ? new Map() : null;
+    // Formulas are serialized only while the held-back statements are written, each of them once
+    this._encodingFormulas = false;
+    this._writtenFormulas = new Set();
 
     // If no output stream given, send the output as string through the end callback
     if (!outputStream) {
@@ -249,7 +261,12 @@ export default class N3Writer {
   // and holds it back until the end if it contains formulas, so every formula can be written once.
   // Returns whether the statement was handled.
   _holdQuad(subject, predicate, object, graph, done) {
-    try { this._checkStatement(subject, predicate, object, graph); }
+    try {
+      // A closed writer accepts nothing
+      if (this._write === this._blockedWrite)
+        this._blockedWrite();
+      this._checkStatement(subject, predicate, object, graph);
+    }
     catch (error) {
       if (done)
         return done(error), true;
@@ -311,8 +328,8 @@ export default class N3Writer {
   // Nested formulas are serialized first, depth-first with an explicit stack,
   // so deeply nested formulas do not exhaust the call stack.
   _encodeFormula(label) {
-    const owner = !this._formulaCache, frames = [{ label, position: 0 }];
-    const cache = this._formulaCache || (this._formulaCache = new Map());
+    // Every formula inside it is found and serialized here, so this is never called recursively
+    const frames = [{ label, position: 0 }], cache = this._formulaCache = new Map();
     this._openFormulas.add(label);
     try {
       while (frames.length) {
@@ -348,11 +365,25 @@ export default class N3Writer {
       return formula;
     }
     finally {
-      if (owner) {
-        this._formulaCache = null;
-        this._openFormulas.clear();
-      }
+      this._formulaCache = null;
+      this._openFormulas.clear();
     }
+  }
+
+  // ### `_encodeFormulaLabel` serializes the formula with the given label where it is written
+  _encodeFormulaLabel(label) {
+    // Formulas are written at the end, where the Writer can write each of them once
+    if (!this._encodingFormulas)
+      throw new Error('Cannot serialize formulas outside of statements');
+    // A copy would be read back as another formula
+    if (this._writtenFormulas.has(label))
+      throw new Error(`Cannot write formula _:${label} more than once`);
+    this._writtenFormulas.add(label);
+    // Serialized formulas are used once, so that deep nesting keeps no copies
+    const cached = this._formulaCache && this._formulaCache.get(label);
+    if (cached)
+      this._formulaCache.delete(label);
+    return cached || this._encodeFormula(label);
   }
 
   // ### `_encodeSubject` represents a subject
@@ -376,16 +407,8 @@ export default class N3Writer {
       if (this._lists && hasOwnProperty.call(this._lists, entity.value))
         entity = this.list(this._lists[entity.value]);
       // If it labels an N3 formula, write the formula's contents
-      else if (this._isFormula(entity)) {
-        // Formulas are written at the end, where the Writer can write each of them once
-        if (this._formulaStatements)
-          throw new Error('Cannot serialize formulas outside of statements');
-        // Serialized formulas are used once, so that deep nesting keeps no copies
-        const cached = this._formulaCache && this._formulaCache.get(entity.value);
-        if (cached)
-          this._formulaCache.delete(entity.value);
-        entity = cached || this._encodeFormula(entity.value);
-      }
+      else if (this._formulas && this._isFormula(entity))
+        entity = this._encodeFormulaLabel(entity.value);
       // Terms from this library already hold their serialization as id
       if (entity instanceof Term)
         return entity.id;
@@ -638,15 +661,19 @@ export default class N3Writer {
 
   // ### `_encodeFormulaQuads` serializes the quads of a formula, with its formulas already serialized
   _encodeFormulaQuads(quads) {
-    for (const quad of quads)
-      this._checkTerms([quad.subject, quad.predicate, quad.object]);
+    for (const { subject, predicate, object, graph } of quads) {
+      // Quads of formulas are in the default graph, or in the graph the parser labels the formula with
+      if (graph && graph.termType !== 'DefaultGraph' && graph.termType !== 'BlankNode')
+        throw new Error(GRAPHS_WITH_FORMULAS);
+      this._checkTerms([subject, predicate, object]);
+    }
     const statements = this._encodeStatements(quads);
     // Check the blank nodes after nested formulas were written, as these record theirs
     const scope = {}, scopes = new Map();
     for (const quad of quads)
       this._findBlankScopes([quad.subject, quad.predicate, quad.object], scope, scopes);
     this._addBlankScopes(scopes);
-    return new SerializedTerm(statements.length ? `{ ${statements.join('. ')} }` : '{}');
+    return new SerializedTerm(statements.length ? `{ ${concat(statements, '. ')} }` : '{}');
   }
 
   // ### `_encodeStatements` serializes N3 statements, so that every formula is written once.
@@ -688,13 +715,13 @@ export default class N3Writer {
     for (const { head, verbs } of statements.values()) {
       const parts = [];
       for (const { predicate, terms } of verbs[0].values())
-        parts.push(`${this._encodePredicate(predicate)} ${terms.map(term => this._encodeObject(term)).join(', ')}`);
+        parts.push(`${this._encodePredicate(predicate)} ${concat(terms.map(term => this._encodeObject(term)), ', ')}`);
       for (const { predicate, terms } of verbs[1].values()) {
         const verb = this._encodePredicate(predicate);
         parts.push(`is ${verb === 'a' ? this._encodeIriOrBlank(predicate) : verb} of ${
-          terms.map(term => this._encodeSubject(term)).join(', ')}`);
+          concat(terms.map(term => this._encodeSubject(term)), ', ')}`);
       }
-      result.push(`${this._encodeSubject(head)} ${parts.join('; ')}`);
+      result.push(`${this._encodeSubject(head)} ${concat(parts, '; ')}`);
     }
     return result;
   }
@@ -711,8 +738,9 @@ export default class N3Writer {
     // Stop holding back statements, also when encoding them creates formulas
     this._formulaStatements = false;
     if (formulaStatements && formulaStatements.length) {
+      this._encodingFormulas = true;
       try {
-        this._write(`${this._encodeStatements(formulaStatements).join('.\n')}.\n`);
+        this._write(`${concat(this._encodeStatements(formulaStatements), '.\n')}.\n`);
       }
       catch (error) {
         // Disallow further writing, report the same error on later ends,
@@ -725,6 +753,7 @@ export default class N3Writer {
         }
         return done && done(error);
       }
+      finally { this._encodingFormulas = false; }
     }
     // Disallow further writing
     this._write = this._blockedWrite;
