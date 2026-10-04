@@ -156,7 +156,7 @@ export default class N3Reasoner {
   }
 
   _createRule({ premise, conclusion }) {
-    const varMapping = {};
+    const varMapping = Object.create(null);
 
     const toId = value => value.termType === 'Variable' ?
       // If the term is a variable, then create an empty object that values can be placed into
