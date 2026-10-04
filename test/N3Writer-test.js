@@ -58,23 +58,13 @@ describe('Writer', () => {
     }
 
     // Writes the parsed document, with its quads shuffled for a non-zero seed,
-    // rebuilt by a store if `via` is 'store', and with lists extracted if `via` is 'lists'
+    // and rebuilt by a store if `via` is 'store'
     async function roundTrip(document, seed, via) {
       // Duplicate statements are only counted once
       const quads = new Store(new Parser({ format: 'N3' }).parse(document)).getQuads();
-      let input = quads, lists;
-      if (via) {
-        const store = new Store(quads);
-        if (via === 'lists') {
-          lists = store.extractLists({ remove: true, ignoreErrors: true });
-          // Keep only the lists that were removed
-          for (const quad of store.getQuads(null, namespaces.rdf.first))
-            delete lists[quad.subject.value];
-        }
-        input = store.getQuads();
-      }
+      const input = via === 'store' ? new Store(quads).getQuads() : quads;
       const { formulas, statements } = splitFormulas(seed ? shuffle(input, seed) : input);
-      const writer = new Writer({ format: 'N3', formulas, lists });
+      const writer = new Writer({ format: 'N3', formulas });
       writer.addQuads(statements);
       const output = await end(writer);
       return { quads, output, reparsed: new Parser({ format: 'N3' }).parse(output) };
@@ -202,7 +192,7 @@ describe('Writer', () => {
       for (let seed = 1; seed <= 20; seed++) {
         let state = seed;
         const document = randomDocument(() => (state = (state * 1103515245 + 12345) % 2147483648) / 2147483648);
-        for (const [order, via] of [[0], [seed], [seed, 'store'], [seed, 'lists']]) {
+        for (const [order, via] of [[0], [seed], [seed, 'store']]) {
           const { quads, output, reparsed } = await roundTrip(document, order, via);
           // Every formula is written exactly once
           const formulas = new Set(quads.filter(quad => quad.graph.termType === 'BlankNode').map(quad => quad.graph.value));
@@ -229,16 +219,35 @@ describe('Writer', () => {
       }
     });
 
-    it('should write deeply nested formulas inside lists', async () => {
-      const depth = 10000, formulas = {}, lists = {}, p = new NamedNode('urn:p');
-      for (let i = 0; i < depth; i++) {
-        formulas[`f${i}`] = [new Quad(p, p, i + 1 < depth ? new BlankNode(`l${i}`) : p)];
-        lists[`l${i}`] = [new BlankNode(`f${i + 1}`)];
-      }
-      const writer = new Writer({ format: 'N3', formulas, lists });
-      writer.addQuad(p, p, new BlankNode('f0'));
-      const output = await end(writer);
-      expect(output).toBe(`<urn:p> <urn:p> ${'{ <urn:p> <urn:p> ('.repeat(depth - 1)}{ <urn:p> <urn:p> <urn:p> }${') }'.repeat(depth - 1)}.\n`);
+    it('should refuse to rebind a prefix after creating a formula', async () => {
+      const p = new NamedNode('urn:old:p'), writer = new Writer({ format: 'N3', prefixes: { ex: 'urn:old:' } });
+      const formula = writer.formula([new Quad(p, p, p)]);
+      expect(() => writer.addPrefix('ex', 'urn:new:')).toThrow('Cannot rebind prefix ex: after writing statements with formulas');
+      writer.addQuad(p, p, formula);
+      expect(await end(writer)).toBe('@prefix ex: <urn:old:>.\n\nex:p ex:p { ex:p ex:p ex:p }.\n');
+    });
+
+    it('should refuse statements with formulas after the end', async () => {
+      const p = new NamedNode('urn:p'), writer = new Writer({ format: 'N3', formulas: { f: [new Quad(p, p, p)] } });
+      writer.addQuad(p, p, new BlankNode('f'));
+      expect(await end(writer)).toBe('<urn:p> <urn:p> { <urn:p> <urn:p> <urn:p> }.\n');
+      let error;
+      writer.addQuad(p, p, new BlankNode('f'), new DefaultGraph(), e => { error = e; });
+      expect(error).toEqual(new Error('Cannot write because the writer has been closed.'));
+      writer.addQuad(p, p, writer.formula(), new DefaultGraph(), e => { error = e; });
+      expect(error).toEqual(new Error('Cannot write because the writer has been closed.'));
+    });
+
+    it('should refuse the lists option together with formulas', () => {
+      const message = 'Cannot write formulas with the lists option; write lists as rdf:first and rdf:rest statements instead';
+      expect(() => new Writer({ format: 'N3', formulas: {}, lists: {} })).toThrow(message);
+      expect(() => new Writer({ format: 'N3', lists: {} }).formula()).toThrow(message);
+    });
+
+    it('should write formulas inside lists written as statements', async () => {
+      const { quads, output, reparsed } = await roundTrip('<urn:s> <urn:p> ({ <urn:a> <urn:b> <urn:c> } { <urn:d> <urn:e> ({ <urn:f> <urn:g> <urn:h> }) }).');
+      expect((output.match(/\{/g) || []).length).toBe(3);
+      expect(isomorphic(reparsed, quads)).toBe(true);
     });
 
     it('should write formulas inside quoted triples inside formulas', async () => {
@@ -249,36 +258,10 @@ describe('Writer', () => {
       expect(await end(writer)).toBe('<urn:p> <urn:p> { <urn:p> <urn:p> <<(<urn:p> <urn:p> { <urn:p> <urn:p> <urn:p> })>> }.\n');
     });
 
-    it('should refuse a formula shared by a list and a statement', async () => {
-      const p = new NamedNode('urn:p'), a = new NamedNode('urn:a');
-      const writer = new Writer({ format: 'N3', formulas: { f: [new Quad(a, a, a)] }, lists: { l: [new BlankNode('f')] } });
-      writer.addQuad(new NamedNode('urn:s'), p, new BlankNode('l'));
-      writer.addQuad(new NamedNode('urn:t'), p, new BlankNode('f'));
-      await expect(end(writer)).rejects.toThrow('Cannot write formula _:f, which a list shares with other terms');
-      expect(() => writer.formula([new Quad(a, p, new BlankNode('l')), new Quad(a, a, new BlankNode('f'))]))
-        .toThrow('Cannot write formula _:f, which a list shares with other terms');
-    });
-
     it('should keep formulas created by formula() inside quoted triples apart', () => {
       const p = new NamedNode('urn:p'), writer = new Writer({ format: 'N3' });
       const formula = writer.formula([new Quad(new Quad(writer.formula(), p, p), p, p), new Quad(new Quad(writer.formula(), p, p), p, p)]);
       expect(formula.id).toBe('{ <<({} <urn:p> <urn:p>)>> <urn:p> <urn:p>. <<({} <urn:p> <urn:p>)>> <urn:p> <urn:p> }');
-    });
-
-    it('should refuse a formula shared by two lists', async () => {
-      const p = new NamedNode('urn:p'), a = new NamedNode('urn:a'), f = new BlankNode('f');
-      const writer = new Writer({ format: 'N3', formulas: { f: [new Quad(a, a, a)] }, lists: { l: [f], m: [f] } });
-      writer.addQuad(new NamedNode('urn:s'), p, new BlankNode('l'));
-      writer.addQuad(new NamedNode('urn:t'), p, new BlankNode('m'));
-      await expect(end(writer)).rejects.toThrow('Cannot write formula _:f, which a list shares with other terms');
-    });
-
-    it('should not mistake a literal for a list', async () => {
-      const p = new NamedNode('urn:p'), a = new NamedNode('urn:a');
-      const writer = new Writer({ format: 'N3', formulas: { f: [new Quad(a, a, a)] }, lists: { l: [new BlankNode('f')] } });
-      writer.addQuad(new NamedNode('urn:s'), p, new Literal('"l"'));
-      writer.addQuad(new NamedNode('urn:t'), p, new BlankNode('l'));
-      expect(await end(writer)).toBe('<urn:s> <urn:p> "l".\n<urn:t> <urn:p> ({ <urn:a> <urn:a> <urn:a> }).\n');
     });
 
     it('should group quoted triples that share a formula created by formula()', () => {
@@ -341,17 +324,6 @@ describe('Writer', () => {
       expect(await end(writer)).toBe('[] <urn:p> <urn:o>.\n<urn:o> <urn:q> {}; <urn:p> {}.\n');
     });
 
-    it('should hold back statements about lists after a statement with formulas', async () => {
-      const [p, q, o] = ['p', 'q', 'o'].map(name => new NamedNode(`urn:${name}`)), l = new BlankNode('l');
-      const writer = new Writer({ format: 'N3', formulas: { g: [] }, lists: { l: [o] } });
-      writer.addQuad(l, p, new BlankNode('g'));
-      writer.addQuad(l, q, o);
-      writer.addQuad(o, q, o, new NamedNode('urn:g'));
-      writer.addQuad(o, p, o);
-      expect(await end(writer)).toBe('<urn:g> {\n<urn:o> <urn:q> <urn:o>\n}\n<urn:o> <urn:p> <urn:o>.\n' +
-        '(<urn:o>) <urn:p> {}; <urn:q> <urn:o>.\n');
-    });
-
     it('should write each formula created by formula() once without the formulas option', async () => {
       const [a, p, s, t] = ['a', 'p', 's', 't'].map(name => new NamedNode(`urn:${name}`));
       const writer = new Writer({ format: 'N3' });
@@ -360,17 +332,6 @@ describe('Writer', () => {
       writer.addQuad(s, p, f);
       writer.addQuad(t, p, f);
       expect(await end(writer)).toBe('<urn:a> <urn:p> <urn:a>.\n{ <urn:a> <urn:a> <urn:a> } is <urn:p> of <urn:s>, <urn:t>.\n');
-    });
-
-    it('should refuse a list that contains itself', async () => {
-      const p = new NamedNode('urn:p'), l = new BlankNode('l');
-      const writer = new Writer({ format: 'N3', formulas: { f: [] }, lists: { l: [new BlankNode('m')], m: [l] } });
-      let error;
-      writer.addQuad(new NamedNode('urn:s'), p, l, new DefaultGraph(), e => { error = e; });
-      expect(error).toEqual(new Error('Cannot write list _:l, which contains itself'));
-      expect(() => writer.addQuad(l, p, p)).toThrow('Cannot write list _:l, which contains itself');
-      writer.addQuad(new NamedNode('urn:s'), p, new BlankNode('f'));
-      expect(await end(writer)).toBe('<urn:s> <urn:p> {}.\n');
     });
 
     it('should refuse a formula created by formula() that is written more than once', async () => {
@@ -400,22 +361,6 @@ describe('Writer', () => {
       expect(chunks.join('').endsWith('<urn:p> <urn:p> {}.\n')).toBe(true);
     });
 
-    it('should write a list with a formula that heads several statements', async () => {
-      const [a, p, q, o, r] = ['a', 'p', 'q', 'o', 'r'].map(name => new NamedNode(`urn:${name}`)), l = new BlankNode('l');
-      const writer = new Writer({ format: 'N3', formulas: { f: [new Quad(a, a, a)] }, lists: { l: [new BlankNode('f')] } });
-      writer.addQuad(l, p, o);
-      writer.addQuad(l, q, r);
-      expect(await end(writer)).toBe('({ <urn:a> <urn:a> <urn:a> }) <urn:p> <urn:o>; <urn:q> <urn:r>.\n');
-    });
-
-    it('should write a list with a formula that is the object of several statements', async () => {
-      const [a, p, q, s, t] = ['a', 'p', 'q', 's', 't'].map(name => new NamedNode(`urn:${name}`)), l = new BlankNode('l');
-      const writer = new Writer({ format: 'N3', formulas: { f: [new Quad(a, a, a)] }, lists: { l: [new BlankNode('f')] } });
-      writer.addQuad(s, p, l);
-      writer.addQuad(t, q, l);
-      expect(await end(writer)).toBe('({ <urn:a> <urn:a> <urn:a> }) is <urn:p> of <urn:s>; is <urn:q> of <urn:t>.\n');
-    });
-
     it('should keep an IRI bound to another prefix when rebinding a prefix', async () => {
       const writer = new Writer({ format: 'N3', prefixes: { ex: 'urn:old:', other: 'urn:old:' } });
       writer.addPrefix('ex', 'urn:new:');
@@ -430,13 +375,6 @@ describe('Writer', () => {
       writer.addQuad(new NamedNode('urn:s'), f, new Literal('"x"'));
       writer.addQuad(new NamedNode('urn:t'), f, new Literal('"x"'));
       expect(await end(writer)).toBe('"x" is { <urn:a> <urn:a> <urn:a> } of <urn:s>, <urn:t>.\n');
-    });
-
-    it('should write a formula with a very long list', async () => {
-      const p = new NamedNode('urn:p'), items = new Array(200000).fill(p);
-      const writer = new Writer({ format: 'N3', formulas: { f: [new Quad(p, p, new BlankNode('l'))] }, lists: { l: items } });
-      writer.addQuad(p, p, new BlankNode('f'));
-      expect(await end(writer)).toBe(`<urn:p> <urn:p> { <urn:p> <urn:p> (${items.map(() => '<urn:p>').join(' ')}) }.\n`);
     });
 
     it('should write deeply nested formulas inside quoted triples', async () => {
@@ -481,14 +419,6 @@ describe('Writer', () => {
       writer.addQuad(p, p, new BlankNode('f0'));
       const output = await end(writer);
       expect(output).toBe(`<urn:p> <urn:p> ${'{ <urn:p> <urn:p> '.repeat(depth)}<urn:p>${' }'.repeat(depth)}.\n`);
-    });
-
-    it('should write formulas inside lists inside formulas', async () => {
-      const p = new NamedNode('urn:p');
-      const formulas = { f: [new Quad(p, p, new BlankNode('l'))], g: [new Quad(p, p, p)] };
-      const writer = new Writer({ format: 'N3', formulas, lists: { l: [new BlankNode('g')] } });
-      writer.addQuad(p, p, new BlankNode('f'));
-      expect(await end(writer)).toBe('<urn:p> <urn:p> { <urn:p> <urn:p> ({ <urn:p> <urn:p> <urn:p> }) }.\n');
     });
 
     it('should group formula statements about equal literals', async () => {

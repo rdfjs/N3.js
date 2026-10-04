@@ -33,6 +33,9 @@ class SerializedTerm extends Term {
   }
 }
 
+const HELPERS_WITH_FORMULAS = 'Cannot use nodes created by blank() or list() in statements with formulas';
+const LISTS_WITH_FORMULAS = 'Cannot write formulas with the lists option; write lists as rdf:first and rdf:rest statements instead';
+
 // ## Placeholder class to represent formulas created by `formula`
 class SerializedFormula extends SerializedTerm {}
 
@@ -72,12 +75,6 @@ function hasHelperNode(term) {
   return term instanceof SerializedTerm && !(term instanceof SerializedFormula) || term.termType === 'Quad' &&
     (hasHelperNode(term.subject) || hasHelperNode(term.predicate) || hasHelperNode(term.object));
 }
-// Refuses nodes from `blank` and `list` in statements with formulas,
-// since they cannot be kept apart from or together with other occurrences
-function checkHelperNodes(terms) {
-  if (terms.some(hasHelperNode))
-    throw new Error('Cannot use nodes created by blank() or list() in statements with formulas');
-}
 // Checks whether the term is or contains a pretty-printed node
 function hasSerializedTerm(term) {
   return term instanceof SerializedTerm || term.termType === 'Quad' &&
@@ -97,10 +94,13 @@ export default class N3Writer {
     options = options || {};
     this._lists = options.lists;
     this._formulas = options.formulas;
+    if (this._lists && this._formulas)
+      throw new Error(LISTS_WITH_FORMULAS);
     this._openFormulas = new Set();
     this._formulaCache = null;
     // Statements with formulas are held back until the end, to group them by formula
     this._formulaStatements = this._formulas ? [] : null;
+    this._prefixesFixed = false;
 
     // If no output stream given, send the output as string through the end callback
     if (!outputStream) {
@@ -158,26 +158,18 @@ export default class N3Writer {
   // ### `_writeQuad` writes the quad to the output stream
   _writeQuad(subject, predicate, object, graph, done) {
     // Statements with formulas are held back until the end, so every formula can be written once
-    if (this._formulaStatements && DEFAULTGRAPH.equals(graph)) {
-      let holdBack;
-      try {
-        // Once statements are held back, so are those about lists,
-        // so that all statements about a list are written together
-        holdBack = this._findFormulas([object, predicate, subject]).length > 0 ||
-          this._formulaStatements.length > 0 && (this._isList(subject) || this._isList(object));
-        if (holdBack)
-          checkHelperNodes([subject, predicate, object]);
-      }
-      catch (error) {
+    if (this._formulaStatements && DEFAULTGRAPH.equals(graph) &&
+        this._findFormulas([object, predicate, subject]).length) {
+      if ([subject, predicate, object].some(hasHelperNode)) {
+        const error = new Error(HELPERS_WITH_FORMULAS);
         if (done)
           return done(error);
         throw error;
       }
-      if (holdBack) {
-        this._formulaStatements.push({ subject, predicate, object });
-        done && done();
-        return;
-      }
+      this._formulaStatements.push({ subject, predicate, object });
+      this._prefixesFixed = true;
+      done && done();
+      return;
     }
     try {
       // Write the graph's label if it has changed
@@ -241,29 +233,15 @@ export default class N3Writer {
     return !!this._formulas && term.termType === 'BlankNode' && hasOwnProperty.call(this._formulas, term.value);
   }
 
-  // ### `_findFormulas` lists the formulas in the terms, last term first,
-  // including inside quoted triples, and inside lists unless `inLists` is false.
+  // ### `_findFormulas` lists the formulas in the terms, last term first, including inside quoted triples.
   // Formulas from the `formulas` option are listed by label, and those created by `formula` as terms.
-  _findFormulas(terms, inLists = true) {
-    const formulas = [], openLists = new Set();
+  _findFormulas(terms) {
+    const formulas = [];
     terms = terms.slice();
     while (terms.length) {
       const term = terms.pop();
-      // A marker that all items of an open list were visited
-      if (typeof term === 'string')
-        openLists.delete(term);
-      else if (term.termType === 'Quad')
+      if (term.termType === 'Quad')
         terms.push(term.object, term.predicate, term.subject);
-      else if (this._isList(term)) {
-        if (!inLists) continue; // eslint-disable-line no-continue
-        if (openLists.has(term.value))
-          throw new Error(`Cannot write list _:${term.value}, which contains itself`);
-        const list = this._lists[term.value];
-        openLists.add(term.value);
-        terms.push(term.value);
-        for (let i = list.length - 1; i >= 0; i--)
-          terms.push(list[i]);
-      }
       else if (this._isFormula(term))
         formulas.push(term.value);
       else if (term instanceof SerializedFormula)
@@ -272,25 +250,16 @@ export default class N3Writer {
     return formulas;
   }
 
-  // ### `_isList` checks whether the term is the head of a given list
-  _isList(term) {
-    return !!this._lists && (term.termType === 'BlankNode' || term.termType === 'Variable') &&
-      (term.value in this._lists);
-  }
-
-  // ### `_checkLists` rejects lists that contain a formula occurring more than once,
-  // since N3 can only share a formula between statements, not with a list
-  _checkLists(terms) {
-    const all = new Map(), outsideLists = new Map();
-    for (const label of this._findFormulas(terms))
-      all.set(label, (all.get(label) || 0) + 1);
-    for (const label of this._findFormulas(terms, false))
-      outsideLists.set(label, (outsideLists.get(label) || 0) + 1);
-    for (const [label, count] of all) {
-      if (count > 1 && label instanceof SerializedFormula)
-        throw new Error('Cannot write a formula created by formula() more than once; use the formulas option to share it');
-      if (count > 1 && count > (outsideLists.get(label) || 0))
-        throw new Error(`Cannot write formula _:${label}, which a list shares with other terms`);
+  // ### `_checkFormulas` rejects formulas created by `formula` that would be written more than once,
+  // since each copy would denote a different formula
+  _checkFormulas(terms) {
+    const seen = new Set();
+    for (const formula of this._findFormulas(terms)) {
+      if (formula instanceof SerializedFormula) {
+        if (seen.has(formula))
+          throw new Error('Cannot write a formula created by formula() more than once; use the formulas option to share it');
+        seen.add(formula);
+      }
     }
   }
 
@@ -357,7 +326,7 @@ export default class N3Writer {
     // A blank node or list is represented as-is
     if (entity.termType !== 'NamedNode') {
       // If it is a list head, pretty-print it
-      if (this._isList(entity))
+      if (this._lists && hasOwnProperty.call(this._lists, entity.value))
         entity = this.list(this._lists[entity.value]);
       // If it labels an N3 formula, write the formula's contents,
       // unless that formula is already being written, which would never end
@@ -509,9 +478,9 @@ export default class N3Writer {
     if (!this._prefixIRIs)
       return done && done();
 
-    // Statements with formulas are written at the end with the prefixes bound then,
-    // so they cannot survive a prefix being bound to another IRI
-    if (this._formulaStatements && this._formulaStatements.length) {
+    // Formulas are written with the prefixes bound when they are serialized,
+    // so these cannot change once formulas are in use
+    if (this._prefixesFixed) {
       for (const prefix in prefixes) {
         const iri = typeof prefixes[prefix] === 'string' ? prefixes[prefix] : prefixes[prefix].value;
         if (`${prefix}:` in this._prefixNames && this._prefixNames[`${prefix}:`] !== iri)
@@ -612,12 +581,19 @@ export default class N3Writer {
 
   // ### `formula` creates an N3 formula with the given quads
   formula(quads) {
+    if (this._lists)
+      throw new Error(LISTS_WITH_FORMULAS);
     quads = quads || [];
-    for (const quad of quads)
-      checkHelperNodes([quad.subject, quad.predicate, quad.object]);
-    // Hold back statements with formulas from now on, so each can be written once
-    if (!this._formulaStatements)
+    // Nodes from `blank` and `list` cannot be kept apart from or together with their other occurrences
+    for (const quad of quads) {
+      if (hasHelperNode(quad.subject) || hasHelperNode(quad.predicate) || hasHelperNode(quad.object))
+        throw new Error(HELPERS_WITH_FORMULAS);
+    }
+    // Hold back statements with formulas from now on, so each can be written once,
+    // and keep the prefixes that the formula was written with
+    if (this._formulaStatements === null)
       this._formulaStatements = [];
+    this._prefixesFixed = true;
     const statements = this._encodeStatements(quads);
     return new SerializedFormula(statements.length ? `{ ${statements.join('. ')} }` : '{}');
   }
@@ -667,7 +643,7 @@ export default class N3Writer {
           written.push(term);
       }
     }
-    this._checkLists(written);
+    this._checkFormulas(written);
     const result = [];
     for (const { head, verbs } of statements.values()) {
       const parts = [];
@@ -692,7 +668,8 @@ export default class N3Writer {
     }
     // Write the statements with formulas, which were held back
     const formulaStatements = this._formulaStatements;
-    this._formulaStatements = null;
+    // Stop holding back statements, also when encoding them creates formulas
+    this._formulaStatements = false;
     if (formulaStatements && formulaStatements.length) {
       try {
         this._write(`${this._encodeStatements(formulaStatements).join('.\n')}.\n`);
