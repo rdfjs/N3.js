@@ -5131,6 +5131,21 @@ describe('Parser', () => {
       expect(parser.parse('<s> <p> <o>.')).toHaveLength(1);
     });
 
+    it('restores the base of a formula when lexing fails inside it', () => {
+      const parser = new Parser({ format: 'text/n3', baseIRI: 'http://outer.example/' });
+      expect(() => parser.parse('<s> <p> { @base <http://inner.example/>. <a> <b> "unterminated'))
+        .toThrow('Unexpected ""unterminated" on line 1.');
+      expect(parser.parse('<s> <p> <o>.')[0].subject.value).toBe('http://outer.example/s');
+    });
+
+    it('does not reuse a reifier when lexing fails after it', () => {
+      const parser = new Parser();
+      expect(() => parser.parse('<s> <p> <o> ~ <r> "unterminated'))
+        .toThrow('Unexpected ""unterminated" on line 1.');
+      const [, reifies] = parser.parse('<a> <b> <c> {| <d> <e> |}.');
+      expect(reifies.subject.termType).toBe('BlankNode');
+    });
+
     it('parses synchronously through a lexer that overrides tokenize', () => {
       class UppercaseLexer extends Lexer {
         tokenize(input, callback) {
