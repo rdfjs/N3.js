@@ -2,8 +2,10 @@
 # Reference: https://docs.coderabbit.ai/reference/configuration
 language: en-US
 reviews:
-  profile: chill
-  request_changes_workflow: false
+  # Most thorough profile: also reports smaller issues and nits.
+  profile: assertive
+  # Request changes on findings; approve once its threads are resolved.
+  request_changes_workflow: true
   high_level_summary: false
   poem: false
   review_status: true
