@@ -6,6 +6,8 @@ import namespaces from './IRIs';
 let blankNodePrefix = 0;
 // Detects `.` and `..` path segments in an IRI
 const dotSegments = /(^|\/)\.\.?($|[/#?])/;
+// Detects `.` and `..` segments in the path of an IRI, ignoring its query and fragment
+const pathDotSegments = /^[^?#]*(?:^|\/)\.\.?(?:$|[/#?])/;
 
 // ## Constructor
 export default class N3Parser {
@@ -1540,7 +1542,7 @@ export default class N3Parser {
         return null;
       // Only scan the joined IRI for dot segments if either part can contain them,
       // as the base path can be long and the joined IRI would need to be copied
-      return this._basePathHasDotSegments || dotSegments.test(iri) ?
+      return this._basePathHasDotSegments || pathDotSegments.test(iri) ?
         this._removeDotSegments(this._basePath + iri) : this._basePath + iri;
     }
   }

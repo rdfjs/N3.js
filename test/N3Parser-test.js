@@ -875,6 +875,13 @@ describe('Parser', () => {
     );
 
     it(
+      'should not treat dot segments in the query or fragment of a relative IRI as path segments',
+      shouldParse('@base <http://ex.org/a/>.\n' +
+                  '<g?y/../x> <h#s/../x> <i/../j?y/./x>.',
+                  ['http://ex.org/a/g?y/../x', 'http://ex.org/a/h#s/../x', 'http://ex.org/a/j?y/./x']),
+    );
+
+    it(
       'should not resolve IRIs against @BASE',
       shouldNotParse('@BASE <http://ex.org/>.',
                      'Expected entity but got @BASE on line 1.'),
