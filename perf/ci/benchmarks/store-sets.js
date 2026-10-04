@@ -176,13 +176,13 @@ Object.assign(benchmarks, {
 function intersectionBothWays(first, second, createStores) {
   function benchmark(swap) {
     return N3 => {
-      const { store, other, before = () => undefined, repeat = 1 } = createStores(N3);
+      const { store, other, change = () => undefined, repeat } = createStores(N3);
       const [a, b] = swap ? [other, store] : [store, other];
-      return {
-        before,
-        run: () => {
-          for (let i = 0; i < repeat; i++) check(a.intersection(b).size <= 1, 'too large');
-        },
+      return () => {
+        for (let i = 0; i < repeat; i++) {
+          change();
+          check(a.intersection(b).size <= 1, 'too large');
+        }
       };
     };
   }
@@ -224,10 +224,11 @@ Object.assign(benchmarks, {
       store: new N3.Store({ entityIndex }),
       other: store,
       // Removing and adding back a quad leaves the store's size uncached
-      before: () => {
+      change: () => {
         store.removeQuad(changed);
         store.addQuad(changed);
       },
+      repeat: 10000,
     };
   }),
   ...intersectionBothWays('one quad', 'many graphs', N3 => {
