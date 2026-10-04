@@ -4,6 +4,8 @@ import N3DataFactory from './N3DataFactory';
 import namespaces from './IRIs';
 
 let blankNodePrefix = 0;
+// Detects `.` and `..` path segments in an IRI
+const dotSegments = /(^|\/)\.\.?($|[/#?])/;
 
 // ## Constructor
 export default class N3Parser {
@@ -70,6 +72,7 @@ export default class N3Parser {
     if (!baseIRI) {
       this._base = '';
       this._basePath = '';
+      this._basePathHasDotSegments = false;
     }
     else {
       // Remove fragment if present
@@ -80,6 +83,7 @@ export default class N3Parser {
       this._base = baseIRI;
       this._basePath   = baseIRI.indexOf('/') < 0 ? baseIRI :
                          baseIRI.replace(/[^\/?]*(?:\?.*)?$/, '');
+      this._basePathHasDotSegments = dotSegments.test(this._basePath);
       baseIRI = baseIRI.match(/^(?:([a-z][a-z0-9+.-]*:))?(?:\/\/[^\/]*)?/i);
       this._baseRoot   = baseIRI[0];
       this._baseScheme = baseIRI[1];
@@ -106,7 +110,8 @@ export default class N3Parser {
     // Prefix and base declarations are scoped to their formula
     if (type === 'formula') {
       context.prefixes = this._prefixes;
-      context.base = [this._base, this._basePath, this._baseRoot, this._baseScheme];
+      context.base = [this._base, this._basePath, this._baseRoot, this._baseScheme,
+        this._basePathHasDotSegments];
       this._prefixes = Object.create(this._prefixes);
     }
     this._contextStack.push(context);
@@ -149,7 +154,8 @@ export default class N3Parser {
       this._expectOf = context.expectOf;
       if (type === 'formula') {
         this._prefixes = context.prefixes;
-        [this._base, this._basePath, this._baseRoot, this._baseScheme] = context.base;
+        [this._base, this._basePath, this._baseRoot, this._baseScheme,
+          this._basePathHasDotSegments] = context.base;
       }
       else
         this._prefixes._ = context.blankPrefix;
@@ -1529,14 +1535,19 @@ export default class N3Parser {
     // Resolve all other IRIs at the base IRI's path
     default:
       // Relative IRIs cannot contain a colon in the first path segment
-      return (/^[^/:]*:/.test(iri)) ? null : this._removeDotSegments(this._basePath + iri);
+      if (/^[^/:]*:/.test(iri))
+        return null;
+      // Only scan the joined IRI for dot segments if either part can contain them,
+      // as the base path can be long and the joined IRI would need to be copied
+      return this._basePathHasDotSegments || dotSegments.test(iri) ?
+        this._removeDotSegments(this._basePath + iri) : this._basePath + iri;
     }
   }
 
   // ### `_removeDotSegments` resolves './' and '../' path segments in an IRI as per RFC3986
   _removeDotSegments(iri) {
     // Don't modify the IRI if it does not contain any dot segments
-    if (!/(^|\/)\.\.?($|[/#?])/.test(iri))
+    if (!dotSegments.test(iri))
       return iri;
 
     // Start with an imaginary slash before the IRI in order to resolve trailing './' and '../'
