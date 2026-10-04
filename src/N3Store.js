@@ -482,6 +482,9 @@ export default class N3Store {
   // that shares this store's entity index, so no terms need to be converted.
   // With `otherGraphs`, it only adds the quads that are (`inOther`) or are not
   // in those graph indexes.
+  // Index keys are strings, so the ids are converted back to the numbers that
+  // `addQuad` uses: forwarded views compare the ids they are notified with to
+  // their own numeric ids. Unary plus measured as fast as `Number()`.
   _addFromIndex(graphs, otherGraphs = null, inOther = false) {
     for (const graphKey in graphs) {
       const other = otherGraphs && otherGraphs[graphKey];
@@ -495,12 +498,18 @@ export default class N3Store {
     const otherSubjects = other ? other.subjects : null;
     for (const subjectKey in subjects) {
       const subject = +subjectKey, predicates = subjects[subjectKey];
-      for (const predicateKey in predicates) {
-        const predicate = +predicateKey, objects = predicates[predicateKey];
-        for (const objectKey in objects) {
-          const object = +objectKey;
-          if (!otherGraphs || hasInIndex(otherSubjects, subject, predicate, object) === inOther)
-            this._addQuad(subject, predicate, object, graph);
+      const otherPredicates = otherSubjects && otherSubjects[subjectKey];
+      // An intersection skips the subjects and predicates the other store lacks
+      if (!inOther || otherPredicates) {
+        for (const predicateKey in predicates) {
+          const predicate = +predicateKey, objects = predicates[predicateKey];
+          const otherObjects = otherPredicates && otherPredicates[predicateKey];
+          if (!inOther || otherObjects) {
+            for (const objectKey in objects) {
+              if (!otherGraphs || (!!otherObjects && objectKey in otherObjects) === inOther)
+                this._addQuad(subject, predicate, +objectKey, graph);
+            }
+          }
         }
       }
     }
@@ -1150,8 +1159,10 @@ export default class N3Store {
       return store;
     }
     else if ((other instanceof N3Store) && this._entityIndex === other._entityIndex) {
-      // Look up the quads of the smaller store in the larger one
-      const [smaller, larger] = other.size <= this.size ? [other, this] : [this, other];
+      // Look up the quads of the smaller store in the larger one, if both
+      // sizes are known: counting them could take longer than the intersection
+      const [smaller, larger] = other._size !== null && this._size !== null && other._size < this._size ?
+        [other, this] : [this, other];
       const store = new N3Store({ entityIndex: this._entityIndex });
       store._addFromIndex(smaller._graphs, larger._graphs, true);
       return store;

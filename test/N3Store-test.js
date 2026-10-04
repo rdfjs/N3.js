@@ -4586,6 +4586,29 @@ describe('Set operations between stores sharing an EntityIndex', () => {
     expect(lazy.size).toBe(2);
   });
 
+  it('intersects and subtracts stores whose subjects or predicates differ', () => {
+    const c = new Store([q('s1', 'p', 'o1'), q('s1', 'p2', 'o1'), q('s5', 'p', 'o1')], { entityIndex });
+    expect(contents(a.intersection(c))).toEqual(ids([q('s1', 'p', 'o1')]));
+    expect(contents(c.intersection(a))).toEqual(ids([q('s1', 'p', 'o1')]));
+    expect(contents(c.difference(a))).toEqual(ids([q('s1', 'p2', 'o1'), q('s5', 'p', 'o1')]));
+  });
+
+  it('intersects with the store whose size is known to be smaller', () => {
+    const c = new Store([q('s1', 'p', 'o1')], { entityIndex });
+    expect(a.size + c.size).toBe(4);
+    expect(contents(a.intersection(c))).toEqual(ids([q('s1', 'p', 'o1')]));
+    expect(contents(c.intersection(a))).toEqual(ids([q('s1', 'p', 'o1')]));
+  });
+
+  it('notifies forwarded views when adding a store to an empty store', () => {
+    // A forwarded view compares the numeric ids it is notified with to its pattern
+    const empty = new Store({ entityIndex });
+    const forwarded = empty.match(null, ex('p'), null, ex('g'), { matchSemantics: 'forwarded' });
+    expect(forwarded.size).toBe(0);
+    empty.addAll(b);
+    expect(forwarded.size).toBe(2);
+  });
+
   it('computes the union', () => {
     expect(contents(a.union(b))).toEqual(ids([q('s1', 'p', 'o1'), q('s2', 'p', 'o2', 'g'), q('s3', 'p', 'o3'), q('s4', 'p', 'o4', 'g')]));
     expect(a.size).toBe(3);

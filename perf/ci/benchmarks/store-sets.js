@@ -172,6 +172,35 @@ Object.assign(benchmarks, {
     view.contains(view) + view.equals(other) + view.filter(isLiteralQuad).size),
 });
 
+// Intersections of stores sharing an EntityIndex that need not look at most
+// quads: stores whose subjects differ, and an empty store intersected with a
+// store whose size is not cached because it has just changed
+Object.assign(benchmarks, {
+  'store intersection: different subjects, shared index': N3 => {
+    const { namedNode, quad } = N3.DataFactory, entityIndex = new N3.EntityIndex();
+    function storeAbout(subject) {
+      return new N3.Store(Array.from({ length: SIZE }, (_, i) =>
+        quad(namedNode(subject), namedNode('http://example.org/p'), namedNode(`http://example.org/o${i}`))), { entityIndex });
+    }
+    const store = storeAbout('http://example.org/a'), other = storeAbout('http://example.org/b');
+    return () => {
+      for (let i = 0; i < 1000; i++) check(store.intersection(other).size === 0, 'not empty');
+    };
+  },
+  'store intersection: empty store with a changed store, shared index': N3 => {
+    const { entityIndex, store } = createContext(N3);
+    const empty = new N3.Store({ entityIndex }), changed = store.toArray()[0];
+    return {
+      // Removing and adding back a quad leaves the store's size uncached
+      before: () => {
+        store.removeQuad(changed);
+        store.addQuad(changed);
+      },
+      run: () => check(empty.intersection(store).size === 0, 'not empty'),
+    };
+  },
+});
+
 // addAll on a view, which adds to the view's own filtered store or, with
 // forwarded semantics, to the underlying store; each run gets a fresh store
 function viewAddAllBenchmark(matchSemantics) {
