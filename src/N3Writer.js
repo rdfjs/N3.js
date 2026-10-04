@@ -53,6 +53,10 @@ export default class N3Writer {
       this._endStream = options.end === undefined ? true : !!options.end;
     }
 
+    // A version label is written as-is, so it cannot contain characters that need escaping
+    if (options.version && /["\\\u0000-\u001f\u007f]/.test(options.version))
+      throw new Error(`Invalid version label: ${JSON.stringify(options.version)}`);
+
     // Initialize writer, depending on the format
     this._subject = null;
     if (!(/triple|quad/i).test(options.format)) {

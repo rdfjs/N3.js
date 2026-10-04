@@ -685,6 +685,12 @@ describe('Writer', () => {
       expect(output).toBe('VERSION "1.2"\n<a> <b> <c> <g> .\n');
     });
 
+    it.each(['1.2"', '1.2\\', '1.2\n@prefix x: <y>.', '1.2\u0000', '1.2\u007f'])(
+      'rejects the version label %j', version => {
+        expect(() => new Writer({ version })).toThrow(`Invalid version label: ${JSON.stringify(version)}`);
+        expect(() => new Writer({ format: 'N-Triples', version })).toThrow('Invalid version label');
+      });
+
     it('produces a version directive that the parser reads back', () => {
       const writer = new Writer({ version: '1.2' });
       let output;
