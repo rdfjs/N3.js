@@ -204,13 +204,15 @@ This is done by passing a `baseIRI` argument upon creation:
 const parser = new N3.Parser({ baseIRI: 'http://example.org/' });
 ```
 
-In N3 mode, `implicitEmptyPrefix` can bind an undeclared empty prefix to the
-document IRI with a `#` fragment:
+In N3 mode, an undeclared empty prefix is bound to the
+document IRI with a `#` fragment, so `:term` parses as `<http://example.org/document#term>`
+(see [w3c-cg/N3#235](https://github.com/w3c-cg/N3/issues/235)).
+Setting `implicitEmptyPrefix` to `false` requires an explicit `@prefix :` declaration instead:
 ```JavaScript
 const parser = new N3.Parser({
   format: 'text/n3',
   baseIRI: 'http://example.org/document',
-  implicitEmptyPrefix: true,
+  implicitEmptyPrefix: false,
 });
 ```
 
