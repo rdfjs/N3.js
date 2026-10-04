@@ -2762,6 +2762,12 @@ describe('Parser', () => {
     );
 
     it(
+      'should parse a version directive without whitespace before the string',
+      shouldParse(parser, 'VERSION"1.2"\n_:a <http://ex.org/b> "c".',
+                          ['_:b0_a', 'http://ex.org/b', '"c"']),
+    );
+
+    it(
       'should not parse a lowercase version directive',
       shouldNotParse(parser, 'version "1.2"', 'Unexpected "version" on line 1.'),
     );
@@ -2902,6 +2908,12 @@ describe('Parser', () => {
     it(
       'should parse a version directive',
       shouldParse(parser, 'VERSION "1.2"\n_:a <http://ex.org/b> "c".',
+                          ['_:b0_a', 'http://ex.org/b', '"c"']),
+    );
+
+    it(
+      'should parse a version directive without whitespace before the string',
+      shouldParse(parser, 'VERSION"1.2"\n_:a <http://ex.org/b> "c".',
                           ['_:b0_a', 'http://ex.org/b', '"c"']),
     );
 
