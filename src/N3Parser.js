@@ -1634,14 +1634,14 @@ export default class N3Parser {
     this._quantified = Object.create(null);
     this._emptyFormula = false;
 
-    let readToken = token => {
+    const readGrammarToken = token => {
       return this._readCallback = this._readCallback(token);
     };
+    let readToken = readGrammarToken;
 
     // Comments bypass the grammar, but participate in the token lifecycle.
     if (onComment || this._lexer.comments) {
       this._lexer.comments = true;
-      const readGrammarToken = readToken;
       readToken = token => {
         if (token.type !== 'comment')
           return readGrammarToken(token);
@@ -1676,7 +1676,17 @@ export default class N3Parser {
       const quads = [];
       let error;
       this._callback = (e, t) => { e ? (error = e) : t && quads.push(t); };
-      this._lexer.tokenize(input).every(readToken);
+      const lexer = this._lexer;
+      // Without comment or token callbacks, nothing observes a token before the
+      // whole document has lexed, so tokens can be parsed as they are lexed
+      // instead of being collected into an array first
+      if (readToken === readGrammarToken && typeof lexer._tokenizeString === 'function')
+        lexer._tokenizeString(input, (e, token) => {
+          if (e) this._callback(e), this._callback = noop;
+          else if (this._readCallback) readToken(token);
+        });
+      else
+        lexer.tokenize(input).every(readToken);
       if (error) throw error;
       return quads;
     }

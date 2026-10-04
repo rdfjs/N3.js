@@ -1,4 +1,4 @@
-import { Parser, Writer, NamedNode, BlankNode, Quad, termFromId, DataFactory as DF } from '../src';
+import { Lexer, Parser, Writer, NamedNode, BlankNode, Quad, termFromId, DataFactory as DF } from '../src';
 import rdfDataModel from '@rdfjs/data-model';
 import { isomorphic } from 'rdf-isomorphic';
 
@@ -4999,6 +4999,20 @@ describe('Parser', () => {
       expect(error.message).toMatch(/^Undefined prefix "a+…/);
       expect(error.message.length).toBeLessThanOrEqual(200);
       expect(error.context.token.prefix).toBe(bigPrefix);
+    });
+
+    it('reports the first error in the document when parsing synchronously', () => {
+      expect(() => new Parser().parse('<s> . <p> <o>.\n"unterminated'))
+        .toThrow('Unexpected . on line 1.');
+      expect(() => new Parser().parse('<s> <p> <o>.\n<s> <p> "unterminated'))
+        .toThrow('Unexpected ""unterminated" on line 2.');
+    });
+
+    it('parses synchronously with a lexer that only provides tokenize', () => {
+      const lexer = new Lexer();
+      lexer._tokenizeString = undefined;
+      expect(new Parser({ lexer }).parse('<s> <p> <o>.')).toHaveLength(1);
+      expect(() => new Parser({ lexer }).parse('<s> . "unterminated')).toThrow('Unexpected ""unterminated" on line 1.');
     });
   });
 
