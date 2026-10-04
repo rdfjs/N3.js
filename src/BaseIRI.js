@@ -4,7 +4,9 @@ import { escapeRegex } from './Util';
 // - file: IRIs (which could also use backslashes)
 // - IRIs containing /. or /.. or //
 const BASE_UNSUPPORTED = /^:?[^:?#]*(?:[?#]|$)|^file:|^[^:]*:\/*[^?#]+?\/(?:\.\.?(?:\/|$)|\/)/i;
-const SUFFIX_SUPPORTED = /^(?:(?:[^/?#]{3,}|\.?[^/?#.]\.?)(?:\/[^/?#]{3,}|\.?[^/?#.]\.?)*\/?)?(?:[?#]|$)/;
+// Supported suffixes have a first path segment other than . or ..,
+// and further path segments of at least 3 characters
+const SUFFIX_SUPPORTED = /^(?:(?!\.\.?(?:[/?#]|$))[^/?#]+(?:\/[^/?#]{3,})*\/?)?(?:[?#]|$)/;
 const CURRENT = './';
 const PARENT = '../';
 const QUERY = '?';
