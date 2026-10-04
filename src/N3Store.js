@@ -559,13 +559,24 @@ export default class N3Store {
     stream.on('data', quad => { this.addQuad(quad); });
 
     const store = this;
-    let promise = null;
+    let promise = null, error = null;
+    // Record errors from the start, since native streams before Node.js 18 lack `errored`
+    function recordError(streamError) {
+      error = streamError;
+      // Without other listeners, keep the stream's usual unhandled error behavior
+      if (!promise && stream.listenerCount('error') === 1) {
+        stream.removeListener('error', recordError);
+        stream.emit('error', streamError);
+      }
+    }
+    stream.on('error', recordError);
+
     function trackCompletion() {
       return promise || (promise = new Promise((resolve, reject) => {
         // A stream that has already errored rejects,
         // even if it was destroyed or has stopped being readable
-        if (stream.errored)
-          reject(stream.errored);
+        if (error || stream.errored)
+          reject(error || stream.errored);
         // A stream that has already ended resolves immediately
         else if (stream.readableEnded || stream.destroyed || stream.readable === false)
           resolve(store);
@@ -574,7 +585,7 @@ export default class N3Store {
         else {
           stream.once('end', () => resolve(store));
           stream.once('error', reject);
-          stream.once('close', () => stream.errored ? reject(stream.errored) : resolve(store));
+          stream.once('close', () => error ? reject(error) : resolve(store));
         }
       }));
     }
