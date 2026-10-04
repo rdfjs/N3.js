@@ -511,6 +511,8 @@ The store implements the following manipulation methods in addition to the stand
 - `addQuads` to insert an array of quads
 - `removeQuad` to remove one quad
 - `removeQuads` to remove an array of quads
+- `import` to insert a stream of quads; awaiting its result waits until the stream has ended
+  (start awaiting before the stream finishes for RDF/JS streams that are not Node.js streams)
 - `remove` to remove a stream of quads
 - `removeMatches` to remove all quads matching the given pattern
 - `deleteGraph` to remove all quads with the given graph
