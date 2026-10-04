@@ -94,7 +94,7 @@ export default class N3Parser {
   // failing if triple terms nest deeper than the maximum depth
   _enterTripleTerm(type, subject, predicate, token) {
     if (this._tripleTermDepth >= this._maxTripleTermDepth) {
-      this._error(`Triple terms nested deeper than ${this._maxTripleTermDepth} levels`, token);
+      this._error(`Triple terms nested deeper than ${this._maxTripleTermDepth} level${this._maxTripleTermDepth === 1 ? '' : 's'}`, token);
       return false;
     }
     this._tripleTermDepth++;

@@ -5060,7 +5060,7 @@ describe('Parser', () => {
           (error, quad) => { calls.push([error, quad]); setTimeout(resolve, 10); });
       });
       expect(calls).toHaveLength(1);
-      expect(calls[0][0].message).toBe('Triple terms nested deeper than 1 levels on line 1.');
+      expect(calls[0][0].message).toBe('Triple terms nested deeper than 1 level on line 1.');
     });
   });
 
