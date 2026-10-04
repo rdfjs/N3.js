@@ -43,18 +43,27 @@ commit_record() {
     print join("\n", grep { !/^(?:tree|parent|committer|gpgsig|gpgsig-sha256) / } split /\n(?! )/, $head), "\n\n", $body'
 }
 
-# The lines a commit adds and removes, byte for byte and in order, outside the given paths. Only
-# blob ids and hunk headers (line numbers and function context) are dropped, since a rebase onto
-# a newer main changes those.
-changes() {
-  local commit=$1
-  shift
-  git diff --unified=0 --no-color --no-ext-diff --no-renames "$commit^" "$commit" -- . "${@/#/:(exclude,literal)}" |
-    sed -E -e '/^index [0-9a-f]+\.\.[0-9a-f]+/d' -e 's/^@@ -[0-9]+(,[0-9]+)? \+[0-9]+(,[0-9]+)? @@.*/@@/'
+# Succeeds if commit b is commit a's change applied to b's parent: a's patch, with full context and
+# without the given paths (the hand-resolved ones), applies to b's parent, and the result is b's
+# tree outside those paths. git apply refuses a patch unless every removed and context line is
+# there, so commit by commit from main, b can differ from a only in the resolved paths. Unlike a
+# comparison of diff texts, this does not depend on how git aligns a diff.
+same_change() {
+  local a=$1 b=$2 index tree status
+  shift 2
+  index=$(mktemp)
+  GIT_INDEX_FILE=$index git read-tree "$b^" &&
+    git diff-tree -p --binary --full-index --no-renames "$a^" "$a" -- . "${@/#/:(exclude,literal)}" > "$index.patch" &&
+    { [ ! -s "$index.patch" ] || GIT_INDEX_FILE=$index git -c apply.whitespace=nowarn apply --cached "$index.patch"; } &&
+    tree=$(GIT_INDEX_FILE=$index git write-tree) &&
+    git diff-tree -r --quiet --no-renames "$tree" "$b^{tree}" -- . "${@/#/:(exclude,literal)}"
+  status=$?
+  rm -f "$index" "$index.patch"
+  return "$status"
 }
 
 # Succeeds if two ranges hold the same number of commits and each pair, compared on its own, has
-# the same author, message and other raw fields, and changes the same lines outside the paths
+# the same author, message and other raw fields, and makes the same change outside the paths
 # given after the ranges (the hand-resolved ones)
 same_commits() {
   local -a a b
@@ -65,7 +74,7 @@ same_commits() {
   [ "${#a[@]}" -eq "${#b[@]}" ] || return 1
   for i in "${!a[@]}"; do
     cmp -s <(commit_record "${a[$i]}") <(commit_record "${b[$i]}") &&
-      cmp -s <(changes "${a[$i]}" "$@") <(changes "${b[$i]}" "$@") || return 1
+      same_change "${a[$i]}" "${b[$i]}" "$@" || return 1
   done
 }
 
