@@ -307,8 +307,12 @@ export default class N3Lexer {
     while (true) {
       // Consume one separator line at a time, including its following indentation.
       while (true) {
-        let separatorLength = skipSpaces(input, pos) - pos;
-        const charCode = input.charCodeAt(pos + separatorLength);
+        // Most tokens are not preceded by spaces, so check before skipping them
+        let charCode = input.charCodeAt(pos), separatorLength = 0;
+        if (charCode === SPACE || charCode === TAB) {
+          separatorLength = skipSpaces(input, pos + 1) - pos;
+          charCode = input.charCodeAt(pos + separatorLength);
+        }
         if (charCode === HASH) {
           const hash = pos + separatorLength, lineEnd = findLineBreak(input, hash + 1);
           if (lineEnd < input.length) {
@@ -340,8 +344,10 @@ export default class N3Lexer {
             return this._suspend(input, pos, currentLineLength);
           separatorLength += charCode === CR && input.charCodeAt(pos + separatorLength + 1) === LF ? 2 : 1;
           // Indentation is consumed with the newline, but belongs to the next line's columns.
-          const indentationLength = skipSpaces(input, pos + separatorLength) - pos - separatorLength;
-          pos += separatorLength + indentationLength;
+          pos += separatorLength;
+          const next = input.charCodeAt(pos);
+          const indentationLength = next === SPACE || next === TAB ? skipSpaces(input, pos + 1) - pos : 0;
+          pos += indentationLength;
           currentLineLength = input.length - pos + indentationLength;
           this._line++;
         }
