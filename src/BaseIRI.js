@@ -4,7 +4,9 @@ import { escapeRegex } from './Util';
 // - file: IRIs (which could also use backslashes)
 // - IRIs containing /. or /.. or //
 const BASE_UNSUPPORTED = /^:?[^:?#]*(?:[?#]|$)|^file:|^[^:]*:\/*[^?#]+?\/(?:\.\.?(?:\/|$)|\/)/i;
-const SUFFIX_SUPPORTED = /^(?:(?:[^/?#]{3,}|\.?[^/?#.]\.?)(?:\/[^/?#]{3,}|\.?[^/?#.]\.?)*\/?)?(?:[?#]|$)/;
+// Supported suffixes have a first path segment other than . or ..,
+// and further path segments of at least 3 characters
+const SUFFIX_SUPPORTED = /^(?:(?!\.\.?(?:[/?#]|$))[^/?#]+(?:\/[^/?#]{3,})*\/?)?(?:[?#]|$)/;
 const CURRENT = './';
 const PARENT = '../';
 const QUERY = '?';
@@ -88,8 +90,10 @@ export default class BaseIRI {
       // Don't abbreviate unsupported path
       if (parentPath !== QUERY && !SUFFIX_SUPPORTED.test(suffix))
         return iri;
-      // Omit ./ with fragment or query string
-      if (parentPath === CURRENT && /^[^?#]/.test(suffix))
+      // Omit ./ with fragment or query string,
+      // unless the first segment has a colon and would be read as a scheme
+      if (parentPath === CURRENT && /^[^?#]/.test(suffix) &&
+          (suffix.indexOf(':') < 0 || !/^[^/?#]*:/.test(suffix)))
         return suffix;
       // Append suffix to relative parent path
       return parentPath + suffix;

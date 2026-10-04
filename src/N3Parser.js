@@ -22,7 +22,7 @@ export default class N3Parser {
 
     // Set supported features depending on the format
     const format = (typeof options.format === 'string') ?
-                 options.format.match(/\w*$/)[0].toLowerCase() : '',
+                 options.format.match(/(?:^|\W)(\w*)$/)[1].toLowerCase() : '',
         isTurtle = /turtle/.test(format), isTriG = /trig/.test(format),
         isNTriples = /triple/.test(format), isNQuads = /quad/.test(format),
         isN3 = this._n3Mode = /n3/.test(format),
@@ -83,8 +83,10 @@ export default class N3Parser {
         baseIRI = baseIRI.substr(0, fragmentPos);
       // Set base IRI and its components
       this._base = baseIRI;
+      const queryPos = baseIRI.indexOf('?');
+      const path = queryPos < 0 ? baseIRI : baseIRI.substr(0, queryPos);
       this._basePath   = baseIRI.indexOf('/') < 0 ? baseIRI :
-                         baseIRI.replace(/[^\/?]*(?:\?.*)?$/, '');
+                         path.substr(0, path.lastIndexOf('/') + 1);
       baseIRI = baseIRI.match(/^(?:([a-z][a-z0-9+.-]*:))?(?:\/\/[^\/]*)?/i);
       this._baseRoot   = baseIRI[0];
       this._baseScheme = baseIRI[1];
@@ -107,15 +109,16 @@ export default class N3Parser {
       inverse: this._inversePredicate,
       expectOf: this._expectOf,
       blankPrefix: this._prefixes._,
-      quantified: this._quantified,
+      prefixChanges: this._prefixChanges,
+      quantifiedChanges: this._quantifiedChanges,
       emptyFormula: this._emptyFormula,
     };
-    // Prefix and base declarations are scoped to their formula
+    // Prefix and base declarations are scoped to their formula,
+    // so record prefix changes to undo them when the formula ends
     if (type === 'formula') {
-      context.prefixes = this._prefixes;
       context.base = [this._base, this._basePath, this._baseRoot, this._baseScheme,
         this._basePathHasDotSegments];
-      this._prefixes = Object.create(this._prefixes);
+      this._prefixChanges = [];
     }
     this._contextStack.push(context);
     // Every new scope resets the predicate direction
@@ -128,7 +131,7 @@ export default class N3Parser {
       // Label the scope with the enclosing formula's blank node
       // (using a dot as separator, as a blank node label cannot start with it)
       this._prefixes._ = (this._graph ? `${this._graph.value}.` : '.');
-      this._quantified = Object.create(this._quantified);
+      this._quantifiedChanges = [];
     }
     // A formula starts empty and must not inherit its parent's subject
     if (type === 'formula') {
@@ -155,14 +158,18 @@ export default class N3Parser {
     if (this._n3Mode) {
       this._inversePredicate = context.inverse;
       this._expectOf = context.expectOf;
-      if (type === 'formula') {
-        this._prefixes = context.prefixes;
+      if (type === 'formula')
         [this._base, this._basePath, this._baseRoot, this._baseScheme,
           this._basePathHasDotSegments] = context.base;
+      if (this._prefixChanges !== context.prefixChanges) {
+        undoChanges(this._prefixes, this._prefixChanges);
+        this._prefixChanges = context.prefixChanges;
       }
-      else
-        this._prefixes._ = context.blankPrefix;
-      this._quantified = context.quantified;
+      this._prefixes._ = context.blankPrefix;
+      if (this._quantifiedChanges !== context.quantifiedChanges) {
+        undoChanges(this._quantified, this._quantifiedChanges);
+        this._quantifiedChanges = context.quantifiedChanges;
+      }
       this._emptyFormula = context.emptyFormula;
     }
   }
@@ -1064,6 +1071,8 @@ export default class N3Parser {
     if (token.type !== 'IRI')
       return this._error(`Expected IRI to follow prefix "${this._prefix}:"`, token);
     const prefixNode = this._readEntity(token);
+    if (this._prefixChanges !== null)
+      this._prefixChanges.push(this._prefix, this._prefixes[this._prefix]);
     this._prefixes[this._prefix] = prefixNode.value;
     this._prefixCallback(this._prefix, prefixNode);
     return this._readDeclarationPunctuation;
@@ -1142,8 +1151,11 @@ export default class N3Parser {
       return this._error(`Unexpected ${token.type}`, token);
     }
     // Without explicit quantifiers, map entities to a quantified entity
-    if (!this._explicitQuantifiers)
+    if (!this._explicitQuantifiers) {
+      if (this._quantifiedChanges !== null)
+        this._quantifiedChanges.push(entity.id, this._quantified[entity.id]);
       this._quantified[entity.id] = this._factory[this._quantifier](this._factory.blankNode().value);
+    }
     // With explicit quantifiers, output the reified quantifier
     else {
       // If this is the first item, start a new quantifier list
@@ -1530,7 +1542,10 @@ export default class N3Parser {
     // Resolve relative fragment IRIs against the base IRI
     case '#': return this._base + iri;
     // Resolve relative query string IRIs by replacing the query string
-    case '?': return this._base.replace(/(?:\?.*)?$/, iri);
+    case '?': {
+      const queryPos = this._base.indexOf('?');
+      return (queryPos < 0 ? this._base : this._base.substr(0, queryPos)) + iri;
+    }
     // Resolve root-relative IRIs at the root of the base IRI
     case '/':
       // Resolve scheme-relative IRIs to the scheme
@@ -1646,6 +1661,9 @@ export default class N3Parser {
     this._inversePredicate = false;
     this._expectOf = false;
     this._quantified = Object.create(null);
+    // Changes to prefixes and quantifiers in nested scopes, to undo when leaving them
+    this._prefixChanges = null;
+    this._quantifiedChanges = null;
     this._emptyFormula = false;
 
     let readToken = token => {
@@ -1705,6 +1723,16 @@ export default class N3Parser {
     // Parse asynchronously otherwise, executing the read callback when a token arrives
     this._callback = onQuad;
     this._lexer.tokenize(input, processNextToken);
+  }
+}
+
+// ### `undoChanges` restores the entries of a map from a list of key and previous value pairs
+function undoChanges(map, changes) {
+  for (let i = changes.length - 2; i >= 0; i -= 2) {
+    if (changes[i + 1] === undefined)
+      delete map[changes[i]];
+    else
+      map[changes[i]] = changes[i + 1];
   }
 }
 

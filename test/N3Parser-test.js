@@ -2966,6 +2966,14 @@ describe('Parser', () => {
     );
 
     it(
+      'should not keep a prefix first declared inside a formula',
+      shouldNotParse(parser,
+                     '<s> <p> { @prefix in: <http://inner.example/>. in:s in:p in:o. }.\n' +
+                     'in:s in:p in:o.',
+                     'Undefined prefix "in:" on line 2.'),
+    );
+
+    it(
       'should scope base declarations to their formula',
       shouldParse(parser,
                   '@base <http://outer.example/>.\n' +

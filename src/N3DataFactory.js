@@ -499,7 +499,8 @@ export function fromTerm(term) {
   case 'BlankNode':    return blankNode(term.value);
   case 'Variable':     return variable(term.value);
   case 'DefaultGraph': return DEFAULTGRAPH;
-  case 'Literal':      return literal(term.value, term.language || term.datatype);
+  case 'Literal':      return literal(term.value, !term.language ? term.datatype :
+    term.direction ? { language: term.language, direction: term.direction } : term.language);
   case 'Quad':         return fromQuad(term);
   default:             throw new Error(`Unexpected termType: ${term.termType}`);
   }
