@@ -134,7 +134,8 @@ link_commit() { git commit --quiet --allow-empty --cleanup=verbatim -m "$1"; }
 
 # Submodule pointers that .gitmodules tells git to ignore must still be checked
 git checkout --quiet --detach "$base"
-commit 'chore: submodule' .gitmodules "$(lines '[submodule "sub"]' '	path = sub' '	url = ./sub' '	ignore = all')"
+commit 'chore: submodule' .gitmodules "$(lines '[submodule "sub"]' '  path = sub' '  url = ./sub' '  ignore = all')"
+[ "$(git config -f .gitmodules --get submodule.sub.ignore)" = all ] || { echo 'FAIL: .gitmodules setup'; exit 1; }
 entry 160000 "$base" sub && link_commit 'chore: pointer'
 pointer=$(git rev-parse HEAD)
 entry 160000 "$main" sub && link_commit 'feat!: move the pointer'
@@ -165,5 +166,20 @@ link_main=$(git rev-parse HEAD)
 entry 120000 "$(blob "$(lines T1 t2 t3 t4 t5 T6)")" link
 GIT_AUTHOR_DATE=$(git log -1 --format=%aD "$link_change") link_commit "$(git log -1 --format=%B "$link_change")"
 expect refused 'a symlink target merged line by line' same_commits "$link_base..$link_change" "$link_main..HEAD"
+
+# An empty directory added by one commit and removed by the next: no file listing shows it, so
+# only the whole tree can tell the forged intermediate commit apart
+git reset --quiet --hard && git checkout --quiet --detach "$base" || { echo 'FAIL: checkout'; exit 1; }
+commit 'feat!: g4' g "$(lines g4)"
+commit 'feat!: g5' g "$(lines g5)"
+two=$(git rev-parse HEAD)
+empty=$(git mktree < /dev/null)
+with_empty=$(printf '040000 tree %s\te\n' "$empty" | cat - <(git ls-tree "$two~1") | git mktree)
+[ "$(git rev-parse "$with_empty:e")" = "$empty" ] || { echo 'FAIL: empty directory setup'; exit 1; }
+forged=$(GIT_AUTHOR_NAME=test GIT_AUTHOR_EMAIL=test@example.org GIT_AUTHOR_DATE=$(git log -1 --format=%aD "$two~1") \
+  git commit-tree "$with_empty" -p "$base" -m "$(git log -1 --format=%B "$two~1")")
+forged=$(GIT_AUTHOR_NAME=test GIT_AUTHOR_EMAIL=test@example.org GIT_AUTHOR_DATE=$(git log -1 --format=%aD "$two") \
+  git commit-tree "$two^{tree}" -p "$forged" -m "$(git log -1 --format=%B "$two")")
+expect refused 'an empty directory added and removed again' same_commits "$base..$two" "$base..$forged"
 
 exit "$failures"

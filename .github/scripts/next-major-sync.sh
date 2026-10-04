@@ -64,7 +64,8 @@ files_of() {
 # renames, no attributes) into exactly b's version, and b changes nothing else. Only the given
 # paths (the hand-resolved ones) are skipped. The three-way merge, not the diff text or patch
 # context, decides where a's change lands, so commit by commit from main the rebased history can
-# differ only in the resolved paths.
+# differ only in the resolved paths. Last, b's whole tree must be the tree those entries build
+# on b's parent, so nothing the file listings leave out, such as an empty directory, gets through.
 same_change() {
   local dir status
   dir=$(mktemp -d)
@@ -102,10 +103,21 @@ compare_change() {
       return 1
     fi
     [ "${new_files[$path]:-}" = "$want" ] || return 1
+    printf '%s\t%s\0' "${want:-0 0000000000000000000000000000000000000000}" "$path" >> "$dir/entries" || return 1
   done < "$dir/a-paths"
   while IFS= read -r -d '' path; do
     [ -n "${skip[$path]:-}" ] || [ -n "${changed[$path]:-}" ] || return 1
   done < "$dir/b-paths"
+  for r in "$@"; do
+    want=${new_files[$r]:-}
+    printf '%s\t%s\0' "${want:-0 0000000000000000000000000000000000000000}" "$r" >> "$dir/entries" || return 1
+  done
+  : >> "$dir/entries" &&
+    GIT_INDEX_FILE=$dir/index git read-tree "$b^" &&
+    GIT_INDEX_FILE=$dir/index git update-index -z --index-info < "$dir/entries" &&
+    GIT_INDEX_FILE=$dir/index git write-tree > "$dir/tree" &&
+    git rev-parse --verify "$b^{tree}" > "$dir/b-tree" &&
+    cmp -s "$dir/tree" "$dir/b-tree"
 }
 
 # Succeeds if two ranges hold the same number of commits and each pair, compared on its own, has
