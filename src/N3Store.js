@@ -1371,8 +1371,12 @@ function validateMatchSemantics(semantics = 'lazy') {
 
 // Returns whether two terms or term IDs are the same; triple terms are compared by their components.
 function sameTerm(left, right) {
-  return left.termType === 'Quad' || right.termType === 'Quad' ?
-    left.termType === right.termType && left.equals(right) : termToId(left) === termToId(right);
+  if (left.termType !== 'Quad' && right.termType !== 'Quad')
+    return termToId(left) === termToId(right);
+  // Compare components, since triple terms from other libraries may lack `equals`
+  return left.termType === right.termType &&
+    sameTerm(left.subject, right.subject) && sameTerm(left.predicate, right.predicate) &&
+    sameTerm(left.object, right.object) && sameTerm(left.graph, right.graph);
 }
 
 // Returns the intersection of two quad patterns, or false if they conflict.

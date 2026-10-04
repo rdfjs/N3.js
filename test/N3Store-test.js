@@ -2995,6 +2995,30 @@ describe('Store', () => {
       expect(store.match(null, null, triple).match(null, null, namedNode('x')).size).toBe(0);
       expect(store.match(null, null, namedNode('x')).match(null, null, triple).size).toBe(0);
     });
+
+    it('should accept triple terms from other libraries without equals', () => {
+      const foreign = {
+        termType: 'Quad',
+        subject: { termType: 'NamedNode', value: 's' },
+        predicate: { termType: 'NamedNode', value: 'p' },
+        object: { termType: 'Literal', value: 'o', language: '', datatype: { termType: 'NamedNode', value: namespaces.xsd.string } },
+        graph: { termType: 'DefaultGraph', value: '' },
+      };
+      const other = new Store([
+        quad(triple, namedNode('says'), namedNode('x')),
+        quad(namedNode('s'), namedNode('says'), triple),
+      ], { matchSemantics: 'forwarded' });
+      const view = other.match(foreign);
+      expect(view.size).toBe(1);
+      view.add(quad(triple, namedNode('says'), namedNode('y')));
+      expect(view.size).toBe(2);
+      expect(() => view.add(quad(quad(namedNode('s'), namedNode('p'), literal('other')), namedNode('says'), namedNode('z'))))
+        .toThrow('Quad does not match the forwarded view pattern');
+      expect(view.match(triple).size).toBe(2);
+      expect(other.match(null, null, foreign).match(null, null, triple).size).toBe(1);
+      view.deleteMatches(foreign, namedNode('says'), namedNode('y'));
+      expect(view.size).toBe(1);
+    });
   });
 
   describe('A Store with an object recurring under multiple predicates', () => {
