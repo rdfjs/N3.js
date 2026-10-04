@@ -6,6 +6,16 @@ import { isDefaultGraph } from './N3Util';
 import N3Writer from './N3Writer';
 
 const ITERATOR = Symbol('iter');
+const SIZE = Symbol('size');
+
+// Neither a registration nor its cleanup record may keep a view or store alive.
+// Initialize lazily so importing N3 and using lazy views needs no weak-reference APIs.
+let observerRegistry;
+function finalizeObserver({ store, observer }) {
+  const target = store.deref();
+  if (target)
+    target._removeObserver(observer);
+}
 
 function hasInIndex(index0, key0, key1, key2) {
   const index1 = index0 && index0[key0];
@@ -14,11 +24,18 @@ function hasInIndex(index0, key0, key1, key2) {
 }
 
 function merge(target, source, depth = 4) {
-  if (depth === 0)
-    return Object.assign(target, source);
-
-  for (const key in source)
-    target[key] = merge(target[key] || Object.create(null), source[key], depth - 1);
+  let size = target[SIZE] || 0;
+  for (const key in source) {
+    if (!(key in target)) {
+      size++;
+      target[key] = depth === 0 ? null : merge(Object.create(null), source[key], depth - 1);
+    }
+    else if (depth !== 0)
+      target[key] = merge(target[key], source[key], depth - 1);
+  }
+  // Depth 2 is the level of the `subjects`, `predicates`, and `objects` indexes.
+  if (depth <= 2)
+    target[SIZE] = size;
 
   return target;
 }
@@ -34,7 +51,10 @@ const isQuadPattern = Array.isArray;
  * *not* be set as the value for an index.
  */
 function intersect(s1, s2, depth = 4) {
-  let target = false;
+  let target = false, size = 0;
+
+  if (depth <= 2 && s2[SIZE] < s1[SIZE])
+    [s1, s2] = [s2, s1];
 
   for (const key in s1) {
     if (key in s2) {
@@ -42,6 +62,7 @@ function intersect(s1, s2, depth = 4) {
       if (intersection !== false) {
         target = target || Object.create(null);
         target[key] = intersection;
+        size++;
       }
       // Depth 3 is the 'subjects', 'predicates' and 'objects' keys.
       // If the 'subjects' index is empty, so will the 'predicates' and 'objects' index.
@@ -50,6 +71,10 @@ function intersect(s1, s2, depth = 4) {
       }
     }
   }
+
+  // Depth 2 is the level of the `subjects`, `predicates`, and `objects` indexes.
+  if (depth <= 2 && target)
+    target[SIZE] = size;
 
   return target;
 }
@@ -62,7 +87,7 @@ function intersect(s1, s2, depth = 4) {
  * *not* be set as the value for an index.
  */
 function difference(s1, s2, depth = 4) {
-  let target = false;
+  let target = false, size = 0;
 
   for (const key in s1) {
     // When the key is not in the index, then none of the triples defined by s1[key] are
@@ -70,12 +95,14 @@ function difference(s1, s2, depth = 4) {
     if (!(key in s2)) {
       target = target || Object.create(null);
       target[key] = depth === 0 ? null : merge({}, s1[key], depth - 1);
+      size++;
     }
     else if (depth !== 0) {
       const diff = difference(s1[key], s2[key], depth - 1);
       if (diff !== false) {
         target = target || Object.create(null);
         target[key] = diff;
+        size++;
       }
       // Depth 3 is the 'subjects', 'predicates' and 'objects' keys.
       // If the 'subjects' index is empty, so will the 'predicates' and 'objects' index.
@@ -84,6 +111,10 @@ function difference(s1, s2, depth = 4) {
       }
     }
   }
+
+  // Depth 2 is the level of the `subjects`, `predicates`, and `objects` indexes.
+  if (depth <= 2 && target)
+    target[SIZE] = size;
 
   return target;
 }
@@ -248,12 +279,15 @@ export default class N3Store {
     this._size = 0;
     // `_graphs` contains subject, predicate, and object indexes per graph
     this._graphs = Object.create(null);
+    // `_observers` contains weak references to views notified before every mutation
+    this._observers = null;
 
     // Shift parameters if `quads` is not given
     if (!options && quads && !quads[0] && !(typeof quads.match === 'function'))
       options = quads, quads = null;
     options = options || {};
     this._factory = options.factory || N3DataFactory;
+    this._matchSemantics = validateMatchSemantics(options.matchSemantics);
     this._entityIndex = options.entityIndex || new N3EntityIndex({ factory: this._factory });
     this._entities = this._entityIndex._entities;
     this._termFromId = this._entityIndex._termFromId.bind(this._entityIndex);
@@ -281,7 +315,7 @@ export default class N3Store {
     for (const graphKey in graphs)
       for (const subjectKey in (subjects = graphs[graphKey].subjects))
         for (const predicateKey in (subject = subjects[subjectKey]))
-          size += Object.keys(subject[predicateKey]).length;
+          size += subject[predicateKey][SIZE];
     return this._size = size;
   }
 
@@ -290,13 +324,23 @@ export default class N3Store {
   // ### `_addToIndex` adds a quad to a three-layered index.
   // Returns if the index has changed, if the entry did not already exist.
   _addToIndex(index0, key0, key1, key2) {
-    // Create layers as necessary
-    const index1 = index0[key0] || (index0[key0] = {});
-    const index2 = index1[key1] || (index1[key1] = {});
+    // Create layers as necessary, maintaining their entry counters
+    let index1 = index0[key0];
+    if (!index1) {
+      index0[key0] = index1 = { [SIZE]: 0 };
+      index0[SIZE]++;
+    }
+    let index2 = index1[key1];
+    if (!index2) {
+      index1[key1] = index2 = { [SIZE]: 0 };
+      index1[SIZE]++;
+    }
     // Setting the key to _any_ value signals the presence of the quad
     const existed = key2 in index2;
-    if (!existed)
+    if (!existed) {
       index2[key2] = null;
+      index2[SIZE]++;
+    }
     return !existed;
   }
 
@@ -306,44 +350,63 @@ export default class N3Store {
     const index1 = index0[key0], index2 = index1[key1];
     delete index2[key2];
 
-    // Remove intermediary index layers if they are empty
-    for (const key in index2) return;
+    // Remove intermediary index layers if they are empty,
+    // which the entry counters detect in constant time
+    if (--index2[SIZE] !== 0) return;
     delete index1[key1];
-    for (const key in index1) return;
+    if (--index1[SIZE] !== 0) return;
     delete index0[key0];
+    index0[SIZE]--;
   }
 
   // ### `_findInIndex` finds a set of quads in a three-layered index.
   // The index base is `index0` and the keys at each level are `key0`, `key1`, and `key2`.
-  // Any of these keys can be undefined, which is interpreted as a wildcard.
+  // A key and any keys after it can be null or undefined, which is interpreted as a wildcard.
   // `name0`, `name1`, and `name2` are the names of the keys at each level,
   // used when reconstructing the resulting quad
   // (for instance: _subject_, _predicate_, and _object_).
   // Finally, `graphId` will be the graph of the created quads.
   *_findInIndex(index0, key0, key1, key2, name0, name1, name2, graphId) {
-    let tmp, index1, index2;
     const entityKeys = this._entities;
     const graph = this._termFromId(entityKeys[graphId]);
     const parts = { subject: null, predicate: null, object: null };
 
-    // If a key is specified, use only that part of index 0.
-    if (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
-    for (const value0 in index0) {
-      if (index1 = index0[value0]) {
-        parts[name0] = this._termFromId(entityKeys[value0]);
-        // If a key is specified, use only that part of index 1.
-        if (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
-        for (const value1 in index1) {
-          if (index2 = index1[value1]) {
-            parts[name1] = this._termFromId(entityKeys[value1]);
-            // If a key is specified, use only that part of index 2, if it exists.
-            const values = key2 ? (key2 in index2 ? [key2] : []) : Object.keys(index2);
-            // Create quads for all items found in index 2.
-            for (let l = 0; l < values.length; l++) {
-              parts[name2] = this._termFromId(entityKeys[values[l]]);
-              yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
-            }
-          }
+    // Exact matches avoid allocating key arrays or entering generic loops.
+    if (key2) {
+      const index1 = index0[key0];
+      const index2 = index1 && index1[key1];
+      if (!index2 || !(key2 in index2))
+        return;
+      parts[name0] = this._termFromId(entityKeys[key0]);
+      parts[name1] = this._termFromId(entityKeys[key1]);
+      parts[name2] = this._termFromId(entityKeys[key2]);
+      yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
+      return;
+    }
+
+    if (key0 && !(key0 in index0))
+      return;
+    // A null key list stops after visiting a bound key, avoiding a one-item array.
+    const keys0 = key0 ? null : Object.keys(index0);
+    for (let i0 = 0, value0 = key0 || keys0[0]; value0;
+         value0 = keys0 && keys0[++i0]) {
+      // Mutations can remove keys captured before an earlier yield.
+      const index1 = index0[value0];
+      if (!index1) continue; // eslint-disable-line no-continue
+      parts[name0] = this._termFromId(entityKeys[value0]);
+
+      if (key1 && !(key1 in index1))
+        return;
+      const keys1 = key1 ? null : Object.keys(index1);
+      for (let i1 = 0, value1 = key1 || keys1[0]; value1;
+           value1 = keys1 && keys1[++i1]) {
+        const index2 = index1[value1];
+        if (!index2) continue; // eslint-disable-line no-continue
+        parts[name1] = this._termFromId(entityKeys[value1]);
+        const values = Object.keys(index2);
+        for (let l = 0; l < values.length; l++) {
+          parts[name2] = this._termFromId(entityKeys[values[l]]);
+          yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
         }
       }
     }
@@ -398,25 +461,32 @@ export default class N3Store {
 
   // ### `_countInIndex` counts matching quads in a three-layered index.
   // The index base is `index0` and the keys at each level are `key0`, `key1`, and `key2`.
-  // Any of these keys can be undefined, which is interpreted as a wildcard.
+  // A key and any keys after it can be null or undefined, which is interpreted as a wildcard.
   _countInIndex(index0, key0, key1, key2) {
-    let count = 0, tmp, index1, index2;
+    let count = 0, index1, index2;
 
-    // If a key is specified, count only that part of index 0
-    if (key0) (tmp = index0, index0 = {})[key0] = tmp[key0];
-    for (const value0 in index0) {
-      if (index1 = index0[value0]) {
-        // If a key is specified, count only that part of index 1
-        if (key1) (tmp = index1, index1 = {})[key1] = tmp[key1];
-        for (const value1 in index1) {
-          if (index2 = index1[value1]) {
-            // If a key is specified, count the quad if it exists
-            if (key2) (key2 in index2) && count++;
-            // Otherwise, count all quads
-            else count += Object.keys(index2).length;
-          }
-        }
+    // Bound outer keys can be looked up directly.
+    if (key0) {
+      if (!(index1 = index0[key0]))
+        return 0;
+      if (key1) {
+        if (!(index2 = index1[key1]))
+          return 0;
+        return key2 ? (key2 in index2 ? 1 : 0) : index2[SIZE];
       }
+
+      const keys1 = Object.keys(index1);
+      for (let i1 = 0; i1 < keys1.length; i1++)
+        count += index1[keys1[i1]][SIZE];
+      return count;
+    }
+
+    const keys0 = Object.keys(index0);
+    for (let i0 = 0; i0 < keys0.length; i0++) {
+      index1 = index0[keys0[i0]];
+      const keys1 = Object.keys(index1);
+      for (let i1 = 0; i1 < keys1.length; i1++)
+        count += index1[keys1[i1]][SIZE];
     }
     return count;
   }
@@ -442,6 +512,38 @@ export default class N3Store {
   _getGraphs(graph) {
     graph = graph === '' ? 1 : (graph && (this._termToNumericId(graph) || -1));
     return typeof graph !== 'number' ? this._graphs : { [graph]: this._graphs[graph] };
+  }
+
+  // ### `_addObserver` registers a mutation observer.
+  _addObserver(view) {
+    const observer = new WeakRef(view);
+    const registry = observerRegistry || (observerRegistry = new FinalizationRegistry(finalizeObserver));
+    registry.register(view, { store: new WeakRef(this), observer }, observer);
+    (this._observers || (this._observers = new Set())).add(observer);
+    return observer;
+  }
+
+  // ### `_removeObserver` unregisters a mutation observer.
+  _removeObserver(observer) {
+    observerRegistry.unregister(observer);
+    if (this._observers) {
+      this._observers.delete(observer);
+      if (this._observers.size === 0)
+        this._observers = null;
+    }
+  }
+
+  // ### `_notifyObservers` notifies observers of a mutation.
+  _notifyObservers(subjectId, predicateId, objectId, graphId, added) {
+    // Observers can remove themselves during Set iteration
+    for (const observer of this._observers) {
+      const view = observer.deref();
+      if (view)
+        view._onParentMutation(subjectId, predicateId, objectId, graphId, added);
+      else
+        // Finalization may be delayed; also prune collected views during notification.
+        this._removeObserver(observer);
+    }
   }
 
   // ### `_uniqueEntities` returns a function that accepts an entity ID
@@ -477,22 +579,35 @@ export default class N3Store {
     // Convert terms to internal string representation
     graph = graph ? this._termToNewNumericId(graph) : 1;
 
+    // Map long IRIs to shared numeric identifiers before updating the indexes.
+    subject   = this._termToNewNumericId(subject);
+    predicate = this._termToNewNumericId(predicate);
+    object    = this._termToNewNumericId(object);
+    return this._addQuad(subject, predicate, object, graph);
+  }
+
+  // ### `_addQuad` adds a quad using identifiers from this store's entity index.
+  _addQuad(subject, predicate, object, graph) {
     // Find the graph that will contain the triple
     let graphItem = this._graphs[graph];
     // Create the graph if it doesn't exist yet
     if (!graphItem) {
-      graphItem = this._graphs[graph] = { subjects: {}, predicates: {}, objects: {} };
+      graphItem = this._graphs[graph] = {
+        subjects: { [SIZE]: 0 },
+        predicates: { [SIZE]: 0 },
+        objects: { [SIZE]: 0 },
+      };
       // Freezing a graph helps subsequent `add` performance,
       // and properties will never be modified anyway
       Object.freeze(graphItem);
     }
 
-    // Since entities can often be long IRIs, we avoid storing them in every index.
-    // Instead, we have a separate index that maps entities to numbers,
-    // which are then used as keys in the other indexes.
-    subject   = this._termToNewNumericId(subject);
-    predicate = this._termToNewNumericId(predicate);
-    object    = this._termToNewNumericId(object);
+    // Notify observers before inserting a new quad so snapshots retain their prior contents
+    if (this._observers !== null) {
+      if (hasInIndex(graphItem.subjects, subject, predicate, object))
+        return false;
+      this._notifyObservers(subject, predicate, object, graph, true);
+    }
 
     if (!this._addToIndex(graphItem.subjects,   subject,   predicate, object))
       return false;
@@ -548,16 +663,24 @@ export default class N3Store {
     // Convert terms to internal string representation
     graph = graph ? this._termToNumericId(graph) : 1;
 
-    // Find internal identifiers for all components
-    // and verify the quad exists.
-    const graphs = this._graphs;
-    let graphItem, subjects, predicates;
-    if (!(subject    = subject && this._termToNumericId(subject)) || !(predicate = predicate && this._termToNumericId(predicate)) ||
-        !(object     = object && this._termToNumericId(object))  || !(graphItem = graphs[graph])  ||
-        !(subjects   = graphItem.subjects[subject]) ||
-        !(predicates = subjects[predicate]) ||
-        !(object in predicates))
+    if (!(subject   = subject && this._termToNumericId(subject)) ||
+        !(predicate = predicate && this._termToNumericId(predicate)) ||
+        !(object    = object && this._termToNumericId(object)))
       return false;
+    return this._removeQuad(subject, predicate, object, graph);
+  }
+
+  // ### `_removeQuad` removes a quad using identifiers from this store's entity index.
+  _removeQuad(subject, predicate, object, graph) {
+    // Verify the quad exists before notifying observers or changing any indexes.
+    const graphs = this._graphs;
+    const graphItem = graphs[graph];
+    if (!graphItem || !hasInIndex(graphItem.subjects, subject, predicate, object))
+      return false;
+
+    // Notify observers before the mutation
+    if (this._observers !== null)
+      this._notifyObservers(subject, predicate, object, graph, false);
 
     // Remove it from all indexes
     this._removeFromIndex(graphItem.subjects,   subject,   predicate, object);
@@ -566,8 +689,8 @@ export default class N3Store {
     if (this._size !== null) this._size--;
 
     // Remove the graph if it is empty
-    for (subject in graphItem.subjects) return true;
-    delete graphs[graph];
+    if (graphItem.subjects[SIZE] === 0)
+      delete graphs[graph];
     return true;
   }
 
@@ -710,8 +833,13 @@ export default class N3Store {
   // Note: Since a DatasetCore is an unordered set, the order of the quads within the returned sequence is arbitrary.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   // For backwards compatibility, the object return also implements the Readable stream interface.
-  match(subject, predicate, object, graph) {
-    return new DatasetCoreAndReadableStream(this, subject, predicate, object, graph, { entityIndex: this._entityIndex });
+  // `options.matchSemantics` controls how the view reacts to later mutations.
+  match(subject, predicate, object, graph, options = null) {
+    return new DatasetCoreAndReadableStream(this, subject, predicate, object, graph, {
+      entityIndex: this._entityIndex,
+      matchSemantics: options && options.matchSemantics !== undefined ?
+        options.matchSemantics : this._matchSemantics,
+    });
   }
 
   // ### `countQuads` returns the number of quads matching a pattern.
@@ -967,7 +1095,11 @@ export default class N3Store {
 
   // ### `extractLists` finds and removes all list triples
   // and returns the items per list.
-  extractLists({ remove = false, ignoreErrors = false } = {}) {
+  // With `allowExtraArcs`, lists whose nodes carry arcs other than
+  // rdf:first/rdf:rest are returned as well,
+  // but left intact when `remove` is set. Ambiguous unreferenced list heads
+  // with multiple non-list arcs remain errors.
+  extractLists({ remove = false, ignoreErrors = false, allowExtraArcs = false } = {}) {
     // Keys are the list heads' term values, so a null-prototype map keeps
     // them from colliding with inherited Object members such as `toString`
     const lists = Object.create(null);
@@ -976,13 +1108,15 @@ export default class N3Store {
 
     // Traverse each list from its tail
     const tails = this.getQuads(null, namespaces.rdf.rest, namespaces.rdf.nil, null);
-    const toRemove = remove ? [...tails] : [];
+    const toRemove = [];
     tails.forEach(tailQuad => {
       const items = [];             // the members found as objects of rdf:first quads
       let malformed = false;      // signals whether the current list is malformed
+      let extraArcs = false;      // signals whether the current list has extra arcs
       let head;                   // the head of the list (_:b1 in above example)
       let headPos;                // set to subject or object when head is set
       const graph = tailQuad.graph; // make sure list is in exactly one graph
+      const listQuads = [];       // rdf:first/rdf:rest quads of this list
 
       // Traverse the list from tail to end
       let current = tailQuad.subject;
@@ -1004,7 +1138,9 @@ export default class N3Store {
             if (first)
               malformed = onError(current, 'has multiple rdf:first arcs');
             else
-              toRemove.push(first = quad);
+              first = quad;
+            if (remove && first === quad)
+              listQuads.push(quad);
           }
 
           // one rdf:rest
@@ -1012,12 +1148,18 @@ export default class N3Store {
             if (rest)
               malformed = onError(current, 'has multiple rdf:rest arcs');
             else
-              toRemove.push(rest = quad);
+              rest = quad;
+            if (remove && rest === quad)
+              listQuads.push(quad);
           }
 
           // alien triple
-          else if (objectQuads.length)
-            malformed = onError(current, 'can\'t be subject and object');
+          else if (objectQuads.length) {
+            if (allowExtraArcs)
+              extraArcs = true;
+            else
+              malformed = onError(current, `has non-list arc ${quad.predicate.value}`);
+          }
           else {
             head = quad; // e.g. { (1 2 3) :p :o }
             headPos = 'subject';
@@ -1054,9 +1196,14 @@ export default class N3Store {
       // Don't remove any quads if the list is malformed
       if (malformed)
         remove = false;
-      // Store the list under the value of its head
-      else if (head)
-        lists[head[headPos].value] = items;
+      else {
+        // Store the list under the value of its head
+        if (head)
+          lists[head[headPos].value] = items;
+        // Leave lists with extra arcs fully intact; otherwise queue this list once.
+        if (remove && !extraArcs)
+          toRemove.push(...listQuads);
+      }
     });
 
     // Remove list quads if requested
@@ -1077,7 +1224,8 @@ export default class N3Store {
 
     if (Array.isArray(quads))
       this.addQuads(quads);
-    else if (quads instanceof N3Store && quads._entityIndex === this._entityIndex) {
+    // Index merging bypasses observer notifications
+    else if (this._observers === null && quads instanceof N3Store && quads._entityIndex === this._entityIndex) {
       if (quads._size !== 0) {
         this._graphs = merge(this._graphs, quads._graphs);
         this._size = null; // Invalidate the cached size
@@ -1135,7 +1283,7 @@ export default class N3Store {
    * @param graph     The optional exact graph to match.
    */
   deleteMatches(subject, predicate, object, graph) {
-    for (const quad of this.match(subject, predicate, object, graph))
+    for (const quad of this.match(subject, predicate, object, graph, { matchSemantics: 'lazy' }))
       this.removeQuad(quad);
     return this;
   }
@@ -1263,7 +1411,7 @@ export default class N3Store {
    * Returns a stream that contains all quads of the dataset.
    */
   toStream() {
-    return this.match();
+    return this.match(null, null, null, null, { matchSemantics: 'lazy' });
   }
 
   /**
@@ -1289,10 +1437,9 @@ export default class N3Store {
   }
 
   // ### Store is an iterable.
-  // Can be used where iterables are expected: for...of loops, array spread operator,
-  // `yield*`, and destructuring assignment (order is not guaranteed).
-  *[Symbol.iterator]() {
-    yield* this.readQuads();
+  // Returns the quad iterator directly; order is not guaranteed.
+  [Symbol.iterator]() {
+    return this.readQuads();
   }
 }
 
@@ -1309,16 +1456,111 @@ function indexMatch(index, ids, depth = 0) {
   if (ind && !(ind in index))
     return false;
 
-  let target = false;
+  let target = false, size = 0;
   for (const key in (ind ? { [ind]: index[ind] } : index)) {
     const result = depth === 2 ? null : indexMatch(index[key], ids, depth + 1);
 
     if (result !== false) {
       target = target || Object.create(null);
       target[key] = result;
+      size++;
     }
   }
+  if (target)
+    target[SIZE] = size;
   return target;
+}
+
+// Capture a read in the same index order as readQuads, without constructing RDF terms.
+// A flat list avoids allocating a Quad (and its terms) for every unread result.
+function snapshotMatch(store, subject, predicate, object, graph) {
+  const snapshot = { store, ids: [] };
+  const subjectId = subject && store._termToNumericId(subject);
+  const predicateId = predicate && store._termToNumericId(predicate);
+  const objectId = object && store._termToNumericId(object);
+  // Only active reads are frozen: bound terms and graphs have already resolved,
+  // and notifications run before deletion. Entity IDs are never removed.
+
+  // Keep this choice aligned with readQuads: changing order would repeat or skip
+  // results when an iterator resumes partway through its snapshot.
+  let indexName, key0, key1, key2, positions;
+  if (objectId && (subjectId || !predicateId)) {
+    indexName = 'objects';
+    [key0, key1, key2] = [objectId, subjectId, predicateId];
+    positions = [2, 0, 1];
+  }
+  else if (!subjectId && predicateId) {
+    indexName = 'predicates';
+    [key0, key1, key2] = [predicateId, objectId, subjectId];
+    positions = [1, 2, 0];
+  }
+  else {
+    indexName = 'subjects';
+    [key0, key1, key2] = [subjectId, predicateId, objectId];
+    positions = [0, 1, 2];
+  }
+
+  const graphs = store._getGraphs(graph), parts = [];
+  for (const graphId in graphs) {
+    const index = graphs[graphId][indexName];
+    const graphKey = Number(graphId);
+    for (const value0 in (key0 ? { [key0]: index[key0] } : index)) {
+      const index1 = index[value0];
+      if (!index1) continue; // eslint-disable-line no-continue
+      parts[positions[0]] = Number(value0);
+      for (const value1 in (key1 ? { [key1]: index1[key1] } : index1)) {
+        const index2 = index1[value1];
+        if (!index2) continue; // eslint-disable-line no-continue
+        parts[positions[1]] = Number(value1);
+        for (const value2 in (key2 ? (key2 in index2 ? { [key2]: null } : {}) : index2)) {
+          parts[positions[2]] = Number(value2);
+          snapshot.ids.push(parts[0], parts[1], parts[2], graphKey);
+        }
+      }
+    }
+  }
+  return snapshot;
+}
+
+// Skip already-yielded IDs in constant time; only materialize the requested tail.
+function* iterateSnapshot({ store, ids }, offset) {
+  const entities = store._entities;
+  let subject, predicate, object, graph;
+  let subjectId, predicateId, objectId, graphId;
+  for (let i = offset * 4; i < ids.length; i += 4) {
+    if (subjectId !== ids[i])
+      subject = store._termFromId(entities[subjectId = ids[i]]);
+    if (predicateId !== ids[i + 1])
+      predicate = store._termFromId(entities[predicateId = ids[i + 1]]);
+    if (objectId !== ids[i + 2])
+      object = store._termFromId(entities[objectId = ids[i + 2]]);
+    if (graphId !== ids[i + 3])
+      graph = store._termFromId(entities[graphId = ids[i + 3]]);
+    yield store._factory.quad(subject, predicate, object, graph);
+  }
+}
+
+function validateMatchSemantics(semantics = 'lazy') {
+  if (semantics !== 'lazy' && semantics !== 'snapshot' && semantics !== 'forwarded')
+    throw new Error(`Unknown matchSemantics: ${semantics}`);
+  if (semantics !== 'lazy' && (typeof WeakRef !== 'function' || typeof FinalizationRegistry !== 'function'))
+    throw new Error('Non-lazy matchSemantics requires WeakRef and FinalizationRegistry support');
+  return semantics;
+}
+
+// Returns the intersection of two quad patterns, or false if they conflict.
+function intersectMatchPatterns(left, right) {
+  const result = new Array(4);
+  for (let i = 0; i < 4; i++) {
+    const leftTerm = left[i], rightTerm = right[i];
+    if (leftTerm === null || leftTerm === undefined)
+      result[i] = rightTerm;
+    else if (rightTerm === null || rightTerm === undefined || termToId(leftTerm) === termToId(rightTerm))
+      result[i] = leftTerm;
+    else
+      return false;
+  }
+  return result;
 }
 
 /**
@@ -1328,12 +1570,102 @@ class DatasetCoreAndReadableStream extends Readable {
   constructor(n3Store, subject, predicate, object, graph, options) {
     super({ objectMode: true });
     Object.assign(this, { n3Store, subject, predicate, object, graph, options });
+    const semantics = this._semantics = validateMatchSemantics(options.matchSemantics);
+
+    if (options.matchesNothing) {
+      this._matchesNothing = true;
+      this._filtered = new N3Store({ factory: n3Store._factory, entityIndex: options.entityIndex });
+    }
+
+    if (semantics !== 'lazy') {
+      // Active reads share a snapshot only when their source changes.
+      this._readers = null;
+      // Cache pattern ids on first use
+      this._subjectId = this._predicateId = this._objectId = this._graphId = undefined;
+      if (!this._matchesNothing) {
+        this._observer = n3Store._addObserver(this);
+      }
+    }
+  }
+
+  // ### `_matchesPattern` tests quad ids against this view.
+  _matchesPattern(subjectId, predicateId, objectId, graphId) {
+    const { subject, predicate, object, graph, n3Store } = this;
+    if (subject && subjectId !== (this._subjectId || (this._subjectId = n3Store._termToNumericId(subject))))
+      return false;
+    if (predicate && predicateId !== (this._predicateId || (this._predicateId = n3Store._termToNumericId(predicate))))
+      return false;
+    if (object && objectId !== (this._objectId || (this._objectId = n3Store._termToNumericId(object))))
+      return false;
+    return graph === null || graph === undefined ||
+      graphId === (this._graphId || (this._graphId =
+        graph === '' || isDefaultGraph(graph) ? 1 : n3Store._termToNumericId(graph)));
+  }
+
+  // ### `_matchesQuad` tests a Quad against this view.
+  _matchesQuad(quad) {
+    const { subject, predicate, object, graph } = this;
+    return !this._matchesNothing &&
+      (subject === null || subject === undefined || termToId(subject) === termToId(quad.subject)) &&
+      (predicate === null || predicate === undefined || termToId(predicate) === termToId(quad.predicate)) &&
+      (object === null || object === undefined || termToId(object) === termToId(quad.object)) &&
+      (graph === null || graph === undefined || termToId(graph) === termToId(quad.graph));
+  }
+
+  // ### `_assertMatchesPattern` rejects a Quad outside this view.
+  _assertMatchesPattern(quad) {
+    if (!this._matchesQuad(quad))
+      throw new Error('Quad does not match the forwarded view pattern');
+  }
+
+  // ### `_sourceIterator` returns an iterator over the current backing store.
+  _sourceIterator() {
+    return this._filtered ? this._filtered[Symbol.iterator]() :
+      this.n3Store.readQuads(this.subject, this.predicate, this.object, this.graph);
+  }
+
+  // ### `_freezeCurrentIterators` freezes only readers still using the live source.
+  _freezeCurrentIterators() {
+    if (this._readers) {
+      this._readers.snapshot = this._filtered ? snapshotMatch(this._filtered) :
+        snapshotMatch(this.n3Store, this.subject, this.predicate, this.object, this.graph);
+      // Each iterator retains its own group. New reads must see the new source;
+      // the view must not retain snapshots belonging to suspended or abandoned reads.
+      this._readers = null;
+    }
+  }
+
+  // ### `_onParentMutation` applies a parent mutation to this view.
+  _onParentMutation(subjectId, predicateId, objectId, graphId, added) {
+    if (!this._matchesPattern(subjectId, predicateId, objectId, graphId))
+      return;
+
+    this._freezeCurrentIterators();
+
+    // Keep using the parent until materialization
+    if (this._semantics === 'forwarded') {
+      if (this._filtered) {
+        if (added)
+          this._filtered._addQuad(subjectId, predicateId, objectId, graphId);
+        else
+          this._filtered._removeQuad(subjectId, predicateId, objectId, graphId);
+      }
+      return;
+    }
+
+    // Capture the pre-mutation snapshot
+    this._filtered = this.filtered;
   }
 
   get filtered() {
     if (!this._filtered) {
       const { n3Store, graph, object, predicate, subject } = this;
+      if (this._semantics !== 'lazy')
+        this._freezeCurrentIterators();
       const newStore = this._filtered = new N3Store({ factory: n3Store._factory, entityIndex: this.options.entityIndex });
+
+      if (this._semantics === 'snapshot')
+        this._detachObserver();
 
       let subjectId, predicateId, objectId;
 
@@ -1424,7 +1756,42 @@ class DatasetCoreAndReadableStream extends Readable {
     }
   }
 
+  // ### `_destroy` closes the cached iterator.
+  _destroy(error, callback) {
+    if (this[ITERATOR]) {
+      this[ITERATOR].return();
+      this[ITERATOR] = null;
+    }
+    callback(error);
+  }
+
+  // ### `_detachObserver` stops observing the parent store.
+  _detachObserver() {
+    if (this._observer) {
+      this.n3Store._removeObserver(this._observer);
+      this._observer = null;
+    }
+  }
+
+  // ### `_detach` freezes the view and stops observing the parent.
+  _detach() {
+    this._filtered = this.filtered;
+    this._detachObserver();
+    // Lazy views deferred this state
+    if (this._semantics === 'lazy')
+      this._readers = null;
+    this._semantics = 'snapshot';
+    return this;
+  }
+
   addAll(quads) {
+    if (this._semantics === 'forwarded') {
+      for (const quad of quads) {
+        this._assertMatchesPattern(quad);
+        this.n3Store.addQuad(quad);
+      }
+      return this;
+    }
     return this.filtered.addAll(quads);
   }
 
@@ -1433,6 +1800,19 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   deleteMatches(subject, predicate, object, graph) {
+    if (this._semantics === 'forwarded') {
+      // No deletion pattern can match a view with conflicting ancestor patterns.
+      if (this._matchesNothing)
+        throw new Error('Cannot delete from a conflicting forwarded view pattern');
+      const pattern = intersectMatchPatterns(
+        [this.subject, this.predicate, this.object, this.graph],
+        [subject, predicate, object, graph],
+      );
+      if (!pattern)
+        throw new Error('Deletion pattern does not match the forwarded view pattern');
+      this.n3Store.deleteMatches(...pattern);
+      return this;
+    }
     return this.filtered.deleteMatches(subject, predicate, object, graph);
   }
 
@@ -1445,19 +1825,41 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   every(callback, subject, predicate, object, graph) {
-    return this.filtered.every(callback, subject, predicate, object, graph);
+    return this.filtered.every(this._semantics === 'forwarded' ?
+      quad => callback(quad, this) : callback, subject, predicate, object, graph);
   }
 
   filter(iteratee) {
-    return this.filtered.filter(iteratee);
+    return this.filtered.filter(this._semantics === 'forwarded' ?
+      quad => iteratee(quad, this) : iteratee);
   }
 
   forEach(callback, subject, predicate, object, graph) {
-    return this.filtered.forEach(callback, subject, predicate, object, graph);
+    return this.filtered.forEach(this._semantics === 'forwarded' ?
+      quad => callback(quad, this) : callback, subject, predicate, object, graph);
   }
 
   import(stream) {
-    return this.filtered.import(stream);
+    if (this._semantics !== 'forwarded')
+      return this.filtered.import(stream);
+
+    const view = this;
+    function onData(quad) {
+      try {
+        view._assertMatchesPattern(quad);
+        view.n3Store.addQuad(quad);
+      }
+      catch (error) {
+        // Stop this import; RDF/JS streams need not implement destroy()
+        stream.removeListener('data', onData);
+        if (typeof stream.destroy === 'function')
+          stream.destroy(error);
+        else
+          stream.emit('error', error);
+      }
+    }
+    stream.on('data', onData);
+    return stream;
   }
 
   intersection(other) {
@@ -1465,11 +1867,13 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   map(iteratee) {
-    return this.filtered.map(iteratee);
+    return this.filtered.map(this._semantics === 'forwarded' ?
+      quad => iteratee(quad, this) : iteratee);
   }
 
   some(callback, subject, predicate, object, graph) {
-    return this.filtered.some(callback, subject, predicate, object, graph);
+    return this.filtered.some(this._semantics === 'forwarded' ?
+      quad => callback(quad, this) : callback, subject, predicate, object, graph);
   }
 
   toCanonical() {
@@ -1477,23 +1881,29 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   toStream() {
+    if (this._semantics !== 'lazy')
+      // Use a fresh sync iterator instead of consuming this view's own readable stream.
+      return Readable.from(this[Symbol.iterator]());
     return this._filtered ?
       this._filtered.toStream()
-      : this.n3Store.match(this.subject, this.predicate, this.object, this.graph);
+      : this.n3Store.match(this.subject, this.predicate, this.object, this.graph, { matchSemantics: 'lazy' });
   }
 
   union(quads) {
     return this._filtered ?
       this._filtered.union(quads)
-      : this.n3Store.match(this.subject, this.predicate, this.object, this.graph).addAll(quads);
+      : this.n3Store.match(this.subject, this.predicate, this.object, this.graph, { matchSemantics: 'lazy' }).addAll(quads);
   }
 
   toArray() {
+    if (this._semantics !== 'lazy')
+      return [...this];
     return this._filtered ? this._filtered.toArray() : this.n3Store.getQuads(this.subject, this.predicate, this.object, this.graph);
   }
 
   reduce(callback, initialValue) {
-    return this.filtered.reduce(callback, initialValue);
+    return this.filtered.reduce(this._semantics === 'forwarded' ?
+      (accumulator, quad) => callback(accumulator, quad, this) : callback, initialValue);
   }
 
   toString() {
@@ -1501,10 +1911,20 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   add(quad) {
+    if (this._semantics === 'forwarded') {
+      this._assertMatchesPattern(quad);
+      this.n3Store.addQuad(quad);
+      return this;
+    }
     return this.filtered.add(quad);
   }
 
   delete(quad) {
+    if (this._semantics === 'forwarded') {
+      this._assertMatchesPattern(quad);
+      this.n3Store.removeQuad(quad);
+      return this;
+    }
     return this.filtered.delete(quad);
   }
 
@@ -1512,11 +1932,61 @@ class DatasetCoreAndReadableStream extends Readable {
     return this.filtered.has(quad);
   }
 
-  match(subject, predicate, object, graph) {
-    return new DatasetCoreAndReadableStream(this.filtered, subject, predicate, object, graph, this.options);
+  match(subject, predicate, object, graph, options = null) {
+    const requestedSemantics = options && options.matchSemantics;
+    if (options && requestedSemantics !== undefined) {
+      validateMatchSemantics(requestedSemantics);
+      if (requestedSemantics !== this._semantics)
+        throw new Error(`Cannot override matchSemantics on a view: inherited "${this._semantics}", received "${requestedSemantics}"`);
+    }
+
+    if (this._semantics !== 'forwarded')
+      return new DatasetCoreAndReadableStream(this.filtered, subject, predicate, object, graph, {
+        entityIndex: this.options.entityIndex,
+        matchSemantics: this._semantics,
+      });
+
+    const pattern = !this._matchesNothing && intersectMatchPatterns(
+      [this.subject, this.predicate, this.object, this.graph],
+      [subject, predicate, object, graph],
+    );
+    const [matchedSubject, matchedPredicate, matchedObject, matchedGraph] = pattern || [null, null, null, null];
+    return new DatasetCoreAndReadableStream(
+      this.n3Store, matchedSubject, matchedPredicate, matchedObject, matchedGraph, {
+        entityIndex: this.options.entityIndex,
+        matchSemantics: 'forwarded',
+        matchesNothing: !pattern,
+      });
   }
 
-  *[Symbol.iterator]() {
-    yield* this._filtered || this.n3Store.readQuads(this.subject, this.predicate, this.object, this.graph);
+  [Symbol.iterator]() {
+    return this._semantics === 'lazy' ? this._sourceIterator() : this._iterateStable();
+  }
+
+  *_iterateStable() {
+    const readers = this._readers || (this._readers = { count: 0, snapshot: null });
+    const source = this._sourceIterator();
+    let yielded = 0;
+    readers.count++;
+    try {
+      while (!readers.snapshot) {
+        const { value, done } = source.next();
+        // A custom factory can mutate the store inside next(), even on its first call.
+        if (readers.snapshot || done)
+          break;
+        yielded++;
+        yield value;
+      }
+      if (readers.snapshot)
+        yield* iterateSnapshot(readers.snapshot, yielded);
+    }
+    finally {
+      source.return();
+      if (--readers.count === 0) {
+        readers.snapshot = null;
+        if (this._readers === readers)
+          this._readers = null;
+      }
+    }
   }
 }

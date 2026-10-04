@@ -94,6 +94,13 @@ describe('Term', () => {
       });
     });
 
+    it('should create a NamedNode with the empty IRI from <>', () => {
+      expect(termFromId('<>').toJSON()).toEqual({
+        termType: 'NamedNode',
+        value: '',
+      });
+    });
+
     it('should create a NamedNode from an IRI', () => {
       expect(termFromId('http://example.org/foo#bar').toJSON()).toEqual({
         termType: 'NamedNode',
@@ -314,6 +321,18 @@ describe('Term', () => {
     it('should create the empty string from the DefaultGraph', () => {
       expect(termToId(new DefaultGraph())).toBe('');
       expect(termToId(new DefaultGraph().toJSON())).toBe('');
+    });
+
+    it('should create a distinct id from the empty IRI', () => {
+      expect(termToId(new NamedNode(''))).toBe('<>');
+      expect(termToId(new NamedNode('').toJSON())).toBe('<>');
+    });
+
+    it('should distinguish the empty IRI from the DefaultGraph inside quads', () => {
+      const q = new Quad(new NamedNode(''), new NamedNode('p'), new NamedNode('o'), new NamedNode(''));
+      expect(termToId(q)).toBe('["<>","p","o","<>"]');
+      expect(termToId(q.toJSON())).toBe('["<>","p","o","<>"]');
+      expect(termFromId(termToId(q)).equals(q)).toBe(true);
     });
 
     it(

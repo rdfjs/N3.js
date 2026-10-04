@@ -78,6 +78,37 @@ describe('DataFactory', () => {
       expect(DataFactory.literal(2.3)).toEqual(new Literal('"2.3"^^http://www.w3.org/2001/XMLSchema#double'));
     });
 
+    it('converts a large exponential-form integer-valued number to xsd:double', () => {
+      // String(1e21) === '1e+21', which is not a valid xsd:integer lexical
+      expect(DataFactory.literal(1e21)).toEqual(new Literal('"1e+21"^^http://www.w3.org/2001/XMLSchema#double'));
+      expect(DataFactory.literal(-1e21)).toEqual(new Literal('"-1e+21"^^http://www.w3.org/2001/XMLSchema#double'));
+      expect(DataFactory.literal(1e30)).toEqual(new Literal('"1e+30"^^http://www.w3.org/2001/XMLSchema#double'));
+    });
+
+    it('converts integer-valued numbers below 1e21 to xsd:integer', () => {
+      expect(DataFactory.literal(2 ** 53)).toEqual(new Literal('"9007199254740992"^^http://www.w3.org/2001/XMLSchema#integer'));
+      expect(DataFactory.literal(-(2 ** 53))).toEqual(new Literal('"-9007199254740992"^^http://www.w3.org/2001/XMLSchema#integer'));
+      expect(DataFactory.literal(1e20)).toEqual(new Literal('"100000000000000000000"^^http://www.w3.org/2001/XMLSchema#integer'));
+      expect(DataFactory.literal(999999999999999900000)).toEqual(new Literal('"999999999999999900000"^^http://www.w3.org/2001/XMLSchema#integer'));
+    });
+
+    it('converts a BigInt to xsd:integer', () => {
+      expect(DataFactory.literal(123n)).toEqual(new Literal('"123"^^http://www.w3.org/2001/XMLSchema#integer'));
+      expect(DataFactory.literal(0n)).toEqual(new Literal('"0"^^http://www.w3.org/2001/XMLSchema#integer'));
+      expect(DataFactory.literal(-42n)).toEqual(new Literal('"-42"^^http://www.w3.org/2001/XMLSchema#integer'));
+    });
+
+    it('converts a BigInt beyond the range of a number to an exact xsd:integer', () => {
+      expect(DataFactory.literal(2n ** 53n + 1n)).toEqual(new Literal('"9007199254740993"^^http://www.w3.org/2001/XMLSchema#integer'));
+      expect(DataFactory.literal(10n ** 30n)).toEqual(new Literal('"1000000000000000000000000000000"^^http://www.w3.org/2001/XMLSchema#integer'));
+      expect(DataFactory.literal(-(10n ** 30n) - 7n)).toEqual(new Literal('"-1000000000000000000000000000007"^^http://www.w3.org/2001/XMLSchema#integer'));
+      expect(DataFactory.literal(10n ** 30n).value).toBe('1000000000000000000000000000000');
+    });
+
+    it('converts a BigInt with an explicit datatype', () => {
+      expect(DataFactory.literal(5n, new NamedNode('http://www.w3.org/2001/XMLSchema#long'))).toEqual(new Literal('"5"^^http://www.w3.org/2001/XMLSchema#long'));
+    });
+
     it('converts Infinity', () => {
       expect(DataFactory.literal(Infinity)).toEqual(new Literal('"INF"^^http://www.w3.org/2001/XMLSchema#double'));
     });
@@ -96,6 +127,22 @@ describe('DataFactory', () => {
 
     it('converts true', () => {
       expect(DataFactory.literal(true)).toEqual(new Literal('"true"^^http://www.w3.org/2001/XMLSchema#boolean'));
+    });
+
+    it('converts a Date', () => {
+      expect(DataFactory.literal(new Date(Date.UTC(2017, 3, 27, 14, 39, 48, 901))))
+        .toEqual(new Literal('"2017-04-27T14:39:48.901Z"^^http://www.w3.org/2001/XMLSchema#dateTime'));
+    });
+
+    it('does not convert an invalid Date', () => {
+      expect(DataFactory.literal(new Date('invalid')))
+        .toEqual(new Literal('"Invalid Date"'));
+    });
+
+    it('converts a Date with a named node type', () => {
+      const date = new Date(Date.UTC(2017, 3, 27, 14, 39, 48, 901));
+      expect(DataFactory.literal(date, new NamedNode('http://ex.org/type')))
+        .toEqual(new Literal(`"${date}"^^http://ex.org/type`));
     });
   });
 

@@ -349,6 +349,27 @@ describe('Reasoner', () => {
       }
     });
 
+    it('Should leave observing views consistent after a caught maxDerivations error', () => {
+      const store = chainStore(400);
+      const original = store.getQuads();
+      const options = { matchSemantics: 'forwarded' };
+      const materialized = store.match(null, null, null, null, options);
+      expect(materialized.size).toBe(400);
+      const unread = store.match(null, null, null, null, options);
+      const snapshot = store.match(null, null, null, null, { matchSemantics: 'snapshot' });
+      const iterator = store.match(null, null, null, null, options)[Symbol.iterator]();
+      const first = iterator.next().value;
+
+      expect(() => new Reasoner(store, { maxDerivations: 1000 }).reason(transitiveRule()))
+        .toThrow('Reasoning exceeded the maximum of 1000 derivations');
+      // The derivation that exceeded the budget remains indexed and observed
+      expect(store.size).toBe(1401);
+      expect(store.equals(materialized)).toBe(true);
+      expect(store.equals(unread)).toBe(true);
+      expect(snapshot.size).toBe(400);
+      expect([first, ...iterator]).toEqual(original);
+    });
+
     it('Should reason normally within a generous maxDerivations budget', () => {
       const store = chainStore(50);
       new Reasoner(store, { maxDerivations: 100000 }).reason(transitiveRule());
@@ -375,5 +396,68 @@ describe('Reasoner', () => {
       new Reasoner(store, { maxPremiseDepth: 2 }).reason(transitiveRule());
       expect(store.size).toBe(1275);
     });
+  });
+
+  it('Should apply a multi-premise rule whose middle premise has a bound third position', () => {
+    const store = new Store([
+      new Quad(new NamedNode('http://example.org/m'), new NamedNode('http://example.org/rel'), new NamedNode('http://example.org/n')),
+      new Quad(new NamedNode('http://example.org/n'), new NamedNode('http://example.org/rel'), new NamedNode('http://example.org/m')),
+      new Quad(new NamedNode('http://example.org/m'), new NamedNode('http://example.org/tail'), new NamedNode('http://example.org/z')),
+    ]);
+    expect(store.size).toEqual(3);
+    new Reasoner(store).reason([{
+      premise: [
+        new Quad(new Variable('?a'), new Variable('?p'), new Variable('?b')),
+        new Quad(new Variable('?b'), new Variable('?p'), new Variable('?a')),
+        new Quad(new Variable('?a'), new NamedNode('http://example.org/tail'), new Variable('?z')),
+      ],
+      conclusion: [
+        new Quad(new Variable('?a'), new NamedNode('http://example.org/out'), new Variable('?z')),
+      ],
+    }]);
+    expect(store.size).toEqual(4);
+    expect(store.has(new Quad(
+      new NamedNode('http://example.org/m'),
+      new NamedNode('http://example.org/out'),
+      new NamedNode('http://example.org/z'),
+    ))).toEqual(true);
+  });
+
+  it.each(['snapshot', 'forwarded'])('Should notify observing %s views of derived quads', matchSemantics => {
+    function ex(name) {
+      return new NamedNode(`http://example.org/${name}`);
+    }
+    const rules = [{
+      premise: [new Quad(new Variable('x'), ex('p'), ex('o'))],
+      conclusion: [new Quad(new Variable('x'), ex('q'), ex('o'))],
+    }];
+    const original = [
+      new Quad(ex('a'), ex('p'), ex('o')),
+      new Quad(ex('b'), ex('p'), ex('o'), ex('g')),
+    ];
+    const store = new Store(original);
+    const options = { matchSemantics };
+    const unread = store.match(null, ex('q'), null, null, options);
+    const read = store.match(null, ex('q'), null, null, options);
+    const namedGraph = store.match(null, ex('q'), null, ex('g'), options);
+    expect(read.size).toBe(0);
+    expect(namedGraph.size).toBe(0);
+    const iterator = store.match(null, null, null, null, options)[Symbol.iterator]();
+    const first = iterator.next().value;
+
+    new Reasoner(store).reason(rules);
+
+    const derived = matchSemantics === 'forwarded';
+    expect(store.size).toBe(4);
+    expect([first, ...iterator]).toEqual(original);
+    expect(unread.size).toBe(derived ? 2 : 0);
+    expect(read.size).toBe(derived ? 2 : 0);
+    expect(namedGraph.has(new Quad(ex('b'), ex('q'), ex('o'), ex('g')))).toBe(derived);
+
+    // Repeated derivations are not new quads
+    const observer = store.match(null, ex('q'), null, null, options);
+    new Reasoner(store).reason(rules);
+    expect(store.size).toBe(4);
+    expect(observer.size).toBe(2);
   });
 });
