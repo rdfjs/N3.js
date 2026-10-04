@@ -5,6 +5,9 @@ import namespaces from './IRIs';
 
 let blankNodePrefix = 0;
 
+// Directive names that are built into the grammar
+const builtInDirectives = /^(?:prefix|base|version|graph|forsome|forall|iri)$/i;
+
 // ## Constructor
 export default class N3Parser {
   constructor(options) {
@@ -46,7 +49,22 @@ export default class N3Parser {
       this._resolveRelativeIRI = iri => { return null; };
     this._blankNodePrefix = typeof options.blankNodePrefix !== 'string' ? '' :
                               options.blankNodePrefix.replace(/^(?!_:)/, '_:');
-    this._lexer = options.lexer || new N3Lexer({ lineMode: isLineMode, n3: isN3, isImpliedBy: this._isImpliedBy });
+    // Map the token types of additional directives to their names and number of arguments
+    this._directives = null;
+    let directiveNames;
+    if (options.directives) {
+      directiveNames = Object.keys(options.directives);
+      this._directives = Object.create(null);
+      for (const name of directiveNames) {
+        if (!/^[a-z]+$/i.test(name) || builtInDirectives.test(name))
+          throw new Error(`Invalid directive name: "${name}"`);
+        const directive = { name, arguments: options.directives[name] };
+        this._directives[`@${name.toLowerCase()}`] = this._directives[name.toUpperCase()] = directive;
+      }
+    }
+    this._lexer = options.lexer || new N3Lexer({
+      lineMode: isLineMode, n3: isN3, isImpliedBy: this._isImpliedBy, directives: directiveNames,
+    });
     // Disable explicit quantifiers by default
     this._explicitQuantifiers = !!options.explicitQuantifiers;
     // Disable formula-only blank node scoping by default
@@ -199,10 +217,40 @@ export default class N3Parser {
     case 'GRAPH':
       if (this._supportsNamedGraphs)
         return this._readNamedGraphLabel;
-    // Otherwise, the next token must be a subject
+    // Otherwise, the next token must be a subject, unless it is an additional directive
     default:
+      if (this._directives !== null && token.type in this._directives)
+        return this._readDirective(token);
       return this._readSubject(token);
     }
+  }
+
+  // ### `_readDirective` starts reading an additional directive
+  _readDirective(token) {
+    if (this._graph !== null)
+      return this._error(`Unexpected ${token.type} directive inside a graph`, token);
+    this._directive = this._directives[token.type];
+    this._directiveArguments = [];
+    this._sparqlStyle = token.type[0] !== '@';
+    return this._readDirectiveArgument(token, true);
+  }
+
+  // ### `_readDirectiveArgument` reads the arguments of an additional directive
+  _readDirectiveArgument(token, first) {
+    const directive = this._directive, args = this._directiveArguments;
+    if (first !== true) {
+      let argument;
+      if (token.type === 'literal')
+        argument = this._factory.literal(token.value);
+      else if ((argument = this._readEntity(token)) === undefined)
+        return;
+      args.push(argument);
+    }
+    if (args.length < directive.arguments)
+      return this._readDirectiveArgument;
+    this._directive = this._directiveArguments = null;
+    this._directiveCallback(directive.name, args);
+    return this._readDeclarationPunctuation;
   }
 
   // ### `_readInFormulaContext` reads a token at the statement level of a formula
@@ -1602,13 +1650,14 @@ export default class N3Parser {
   parse(input, quadCallback, prefixCallback, versionCallback) {
     // The second parameter also accepts an object of named callbacks.
     // As a second and third parameter it still accepts a separate quadCallback and prefixCallback for backward compatibility as well
-    let onQuad, onPrefix, onComment, onVersion, onToken, onTokenEnd;
+    let onQuad, onPrefix, onComment, onVersion, onDirective, onToken, onTokenEnd;
     if (quadCallback && (quadCallback.onQuad || quadCallback.onPrefix || quadCallback.onComment || quadCallback.onVersion ||
-                         quadCallback.onToken || quadCallback.onTokenEnd)) {
+                         quadCallback.onDirective || quadCallback.onToken || quadCallback.onTokenEnd)) {
       onQuad = quadCallback.onQuad;
       onPrefix = quadCallback.onPrefix;
       onComment = quadCallback.onComment;
       onVersion = quadCallback.onVersion;
+      onDirective = quadCallback.onDirective;
       onToken = quadCallback.onToken;
       onTokenEnd = quadCallback.onTokenEnd;
     }
@@ -1629,6 +1678,7 @@ export default class N3Parser {
       this._prefixes[''] = this._resolveIRI('#');
     this._prefixCallback = onPrefix || noop;
     this._versionCallback = onVersion || noop;
+    this._directiveCallback = onDirective || noop;
     this._inversePredicate = false;
     this._expectOf = false;
     this._quantified = Object.create(null);

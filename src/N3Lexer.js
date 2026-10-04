@@ -75,6 +75,16 @@ export default class N3Lexer {
     else {
       this._n3Mode = options.n3 !== false;
     }
+    // Recognize additional directive keywords, such as MESSAGE
+    // (the @-form of a directive is always tokenized as an @-keyword)
+    this._directive = null;
+    if (options.directives && options.directives.length !== 0) {
+      for (const name of options.directives) {
+        if (!/^[a-z]+$/i.test(name))
+          throw new Error(`Invalid directive name: "${name}"`);
+      }
+      this._directive = new RegExp(`^(?:${options.directives.join('|')})(?=[\\s#<])`, 'i');
+    }
     // Don't output comment tokens by default
     this.comments = !!options.comments;
     // Cache the last tested closing position of long literals
@@ -452,6 +462,10 @@ export default class N3Lexer {
         if ((this._previousMarker === '@prefix' || this._previousMarker === 'PREFIX') &&
             (match = this._prefix.exec(input)))
           type = 'prefix', value = match[1] || '';
+        // Try to find an additional directive keyword
+        else if (this._directive !== null && ((match = this._directive.exec(input)) ||
+                 inputFinished && (match = this._directive.exec(`${input} `))))
+          type = match[0].toUpperCase();
         // Try to find a prefixed name. Since it can contain (but not end with) a dot,
         // we always need a non-dot character before deciding it is a prefixed name.
         // Therefore, try inserting a space if we're at the end of the input.
