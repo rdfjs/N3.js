@@ -2685,6 +2685,16 @@ describe('Parser', () => {
     );
 
     it(
+      'should not parse a lowercase version directive',
+      shouldNotParse(parser, 'version "1.2"', 'Unexpected "version" on line 1.'),
+    );
+
+    it(
+      'should not parse a mixed-case version directive',
+      shouldNotParse(parser, 'Version "1.2"', 'Unexpected "Version" on line 1.'),
+    );
+
+    it(
       'should not parse an @version directive',
       shouldNotParse(parser, '@version "1.2".', 'Unexpected "@version" on line 1.'),
     );
@@ -2816,6 +2826,16 @@ describe('Parser', () => {
       'should parse a version directive',
       shouldParse(parser, 'VERSION "1.2"\n_:a <http://ex.org/b> "c".',
                           ['_:b0_a', 'http://ex.org/b', '"c"']),
+    );
+
+    it(
+      'should not parse a lowercase version directive',
+      shouldNotParse(parser, 'version "1.2"', 'Unexpected "version" on line 1.'),
+    );
+
+    it(
+      'should not parse a mixed-case version directive',
+      shouldNotParse(parser, 'Version "1.2"', 'Unexpected "Version" on line 1.'),
     );
 
     it(
