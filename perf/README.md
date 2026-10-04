@@ -3,7 +3,8 @@
 ## Regression check on pull requests
 
 The [Performance workflow](../.github/workflows/perf.yml) builds the pull
-request and its base branch in the same job and runs every benchmark in
+request merged into its base branch, and the base branch commit it was merged
+onto, in the same job and runs every benchmark in
 [`ci/benchmarks.js`](ci/benchmarks.js) against both. Each measurement runs in
 a fresh process; base and head are interleaved over 5 rounds so drift on the
 shared runner hits both equally. A benchmark is flagged when head is more
@@ -31,7 +32,8 @@ and `--rounds`, `--iterations` and `--threshold` tune the comparison.
   and `blank()`/`list()` output.
 - **Store**: `addQuad` with terms and with strings, `getQuads` by each
   position, `countQuads` and `has`, `match` and iteration, `removeQuad`.
-- **DataFactory**: creating terms and quads, term getters and `equals`,
+- **DataFactory**: creating terms and quads, `literal()` from numbers,
+  booleans and dates, term getters and `equals`,
   `termToId`/`termFromId`.
 - **Reasoner**: the deep taxonomy benchmark at depth 1000.
 
