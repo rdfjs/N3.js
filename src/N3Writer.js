@@ -137,9 +137,22 @@ export default class N3Writer {
     // statements in the default graph too, so they can be grouped with it
     if (this._formulaStatements && DEFAULTGRAPH.equals(graph) && (this._formulaStatements.length ||
         this._findFormulas([object, predicate, subject]).length)) {
+      // A pretty-printed node that was already written cannot be written again,
+      // since it would then denote a different blank node
+      if ([subject, predicate, object].some(term => this._hasWrittenNode(term))) {
+        const error = new Error('Cannot write a pretty-printed node that was already written in a statement with formulas');
+        if (done)
+          return done(error);
+        throw error;
+      }
       this._formulaStatements.push({ subject, predicate, object });
       done && done();
       return;
+    }
+    // Remember pretty-printed nodes that are written before statements with formulas
+    if (this._formulaStatements) {
+      for (const term of [subject, predicate, object])
+        this._markWrittenNodes(term);
     }
     try {
       // Write the graph's label if it has changed
@@ -172,6 +185,23 @@ export default class N3Writer {
                     this._encodeObject(object)}`, done);
     }
     catch (error) { done && done(error); }
+  }
+
+  // ### `_markWrittenNodes` remembers the pretty-printed nodes in the term
+  _markWrittenNodes(term) {
+    if (term instanceof SerializedTerm)
+      (this._writtenNodes || (this._writtenNodes = new WeakSet())).add(term);
+    else if (term.termType === 'Quad') {
+      this._markWrittenNodes(term.subject);
+      this._markWrittenNodes(term.predicate);
+      this._markWrittenNodes(term.object);
+    }
+  }
+
+  // ### `_hasWrittenNode` checks whether the term contains a pretty-printed node that was written
+  _hasWrittenNode(term) {
+    return !!this._writtenNodes && (this._writtenNodes.has(term) || term.termType === 'Quad' &&
+      (this._hasWrittenNode(term.subject) || this._hasWrittenNode(term.predicate) || this._hasWrittenNode(term.object)));
   }
 
   // ### `_writeQuadLine` writes the quad to the output stream as a single line

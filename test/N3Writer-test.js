@@ -6,6 +6,7 @@ import {
   Literal,
   Quad,
   Variable,
+  DefaultGraph,
   Store,
   termFromId,
 } from '../src';
@@ -308,6 +309,21 @@ describe('Writer', () => {
       expect(() => writer.addPrefix('ex', 'urn:new:')).toThrow('Cannot rebind prefix ex: after writing statements with formulas');
       expect(await end(writer)).toBe('@prefix ex: <urn:old:>.\n\n@prefix alias: <urn:old:>.\n\n' +
         '[ ex:p ex:o ] alias:p {}.\n');
+    });
+
+    it('should refuse a pretty-printed node written before a statement with formulas', async () => {
+      const [p, q, o] = ['p', 'q', 'o'].map(name => new NamedNode(`urn:${name}`));
+      const writer = new Writer({ format: 'N3', formulas: { f: [] } });
+      const b = writer.blank(), c = writer.blank();
+      writer.addQuad(b, p, o);
+      writer.addQuad(new Quad(c, p, o), p, o);
+      const message = 'Cannot write a pretty-printed node that was already written in a statement with formulas';
+      expect(() => writer.addQuad(b, q, new BlankNode('f'))).toThrow(message);
+      let error;
+      writer.addQuad(new Quad(o, p, c), q, new BlankNode('f'), new DefaultGraph(), e => { error = e; });
+      expect(error).toEqual(new Error(message));
+      writer.addQuad(writer.blank(), q, new BlankNode('f'));
+      expect(await end(writer)).toBe('[] <urn:p> <urn:o>.\n<<([] <urn:p> <urn:o>)>> <urn:p> <urn:o>.\n[] <urn:q> {}.\n');
     });
 
     it('should hold back statements after a statement with formulas', async () => {
