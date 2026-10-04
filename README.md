@@ -509,8 +509,9 @@ for (const bindings of store.matchBGP([
   console.log(bindings.get('person').value, 'knows', bindings.get('friendName').value);
 ```
 
-A pattern without an explicit graph matches the default graph only, like other `Quad` terms;
-use a variable as the graph to match quads in any graph.
+A pattern created with `quad(s, p, o)` gets the default graph from the factory, so it matches the default graph only.
+A plain-object pattern without a `graph` treats it as a wildcard and also matches named graphs.
+Use a variable as the graph to match and bind the graph of quads in any graph.
 
 ### Configuring `match()` semantics
 
