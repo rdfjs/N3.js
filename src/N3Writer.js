@@ -38,6 +38,7 @@ export default class N3Writer {
       options = outputStream, outputStream = null;
     options = options || {};
     this._lists = options.lists;
+    this._formulas = options.formulas;
 
     // If no output stream given, send the output as string through the end callback
     if (!outputStream) {
@@ -163,6 +164,9 @@ export default class N3Writer {
       // If it is a list head, pretty-print it
       if (this._lists && (entity.value in this._lists))
         entity = this.list(this._lists[entity.value]);
+      // If it labels an N3 formula, write the formula's contents
+      else if (this._formulas && (entity.value in this._formulas))
+        entity = this.formula(this._formulas[entity.value]);
       // Terms from this library already hold their serialization as id
       if (entity instanceof Term)
         return entity.id;
@@ -384,6 +388,17 @@ export default class N3Writer {
     for (let i = 0; i < length; i++)
       contents[i] = this._encodeObject(elements[i]);
     return new SerializedTerm(`(${contents.join(' ')})`);
+  }
+
+  // ### `formula` creates an N3 formula with the given quads
+  formula(quads) {
+    const length = quads && quads.length || 0, statements = new Array(length);
+    for (let i = 0; i < length; i++) {
+      const { subject, predicate, object } = quads[i];
+      statements[i] = `${this._encodeSubject(subject)} ${
+        this._encodePredicate(predicate)} ${this._encodeObject(object)}`;
+    }
+    return new SerializedTerm(length ? `{ ${statements.join('. ')} }` : '{}');
   }
 
   // ### `end` signals the end of the output stream

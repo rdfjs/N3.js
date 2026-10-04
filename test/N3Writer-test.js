@@ -29,6 +29,63 @@ describe('Writer', () => {
     });
   });
 
+  describe('A Writer writing N3 formulas', () => {
+    // Groups parsed N3 quads into top-level statements and formula contents
+    function splitFormulas(quads) {
+      const formulas = {}, statements = [];
+      for (const quad of quads) {
+        if (quad.graph.termType === 'BlankNode')
+          (formulas[quad.graph.value] || (formulas[quad.graph.value] = [])).push(quad);
+        else
+          statements.push(quad);
+      }
+      return { formulas, statements };
+    }
+
+    async function roundTrip(document) {
+      const quads = new Parser({ format: 'N3' }).parse(document);
+      const { formulas, statements } = splitFormulas(quads);
+      const writer = new Writer({ format: 'N3', formulas });
+      writer.addQuads(statements);
+      const output = await end(writer);
+      return { quads, output, reparsed: new Parser({ format: 'N3' }).parse(output) };
+    }
+
+    function shape(quads) {
+      // Blank node labels differ between parses, so compare everything else
+      return quads.map(({ subject, predicate, object, graph }) =>
+        [subject, predicate, object, graph].map(t => t.termType === 'BlankNode' ? 'BlankNode' : t.id)).sort();
+    }
+
+    it('should write the formulas of a rule', async () => {
+      const { quads, output, reparsed } = await roundTrip('{ ?s a ?o } => { ?s a ?o }.');
+      expect(output).toBe('{ ?s a ?o } <http://www.w3.org/2000/10/swap/log#implies> { ?s a ?o }.\n');
+      expect(shape(reparsed)).toEqual(shape(quads));
+    });
+
+    it('should write nested formulas and formulas with several statements', async () => {
+      const document = '@prefix : <http://ex.org/>. :a :says { :b :c :d. :e :f { :g :h "i"@en } }.';
+      const { quads, output, reparsed } = await roundTrip(document);
+      expect(output).toBe('<http://ex.org/a> <http://ex.org/says> { <http://ex.org/b> <http://ex.org/c> <http://ex.org/d>. ' +
+        '<http://ex.org/e> <http://ex.org/f> { <http://ex.org/g> <http://ex.org/h> "i"@en } }.\n');
+      expect(shape(reparsed)).toEqual(shape(quads));
+    });
+
+    it('should create formulas manually', async () => {
+      const writer = new Writer({ format: 'N3', prefixes: { '': 'http://ex.org/' } });
+      writer.addQuad(writer.formula([new Quad(new NamedNode('http://ex.org/a'), new NamedNode('http://ex.org/b'),
+        new NamedNode('http://ex.org/c'))]), new NamedNode('http://ex.org/is'), writer.formula([]));
+      expect(await end(writer)).toBe('@prefix : <http://ex.org/>.\n\n{ :a :b :c } :is {}.\n');
+      expect(writer.formula()).toEqual(writer.formula([]));
+    });
+
+    it('should leave blank nodes that are no formula unchanged', async () => {
+      const writer = new Writer({ format: 'N3', formulas: {} });
+      writer.addQuad(new BlankNode('b'), new NamedNode('http://ex.org/p'), new BlankNode('c'));
+      expect(await end(writer)).toBe('_:b <http://ex.org/p> _:c.\n');
+    });
+  });
+
   describe('A Writer instance', () => {
     it('should serialize a single triple', () => {
       const writer = new Writer();

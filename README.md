@@ -402,6 +402,28 @@ writer.addQuad(
 writer.end((error, result) => console.log(result));
 ```
 
+### N3 formulas
+The N3 parser represents a formula `{ … }` as a blank node,
+whose statements are quads in a graph labelled by that blank node.
+A streaming writer cannot know which graphs are formulas until it has seen every quad,
+so pass them in through the `formulas` option, keyed by blank node label.
+The writer then writes each such blank node as a formula:
+```JavaScript
+const quads = new N3.Parser({ format: 'N3' }).parse('{ ?s a ?o } => { ?s a ?o }.');
+const formulas = {}, statements = [];
+for (const quad of quads) {
+  if (quad.graph.termType === 'BlankNode')
+    (formulas[quad.graph.value] ||= []).push(quad);
+  else
+    statements.push(quad);
+}
+const writer = new N3.Writer({ format: 'N3', formulas });
+writer.addQuads(statements);
+writer.end((error, result) => console.log(result));
+// { ?s a ?o } <http://www.w3.org/2000/10/swap/log#implies> { ?s a ?o }.
+```
+`writer.formula(quads)` creates a formula manually, like `blank` and `list`.
+
 ## Storing
 
 `N3.Store` allows you to store triples in memory and find them fast.
