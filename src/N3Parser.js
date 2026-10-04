@@ -50,8 +50,8 @@ export default class N3Parser {
     this._lexer = options.lexer || new N3Lexer({ lineMode: isLineMode, n3: isN3, isImpliedBy: this._isImpliedBy });
     // Disable explicit quantifiers by default
     this._explicitQuantifiers = !!options.explicitQuantifiers;
-    // Disable formula-only blank node scoping by default
-    this._formulaScopedBlankNodes = !!options.formulaScopedBlankNodes;
+    // Scope blank node labels to formulas only, unless explicitly disabled
+    this._formulaScopedBlankNodes = options.formulaScopedBlankNodes !== false;
     // Disable parsing of unsupported versions by default
     this._parseUnsupportedVersions = !!options.parseUnsupportedVersions;
     this._version = options.version;
