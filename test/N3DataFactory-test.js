@@ -92,6 +92,23 @@ describe('DataFactory', () => {
       expect(DataFactory.literal(999999999999999900000)).toEqual(new Literal('"999999999999999900000"^^http://www.w3.org/2001/XMLSchema#integer'));
     });
 
+    it('converts a BigInt to xsd:integer', () => {
+      expect(DataFactory.literal(123n)).toEqual(new Literal('"123"^^http://www.w3.org/2001/XMLSchema#integer'));
+      expect(DataFactory.literal(0n)).toEqual(new Literal('"0"^^http://www.w3.org/2001/XMLSchema#integer'));
+      expect(DataFactory.literal(-42n)).toEqual(new Literal('"-42"^^http://www.w3.org/2001/XMLSchema#integer'));
+    });
+
+    it('converts a BigInt beyond the range of a number to an exact xsd:integer', () => {
+      expect(DataFactory.literal(2n ** 53n + 1n)).toEqual(new Literal('"9007199254740993"^^http://www.w3.org/2001/XMLSchema#integer'));
+      expect(DataFactory.literal(10n ** 30n)).toEqual(new Literal('"1000000000000000000000000000000"^^http://www.w3.org/2001/XMLSchema#integer'));
+      expect(DataFactory.literal(-(10n ** 30n) - 7n)).toEqual(new Literal('"-1000000000000000000000000000007"^^http://www.w3.org/2001/XMLSchema#integer'));
+      expect(DataFactory.literal(10n ** 30n).value).toBe('1000000000000000000000000000000');
+    });
+
+    it('converts a BigInt with an explicit datatype', () => {
+      expect(DataFactory.literal(5n, new NamedNode('http://www.w3.org/2001/XMLSchema#long'))).toEqual(new Literal('"5"^^http://www.w3.org/2001/XMLSchema#long'));
+    });
+
     it('converts Infinity', () => {
       expect(DataFactory.literal(Infinity)).toEqual(new Literal('"INF"^^http://www.w3.org/2001/XMLSchema#double'));
     });
@@ -265,6 +282,19 @@ describe('DataFactory', () => {
       expect(DataFactory.fromTerm(DM.literal('abc')).equals(new Literal('"abc"'))).toEqual(true);
       expect(DataFactory.fromTerm(DM.literal('abc'))).not.toBe(DM.literal('abc'));
       expect(DataFactory.fromTerm(DM.literal('abc')).equals(DM.literal('abc'))).toBe(true);
+    });
+
+    it('with a directional language-tagged literal from another library', () => {
+      const external = {
+        termType: 'Literal', value: 'abc', language: 'he', direction: 'rtl',
+        datatype: { termType: 'NamedNode', value: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#dirLangString' },
+      };
+      const term = DataFactory.fromTerm(external);
+      expect(term.language).toBe('he');
+      expect(term.direction).toBe('rtl');
+      expect(term.datatype.value).toBe('http://www.w3.org/1999/02/22-rdf-syntax-ns#dirLangString');
+      expect(term.equals(DataFactory.literal('abc', { language: 'he', direction: 'rtl' }))).toBe(true);
+      expect(DataFactory.fromTerm({ ...external, direction: '' }).equals(DataFactory.literal('abc', 'he'))).toBe(true);
     });
 
     it('with a variable', () => {
