@@ -1,0 +1,113 @@
+name: Sync next-major
+
+# Merges main into next-major after each successful CI run on main, so the
+# major branch stays current and CI publishes a fresh alpha from it. It waits
+# for CI, release included, so main's tags exist before next-major releases.
+# This is a merge, never a rebase: semantic-release finds the last alpha through
+# the tags reachable from next-major, and a rebase would drop them (see
+# RELEASING.md).
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    if: >-
+      github.repository == 'rdfjs/N3.js' && (
+        github.event_name == 'workflow_dispatch' || (
+          github.event.workflow_run.event == 'push' &&
+          github.event.workflow_run.conclusion == 'success'))
+    runs-on: ubuntu-latest
+    # Job-level, so a run whose job is skipped (its CI failed) never enters the
+    # group. At workflow level it would still replace a pending sync for a
+    # green commit, and that commit would never be synced.
+    concurrency:
+      group: sync-next-major
+      cancel-in-progress: false
+    env:
+      # A push made with GITHUB_TOKEN does not trigger CI, so next-major would
+      # never release. Set this Actions secret to a fine-grained PAT for this
+      # repo with Contents, Pull requests and Workflows write (main's commits
+      # can change .github/workflows), owned by an actor allowed to push to
+      # next-major.
+      GH_TOKEN: ${{ secrets.NEXT_MAJOR_SYNC_TOKEN }}
+      # The main commit whose CI and release succeeded. Later commits sync
+      # after their own runs.
+      MAIN_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - name: Check the token
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Set the NEXT_MAJOR_SYNC_TOKEN Actions secret to a token with Contents, Pull requests and Workflows write. See RELEASING.md."
+            exit 1
+          fi
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.NEXT_MAJOR_SYNC_TOKEN }}
+      - name: Merge main into next-major
+        id: merge
+        run: |
+          if ! git ls-remote --exit-code --heads origin next-major > /dev/null; then
+            echo "There is no next-major branch; nothing to sync."
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -B next-major origin/next-major
+          if git merge-base --is-ancestor "$MAIN_SHA" HEAD; then
+            echo "next-major already contains main."
+            exit 0
+          fi
+          # Once the major is squash-merged into main, next-major has nothing main
+          # lacks. Merging would make its old breaking commits count again and
+          # publish a stray alpha of the following major, so start it over from
+          # main instead. Its alpha tags are already released, so nothing is lost.
+          if git diff --quiet "$MAIN_SHA" HEAD; then
+            git push --force-with-lease="refs/heads/next-major:$(git rev-parse HEAD)" origin "$MAIN_SHA:refs/heads/next-major"
+            exit 0
+          fi
+          if git merge --no-edit -m 'chore: merge main into next-major' "$MAIN_SHA"; then
+            git push origin next-major
+          else
+            git merge --abort
+            echo "conflict=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Open a pull request to resolve the conflict
+        if: steps.merge.outputs.conflict == 'true'
+        env:
+          REPO: ${{ github.repository }}
+        run: |
+          branch=sync/main-into-next-major
+          open=$(gh pr list --repo "$REPO" --head "$branch" --base next-major --state open --json number --jq length)
+          if [ "$open" != 0 ]; then
+            echo "::warning::main conflicts with next-major and a sync pull request is already open; resolve it to resume syncing."
+            exit 0
+          fi
+          git push --force origin "$MAIN_SHA:refs/heads/$branch"
+          gh pr create --repo "$REPO" --base next-major --head "$branch" \
+            --title 'chore: merge main into next-major' \
+            --body "$(cat <<'EOF'
+          main no longer merges cleanly into next-major, so the automatic sync stopped.
+
+          Resolve it with a **merge**, never a squash or rebase, because next-major has to keep main's history:
+
+          ```sh
+          git fetch origin
+          git checkout next-major
+          git merge origin/main
+          # resolve the conflicts, then commit
+          git push origin next-major
+          ```
+
+          Pushing the merge marks this pull request as merged.
+          EOF
+          )"
+          echo "::warning::main conflicts with next-major; opened a pull request to resolve it."

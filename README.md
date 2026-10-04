@@ -234,6 +234,13 @@ matching N3's formula-scoped blank node semantics
 const parser = new N3.Parser({ format: 'N3', formulaScopedBlankNodes: true });
 ```
 
+The parser rejects triple terms nested more than 1024 levels deep,
+so that the resulting quads stay within what the store and writer can traverse.
+The `maxTripleTermDepth` option changes this limit (`Infinity` removes it):
+```JavaScript
+const parser = new N3.Parser({ maxTripleTermDepth: 64 });
+```
+
 ### From an RDF stream to quads
 
 `N3.Parser` can parse [Node.js streams](http://nodejs.org/api/stream.html) as they grow,
