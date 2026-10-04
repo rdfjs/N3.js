@@ -247,7 +247,7 @@ export default class N3Lexer {
           this[key] = invalidRegExp;
       }
       // The only keyword in N-Triples and N-Quads is VERSION, which is case-sensitive
-      this._keyword = /VERSION(?=[\s#<])/y;
+      this._keyword = /VERSION(?=[\s#<"])/y;
     }
     // When not in line mode, enable N3 functionality by default
     else {
@@ -931,6 +931,27 @@ export default class N3Lexer {
     return err;
   }
 
+  // ### `_startTokenization` resets the lexer state for a new input
+  _startTokenization() {
+    this._line = 1;
+    this._linePosition = 0;
+    this._previousMarker = undefined;
+    this.previousToken = undefined;
+    this._literalClosingPos = 0;
+    this._input = undefined;
+    // Deferred tokenization and stream events can outlive their invocation.
+    // Ignore them once a later call takes ownership of the lexer state.
+    return this._tokenization = {};
+  }
+
+  // ### `_tokenizeString` synchronously emits the tokens of a complete string through the callback,
+  // so that the caller can consume each token without the lexer collecting them all first
+  _tokenizeString(input, callback) {
+    this._startTokenization();
+    this._input = this._readStartingBom(input);
+    this._tryTokenizeToEnd(callback, true);
+  }
+
   // ### Strips off any starting UTF BOM mark.
   _readStartingBom(input) {
     if (input.startsWith('\ufeff')) {
@@ -948,15 +969,7 @@ export default class N3Lexer {
   // Separator whitespace counts towards the next token's start, outside either range.
   // Multiline tokens also have endLine; their end column is relative to that line.
   tokenize(input, callback) {
-    // Deferred tokenization and stream events can outlive their invocation.
-    // Ignore them once a later call takes ownership of the lexer state.
-    const tokenization = this._tokenization = {};
-    this._line = 1;
-    this._linePosition = 0;
-    this._previousMarker = undefined;
-    this.previousToken = undefined;
-    this._literalClosingPos = 0;
-    this._input = undefined;
+    const tokenization = this._startTokenization();
 
     // If the input is a string, continuously emit tokens through the callback until the end
     if (typeof input === 'string') {
