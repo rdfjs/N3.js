@@ -1,5 +1,4 @@
 // **N3Lexer** tokenizes N3 documents.
-import { Buffer } from 'buffer';
 import namespaces from './IRIs';
 
 const { xsd } = namespaces;
@@ -59,6 +58,12 @@ function isSeparatorCode(code) {
   return code === SPACE || code === TAB || code === LF || code === CR || code === HASH;
 }
 
+// Words with a fixed meaning in the grammar, which cannot name an additional directive
+const reservedWords = /^(?:prefix|base|version|graph|forsome|forall|iri|a|true|false|has|is|of|id)$/i;
+
+// Unfinished input in a stream up to this length is tokenized again with every chunk
+const MIN_RESCAN_LENGTH = 1024;
+
 // ## Constructor
 export default class N3Lexer {
   constructor(options) {
@@ -100,6 +105,19 @@ export default class N3Lexer {
     // When not in line mode, enable N3 functionality by default
     else {
       this._n3Mode = options.n3 !== false;
+    }
+    // Recognize additional directive keywords, such as MESSAGE
+    // (the @-form of a directive is always tokenized as an @-keyword)
+    this._directive = null;
+    if (options.directives && options.directives.length !== 0) {
+      for (const name of options.directives) {
+        if (!/^[a-z]+$/i.test(name) || reservedWords.test(name))
+          throw new Error(`Invalid directive name: "${name}"`);
+      }
+      this._directive = new RegExp(`(?:${options.directives.join('|')})(?=[\\s#<])`, 'iy');
+      this._directiveMaxLength = Math.max(...options.directives.map(name => name.length));
+      // The first characters of directive names, so other words skip the regular expression
+      this._directiveStarts = options.directives.map(name => name[0].toLowerCase() + name[0].toUpperCase()).join('');
     }
     // Don't output comment tokens by default
     this.comments = !!options.comments;
@@ -484,6 +502,13 @@ export default class N3Lexer {
         if ((this._previousMarker === '@prefix' || this._previousMarker === 'PREFIX') &&
             (match = execAt(this._prefix, input, pos)))
           type = 'prefix', value = match[1] || '';
+        // Try to find an additional directive keyword
+        // (at the end of the input, only a short final word can be one)
+        else if (this._directive !== null && this._directiveStarts.includes(firstChar) &&
+                 ((match = execAt(this._directive, input, pos)) ||
+                 inputFinished && input.length - pos <= this._directiveMaxLength &&
+                 (match = execAtEnd(this._directive, input, pos))))
+          type = match[0].toUpperCase();
         // Try to find a prefixed name. Since it can contain (but not end with) a dot,
         // we always need a non-dot character before deciding it is a prefixed name.
         // Therefore, try inserting a space if we're at the end of the input.
@@ -532,7 +557,8 @@ export default class N3Lexer {
       else
         token = emitToken(type, value, prefix, line, start, lexicalLength || length);
       this.previousToken = token;
-      this._previousMarker = type;
+      // The string of a version declaration cannot take a language tag, so a following @keyword is a keyword
+      this._previousMarker = type === 'literal' && (this._previousMarker === 'VERSION' || this._previousMarker === '@version') ? 'version' : type;
 
       // Advance to next part to tokenize
       pos = Math.min(pos + length, input.length);
@@ -747,36 +773,42 @@ export default class N3Lexer {
     }
     // Otherwise, the input must be a stream
     else {
-      this._pendingBuffer = null;
+      let decoder, retryLength = 0;
       if (typeof input.setEncoding === 'function')
         input.setEncoding('utf8');
       // Adds the data chunk to the buffer and parses as far as possible
       input.on('data', data => {
         if (this._tokenization === tokenization && this._input !== null && data.length !== 0) {
-          // Prepend any previous pending writes
-          if (this._pendingBuffer) {
-            data = Buffer.concat([this._pendingBuffer, data]);
-            this._pendingBuffer = null;
+          // Decode bytes, keeping an incomplete trailing character for the next chunk
+          if (typeof data !== 'string') {
+            decoder = decoder || new TextDecoder('utf-8', { ignoreBOM: true });
+            if (!(data = decoder.decode(data, { stream: true })))
+              return;
           }
-          // Hold if the buffer ends in an incomplete unicode sequence
-          if (data[data.length - 1] & 0x80) {
-            this._pendingBuffer = data;
-          }
-          // Otherwise, tokenize as far as possible
-          else {
-            // Only read a BOM at the start
-            if (typeof this._input === 'undefined')
-              this._input = this._readStartingBom(typeof data === 'string' ? data : data.toString());
-            else
-              this._input += data;
+          // Only read a BOM at the start
+          if (typeof this._input === 'undefined')
+            this._input = this._readStartingBom(data);
+          else
+            this._input += data;
+          // Tokenize as far as possible. When a previous attempt left a long unfinished token,
+          // wait until the buffered input has doubled, so the token is not rescanned for every chunk.
+          if (this._input.length >= retryLength) {
             this._tokenizeToEnd(callback, false);
+            retryLength = this._input !== null && this._input.length > MIN_RESCAN_LENGTH ?
+              2 * this._input.length : 0;
           }
         }
       });
       // Parses until the end
       input.on('end', () => {
-        if (this._tokenization === tokenization && typeof this._input === 'string')
-          this._tokenizeToEnd(callback, true);
+        if (this._tokenization === tokenization && this._input !== null) {
+          // Decode any incomplete character left at the end
+          const rest = decoder ? decoder.decode() : '';
+          if (rest)
+            this._input = typeof this._input === 'string' ? this._input + rest : rest;
+          if (typeof this._input === 'string')
+            this._tokenizeToEnd(callback, true);
+        }
       });
       input.on('error', error => {
         if (this._tokenization === tokenization)
