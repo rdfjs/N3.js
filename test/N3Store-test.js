@@ -3716,6 +3716,51 @@ describe('Store', () => {
     });
 
     describe('#contains', () => {
+      it('should not contain a larger store from another entity index', () => {
+        const larger = new Store([q[2], q[0], q[1]], { entityIndex: new EntityIndex() });
+        jest.spyOn(larger, 'every');
+        expect(new Store([q[0], q[1]]).contains(larger)).toBe(false);
+        expect(larger.every).not.toHaveBeenCalled();
+      });
+
+      it('should keep the size through bulk operations', () => {
+        const entityIndex = new EntityIndex();
+        const first = new Store([q[0], q[1], q[2]], { entityIndex });
+        const second = new Store([q[1], q[2], q[3]], { entityIndex });
+        function count(store) { return [...store].length; }
+        first.addAll(second);
+        expect(first._size).toBe(4);
+        expect(first._size).toBe(count(first));
+        for (const result of [first.intersection(second), first.difference(second), first.union(second),
+          first.match(q[0].subject).filtered])
+          expect(result.size).toBe(count(result));
+      });
+
+      it('should not count stores to compare their sizes', () => {
+        const small = new Store([q[0]]), other = new Store([q[1], q[2], q[3]]);
+        other._size = null;
+        const countQuads = jest.spyOn(other, 'countQuads');
+        expect(small.contains(other)).toBe(false);
+        expect(small.intersection(other).size).toBe(0);
+        expect(countQuads).not.toHaveBeenCalled();
+        const stale = new Store([q[1], q[2]]);
+        stale._size = null;
+        const countStale = jest.spyOn(stale, 'countQuads');
+        expect(stale.contains(new Store([q[0]]))).toBe(false);
+        expect(countStale).not.toHaveBeenCalled();
+      });
+
+      it('should check a larger dataset of another kind quad by quad', () => {
+        const dataset = { size: 2, every: jest.fn(callback => [q[0], q[1]].every(callback)) };
+        expect(new Store([q[0]]).contains(dataset)).toBe(false);
+        expect(dataset.every).toHaveBeenCalled();
+      });
+
+      it('should contain a dataset without a size', () => {
+        const dataset = { every: callback => [q[0]].every(callback) };
+        expect(new Store([q[0]]).contains(dataset)).toBe(true);
+      });
+
       it('empty set is contained in all sets', () => {
         expect(empty.contains(empty)).toBe(true);
         expect(store.contains(empty)).toBe(true);
@@ -3755,6 +3800,19 @@ describe('Store', () => {
         expect(store1.contains(store2)).toBe(false);
         expect(store1.contains(storeb)).toBe(false);
         expect(storeb.contains(store1)).toBe(false);
+      });
+
+      it('should return false for a quad that differs only in its object', () => {
+        const other = new Store([q[1]], options);
+        expect(store.contains(other)).toBe(false);
+        expect(other.contains(store)).toBe(false);
+      });
+
+      it('should test the quads of a dataset without a size', () => {
+        const quads = [...store1];
+        const dataset = { every: callback => quads.every(callback) };
+        expect(store1.contains(dataset)).toBe(true);
+        expect(store.contains(dataset)).toBe(false);
       });
     });
 
@@ -3843,6 +3901,44 @@ describe('Store', () => {
         expect(store1.intersection(store2).size).toBe(1);
         expect(store1.intersection(storeb).size).toBe(1);
         expect(storeb.intersection(store1).size).toBe(1);
+      });
+
+      it('should intersect with a smaller dataset of another kind through its has method', () => {
+        const larger = new Store([q[0], q[1], q[2]]);
+        const dataset = { size: 2, has: jest.fn(quad => quad.equals(q[0])), *[Symbol.iterator]() { yield q[0]; } };
+        const result = larger.intersection(dataset);
+        expect(dataset.has).toHaveBeenCalled();
+        expect(result.size).toBe(1);
+        expect(result.has(q[0])).toBe(true);
+      });
+
+      it('should intersect with a smaller store from another copy of N3 whose factory creates other quads', () => {
+        let OtherStore;
+        jest.isolateModules(() => { OtherStore = require('../src').Store; });
+        const factory = Object.assign({}, DataFactory, { quad: (s, p, o, g) => ({ s, p, o, g }) });
+        const custom = new OtherStore([q[0]], { factory });
+        expect(store1.intersection(custom).size).toBe(1);
+      });
+
+      it('should not count the quads of a store from an earlier version of N3', () => {
+        const earlier = { _entityIndex: {}, get size() { throw new Error('counted'); },
+          every: fn => [q[0]].every(fn), has: quad => quad.equals(q[0]) };
+        expect(store1.contains(earlier)).toBe(true);
+        expect(store1.intersection(earlier).size).toBe(1);
+      });
+
+      it('should intersect with a smaller store whose factory creates other quads', () => {
+        const factory = Object.assign({}, DataFactory, { quad: (s, p, o, g) => ({ s, p, o, g }) });
+        const custom = new Store([q[0]], { factory });
+        expect(store1.intersection(custom).size).toBe(1);
+      });
+
+      it('should intersect with a smaller store whose entity index factory creates other quads', () => {
+        const factory = Object.assign({}, DataFactory, { quad: (s, p, o, g) => ({ s, p, o, g }) });
+        const tripleTerm = new Quad(new NamedNode('s1'), new NamedNode('p1'), new Quad(q[0].subject, q[0].predicate, q[0].object));
+        const larger = new Store([tripleTerm, q[0], q[1]]);
+        const custom = new Store([tripleTerm], { entityIndex: new EntityIndex({ factory }) });
+        expect(larger.intersection(custom).size).toBe(1);
       });
     });
 

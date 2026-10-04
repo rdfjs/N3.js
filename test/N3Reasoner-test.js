@@ -345,6 +345,72 @@ describe('Reasoner', () => {
         '@prefix : <http://example.org/>. { ?x :r ?y. ?y :r ?z } => { ?x :r ?z }.')));
     }
 
+    it('Should keep the size of a store from another copy of N3', () => {
+      let OtherStore;
+      jest.isolateModules(() => { OtherStore = require('../src').Store; });
+      const store = new OtherStore(chainStore(10).getQuads());
+      expect(store).not.toBeInstanceOf(Store);
+      new Reasoner(store).reason([]);
+      expect(store.size).toBe(10);
+      new Reasoner(store).reason(transitiveRule());
+      expect(store.size).toBe(55);
+      expect(store.getQuads()).toHaveLength(55);
+    });
+
+    it('Should keep the size of a store whose size an earlier version of N3 marked as stale', () => {
+      const store = chainStore(10);
+      // Earlier versions set `_size` to null after changes, and count again when it is read
+      store._size = null;
+      new Reasoner(store).reason(transitiveRule());
+      expect(store._size).toBe(null);
+      expect(store.size).toBe(55);
+      expect(store.getQuads()).toHaveLength(55);
+    });
+
+    it('Should keep the size of a store used by a reasoner from an earlier version of N3', () => {
+      const store = chainStore(10);
+      // Earlier reasoners add to the indexes directly, then set `_size` to null
+      const graph = store._graphs[Object.keys(store._graphs)[0]];
+      const [s, p, o] = [0, 1, 2].map(i => store._termToNewNumericId(new NamedNode(`http://example.org/new${i}`)));
+      store._addToIndex(graph.subjects, s, p, o);
+      store._addToIndex(graph.predicates, p, o, s);
+      store._addToIndex(graph.objects, o, s, p);
+      store._size = null;
+      store.addQuad(new NamedNode('http://example.org/a'), new NamedNode('http://example.org/b'), new NamedNode('http://example.org/c'));
+      expect(store.size).toBe(12);
+      store.addQuad(new NamedNode('http://example.org/a'), new NamedNode('http://example.org/b'), new NamedNode('http://example.org/d'));
+      expect(store.size).toBe(13);
+      expect(store.getQuads()).toHaveLength(13);
+    });
+
+    it('Should count a store marked as stale by an earlier version of N3 after merging into it', () => {
+      const [a, p, b, c] = ['a', 'p', 'b', 'c'].map(name => new NamedNode(`http://example.org/${name}`));
+      const store = new Store([new Quad(a, p, b)]);
+      store._size = null;
+      store.addAll(new Store([new Quad(b, p, c)], { entityIndex: store._entityIndex }));
+      expect(store._size).toBe(null);
+      expect(store.size).toBe(2);
+    });
+
+    it('Should keep quads from a reasoner from an earlier version of N3 when merging stores', () => {
+      const [a, p, b, c] = ['a', 'p', 'b', 'c'].map(name => new NamedNode(`http://example.org/${name}`));
+      const store = new Store([new Quad(a, p, b), new Quad(b, p, c)]);
+      // An earlier reasoner derives a p c through the indexes, then sets `_size` to null
+      const graph = store._graphs[Object.keys(store._graphs)[0]];
+      const [aId, pId, cId] = [a, p, c].map(term => store._termToNewNumericId(term));
+      store._addToIndex(graph.subjects, aId, pId, cId);
+      store._addToIndex(graph.predicates, pId, cId, aId);
+      store._addToIndex(graph.objects, cId, aId, pId);
+      store._size = null;
+      store.removeQuad(new Quad(a, p, b));
+      store.removeQuad(new Quad(b, p, c));
+      const other = new Store({ entityIndex: store._entityIndex });
+      other.addAll(store);
+      expect(other.has(new Quad(a, p, c))).toBe(true);
+      expect(other.size).toBe(1);
+      expect(store.union(other).size).toBe(1);
+    });
+
     it('Should fail when reasoning exceeds maxDerivations', () => {
       const store = chainStore(400);
       expect(() => new Reasoner(store, { maxDerivations: 1000 }).reason(transitiveRule()))
