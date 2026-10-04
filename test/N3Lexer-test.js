@@ -1333,6 +1333,15 @@ describe('Lexer', () => {
     );
 
     it(
+      'should keep keyword-like prefixes with name characters that are also whitespace as prefixed names',
+      shouldTokenize('has\u1680x:p is\ufeffx:p of\u1680:p',
+                     { type: 'prefixed', prefix: 'has\u1680x', value: 'p', line: 1 },
+                     { type: 'prefixed', prefix: 'is\ufeffx', value: 'p', line: 1 },
+                     { type: 'prefixed', prefix: 'of\u1680', value: 'p', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
       'should keep keyword-like prefixes split across chunks as prefixed names',
       shouldTokenize(streamOf('has', '1:p is', '_:p of-', 'foo:p'),
                      { type: 'prefixed', prefix: 'has1', value: 'p', line: 1 },
@@ -2712,6 +2721,61 @@ describe('Lexer', () => {
       expect(laterError.context.previousToken).toBeUndefined();
     });
   });
+});
+
+describe('A Lexer instance tokenizing names', () => {
+  // The character classes of the Turtle grammar
+  const nameStart = '[A-Za-z\\xc0-\\xd6\\xd8-\\xf6\\xf8-\\u02ff\\u0370-\\u037d\\u037f-\\u1fff\\u200c\\u200d' +
+                    '\\u2070-\\u218f\\u2c00-\\u2fef\\u3001-\\ud7ff\\uf900-\\ufdcf\\ufdf0-\\ufffd]|[\\ud800-\\udb7f][\\udc00-\\udfff]';
+  const nameChar = '[\\-0-9_\\xb7\\u0300-\\u036f\\u203f\\u2040]';
+  const isNameStart = new RegExp(`^(?:${nameStart})$`);
+  // Local names can also contain colons, as well as dots that are not at the end
+  const isLocalChar = new RegExp(`^(?:${nameStart}|${nameChar}|[.:])$`);
+  // Characters at the edges of those classes
+  const boundaries = [
+    0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x39, 0x3A, 0x40, 0x41, 0x5A, 0x5B, 0x5E, 0x5F, 0x60, 0x61, 0x7A, 0x7B,
+    0x7F, 0xA0, 0xB6, 0xB7, 0xB8, 0xBF, 0xC0, 0xD6, 0xD7, 0xD8, 0xF6, 0xF7, 0xF8, 0x2FF, 0x300,
+    0x36F, 0x370, 0x37D, 0x37E, 0x37F, 0x1FFF, 0x2000, 0x200B, 0x200C, 0x200D, 0x200E, 0x203E,
+    0x203F, 0x2040, 0x2041, 0x206F, 0x2070, 0x218F, 0x2190, 0x2BFF, 0x2C00, 0x2FEF, 0x2FF0, 0x3000,
+    0x3001, 0xD7FF, 0xD800, 0xDB7F, 0xDB80, 0xDC00, 0xDFFF, 0xE000, 0xF8FF, 0xF900, 0xFDCF, 0xFDD0,
+    0xFDEF, 0xFDF0, 0xFFFD, 0xFFFE, 0xFFFF,
+  ];
+  const chars = boundaries.map(code => String.fromCharCode(code))
+    .concat(['𐀀', '󯿿', '󰀀', '\ud800\ud800', '\ud800x']);
+
+  function firstToken(input) {
+    try {
+      return new Lexer().tokenize(input)[0];
+    }
+    catch (error) {
+      return null;
+    }
+  }
+
+  for (const char of chars) {
+    const code = [...char].map(c => c.codePointAt(0).toString(16).toUpperCase()).join(' ');
+
+    it(`should ${isNameStart.test(char) ? '' : 'not '}start a prefix with U+${code}`, () => {
+      const token = firstToken(`${char}x:y `);
+      expect(token !== null && token.type === 'prefixed' && token.prefix === `${char}x`)
+        .toBe(isNameStart.test(char));
+    });
+
+    it(`should ${isLocalChar.test(char) ? '' : 'not '}continue a local name with U+${code}`, () => {
+      const token = firstToken(`p:a${char}b `);
+      expect(token !== null && token.type === 'prefixed' && token.value === `a${char}b`)
+        .toBe(isLocalChar.test(char));
+    });
+  }
+
+  it(
+    'should tokenize a prefixed name with a name character that is also whitespace at the end of a chunk',
+    shouldTokenize(streamOf('p:a p:b ', 'c p:d '),
+                   { type: 'prefixed', prefix: 'p', value: 'a', line: 1 },
+                   { type: 'prefixed', prefix: 'p', value: 'b c', line: 1 },
+                   { type: 'prefixed', prefix: 'p', value: 'd ', line: 1 },
+                   { type: 'eof', line: 1 }),
+  );
 });
 
 describe('A Lexer instance with the n3 option set to false', () => {
