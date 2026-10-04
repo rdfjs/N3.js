@@ -152,10 +152,9 @@ export default class N3Store {
   constructor(quads, options) {
     // The number of quads is initially zero
     this._size = 0;
-    // `_graphs` contains subject, predicate, and object indexes per graph,
-    // and counts them like the indexes count their keys
+    // `_graphs` contains subject, predicate, and object indexes per graph
     this._graphs = Object.create(null);
-    this._graphs[SIZE] = 0;
+    this._graphCount = 0;
     // `_observers` contains weak references to views notified before every mutation
     this._observers = null;
 
@@ -461,7 +460,7 @@ export default class N3Store {
       // Freezing a graph helps subsequent `add` performance,
       // and properties will never be modified anyway
       Object.freeze(graphItem);
-      this._graphs[SIZE]++;
+      this._graphCount++;
     }
 
     // Notify observers before inserting a new quad so snapshots retain their prior contents
@@ -507,10 +506,9 @@ export default class N3Store {
   }
 
   // ### `_addIntersectionFromIndex` adds the quads that are in both of the
-  // given graph indexes, at every level walking the one with fewer keys
+  // given graph indexes, walking the graphs of the first and, below them,
+  // whichever index has fewer keys
   _addIntersectionFromIndex(graphs, otherGraphs) {
-    if (otherGraphs[SIZE] < graphs[SIZE])
-      [graphs, otherGraphs] = [otherGraphs, graphs];
     for (const graphKey in graphs) {
       const other = otherGraphs[graphKey];
       if (other) {
@@ -611,7 +609,7 @@ export default class N3Store {
     // Remove the graph if it is empty
     if (graphItem.subjects[SIZE] === 0) {
       delete graphs[graph];
-      graphs[SIZE]--;
+      this._graphCount--;
     }
     return true;
   }
@@ -1187,8 +1185,12 @@ export default class N3Store {
     else if ((other instanceof N3Store) && this._entityIndex === other._entityIndex) {
       const store = new N3Store({ entityIndex: this._entityIndex });
       // Starting a loop over no graphs costs more than checking for an empty store
-      if (this._size !== 0 && other._size !== 0)
-        store._addIntersectionFromIndex(this._graphs, other._graphs);
+      if (this._size !== 0 && other._size !== 0) {
+        if (other._graphCount < this._graphCount)
+          store._addIntersectionFromIndex(other._graphs, this._graphs);
+        else
+          store._addIntersectionFromIndex(this._graphs, other._graphs);
+      }
       return store;
     }
 
@@ -1529,7 +1531,7 @@ class DatasetCoreAndReadableStream extends Readable {
 
           if (subjects) {
             newStore._graphs[graphKey] = { subjects, predicates, objects };
-            newStore._graphs[SIZE]++;
+            newStore._graphCount++;
           }
         }
       }
