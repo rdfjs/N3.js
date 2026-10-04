@@ -131,7 +131,12 @@
         }
       ],
       "@semantic-release/npm",
-      "@semantic-release/github"
+      [
+        "@semantic-release/github",
+        {
+          "successCommentCondition": "<% return !(issue.labels || []).some(function (label) { return /^released( on @|$)/.test(label.name); }) %>"
+        }
+      ]
     ]
   },
   "publishConfig": {

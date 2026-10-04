@@ -1,0 +1,53 @@
+name: Close issues fixed on next-major
+
+# GitHub only closes issues from closing keywords ("Closes #123") when a change
+# lands on the default branch. This does the same for next-major, so an issue
+# closes as soon as its fix lands on either branch. It closes without a comment:
+# the release announcement on the issue comes from semantic-release.
+
+on:
+  push:
+    branches:
+      - next-major
+
+# Least-privilege default; the job below widens only to what it needs.
+permissions:
+  contents: read
+
+jobs:
+  close:
+    runs-on: ubuntu-latest
+    # Force pushes (the rebase sync onto main, resetting the branch after a
+    # major) replay commits that already landed; only new changes close issues.
+    if: github.repository == 'rdfjs/N3.js' && !github.event.forced
+    permissions:
+      issues: write
+      pull-requests: read
+    steps:
+      - name: Close issues referenced with closing keywords
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # Closing keywords GitHub recognises, followed by #N or rdfjs/N3.js#N.
+          keywords='(^|[^[:alnum:]_])(close[sd]?|fix(e[sd])?|resolve[sd]?):?[[:space:]]+(rdfjs/n3\.js)?#[0-9]+'
+          refs() { grep -ioE "$keywords" | grep -oE '[0-9]+$' || true; }
+
+          numbers=$(
+            for sha in $(jq -r '.commits[].id' "$GITHUB_EVENT_PATH"); do
+              gh api "repos/$REPO/commits/$sha" --jq '.commit.message' | refs
+              # Keywords in the body of the pull request merged into next-major.
+              gh api "repos/$REPO/commits/$sha/pulls" \
+                --jq '.[] | select(.base.ref == "next-major") | .body // ""' | refs
+            done | sort -un
+          )
+
+          for number in $numbers; do
+            issue=$(gh api "repos/$REPO/issues/$number" --jq '{state, pr: (.pull_request != null)}') || continue
+            if [ "$(jq -r .pr <<<"$issue")" = true ] || [ "$(jq -r .state <<<"$issue")" != open ]; then
+              continue
+            fi
+            echo "Closing #$number"
+            gh api -X PATCH "repos/$REPO/issues/$number" -f state=closed -f state_reason=completed >/dev/null
+          done

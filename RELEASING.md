@@ -72,3 +72,16 @@ and only fix what the alphas turn up.
    and publish a stray `vN+1.0.0-alpha.1`. The old alpha tags stay where they are.
    The branch is ready for the following major, whose first breaking change publishes
    `vN+1.0.0-alpha.1`.
+
+## Issues and announcements
+
+- **Closing.** An issue closes as soon as a pull request with a closing keyword
+  (`Closes #123`) lands on `main` or `next-major`. GitHub handles `main`;
+  [`close-next-major-issues.yml`](.github/workflows/close-next-major-issues.yml) handles
+  new changes on `next-major`, and skips force pushes such as the sync, which only
+  replay changes that already landed.
+- **Announcing.** semantic-release comments once on each issue and pull request, in the
+  first release that contains the fix, whether that is an alpha or a stable release, and
+  labels it `released` or `released on @alpha`. Later releases skip anything that
+  already carries one of those labels: the same fix reaching the other branch, a sync
+  replaying it, or a squashed stacked pull request repeating its `Closes #123`.
