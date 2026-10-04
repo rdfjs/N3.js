@@ -1,6 +1,5 @@
-const crypto = require('crypto');
 const fs = require('fs');
-const path = require('path');
+const { Util } = require('rdf-test-suite');
 const { Parser, Writer } = require('..');
 
 // Runs the RDF 1.2 canonical N-Triples and N-Quads suites, which rdf-test-suite does not support:
@@ -22,26 +21,23 @@ const KNOWN_FAILURES = new Map([
   ['N-Triples#extra_whitespace-04', 'syntax'], ['N-Quads#extra_whitespace-04', 'syntax'],
   ['N-Triples#literal_with_numeric_escape4', 'output'], ['N-Triples#literal_with_numeric_escape8', 'output'],
 ]);
-// Fetched documents live in the CI fixture cache, which rotates with spec/cache-key.txt.
-const CACHE = path.join('.rdf-test-suite-cache', 'c14n');
 const MF = 'http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#';
 const RDFT = 'http://www.w3.org/ns/rdftest#';
 
+// Documents are read through rdf-test-suite's own cached fetch, so they share the fixture cache
+// of the other suites, which rotates with spec/cache-key.txt.
 const mappingIndex = process.argv.indexOf('-m');
 const [mappedUrl, mappedPath] = mappingIndex < 0 ? [] : process.argv[mappingIndex + 1].split('~');
+const FETCH_OPTIONS = {
+  cachePath: '.rdf-test-suite-cache/',
+  urlToFileMappings: mappedUrl ? [{ url: mappedUrl, path: mappedPath }] : [],
+};
 
 async function load(url) {
-  if (mappedUrl && url.startsWith(mappedUrl))
-    return fs.readFileSync(mappedPath + url.slice(mappedUrl.length), 'utf8');
-  const cached = path.join(CACHE, crypto.createHash('sha256').update(url).digest('hex'));
-  if (fs.existsSync(cached))
-    return fs.readFileSync(cached, 'utf8');
-  const response = await fetch(url);
-  if (!response.ok)
-    throw new Error(`Could not fetch ${url}: ${response.status}`);
-  const text = await response.text();
-  fs.mkdirSync(CACHE, { recursive: true });
-  fs.writeFileSync(cached, text);
+  const { body } = await Util.fetchCached(url, FETCH_OPTIONS);
+  let text = '';
+  for await (const chunk of body)
+    text += chunk;
   return text;
 }
 
@@ -63,6 +59,7 @@ function write(quads, format) {
 }
 
 async function run() {
+  fs.mkdirSync(FETCH_OPTIONS.cachePath, { recursive: true });
   let passed = 0, failed = 0, skipped = 0;
   for (const [manifestUrl, format] of Object.entries(MANIFESTS)) {
     const manifest = new Parser({ baseIRI: manifestUrl }).parse(await load(manifestUrl));
