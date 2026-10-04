@@ -881,6 +881,29 @@ describe('Parser', () => {
                   ['http://ex.org/a/g?y/../x', 'http://ex.org/a/h#s/../x', 'http://ex.org/a/j?y/./x']),
     );
 
+    it('should not rescan a long base path for relative IRIs without dot segments', () => {
+      // Resolving used to join and rescan the whole base path for every relative IRI,
+      // so time and memory grew with the base length times the number of IRIs
+      const basePath = `http://ex.org/${'segment/'.repeat(12500)}`;
+      let document = `@base <${basePath}>.\n`;
+      for (let i = 0; i < 2000; i++)
+        document += `<s${i}> <p> <o?q/../${i}>.\n`;
+      const parser = new Parser();
+      const removeDotSegments = jest.spyOn(parser, '_removeDotSegments');
+      const quads = parser.parse(document);
+      expect(quads).toHaveLength(2000);
+      expect(quads[1999].subject.value).toBe(`${basePath}s1999`);
+      expect(quads[1999].object.value).toBe(`${basePath}o?q/../1999`);
+      expect(removeDotSegments).not.toHaveBeenCalled();
+    });
+
+    it('should still remove dot segments when the base path has them', () => {
+      const parser = new Parser({ baseIRI: 'http://ex.org/a/../b/' });
+      const removeDotSegments = jest.spyOn(parser, '_removeDotSegments');
+      expect(parser.parse('<c> <d> <e>.')[0].subject.value).toBe('http://ex.org/b/c');
+      expect(removeDotSegments).toHaveBeenCalled();
+    });
+
     it(
       'should not resolve IRIs against @BASE',
       shouldNotParse('@BASE <http://ex.org/>.',
