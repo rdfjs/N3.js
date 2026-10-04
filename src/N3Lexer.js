@@ -4,8 +4,8 @@ import namespaces from './IRIs';
 
 const { xsd } = namespaces;
 const SPACE = 0x20, TAB = 0x09, LF = 0x0A, CR = 0x0D, HASH = 0x23,
-    DOT = 0x2E, LT = 0x3C, GT = 0x3E, LBRACE = 0x7B, RBRACE = 0x7D, PLUS = 0x2B, MINUS = 0x2D, COLON = 0x3A, ZERO = 0x30, NINE = 0x39,
-    PERCENT = 0x25, BACKSLASH = 0x5C;
+    DOT = 0x2E, PLUS = 0x2B, MINUS = 0x2D, COLON = 0x3A, ZERO = 0x30, NINE = 0x39,
+    PERCENT = 0x25, BACKSLASH = 0x5C, LT = 0x3C, GT = 0x3E, LBRACE = 0x7B, RBRACE = 0x7D;
 
 // Whitespace as matched by `\s`
 function isWhitespace(charCode) {
@@ -43,6 +43,78 @@ function findSimpleStringEnd(input, pos) {
   // The closing quote must be followed by something other than a quote,
   // as two quotes could be the start of a triple-quoted string
   return charCode === quote && end + 1 < input.length && input.charCodeAt(end + 1) !== quote ? end : -1;
+}
+// Returns the position after the spaces and tabs starting at the given position
+function skipSpaces(input, pos) {
+  let charCode = input.charCodeAt(pos);
+  while (charCode === SPACE || charCode === TAB)
+    charCode = input.charCodeAt(++pos);
+  return pos;
+}
+// Returns the position of the first line break from the given position,
+// or the length of the input if there is none
+function findLineBreak(input, pos) {
+  let charCode = input.charCodeAt(pos);
+  while (charCode !== LF && charCode !== CR && pos < input.length)
+    charCode = input.charCodeAt(++pos);
+  return pos;
+}
+// Whether a keyword can end before the given character code (the lookahead `[\s#<]`)
+function isKeywordEnd(charCode) {
+  return charCode === HASH || charCode === LT || isWhitespace(charCode);
+}
+// Whether a word such as `a` or `true` can end before the given position:
+// it must be followed by whitespace, a bracket, quote or hash, or by punctuation if allowed
+function canEndWord(input, pos, punctuationCanFollow) {
+  const charCode = input.charCodeAt(pos);
+  if (charCode === DOT || charCode === 0x2C || charCode === 0x3B || charCode === 0x21 || charCode === 0x5E) // , ; ! ^
+    return punctuationCanFollow;
+  return isDelimiter(charCode);
+}
+// Keywords that can occur in Turtle and N3 without an @ sign, by their first character
+const sparqlKeywords = {
+  B: 'BASE', b: 'BASE', P: 'PREFIX', p: 'PREFIX',
+  G: 'GRAPH', g: 'GRAPH', V: 'VERSION', v: 'VERSION',
+};
+// Whether the given uppercase keyword occurs in any case at the given position
+function matchesKeyword(input, pos, keyword) {
+  const end = pos + keyword.length;
+  if (end >= input.length || !isKeywordEnd(input.charCodeAt(end)))
+    return false;
+  // Setting the 0x20 bit turns uppercase letters into lowercase ones
+  for (let i = 0; i < keyword.length; i++) {
+    if ((input.charCodeAt(pos + i) | 0x20) !== (keyword.charCodeAt(i) | 0x20))
+      return false;
+  }
+  return true;
+}
+// N3 verbs, by their first character
+const n3Verbs = { h: 'has', i: 'is', o: 'of' };
+function isLetter(charCode) {
+  return charCode >= 0x41 && charCode <= 0x5A || charCode >= 0x61 && charCode <= 0x7A;
+}
+function isLetterOrDigit(charCode) {
+  return isLetter(charCode) || charCode >= ZERO && charCode <= NINE;
+}
+// Returns the position after the ASCII letters starting at the given position
+function skipLetters(input, pos) {
+  while (isLetter(input.charCodeAt(pos)))
+    pos++;
+  return pos;
+}
+// Returns the end of the language code (letters, followed by subtags with letters and digits,
+// each after a dash) at the given position, or -1 if there is none
+function skipLanguageCode(input, pos) {
+  let end = skipLetters(input, pos);
+  if (end === pos)
+    return -1;
+  while (input.charCodeAt(end) === MINUS && isLetterOrDigit(input.charCodeAt(end + 1))) {
+    end += 2;
+    while (isLetterOrDigit(input.charCodeAt(end)))
+      end++;
+  }
+  // The language code must be followed by a character that cannot extend it
+  return end < input.length && !isLetterOrDigit(input.charCodeAt(end)) ? end : -1;
 }
 // Returns the position after the digits starting at the given position
 function skipDigits(input, pos) {
@@ -193,40 +265,9 @@ function isValidCodePoint(charCode) {
   return charCode <= 0x10FFFF && (charCode < 0xD800 || charCode > 0xDFFF);
 }
 
-const lineModeRegExps = {
-  _langcode: true,
-  _blank: true,
-  _commentLine: true,
-  _whitespace: true,
-};
-const invalidRegExp = /$0^/;
-const nonWhitespace = /\S*/y;
-
-// Matches a sticky regular expression at the given position of the input
-function execAt(regExp, input, pos) {
-  regExp.lastIndex = pos;
-  return regExp.exec(input);
-}
-function testAt(regExp, input, pos) {
-  regExp.lastIndex = pos;
-  return regExp.test(input);
-}
-
 // ## Constructor
 export default class N3Lexer {
   constructor(options) {
-    // ## Regular expressions
-    // It's slightly faster to have these as properties than as in-scope variables.
-    // They are sticky, so they only match at the `lastIndex` set by `execAt`.
-    this._langcode = /@([a-z]+(?:-[a-z0-9]+)*)(?=[^a-z0-9])/iy;
-    this._boolean = /(?:true|false)(?=[.,;!\^\s#()\[\]\{\}"'<>])/y;
-    this._atKeyword = /@[a-z]+(?=[\s#<:])/iy;
-    this._keyword = /(?:PREFIX|BASE|VERSION|GRAPH)(?=[\s#<])/iy;
-    this._n3Verb = /(?:has|is|of)(?=[\s#()\[\]\{\}"'<>?_+\-0-9])/y;
-    this._n3Id = /id(?=[\s#<])/y;
-    this._shortPredicates = /a(?=[\s#()\[\]\{\}"'<>])/y;
-    this._commentLine = /[ \t]*#([^\n\r]*)(?:\r\n|\n|\r)([ \t]*)/y;
-    this._whitespace = /[ \t]+/y;
     options = options || {};
 
     // Whether the log:isImpliedBy predicate is supported
@@ -235,11 +276,6 @@ export default class N3Lexer {
     // In line mode (N-Triples or N-Quads), only simple features may be parsed
     if (this._lineMode = !!options.lineMode) {
       this._n3Mode = false;
-      // Don't tokenize special literals
-      for (const key in this) {
-        if (!(key in lineModeRegExps) && this[key] instanceof RegExp)
-          this[key] = invalidRegExp;
-      }
     }
     // When not in line mode, enable N3 functionality by default
     else {
@@ -256,33 +292,27 @@ export default class N3Lexer {
   // ### `_tokenizeToEnd` tokenizes as for as possible, emitting tokens through the callback
   _tokenizeToEnd(callback, inputFinished) {
     // Continue parsing as far as possible; the loop will return eventually.
-    // Rather than slicing off every token, track the position of the remaining input;
-    // the regular expressions are sticky, so they match at that position.
+    // Rather than slicing off every token, track the position of the remaining input.
     const input = this._input;
     let pos = 0;
     let currentLineLength = this._linePosition + input.length;
     while (true) {
       // Consume one separator line at a time, including its following indentation.
       while (true) {
-        let charCode = input.charCodeAt(pos), separatorLength = 0;
-        if (charCode === SPACE || charCode === TAB) {
-          const next = input.charCodeAt(pos + 1);
-          separatorLength = next === SPACE || next === TAB ?
-            execAt(this._whitespace, input, pos)[0].length : 1;
-          charCode = input.charCodeAt(pos + separatorLength);
-        }
+        let separatorLength = skipSpaces(input, pos) - pos;
+        const charCode = input.charCodeAt(pos + separatorLength);
         if (charCode === HASH) {
-          const comment = execAt(this._commentLine, input, pos);
-          if (comment) {
-            const commentLength = comment[0].length;
+          const hash = pos + separatorLength, lineEnd = findLineBreak(input, hash + 1);
+          if (lineEnd < input.length) {
             // Keep a trailing CR buffered in case the next chunk starts with LF.
-            if (!inputFinished && pos + commentLength === input.length &&
-                input.charCodeAt(input.length - 1) === CR)
+            if (!inputFinished && lineEnd + 1 === input.length && input.charCodeAt(lineEnd) === CR)
               return this._suspend(input, pos, currentLineLength);
             if (this.comments)
-              emitComment(comment[1], this._line, currentLineLength - (input.length - pos) + separatorLength);
-            pos += commentLength;
-            currentLineLength = input.length - pos + comment[2].length;
+              emitComment(input.slice(hash + 1, lineEnd), this._line, currentLineLength - (input.length - hash));
+            // Consume the comment and line break, followed by the next line's indentation
+            const nextLine = lineEnd + (input.charCodeAt(lineEnd) === CR && input.charCodeAt(lineEnd + 1) === LF ? 2 : 1);
+            pos = skipSpaces(input, nextLine);
+            currentLineLength = input.length - nextLine;
             this._line++;
           }
           else {
@@ -302,13 +332,7 @@ export default class N3Lexer {
             return this._suspend(input, pos, currentLineLength);
           separatorLength += charCode === CR && input.charCodeAt(pos + separatorLength + 1) === LF ? 2 : 1;
           // Indentation is consumed with the newline, but belongs to the next line's columns.
-          let indentationLength = 0;
-          const next = input.charCodeAt(pos + separatorLength);
-          if (next === SPACE || next === TAB) {
-            const following = input.charCodeAt(pos + separatorLength + 1);
-            indentationLength = following === SPACE || following === TAB ?
-              execAt(this._whitespace, input, pos + separatorLength)[0].length : 1;
-          }
+          const indentationLength = skipSpaces(input, pos + separatorLength) - pos - separatorLength;
           pos += separatorLength + indentationLength;
           currentLineLength = input.length - pos + indentationLength;
           this._line++;
@@ -330,7 +354,7 @@ export default class N3Lexer {
       // Look for specific token types based on the first character
       const line = this._line, firstChar = input[pos];
       let type = '', value = '', prefix = '',
-          match = null, matchLength = 0,
+          matchLength = 0,
           finalLineLength = 0, inconclusive = false;
       switch (firstChar) {
       case '^':
@@ -440,16 +464,17 @@ export default class N3Lexer {
         // input is not finished, another subtag may still arrive in a later chunk and
         // the match would be premature; wait for more input in that case.
         // A double dash starts a direction code, which cannot extend the language code.
-        if (this._previousMarker === 'literal' && (match = execAt(this._langcode, input, pos)) && match[1] !== 'version') {
-          const end = pos + match[0].length;
-          if (!inputFinished && input[end] === '-' && input[end + 1] !== '-')
-            match = null;
-          else
-            type = 'langcode', value = match[1];
+        let end = -1;
+        if (this._previousMarker === 'literal' && (end = skipLanguageCode(input, pos + 1)) >= 0 &&
+            !(end === pos + 8 && input.startsWith('version', pos + 1))) {
+          // Wait for more input if another subtag can still follow
+          if (inputFinished || input[end] !== '-' || input[end + 1] === '-')
+            type = 'langcode', value = input.slice(pos + 1, end), matchLength = end - pos;
         }
         // Try to find a keyword
-        else if (match = execAt(this._atKeyword, input, pos))
-          type = match[0];
+        else if (!this._lineMode && (end = skipLetters(input, pos + 1)) > pos + 1 && end < input.length &&
+                 (input.charCodeAt(end) === COLON || isKeywordEnd(input.charCodeAt(end))))
+          type = input.slice(pos, end), matchLength = end - pos;
         break;
 
       case '.':
@@ -501,24 +526,25 @@ export default class N3Lexer {
       case 'V':
       case 'v':
         // Try to find a SPARQL-style keyword
-        if (match = execAt(this._keyword, input, pos))
-          type = match[0].toUpperCase();
+        if (!this._lineMode && matchesKeyword(input, pos, type = sparqlKeywords[firstChar]))
+          matchLength = type.length;
         else
-          inconclusive = true;
+          type = '', inconclusive = true;
         break;
 
       case 'f':
       case 't':
         // Try to match a boolean
-        if (testAt(this._boolean, input, pos))
-          type = 'literal', value = firstChar === 't' ? 'true' : 'false', prefix = xsd.boolean, matchLength = value.length;
+        value = firstChar === 't' ? 'true' : 'false';
+        if (!this._lineMode && input.startsWith(value, pos) && canEndWord(input, pos + value.length, true))
+          type = 'literal', prefix = xsd.boolean, matchLength = value.length;
         else
-          inconclusive = true;
+          value = '', inconclusive = true;
         break;
 
       case 'a':
         // Try to find an abbreviated predicate
-        if (testAt(this._shortPredicates, input, pos))
+        if (!this._lineMode && canEndWord(input, pos + 1, false))
           type = 'abbreviation', value = 'a', matchLength = 1;
         else
           inconclusive = true;
@@ -527,18 +553,19 @@ export default class N3Lexer {
       case 'h':
       case 'o':
         // Try to find an N3 verb keyword
-        if (this._n3Mode && (match = this._matchN3Verb(input, pos, inputFinished)))
-          type = match[0];
+        if (this._n3Mode && (type = this._matchN3Verb(input, pos, inputFinished)))
+          matchLength = type.length;
         else
           inconclusive = true;
         break;
 
       case 'i':
         // Try to find an IRI property list identifier or N3 verb keyword
-        if (this._n3Mode && testAt(this._n3Id, input, pos))
+        if (this._n3Mode && input[pos + 1] === 'd' && pos + 2 < input.length &&
+            isKeywordEnd(input.charCodeAt(pos + 2)))
           type = 'id', matchLength = 2;
-        else if (this._n3Mode && (match = this._matchN3Verb(input, pos, inputFinished)))
-          type = match[0];
+        else if (this._n3Mode && (type = this._matchN3Verb(input, pos, inputFinished)))
+          matchLength = type.length;
         else
           inconclusive = true;
         break;
@@ -637,14 +664,14 @@ export default class N3Lexer {
         // Otherwise, a syntax error has occurred in the input.
         // One exception: error on an unaccounted linebreak (= not inside a triple-quoted literal).
         if (inputFinished || (!input.startsWith("'''", pos) && !input.startsWith('"""', pos) &&
-                              /\n|\r/.test(input.slice(pos))))
+                              findLineBreak(input, pos) < input.length))
           return reportSyntaxError(this, input, pos);
         else
           return this._suspend(input, pos, currentLineLength);
       }
 
       // Emit the parsed token
-      const length = matchLength || match[0].length;
+      const length = matchLength;
       const start = currentLineLength - (input.length - pos);
       let token;
       if (finalLineLength) {
@@ -660,7 +687,7 @@ export default class N3Lexer {
       this._previousMarker = type;
 
       // Advance to next part to tokenize
-      pos = Math.min(pos + length, input.length);
+      pos += length;
       if (finalLineLength)
         currentLineLength = input.length - pos + finalLineLength;
     }
@@ -680,7 +707,10 @@ export default class N3Lexer {
     }
     // Signals the syntax error through the callback
     function reportSyntaxError(self, input, pos) {
-      callback(self._syntaxError(execAt(nonWhitespace, input, pos)[0]));
+      let end = pos;
+      while (end < input.length && !isWhitespace(input.charCodeAt(end)))
+        end++;
+      callback(self._syntaxError(input.slice(pos, end)));
     }
   }
 
@@ -692,24 +722,26 @@ export default class N3Lexer {
 
   // ### `_matchN3Verb` matches an N3 verb unless the input is a longer prefixed name
   _matchN3Verb(input, pos, inputFinished) {
-    const verb = execAt(this._n3Verb, input, pos);
-    if (!verb)
-      return null;
+    const verb = n3Verbs[input[pos]];
+    if (!input.startsWith(verb, pos) || pos + verb.length >= input.length)
+      return '';
 
     // Most verb boundaries cannot be part of a prefix, so keep the common path fast.
-    const next = input[pos + verb[0].length];
-    if (next !== '-' && next !== '_' && (next < '0' || next > '9'))
+    const next = input.charCodeAt(pos + verb.length);
+    if (canEndWord(input, pos + verb.length, false) || next === 0x3F || next === PLUS) // ?
       return verb;
+    if (next !== MINUS && next !== 0x5F && (next < ZERO || next > NINE)) // _
+      return '';
 
     // A prefix can start with a verb and continue with characters that are also
     // valid verb boundaries. Prefer the longer prefixed name when it is complete.
     if (skipPrefixedName(input, pos, true) >= 0)
-      return null;
+      return '';
 
     // If a stream chunk ends partway through such a prefix,
     // wait for the colon instead of prematurely emitting the verb.
     if (!inputFinished && skipName(input, pos, PREFIX_START) === input.length)
-      return null;
+      return '';
     return verb;
   }
 
