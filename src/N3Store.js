@@ -1,5 +1,5 @@
 // **N3Store** objects store N3 quads by graph in memory.
-import { Readable } from 'readable-stream';
+import { Readable, finished } from 'readable-stream';
 import { default as N3DataFactory, termToId, termFromId } from './N3DataFactory';
 import namespaces from './IRIs';
 import { isDefaultGraph } from './N3Util';
@@ -571,10 +571,55 @@ export default class N3Store {
     return !this.readQuads(subjectOrQuad, predicate, object, graph).next().done;
   }
 
-  // ### `import` adds a stream of quads to the store
+  // ### `import` adds a stream of quads to the store.
+  // It returns the stream, wrapped such that it can also be awaited
+  // as a promise of the store (per the RDF/JS `Dataset.import` signature).
   import(stream) {
     stream.on('data', quad => { this.addQuad(quad); });
-    return stream;
+
+    // Only track completion once awaited, so unawaited imports keep the stream's behavior
+    const store = this;
+    let promise = null;
+    function completion() {
+      return promise || (promise = new Promise((resolve, reject) => {
+        let stopListening = null;
+        function settle(error) {
+          stopListening();
+          error ? reject(error) : resolve(store);
+        }
+        try {
+          stopListening = finished(stream, { readable: true, writable: false }, settle);
+        }
+        // RDF/JS streams that are not Node.js streams only signal their end and errors
+        // and must be awaited before they finish
+        catch {
+          stopListening = () => {
+            if (stream.removeListener) {
+              stream.removeListener('end', onFinish);
+              stream.removeListener('error', settle);
+            }
+          };
+          function onFinish() { settle(); }
+          stream.on('end', onFinish);
+          stream.on('error', settle);
+        }
+      }));
+    }
+    const thenable = {
+      then(onFulfilled, onRejected) { return completion().then(onFulfilled, onRejected); },
+      catch(onRejected) { return completion().catch(onRejected); },
+      finally(onFinally) { return completion().finally(onFinally); },
+    };
+    // Return a wrapper that behaves as the stream, but is also awaitable
+    return new Proxy(stream, {
+      get(target, property) {
+        if (property === 'then' || property === 'catch' || property === 'finally')
+          return thenable[property];
+        const value = target[property];
+        // Methods run on the stream itself, which may rely on private fields
+        return typeof value === 'function' ? value.bind(target) : value;
+      },
+    });
   }
 
   // ### `removeQuad` removes a quad from the store if it exists
