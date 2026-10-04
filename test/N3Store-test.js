@@ -4109,6 +4109,20 @@ describe('Store', () => {
       expect(solutions([])).toEqual([{}]);
     });
 
+    it('should match many patterns without exhausting the call stack', () => {
+      const ground = quad(ex('alice'), ex('knows'), ex('bob'));
+      expect(solutions(new Array(20000).fill(ground))).toEqual([{}]);
+      const chain = new Store(), patterns = [];
+      for (let i = 0; i < 5000; i++) {
+        chain.addQuad(ex(`n${i}`), ex('next'), ex(`n${i + 1}`));
+        patterns.push(quad(i ? variable(`v${i}`) : ex('n0'), ex('next'), variable(`v${i + 1}`)));
+      }
+      const [bindings, ...rest] = chain.matchBGP(patterns);
+      expect(rest).toHaveLength(0);
+      expect(bindings.size).toBe(5000);
+      expect(bindings.get('v5000').equals(ex('n5000'))).toBe(true);
+    });
+
     it('should yield RDF/JS Bindings from variables to terms', () => {
       const [bindings] = store.matchBGP([quad(s, ex('name'), literal('Alice'))]);
       expect(bindings).toBeInstanceOf(Bindings);

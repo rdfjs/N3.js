@@ -115,8 +115,8 @@ export class BindingsFactory {
     this._factory = factory;
   }
 
-  bindings(entries = []) {
-    return new Bindings(new Map(entries.map(([variable, value]) => [variable.value, value])), this._factory);
+  bindings(entries) {
+    return new Bindings(new Map((entries || []).map(([variable, value]) => [variable.value, value])), this._factory);
   }
 
   fromBindings(bindings) {

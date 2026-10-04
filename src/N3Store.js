@@ -927,46 +927,64 @@ export default class N3Store {
       }
     }
     steps.bindingsFactory = bindingsFactory;
-    yield* this._matchSteps(steps, 0, new Map(), new Map());
+    yield* this._matchSteps(steps);
   }
 
-  *_matchSteps(steps, index, bindings, terms) {
-    if (index === steps.length) {
-      // Cache terms by id, since solutions often share them
-      const solution = new Map();
-      for (const [name, id] of bindings) {
-        let term = terms.get(id);
-        if (term === undefined)
-          terms.set(id, term = this._termFromId(this._entities[id]));
-        solution.set(name, term);
+  // ### `_matchSteps` joins the steps by backtracking with an explicit stack of index iterators,
+  // so large patterns do not exhaust the call stack
+  *_matchSteps(steps) {
+    const bindings = new Map(), terms = new Map(), iterators = new Array(steps.length);
+    let index = 0;
+    while (index >= 0) {
+      if (index === steps.length) {
+        yield this._createBindings(steps, bindings, terms);
+        index--;
       }
-      const { bindingsFactory } = steps;
-      if (!bindingsFactory)
-        yield new Bindings(solution, this._factory);
       else {
-        // A custom factory receives the variables of the patterns
-        const entries = [];
-        for (const [name, term] of solution)
-          entries.push([steps.variables.get(name), term]);
-        yield bindingsFactory.bindings(entries);
+        const { terms: keys, bound, binds, checks } = steps[index];
+        if (!iterators[index]) {
+          for (let i = 0; i < bound.length; i += 2)
+            keys[bound[i]] = bindings.get(bound[i + 1]);
+          iterators[index] = this._readIds(keys[0], keys[1], keys[2], keys[3]);
+        }
+        const { value: ids, done } = iterators[index].next();
+        if (done) {
+          // Each quad overwrites this step's bindings; drop them once the step is exhausted
+          for (let i = 0; i < binds.length; i += 2)
+            bindings.delete(binds[i + 1]);
+          iterators[index--] = null;
+        }
+        else {
+          for (let i = 0; i < binds.length; i += 2)
+            bindings.set(binds[i + 1], ids[binds[i]]);
+          let consistent = true;
+          for (let i = 0; consistent && i < checks.length; i += 2)
+            consistent = bindings.get(checks[i + 1]) === ids[checks[i]];
+          if (consistent)
+            index++;
+        }
       }
-      return;
     }
-    const { terms: keys, bound, binds, checks } = steps[index];
-    for (let i = 0; i < bound.length; i += 2)
-      keys[bound[i]] = bindings.get(bound[i + 1]);
-    for (const ids of this._readIds(keys[0], keys[1], keys[2], keys[3])) {
-      for (let i = 0; i < binds.length; i += 2)
-        bindings.set(binds[i + 1], ids[binds[i]]);
-      let consistent = true;
-      for (let i = 0; consistent && i < checks.length; i += 2)
-        consistent = bindings.get(checks[i + 1]) === ids[checks[i]];
-      if (consistent)
-        yield* this._matchSteps(steps, index + 1, bindings, terms);
+  }
+
+  // ### `_createBindings` creates a solution from the bound ids
+  _createBindings(steps, bindings, terms) {
+    // Cache terms by id, since solutions often share them
+    const solution = new Map();
+    for (const [name, id] of bindings) {
+      let term = terms.get(id);
+      if (term === undefined)
+        terms.set(id, term = this._termFromId(this._entities[id]));
+      solution.set(name, term);
     }
-    // Each quad overwrites this step's bindings; drop them once the step is exhausted
-    for (let i = 0; i < binds.length; i += 2)
-      bindings.delete(binds[i + 1]);
+    const { bindingsFactory } = steps;
+    if (!bindingsFactory)
+      return new Bindings(solution, this._factory);
+    // A custom factory receives the variables of the patterns
+    const entries = [];
+    for (const [name, term] of solution)
+      entries.push([steps.variables.get(name), term]);
+    return bindingsFactory.bindings(entries);
   }
 
   // ### `_readIds` yields the subject, predicate, object, and graph ids of matching quads.
@@ -1387,19 +1405,29 @@ function planBGP(patterns) {
   const steps = [], known = new Set();
   // The variable term for each variable name
   steps.variables = new Map();
-  while (patterns.length) {
-    let best = 0, bestKnown = -1;
-    for (let i = 0; i < patterns.length; i++) {
-      let count = 0;
-      for (const name of QUAD_POSITIONS) {
-        const term = patterns[i][name];
-        if (term && (term.termType !== 'Variable' || known.has(term.value)))
-          count++;
+  // Count the known terms of each pattern, and which patterns each variable occurs in
+  const counts = [], occurrences = new Map();
+  patterns.forEach((pattern, i) => {
+    counts[i] = 0;
+    for (const name of QUAD_POSITIONS) {
+      const term = pattern[name];
+      if (term && term.termType === 'Variable') {
+        const indexes = occurrences.get(term.value);
+        if (indexes) indexes.push(i);
+        else occurrences.set(term.value, [i]);
       }
-      if (count > bestKnown)
-        best = i, bestKnown = count;
+      else if (term)
+        counts[i]++;
     }
-    const pattern = patterns.splice(best, 1)[0];
+  });
+  const remaining = patterns.map((pattern, i) => i);
+  while (remaining.length) {
+    let best = 0;
+    for (let i = 1; i < remaining.length; i++) {
+      if (counts[remaining[i]] > counts[remaining[best]])
+        best = i;
+    }
+    const pattern = patterns[remaining.splice(best, 1)[0]];
     const step = { terms: [null, null, null, null], bound: [], binds: [], checks: [] };
     const binding = new Set();
     QUAD_POSITIONS.forEach((name, position) => {
@@ -1415,8 +1443,11 @@ function planBGP(patterns) {
         steps.variables.set(term.value, term);
       }
     });
-    for (const name of binding)
+    for (const name of binding) {
       known.add(name);
+      for (const i of occurrences.get(name))
+        counts[i]++;
+    }
     steps.push(step);
   }
   return steps;

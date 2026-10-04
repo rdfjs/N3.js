@@ -16,6 +16,7 @@ describe('Bindings', () => {
     expect(bindings.type).toBe('bindings');
     expect(new Bindings().size).toBe(0);
     expect(factory.bindings().size).toBe(0);
+    expect(factory.bindings(null).size).toBe(0);
   });
 
   it('should look up variables by term or by name', () => {
