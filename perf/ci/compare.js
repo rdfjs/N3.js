@@ -11,7 +11,9 @@
 // interleaved within each round (alternating which goes first) so that
 // drift in the machine's speed affects both equally, and each round yields
 // a paired head/base ratio. A benchmark counts as a regression when the
-// median ratio exceeds 1 + threshold and nearly every round agrees.
+// median ratio and the ratio of the medians exceed 1 + threshold and 80% of
+// the rounds agree; a benchmark flagged that way runs as many rounds again
+// and must stay flagged over all of them.
 // --shard i/n runs every n-th benchmark starting at the i-th, so CI can
 // spread them over parallel jobs; report.js merges the shards' JSON output.
 // Exits with status 1 when there is a regression or a benchmark fails.
@@ -75,9 +77,8 @@ function measure(lib, name) {
   }
 }
 
-const results = names.map(name => ({ name, base: [], head: [], ratios: [] }));
-for (let round = 0; round < rounds; round++) {
-  results.forEach((result, index) => {
+function runRound(round, list) {
+  list.forEach((result, index) => {
     if (result.baseError || result.headError || result.skipped || result.unavailable) return;
     const order = (round + index) % 2 ? ['head', 'base'] : ['base', 'head'];
     const times = {};
@@ -94,23 +95,43 @@ for (let round = 0; round < rounds; round++) {
     result.head.push(times.head);
     result.ratios.push(times.head / times.base);
   });
-  console.error(`Round ${round + 1}/${rounds} done`);
 }
 
-const required = Math.max(1, Math.ceil(rounds * 0.8));
-for (const result of results) {
-  if (result.headError || result.baseError) result.status = 'error';
-  else if (result.skipped) result.status = 'new';
-  else if (result.unavailable) result.status = 'unavailable';
-  else {
-    result.ratio = median(result.ratios);
-    const slower = result.ratios.filter(r => r > 1).length;
-    const faster = result.ratios.filter(r => r < 1).length;
-    if (result.ratio > 1 + threshold && slower >= required) result.status = 'regression';
-    else if (result.ratio < 1 / (1 + threshold) && faster >= required) result.status = 'improvement';
-    else result.status = 'ok';
-  }
+// A change counts when the median of the paired per-round ratios and the
+// ratio of the overall medians both exceed the threshold, and at least 80%
+// of the rounds agree on its direction
+function classify(result) {
+  if (result.headError || result.baseError) return 'error';
+  if (result.skipped) return 'new';
+  if (result.unavailable) return 'unavailable';
+  result.ratio = median(result.ratios);
+  const overall = median(result.head) / median(result.base);
+  const required = Math.max(1, Math.ceil(result.ratios.length * 0.8));
+  const slower = result.ratios.filter(r => r > 1).length;
+  const faster = result.ratios.filter(r => r < 1).length;
+  if (result.ratio > 1 + threshold && overall > 1 + threshold && slower >= required)
+    return 'regression';
+  if (result.ratio < 1 / (1 + threshold) && overall < 1 / (1 + threshold) && faster >= required)
+    return 'improvement';
+  return 'ok';
 }
+
+const results = names.map(name => ({ name, base: [], head: [], ratios: [] }));
+for (let round = 0; round < rounds; round++) {
+  runRound(round, results);
+  console.error(`Round ${round + 1}/${rounds} done`);
+}
+for (const result of results) result.status = classify(result);
+
+// Noise on a shared runner occasionally pushes an unchanged benchmark past the
+// threshold, so every flagged benchmark runs as many rounds again and has to
+// stay flagged over all of them
+const flagged = results.filter(r => r.status === 'regression' || r.status === 'improvement');
+for (let round = 0; round < rounds && flagged.length; round++) {
+  runRound(rounds + round, flagged);
+  console.error(`Confirmation round ${round + 1}/${rounds} done (${flagged.length} benchmarks)`);
+}
+for (const result of flagged) result.status = classify(result);
 
 const settings = { rounds, iterations: Number(args.iterations), threshold };
 const { markdown, failed } = render([{ settings, results }]);

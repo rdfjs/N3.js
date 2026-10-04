@@ -9,7 +9,10 @@ both. The benchmarks are spread over 6 parallel jobs (shards); each shard
 builds both sides and compares them on its own runner. Each measurement runs
 in a fresh process; base and head are interleaved over 5 rounds so drift on
 the shared runner hits both equally. A benchmark is flagged when head is more
-than 10% slower in the median and in at least 4 of 5 rounds.
+than 10% slower both in the median of the per-round ratios and in median
+time, and at least 4 of 5 rounds agree. Noise on shared runners occasionally
+gets an unchanged benchmark past that bar, so a flagged benchmark runs 5 more
+rounds and has to stay flagged over all 10.
 
 A report job merges the shards into the job summary and a comment on the pull
 request. The comment lists regressions, failures and speedups, and folds the

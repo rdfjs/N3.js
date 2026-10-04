@@ -47,7 +47,7 @@ function render(runs) {
   if (runs.some(run => JSON.stringify(run.settings) !== JSON.stringify(runs[0].settings)))
     throw new Error('The result files were produced with different settings.');
   const results = runs.flatMap(run => run.results);
-  const required = Math.max(1, Math.ceil(rounds * 0.8)), percent = Math.round(threshold * 100);
+  const percent = Math.round(threshold * 100);
   function byStatus(status) {
     return results.filter(r => r.status === status);
   }
@@ -78,8 +78,10 @@ function render(runs) {
     lines.push(`<details><summary>${plural(unchanged.length, 'benchmark')} within ${percent}%</summary>`, '',
       table(unchanged), '', '</details>', '');
   }
-  lines.push(`Head vs base, median of ${rounds} interleaved rounds (each the median of ${iterations} runs ` +
-    `after warm-up). Flagged when the change exceeds ${percent}% in at least ${required} of ${rounds} rounds.`);
+  lines.push(`Head vs base over ${rounds} interleaved rounds, each the median of ${iterations} runs after ` +
+    'warm-up in a fresh process. Flagged when the median per-round change and the change in median time both ' +
+    `exceed ${percent}% and at least 80% of the rounds agree; a benchmark that looks flagged runs ${rounds} ` +
+    'more rounds and has to stay flagged over all of them.');
   for (const r of errors) {
     for (const side of ['base', 'head']) {
       const error = r[`${side}Error`];
