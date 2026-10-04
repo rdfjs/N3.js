@@ -99,6 +99,8 @@ export default class N3Writer {
       this._escape = escape, this._escapeAll = escapeAll, this._characterReplacer = characterReplacer;
       this._graph = DEFAULTGRAPH;
       this._prefixIRIs = Object.create(null);
+      // `_prefixNames` maps each prefix to the IRI it is bound to
+      this._prefixNames = Object.create(null);
       // Escaped prefix IRIs and names for the prefix matcher, computed once per prefix
       this._prefixPatterns = Object.create(null);
       if (options.baseIRI) {
@@ -131,8 +133,10 @@ export default class N3Writer {
 
   // ### `_writeQuad` writes the quad to the output stream
   _writeQuad(subject, predicate, object, graph, done) {
-    if (this._formulaStatements && DEFAULTGRAPH.equals(graph) &&
-        this._findFormulas([object, predicate, subject]).length) {
+    // Once a statement with formulas is held back, hold back all later
+    // statements in the default graph too, so they can be grouped with it
+    if (this._formulaStatements && DEFAULTGRAPH.equals(graph) && (this._formulaStatements.length ||
+        this._findFormulas([object, predicate, subject]).length)) {
       this._formulaStatements.push({ subject, predicate, object });
       done && done();
       return;
@@ -460,10 +464,8 @@ export default class N3Writer {
     if (this._formulaStatements && this._formulaStatements.length) {
       for (const prefix in prefixes) {
         const iri = typeof prefixes[prefix] === 'string' ? prefixes[prefix] : prefixes[prefix].value;
-        for (const bound in this._prefixIRIs) {
-          if (this._prefixIRIs[bound] === `${prefix}:` && bound !== iri)
-            throw new Error(`Cannot rebind prefix ${prefix}: after writing statements with formulas`);
-        }
+        if (`${prefix}:` in this._prefixNames && this._prefixNames[`${prefix}:`] !== iri)
+          throw new Error(`Cannot rebind prefix ${prefix}: after writing statements with formulas`);
       }
     }
     // Write all new prefixes
@@ -480,6 +482,7 @@ export default class N3Writer {
       }
       // Store and write the prefix
       this._prefixIRIs[iri] = (prefix += ':');
+      this._prefixNames[prefix] = iri;
       this._prefixPatterns[iri] = [escapeRegex(iri), escapeRegex(prefix)];
       this._write(`@prefix ${prefix} <${iri}>.\n`);
     }

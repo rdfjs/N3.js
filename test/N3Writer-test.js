@@ -300,6 +300,29 @@ describe('Writer', () => {
         '[ ex:p ex:o ] ex:p {}.\n');
     });
 
+    it('should refuse to rebind a prefix that also has an alias after statements with formulas', async () => {
+      const p = new NamedNode('urn:old:p'), o = new NamedNode('urn:old:o');
+      const writer = new Writer({ format: 'N3', prefixes: { ex: 'urn:old:' }, formulas: { f: [] } });
+      writer.addQuad(writer.blank(p, o), p, new BlankNode('f'));
+      writer.addPrefix('alias', 'urn:old:');
+      expect(() => writer.addPrefix('ex', 'urn:new:')).toThrow('Cannot rebind prefix ex: after writing statements with formulas');
+      expect(await end(writer)).toBe('@prefix ex: <urn:old:>.\n\n@prefix alias: <urn:old:>.\n\n' +
+        '[ ex:p ex:o ] alias:p {}.\n');
+    });
+
+    it('should hold back statements after a statement with formulas', async () => {
+      const [p, q, o] = ['p', 'q', 'o'].map(name => new NamedNode(`urn:${name}`));
+      const writer = new Writer({ format: 'N3', formulas: { f: [], g: [] } });
+      const b = writer.blank(), l = writer.list([o]);
+      writer.addQuad(b, p, new BlankNode('f'));
+      writer.addQuad(b, q, o);
+      writer.addQuad(l, p, new BlankNode('g'));
+      writer.addQuad(l, q, o);
+      writer.addQuad(o, q, o, new NamedNode('urn:g'));
+      expect(await end(writer)).toBe('<urn:g> {\n<urn:o> <urn:q> <urn:o>\n}\n' +
+        '[] <urn:p> {}; <urn:q> <urn:o>.\n(<urn:o>) <urn:p> {}; <urn:q> <urn:o>.\n');
+    });
+
     it('should write a list with a formula that heads several statements', async () => {
       const [a, p, q, o, r] = ['a', 'p', 'q', 'o', 'r'].map(name => new NamedNode(`urn:${name}`)), l = new BlankNode('l');
       const writer = new Writer({ format: 'N3', formulas: { f: [new Quad(a, a, a)] }, lists: { l: [new BlankNode('f')] } });
