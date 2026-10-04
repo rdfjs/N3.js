@@ -317,6 +317,22 @@ describe('Reasoner', () => {
     return expect(store.size).toEqual(1830);
   });
 
+  it('Should treat variables named like built-in object members as ordinary variables', () => {
+    const store = new Store(new Parser({ format: 'text/n3' }).parse(
+      '@prefix : <http://example.org/>. :a :p :b. :c :p :d.'));
+    const rules = getRulesFromDataset(new Store(new Parser({ format: 'text/n3' }).parse(
+      '@prefix : <http://example.org/>. { ?toString :p ?constructor } => { ?constructor :q ?toString }.')));
+    new Reasoner(store).reason(rules);
+    expect(store.has(new Quad(new NamedNode('http://example.org/b'), new NamedNode('http://example.org/q'), new NamedNode('http://example.org/a')))).toBe(true);
+    expect(store.has(new Quad(new NamedNode('http://example.org/d'), new NamedNode('http://example.org/q'), new NamedNode('http://example.org/c')))).toBe(true);
+    expect(store.size).toBe(4);
+
+    const [rule] = rules.map(r => new Reasoner(store)._createRule(r));
+    expect(rule.variables).toHaveLength(2);
+    for (const variable of rule.variables)
+      expect(typeof variable).toBe('object');
+  });
+
   describe('Reasoning budgets', () => {
     // A transitive-closure rule over a chain of n edges derives O(n^2) quads
     function chainStore(n) {

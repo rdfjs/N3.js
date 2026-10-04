@@ -3204,6 +3204,24 @@ describe('Store', () => {
     });
   });
 
+  describe('A Store containing a very long rdf:Collection', () => {
+    const store = new Store();
+    const length = 100000;
+    const items = [];
+    for (let i = 0; i < length; i++)
+      items.push(new Literal(`"${i}"`));
+    const head = addList(store, ...items)[0];
+    store.addQuad(new NamedNode('s'), new NamedNode('p'), head);
+
+    it('extractLists with remove returns the items in order and removes the list', () => {
+      const lists = store.extractLists({ remove: true });
+      expect(lists[head.value]).toHaveLength(length);
+      expect(lists[head.value][0].value).toBe('0');
+      expect(lists[head.value][length - 1].value).toBe(`${length - 1}`);
+      expect(store.size).toBe(1);
+    });
+  });
+
   describe('A Store containing a rdf:Collection without first', () => {
     const store = new Store();
     const added = store.addQuad(store.createBlankNode(), new NamedNode(namespaces.rdf.rest), namespaces.rdf.nil);
@@ -3854,6 +3872,23 @@ describe('Store', () => {
         store1.addAll([q[2]]);
         expect(store1.size).toEqual(3);
       });
+
+      it('should merge a store with the same entity index into an existing graph', () => {
+        const entityIndex = new EntityIndex();
+        const target = new Store({ entityIndex });
+        const source = new Store({ entityIndex });
+        const graph = new NamedNode('g');
+        target.addQuad(new NamedNode('s1'), new NamedNode('p'), new NamedNode('o1'), graph);
+        target.addQuad(new NamedNode('s2'), new NamedNode('p'), new NamedNode('o2'));
+        source.addQuad(new NamedNode('s1'), new NamedNode('p'), new NamedNode('o3'), graph);
+        source.addQuad(new NamedNode('s3'), new NamedNode('p'), new NamedNode('o4'));
+        expect(target.addAll(source)).toBe(target);
+        expect(target.size).toBe(4);
+        expect(target.countQuads(null, new NamedNode('p'), null, null)).toBe(4);
+        expect(target.getQuads(null, null, new NamedNode('o3'), graph)).toHaveLength(1);
+        expect(target.getQuads(new NamedNode('s3'), null, null, null)).toHaveLength(1);
+        expect(source.size).toBe(2);
+      });
     });
 
     describe('#map', () => {
@@ -4020,6 +4055,126 @@ describe('Store', () => {
     const store = new Store(quads);
     expect(store.size).toEqual(2);
     expect(store.getQuads()).toHaveLength(2);
+  });
+
+  describe('A Store containing IRIs that start like other term ids', () => {
+    const p = namedNode('http://example.org/p');
+    const iris = ['?x', '_:b', '"a"', '[1,2,3]', '.2.3.4', '.1.1.1', '<a>'];
+
+    it('should return the quads unchanged', () => {
+      const quads = iris.map(iri => quad(namedNode(iri), p, namedNode(iri), namedNode(iri)));
+      const store = new Store(quads);
+      expect(store.getQuads().map(q => q.toJSON())).toEqual(quads.map(q => q.toJSON()));
+      for (const q of quads)
+        expect(store.has(q)).toBe(true);
+    });
+
+    it('should keep an IRI distinct from a quoted triple with the same internal key', () => {
+      const store = new Store();
+      const s = namedNode('http://example.org/s');
+      store.addQuad(s, p, namedNode('http://example.org/o'));
+      const quoted = quad(s, p, namedNode('http://example.org/o'));
+      store.addQuad(quoted, p, s);
+      // The quoted triple's key is built from the ids of s, p and o, which are 2, 3 and 4
+      store.addQuad(namedNode('.2.3.4'), p, s);
+      expect(store.size).toBe(3);
+      expect(store.getQuads(null, null, s).map(q => q.subject.termType).sort()).toEqual(['NamedNode', 'Quad']);
+    });
+
+    it('should keep an IRI distinct from a variable', () => {
+      const store = new Store([quad(namedNode('?x'), p, p), quad(DataFactory.variable('x'), p, p)]);
+      expect(store.size).toBe(2);
+      expect(store.getQuads().map(q => q.subject.termType).sort()).toEqual(['NamedNode', 'Variable']);
+      expect(store.getQuads(namedNode('?x')).map(q => q.subject.termType)).toEqual(['NamedNode']);
+      expect([...store.match(namedNode('?x'))].map(q => q.subject.termType)).toEqual(['NamedNode']);
+      expect([...store.match(namedNode('?x')).match(DataFactory.variable('x'))]).toHaveLength(0);
+    });
+
+    it('should keep quoted triples with such IRIs distinct from quoted triples with other terms', () => {
+      const o = namedNode('http://example.org/o');
+      const withIri = quad(namedNode('?x'), p, o);
+      const withVariable = quad(DataFactory.variable('x'), p, o);
+      function nested(term) { return quad(quad(term, p, o), p, o); }
+      const store = new Store([quad(withIri, p, o), quad(withVariable, p, o), quad(nested(namedNode('?x')), p, o)]);
+      expect(store.size).toBe(3);
+      expect(store.getQuads(withIri).map(q => q.subject.subject.termType)).toEqual(['NamedNode']);
+      expect(store.getQuads(nested(DataFactory.variable('x')))).toHaveLength(0);
+      expect([...store.match(withIri).match(withVariable)]).toHaveLength(0);
+      expect([...store.match(nested(namedNode('?x'))).match(nested(DataFactory.variable('x')))]).toHaveLength(0);
+      expect([...store.match(withIri).match(withIri)]).toHaveLength(1);
+      expect([...store.match(nested(namedNode('?x'))).match(nested(namedNode('?x')))]).toHaveLength(1);
+    });
+
+    it('should keep quoted triples with such IRIs apart in forwarded views', () => {
+      const o = namedNode('http://example.org/o');
+      const quoted = quad(namedNode('?x'), p, o, namedNode('?g'));
+      const other = quad(DataFactory.variable('x'), p, o, DataFactory.variable('g'));
+      function nested(term) { return quad(term, p, o); }
+      const store = new Store([quad(quoted, p, o), quad(other, p, o), quad(nested(quoted), p, o)]);
+      const view = store.match(quoted, null, null, null, { matchSemantics: 'forwarded' });
+      expect([...view]).toHaveLength(1);
+      expect([...view.match(other)]).toHaveLength(0);
+      expect([...view.match(quoted)]).toHaveLength(1);
+      expect(() => view.add(quad(other, p, p))).toThrow('Quad does not match the forwarded view pattern');
+      expect(() => view.deleteMatches(other)).toThrow('Deletion pattern does not match the forwarded view pattern');
+      const nestedView = store.match(nested(quoted), null, null, null, { matchSemantics: 'forwarded' });
+      expect([...nestedView.match(nested(other))]).toHaveLength(0);
+      expect(() => nestedView.add(quad(nested(other), p, p))).toThrow('Quad does not match the forwarded view pattern');
+      const foreign = { termType: 'Quad', subject: namedNode('?x'), predicate: p, object: o };
+      expect([...store.match(quad(namedNode('?x'), p, o), null, null, null, { matchSemantics: 'forwarded' })
+        .match(foreign)]).toHaveLength(0);
+      view.add(quad(quoted, p, p));
+      expect(store.size).toBe(4);
+      expect(store.getQuads(other)).toHaveLength(1);
+    });
+
+    it('should store such IRIs from another library', () => {
+      const store = new Store();
+      store.addQuad({ termType: 'NamedNode', value: '.2.3.4' }, p, { termType: 'NamedNode', value: '?x' });
+      expect(store.getQuads().map(q => q.toJSON())).toEqual([quad(namedNode('.2.3.4'), p, namedNode('?x')).toJSON()]);
+    });
+
+    it('should keep IRIs starting with < distinct from the IRIs inside them', () => {
+      const values = ['', 'http://a', '<', '<>', '<<>>', '<http://a>', '<<http://a>>', '<a', 'a>'];
+      const quads = values.map(v => quad(namedNode(v), p, namedNode(v), namedNode(v)));
+      const store = new Store(quads);
+      expect(store.size).toBe(values.length);
+      expect(store.getQuads().map(q => q.toJSON())).toEqual(quads.map(q => q.toJSON()));
+      for (const v of values) {
+        expect(store.getQuads(null, null, namedNode(v)).map(q => q.object.value)).toEqual([v]);
+        expect(store.getQuads({ termType: 'NamedNode', value: v }).map(q => q.subject.value)).toEqual([v]);
+      }
+    });
+
+    it('should treat a string id starting with < as the same IRI', () => {
+      const store = new Store();
+      store.addQuad('<a>', p, '<b>');
+      store.addQuad(namedNode('<a>'), p, namedNode('<b>'));
+      expect(store.size).toBe(1);
+      expect(store.getQuads().map(q => [q.subject.value, q.object.value])).toEqual([['<a>', '<b>']]);
+      expect(store.getQuads('<a>')).toHaveLength(1);
+      expect(store.getQuads(namedNode('<a>'), null, '<b>')).toHaveLength(1);
+      expect(store.getQuads('a')).toHaveLength(0);
+      store.addQuad(namedNode('.x'), p, p);
+      expect(store.getQuads('<.x>')).toHaveLength(0);
+      expect(store.getQuads('.x')).toHaveLength(0);
+      store.addQuad('<.x>', p, p);
+      expect(store.getQuads().map(q => q.subject.value).sort()).toEqual(['.x', '<.x>', '<a>']);
+      expect(store.has(quad(namedNode('<a>'), p, namedNode('<b>')))).toBe(true);
+    });
+
+    it('should keep the string id <> as the empty IRI', () => {
+      const store = new Store();
+      store.addQuad('<>', p, p);
+      expect(store.getQuads().map(q => q.subject.toJSON())).toEqual([namedNode('').toJSON()]);
+      expect(store.getQuads(namedNode(''))).toHaveLength(1);
+    });
+
+    it('should store relative IRIs parsed without a base IRI', () => {
+      const store = new Store(new Parser().parse('<.2.3.4> <?x> <_b> .'));
+      expect(store.getQuads().map(q => [q.subject.value, q.predicate.value, q.object.value]))
+        .toEqual([['.2.3.4', '?x', '_b']]);
+    });
   });
 
   describe('A Store containing the empty IRI', () => {
