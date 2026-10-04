@@ -8,6 +8,7 @@ import {
   Variable,
   DefaultGraph,
   Store,
+  StreamWriter,
   termFromId,
 } from '../src';
 import namespaces from '../src/IRIs';
@@ -419,7 +420,73 @@ describe('Writer', () => {
       expect(() => writer.addQuad(b, p, p)).toThrow(message);
       expect(() => writer.addQuad(new Quad(b, p, p))).toThrow(message);
       expect(() => writer.addQuads([new Quad(b, p, p)])).toThrow(message);
-      expect(() => writer.addQuad(p, p, p, b)).toThrow(message);
+      expect(() => writer.addQuad(p, p, b, new DefaultGraph())).toThrow(message);
+    });
+
+    it('should not record blank nodes of refused statements and formulas', async () => {
+      const [b, c, d, p] = [new BlankNode('b'), new BlankNode('c'), new BlankNode('d'), new NamedNode('urn:p')];
+      const writer = new Writer({ format: 'N3' });
+      writer.formula([new Quad(b, p, p)]);
+      expect(() => writer.addQuad(b, p, c)).toThrow('Cannot write blank node _:b both inside and outside a formula');
+      const f = writer.formula();
+      expect(() => writer.formula([new Quad(d, p, new Quad(f, p, p)), new Quad(d, p, new Quad(p, p, f))]))
+        .toThrow('Cannot write a formula created by formula() more than once');
+      writer.addQuad(p, p, writer.formula([new Quad(c, p, p), new Quad(d, p, p)]));
+      expect(await end(writer)).toBe('<urn:p> <urn:p> { _:c <urn:p> <urn:p>. _:d <urn:p> <urn:p> }.\n');
+    });
+
+    it('should refuse named graphs once formulas are in use', async () => {
+      const [b, p, g] = [new BlankNode('b'), new NamedNode('urn:p'), new NamedNode('urn:g')];
+      const message = 'Cannot write named graphs once formulas are in use';
+      const writer = new Writer({ format: 'N3' });
+      writer.addQuad(p, p, p, g);
+      const f = writer.formula([new Quad(p, p, p)]);
+      expect(() => writer.addQuad(f, p, f, g)).toThrow(message);
+      expect(() => writer.addQuad(p, p, p, g)).toThrow(message);
+      expect(() => writer.addQuads([new Quad(p, p, p, g)])).toThrow(message);
+      let error;
+      writer.addQuad(p, p, p, b, e => { error = e; });
+      expect(error).toEqual(new Error(message));
+      expect(() => writer.addQuad(p, p, new Quad(p, p, b, g))).toThrow(message);
+      expect(() => writer.formula([new Quad(p, p, new Quad(p, p, p, g))])).toThrow(message);
+      writer.addQuad(p, p, f);
+      expect(await end(writer)).toBe('<urn:g> {\n<urn:p> <urn:p> <urn:p>\n}\n<urn:p> <urn:p> { <urn:p> <urn:p> <urn:p> }.\n');
+      const labelled = new Writer({ format: 'N3', formulas: { f: [] } });
+      expect(() => labelled.addQuad(p, p, p, new BlankNode('f'))).toThrow(message);
+    });
+
+    it('should refuse named graphs once formulas are in use in a stream', async () => {
+      const p = new NamedNode('urn:p'), writer = new StreamWriter({ format: 'N3', formulas: { f: [] } });
+      const errors = [];
+      writer.on('error', error => errors.push(error));
+      writer.write(new Quad(p, p, p, new NamedNode('urn:g')));
+      await new Promise(resolve => setImmediate(resolve));
+      expect(errors).toEqual([new Error('Cannot write named graphs once formulas are in use')]);
+    });
+
+    it('should find nodes from blank() and formulas in the graph of a quoted triple', () => {
+      const [b, p] = [new BlankNode('b'), new NamedNode('urn:p')];
+      const helpers = new Writer({ format: 'N3' }), node = helpers.blank(p, b);
+      const writer = new Writer({ format: 'N3' }), f = writer.formula();
+      expect(() => writer.addQuad(p, p, new Quad(p, p, p, node))).toThrow('Cannot use nodes created by blank() or list() once formulas are in use');
+      expect(() => writer.addQuad(p, p, new Quad(p, p, p, f))).toThrow('Cannot write named graphs once formulas are in use');
+    });
+
+    it('should write a formula once when it occurs several times in another formula', async () => {
+      const [p, q] = [new NamedNode('urn:p'), new NamedNode('urn:q')];
+      const writer = new Writer({ format: 'N3' }), f = writer.formula();
+      const g = writer.formula([new Quad(f, p, p), new Quad(f, p, q)]);
+      expect(g.nested).toEqual([f]);
+      writer.addQuad(p, p, g);
+      expect(await end(writer)).toBe('<urn:p> <urn:p> { {} <urn:p> <urn:p>, <urn:q> }.\n');
+    });
+
+    it('should refuse formulas created by formula() in the formulas option', async () => {
+      const p = new NamedNode('urn:p'), formulas = { g: [] };
+      const writer = new Writer({ format: 'N3', formulas }), f = writer.formula();
+      formulas.g.push(new Quad(p, p, f));
+      writer.addQuad(f, p, new BlankNode('g'));
+      await expect(end(writer)).rejects.toThrow('Cannot use formulas created by formula() in the formulas option');
     });
 
     it('should refuse to write a formula created by formula() again inside another formula', async () => {

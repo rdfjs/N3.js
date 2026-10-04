@@ -49,6 +49,7 @@ class SerializedTerm extends Term {
 const HELPERS_WITH_FORMULAS = 'Cannot use nodes created by blank() or list() once formulas are in use';
 // The scope of blank nodes outside formulas
 const TOP_SCOPE = {};
+const GRAPHS_WITH_FORMULAS = 'Cannot write named graphs once formulas are in use';
 const LISTS_WITH_FORMULAS = 'Cannot write formulas with the lists option; write lists as rdf:first and rdf:rest statements instead';
 
 // ## Placeholder class to represent formulas created by `formula`,
@@ -94,12 +95,19 @@ function serializedTermKey(term) {
 // Checks whether the term is or contains a node from `blank` or `list`
 function hasHelperNode(term) {
   return term instanceof SerializedTerm && !(term instanceof SerializedFormula) || term.termType === 'Quad' &&
-    (hasHelperNode(term.subject) || hasHelperNode(term.predicate) || hasHelperNode(term.object));
+    (hasHelperNode(term.subject) || hasHelperNode(term.predicate) || hasHelperNode(term.object) ||
+     hasHelperNode(term.graph));
+}
+// Checks whether the term is or contains a quoted triple in a named graph
+function hasNamedGraph(term) {
+  return term.termType === 'Quad' && (!isDefaultGraph(term.graph) ||
+    hasNamedGraph(term.subject) || hasNamedGraph(term.predicate) || hasNamedGraph(term.object));
 }
 // Checks whether the term is or contains a pretty-printed node
 function hasSerializedTerm(term) {
   return term instanceof SerializedTerm || term.termType === 'Quad' &&
-    (hasSerializedTerm(term.subject) || hasSerializedTerm(term.predicate) || hasSerializedTerm(term.object));
+    (hasSerializedTerm(term.subject) || hasSerializedTerm(term.predicate) || hasSerializedTerm(term.object) ||
+     hasSerializedTerm(term.graph));
 }
 
 // ## Constructor
@@ -201,28 +209,9 @@ export default class N3Writer {
 
   // ### `_writeQuad` writes the quad to the output stream
   _writeQuad(subject, predicate, object, graph, done) {
-    // Once formulas are in use, check that the statement keeps every blank node in one scope,
-    // which nodes from `blank` and `list` would hide
-    if (this._blankScopes) {
-      try {
-        if ([subject, predicate, object].some(hasHelperNode))
-          throw new Error(HELPERS_WITH_FORMULAS);
-        this._addBlankScopes([subject, predicate, object, graph], TOP_SCOPE);
-      }
-      catch (error) {
-        if (done)
-          return done(error);
-        throw error;
-      }
-    }
-    // Statements with formulas are held back until the end, so every formula can be written once
-    if (this._formulaStatements && DEFAULTGRAPH.equals(graph) &&
-        this._findFormulas([object, predicate, subject]).length) {
-      this._formulaStatements.push({ subject, predicate, object });
-      this._prefixesFixed = true;
-      done && done();
+    // Once formulas are in use, check the statement against them, and hold it back if needed
+    if (this._blankScopes && this._holdQuad(subject, predicate, object, graph, done))
       return;
-    }
     try {
       this._wroteStatements = true;
       // Write the graph's label if it has changed
@@ -294,7 +283,7 @@ export default class N3Writer {
     while (terms.length) {
       const term = terms.pop();
       if (term.termType === 'Quad')
-        terms.push(term.object, term.predicate, term.subject);
+        terms.push(term.graph, term.object, term.predicate, term.subject);
       else if (this._isFormula(term))
         formulas.push(term.value);
       else if (term instanceof SerializedFormula)
@@ -303,9 +292,46 @@ export default class N3Writer {
     return formulas;
   }
 
-  // ### `_addBlankScopes` records the scope of the blank nodes in the terms,
+  // ### `_holdQuad` checks a statement once formulas are in use,
+  // and holds it back until the end if it contains formulas, so every formula can be written once.
+  // Returns whether the statement was handled.
+  _holdQuad(subject, predicate, object, graph, done) {
+    try { this._checkStatement(subject, predicate, object, graph); }
+    catch (error) {
+      if (done)
+        return done(error), true;
+      throw error;
+    }
+    if (!this._formulaStatements || !this._findFormulas([object, predicate, subject]).length)
+      return false;
+    this._formulaStatements.push({ subject, predicate, object });
+    this._prefixesFixed = true;
+    done && done();
+    return true;
+  }
+
+  // ### `_checkStatement` checks that the statement keeps every blank node in one scope,
+  // which nodes from `blank` and `list` would hide, and that every formula is written once,
+  // which statements in named graphs would not
+  _checkStatement(subject, predicate, object, graph) {
+    if (!DEFAULTGRAPH.equals(graph))
+      throw new Error(GRAPHS_WITH_FORMULAS);
+    this._checkTerms([subject, predicate, object]);
+    this._addBlankScopes(this._findBlankScopes([subject, predicate, object], TOP_SCOPE));
+  }
+
+  // ### `_checkTerms` rejects nodes from `blank` and `list`, and quoted triples in named graphs,
+  // whose blank nodes and formulas cannot be checked
+  _checkTerms(terms) {
+    if (terms.some(hasHelperNode))
+      throw new Error(HELPERS_WITH_FORMULAS);
+    if (terms.some(hasNamedGraph))
+      throw new Error(GRAPHS_WITH_FORMULAS);
+  }
+
+  // ### `_findBlankScopes` lists the blank nodes of the terms that are new to the given scope,
   // rejecting blank nodes that were written in another scope
-  _addBlankScopes(terms, scope) {
+  _findBlankScopes(terms, scope, found = new Map()) {
     terms = terms.slice();
     while (terms.length) {
       const term = terms.pop();
@@ -316,12 +342,19 @@ export default class N3Writer {
         if (previous === undefined) {
           if (scope !== TOP_SCOPE && this._blankScopesIncomplete)
             throw new Error(`Cannot write blank node _:${term.value} in a formula created after statements without formulas`);
-          this._blankScopes.set(term.value, scope);
+          found.set(term.value, scope);
         }
         else if (previous !== scope)
           throw new Error(`Cannot write blank node _:${term.value} both inside and outside a formula`);
       }
     }
+    return found;
+  }
+
+  // ### `_addBlankScopes` records the scopes of blank nodes, once they have been checked
+  _addBlankScopes(scopes) {
+    for (const [label, scope] of scopes)
+      this._blankScopes.set(label, scope);
   }
 
   // ### `_checkFormulas` rejects formulas created by `formula` that would be written more than once,
@@ -356,6 +389,9 @@ export default class N3Writer {
           for (let i = quads.length - 1; i >= 0; i--)
             terms.push(quads[i].object, quads[i].predicate, quads[i].subject);
           frame.nested = this._findFormulas(terms);
+          // Their definitions do not track the formulas created by `formula` they contain
+          if (frame.nested.some(formula => formula instanceof SerializedFormula))
+            throw new Error('Cannot use formulas created by formula() in the formulas option');
         }
         let nested = null;
         while (!nested && frame.position < frame.nested.length) {
@@ -670,10 +706,8 @@ export default class N3Writer {
       throw new Error(LISTS_WITH_FORMULAS);
     quads = quads || [];
     // Nodes from `blank` and `list` cannot be kept apart from or together with their other occurrences
-    for (const quad of quads) {
-      if (hasHelperNode(quad.subject) || hasHelperNode(quad.predicate) || hasHelperNode(quad.object))
-        throw new Error(HELPERS_WITH_FORMULAS);
-    }
+    for (const quad of quads)
+      this._checkTerms([quad.subject, quad.predicate, quad.object]);
     // Hold back statements with formulas from now on, so each can be written once,
     // and keep the prefixes that the formula was written with
     if (this._formulaStatements === null)
@@ -684,17 +718,21 @@ export default class N3Writer {
       this._blankScopes = new Map();
       this._blankScopesIncomplete = this._wroteStatements;
     }
-    const scope = {};
+    // Record the scopes of the blank nodes only once the formula is written
+    const scope = {}, scopes = new Map();
     for (const quad of quads)
-      this._addBlankScopes([quad.subject, quad.predicate, quad.object], scope);
-    const statements = this._encodeStatements(quads), nested = [];
+      this._findBlankScopes([quad.subject, quad.predicate, quad.object], scope, scopes);
+    const statements = this._encodeStatements(quads), nested = new Set();
+    this._addBlankScopes(scopes);
     for (const quad of quads) {
       for (const formula of this._findFormulas([quad.subject, quad.predicate, quad.object])) {
-        if (formula instanceof SerializedFormula)
-          nested.push(formula, ...formula.nested);
+        if (formula instanceof SerializedFormula) {
+          nested.add(formula);
+          formula.nested.forEach(nested.add, nested);
+        }
       }
     }
-    return new SerializedFormula(statements.length ? `{ ${statements.join('. ')} }` : '{}', nested);
+    return new SerializedFormula(statements.length ? `{ ${statements.join('. ')} }` : '{}', [...nested]);
   }
 
   // ### `_encodeStatements` serializes N3 statements, so that every formula is written once.
