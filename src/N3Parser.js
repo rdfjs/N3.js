@@ -4,6 +4,10 @@ import N3DataFactory from './N3DataFactory';
 import namespaces from './IRIs';
 
 let blankNodePrefix = 0;
+// Detects `.` and `..` path segments in an IRI
+const dotSegments = /(^|\/)\.\.?($|[/#?])/;
+// Detects `.` and `..` segments in the path of an IRI, ignoring its query and fragment
+const pathDotSegments = /^[^?#]*(?:^|\/)\.\.?(?:$|[/#?])/;
 
 // ## Constructor
 export default class N3Parser {
@@ -83,6 +87,7 @@ export default class N3Parser {
     if (!baseIRI) {
       this._base = '';
       this._basePath = '';
+      this._basePathHasDotSegments = false;
     }
     else {
       // Remove fragment if present
@@ -103,6 +108,8 @@ export default class N3Parser {
       // relative IRIs merge under the path '/' (RFC 3986 §5.2.3)
       if (baseIRI[2] !== undefined && (base.length === this._baseRoot.length || base[this._baseRoot.length] === '?'))
         this._basePath = `${this._baseRoot}/`;
+      // Check once whether resolving against the base path needs to remove dot segments
+      this._basePathHasDotSegments = dotSegments.test(this._basePath);
     }
   }
 
@@ -140,7 +147,8 @@ export default class N3Parser {
     // Prefix and base declarations are scoped to their formula,
     // so record prefix changes to undo them when the formula ends
     if (type === 'formula') {
-      context.base = [this._base, this._basePath, this._baseRoot, this._baseScheme];
+      context.base = [this._base, this._basePath, this._baseRoot, this._baseScheme,
+        this._basePathHasDotSegments];
       this._prefixChanges = [];
     }
     this._contextStack.push(context);
@@ -182,7 +190,8 @@ export default class N3Parser {
       this._inversePredicate = context.inverse;
       this._expectOf = context.expectOf;
       if (type === 'formula')
-        [this._base, this._basePath, this._baseRoot, this._baseScheme] = context.base;
+        [this._base, this._basePath, this._baseRoot, this._baseScheme,
+          this._basePathHasDotSegments] = context.base;
       if (this._prefixChanges !== context.prefixChanges) {
         undoChanges(this._prefixes, this._prefixChanges);
         this._prefixChanges = context.prefixChanges;
@@ -1576,14 +1585,19 @@ export default class N3Parser {
     // Resolve all other IRIs at the base IRI's path
     default:
       // Relative IRIs cannot contain a colon in the first path segment
-      return (/^[^/:]*:/.test(iri)) ? null : this._removeDotSegments(this._basePath + iri);
+      if (/^[^/:]*:/.test(iri))
+        return null;
+      // Only scan the joined IRI for dot segments if either part can contain them,
+      // as the base path can be long and the joined IRI would need to be copied
+      return this._basePathHasDotSegments || pathDotSegments.test(iri) ?
+        this._removeDotSegments(this._basePath + iri) : this._basePath + iri;
     }
   }
 
   // ### `_removeDotSegments` resolves './' and '../' path segments in an IRI as per RFC3986
   _removeDotSegments(iri) {
     // Don't modify the IRI if it does not contain any dot segments
-    if (!/(^|\/)\.\.?($|[/#?])/.test(iri))
+    if (!dotSegments.test(iri))
       return iri;
 
     // Start with an imaginary slash before the IRI in order to resolve trailing './' and '../'
