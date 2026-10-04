@@ -3204,6 +3204,24 @@ describe('Store', () => {
     });
   });
 
+  describe('A Store containing a very long rdf:Collection', () => {
+    const store = new Store();
+    const length = 100000;
+    const items = [];
+    for (let i = 0; i < length; i++)
+      items.push(new Literal(`"${i}"`));
+    const head = addList(store, ...items)[0];
+    store.addQuad(new NamedNode('s'), new NamedNode('p'), head);
+
+    it('extractLists with remove returns the items in order and removes the list', () => {
+      const lists = store.extractLists({ remove: true });
+      expect(lists[head.value]).toHaveLength(length);
+      expect(lists[head.value][0].value).toBe('0');
+      expect(lists[head.value][length - 1].value).toBe(`${length - 1}`);
+      expect(store.size).toBe(1);
+    });
+  });
+
   describe('A Store containing a rdf:Collection without first', () => {
     const store = new Store();
     const added = store.addQuad(store.createBlankNode(), new NamedNode(namespaces.rdf.rest), namespaces.rdf.nil);
