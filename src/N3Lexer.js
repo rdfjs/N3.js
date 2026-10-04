@@ -878,17 +878,22 @@ export default class N3Lexer {
         if (backslashCount % 2 === 0) {
           // Extract and unescape the value
           const raw = input.substring(pos + openingLength, closingPos);
-          // Count the line breaks and find the start of the last line,
-          // starting from the first one, which a native search finds fastest
-          const lf = raw.indexOf('\n'), cr = raw.indexOf('\r');
+          // Count the line breaks and find the start of the last line
           let lineCount = 0, lastLineStart = 0;
-          for (let i = lf < 0 || cr >= 0 && cr < lf ? cr : lf; i >= 0 && i < raw.length; i++) {
-            const charCode = raw.charCodeAt(i);
-            if (charCode === LF || charCode === CR) {
-              if (charCode === CR && raw.charCodeAt(i + 1) === LF)
-                i++;
-              lineCount++;
-              lastLineStart = i + 1;
+          // Without carriage returns, native searches find the line feeds fastest
+          if (raw.indexOf('\r') < 0) {
+            for (let lf = raw.indexOf('\n'); lf >= 0; lf = raw.indexOf('\n', lf + 1))
+              lineCount++, lastLineStart = lf + 1;
+          }
+          else {
+            for (let i = 0; i < raw.length; i++) {
+              const charCode = raw.charCodeAt(i);
+              if (charCode === LF || charCode === CR) {
+                if (charCode === CR && raw.charCodeAt(i + 1) === LF)
+                  i++;
+                lineCount++;
+                lastLineStart = i + 1;
+              }
             }
           }
           const matchLength = closingPos - pos + openingLength;
