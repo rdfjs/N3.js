@@ -1677,11 +1677,11 @@ export default class N3Parser {
       let error;
       this._callback = (e, t) => { e ? (error = e) : t && quads.push(t); };
       const lexer = this._lexer;
-      // Without comment or token callbacks, nothing observes a token before the
-      // whole document has lexed, so tokens can be parsed as they are lexed
-      // instead of being collected into an array first. A lexer that replaces
-      // the built-in tokenize keeps going through its own implementation.
-      if (!onComment && !onToken && !onTokenEnd &&
+      // Without callbacks, nothing observes the parse before the whole document
+      // has lexed, so tokens can be parsed as they are lexed instead of being
+      // collected into an array first. A lexer that replaces the built-in
+      // tokenize keeps going through its own implementation.
+      if (!onPrefix && !onVersion && !onComment && !onToken && !onTokenEnd &&
           lexer.tokenize === N3Lexer.prototype.tokenize && typeof lexer._tokenizeString === 'function')
         lexer._tokenizeString(input, (e, token) => {
           if (e) this._callback(e), this._callback = noop;

@@ -5008,6 +5008,15 @@ describe('Parser', () => {
         .toThrow('Unexpected ""unterminated" on line 2.');
     });
 
+    it('calls no prefix or version callbacks when lexing fails later', () => {
+      const parser = new Parser({ format: 'text/turtle' });
+      const onPrefix = jest.fn(), onVersion = jest.fn();
+      expect(() => parser.parse('VERSION "1.2" @prefix ex: <http://ex.org/>. ex:s ex:p "unterminated',
+        { onPrefix, onVersion })).toThrow('Unexpected ""unterminated" on line 1.');
+      expect(onPrefix).not.toHaveBeenCalled();
+      expect(onVersion).not.toHaveBeenCalled();
+    });
+
     it('parses synchronously through a lexer that overrides tokenize', () => {
       class UppercaseLexer extends Lexer {
         tokenize(input, callback) {
