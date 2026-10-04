@@ -61,10 +61,16 @@ if (args.shard) {
   names = names.filter((name, index) => index % shards === shard - 1);
 }
 
+// V8 grows its young generation when a program allocates faster, and peak
+// memory follows that growth; a fixed size keeps peak memory benchmarks
+// measuring the memory a run keeps alive rather than how V8 sized its heap
+const peakFlags = ['--max-semi-space-size=4'];
+
 function measure(lib, name) {
   try {
+    const flags = benchmarks[name].memory === 'peak' ? peakFlags : [];
     const output = execFileSync(process.execPath,
-      ['--expose-gc', path.join(__dirname, 'run-one.js'), path.resolve(lib), name, String(args.iterations)],
+      ['--expose-gc', ...flags, path.join(__dirname, 'run-one.js'), path.resolve(lib), name, String(args.iterations)],
       { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
     const { skipped, times } = JSON.parse(output);
     if (skipped)
