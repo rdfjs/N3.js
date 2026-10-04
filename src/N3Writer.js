@@ -8,6 +8,7 @@ import { escapeRegex } from './Util';
 const DEFAULTGRAPH = N3DataFactory.defaultGraph();
 
 const { rdf, xsd } = namespaces;
+const { hasOwnProperty } = Object.prototype;
 
 // Characters in literals that require escaping
 const escape    = /["\\\t\n\r\b\f\u0000-\u0019\ud800-\udbff]/,
@@ -161,7 +162,7 @@ export default class N3Writer {
     // A blank node or list is represented as-is
     if (entity.termType !== 'NamedNode') {
       // If it is a list head, pretty-print it
-      if (this._lists && (entity.value in this._lists))
+      if (this._lists && hasOwnProperty.call(this._lists, entity.value))
         entity = this.list(this._lists[entity.value]);
       // Terms from this library already hold their serialization as id
       if (entity instanceof Term)
@@ -327,7 +328,7 @@ export default class N3Writer {
         prefixList += (prefixList ? '|' : '') + this._prefixIRIs[prefixIRI];
       }
       IRIlist = escapeRegex(IRIlist, /[\]\/\(\)\*\+\?\.\\\$]/g, '\\$&');
-      this._prefixRegex = new RegExp(`^(?:${prefixList})[^\/]*$|` +
+      this._prefixRegex = new RegExp(`^(?:${prefixList})(?:[_a-zA-Z0-9](?:\\.?[\\-_a-zA-Z0-9])*)?$|` +
                                      `^(${IRIlist})([_a-zA-Z0-9](?:\\.?[\\-_a-zA-Z0-9])*)$`);
     }
     // End a prefix block with a newline

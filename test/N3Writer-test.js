@@ -357,6 +357,16 @@ describe('Writer', () => {
     );
 
     it(
+      'should only expand prefixes when the rest is a valid local name',
+      shouldSerialize({ prefixes: { a: 'http://a.org/' } },
+                      ['a:bc', 'a:d#e', 'a:f?g'],
+                      ['a:', 'a:h~i', 'a:j.'],
+                      '@prefix a: <http://a.org/>.\n\n' +
+                      'a:bc <a:d#e> <a:f?g>.\n' +
+                      'a: <a:h~i> <a:j.>.\n'),
+    );
+
+    it(
       'should not repeat the same subjects',
       shouldSerialize(['abc', 'def', 'ghi'],
                       ['abc', 'mno', 'pqr'],
@@ -900,6 +910,15 @@ describe('Writer', () => {
           '<a3> <b> _:m3.\n');
       },
     );
+
+    it('should only treat own properties of options.lists as list heads', async () => {
+      const writer = new Writer({ lists: { l1: [new NamedNode('c')] } });
+      writer.addQuad(new BlankNode('toString'), new NamedNode('b'), new BlankNode('constructor'));
+      writer.addQuad(new BlankNode('l1'), new NamedNode('b'), new BlankNode('__proto__'));
+      const output = await end(writer);
+      expect(output).toBe('_:toString <b> _:constructor.\n' +
+        '(<c>) <b> _:__proto__.\n');
+    });
 
     it('should accept triples in bulk', async () => {
       const writer = new Writer();
