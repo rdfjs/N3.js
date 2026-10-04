@@ -159,6 +159,9 @@ export default class N3Lexer {
       }
       if (input.length === 0) {
         if (inputFinished) {
+          // A datatype marker needs a type
+          if (this._previousMarker === '^^')
+            return reportSyntaxError(this);
           input = null;
           emitToken('eof', '', '', this._line, 0);
         }
@@ -173,6 +176,9 @@ export default class N3Lexer {
           finalLineLength = 0, inconclusive = false;
       switch (firstChar) {
       case '^':
+        // A datatype marker separated from its type cannot be followed by another marker
+        if (this._previousMarker === '^^')
+          return reportSyntaxError(this);
         // We need at least 3 tokens lookahead to distinguish ^^<IRI> and ^^pre:fixed
         if (input.length < 3)
           break;
