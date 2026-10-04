@@ -2565,7 +2565,7 @@ describe('A Lexer instance tokenizing names', () => {
   }
 
   for (const char of chars) {
-    const code = [...char].map(c => c.charCodeAt(0).toString(16)).join(' ');
+    const code = [...char].map(c => c.codePointAt(0).toString(16).toUpperCase()).join(' ');
 
     it(`should ${isNameStart.test(char) ? '' : 'not '}start a prefix with U+${code}`, () => {
       const token = firstToken(`${char}x:y `);
