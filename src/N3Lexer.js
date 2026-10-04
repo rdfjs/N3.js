@@ -17,6 +17,9 @@ const localNameEscapeReplacements = {
   '=': '=', '/': '/', '?': '?', '#': '#', '@': '@', '%': '%',
 };
 const illegalIriChars = /[\x00-\x20<>\\"\{\}\|\^\`]/;
+// Characters that cannot occur in a prefixed name, not even escaped
+// (global, so that testAt searches the rest of the input from a position)
+const nonPrefixedNameChar = /[\s<>"{}|^`]/g;
 
 // A valid code point is a Unicode scalar value: at most U+10FFFF and not a surrogate
 function isValidCodePoint(charCode) {
@@ -33,30 +36,53 @@ const lineModeRegExps = {
   _whitespace: true,
 };
 const invalidRegExp = /$0^/;
+const nonWhitespace = /\S*/y;
+
+// Matches a sticky regular expression at the given position of the input
+function execAt(regExp, input, pos) {
+  regExp.lastIndex = pos;
+  return regExp.exec(input);
+}
+function testAt(regExp, input, pos) {
+  regExp.lastIndex = pos;
+  return regExp.test(input);
+}
+// Matches the rest of the input followed by a space, as at the end of the input,
+// a token that can contain (but not end with) a dot needs a non-dot character after it
+function execAtEnd(regExp, input, pos) {
+  regExp.lastIndex = 0;
+  return regExp.exec(`${input.slice(pos)} `);
+}
+
+// Whitespace or the start of a comment
+function isSeparatorCode(code) {
+  return code === SPACE || code === TAB || code === LF || code === CR || code === HASH;
+}
 
 // ## Constructor
 export default class N3Lexer {
   constructor(options) {
     // ## Regular expressions
-    // It's slightly faster to have these as properties than as in-scope variables
-    this._iri = /^<((?:[^ <>{}\\]|\\[uU])+)>[ \t]*/; // IRI with escape sequences; needs sanity check after unescaping
-    this._unescapedIri = /^<([^\x00-\x20<>\\"\{\}\|\^\`]*)>[ \t]*/; // IRI without escape sequences; no unescaping
-    this._simpleQuotedString = /^"([^"\\\r\n]*)"(?=[^"])/; // string without escape sequences
-    this._simpleApostropheString = /^'([^'\\\r\n]*)'(?=[^'])/;
-    this._langcode = /^@([a-z]+(?:-[a-z0-9]+)*)(?=[^a-z0-9])/i;
-    this._prefix = /^((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:(?=[#\s<])/;
-    this._prefixed = /^((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:((?:(?:[0-:A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])(?:(?:[\.\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])*(?:[\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~]))?)?)(?:[ \t]+|(?=\.?[,;!\^\s#()\[\]\{\}"'<>]))/;
-    this._variable = /^\?(?:(?:[A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:[\-0-:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?=[.,;!\^\s#()\[\]\{\}"'<>])/;
-    this._blank = /^_:((?:[0-9A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?:[ \t]+|(?=\.?[,;:!\^\s#()\[\]\{\}"'<>]))/;
-    this._number = /^[\-+]?(?:(\d+\.\d*|\.?\d+)[eE][\-+]?|\d*(\.)?)\d+(?=\.?[,;:!\^\s#()\[\]\{\}"'<>])/;
-    this._boolean = /^(?:true|false)(?=[.,;!\^\s#()\[\]\{\}"'<>])/;
-    this._atKeyword = /^@[a-z]+(?=[\s#<:])/i;
-    this._keyword = /^(?:PREFIX|BASE|VERSION|GRAPH)(?=[\s#<])/i;
-    this._n3Verb = /^(?:has|is|of)(?=[\s#()\[\]\{\}"'<>?_+\-0-9])/;
-    this._n3Id = /^id(?=[\s#<])/;
-    this._shortPredicates = /^a(?=[\s#()\[\]\{\}"'<>])/;
-    this._commentLine = /^[ \t]*#([^\n\r]*)(?:\r\n|\n|\r)([ \t]*)/;
-    this._whitespace = /^[ \t]+/;
+    // It's slightly faster to have these as properties than as in-scope variables.
+    // They are sticky, so they only match at the `lastIndex` set by `execAt`.
+    this._iri = /<((?:[^ <>{}\\]|\\[uU])+)>[ \t]*/y; // IRI with escape sequences; needs sanity check after unescaping
+    this._unescapedIri = /<([^\x00-\x20<>\\"\{\}\|\^\`]*)>[ \t]*/y; // IRI without escape sequences; no unescaping
+    this._simpleQuotedString = /"([^"\\\r\n]*)"(?=[^"])/y; // string without escape sequences
+    this._simpleApostropheString = /'([^'\\\r\n]*)'(?=[^'])/y;
+    this._langcode = /@([a-z]+(?:-[a-z0-9]+)*)(?=[^a-z0-9])/iy;
+    this._prefix = /((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:(?=[#\s<])/y;
+    this._prefixed = /((?:[A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)?:((?:(?:[0-9:A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])(?:(?:[\.\-0-9:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~])*(?:[\-0-9:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff]|%[0-9a-fA-F]{2}|\\[!#-\/;=?\-@_~]))?)?)(?:[ \t]+|(?=\.?[,;!\^\s#()\[\]\{\}"'<>]))/y;
+    this._variable = /\?(?:(?:[A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:[\-0-9:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?=[.,;!\^\s#()\[\]\{\}"'<>])/y;
+    this._blank = /_:((?:[0-9A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?:[ \t]+|(?=\.?[,;:!\^\s#()\[\]\{\}"'<>]))/y;
+    this._number = /[\-+]?(?:(\d+\.\d*|\.?\d+)[eE][\-+]?\d+|(?=\.?\d)\d*(?:(\.)\d+)?)(?=\.?[,;:!\^\s#()\[\]\{\}"'<>])/y;
+    this._boolean = /(?:true|false)(?=[.,;!\^\s#()\[\]\{\}"'<>])/y;
+    this._atKeyword = /@[a-z]+(?=[\s#<:])/iy;
+    this._keyword = /(?:PREFIX|BASE|VERSION|GRAPH)(?=[\s#<])/iy;
+    this._n3Verb = /(?:has|is|of)(?=[\s#()\[\]\{\}"'<>?_+\-0-9])/y;
+    this._n3Id = /id(?=[\s#<])/y;
+    this._shortPredicates = /a(?=[\s#()\[\]\{\}"'<>])/y;
+    this._commentLine = /[ \t]*#([^\n\r]*)(?:\r\n|\n|\r)([ \t]*)/y;
+    this._whitespace = /[ \t]+/y;
     options = options || {};
 
     // Whether the log:isImpliedBy predicate is supported
@@ -85,98 +111,103 @@ export default class N3Lexer {
 
   // ### `_tokenizeToEnd` tokenizes as for as possible, emitting tokens through the callback
   _tokenizeToEnd(callback, inputFinished) {
-    // Continue parsing as far as possible; the loop will return eventually
-    let input = this._input;
+    // Continue parsing as far as possible; the loop will return eventually.
+    // Rather than slicing off every token, track the position of the remaining input;
+    // the regular expressions are sticky, so they match at that position.
+    const input = this._input;
+    let pos = 0;
     let currentLineLength = this._linePosition + input.length;
     while (true) {
       // Consume one separator line at a time, including its following indentation.
       while (true) {
-        let charCode = input.charCodeAt(0), separatorLength = 0;
+        let charCode = input.charCodeAt(pos), separatorLength = 0;
         if (charCode === SPACE || charCode === TAB) {
-          const next = input.charCodeAt(1);
+          const next = input.charCodeAt(pos + 1);
           separatorLength = next === SPACE || next === TAB ?
-            this._whitespace.exec(input)[0].length : 1;
-          charCode = input.charCodeAt(separatorLength);
+            execAt(this._whitespace, input, pos)[0].length : 1;
+          charCode = input.charCodeAt(pos + separatorLength);
         }
         if (charCode === HASH) {
-          const comment = this._commentLine.exec(input);
+          const comment = execAt(this._commentLine, input, pos);
           if (comment) {
             const commentLength = comment[0].length;
             // Keep a trailing CR buffered in case the next chunk starts with LF.
-            if (!inputFinished && commentLength === input.length &&
-                input.charCodeAt(commentLength - 1) === CR) {
-              this._linePosition = currentLineLength - input.length;
-              return this._input = input;
-            }
+            if (!inputFinished && pos + commentLength === input.length &&
+                input.charCodeAt(input.length - 1) === CR)
+              return this._suspend(input, pos, currentLineLength);
             if (this.comments)
-              emitComment(comment[1], this._line, separatorLength);
-            input = input.slice(commentLength);
-            currentLineLength = input.length + comment[2].length;
+              emitComment(comment[1], this._line, currentLineLength - (input.length - pos) + separatorLength);
+            pos += commentLength;
+            currentLineLength = input.length - pos + comment[2].length;
             this._line++;
           }
           else {
             // A comment without a line ending stays buffered until EOF.
-            input = input.slice(separatorLength);
-            if (!inputFinished) {
-              this._linePosition = currentLineLength - input.length;
-              return this._input = input;
-            }
+            pos += separatorLength;
+            if (!inputFinished)
+              return this._suspend(input, pos, currentLineLength);
             if (this.comments)
-              emitComment(input.slice(1), this._line, 0);
-            input = '';
+              emitComment(input.slice(pos + 1), this._line, currentLineLength - (input.length - pos));
+            pos = input.length;
             break;
           }
         }
         else if (charCode === LF || charCode === CR) {
           // A CR at the end of a chunk may still be followed by LF.
-          if (!inputFinished && charCode === CR && separatorLength + 1 === input.length) {
-            this._linePosition = currentLineLength - input.length;
-            return this._input = input;
-          }
-          separatorLength += charCode === CR && input.charCodeAt(separatorLength + 1) === LF ? 2 : 1;
+          if (!inputFinished && charCode === CR && pos + separatorLength + 1 === input.length)
+            return this._suspend(input, pos, currentLineLength);
+          separatorLength += charCode === CR && input.charCodeAt(pos + separatorLength + 1) === LF ? 2 : 1;
           // Indentation is consumed with the newline, but belongs to the next line's columns.
           let indentationLength = 0;
-          const next = input.charCodeAt(separatorLength);
+          const next = input.charCodeAt(pos + separatorLength);
           if (next === SPACE || next === TAB) {
-            const following = input.charCodeAt(separatorLength + 1);
+            const following = input.charCodeAt(pos + separatorLength + 1);
             indentationLength = following === SPACE || following === TAB ?
-              this._whitespace.exec(input.slice(separatorLength))[0].length : 1;
+              execAt(this._whitespace, input, pos + separatorLength)[0].length : 1;
           }
-          input = input.slice(separatorLength + indentationLength);
-          currentLineLength = input.length + indentationLength;
+          pos += separatorLength + indentationLength;
+          currentLineLength = input.length - pos + indentationLength;
           this._line++;
         }
         else {
-          if (separatorLength !== 0)
-            input = input.slice(separatorLength);
+          pos += separatorLength;
           break;
         }
       }
-      if (input.length === 0) {
-        if (inputFinished) {
-          input = null;
-          emitToken('eof', '', '', this._line, 0);
-        }
+      if (pos >= input.length) {
+        // A datatype marker needs a type
+        if (inputFinished && this._previousMarker === '^^')
+          return reportSyntaxError(this, input, pos);
         this._linePosition = currentLineLength;
-        return this._input = input;
+        if (inputFinished) {
+          emitToken('eof', '', '', this._line, currentLineLength, 0);
+          return this._input = null;
+        }
+        return this._input = '';
       }
 
       // Look for specific token types based on the first character
-      const line = this._line, firstChar = input[0];
+      const line = this._line, firstChar = input[pos];
       let type = '', value = '', prefix = '',
           match = null, matchLength = 0, lexicalLength = 0,
           finalLineLength = 0, inconclusive = false;
       switch (firstChar) {
       case '^':
+        // A datatype marker separated from its type cannot be followed by another marker
+        if (this._previousMarker === '^^')
+          return reportSyntaxError(this, input, pos);
         // We need at least 3 tokens lookahead to distinguish ^^<IRI> and ^^pre:fixed
-        if (input.length < 3)
+        if (input.length - pos < 3)
           break;
         // Try to match a type
-        else if (input[1] === '^') {
+        else if (input[pos + 1] === '^') {
           this._previousMarker = '^^';
           // Move to type IRI or prefixed name
-          input = input.slice(2);
-          if (input[0] !== '<') {
+          pos += 2;
+          if (input[pos] !== '<') {
+            // Whitespace and comments may separate the marker from the type
+            if (isSeparatorCode(input.charCodeAt(pos)))
+              continue; // eslint-disable-line no-continue
             inconclusive = true;
             break;
           }
@@ -192,38 +223,38 @@ export default class N3Lexer {
         // Fall through in case the type is an IRI
       case '<':
         // Try to find a full IRI without escape sequences
-        if (match = this._unescapedIri.exec(input)) {
+        if (match = execAt(this._unescapedIri, input, pos)) {
           type = 'IRI', value = match[1];
           lexicalLength = match[1].length + 2;
         }
         // Try to find a full IRI with escape sequences
-        else if (match = this._iri.exec(input)) {
+        else if (match = execAt(this._iri, input, pos)) {
           value = this._unescape(match[1], stringEscapeReplacements);
           if (value === null || illegalIriChars.test(value))
-            return reportSyntaxError(this);
+            return reportSyntaxError(this, input, pos);
           type = 'IRI';
           lexicalLength = match[1].length + 2;
         }
         // Try to find a triple term
-        else if (input.length > 2 && input[1] === '<' && input[2] === '(')
+        else if (input.length - pos > 2 && input[pos + 1] === '<' && input[pos + 2] === '(')
           type = '<<(', matchLength = 3;
         // Try to find a reified triple
-        else if (!this._lineMode && input.length > (inputFinished ? 1 : 2) && input[1] === '<')
+        else if (!this._lineMode && input.length - pos > (inputFinished ? 1 : 2) && input[pos + 1] === '<')
           type = '<<', matchLength = 2;
         // Try to find a backwards implication arrow
-        else if (this._n3Mode && input.length > 1 && input[1] === '=') {
+        else if (this._n3Mode && input.length - pos > 1 && input[pos + 1] === '=') {
           matchLength = 2;
           if (this._isImpliedBy) type = 'abbreviation', value = '<';
           else type = 'inverse', value = '>';
         }
         // Try to find an inverted predicate marker
-        else if (this._n3Mode && input.length > 1 && input[1] === '-')
+        else if (this._n3Mode && input.length - pos > 1 && input[pos + 1] === '-')
           type = 'inversePredicate', matchLength = 2;
         break;
 
       case '>':
         // Try to find a reified triple
-        if (input.length > 1 && input[1] === '>')
+        if (input.length - pos > 1 && input[pos + 1] === '>')
           type = '>>', matchLength = 2;
         break;
 
@@ -231,8 +262,8 @@ export default class N3Lexer {
         // Try to find a blank node. Since it can contain (but not end with) a dot,
         // we always need a non-dot character before deciding it is a blank node.
         // Therefore, try inserting a space if we're at the end of the input.
-        if ((match = this._blank.exec(input)) ||
-            inputFinished && (match = this._blank.exec(`${input} `))) {
+        if ((match = execAt(this._blank, input, pos)) ||
+            inputFinished && (match = execAtEnd(this._blank, input, pos))) {
           type = 'blank', prefix = '_', value = match[1];
           lexicalLength = match[1].length + 2;
         }
@@ -240,13 +271,13 @@ export default class N3Lexer {
 
       case '"':
         // Try to find a literal without escape sequences
-        if (match = this._simpleQuotedString.exec(input))
+        if (match = execAt(this._simpleQuotedString, input, pos))
           value = match[1];
         // Try to find a literal wrapped in three pairs of quotes
         else {
-          ({ value, matchLength, finalLineLength } = this._parseLiteral(input));
+          ({ value, matchLength, finalLineLength } = this._parseLiteral(input, pos));
           if (value === null)
-            return reportSyntaxError(this);
+            return reportSyntaxError(this, input, pos);
         }
         if (match !== null || matchLength !== 0) {
           type = 'literal';
@@ -257,13 +288,13 @@ export default class N3Lexer {
       case "'":
         if (!this._lineMode) {
           // Try to find a literal without escape sequences
-          if (match = this._simpleApostropheString.exec(input))
+          if (match = execAt(this._simpleApostropheString, input, pos))
             value = match[1];
           // Try to find a literal wrapped in three pairs of quotes
           else {
-            ({ value, matchLength, finalLineLength } = this._parseLiteral(input));
+            ({ value, matchLength, finalLineLength } = this._parseLiteral(input, pos));
             if (value === null)
-              return reportSyntaxError(this);
+              return reportSyntaxError(this, input, pos);
           }
           if (match !== null || matchLength !== 0) {
             type = 'literal';
@@ -274,7 +305,7 @@ export default class N3Lexer {
 
       case '?':
         // Try to find a variable
-        if (this._n3Mode && (match = this._variable.exec(input)))
+        if (this._n3Mode && (match = execAt(this._variable, input, pos)))
           type = 'var', value = match[0];
         break;
 
@@ -284,20 +315,21 @@ export default class N3Lexer {
         // input is not finished, another subtag may still arrive in a later chunk and
         // the match would be premature; wait for more input in that case.
         // A double dash starts a direction code, which cannot extend the language code.
-        if (this._previousMarker === 'literal' && (match = this._langcode.exec(input)) && match[1] !== 'version') {
-          if (!inputFinished && input[match[0].length] === '-' && input[match[0].length + 1] !== '-')
+        if (this._previousMarker === 'literal' && (match = execAt(this._langcode, input, pos)) && match[1] !== 'version') {
+          const end = pos + match[0].length;
+          if (!inputFinished && input[end] === '-' && input[end + 1] !== '-')
             match = null;
           else
             type = 'langcode', value = match[1];
         }
         // Try to find a keyword
-        else if (match = this._atKeyword.exec(input))
+        else if (match = execAt(this._atKeyword, input, pos))
           type = match[0];
         break;
 
       case '.':
         // Try to find a dot as punctuation
-        if (input.length === 1 ? inputFinished : (input[1] < '0' || input[1] > '9')) {
+        if (input.length - pos === 1 ? inputFinished : (input[pos + 1] < '0' || input[pos + 1] > '9')) {
           type = '.';
           matchLength = 1;
           break;
@@ -316,12 +348,12 @@ export default class N3Lexer {
       case '9':
       case '+':
       case '-':
-        if (input[1] === '-') {
+        if (input[pos + 1] === '-') {
           // Try to find a direction code
           if (this._previousMarker === 'langcode') {
-            if (input.startsWith('--ltr'))
+            if (input.startsWith('--ltr', pos))
               type = 'dircode', value = 'ltr', matchLength = 5;
-            else if (input.startsWith('--rtl'))
+            else if (input.startsWith('--rtl', pos))
               type = 'dircode', value = 'rtl', matchLength = 5;
           }
           break;
@@ -330,8 +362,8 @@ export default class N3Lexer {
         // Try to find a number. Since it can contain (but not end with) a dot,
         // we always need a non-dot character before deciding it is a number.
         // Therefore, try inserting a space if we're at the end of the input.
-        if (match = this._number.exec(input) ||
-            inputFinished && (match = this._number.exec(`${input} `))) {
+        if (match = execAt(this._number, input, pos) ||
+            inputFinished && (match = execAtEnd(this._number, input, pos))) {
           type = 'literal', value = match[0];
           prefix = (typeof match[1] === 'string' ? xsd.double :
                     (typeof match[2] === 'string' ? xsd.decimal : xsd.integer));
@@ -347,7 +379,7 @@ export default class N3Lexer {
       case 'V':
       case 'v':
         // Try to find a SPARQL-style keyword
-        if (match = this._keyword.exec(input))
+        if (match = execAt(this._keyword, input, pos))
           type = match[0].toUpperCase();
         else
           inconclusive = true;
@@ -356,7 +388,7 @@ export default class N3Lexer {
       case 'f':
       case 't':
         // Try to match a boolean
-        if (this._boolean.test(input))
+        if (testAt(this._boolean, input, pos))
           type = 'literal', value = firstChar === 't' ? 'true' : 'false', prefix = xsd.boolean, matchLength = value.length;
         else
           inconclusive = true;
@@ -364,7 +396,7 @@ export default class N3Lexer {
 
       case 'a':
         // Try to find an abbreviated predicate
-        if (this._shortPredicates.test(input))
+        if (testAt(this._shortPredicates, input, pos))
           type = 'abbreviation', value = 'a', matchLength = 1;
         else
           inconclusive = true;
@@ -373,7 +405,7 @@ export default class N3Lexer {
       case 'h':
       case 'o':
         // Try to find an N3 verb keyword
-        if (this._n3Mode && (match = this._matchN3Verb(input, inputFinished)))
+        if (this._n3Mode && (match = this._matchN3Verb(input, pos, inputFinished)))
           type = match[0];
         else
           inconclusive = true;
@@ -381,9 +413,9 @@ export default class N3Lexer {
 
       case 'i':
         // Try to find an IRI property list identifier or N3 verb keyword
-        if (this._n3Mode && this._n3Id.test(input))
+        if (this._n3Mode && testAt(this._n3Id, input, pos))
           type = 'id', matchLength = 2;
-        else if (this._n3Mode && (match = this._matchN3Verb(input, inputFinished)))
+        else if (this._n3Mode && (match = this._matchN3Verb(input, pos, inputFinished)))
           type = match[0];
         else
           inconclusive = true;
@@ -391,9 +423,9 @@ export default class N3Lexer {
 
       case '=':
         // Try to find an implication arrow or equals sign
-        if (this._n3Mode && input.length > 1) {
+        if (this._n3Mode && input.length - pos > 1) {
           type = 'abbreviation';
-          if (input[1] !== '>')
+          if (input[pos + 1] !== '>')
             matchLength = 1, value = '=';
           else
             matchLength = 2, value = '>';
@@ -404,12 +436,12 @@ export default class N3Lexer {
         if (!this._n3Mode)
           break;
       case ')':
-        if (!inputFinished && (input.length === 1 || (input.length === 2 && input[1] === '>'))) {
+        if (!inputFinished && (input.length - pos === 1 || (input.length - pos === 2 && input[pos + 1] === '>'))) {
           // Don't consume yet, as it *could* become a triple term end.
           break;
         }
         // Try to find a triple term
-        if (input.length > 2 && input[1] === '>' && input[2] === '>') {
+        if (input.length - pos > 2 && input[pos + 1] === '>' && input[pos + 2] === '>') {
           type = ')>>', matchLength = 3;
           break;
         }
@@ -427,9 +459,9 @@ export default class N3Lexer {
         break;
       case '{':
         // We need at least 2 tokens lookahead to distinguish "{|" and "{ "
-        if (!this._lineMode && input.length >= 2) {
+        if (!this._lineMode && input.length - pos >= 2) {
           // Try to find a quoted triple annotation start
-          if (input[1] === '|')
+          if (input[pos + 1] === '|')
             type = '{|', matchLength = 2;
           else
             type = firstChar, matchLength = 1;
@@ -438,7 +470,7 @@ export default class N3Lexer {
       case '|':
         // We need 2 tokens lookahead to parse "|}"
         // Try to find a quoted triple annotation end
-        if (input.length >= 2 && input[1] === '}')
+        if (input.length - pos >= 2 && input[pos + 1] === '}')
           type = '|}', matchLength = 2;
         break;
 
@@ -450,13 +482,13 @@ export default class N3Lexer {
       if (inconclusive) {
         // Try to find a prefix
         if ((this._previousMarker === '@prefix' || this._previousMarker === 'PREFIX') &&
-            (match = this._prefix.exec(input)))
+            (match = execAt(this._prefix, input, pos)))
           type = 'prefix', value = match[1] || '';
         // Try to find a prefixed name. Since it can contain (but not end with) a dot,
         // we always need a non-dot character before deciding it is a prefixed name.
         // Therefore, try inserting a space if we're at the end of the input.
-        else if ((match = this._prefixed.exec(input)) ||
-                 inputFinished && (match = this._prefixed.exec(`${input} `))) {
+        else if ((match = execAt(this._prefixed, input, pos)) ||
+                 inputFinished && (match = execAtEnd(this._prefixed, input, pos))) {
           type = 'prefixed', prefix = match[1] || '';
           value = this._unescape(match[2], localNameEscapeReplacements);
           lexicalLength = prefix.length + match[2].length + 1;
@@ -477,79 +509,90 @@ export default class N3Lexer {
         // We could be in streaming mode, and then we just wait for more input to arrive.
         // Otherwise, a syntax error has occurred in the input.
         // One exception: error on an unaccounted linebreak (= not inside a triple-quoted literal).
-        if (inputFinished || (!/^'''|^"""/.test(input) && /\n|\r/.test(input)))
-          return reportSyntaxError(this);
-        else {
-          this._linePosition = currentLineLength - input.length;
-          return this._input = input;
-        }
+        if (inputFinished || (!input.startsWith("'''", pos) && !input.startsWith('"""', pos) &&
+                              /\n|\r/.test(input.slice(pos))))
+          return reportSyntaxError(this, input, pos);
+        else
+          return this._suspend(input, pos, currentLineLength);
       }
 
       // Emit the parsed token
       // Consumption includes separator whitespace; lexicalLength excludes it
-      // and any synthetic EOF space. slice below clamps consumption to the input.
+      // and any synthetic EOF space. Consumption is clamped to the input below.
       const length = matchLength || match[0].length;
+      const start = currentLineLength - (input.length - pos);
       let token;
       if (finalLineLength) {
         token = {
-          type, value, prefix, line,
-          start: currentLineLength - input.length,
+          type, value, prefix, line, start,
           end: finalLineLength, endLine: this._line,
         };
         callback(null, token);
       }
       else
-        token = emitToken(type, value, prefix, line, lexicalLength || length);
+        token = emitToken(type, value, prefix, line, start, lexicalLength || length);
       this.previousToken = token;
       this._previousMarker = type;
 
       // Advance to next part to tokenize
-      input = input.slice(length);
+      pos = Math.min(pos + length, input.length);
       if (finalLineLength)
-        currentLineLength = input.length + finalLineLength;
+        currentLineLength = input.length - pos + finalLineLength;
     }
 
     // Emits a comment at its exact position within matched whitespace.
-    function emitComment(value, line, offset) {
-      const start = currentLineLength - input.length + offset;
+    function emitComment(value, line, start) {
       callback(null, {
         type: 'comment', value, prefix: '', line,
         start, end: start + value.length + 1,
       });
     }
     // Emits the token through the callback
-    function emitToken(type, value, prefix, line, length) {
-      const start = input ? currentLineLength - input.length : currentLineLength;
-      const end = start + length;
-      const token = { type, value, prefix, line, start, end };
+    function emitToken(type, value, prefix, line, start, length) {
+      const token = { type, value, prefix, line, start, end: start + length };
       callback(null, token);
       return token;
     }
     // Signals the syntax error through the callback
-    function reportSyntaxError(self) { callback(self._syntaxError(/^\S*/.exec(input)[0])); }
+    function reportSyntaxError(self, input, pos) {
+      callback(self._syntaxError(execAt(nonWhitespace, input, pos)[0]));
+    }
+  }
+
+  // ### `_suspend` keeps the unconsumed input until more input arrives
+  _suspend(input, pos, currentLineLength) {
+    this._linePosition = currentLineLength - (input.length - pos);
+    return this._input = input.slice(pos);
   }
 
   // ### `_matchN3Verb` matches an N3 verb unless the input is a longer prefixed name
-  _matchN3Verb(input, inputFinished) {
-    const verb = this._n3Verb.exec(input);
+  _matchN3Verb(input, pos, inputFinished) {
+    const verb = execAt(this._n3Verb, input, pos);
     if (!verb)
       return null;
 
     // Most verb boundaries cannot be part of a prefix, so keep the common path fast.
-    const next = input[verb[0].length];
+    const next = input[pos + verb[0].length];
     if (next !== '-' && next !== '_' && (next < '0' || next > '9'))
       return verb;
 
     // A prefix can start with a verb and continue with characters that are also
     // valid verb boundaries. Prefer the longer prefixed name when it is complete.
-    if (this._prefixed.exec(input) || this._prefixed.exec(`${input} `))
+    if (execAt(this._prefixed, input, pos))
+      return null;
+    // Appending to the input only matters when a prefixed name could run up to
+    // its end, which a character that cannot occur in prefixed names rules out.
+    // This avoids copying the rest of the document for every such verb.
+    if (testAt(nonPrefixedNameChar, input, pos))
+      return verb;
+    if (execAtEnd(this._prefixed, input, pos))
       return null;
 
     // If a stream chunk ends partway through such a prefix, wait for the colon
     // instead of prematurely emitting the verb. Appending ": " lets the prefix
     // grammar determine whether all input seen so far can be a complete prefix.
     if (!inputFinished) {
-      const prefix = this._prefix.exec(`${input}: `);
+      const prefix = execAt(this._prefix, `${input.slice(pos)}: `, 0);
       if (prefix)
         return null;
     }
@@ -603,20 +646,20 @@ export default class N3Lexer {
     return result + item.slice(start);
   }
 
-  // ### `_parseLiteral` parses a literal into an unescaped value
-  _parseLiteral(input) {
+  // ### `_parseLiteral` parses a literal at the given position into an unescaped value
+  _parseLiteral(input, pos) {
     // Ensure we have enough lookahead to identify triple-quoted strings
-    if (input.length >= 3) {
+    if (input.length - pos >= 3) {
       // The caller has already identified a single or double quote.
-      const quote = input[0];
-      const openingLength = input[1] === quote && input[2] === quote ? 3 : 1;
+      const quote = input[pos];
+      const openingLength = input[pos + 1] === quote && input[pos + 2] === quote ? 3 : 1;
       let opening = quote;
       if (openingLength === 3)
         opening = quote === '"' ? '"""' : "'''";
 
       // Find the next candidate closing quotes
-      let closingPos = Math.max(this._literalClosingPos, openingLength);
-      while ((closingPos = input.indexOf(opening, closingPos)) > 0) {
+      let closingPos = pos + Math.max(this._literalClosingPos, openingLength);
+      while ((closingPos = input.indexOf(opening, closingPos)) > pos) {
         // Count backslashes right before the closing quotes
         let backslashCount = 0;
         while (input[closingPos - backslashCount - 1] === '\\')
@@ -626,10 +669,10 @@ export default class N3Lexer {
         // means these are actual, non-escaped closing quotes
         if (backslashCount % 2 === 0) {
           // Extract and unescape the value
-          const raw = input.substring(openingLength, closingPos),
+          const raw = input.substring(pos + openingLength, closingPos),
               lines = raw.split(/\r\n|\r|\n/),
               lineCount = lines.length - 1;
-          const matchLength = closingPos + openingLength;
+          const matchLength = closingPos - pos + openingLength;
           // Only triple-quoted strings can be multi-line
           if (openingLength === 1 && lineCount !== 0 ||
               openingLength === 3 && this._lineMode)
@@ -640,7 +683,7 @@ export default class N3Lexer {
         }
         closingPos++;
       }
-      this._literalClosingPos = input.length - openingLength + 1;
+      this._literalClosingPos = input.length - pos - openingLength + 1;
     }
     return { value: '', matchLength: 0, finalLineLength: 0 };
   }

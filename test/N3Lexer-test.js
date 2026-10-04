@@ -709,6 +709,44 @@ describe('Lexer', () => {
                      { type: 'eof', line: 1 }),
     );
 
+    it(
+      'should tokenize a type separated from its marker by whitespace and comments',
+      shouldTokenize('"stringA" ^^ <type> "stringB"^^\t# comment\n ns:mytype ',
+                     { type: 'literal', value: 'stringA', line: 1 },
+                     { type: 'typeIRI', value: 'type', line: 1 },
+                     { type: 'literal', value: 'stringB', line: 1 },
+                     { type: 'type', value: 'mytype', prefix: 'ns', line: 2 },
+                     { type: 'eof', line: 2 }),
+    );
+
+    it(
+      'should tokenize a type separated from its marker by whitespace across chunks',
+      shouldTokenize(streamOf('"string"^^', '  ', '<type> '),
+                     { type: 'literal', value: 'string', line: 1 },
+                     { type: 'typeIRI', value: 'type', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should not tokenize a datatype marker repeated after whitespace',
+      shouldNotTokenize('<urn:s> <urn:p> "v"^^ ^^<urn:t> .', 'Unexpected "^^<urn:t>" on line 1.'),
+    );
+
+    it(
+      'should not tokenize a datatype marker repeated after whitespace in line mode',
+      shouldNotTokenize(new Lexer({ lineMode: true }), '<urn:s> <urn:p> "v"^^ ^^<urn:t> .', 'Unexpected "^^<urn:t>" on line 1.'),
+    );
+
+    it(
+      'should not tokenize a trailing datatype marker followed by a comment',
+      shouldNotTokenize('<urn:s> <urn:p> <urn:o> . ^^ # trailing comment', 'Unexpected "" on line 1.'),
+    );
+
+    it(
+      'should not tokenize a trailing datatype marker followed by whitespace in line mode',
+      shouldNotTokenize(new Lexer({ lineMode: true }), '<urn:s> <urn:p> <urn:o> . ^^ \n', 'Unexpected "" on line 2.'),
+    );
+
     it('should not tokenize a single hat', shouldNotTokenize('^',
                       'Unexpected "^" on line 1.'));
 
@@ -1205,6 +1243,27 @@ describe('Lexer', () => {
                      { type: 'of', line: 1 },
                      { type: 'literal', value: '-1', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
                      { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should keep numeric characters as N3 verb boundaries before further input',
+      shouldTokenize('of-1 <a> has1 "b"',
+                     { type: 'of', line: 1 },
+                     { type: 'literal', value: '-1', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                     { type: 'IRI', value: 'a', line: 1 },
+                     { type: 'has', line: 1 },
+                     { type: 'literal', value: '1', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                     { type: 'literal', value: 'b', line: 1 },
+                     { type: 'eof', line: 1 }),
+    );
+
+    it(
+      'should emit an N3 verb at the end of a chunk when no prefix can follow',
+      shouldTokenize(streamOf('of-1.', '\n'),
+                     { type: 'of', line: 1 },
+                     { type: 'literal', value: '-1', prefix: 'http://www.w3.org/2001/XMLSchema#integer', line: 1 },
+                     { type: '.', line: 1 },
+                     { type: 'eof', line: 2 }),
     );
 
     it(

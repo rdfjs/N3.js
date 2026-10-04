@@ -4,6 +4,8 @@ on:
   push:
     branches:
     - main
+    # Breaking changes for the next major; releases alphas. See RELEASING.md.
+    - next-major
   pull_request:
   merge_group:
     types: [checks_requested]
@@ -69,7 +71,6 @@ jobs:
       fail-fast: false
       matrix:
         node-version: [18.x, 20.x, 22.x, 24.x, 26.x]
-        spec: [1-1-turtle, 1-1-ntriples, 1-1-nquads, 1-1-trig, 1-2-turtle, 1-2-ntriples, 1-2-nquads, 1-2-trig, 1-2-turtle-eval, 1-2-trig-eval, n3-parser, n3-extended]
     needs: build
     steps:
       - uses: actions/checkout@v7
@@ -86,10 +87,11 @@ jobs:
       - uses: actions/cache@v6
         with:
           path: .rdf-test-suite-cache
-          key: rdf-test-suite-cache-v1-${{ matrix.spec }}-${{ hashFiles('spec/cache-key.txt') }}-${{ hashFiles('package.json') }}
+          key: rdf-test-suite-cache-v2-${{ hashFiles('spec/cache-key.txt') }}-${{ hashFiles('spec/run.js') }}
           restore-keys: |
-            rdf-test-suite-cache-v1-${{ matrix.spec }}-${{ hashFiles('spec/cache-key.txt') }}-
-      - run: npm run spec-${{ matrix.spec }}
+            rdf-test-suite-cache-v2-${{ hashFiles('spec/cache-key.txt') }}-
+      # One job runs every suite (see spec/run.js), so the list lives in one place
+      - run: npm run spec
 
   browser:
     # Runs the built browser bundles in real engines (Chromium, Firefox,
@@ -186,12 +188,16 @@ jobs:
           publish_dir: .
 
   release:
-    if: ${{ github.ref == 'refs/heads/main' }}
+    # main publishes to `latest`; next-major publishes prereleases to `alpha`
+    # (branch config in package.json "release").
+    if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/next-major' }}
     needs: [ audit, test, spec ]
     runs-on: ubuntu-latest
-    # Never run two release/publish jobs concurrently.
+    # Never run two releases of the same branch at once. Per-branch groups keep a
+    # pending next-major release from replacing a pending main one; a group
+    # holds only one pending job, and the newest run covers the older commits.
     concurrency:
-      group: release
+      group: release-${{ github.ref }}
       cancel-in-progress: false
     permissions:
       contents: write
@@ -211,4 +217,8 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           # Emit npm build provenance (SLSA) via the workflow's id-token.
           NPM_CONFIG_PROVENANCE: true
-        run: npx semantic-release@25
+        # The conventionalcommits preset reads `feat!:` squash titles as
+        # breaking; the default angular preset only sees BREAKING CHANGE footers.
+        # Stay on preset v9: v10 needs conventional-changelog-writer 9, but
+        # semantic-release 25's notes generator still loads writer 8.
+        run: npx -p semantic-release@25 -p conventional-changelog-conventionalcommits@9 semantic-release
