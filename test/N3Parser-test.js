@@ -1,4 +1,5 @@
-import { Parser, Writer, NamedNode, BlankNode, Quad, termFromId, DataFactory as DF } from '../src';
+import { Parser, Writer, termFromId, DataFactory as DF } from '../src';
+import { NamedNode, BlankNode, Quad } from '../src/N3DataFactory';
 import rdfDataModel from '@rdfjs/data-model';
 import { isomorphic } from 'rdf-isomorphic';
 
