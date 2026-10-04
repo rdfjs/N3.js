@@ -239,14 +239,13 @@ Setting the `emptyFormulaAsTrue` flag to `false` keeps it as a blank node graph 
 const parser = new N3.Parser({ format: 'text/n3', emptyFormulaAsTrue: false });
 ```
 
-In N3 documents, the parser by default rescopes blank node labels
-in lists and blank node property lists, in addition to formulas,
-so `_:a` inside a list does not co-reference `_:a` outside of it.
-The `formulaScopedBlankNodes` flag scopes blank node labels to formulas only,
-matching N3's formula-scoped blank node semantics
-(this will become the default in the next major version):
+In N3 documents, blank node labels are scoped to formulas,
+matching N3's formula-scoped blank node semantics,
+so `_:a` inside a list or blank node property list co-references `_:a` outside of it.
+Setting the `formulaScopedBlankNodes` flag to `false` restores the legacy behavior
+of also rescoping blank node labels in lists and blank node property lists:
 ```JavaScript
-const parser = new N3.Parser({ format: 'N3', formulaScopedBlankNodes: true });
+const parser = new N3.Parser({ format: 'N3', formulaScopedBlankNodes: false });
 ```
 
 The parser rejects triple terms nested more than 1024 levels deep,
