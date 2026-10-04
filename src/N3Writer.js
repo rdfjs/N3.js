@@ -9,9 +9,15 @@ const DEFAULTGRAPH = N3DataFactory.defaultGraph();
 
 const { rdf, xsd } = namespaces;
 
-// Characters in literals that require escaping
+// Characters that require escaping in Turtle, TriG, and N3,
+// where characters outside the Basic Multilingual Plane are escaped as well
 const escape    = /["\\\t\n\r\b\f\u0000-\u0019\ud800-\udbff]/,
     escapeAll = /["\\\t\n\r\b\f\u0000-\u0019]|[\ud800-\udbff][\udc00-\udfff]/g,
+    // Characters that require escaping in canonical N-Triples and N-Quads:
+    // U+0000–U+001F, `"`, `\`, U+007F, U+FFFE, and U+FFFF.
+    // A negated class is as fast to test as a shorter class listing characters.
+    canonicalEscape    = /[^ !#-\[\]-~\u0080-\uFFFD]/,
+    canonicalEscapeAll = /[^ !#-\[\]-~\u0080-\uFFFD]/g,
     escapedCharacters = {
       '\\': '\\\\', '"': '\\"', '\t': '\\t',
       '\n': '\\n', '\r': '\\r', '\b': '\\b', '\f': '\\f',
@@ -57,8 +63,11 @@ export default class N3Writer {
     this._subject = null;
     if (!(/triple|quad/i).test(options.format)) {
       this._lineMode = false;
+      this._escape = escape, this._escapeAll = escapeAll, this._characterReplacer = characterReplacer;
       this._graph = DEFAULTGRAPH;
       this._prefixIRIs = Object.create(null);
+      // Escaped prefix IRIs and names for the prefix matcher, computed once per prefix
+      this._prefixPatterns = Object.create(null);
       if (options.baseIRI) {
         this._baseIri = new BaseIRI(options.baseIRI);
         if (options.writeBase)
@@ -69,6 +78,9 @@ export default class N3Writer {
     else {
       this._lineMode = true;
       this._writeQuad = this._writeQuadLine;
+      // N-Triples and N-Quads are written in their canonical form
+      this._escape = canonicalEscape, this._escapeAll = canonicalEscapeAll;
+      this._characterReplacer = canonicalCharacterReplacer;
     }
   }
 
@@ -174,8 +186,8 @@ export default class N3Writer {
       iri = this._baseIri.toRelative(iri);
     }
     // Escape special characters
-    if (escape.test(iri))
-      iri = iri.replace(escapeAll, characterReplacer);
+    if (this._escape.test(iri))
+      iri = iri.replace(this._escapeAll, this._characterReplacer);
     // Try to represent the IRI as prefixed name, unless no prefixes were added
     const prefixMatch = this._hasPrefixes ? this._prefixRegex.exec(iri) : null;
     return !prefixMatch ? `<${iri}>` :
@@ -186,8 +198,8 @@ export default class N3Writer {
   _encodeLiteral(literal) {
     // Escape special characters
     let value = literal.value;
-    if (escape.test(value))
-      value = value.replace(escapeAll, characterReplacer);
+    if (this._escape.test(value))
+      value = value.replace(this._escapeAll, this._characterReplacer);
 
     // Write a language-tagged literal
     const language = literal.language;
@@ -258,11 +270,13 @@ export default class N3Writer {
 
   // ### `_encodeQuad` encodes an RDF-star quad
   _encodeQuad({ subject, predicate, object, graph }) {
-    return `<<(${
+    // Canonical N-Triples and N-Quads put spaces inside the delimiters
+    const space = this._lineMode ? ' ' : '';
+    return `<<(${space}${
       this._encodeSubject(subject)} ${
       this._encodePredicate(predicate)} ${
       this._encodeObject(object)}${
-      isDefaultGraph(graph) ? '' : ` ${this._encodeIriOrBlank(graph)}`})>>`;
+      isDefaultGraph(graph) ? '' : ` ${this._encodeIriOrBlank(graph)}`}${space})>>`;
   }
 
   // ### `_blockedWrite` replaces `_write` after the writer has been closed
@@ -316,18 +330,19 @@ export default class N3Writer {
       }
       // Store and write the prefix
       this._prefixIRIs[iri] = (prefix += ':');
+      this._prefixPatterns[iri] = [escapeRegex(iri), escapeRegex(prefix)];
       this._write(`@prefix ${prefix} <${iri}>.\n`);
     }
     // Recreate the prefix matcher
     if (hasPrefixes) {
       this._hasPrefixes = true;
       let IRIlist = '', prefixList = '';
-      for (const prefixIRI in this._prefixIRIs) {
-        IRIlist += IRIlist ? `|${prefixIRI}` : prefixIRI;
-        prefixList += (prefixList ? '|' : '') + this._prefixIRIs[prefixIRI];
+      for (const prefixIRI in this._prefixPatterns) {
+        const [IRIpattern, prefixPattern] = this._prefixPatterns[prefixIRI];
+        IRIlist += IRIlist ? `|${IRIpattern}` : IRIpattern;
+        prefixList += prefixList ? `|${prefixPattern}` : prefixPattern;
       }
-      IRIlist = escapeRegex(IRIlist, /[\]\/\(\)\*\+\?\.\\\$]/g, '\\$&');
-      this._prefixRegex = new RegExp(`^(?:${prefixList})[^\/]*$|` +
+      this._prefixRegex = new RegExp(`^(?:${prefixList})[^/]*$|` +
                                      `^(${IRIlist})([_a-zA-Z0-9](?:\\.?[\\-_a-zA-Z0-9])*)$`);
     }
     // End a prefix block with a newline
@@ -422,6 +437,17 @@ function characterReplacer(character) {
                  character.charCodeAt(1) + 0x2400).toString(16);
       result = '\\U00000000'.substr(0, 10 - result.length) + result;
     }
+  }
+  return result;
+}
+
+// Replaces a character by its canonical N-Triples escape:
+// a short escape where one exists, and an upper-case `\uXXXX` escape otherwise
+function canonicalCharacterReplacer(character) {
+  let result = escapedCharacters[character];
+  if (result === undefined) {
+    result = character.charCodeAt(0).toString(16).toUpperCase();
+    result = '\\u0000'.substr(0, 6 - result.length) + result;
   }
   return result;
 }
