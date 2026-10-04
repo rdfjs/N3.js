@@ -173,7 +173,8 @@ Object.assign(benchmarks, {
 });
 
 // Intersections of stores sharing an EntityIndex that need not look at most
-// quads: stores whose subjects differ, and an empty store intersected with a
+// quads: stores whose subjects differ, a large store intersected with a store
+// holding one of its quads, and an empty store intersected with a
 // store whose size is not cached because it has just changed
 Object.assign(benchmarks, {
   'store intersection: different subjects, shared index': N3 => {
@@ -185,6 +186,15 @@ Object.assign(benchmarks, {
     const store = storeAbout('http://example.org/a'), other = storeAbout('http://example.org/b');
     return () => {
       for (let i = 0; i < 1000; i++) check(store.intersection(other).size === 0, 'not empty');
+    };
+  },
+  'store intersection: one quad with many objects, shared index': N3 => {
+    const { namedNode, quad } = N3.DataFactory, entityIndex = new N3.EntityIndex();
+    const quads = Array.from({ length: SIZE }, (_, i) =>
+      quad(namedNode('http://example.org/s'), namedNode('http://example.org/p'), namedNode(`http://example.org/o${i}`)));
+    const store = new N3.Store(quads, { entityIndex }), other = new N3.Store(quads.slice(0, 1), { entityIndex });
+    return () => {
+      for (let i = 0; i < 1000; i++) check(store.intersection(other).size === 1, 'not one quad');
     };
   },
   'store intersection: empty store with a changed store, shared index': N3 => {

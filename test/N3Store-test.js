@@ -4593,11 +4593,12 @@ describe('Set operations between stores sharing an EntityIndex', () => {
     expect(contents(c.difference(a))).toEqual(ids([q('s1', 'p2', 'o1'), q('s5', 'p', 'o1')]));
   });
 
-  it('intersects with the store whose size is known to be smaller', () => {
-    const c = new Store([q('s1', 'p', 'o1')], { entityIndex });
-    expect(a.size + c.size).toBe(4);
+  it('intersects stores whose indexes have different sizes at each level', () => {
+    const c = new Store([q('s1', 'p', 'o1'), q('s1', 'p', 'o5'), q('s1', 'p2', 'o1'), q('s6', 'p', 'o1')], { entityIndex });
+    const d = new Store([q('s1', 'p', 'o1')], { entityIndex });
+    expect(contents(c.intersection(d))).toEqual(ids([q('s1', 'p', 'o1')]));
+    expect(contents(d.intersection(c))).toEqual(ids([q('s1', 'p', 'o1')]));
     expect(contents(a.intersection(c))).toEqual(ids([q('s1', 'p', 'o1')]));
-    expect(contents(c.intersection(a))).toEqual(ids([q('s1', 'p', 'o1')]));
   });
 
   it('notifies forwarded views when adding a store to an empty store', () => {
