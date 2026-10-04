@@ -56,10 +56,12 @@ const illegalIriChars = /[\x00-\x20<>\\"\{\}\|\^\`]/;
 
 // Character classes of names, as bit flags for ASCII characters
 const PREFIX_START = 1, // PN_CHARS_BASE
-    LOCAL_START = 2,      // PN_CHARS_U, digits, and colon
-    NAME_CHAR = 4,        // PN_CHARS
-    LOCAL_CHAR = 8,       // PN_CHARS and colon
-    LOCAL_ESCAPE = 16;    // characters that can be escaped in local names (PN_LOCAL_ESC)
+    VARIABLE_START = 2,   // PN_CHARS_U
+    BLANK_START = 4,      // PN_CHARS_U and digits
+    LOCAL_START = 8,      // PN_CHARS_U, digits, and colon
+    NAME_CHAR = 16,       // PN_CHARS
+    LOCAL_CHAR = 32,      // PN_CHARS and colon
+    LOCAL_ESCAPE = 64;    // characters that can be escaped in local names (PN_LOCAL_ESC)
 const asciiNameClasses = new Uint8Array(0x80);
 for (let charCode = 0; charCode < 0x80; charCode++) {
   const char = String.fromCharCode(charCode);
@@ -67,6 +69,8 @@ for (let charCode = 0; charCode < 0x80; charCode++) {
   const nameChar = letter || char === '_' || char === '-' || char >= '0' && char <= '9';
   asciiNameClasses[charCode] =
     (letter ? PREFIX_START : 0) |
+    (letter || char === '_' ? VARIABLE_START : 0) |
+    (nameChar && char !== '-' ? BLANK_START : 0) |
     (nameChar && char !== '-' || char === ':' ? LOCAL_START : 0) |
     (nameChar ? NAME_CHAR : 0) |
     (nameChar || char === ':' ? LOCAL_CHAR : 0) |
@@ -101,16 +105,26 @@ function isHexDigit(charCode) {
   return charCode >= ZERO && charCode <= NINE ||
     charCode >= 0x41 && charCode <= 0x46 || charCode >= 0x61 && charCode <= 0x66;
 }
-// Returns the end of the prefix (PN_PREFIX) at the given position,
-// which can contain single dots, but not start or end with one
-function skipPrefix(input, pos) {
-  let length = nameCharLength(input, pos, PREFIX_START);
+// Returns the end of the prefix (PN_PREFIX) or blank node label at the given position,
+// whose first character is in the given class and whose other characters are PN_CHARS
+// or single dots, though not at the end
+function skipName(input, pos, startClass) {
+  let length = nameCharLength(input, pos, startClass);
   while (length !== 0) {
     pos += length;
     const next = input.charCodeAt(pos) === DOT ? pos + 1 : pos;
     length = nameCharLength(input, next, NAME_CHAR);
     if (length !== 0)
       pos = next;
+  }
+  return pos;
+}
+// Returns the end of the variable name (VARNAME) at the given position
+function skipVariableName(input, pos) {
+  let length = nameCharLength(input, pos, VARIABLE_START);
+  while (length !== 0) {
+    pos += length;
+    length = nameCharLength(input, pos, LOCAL_CHAR);
   }
   return pos;
 }
@@ -141,7 +155,7 @@ function skipLocalName(input, pos) {
 }
 // Returns the end of the prefixed name at the given position, or -1 if there is none
 function skipPrefixedName(input, pos, inputFinished) {
-  const colon = skipPrefix(input, pos);
+  const colon = skipName(input, pos, PREFIX_START);
   if (input.charCodeAt(colon) !== COLON)
     return -1;
   const end = skipLocalName(input, colon + 1);
@@ -174,12 +188,6 @@ function testAt(regExp, input, pos) {
   regExp.lastIndex = pos;
   return regExp.test(input);
 }
-// Matches the rest of the input followed by a space, as at the end of the input,
-// a token that can contain (but not end with) a dot needs a non-dot character after it
-function execAtEnd(regExp, input, pos) {
-  regExp.lastIndex = 0;
-  return regExp.exec(`${input.slice(pos)} `);
-}
 
 // ## Constructor
 export default class N3Lexer {
@@ -192,8 +200,6 @@ export default class N3Lexer {
     this._simpleQuotedString = /"([^"\\\r\n]*)"(?=[^"])/y; // string without escape sequences
     this._simpleApostropheString = /'([^'\\\r\n]*)'(?=[^'])/y;
     this._langcode = /@([a-z]+(?:-[a-z0-9]+)*)(?=[^a-z0-9])/iy;
-    this._variable = /\?(?:(?:[A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:[\-0-9:A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?=[.,;!\^\s#()\[\]\{\}"'<>])/y;
-    this._blank = /_:((?:[0-9A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])(?:\.?[\-0-9A-Z_a-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c\u200d\u203f\u2040\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd]|[\ud800-\udb7f][\udc00-\udfff])*)(?:[ \t]+|(?=\.?[,;:!\^\s#()\[\]\{\}"'<>]))/y;
     this._boolean = /(?:true|false)(?=[.,;!\^\s#()\[\]\{\}"'<>])/y;
     this._atKeyword = /@[a-z]+(?=[\s#<:])/iy;
     this._keyword = /(?:PREFIX|BASE|VERSION|GRAPH)(?=[\s#<])/iy;
@@ -370,12 +376,14 @@ export default class N3Lexer {
 
       case '_':
         // Try to find a blank node. Since it can contain (but not end with) a dot,
-        // we always need a non-dot character before deciding it is a blank node.
-        // Therefore, try inserting a space if we're at the end of the input.
-        if ((match = execAt(this._blank, input, pos)) ||
-            inputFinished && (match = execAtEnd(this._blank, input, pos))) {
-          type = 'blank', prefix = '_', value = match[1];
-          lexicalLength = match[1].length + 2;
+        // we always need a non-dot character before deciding it is a blank node,
+        // except at the end of the input.
+        if (input.charCodeAt(pos + 1) === COLON) {
+          const end = skipName(input, pos + 2, BLANK_START);
+          if (end > pos + 2 && canEndName(input, end, inputFinished, true)) {
+            type = 'blank', prefix = '_', value = input.slice(pos + 2, end);
+            matchLength = end - pos;
+          }
         }
         break;
 
@@ -415,8 +423,14 @@ export default class N3Lexer {
 
       case '?':
         // Try to find a variable
-        if (this._n3Mode && (match = execAt(this._variable, input, pos)))
-          type = 'var', value = match[0];
+        if (this._n3Mode) {
+          const end = skipVariableName(input, pos + 1);
+          if (end > pos + 1 && end < input.length &&
+              (input.charCodeAt(end) === DOT || isDelimiter(input.charCodeAt(end)))) {
+            type = 'var', value = input.slice(pos, end);
+            matchLength = end - pos;
+          }
+        }
         break;
 
       case '@':
@@ -590,7 +604,7 @@ export default class N3Lexer {
         // Try to find a prefix
         let end;
         if ((this._previousMarker === '@prefix' || this._previousMarker === 'PREFIX') &&
-            input.charCodeAt(end = skipPrefix(input, pos)) === COLON &&
+            input.charCodeAt(end = skipName(input, pos, PREFIX_START)) === COLON &&
             end + 1 < input.length && (input[end + 1] === '#' || input[end + 1] === '<' ||
                                        isWhitespace(input.charCodeAt(end + 1)))) {
           type = 'prefix', value = input.slice(pos, end);
@@ -695,7 +709,7 @@ export default class N3Lexer {
 
     // If a stream chunk ends partway through such a prefix,
     // wait for the colon instead of prematurely emitting the verb.
-    if (!inputFinished && skipPrefix(input, pos) === input.length)
+    if (!inputFinished && skipName(input, pos, PREFIX_START) === input.length)
       return null;
     return verb;
   }

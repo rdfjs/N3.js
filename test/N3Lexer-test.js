@@ -2529,9 +2529,14 @@ describe('A Lexer instance tokenizing names', () => {
   const chars = boundaries.map(code => String.fromCharCode(code))
     .concat(['𐀀', '󯿿', '󰀀', '\ud800\ud800', '\ud800x']);
 
+  const isBlankStart = new RegExp(`^(?:${nameStart}|[0-9_])$`);
+  const isBlankChar = new RegExp(`^(?:${nameStart}|${nameChar}|\\.)$`);
+  const isVariableStart = new RegExp(`^(?:${nameStart}|_)$`);
+  const isVariableChar = new RegExp(`^(?:${nameStart}|${nameChar}|:)$`);
+
   function firstToken(input) {
     try {
-      return new Lexer().tokenize(input)[0];
+      return new Lexer({ n3: true }).tokenize(input)[0];
     }
     catch (error) {
       return null;
@@ -2552,6 +2557,30 @@ describe('A Lexer instance tokenizing names', () => {
       expect(token !== null && token.type === 'prefixed' && token.value === `a${char}b`)
         .toBe(isLocalChar.test(char));
     });
+
+    it(`should ${isBlankStart.test(char) ? '' : 'not '}start a blank node label with U+${code}`, () => {
+      const token = firstToken(`_:${char}x `);
+      expect(token !== null && token.type === 'blank' && token.value === `${char}x`)
+        .toBe(isBlankStart.test(char));
+    });
+
+    it(`should ${isBlankChar.test(char) ? '' : 'not '}continue a blank node label with U+${code}`, () => {
+      const token = firstToken(`_:a${char}b `);
+      expect(token !== null && token.type === 'blank' && token.value === `a${char}b`)
+        .toBe(isBlankChar.test(char));
+    });
+
+    it(`should ${isVariableStart.test(char) ? '' : 'not '}start a variable with U+${code}`, () => {
+      const token = firstToken(`?${char}x `);
+      expect(token !== null && token.type === 'var' && token.value === `?${char}x`)
+        .toBe(isVariableStart.test(char));
+    });
+
+    it(`should ${isVariableChar.test(char) ? '' : 'not '}continue a variable with U+${code}`, () => {
+      const token = firstToken(`?a${char}b `);
+      expect(token !== null && token.type === 'var' && token.value === `?a${char}b`)
+        .toBe(isVariableChar.test(char));
+    });
   }
 
   it(
@@ -2560,6 +2589,15 @@ describe('A Lexer instance tokenizing names', () => {
                    { type: 'prefixed', prefix: 'p', value: 'a', line: 1 },
                    { type: 'prefixed', prefix: 'p', value: 'b c', line: 1 },
                    { type: 'prefixed', prefix: 'p', value: 'd ', line: 1 },
+                   { type: 'eof', line: 1 }),
+  );
+
+  it(
+    'should tokenize a blank node label with a name character that is also whitespace at the end of a chunk',
+    shouldTokenize(streamOf('_:a _:b﻿', 'c _:d﻿'),
+                   { type: 'blank', prefix: '_', value: 'a', line: 1 },
+                   { type: 'blank', prefix: '_', value: 'b﻿c', line: 1 },
+                   { type: 'blank', prefix: '_', value: 'd﻿', line: 1 },
                    { type: 'eof', line: 1 }),
   );
 });
