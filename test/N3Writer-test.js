@@ -254,7 +254,7 @@ describe('Writer', () => {
       writer.addQuad(new NamedNode('urn:s'), p, new BlankNode('l'));
       writer.addQuad(new NamedNode('urn:t'), p, new BlankNode('f'));
       await expect(end(writer)).rejects.toThrow('Cannot write formula _:f, which a list shares with other terms');
-      expect(() => writer.formula([new Quad(a, p, new BlankNode('l')), new Quad(a, p, new BlankNode('l'))]))
+      expect(() => writer.formula([new Quad(a, p, new BlankNode('l')), new Quad(a, a, new BlankNode('f'))]))
         .toThrow('Cannot write formula _:f, which a list shares with other terms');
     });
 
@@ -262,6 +262,14 @@ describe('Writer', () => {
       const p = new NamedNode('urn:p'), writer = new Writer({ format: 'N3' });
       const formula = writer.formula([new Quad(new Quad(writer.blank(), p, p), p, p), new Quad(new Quad(writer.blank(), p, p), p, p)]);
       expect(formula.id).toBe('{ <<([] <urn:p> <urn:p>)>> <urn:p> <urn:p>. <<([] <urn:p> <urn:p>)>> <urn:p> <urn:p> }');
+    });
+
+    it('should refuse a formula shared by two lists', async () => {
+      const p = new NamedNode('urn:p'), a = new NamedNode('urn:a'), f = new BlankNode('f');
+      const writer = new Writer({ format: 'N3', formulas: { f: [new Quad(a, a, a)] }, lists: { l: [f], m: [f] } });
+      writer.addQuad(new NamedNode('urn:s'), p, new BlankNode('l'));
+      writer.addQuad(new NamedNode('urn:t'), p, new BlankNode('m'));
+      await expect(end(writer)).rejects.toThrow('Cannot write formula _:f, which a list shares with other terms');
     });
 
     it('should not mistake a literal for a list', async () => {
@@ -279,13 +287,33 @@ describe('Writer', () => {
       expect(formula.id).toBe('{ <<([] <urn:p> <urn:p>)>> <urn:p> <urn:p>, <urn:o> }');
     });
 
-    it('should write statements with formulas with the prefixes bound at the end', async () => {
+    it('should refuse to rebind a prefix after statements with formulas', async () => {
+      const p = new NamedNode('urn:old:p'), o = new NamedNode('urn:old:o');
       const writer = new Writer({ format: 'N3', prefixes: { ex: 'urn:old:' }, formulas: { f: [] } });
-      writer.addQuad(new NamedNode('urn:old:s'), new NamedNode('urn:old:p'), new BlankNode('f'));
-      writer.addPrefix('ex', 'urn:new:');
-      writer.addQuad(new NamedNode('urn:old:s'), new NamedNode('urn:new:p'), new NamedNode('urn:new:o'));
-      expect(await end(writer)).toBe('@prefix ex: <urn:old:>.\n\n@prefix ex: <urn:new:>.\n\n' +
-        '<urn:old:s> ex:p ex:o.\n<urn:old:s> <urn:old:p> {}.\n');
+      writer.addQuad(writer.blank(p, o), p, new BlankNode('f'));
+      writer.addPrefix('ex', 'urn:old:');
+      writer.addPrefix('other', 'urn:new:');
+      expect(() => writer.addPrefix('ex', 'urn:new:')).toThrow('Cannot rebind prefix ex: after writing statements with formulas');
+      expect(() => writer.addPrefixes({ ex: new NamedNode('urn:new:') }))
+        .toThrow('Cannot rebind prefix ex: after writing statements with formulas');
+      expect(await end(writer)).toBe('@prefix ex: <urn:old:>.\n\n@prefix ex: <urn:old:>.\n\n@prefix other: <urn:new:>.\n\n' +
+        '[ ex:p ex:o ] ex:p {}.\n');
+    });
+
+    it('should write a list with a formula that heads several statements', async () => {
+      const [a, p, q, o, r] = ['a', 'p', 'q', 'o', 'r'].map(name => new NamedNode(`urn:${name}`)), l = new BlankNode('l');
+      const writer = new Writer({ format: 'N3', formulas: { f: [new Quad(a, a, a)] }, lists: { l: [new BlankNode('f')] } });
+      writer.addQuad(l, p, o);
+      writer.addQuad(l, q, r);
+      expect(await end(writer)).toBe('({ <urn:a> <urn:a> <urn:a> }) <urn:p> <urn:o>; <urn:q> <urn:r>.\n');
+    });
+
+    it('should write a list with a formula that is the object of several statements', async () => {
+      const [a, p, q, s, t] = ['a', 'p', 'q', 's', 't'].map(name => new NamedNode(`urn:${name}`)), l = new BlankNode('l');
+      const writer = new Writer({ format: 'N3', formulas: { f: [new Quad(a, a, a)] }, lists: { l: [new BlankNode('f')] } });
+      writer.addQuad(s, p, l);
+      writer.addQuad(t, q, l);
+      expect(await end(writer)).toBe('({ <urn:a> <urn:a> <urn:a> }) is <urn:p> of <urn:s>; is <urn:q> of <urn:t>.\n');
     });
 
     it('should keep an IRI bound to another prefix when rebinding a prefix', async () => {

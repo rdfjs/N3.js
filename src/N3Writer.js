@@ -99,8 +99,6 @@ export default class N3Writer {
       this._escape = escape, this._escapeAll = escapeAll, this._characterReplacer = characterReplacer;
       this._graph = DEFAULTGRAPH;
       this._prefixIRIs = Object.create(null);
-      // `_prefixNames` maps each prefix to the IRI it is bound to
-      this._prefixNames = Object.create(null);
       // Escaped prefix IRIs and names for the prefix matcher, computed once per prefix
       this._prefixPatterns = Object.create(null);
       if (options.baseIRI) {
@@ -230,10 +228,8 @@ export default class N3Writer {
 
   // ### `_checkLists` rejects lists that contain a formula occurring more than once,
   // since N3 can only share a formula between statements, not with a list
-  _checkLists(quads) {
-    const terms = [], all = new Map(), outsideLists = new Map();
-    for (const quad of quads)
-      terms.push(quad.subject, quad.predicate, quad.object);
+  _checkLists(terms) {
+    const all = new Map(), outsideLists = new Map();
     for (const label of this._findFormulas(terms))
       all.set(label, (all.get(label) || 0) + 1);
     for (const label of this._findFormulas(terms, false))
@@ -459,6 +455,17 @@ export default class N3Writer {
     if (!this._prefixIRIs)
       return done && done();
 
+    // Statements with formulas are written at the end with the prefixes bound then,
+    // so they cannot survive a prefix being bound to another IRI
+    if (this._formulaStatements && this._formulaStatements.length) {
+      for (const prefix in prefixes) {
+        const iri = typeof prefixes[prefix] === 'string' ? prefixes[prefix] : prefixes[prefix].value;
+        for (const bound in this._prefixIRIs) {
+          if (this._prefixIRIs[bound] === `${prefix}:` && bound !== iri)
+            throw new Error(`Cannot rebind prefix ${prefix}: after writing statements with formulas`);
+        }
+      }
+    }
     // Write all new prefixes
     let hasPrefixes = false;
     for (let prefix in prefixes) {
@@ -471,14 +478,8 @@ export default class N3Writer {
         this._write(this._inDefaultGraph ? '.\n' : '\n}\n');
         this._subject = null, this._graph = '';
       }
-      // Store and write the prefix, forgetting the IRI it was bound to before,
-      // also for statements that are written later, such as those with formulas
-      prefix += ':';
-      const previous = this._prefixNames[prefix];
-      if (previous !== undefined && previous !== iri && this._prefixIRIs[previous] === prefix)
-        delete this._prefixIRIs[previous], delete this._prefixPatterns[previous];
-      this._prefixNames[prefix] = iri;
-      this._prefixIRIs[iri] = prefix;
+      // Store and write the prefix
+      this._prefixIRIs[iri] = (prefix += ':');
       this._prefixPatterns[iri] = [escapeRegex(iri), escapeRegex(prefix)];
       this._write(`@prefix ${prefix} <${iri}>.\n`);
     }
@@ -567,12 +568,11 @@ export default class N3Writer {
   // using inverse `is … of` verbs where it is their object,
   // or the verb shared by a list of objects (or of subjects, with an inverse verb).
   _encodeStatements(quads) {
-    this._checkLists(quads);
     // Count the occurrences of terms that contain formulas, such as quoted triples
     const occurrences = new Map(), verbSubjects = new Map(), statements = new Map();
     for (const quad of quads) {
       for (const term of [quad.subject, quad.predicate, quad.object]) {
-        if (this._findFormulas([term], false).length) {
+        if (this._findFormulas([term]).length) {
           const key = termKey(term);
           occurrences.set(key, occurrences.has(key));
         }
@@ -591,23 +591,35 @@ export default class N3Writer {
       const head = inverse ? object : subject, headKey = termKey(head);
       let statement = statements.get(headKey);
       if (!statement)
-        statements.set(headKey, statement = { head: this._encodeSubject(head), verbs: [new Map(), new Map()] });
+        statements.set(headKey, statement = { head, verbs: [new Map(), new Map()] });
       const verbs = statement.verbs[inverse ? 1 : 0], verbKey = termKey(predicate);
       let verb = verbs.get(verbKey);
-      if (!verb) {
-        verb = this._encodePredicate(predicate);
-        if (inverse)
-          verb = `is ${verb === 'a' ? this._encodeIriOrBlank(predicate) : verb} of`;
-        verbs.set(verbKey, verb = { verb, terms: [] });
-      }
-      verb.terms.push(inverse ? this._encodeSubject(subject) : this._encodeObject(object));
+      if (!verb)
+        verbs.set(verbKey, verb = { predicate, terms: [] });
+      verb.terms.push(inverse ? subject : object);
     }
+    // Check the lists among the terms as they will be written
+    const written = [];
+    for (const { head, verbs } of statements.values()) {
+      written.push(head);
+      for (const { predicate, terms } of [...verbs[0].values(), ...verbs[1].values()]) {
+        written.push(predicate);
+        for (const term of terms)
+          written.push(term);
+      }
+    }
+    this._checkLists(written);
     const result = [];
     for (const { head, verbs } of statements.values()) {
       const parts = [];
-      for (const { verb, terms } of [...verbs[0].values(), ...verbs[1].values()])
-        parts.push(`${verb} ${terms.join(', ')}`);
-      result.push(`${head} ${parts.join('; ')}`);
+      for (const { predicate, terms } of verbs[0].values())
+        parts.push(`${this._encodePredicate(predicate)} ${terms.map(term => this._encodeObject(term)).join(', ')}`);
+      for (const { predicate, terms } of verbs[1].values()) {
+        const verb = this._encodePredicate(predicate);
+        parts.push(`is ${verb === 'a' ? this._encodeIriOrBlank(predicate) : verb} of ${
+          terms.map(term => this._encodeSubject(term)).join(', ')}`);
+      }
+      result.push(`${this._encodeSubject(head)} ${parts.join('; ')}`);
     }
     return result;
   }
