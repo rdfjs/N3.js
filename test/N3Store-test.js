@@ -4060,6 +4060,18 @@ describe('Store', () => {
       expect(store.getQuads().map(q => q.toJSON())).toEqual([quad(namedNode('.2.3.4'), p, namedNode('?x')).toJSON()]);
     });
 
+    it('should keep IRIs starting with < distinct from the IRIs inside them', () => {
+      const values = ['', 'http://a', '<', '<>', '<<>>', '<http://a>', '<<http://a>>', '<a', 'a>'];
+      const quads = values.map(v => quad(namedNode(v), p, namedNode(v), namedNode(v)));
+      const store = new Store(quads);
+      expect(store.size).toBe(values.length);
+      expect(store.getQuads().map(q => q.toJSON())).toEqual(quads.map(q => q.toJSON()));
+      for (const v of values) {
+        expect(store.getQuads(null, null, namedNode(v)).map(q => q.object.value)).toEqual([v]);
+        expect(store.getQuads({ termType: 'NamedNode', value: v }).map(q => q.subject.value)).toEqual([v]);
+      }
+    });
+
     it('should treat a string id starting with < as the same IRI', () => {
       const store = new Store();
       store.addQuad('<a>', p, '<b>');
