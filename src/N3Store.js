@@ -481,20 +481,20 @@ export default class N3Store {
   // With `otherGraphs`, it only adds the quads that are not in those indexes.
   // Index keys are strings, so the ids are converted back to the numbers that
   // `addQuad` uses: forwarded views compare the ids they are notified with to
-  // their own numeric ids. Unary plus measured as fast as `Number()`.
+  // their own numeric ids.
   _addFromIndex(graphs, otherGraphs = null) {
     for (const graphKey in graphs) {
       const subjects = graphs[graphKey].subjects, other = otherGraphs && otherGraphs[graphKey];
       const otherSubjects = other ? other.subjects : null;
       for (const subjectKey in subjects) {
-        const subject = +subjectKey, predicates = subjects[subjectKey];
+        const subject = Number(subjectKey), predicates = subjects[subjectKey];
         const otherPredicates = otherSubjects && otherSubjects[subjectKey];
         for (const predicateKey in predicates) {
-          const predicate = +predicateKey, objects = predicates[predicateKey];
+          const predicate = Number(predicateKey), objects = predicates[predicateKey];
           const otherObjects = otherPredicates && otherPredicates[predicateKey];
           for (const objectKey in objects) {
             if (!otherObjects || !(objectKey in otherObjects))
-              this._addQuad(subject, predicate, +objectKey, +graphKey);
+              this._addQuad(subject, predicate, Number(objectKey), Number(graphKey));
           }
         }
       }
@@ -523,7 +523,7 @@ export default class N3Store {
                   [objects, otherObjects] = [otherObjects, objects];
                 for (const objectKey in objects) {
                   if (objectKey in otherObjects)
-                    this._addQuad(+subjectKey, +predicateKey, +objectKey, +graphKey);
+                    this._addQuad(Number(subjectKey), Number(predicateKey), Number(objectKey), Number(graphKey));
                 }
               }
             }
