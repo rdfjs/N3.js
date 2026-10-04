@@ -231,13 +231,12 @@ The parser can output a backwards chaining rule such as `_:q <= _:p.` in two way
 const parser = new N3.Parser({ isImpliedBy: true });
 ```
 
-By default, an empty formula `{}` is kept as a blank node graph term.
-The [N3 spec tests](https://w3c-cg.github.io/N3/tests/)
-(and the direction discussed in [w3c-cg/N3#185](https://github.com/w3c-cg/N3/issues/185))
-read it as the boolean literal `"true"^^xsd:boolean` instead;
-the `emptyFormulaAsTrue` flag enables that behavior:
+An empty formula `{}` is read as the boolean literal `"true"^^xsd:boolean`,
+following the [N3 spec tests](https://w3c-cg.github.io/N3/tests/)
+(and the direction discussed in [w3c-cg/N3#185](https://github.com/w3c-cg/N3/issues/185)).
+Setting the `emptyFormulaAsTrue` flag to `false` keeps it as a blank node graph term instead:
 ```JavaScript
-const parser = new N3.Parser({ format: 'text/n3', emptyFormulaAsTrue: true });
+const parser = new N3.Parser({ format: 'text/n3', emptyFormulaAsTrue: false });
 ```
 
 In N3 documents, the parser by default rescopes blank node labels
