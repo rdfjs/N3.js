@@ -766,7 +766,7 @@ export default class N3Lexer {
   _tokenizeString(input, callback) {
     this._startTokenization();
     this._input = this._readStartingBom(input);
-    this._tokenizeToEnd(callback, true);
+    this._tryTokenizeToEnd(callback, true);
   }
 
   // ### Strips off any starting UTF BOM mark.
