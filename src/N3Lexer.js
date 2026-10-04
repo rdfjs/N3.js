@@ -152,6 +152,10 @@ function hasIllegalIriChar(iri) {
   return false;
 }
 
+// IRIs are the most frequent token, and this linear sticky regular expression finds
+// those without escape sequences faster than a loop, especially before the loop is optimized
+const unescapedIri = /<([^\x00-\x20<>\\"\{\}\|\^\`]*)>[ \t]*/y;
+
 // Character classes of names, as bit flags for ASCII characters
 const PREFIX_START = 1, // PN_CHARS_BASE
     VARIABLE_START = 2,   // PN_CHARS_U
@@ -285,6 +289,10 @@ export default class N3Lexer {
     this.comments = !!options.comments;
     // Cache the last tested closing position of long literals
     this._literalClosingPos = 0;
+    // Results of the scanners
+    this._iriValue = '';
+    this._iriEnd = 0;
+    this._numberEnd = 0;
   }
 
   // ## Private methods
@@ -354,7 +362,7 @@ export default class N3Lexer {
       // Look for specific token types based on the first character
       const line = this._line, firstChar = input[pos];
       let type = '', value = '', prefix = '',
-          matchLength = 0,
+          matchLength = 0, tokenLength = 0, iri = null,
           finalLineLength = 0, inconclusive = false;
       switch (firstChar) {
       case '^':
@@ -381,10 +389,16 @@ export default class N3Lexer {
         }
         // Fall through in case the type is an IRI
       case '<':
-        // Try to find a full IRI
-        if ((type = this._scanIri(input, pos)) === null)
+        // Try to find a full IRI without escape sequences
+        unescapedIri.lastIndex = pos;
+        if (iri = unescapedIri.exec(input)) {
+          type = 'IRI', value = iri[1];
+          matchLength = iri[0].length, tokenLength = value.length + 2;
+        }
+        // Try to find a full IRI with escape sequences
+        else if ((type = this._scanIri(input, pos)) === null)
           return reportSyntaxError(this, input, pos);
-        if (type !== '')
+        else if (type !== '')
           value = this._iriValue, matchLength = this._iriEnd - pos;
         // Try to find a triple term
         else if (input.length - pos > 2 && input[pos + 1] === '<' && input[pos + 2] === '(')
@@ -671,6 +685,7 @@ export default class N3Lexer {
       }
 
       // Emit the parsed token
+      // The consumed length can include separator whitespace that the token's range leaves out
       const length = matchLength;
       const start = currentLineLength - (input.length - pos);
       let token;
@@ -682,7 +697,7 @@ export default class N3Lexer {
         callback(null, token);
       }
       else
-        token = emitToken(type, value, prefix, line, start, length);
+        token = emitToken(type, value, prefix, line, start, tokenLength || length);
       this.previousToken = token;
       this._previousMarker = type;
 
@@ -745,21 +760,12 @@ export default class N3Lexer {
     return verb;
   }
 
-  // ### `_scanIri` finds an IRI at the given position, returning 'IRI' and storing
-  // its value and end in `_iriValue` and `_iriEnd`, returning '' if there is no IRI,
+  // ### `_scanIri` finds an IRI with escape sequences at the given position, returning 'IRI'
+  // and storing its value and end in `_iriValue` and `_iriEnd`, returning '' if there is no IRI,
   // or returning null if the IRI is invalid
   _scanIri(input, pos) {
-    // Try to find a full IRI without escape sequences
+    // The IRI needs a check after unescaping
     let end = pos + 1, charCode = input.charCodeAt(end);
-    while (end < input.length && !isIllegalIriChar(charCode))
-      charCode = input.charCodeAt(++end);
-    if (charCode === GT) {
-      this._iriValue = input.slice(pos + 1, end);
-      this._iriEnd = end + 1;
-      return 'IRI';
-    }
-
-    // Try to find a full IRI with escape sequences, which needs a check after unescaping
     while (end < input.length && charCode !== SPACE && charCode !== LT && charCode !== GT &&
            charCode !== LBRACE && charCode !== RBRACE) {
       if (charCode === BACKSLASH) {
