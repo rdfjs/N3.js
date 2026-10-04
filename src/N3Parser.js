@@ -44,8 +44,8 @@ export default class N3Parser {
     // (enabled unless explicitly disabled)
     this._implicitEmptyPrefix = options.implicitEmptyPrefix !== false;
     // Whether an empty formula is read as the boolean literal true,
-    // as in the N3 spec tests (opt-in until the next major version)
-    this._emptyFormulaAsTrue = !!options.emptyFormulaAsTrue;
+    // as in the N3 spec tests (enabled unless explicitly disabled)
+    this._emptyFormulaAsTrue = options.emptyFormulaAsTrue !== false;
     // Disable relative IRIs in N-Triples or N-Quads mode
     if (isLineMode)
       this._resolveRelativeIRI = iri => { return null; };
@@ -975,7 +975,7 @@ export default class N3Parser {
     // Restore the parent context containing this formula
     this._restoreContext('formula', token);
 
-    // When the emptyFormulaAsTrue option is set, an empty formula
+    // Unless the emptyFormulaAsTrue option is false, an empty formula
     // is read as the boolean literal true, following the N3 spec tests
     // and the direction discussed in https://github.com/w3c-cg/N3/issues/185
     if (empty && this._emptyFormulaAsTrue) {
