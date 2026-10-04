@@ -2,7 +2,6 @@
 import N3Lexer from './N3Lexer';
 import N3DataFactory from './N3DataFactory';
 import namespaces from './IRIs';
-import { checkDirectiveName } from './Util';
 
 let blankNodePrefix = 0;
 
@@ -47,23 +46,15 @@ export default class N3Parser {
       this._resolveRelativeIRI = iri => { return null; };
     this._blankNodePrefix = typeof options.blankNodePrefix !== 'string' ? '' :
                               options.blankNodePrefix.replace(/^(?!_:)/, '_:');
-    // Map the token types of additional directives to their names and number of arguments
+    // Map the token types of additional directives (@name and NAME) to their names
     this._directives = null;
-    let directiveNames;
     if (options.directives) {
-      directiveNames = Object.keys(options.directives);
       this._directives = Object.create(null);
-      for (const name of directiveNames) {
-        checkDirectiveName(name);
-        const argumentCount = options.directives[name];
-        if (!Number.isInteger(argumentCount) || argumentCount < 0)
-          throw new Error(`Invalid number of arguments for directive "${name}": ${argumentCount}`);
-        const directive = { name, arguments: argumentCount };
-        this._directives[`@${name.toLowerCase()}`] = this._directives[name.toUpperCase()] = directive;
-      }
+      for (const name of options.directives)
+        this._directives[`@${name.toLowerCase()}`] = this._directives[name.toUpperCase()] = name;
     }
     this._lexer = options.lexer || new N3Lexer({
-      lineMode: isLineMode, n3: isN3, isImpliedBy: this._isImpliedBy, directives: directiveNames,
+      lineMode: isLineMode, n3: isN3, isImpliedBy: this._isImpliedBy, directives: options.directives,
     });
     // Disable explicit quantifiers by default
     this._explicitQuantifiers = !!options.explicitQuantifiers;
@@ -243,40 +234,13 @@ export default class N3Parser {
         return this._readNamedGraphLabel;
     // Otherwise, the next token must be a subject, unless it is an additional directive
     default:
-      if (this._directives !== null && token.type in this._directives)
-        return this._readDirective(token);
+      if (this._directives !== null && token.type in this._directives && this._graph === null) {
+        this._sparqlStyle = token.type[0] !== '@';
+        this._directiveCallback(this._directives[token.type]);
+        return this._readDeclarationPunctuation;
+      }
       return this._readSubject(token);
     }
-  }
-
-  // ### `_readDirective` starts reading an additional directive
-  _readDirective(token) {
-    if (this._graph !== null)
-      return this._error(`Unexpected ${token.type} directive inside a graph`, token);
-    this._directive = this._directives[token.type];
-    this._directiveArguments = [];
-    this._sparqlStyle = token.type[0] !== '@';
-    return this._readDirectiveArgument(token, true);
-  }
-
-  // ### `_readDirectiveArgument` reads the arguments of an additional directive
-  _readDirectiveArgument(token, first) {
-    const directive = this._directive, args = this._directiveArguments;
-    if (first !== true) {
-      let argument;
-      if (token.type === 'literal')
-        // Numbers and booleans carry their datatype in the prefix
-        argument = token.prefix ? this._factory.literal(token.value, this._factory.namedNode(token.prefix)) :
-                                  this._factory.literal(token.value);
-      else if ((argument = this._readEntity(token)) === undefined)
-        return;
-      args.push(argument);
-    }
-    if (args.length < directive.arguments)
-      return this._readDirectiveArgument;
-    this._directive = this._directiveArguments = null;
-    this._directiveCallback(directive.name, args);
-    return this._readDeclarationPunctuation;
   }
 
   // ### `_readInFormulaContext` reads a token at the statement level of a formula

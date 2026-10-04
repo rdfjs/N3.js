@@ -5,12 +5,12 @@ import { EventEmitter } from 'events';
 // Parses the input, recording quads and directives in the order they are emitted
 function parseEvents(input, options) {
   const events = [], stream = new EventEmitter();
-  new Parser({ directives: { message: 0 }, ...options }).parse(stream, {
+  new Parser({ directives: ['message'], ...options }).parse(stream, {
     onQuad: (error, quad) => {
       if (error) throw error;
       if (quad) events.push(`quad ${quad.object.value}`);
     },
-    onDirective: (name, args) => events.push(`${name}(${args.map(arg => arg.value).join(', ')})`),
+    onDirective: name => events.push(`${name}()`),
   });
   stream.emit('data', input);
   stream.emit('end');
@@ -21,7 +21,7 @@ function parseEvents(input, options) {
 function parseChunks(chunks, options) {
   return new Promise((resolve, reject) => {
     const events = [], input = new EventEmitter();
-    new Parser({ directives: { message: 0 }, ...options }).parse(input, {
+    new Parser({ directives: ['message'], ...options }).parse(input, {
       onQuad: (error, quad) => {
         if (error) return reject(error);
         if (quad) events.push(`quad ${quad.object.value}`);
@@ -37,7 +37,7 @@ function parseChunks(chunks, options) {
 // Parses the input and returns the error message
 function parseError(input, options) {
   try {
-    new Parser({ directives: { message: 0 }, ...options }).parse(input);
+    new Parser({ directives: ['message'], ...options }).parse(input);
   }
   catch (error) {
     return error.message;
@@ -80,7 +80,7 @@ describe('Parser directives', () => {
 
     it('does not accept directives that were not registered', () => {
       expect(parseError('@other .')).toBe('Expected entity but got @other on line 1.');
-      expect(parseError('@message .', { directives: {} })).toBe('Expected entity but got @message on line 1.');
+      expect(parseError('@message .', { directives: [] })).toBe('Expected entity but got @message on line 1.');
       expect(parseError('@message .', { directives: undefined })).toBe('Expected entity but got @message on line 1.');
     });
 
@@ -90,49 +90,11 @@ describe('Parser directives', () => {
 
     it('keeps the built-in directives', () => {
       const versions = [];
-      const quads = new Parser({ directives: { message: 0 } }).parse(
+      const quads = new Parser({ directives: ['message'] }).parse(
         '@prefix ex: <a:>.\nVERSION "1.2"\nex:s ex:p ex:o.\n@message .',
         { onVersion: version => versions.push(version) });
       expect(versions).toEqual(['1.2']);
       expect(quads).toHaveLength(1);
-    });
-  });
-
-  describe('with arguments', () => {
-    const options = { directives: { source: 2 } };
-
-    it('passes IRIs, prefixed names, blank nodes and literals as terms', () => {
-      const directives = [];
-      new Parser(options).parse(
-        '@prefix ex: <http://ex.org/>.\n@source ex:a <http://ex.org/b> .\nSOURCE _:b "c"\n',
-        { onDirective: (name, args) => directives.push([name, args.map(arg => `${arg.termType} ${arg.value}`)]) });
-      expect(directives).toEqual([
-        ['source', ['NamedNode http://ex.org/a', 'NamedNode http://ex.org/b']],
-        ['source', [expect.stringMatching(/^BlankNode .*b$/), 'Literal c']],
-      ]);
-    });
-
-    it('passes numbers and booleans as typed literals', () => {
-      const directives = [];
-      new Parser(options).parse('@source 42 true .\nSOURCE 1.5 "x"\n',
-        { onDirective: (name, args) => directives.push(args.map(arg => `${arg.value} ${arg.datatype.value}`)) });
-      const xsd = 'http://www.w3.org/2001/XMLSchema#';
-      expect(directives).toEqual([
-        [`42 ${xsd}integer`, `true ${xsd}boolean`],
-        [`1.5 ${xsd}decimal`, `x ${xsd}string`],
-      ]);
-    });
-
-    it('resolves relative IRIs against the base IRI', () => {
-      const directives = [];
-      new Parser({ ...options, baseIRI: 'http://ex.org/' }).parse('@source <a> <b> .',
-        { onDirective: (name, args) => directives.push(args.map(arg => arg.value)) });
-      expect(directives).toEqual([['http://ex.org/a', 'http://ex.org/b']]);
-    });
-
-    it('reports invalid arguments', () => {
-      expect(parseError('@source <a:a> .', options)).toBe('Expected entity but got . on line 1.');
-      expect(parseError('@source ex:a <a:b> .', options)).toBe('Undefined prefix "ex:" on line 1.');
     });
   });
 
@@ -144,9 +106,9 @@ describe('Parser directives', () => {
 
     it('does not accept directives inside a graph', () => {
       expect(parseError('<a:g> { <a:s> <a:p> <a:1>. MESSAGE }'))
-        .toBe('Unexpected MESSAGE directive inside a graph on line 1.');
+        .toBe('Expected entity but got MESSAGE on line 1.');
       expect(parseError('<a:g> { <a:s> <a:p> <a:1>. @message . }'))
-        .toBe('Unexpected @message directive inside a graph on line 1.');
+        .toBe('Expected entity but got @message on line 1.');
     });
   });
 
@@ -182,14 +144,14 @@ describe('Parser directives', () => {
     it('emits directives from a StreamParser', async () => {
       const events = await new Promise((resolve, reject) => {
         const parsed = [];
-        const parser = new StreamParser({ directives: { message: 0 } });
+        const parser = new StreamParser({ directives: ['message'] });
         parser.on('data', quad => parsed.push(`quad ${quad.object.value}`));
-        parser.on('directive', (name, args) => parsed.push(`${name}(${args.length})`));
+        parser.on('directive', name => parsed.push(`${name}()`));
         parser.on('error', reject);
         parser.on('end', () => resolve(parsed));
         Readable.from(['<a:s> <a:p> <a:1>.\nMESSAGE\n<a:s> <a:p> <a:2>.\n']).pipe(parser);
       });
-      expect(events).toEqual(['quad a:1', 'message(0)', 'quad a:2']);
+      expect(events).toEqual(['quad a:1', 'message()', 'quad a:2']);
     });
   });
 
@@ -197,16 +159,11 @@ describe('Parser directives', () => {
     it.each(['prefix', 'BASE', 'version', 'graph', 'forSome', 'forAll', 'IRI', 'a', 'True', 'false',
       'has', 'is', 'of', 'id', 'mes-sage', 'm1', ''])(
       'rejects the name "%s"', name => {
-        expect(() => new Parser({ directives: { [name]: 0 } })).toThrow(`Invalid directive name: "${name}"`);
+        expect(() => new Parser({ directives: [name] })).toThrow(`Invalid directive name: "${name}"`);
       });
 
     it.each(['a|b', 'a', 'TRUE'])('rejects the name "%s" in the lexer', name => {
       expect(() => new Lexer({ directives: [name] })).toThrow(`Invalid directive name: "${name}"`);
-    });
-
-    it.each([-1, 1.5, '1', null, undefined, NaN])('rejects %p as a number of arguments', count => {
-      expect(() => new Parser({ directives: { message: count } }))
-        .toThrow(`Invalid number of arguments for directive "message": ${count}`);
     });
 
     it('lexes registered names as keywords', () => {

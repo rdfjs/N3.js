@@ -1,7 +1,6 @@
 // **N3Lexer** tokenizes N3 documents.
 import { Buffer } from 'buffer';
 import namespaces from './IRIs';
-import { checkDirectiveName } from './Util';
 
 const { xsd } = namespaces;
 const SPACE = 0x20, TAB = 0x09, LF = 0x0A, CR = 0x0D, HASH = 0x23;
@@ -60,6 +59,9 @@ function isSeparatorCode(code) {
   return code === SPACE || code === TAB || code === LF || code === CR || code === HASH;
 }
 
+// Words with a fixed meaning in the grammar, which cannot name an additional directive
+const reservedWords = /^(?:prefix|base|version|graph|forsome|forall|iri|a|true|false|has|is|of|id)$/i;
+
 // ## Constructor
 export default class N3Lexer {
   constructor(options) {
@@ -106,8 +108,10 @@ export default class N3Lexer {
     // (the @-form of a directive is always tokenized as an @-keyword)
     this._directive = null;
     if (options.directives && options.directives.length !== 0) {
-      for (const name of options.directives)
-        checkDirectiveName(name);
+      for (const name of options.directives) {
+        if (!/^[a-z]+$/i.test(name) || reservedWords.test(name))
+          throw new Error(`Invalid directive name: "${name}"`);
+      }
       this._directive = new RegExp(`(?:${options.directives.join('|')})(?=[\\s#<])`, 'iy');
     }
     // Don't output comment tokens by default

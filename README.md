@@ -158,22 +158,17 @@ const quads = parser.parse('<a> <b> "hello"@en.', {
 });
 ```
 
-Packages that extend a format with their own directives can register them with the `directives` option,
-which maps each directive name to its number of arguments.
-A registered directive is accepted between statements (outside graph blocks and formulas)
-in its `@name … .` form in Turtle, TriG and N3, and in its `NAME …` form (case-insensitive) in all formats,
-including N-Triples and N-Quads.
-`onDirective(name, args)` receives each directive in order with the quads,
-with its arguments (IRIs, prefixed names, blank nodes, strings, numbers, or booleans) as RDF/JS terms.
-`N3.StreamParser` emits them as `directive` events.
-Directive names consist of letters only, and cannot be words that already have a meaning in the grammar,
-such as `prefix`, `graph`, `a`, or `true`.
+Packages that extend a format with their own directives can register their names with the `directives` option.
+Between statements (outside graph blocks and formulas), a registered directive is accepted
+as `@name .` in Turtle, TriG and N3, and as `NAME` (case-insensitive) in all formats, including N-Triples and N-Quads.
+`onDirective(name)` receives each one in order with the quads, and `N3.StreamParser` emits them as `directive` events.
+Names consist of letters only, and cannot be words that already have a meaning in the grammar, such as `prefix` or `a`.
 
 ```JavaScript
-const parser = new N3.Parser({ format: 'N-Quads', directives: { message: 0 } });
+const parser = new N3.Parser({ format: 'N-Quads', directives: ['message'] });
 parser.parse('<a> <b> <c> .\nMESSAGE\n<a> <b> <d> .\n', {
   onQuad: (error, quad) => { /* … */ },
-  onDirective: (name, args) => { console.log('end of a message'); },
+  onDirective: name => { console.log('end of a message'); },
 });
 ```
 

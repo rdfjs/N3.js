@@ -17,7 +17,7 @@ export default class N3StreamParser extends Transform {
         // Emit prefixes through the `prefix` event
       onPrefix: (prefix, uri) => { this.emit('prefix', prefix, uri); },
         // Emit additional directives through the `directive` event
-      onDirective: (name, args) => { this.emit('directive', name, args); },
+      onDirective: name => { this.emit('directive', name); },
     };
 
     if (options && options.comments)
