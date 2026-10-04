@@ -1679,8 +1679,10 @@ export default class N3Parser {
       const lexer = this._lexer;
       // Without comment or token callbacks, nothing observes a token before the
       // whole document has lexed, so tokens can be parsed as they are lexed
-      // instead of being collected into an array first
-      if (readToken === readGrammarToken && typeof lexer._tokenizeString === 'function')
+      // instead of being collected into an array first. A lexer that replaces
+      // the built-in tokenize keeps going through its own implementation.
+      if (!onComment && !onToken && !onTokenEnd &&
+          lexer.tokenize === N3Lexer.prototype.tokenize && typeof lexer._tokenizeString === 'function')
         lexer._tokenizeString(input, (e, token) => {
           if (e) this._callback(e), this._callback = noop;
           else if (this._readCallback) readToken(token);

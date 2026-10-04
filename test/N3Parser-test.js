@@ -5008,6 +5008,26 @@ describe('Parser', () => {
         .toThrow('Unexpected ""unterminated" on line 2.');
     });
 
+    it('parses synchronously through a lexer that overrides tokenize', () => {
+      class UppercaseLexer extends Lexer {
+        tokenize(input, callback) {
+          return super.tokenize(input.replace('<o>', '<O>'), callback);
+        }
+      }
+      const quads = new Parser({ lexer: new UppercaseLexer() }).parse('<s> <p> <o>.');
+      expect(quads.map(q => q.object.value)).toEqual(['O']);
+    });
+
+    it('lexes and parses together again after a parse with onComment', () => {
+      const parser = new Parser();
+      const comments = [];
+      parser.parse('<s> <p> <o>. # c', { onComment: c => comments.push(c) });
+      expect(comments).toEqual([' c']);
+      const tokenizeString = jest.spyOn(parser._lexer, '_tokenizeString');
+      expect(parser.parse('<s> <p> <o>. # c')).toHaveLength(1);
+      expect(tokenizeString).toHaveBeenCalledTimes(1);
+    });
+
     it('parses synchronously with a lexer that only provides tokenize', () => {
       const lexer = new Lexer();
       lexer._tokenizeString = undefined;
