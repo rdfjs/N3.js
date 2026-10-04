@@ -2545,6 +2545,21 @@ describe('Store', () => {
         await expect(store.import(stream)).resolves.toBe(store);
       });
 
+      it('should resolve when an awaited stream is destroyed without an error before it ends', async () => {
+        const imported = store.import(stream);
+        const completion = imported.then(result => result);
+        stream.destroy();
+        await expect(completion).resolves.toBe(store);
+      });
+
+      it('should reject when an awaited stream is destroyed with an error before it ends', async () => {
+        const error = new Error('Test error');
+        const imported = store.import(stream);
+        const completion = imported.then(result => result);
+        stream.destroy(error);
+        await expect(completion).rejects.toBe(error);
+      });
+
       it('should resolve when importing a source that is no longer readable', async () => {
         const source = { readable: false, on: () => {} };
         await expect(store.import(source)).resolves.toBe(store);

@@ -492,10 +492,12 @@ export default class N3Store {
         // A stream that has already ended resolves immediately
         else if (stream.readableEnded || stream.destroyed || stream.readable === false)
           resolve(store);
-        // An active stream resolves or rejects upon completion
+        // An active stream resolves or rejects upon completion,
+        // including when it is destroyed before it ends
         else {
           stream.once('end', () => resolve(store));
           stream.once('error', reject);
+          stream.once('close', () => stream.errored ? reject(stream.errored) : resolve(store));
         }
       }));
     }
