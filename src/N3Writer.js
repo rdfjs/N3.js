@@ -58,6 +58,8 @@ export default class N3Writer {
     if (!(/triple|quad/i).test(options.format)) {
       this._lineMode = false;
       this._graph = DEFAULTGRAPH;
+      if (options.version)
+        this._write(`@version "${options.version}".\n`);
       this._prefixIRIs = Object.create(null);
       if (options.baseIRI) {
         this._baseIri = new BaseIRI(options.baseIRI);
@@ -69,6 +71,8 @@ export default class N3Writer {
     else {
       this._lineMode = true;
       this._writeQuad = this._writeQuadLine;
+      if (options.version)
+        this._write(`VERSION "${options.version}"\n`);
     }
   }
 
@@ -80,8 +84,19 @@ export default class N3Writer {
   }
 
   // ### `_write` writes the argument to the output stream
+  // (protected: subclasses may use it to write their own syntax)
   _write(string, callback) {
     this._outputStream.write(string, 'utf8', callback);
+  }
+
+  // ### `_endStatement` finishes a pending statement and closes an open graph block
+  // (protected: subclasses may call it before writing their own directives)
+  _endStatement() {
+    if (this._subject !== null) {
+      this._write(this._inDefaultGraph ? '.\n' : '\n}\n');
+      this._subject = null;
+      this._graph = DEFAULTGRAPH;
+    }
   }
 
   // ### `_writeQuad` writes the quad to the output stream
@@ -310,10 +325,7 @@ export default class N3Writer {
         iri = iri.value;
       hasPrefixes = true;
       // Finish a possible pending quad
-      if (this._subject !== null) {
-        this._write(this._inDefaultGraph ? '.\n' : '\n}\n');
-        this._subject = null, this._graph = '';
-      }
+      this._endStatement();
       // Store and write the prefix
       this._prefixIRIs[iri] = (prefix += ':');
       this._write(`@prefix ${prefix} <${iri}>.\n`);
@@ -389,10 +401,7 @@ export default class N3Writer {
   // ### `end` signals the end of the output stream
   end(done) {
     // Finish a possible pending quad
-    if (this._subject !== null) {
-      this._write(this._inDefaultGraph ? '.\n' : '\n}\n');
-      this._subject = null;
-    }
+    this._endStatement();
     // Disallow further writing
     this._write = this._blockedWrite;
 
