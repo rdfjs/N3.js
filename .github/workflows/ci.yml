@@ -69,7 +69,7 @@ jobs:
       fail-fast: false
       matrix:
         node-version: [18.x, 20.x, 22.x, 24.x, 26.x]
-        spec: [1-1-turtle, 1-1-ntriples, 1-1-nquads, 1-1-trig, 1-2-turtle, 1-2-ntriples, 1-2-nquads, 1-2-trig, 1-2-turtle-eval, 1-2-trig-eval, n3-parser, n3-extended]
+        spec: [1-1-turtle, 1-1-ntriples, 1-1-nquads, 1-1-trig, 1-2-turtle, 1-2-ntriples, 1-2-nquads, 1-2-trig, 1-2-turtle-eval, 1-2-trig-eval, n3-parser, n3-extended, writer]
     needs: build
     steps:
       - uses: actions/checkout@v7
