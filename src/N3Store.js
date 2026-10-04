@@ -118,11 +118,14 @@ function difference(s1, s2, depth = 4) {
 
 // Returns the key of a term in the entity index.
 // Keys mark the term type by their first character, so the IRI of a named node
-// that is empty or starts with such a marker (as relative IRIs can) is wrapped in < and >.
-const markedIRI = /^(?:$|[?_"[.<])/;
+// that starts with such a marker (as relative IRIs can) is wrapped in < and >.
+const markedIRI = /^[?_"[.<]/;
 function entityKey(term) {
+  // Strings are internal ids already
+  if (typeof term === 'string')
+    return term;
+  // IDs of IRIs usually start with a lowercase scheme letter, which never marks a term type
   const id = termToId(term);
-  // IRIs usually start with a lowercase scheme letter, which never marks a term type
   return id.charCodeAt(0) >= 0x61 || !term || term.termType !== 'NamedNode' || !markedIRI.test(term.value) ?
     id : `<${term.value}>`;
 }
