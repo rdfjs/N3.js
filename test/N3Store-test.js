@@ -3736,6 +3736,20 @@ describe('Store', () => {
           expect(result.size).toBe(count(result));
       });
 
+      it('should not count stores to compare their sizes', () => {
+        const small = new Store([q[0]]), other = new Store([q[1], q[2], q[3]]);
+        other._size = null;
+        const countQuads = jest.spyOn(other, 'countQuads');
+        expect(small.contains(other)).toBe(false);
+        expect(small.intersection(other).size).toBe(0);
+        expect(countQuads).not.toHaveBeenCalled();
+        const stale = new Store([q[1], q[2]]);
+        stale._size = null;
+        const countStale = jest.spyOn(stale, 'countQuads');
+        expect(stale.contains(new Store([q[0]]))).toBe(false);
+        expect(countStale).not.toHaveBeenCalled();
+      });
+
       it('should check a larger dataset of another kind quad by quad', () => {
         const dataset = { size: 2, every: jest.fn(callback => [q[0], q[1]].every(callback)) };
         expect(new Store([q[0]]).contains(dataset)).toBe(false);
