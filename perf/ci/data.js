@@ -37,13 +37,22 @@ function objectNT(r, i) {
   return literalNT(r, i);
 }
 
-function ntriples(count) {
-  const r = rng(1), lines = [];
-  for (let i = 0; i < count; i++) {
-    const s = i % 7 === 0 ? `_:b${i % 500}` : `<${EX}s${i >> 3}>`;
-    lines.push(`${s} <${EX}p${i % 20}> ${objectNT(r, i)} .`);
+// Yields the lines of ntriples(count) in chunks of up to 1000 lines,
+// so large documents can be streamed without holding them in memory
+function* ntriplesChunks(count) {
+  const r = rng(1);
+  for (let start = 0; start < count; start += 1000) {
+    const lines = [];
+    for (let i = start; i < Math.min(start + 1000, count); i++) {
+      const s = i % 7 === 0 ? `_:b${i % 500}` : `<${EX}s${i >> 3}>`;
+      lines.push(`${s} <${EX}p${i % 20}> ${objectNT(r, i)} .\n`);
+    }
+    yield lines.join('');
   }
-  return `${lines.join('\n')}\n`;
+}
+
+function ntriples(count) {
+  return [...ntriplesChunks(count)].join('');
 }
 
 function nquads(count) {
@@ -117,4 +126,4 @@ function turtleStar(subjects) {
   return `${out.join('\n')}\n`;
 }
 
-module.exports = { ntriples, nquads, turtle, trig, n3, turtleStar, EX };
+module.exports = { ntriples, ntriplesChunks, nquads, turtle, trig, n3, turtleStar, EX };

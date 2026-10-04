@@ -146,6 +146,18 @@ describe('BaseIRI', () => {
 
     relativizes('an IRI containing ../ in its fragment', 'http://example.org/foo/',
       'http://example.org/foo/baz#bar/../baz', 'baz#bar/../baz');
+
+    relativizes('an IRI against a base IRI containing [ and ]', 'http://example.org/a[b]/',
+      'http://example.org/a[b]/c', 'c');
+
+    relativizes('an IRI against a base IRI containing { and }', 'http://example.org/a{1}/',
+      'http://example.org/a{1}/c', 'c');
+
+    relativizes('an IRI against a base IRI containing | and ^', 'http://example.org/a|^b/',
+      'http://example.org/a|^b/c', 'c');
+
+    relativizes('an IRI that matches a base IRI only as a pattern', 'http://example.org/a{1}/',
+      'http://example.org/a/c');
   });
 });
 

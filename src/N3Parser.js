@@ -54,6 +54,10 @@ export default class N3Parser {
     // Disable parsing of unsupported versions by default
     this._parseUnsupportedVersions = !!options.parseUnsupportedVersions;
     this._version = options.version;
+    // Maximum nesting depth of triple terms (default 1024; Infinity disables the limit)
+    const maxTripleTermDepth = options.maxTripleTermDepth;
+    this._maxTripleTermDepth = maxTripleTermDepth === Infinity ||
+      Number.isInteger(maxTripleTermDepth) && maxTripleTermDepth >= 0 ? maxTripleTermDepth : 1024;
   }
 
   // ## Static class methods
@@ -82,10 +86,28 @@ export default class N3Parser {
       const path = queryPos < 0 ? baseIRI : baseIRI.substr(0, queryPos);
       this._basePath   = baseIRI.indexOf('/') < 0 ? baseIRI :
                          path.substr(0, path.lastIndexOf('/') + 1);
-      baseIRI = baseIRI.match(/^(?:([a-z][a-z0-9+.-]*:))?(?:\/\/[^\/]*)?/i);
+      const base = baseIRI;
+      baseIRI = baseIRI.match(/^(?:([a-z][a-z0-9+.-]*:))?(\/\/[^\/?#]*)?/i);
       this._baseRoot   = baseIRI[0];
       this._baseScheme = baseIRI[1];
+      // If the base has an authority but an empty path,
+      // relative IRIs merge under the path '/' (RFC 3986 §5.2.3)
+      if (baseIRI[2] !== undefined && (base.length === this._baseRoot.length || base[this._baseRoot.length] === '?'))
+        this._basePath = `${this._baseRoot}/`;
     }
+  }
+
+  // ### `_enterTripleTerm` stores the current parsing context when entering a triple term,
+  // failing if triple terms nest deeper than the maximum depth
+  _enterTripleTerm(type, subject, predicate, token) {
+    if (this._tripleTermDepth >= this._maxTripleTermDepth) {
+      this._error(`Triple terms nested deeper than ${this._maxTripleTermDepth} level${this._maxTripleTermDepth === 1 ? '' : 's'}`, token);
+      return false;
+    }
+    this._tripleTermDepth++;
+    this._saveContext(type, this._graph, subject, predicate, null);
+    this._graph = null;
+    return true;
   }
 
   // ### `_saveContext` stores the current parsing context
@@ -102,14 +124,15 @@ export default class N3Parser {
       inverse: this._inversePredicate,
       expectOf: this._expectOf,
       blankPrefix: this._prefixes._,
-      quantified: this._quantified,
+      prefixChanges: this._prefixChanges,
+      quantifiedChanges: this._quantifiedChanges,
       emptyFormula: this._emptyFormula,
     };
-    // Prefix and base declarations are scoped to their formula
+    // Prefix and base declarations are scoped to their formula,
+    // so record prefix changes to undo them when the formula ends
     if (type === 'formula') {
-      context.prefixes = this._prefixes;
       context.base = [this._base, this._basePath, this._baseRoot, this._baseScheme];
-      this._prefixes = Object.create(this._prefixes);
+      this._prefixChanges = [];
     }
     this._contextStack.push(context);
     // Every new scope resets the predicate direction
@@ -122,7 +145,7 @@ export default class N3Parser {
       // Label the scope with the enclosing formula's blank node
       // (using a dot as separator, as a blank node label cannot start with it)
       this._prefixes._ = (this._graph ? `${this._graph.value}.` : '.');
-      this._quantified = Object.create(this._quantified);
+      this._quantifiedChanges = [];
     }
     // A formula starts empty and must not inherit its parent's subject
     if (type === 'formula') {
@@ -149,13 +172,17 @@ export default class N3Parser {
     if (this._n3Mode) {
       this._inversePredicate = context.inverse;
       this._expectOf = context.expectOf;
-      if (type === 'formula') {
-        this._prefixes = context.prefixes;
+      if (type === 'formula')
         [this._base, this._basePath, this._baseRoot, this._baseScheme] = context.base;
+      if (this._prefixChanges !== context.prefixChanges) {
+        undoChanges(this._prefixes, this._prefixChanges);
+        this._prefixChanges = context.prefixChanges;
       }
-      else
-        this._prefixes._ = context.blankPrefix;
-      this._quantified = context.quantified;
+      this._prefixes._ = context.blankPrefix;
+      if (this._quantifiedChanges !== context.quantifiedChanges) {
+        undoChanges(this._quantified, this._quantifiedChanges);
+        this._quantifiedChanges = context.quantifiedChanges;
+      }
       this._emptyFormula = context.emptyFormula;
     }
   }
@@ -333,13 +360,9 @@ export default class N3Parser {
     case '<<(':
       if (!this._n3Mode)
         return this._error('Disallowed triple term as subject', token);
-      this._saveContext('<<(', this._graph, null, null, null);
-      this._graph = null;
-      return this._readSubject;
+      return this._enterTripleTerm('<<(', null, null, token) && this._readSubject;
     case '<<':
-      this._saveContext('<<', this._graph, null, null, null);
-      this._graph = null;
-      return this._readSubject;
+      return this._enterTripleTerm('<<', null, null, token) && this._readSubject;
     default:
       // Read the subject entity
       if ((this._subject = this._readEntity(token)) === undefined)
@@ -484,13 +507,9 @@ export default class N3Parser {
                         this._graph = this._factory.blankNode());
       return this._readInFormulaContext;
     case '<<(':
-      this._saveContext('<<(', this._graph, this._subject, this._predicate, null);
-      this._graph = null;
-      return this._readSubject;
+      return this._enterTripleTerm('<<(', this._subject, this._predicate, token) && this._readSubject;
     case '<<':
-      this._saveContext('<<', this._graph, this._subject, this._predicate, null);
-      this._graph = null;
-      return this._readSubject;
+      return this._enterTripleTerm('<<', this._subject, this._predicate, token) && this._readSubject;
     default:
       // Read the object entity
       if ((this._object = this._readEntity(token)) === undefined)
@@ -710,13 +729,9 @@ export default class N3Parser {
       this._subject = null;
       return this._readInFormulaContext;
     case '<<(':
-      this._saveContext('<<(', this._graph, null, null, null);
-      this._graph = null;
-      next = this._readSubject;
-      break;
     case '<<':
-      this._saveContext('<<', this._graph, null, null, null);
-      this._graph = null;
+      if (!this._enterTripleTerm(token.type, null, null, token))
+        return;
       next = this._readSubject;
       break;
     default:
@@ -1057,6 +1072,8 @@ export default class N3Parser {
     if (token.type !== 'IRI')
       return this._error(`Expected IRI to follow prefix "${this._prefix}:"`, token);
     const prefixNode = this._readEntity(token);
+    if (this._prefixChanges !== null)
+      this._prefixChanges.push(this._prefix, this._prefixes[this._prefix]);
     this._prefixes[this._prefix] = prefixNode.value;
     this._prefixCallback(this._prefix, prefixNode);
     return this._readDeclarationPunctuation;
@@ -1135,8 +1152,11 @@ export default class N3Parser {
       return this._error(`Unexpected ${token.type}`, token);
     }
     // Without explicit quantifiers, map entities to a quantified entity
-    if (!this._explicitQuantifiers)
+    if (!this._explicitQuantifiers) {
+      if (this._quantifiedChanges !== null)
+        this._quantifiedChanges.push(entity.id, this._quantified[entity.id]);
       this._quantified[entity.id] = this._factory[this._quantifier](this._factory.blankNode().value);
+    }
     // With explicit quantifiers, output the reified quantifier
     else {
       // If this is the first item, start a new quantifier list
@@ -1261,6 +1281,7 @@ export default class N3Parser {
     const quad = this._createQuad(this._subject, this._predicate, this._object,
         this._graph, this._inversePredicate);
     this._restoreContext('<<(', token);
+    this._tripleTermDepth--;
 
     // If we're in a list, continue processing that list
     const stack = this._contextStack, parent = stack.length && stack[stack.length - 1];
@@ -1296,6 +1317,7 @@ export default class N3Parser {
     this._tripleTerm = null;
     const reifier = this._readTripleTerm();
     this._restoreContext('<<', token);
+    this._tripleTermDepth--;
 
     // // If we're in a list, continue processing that list
     const stack = this._contextStack, parent = stack.length && stack[stack.length - 1];
@@ -1529,8 +1551,13 @@ export default class N3Parser {
     }
     // Resolve root-relative IRIs at the root of the base IRI
     case '/':
-      // Resolve scheme-relative IRIs to the scheme
-      return (iri[1] === '/' ? this._baseScheme : this._baseRoot) + this._removeDotSegments(iri);
+      // Resolve scheme-relative IRIs to the scheme,
+      // keeping the reference's authority intact (RFC 3986 §5.2.4)
+      if (iri[1] !== '/')
+        return this._baseRoot + this._removeDotSegments(iri);
+      // Without a base scheme, a leading ':' marks where the authority starts
+      return this._baseScheme ? this._removeDotSegments(this._baseScheme + iri) :
+        this._removeDotSegments(`:${iri}`).substr(1);
     // Resolve all other IRIs at the base IRI's path
     default:
       // Relative IRIs cannot contain a colon in the first path segment
@@ -1555,8 +1582,8 @@ export default class N3Parser {
         if (pathStart < 0) {
           // Skip two slashes before the authority
           if (iri[++i] === '/' && iri[++i] === '/')
-            // Skip to slash after the authority
-            while ((pathStart = i + 1) < length && iri[pathStart] !== '/')
+            // Skip to the end of the authority
+            while ((pathStart = i + 1) < length && iri[pathStart] !== '/' && iri[pathStart] !== '?' && iri[pathStart] !== '#')
               i = pathStart;
         }
         break;
@@ -1637,7 +1664,11 @@ export default class N3Parser {
     this._inversePredicate = false;
     this._expectOf = false;
     this._quantified = Object.create(null);
+    // Changes to prefixes and quantifiers in nested scopes, to undo when leaving them
+    this._prefixChanges = null;
+    this._quantifiedChanges = null;
     this._emptyFormula = false;
+    this._tripleTermDepth = 0;
 
     let readToken = token => {
       return this._readCallback = this._readCallback(token);
@@ -1696,6 +1727,16 @@ export default class N3Parser {
     // Parse asynchronously otherwise, executing the read callback when a token arrives
     this._callback = onQuad;
     this._lexer.tokenize(input, processNextToken);
+  }
+}
+
+// ### `undoChanges` restores the entries of a map from a list of key and previous value pairs
+function undoChanges(map, changes) {
+  for (let i = changes.length - 2; i >= 0; i -= 2) {
+    if (changes[i + 1] === undefined)
+      delete map[changes[i]];
+    else
+      map[changes[i]] = changes[i + 1];
   }
 }
 
