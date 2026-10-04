@@ -2507,6 +2507,19 @@ describe('Lexer', () => {
         expect(errors.map(error => error.message)).toEqual(['Token too long on line 1.']);
       });
 
+      it('rethrows a RangeError thrown by the callback without reporting it', () => {
+        const stream = new EventEmitter(), errors = [];
+        const thrown = new RangeError('from the callback');
+        new Lexer().tokenize(stream, (error, token) => {
+          if (error)
+            errors.push(error);
+          else if (token.type === 'IRI')
+            throw thrown;
+        });
+        expect(() => stream.emit('data', '<a> ')).toThrow(thrown);
+        expect(errors).toEqual([]);
+      });
+
       it('rethrows other errors', () => {
         const lexer = new Lexer();
         lexer._iri = { exec() { throw new TypeError('unexpected'); } };

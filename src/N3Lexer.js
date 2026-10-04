@@ -647,12 +647,21 @@ export default class N3Lexer {
 
   // ### `_tryTokenizeToEnd` tokenizes as far as possible, reporting failures through the callback
   _tryTokenizeToEnd(callback, inputFinished) {
+    // Keep track of errors thrown by the callback, which must reach the caller unchanged
+    let callbackError;
     try {
-      this._tokenizeToEnd(callback, inputFinished);
+      this._tokenizeToEnd((error, token) => {
+        try {
+          return callback(error, token);
+        }
+        catch (thrown) {
+          throw (callbackError = thrown);
+        }
+      }, inputFinished);
     }
     catch (error) {
       // Matching an extremely long token can exhaust the regular expression stack
-      if (!(error instanceof RangeError))
+      if (error === callbackError || !(error instanceof RangeError))
         throw error;
       callback(this._syntaxError(null, `Token too long on line ${this._line}.`));
     }
