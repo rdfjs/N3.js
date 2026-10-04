@@ -685,11 +685,18 @@ describe('Writer', () => {
       expect(output).toBe('VERSION "1.2"\n<a> <b> <c> <g> .\n');
     });
 
-    it.each(['1.2"', '1.2\\', '1.2\n@prefix x: <y>.', '1.2\u0000', '1.2\u007f'])(
+    it.each(['1.2"', '1.2\\', '1.2\n@prefix x: <y>.', '1.2\u0000', '1.2\u007f',
+      '1.2\ud83d', '\ud83d1.2', '1.2\ude00', '\ude001.2', '1.2\ude00\ud83d'])(
       'rejects the version label %j', version => {
         expect(() => new Writer({ version })).toThrow(`Invalid version label: ${JSON.stringify(version)}`);
         expect(() => new Writer({ format: 'N-Triples', version })).toThrow('Invalid version label');
       });
+
+    it('accepts a version label with characters outside the Basic Multilingual Plane', async () => {
+      const writer = new Writer({ version: '1.2-\ud83d\ude00' });
+      const output = await end(writer);
+      expect(output).toBe('@version "1.2-\ud83d\ude00".\n');
+    });
 
     it('produces a version directive that the parser reads back', () => {
       const writer = new Writer({ version: '1.2' });

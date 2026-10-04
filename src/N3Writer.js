@@ -17,6 +17,9 @@ const escape    = /["\\\t\n\r\b\f\u0000-\u0019\ud800-\udbff]/,
       '\n': '\\n', '\r': '\\r', '\b': '\\b', '\f': '\\f',
     };
 
+// Characters that a version label cannot contain
+const invalidVersionLabel = /["\\\u0000-\u001f\u007f]|[\ud800-\udbff](?![\udc00-\udfff])|(?:^|[^\ud800-\udbff])[\udc00-\udfff]/;
+
 // ## Placeholder class to represent already pretty-printed terms
 class SerializedTerm extends Term {
   // Pretty-printed nodes are not equal to any other node
@@ -53,8 +56,9 @@ export default class N3Writer {
       this._endStream = options.end === undefined ? true : !!options.end;
     }
 
-    // A version label is written as-is, so it cannot contain characters that need escaping
-    if (options.version && /["\\\u0000-\u001f\u007f]/.test(options.version))
+    // A version label is written as-is, so it cannot contain characters that need escaping,
+    // nor unpaired surrogates (which cannot be encoded)
+    if (options.version && invalidVersionLabel.test(options.version))
       throw new Error(`Invalid version label: ${JSON.stringify(options.version)}`);
 
     // Initialize writer, depending on the format

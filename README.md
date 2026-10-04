@@ -337,7 +337,7 @@ const writer = new N3.Writer({ baseIRI: 'http://example.org/', writeBase: true }
 
 A `version` argument writes an RDF 1.2 version directive at the top of the document,
 as `@version "1.2".` in Turtle/TriG or `VERSION "1.2"` in N-Triples/N-Quads.
-The constructor throws for a label that contains quotes, backslashes, or control characters.
+The constructor throws for a label that contains quotes, backslashes, control characters, or unpaired surrogates.
 
 ```JavaScript
 const writer = new N3.Writer({ version: '1.2' });
