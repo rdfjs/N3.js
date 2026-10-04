@@ -471,7 +471,7 @@ describe('Writer', () => {
     );
 
     it(
-      'should escape the characters canonical N-Triples escapes, in upper case',
+      'should escape the characters required by canonical N-Triples, in upper case',
       shouldSerialize(['a', 'b', new Literal('"\u0000\u0007\b\t\n\u000b\f\r\u000e\u001f\u007f\ufffe\uffff\u0080 \\\""')],
                       '<a> <b> "\\u0000\\u0007\\b\\t\\n\\u000B\\f\\r\\u000E\\u001F\\u007F\\uFFFE\\uFFFF\u0080 \\\\\\"".\n'),
     );
