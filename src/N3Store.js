@@ -152,8 +152,10 @@ export default class N3Store {
   constructor(quads, options) {
     // The number of quads is initially zero
     this._size = 0;
-    // `_graphs` contains subject, predicate, and object indexes per graph
+    // `_graphs` contains subject, predicate, and object indexes per graph,
+    // and counts them like the indexes count their keys
     this._graphs = Object.create(null);
+    this._graphs[SIZE] = 0;
     // `_observers` contains weak references to views notified before every mutation
     this._observers = null;
 
@@ -459,6 +461,7 @@ export default class N3Store {
       // Freezing a graph helps subsequent `add` performance,
       // and properties will never be modified anyway
       Object.freeze(graphItem);
+      this._graphs[SIZE]++;
     }
 
     // Notify observers before inserting a new quad so snapshots retain their prior contents
@@ -506,6 +509,8 @@ export default class N3Store {
   // ### `_addIntersectionFromIndex` adds the quads that are in both of the
   // given graph indexes, at every level walking the one with fewer keys
   _addIntersectionFromIndex(graphs, otherGraphs) {
+    if (otherGraphs[SIZE] < graphs[SIZE])
+      [graphs, otherGraphs] = [otherGraphs, graphs];
     for (const graphKey in graphs) {
       const other = otherGraphs[graphKey];
       if (other) {
@@ -604,8 +609,10 @@ export default class N3Store {
     if (this._size !== null) this._size--;
 
     // Remove the graph if it is empty
-    if (graphItem.subjects[SIZE] === 0)
+    if (graphItem.subjects[SIZE] === 0) {
       delete graphs[graph];
+      graphs[SIZE]--;
+    }
     return true;
   }
 
@@ -1518,8 +1525,10 @@ class DatasetCoreAndReadableStream extends Readable {
             objects = indexMatch(content.objects, [objectId, subjectId, predicateId]);
           }
 
-          if (subjects)
+          if (subjects) {
             newStore._graphs[graphKey] = { subjects, predicates, objects };
+            newStore._graphs[SIZE]++;
+          }
         }
       }
       newStore._size = null;

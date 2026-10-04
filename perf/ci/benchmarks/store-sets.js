@@ -172,10 +172,30 @@ Object.assign(benchmarks, {
     view.contains(view) + view.equals(other) + view.filter(isLiteralQuad).size),
 });
 
+// An intersection benchmark in each order of its two stores
+function intersectionBothWays(first, second, createStores) {
+  function benchmark(swap) {
+    return N3 => {
+      const { store, other, before = () => undefined, repeat = 1 } = createStores(N3);
+      const [a, b] = swap ? [other, store] : [store, other];
+      return {
+        before,
+        run: () => {
+          for (let i = 0; i < repeat; i++) check(a.intersection(b).size <= 1, 'too large');
+        },
+      };
+    };
+  }
+  return {
+    [`store intersection: ${first} with ${second}, shared index`]: benchmark(false),
+    [`store intersection: ${second} with ${first}, shared index`]: benchmark(true),
+  };
+}
+
 // Intersections of stores sharing an EntityIndex that need not look at most
 // quads: stores whose subjects differ, a large store intersected with a store
-// holding one of its quads, and an empty store intersected with a
-// store whose size is not cached because it has just changed
+// holding one of its quads, an empty store and a store whose size is not cached
+// because it has just changed, and one quad and a store with many graphs
 Object.assign(benchmarks, {
   'store intersection: different subjects, shared index': N3 => {
     const { namedNode, quad } = N3.DataFactory, entityIndex = new N3.EntityIndex();
@@ -197,18 +217,28 @@ Object.assign(benchmarks, {
       for (let i = 0; i < 1000; i++) check(store.intersection(other).size === 1, 'not one quad');
     };
   },
-  'store intersection: empty store with a changed store, shared index': N3 => {
+  ...intersectionBothWays('an empty store', 'a changed store', N3 => {
     const { entityIndex, store } = createContext(N3);
-    const empty = new N3.Store({ entityIndex }), changed = store.toArray()[0];
+    const changed = store.toArray()[0];
     return {
+      store: new N3.Store({ entityIndex }),
+      other: store,
       // Removing and adding back a quad leaves the store's size uncached
       before: () => {
         store.removeQuad(changed);
         store.addQuad(changed);
       },
-      run: () => check(empty.intersection(store).size === 0, 'not empty'),
     };
-  },
+  }),
+  ...intersectionBothWays('one quad', 'many graphs', N3 => {
+    const { namedNode, quad } = N3.DataFactory, entityIndex = new N3.EntityIndex();
+    const quads = [];
+    for (let i = 0; i < SIZE; i++) {
+      quads.push(quad(namedNode('http://example.org/s'), namedNode('http://example.org/p'),
+        namedNode('http://example.org/o'), namedNode(`http://example.org/g${i}`)));
+    }
+    return { store: new N3.Store(quads.slice(0, 1), { entityIndex }), other: new N3.Store(quads, { entityIndex }), repeat: 1000 };
+  }),
 });
 
 // addAll on a view, which adds to the view's own filtered store or, with

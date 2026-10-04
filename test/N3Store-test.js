@@ -4601,6 +4601,17 @@ describe('Set operations between stores sharing an EntityIndex', () => {
     expect(contents(a.intersection(c))).toEqual(ids([q('s1', 'p', 'o1')]));
   });
 
+  it('intersects stores with different numbers of graphs from either side', () => {
+    const c = new Store([q('s1', 'p', 'o1'), q('s2', 'p', 'o2', 'g'), q('s2', 'p', 'o2', 'g2'), q('s2', 'p', 'o2', 'g3')], { entityIndex });
+    const d = new Store([q('s2', 'p', 'o2', 'g3')], { entityIndex });
+    expect(contents(c.intersection(d))).toEqual(ids([q('s2', 'p', 'o2', 'g3')]));
+    expect(contents(d.intersection(c))).toEqual(ids([q('s2', 'p', 'o2', 'g3')]));
+    expect(contents(a.intersection(c))).toEqual(ids([q('s1', 'p', 'o1'), q('s2', 'p', 'o2', 'g')]));
+    c.removeQuad(q('s2', 'p', 'o2', 'g3'));
+    expect(c.intersection(d).size).toBe(0);
+    expect(c.match(null, null, null, ex('g2')).intersection(c).size).toBe(1);
+  });
+
   it('notifies forwarded views when adding a store to an empty store', () => {
     // A forwarded view compares the numeric ids it is notified with to its pattern
     const empty = new Store({ entityIndex });
