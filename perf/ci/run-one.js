@@ -15,20 +15,24 @@ const gc = global.gc || (() => {});
 
 (async () => {
   // A benchmark for a feature this build does not have yet
-  if (!available(N3)) {
+  if (!(await available(N3))) {
     process.stdout.write(JSON.stringify({ name, skipped: true }));
     return;
   }
-  const run = await setup(N3);
+  // setup returns the measured function, or { before, run } when each run
+  // needs fresh untimed input (such as a store that the run mutates)
+  const prepared = await setup(N3);
+  const { before = () => undefined, run } = typeof prepared === 'function' ? { run: prepared } : prepared;
 
   // Warm up so the JIT has settled before anything is measured
-  for (let i = 0; i < 3; i++) await run();
+  for (let i = 0; i < 3; i++) await run(await before());
 
   const times = [];
   for (let i = 0; i < Number(iterations); i++) {
+    const input = await before();
     gc();
     const start = process.hrtime.bigint();
-    await run();
+    await run(input);
     times.push(Number(process.hrtime.bigint() - start) / 1e6);
   }
   process.stdout.write(JSON.stringify({ name, times }));
