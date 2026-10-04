@@ -4401,7 +4401,7 @@ describe('Parser', () => {
     );
 
     // _:m!:p denotes _:b1 such that [_:m ex:p _:b1]; the list (_:m!:p) is _:b0
-    // (as in all lists, the blank node label is scoped to the list context)
+    // (the blank node label is scoped to the enclosing formula, here the document)
     it(
       'should parse a ! path starting with a blank node inside a list',
       shouldParse(parser, '@prefix : <ex:>. (_:m!:p) :q :r.',
