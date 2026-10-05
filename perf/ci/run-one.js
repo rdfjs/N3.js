@@ -55,6 +55,10 @@ async function measureMemory(run, input) {
   const times = [];
   for (let i = 0; i < Number(runs); i++) {
     const input = await before();
+    // V8 keeps every WeakRef target alive until the microtask queue drains,
+    // and this loop never drains it on its own, so without a macrotask turn
+    // the views of earlier runs would pile up in the heap
+    await new Promise(setImmediate);
     gc();
     const start = process.hrtime.bigint();
     await run(input);
