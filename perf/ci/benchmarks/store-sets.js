@@ -172,6 +172,64 @@ Object.assign(benchmarks, {
     view.contains(view) + view.equals(other) + view.filter(isLiteralQuad).size),
 });
 
+// An intersection benchmark in each order of its two stores
+function intersectionBothWays(first, second, createStores) {
+  function benchmark(swap) {
+    return N3 => {
+      const { store, other, repeat } = createStores(N3);
+      const [a, b] = swap ? [other, store] : [store, other];
+      return () => {
+        for (let i = 0; i < repeat; i++)
+          check(a.intersection(b).size <= 1, 'too large');
+      };
+    };
+  }
+  return {
+    [`store intersection: ${first} with ${second}, shared index`]: benchmark(false),
+    [`store intersection: ${second} with ${first}, shared index`]: benchmark(true),
+  };
+}
+
+// Intersections of stores sharing an EntityIndex that need not look at most
+// quads: stores whose subjects differ, a large store intersected with a store
+// holding one of its quads, an empty store and a full one, and one quad and a
+// store with many graphs
+Object.assign(benchmarks, {
+  'store intersection: different subjects, shared index': N3 => {
+    const { namedNode, quad } = N3.DataFactory, entityIndex = new N3.EntityIndex();
+    function storeAbout(subject) {
+      return new N3.Store(Array.from({ length: SIZE }, (_, i) =>
+        quad(namedNode(subject), namedNode('http://example.org/p'), namedNode(`http://example.org/o${i}`))), { entityIndex });
+    }
+    const store = storeAbout('http://example.org/a'), other = storeAbout('http://example.org/b');
+    return () => {
+      for (let i = 0; i < 20000; i++) check(store.intersection(other).size === 0, 'not empty');
+    };
+  },
+  'store intersection: one quad with many objects, shared index': N3 => {
+    const { namedNode, quad } = N3.DataFactory, entityIndex = new N3.EntityIndex();
+    const quads = Array.from({ length: SIZE }, (_, i) =>
+      quad(namedNode('http://example.org/s'), namedNode('http://example.org/p'), namedNode(`http://example.org/o${i}`)));
+    const store = new N3.Store(quads, { entityIndex }), other = new N3.Store(quads.slice(0, 1), { entityIndex });
+    return () => {
+      for (let i = 0; i < 1000; i++) check(store.intersection(other).size === 1, 'not one quad');
+    };
+  },
+  ...intersectionBothWays('an empty store', 'a full store', N3 => {
+    const { entityIndex, store } = createContext(N3);
+    return { store: new N3.Store({ entityIndex }), other: store, repeat: 100000 };
+  }),
+  ...intersectionBothWays('one quad', 'many graphs', N3 => {
+    const { namedNode, quad } = N3.DataFactory, entityIndex = new N3.EntityIndex();
+    const quads = [];
+    for (let i = 0; i < SIZE; i++) {
+      quads.push(quad(namedNode('http://example.org/s'), namedNode('http://example.org/p'),
+        namedNode('http://example.org/o'), namedNode(`http://example.org/g${i}`)));
+    }
+    return { store: new N3.Store(quads.slice(0, 1), { entityIndex }), other: new N3.Store(quads, { entityIndex }), repeat: 1000 };
+  }),
+});
+
 // addAll on a view, which adds to the view's own filtered store or, with
 // forwarded semantics, to the underlying store; each run gets a fresh store
 function viewAddAllBenchmark(matchSemantics) {

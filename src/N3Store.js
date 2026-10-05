@@ -23,105 +23,6 @@ function hasInIndex(index0, key0, key1, key2) {
   return !!index2 && key2 in index2;
 }
 
-// The number of index leaves that the last `merge` call added
-let mergedLeaves = 0;
-
-function merge(target, source, depth = 4) {
-  let size = target[SIZE] || 0;
-  for (const key in source) {
-    if (!(key in target)) {
-      size++;
-      if (depth === 0) mergedLeaves++;
-      target[key] = depth === 0 ? null : merge(Object.create(null), source[key], depth - 1);
-    }
-    // Merge into the existing object in place,
-    // as graph objects are frozen and cannot be reassigned
-    else if (depth !== 0)
-      merge(target[key], source[key], depth - 1);
-  }
-  // Depth 2 is the level of the `subjects`, `predicates`, and `objects` indexes.
-  if (depth <= 2)
-    target[SIZE] = size;
-
-  return target;
-}
-
-/**
- * Determines the intersection of the `_graphs` index s1 and s2.
- * s1 and s2 *must* belong to Stores that share an `_entityIndex`.
- *
- * False is returned when there is no intersection; this should
- * *not* be set as the value for an index.
- */
-function intersect(s1, s2, depth = 4) {
-  let target = false, size = 0;
-
-  if (depth <= 2 && s2[SIZE] < s1[SIZE])
-    [s1, s2] = [s2, s1];
-
-  for (const key in s1) {
-    if (key in s2) {
-      const intersection = depth === 0 ? null : intersect(s1[key], s2[key], depth - 1);
-      if (intersection !== false) {
-        target = target || Object.create(null);
-        target[key] = intersection;
-        size++;
-      }
-      // Depth 3 is the 'subjects', 'predicates' and 'objects' keys.
-      // If the 'subjects' index is empty, so will the 'predicates' and 'objects' index.
-      else if (depth === 3) {
-        return false;
-      }
-    }
-  }
-
-  // Depth 2 is the level of the `subjects`, `predicates`, and `objects` indexes.
-  if (depth <= 2 && target)
-    target[SIZE] = size;
-
-  return target;
-}
-
-/**
- * Determines the difference of the `_graphs` index s1 and s2.
- * s1 and s2 *must* belong to Stores that share an `_entityIndex`.
- *
- * False is returned when there is no difference; this should
- * *not* be set as the value for an index.
- */
-function difference(s1, s2, depth = 4) {
-  let target = false, size = 0;
-
-  for (const key in s1) {
-    // When the key is not in the index, then none of the triples defined by s1[key] are
-    // in s2 and so we want to copy them over to the resultant store.
-    if (!(key in s2)) {
-      target = target || Object.create(null);
-      target[key] = depth === 0 ? null : merge({}, s1[key], depth - 1);
-      size++;
-    }
-    else if (depth !== 0) {
-      const diff = difference(s1[key], s2[key], depth - 1);
-      if (diff !== false) {
-        target = target || Object.create(null);
-        target[key] = diff;
-        size++;
-      }
-      // Depth 3 is the 'subjects', 'predicates' and 'objects' keys.
-      // If the 'subjects' index is empty, so will the 'predicates' and 'objects' index.
-      else if (depth === 3) {
-        return false;
-      }
-    }
-  }
-
-  // Depth 2 is the level of the `subjects`, `predicates`, and `objects` indexes.
-  if (depth <= 2 && target)
-    target[SIZE] = size;
-
-  return target;
-}
-
 // Returns the key of a term in the entity index.
 // Keys mark the term type by their first character, so the IRI of a named node
 // that starts with such a marker (as relative IRIs can) is wrapped in < and >.
@@ -259,6 +160,7 @@ export default class N3Store {
     this._size = 0;
     // `_graphs` contains subject, predicate, and object indexes per graph
     this._graphs = Object.create(null);
+    this._graphCount = 0;
     // `_observers` contains weak references to views notified before every mutation
     this._observers = null;
 
@@ -555,6 +457,7 @@ export default class N3Store {
       // Freezing a graph helps subsequent `add` performance,
       // and properties will never be modified anyway
       Object.freeze(graphItem);
+      this._graphCount++;
     }
 
     // Notify observers before inserting a new quad so snapshots retain their prior contents
@@ -571,6 +474,63 @@ export default class N3Store {
 
     if (this._size !== null) this._size++;
     return true;
+  }
+
+  // ### `_addFromIndex` adds the quads in the given graph indexes of a store
+  // that shares this store's entity index, so no terms need to be converted.
+  // With `otherGraphs`, it only adds the quads that are not in those indexes.
+  // Index keys are strings, so the ids are converted back to the numbers that
+  // `addQuad` uses: forwarded views compare the ids they are notified with to
+  // their own numeric ids.
+  _addFromIndex(graphs, otherGraphs = null) {
+    for (const graphKey in graphs) {
+      const subjects = graphs[graphKey].subjects, other = otherGraphs && otherGraphs[graphKey];
+      const otherSubjects = other ? other.subjects : null;
+      for (const subjectKey in subjects) {
+        const subject = Number(subjectKey), predicates = subjects[subjectKey];
+        const otherPredicates = otherSubjects && otherSubjects[subjectKey];
+        for (const predicateKey in predicates) {
+          const predicate = Number(predicateKey), objects = predicates[predicateKey];
+          const otherObjects = otherPredicates && otherPredicates[predicateKey];
+          for (const objectKey in objects) {
+            if (!otherObjects || !(objectKey in otherObjects))
+              this._addQuad(subject, predicate, Number(objectKey), Number(graphKey));
+          }
+        }
+      }
+    }
+  }
+
+  // ### `_addIntersectionFromIndex` adds the quads that are in both of the
+  // given graph indexes, walking the graphs of the first and, below them,
+  // whichever index has fewer keys
+  _addIntersectionFromIndex(graphs, otherGraphs) {
+    for (const graphKey in graphs) {
+      const other = otherGraphs[graphKey];
+      if (other) {
+        let subjects = graphs[graphKey].subjects, otherSubjects = other.subjects;
+        if (otherSubjects[SIZE] < subjects[SIZE])
+          [subjects, otherSubjects] = [otherSubjects, subjects];
+        for (const subjectKey in subjects) {
+          let predicates = subjects[subjectKey], otherPredicates = otherSubjects[subjectKey];
+          if (otherPredicates) {
+            if (otherPredicates[SIZE] < predicates[SIZE])
+              [predicates, otherPredicates] = [otherPredicates, predicates];
+            for (const predicateKey in predicates) {
+              let objects = predicates[predicateKey], otherObjects = otherPredicates[predicateKey];
+              if (otherObjects) {
+                if (otherObjects[SIZE] < objects[SIZE])
+                  [objects, otherObjects] = [otherObjects, objects];
+                for (const objectKey in objects) {
+                  if (objectKey in otherObjects)
+                    this._addQuad(Number(subjectKey), Number(predicateKey), Number(objectKey), Number(graphKey));
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   // ### `addQuads` adds multiple quads to the store
@@ -643,8 +603,10 @@ export default class N3Store {
     if (this._size !== null) this._size--;
 
     // Remove the graph if it is empty
-    if (graphItem.subjects[SIZE] === 0)
+    if (graphItem.subjects[SIZE] === 0) {
       delete graphs[graph];
+      this._graphCount--;
+    }
     return true;
   }
 
@@ -1104,15 +1066,9 @@ export default class N3Store {
 
     if (Array.isArray(quads))
       this.addQuads(quads);
-    // Index merging bypasses observer notifications
-    else if (this._observers === null && quads instanceof N3Store && quads._entityIndex === this._entityIndex) {
-      if (quads.size !== 0) {
-        // Each new quad adds one leaf to each of the three indexes
-        mergedLeaves = 0;
-        this._graphs = merge(this._graphs, quads._graphs);
-        if (this._size !== null) this._size += mergedLeaves / 3;
-      }
-    }
+    // A store with the same entity index can be copied by identifier
+    else if (quads instanceof N3Store && quads._entityIndex === this._entityIndex)
+      this._addFromIndex(quads._graphs);
     else {
       for (const quad of quads)
         this.add(quad);
@@ -1189,11 +1145,7 @@ export default class N3Store {
 
     if ((other instanceof N3Store) && other._entityIndex === this._entityIndex) {
       const store = new N3Store({ entityIndex: this._entityIndex });
-      const graphs = difference(this._graphs, other._graphs);
-      if (graphs) {
-        store._graphs = graphs;
-        store._size = null;
-      }
+      store._addFromIndex(this._graphs, other._graphs);
       return store;
     }
 
@@ -1234,16 +1186,17 @@ export default class N3Store {
 
     if (other === this) {
       const store = new N3Store({ entityIndex: this._entityIndex });
-      store._graphs = merge(Object.create(null), this._graphs);
-      store._size = this.size;
+      store._addFromIndex(this._graphs);
       return store;
     }
     else if ((other instanceof N3Store) && this._entityIndex === other._entityIndex) {
       const store = new N3Store({ entityIndex: this._entityIndex });
-      const graphs = intersect(other._graphs, this._graphs);
-      if (graphs) {
-        store._graphs = graphs;
-        store._size = null;
+      // Starting a loop over no graphs costs more than checking for an empty store
+      if (this._size !== 0 && other._size !== 0) {
+        if (other._graphCount < this._graphCount)
+          store._addIntersectionFromIndex(other._graphs, this._graphs);
+        else
+          store._addIntersectionFromIndex(this._graphs, other._graphs);
       }
       return store;
     }
@@ -1331,9 +1284,7 @@ export default class N3Store {
    */
   union(quads) {
     const store = new N3Store({ entityIndex: this._entityIndex });
-    store._graphs = merge(Object.create(null), this._graphs);
-    store._size = this.size;
-
+    store._addFromIndex(this._graphs);
     store.addAll(quads);
     return store;
   }
@@ -1598,8 +1549,10 @@ class DatasetCoreAndReadableStream extends Readable {
             objects = indexMatch(content.objects, [objectId, subjectId, predicateId]);
           }
 
-          if (subjects)
+          if (subjects) {
             newStore._graphs[graphKey] = { subjects, predicates, objects };
+            newStore._graphCount++;
+          }
         }
       }
       newStore._size = null;
