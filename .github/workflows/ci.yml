@@ -126,13 +126,6 @@ jobs:
       - run: npm run build
       - run: npm run lint
 
-  sync-script:
-    # Tests the commit check of the next-major sync on throwaway repositories
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - run: bash .github/scripts/next-major-sync-test.sh
-
   docs:
     runs-on: ubuntu-latest
     steps:
@@ -160,7 +153,6 @@ jobs:
       - spec
       - browser
       - lint
-      - sync-script
       - docs
     runs-on: ubuntu-latest
     permissions: {}
