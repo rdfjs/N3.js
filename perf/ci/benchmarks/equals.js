@@ -2,9 +2,10 @@
 const { check } = require('../helpers');
 const { EX } = require('../data');
 
-// Pairs of distinct instances of each term type, so equals cannot shortcut on identity
+// Pairs of distinct instances of each term type, so equals cannot shortcut on identity;
+// the default graph is a singleton, so it is left out
 function termPairs(N3, count) {
-  const { namedNode, blankNode, literal, variable, defaultGraph } = N3.DataFactory;
+  const { namedNode, blankNode, literal, variable } = N3.DataFactory;
   const dt = `${EX}datatype`, left = [], right = [];
   for (let i = 0; i < count; i++) {
     for (const make of [
@@ -18,8 +19,6 @@ function termPairs(N3, count) {
       right.push(make());
     }
   }
-  left.push(defaultGraph());
-  right.push(new N3.DefaultGraph());
   return { left, right };
 }
 
@@ -30,7 +29,7 @@ module.exports = {
       let n = 0;
       for (let r = 0; r < 12; r++)
         for (let i = 0; i < left.length; i++) if (left[i].equals(right[i])) n++;
-      check(n, 'nothing equal');
+      check(n === 12 * left.length, 'not every pair equal');
     };
   },
   'equals: terms with different values': N3 => {
@@ -39,22 +38,26 @@ module.exports = {
       let n = 0;
       for (let r = 0; r < 12; r++)
         for (let i = 0; i < left.length; i++) if (!left[i].equals(right[(i + 5) % right.length])) n++;
-      check(n, 'everything equal');
+      check(n === 12 * left.length, 'some pair equal');
     };
   },
-  'equals: IRIs whose ids match other term types': N3 => {
-    const { namedNode, blankNode, literal, variable } = N3.DataFactory;
-    const iris = [], others = [];
-    for (let i = 0; i < 20000; i++) {
-      iris.push(namedNode(`?v${i}`), namedNode(`_:b${i}`), namedNode(`"l${i}"`));
-      others.push(variable(`v${i}`), blankNode(`b${i}`), literal(`l${i}`));
-    }
-    return () => {
-      let n = 0;
-      for (let r = 0; r < 12; r++)
-        for (let i = 0; i < iris.length; i++) n += iris[i].equals(others[i]) + others[i].equals(iris[i]) + 1;
-      check(n, 'nothing compared');
-    };
+  'equals: IRIs whose ids match other term types': {
+    // Builds where these terms compare as equal have the bug this measures the fix of
+    available: N3 => !N3.DataFactory.namedNode('?x').equals(N3.DataFactory.variable('x')),
+    setup: N3 => {
+      const { namedNode, blankNode, literal, variable } = N3.DataFactory;
+      const iris = [], others = [];
+      for (let i = 0; i < 20000; i++) {
+        iris.push(namedNode(`?v${i}`), namedNode(`_:b${i}`), namedNode(`"l${i}"`));
+        others.push(variable(`v${i}`), blankNode(`b${i}`), literal(`l${i}`));
+      }
+      return () => {
+        let n = 0;
+        for (let r = 0; r < 12; r++)
+          for (let i = 0; i < iris.length; i++) if (!iris[i].equals(others[i]) && !others[i].equals(iris[i])) n++;
+        check(n === 12 * iris.length, 'some pair equal');
+      };
+    },
   },
   'equals: quads and triple terms': N3 => {
     const { namedNode, literal, quad } = N3.DataFactory;
@@ -75,7 +78,7 @@ module.exports = {
           if (left[i].equals(right[i])) n++;
           if (!left[i].equals(right[(i + 1) % right.length])) n++;
         }
-      check(n, 'nothing compared');
+      check(n === 24 * left.length, 'wrong comparison result');
     };
   },
 };
