@@ -1,0 +1,339 @@
+#!/usr/bin/env bash
+# Keeps next-major rebased on main, so it stays main plus one commit per breaking change.
+#
+#   next-major-sync.sh sync <main sha>
+#     Rebases next-major onto <main sha>. A clean rebase is pushed straight away. A conflicting
+#     one moves nothing: it pushes main merged into next-major, conflict markers included, as
+#     sync/conflict-<main sha>-base, for a resolution pull request into that branch.
+#   next-major-sync.sh apply <pull request number> <merge commit sha> <rebased sha>
+#     Run by a maintainer after merging that resolution pull request. Pushes
+#     sync/next-major-rebased as next-major, but only if it is next-major's commits, unchanged,
+#     on <main sha>, with exactly the merged tree, and the pull request resolved the conflict
+#     this script showed for the current next-major.
+#
+# Run from a full clone whose origin can push to next-major, with GH_TOKEN for the gh CLI.
+# semantic-release finds the last alpha through the tags reachable from next-major (see
+# RELEASING.md), so a rebased next-major is pushed together with its newest alpha tag and channel
+# note moved to the rebased commit, and the commit that alpha was published from kept under
+# refs/archive.
+set -euo pipefail
+# The commit check needs associative arrays and namerefs; an older bash would let it fail open
+((BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 3))) 2> /dev/null ||
+  { echo "::error::next-major-sync.sh needs bash 4.3 or later."; exit 1; }
+
+repo=${GITHUB_REPOSITORY:-rdfjs/N3.js}
+git config user.name 'github-actions[bot]'
+git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+git config tag.gpgSign false
+git config commit.gpgSign false
+git config push.gpgSign false
+
+fail() { echo "::error::$*"; exit 1; }
+is_sha() { [[ $1 =~ ^[0-9a-f]{40}$ ]]; }
+remote_ref() { git ls-remote origin "$1" | awk -v ref="$1" '$2 == ref { print $1 }'; }
+
+fetch() {
+  git fetch --quiet origin '+refs/heads/main:refs/remotes/origin/main' \
+    '+refs/heads/next-major:refs/remotes/origin/next-major' \
+    '+refs/tags/*:refs/tags/*' '+refs/notes/*:refs/notes/*' "$@"
+  old=$(git rev-parse origin/next-major)
+}
+
+# A commit's raw object without what a rebase rewrites: tree, parents, committer and signature
+commit_record() {
+  git cat-file commit "$1" | perl -0777 -ne '
+    my ($head, $body) = /\A(.*?)\n\n(.*)\z/s ? ($1, $2) : ($_, "");
+    print join("\n", grep { !/^(?:tree|parent|committer|gpgsig|gpgsig-sha256) / } split /\n(?! )/, $head), "\n\n", $body'
+}
+
+# Loads a commit's files into the associative array named by $1, as path to "<mode> <object>",
+# through the file $3; fails if git does
+files_of() {
+  local -n files=$1 || return 1
+  local line meta
+  git ls-tree -r -z --full-tree "$2" > "$3" || return 1
+  files=()
+  while IFS= read -r -d '' line; do
+    meta=${line%%$'\t'*}
+    files[${line#*$'\t'}]="${meta%% *} ${meta##* }"
+  done < "$3"
+}
+
+# Fails unless every commit listed in the file $2, its parent and their trees and files pass git's
+# object checks with no error or warning: ls-tree hides a malformed tree, showing an odd mode as
+# a normal one and keeping both copies of a duplicated entry. The objects are copied as a pack
+# into a fresh repository in $1, checked with no global or system configuration to relax it.
+# Those checks read a mode as 16 bits, so every tree's raw entries must also use exactly one of
+# git's five modes.
+well_formed() {
+  local c
+  while IFS= read -r c; do printf '%s\n%s^\n' "$c" "$c"; done < "$2" > "$1/heads" &&
+    git rev-list --objects --no-object-names --no-walk --stdin < "$1/heads" > "$1/objects" &&
+    git cat-file --batch-check='%(objecttype) %(objectname)' < "$1/objects" > "$1/types" &&
+    awk '$1 == "tree" { print $2; next } $1 != "commit" && $1 != "blob" { exit 1 }' "$1/types" > "$1/trees" &&
+    [ -s "$1/trees" ] &&
+    git cat-file --batch < "$1/trees" > "$1/raw-trees" &&
+    perl -e '
+      binmode STDIN;
+      while (defined(my $header = <STDIN>)) {
+        my ($oid, $type, $size) = $header =~ /\A([0-9a-f]+) (\S+) (\d+)\n\z/ or exit 1;
+        my ($tree, $nl);
+        $type eq "tree" && read(STDIN, $tree, $size) == $size && read(STDIN, $nl, 1) == 1 && $nl eq "\n" or exit 1;
+        my $length = length($oid) / 2;
+        while (length $tree) {
+          $tree =~ s/\A(100644|100755|120000|160000|40000) [^\0]+\0.{$length}//s or exit 1;
+        }
+      }' < "$1/raw-trees" &&
+    git pack-objects -q --stdout < "$1/objects" > "$1/pack" &&
+    git init --quiet --bare --object-format="$(git rev-parse --show-object-format)" "$1/check.git" &&
+    GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null \
+      git --git-dir="$1/check.git" index-pack --stdin --fsck-objects < "$1/pack" > /dev/null 2> "$1/fsck" &&
+    [ ! -s "$1/fsck" ]
+}
+
+# Fails if a commit's tree holds an empty directory, which no checkout makes and which the file
+# listings and an index cannot show; uses the file $2
+no_empty_tree() {
+  local line empty
+  empty=$(git hash-object -t tree /dev/null) && git ls-tree -r -t -z --full-tree "$1" > "$2" || return 1
+  while IFS= read -r -d '' line; do
+    [ "${line%%$'\t'*}" != "040000 tree $empty" ] || return 1
+  done < "$2"
+}
+
+# Succeeds if commit b is commit a's change carried onto b's parent, file by file, with a's
+# parent as the base: every path a changes merges cleanly with git merge-file (line by line, no
+# renames, no attributes) into exactly b's version, and b changes nothing else. Only the given
+# paths (the hand-resolved ones) are skipped. The three-way merge, not the diff text or patch
+# context, decides where a's change lands, so commit by commit from main the rebased history can
+# differ only in the resolved paths. Last, b's whole tree must be the tree those entries build
+# on b's parent, so nothing else the file listings leave out gets through. None of the four
+# trees may hold an empty directory, which neither the listings nor that tree can account for.
+same_change() {
+  local dir status
+  dir=$(mktemp -d)
+  compare_change "$dir" "$@"
+  status=$?
+  rm -rf "$dir"
+  return "$status"
+}
+compare_change() {
+  local dir=$1 a=$2 b=$3 path r base ours theirs want
+  local -A skip base_files theirs_files ours_files new_files changed || return 1
+  shift 3
+  for r in "$@"; do skip[$r]=1 || return 1; done
+  no_empty_tree "$a^" "$dir/list" && no_empty_tree "$a" "$dir/list" &&
+    no_empty_tree "$b^" "$dir/list" && no_empty_tree "$b" "$dir/list" &&
+    files_of base_files "$a^" "$dir/list" && files_of theirs_files "$a" "$dir/list" &&
+    files_of ours_files "$b^" "$dir/list" && files_of new_files "$b" "$dir/list" &&
+    git diff-tree -r -z --no-renames --ignore-submodules=none --name-only "$a^" "$a" > "$dir/a-paths" &&
+    git diff-tree -r -z --no-renames --ignore-submodules=none --name-only "$b^" "$b" > "$dir/b-paths" || return 1
+  while IFS= read -r -d '' path; do
+    [ -z "${skip[$path]:-}" ] || continue
+    changed[$path]=1 || return 1
+    base=${base_files[$path]:-} theirs=${theirs_files[$path]:-} ours=${ours_files[$path]:-}
+    if [ "$ours" = "$base" ]; then
+      want=$theirs
+    elif [ "$ours" = "$theirs" ]; then
+      want=$ours
+    elif [ -n "$base" ] && [ -n "$ours" ] && [ -n "$theirs" ] && [ "${base%% *}" = "${ours%% *}" ] &&
+      [ "${base%% *}" = "${theirs%% *}" ] && { [ "${base%% *}" = 100644 ] || [ "${base%% *}" = 100755 ]; }; then
+      # Both sides changed the same regular file's content: a line-by-line merge, which must be
+      # clean. Symlinks and submodules are only ever taken whole.
+      git cat-file blob "${base#* }" > "$dir/base" && git cat-file blob "${ours#* }" > "$dir/ours" &&
+        git cat-file blob "${theirs#* }" > "$dir/theirs" &&
+        git merge-file -p --quiet "$dir/ours" "$dir/base" "$dir/theirs" > "$dir/merged" &&
+        want="${base%% *} $(git hash-object --stdin < "$dir/merged")" || return 1
+    else
+      return 1
+    fi
+    [ "${new_files[$path]:-}" = "$want" ] || return 1
+    printf '%s\t%s\0' "${want:-0 0000000000000000000000000000000000000000}" "$path" >> "$dir/entries" || return 1
+  done < "$dir/a-paths"
+  while IFS= read -r -d '' path; do
+    [ -n "${skip[$path]:-}" ] || [ -n "${changed[$path]:-}" ] || return 1
+  done < "$dir/b-paths"
+  for r in "$@"; do
+    want=${new_files[$r]:-}
+    printf '%s\t%s\0' "${want:-0 0000000000000000000000000000000000000000}" "$r" >> "$dir/entries" || return 1
+  done
+  : >> "$dir/entries" &&
+    GIT_INDEX_FILE=$dir/index git read-tree "$b^" &&
+    GIT_INDEX_FILE=$dir/index git update-index -z --index-info < "$dir/entries" &&
+    GIT_INDEX_FILE=$dir/index git write-tree > "$dir/tree" &&
+    git rev-parse --verify "$b^{tree}" > "$dir/b-tree" &&
+    cmp -s "$dir/tree" "$dir/b-tree"
+}
+
+# Succeeds if two ranges hold the same number of commits and each pair, compared on its own, has
+# the same author, message and other raw fields, and makes the same change outside the paths
+# given after the ranges (the hand-resolved ones). Every git command must succeed: outputs go to
+# files rather than through process substitutions, whose failures would go unseen.
+same_commits() {
+  local dir status
+  dir=$(mktemp -d)
+  compare_commits "$dir" "$@"
+  status=$?
+  rm -rf "$dir"
+  return "$status"
+}
+compare_commits() {
+  local dir=$1 i
+  local -a a b
+  git rev-list --reverse "$2" > "$dir/a" && git rev-list --reverse "$3" > "$dir/b" &&
+    cat "$dir/a" "$dir/b" > "$dir/all" && well_formed "$dir" "$dir/all" || return 1
+  mapfile -t a < "$dir/a"
+  mapfile -t b < "$dir/b"
+  shift 3
+  [ "${#a[@]}" -eq "${#b[@]}" ] || return 1
+  for i in "${!a[@]}"; do
+    commit_record "${a[$i]}" > "$dir/record-a" && commit_record "${b[$i]}" > "$dir/record-b" &&
+      cmp -s "$dir/record-a" "$dir/record-b" && same_change "${a[$i]}" "${b[$i]}" "$@" || return 1
+  done
+}
+
+# main_sha merged into next-major, conflict markers committed as they are
+show_conflicts() {
+  git checkout --quiet --detach "$old"
+  git merge --no-edit "$main_sha" > /dev/null || true
+  git add --all
+  # A rebase can conflict where the merge does not; the merge commit then stands as it is
+  git diff --cached --quiet || git commit --quiet --no-verify -m "chore: merge main ${main_sha:0:7} into next-major, conflicts unresolved"
+}
+
+# Pushes HEAD, next-major's own commits rebased onto main_sha, as next-major in one atomic push,
+# every ref leased to the value checked here. If next-major's newest alpha was published from one
+# of its own commits, that tag and its channel note move with it to the same commit's rebased
+# counterpart. Never to a commit on main: semantic-release reads all channel notes on a commit as
+# one, so an alpha sharing a commit with a stable tag would read as stable. The first time a tag
+# moves, the commit it was published from is kept under refs/archive. In apply mode, resolved
+# lists the hand-resolved paths, where a rebased commit may differ from its original.
+publish() {
+  local new own_base tag tag_value tag_commit anchor note_ref old_note archive i
+  local -a olds news
+  new=$(git rev-parse HEAD)
+  own_base=$(git merge-base "$old" origin/main)
+  [ "$(git rev-list --count "$main_sha..$new")" = "$(git rev-list --count "$main_sha..$new" --not origin/main)" ] ||
+    fail "the rebased next-major contains commits from main past ${main_sha:0:7}."
+  same_commits "$own_base..$old" "$main_sha..$new" "${resolved[@]}" ||
+    fail "the rebase changed next-major's commits, probably because one is already on main; rebase it by hand."
+  local args=(--atomic "--force-with-lease=refs/heads/next-major:$old") refs=("$new:refs/heads/next-major")
+  tag=$(git for-each-ref --count=1 --sort=-v:refname --format='%(refname:short)' 'refs/tags/v*-alpha.*')
+  if [ -n "$tag" ] && ! git merge-base --is-ancestor "$tag" "$new"; then
+    tag_commit=$(git rev-parse "$tag^{commit}")
+    mapfile -t olds < <(git rev-list --reverse "$own_base..$old")
+    mapfile -t news < <(git rev-list --reverse "$main_sha..$new")
+    anchor=
+    for i in "${!olds[@]}"; do
+      [ "${olds[$i]}" != "$tag_commit" ] || anchor=${news[$i]}
+    done
+    [ -n "$anchor" ] || fail "$tag is not on one of next-major's own commits; fix the tags by hand."
+    # The tips always correspond. Another commit is only proven by the sync's own rebase, which
+    # same_commits checked change for change; a hand-made history in apply mode proves only its
+    # tip, whose tree is the reviewed one.
+    [ "$tag_commit" = "$old" ] || [ "$mode" = sync ] ||
+      fail "$tag is not on next-major's tip, so it can only move with a sync's own rebase; move the tag by hand."
+    ! git merge-base --is-ancestor "$anchor" origin/main || fail "$anchor is on main, so $tag cannot move there."
+    [ -z "$(git tag --points-at "$anchor" | grep -vFx "$tag" || true)" ] ||
+      fail "$anchor already carries another tag, so $tag cannot move there."
+    tag_value=$(git rev-parse "refs/tags/$tag")
+    note_ref=refs/notes/semantic-release-$tag
+    old_note=$(git rev-parse --verify --quiet "$note_ref") || fail "$tag has no channel note."
+    git notes --ref "semantic-release-$tag" show "$tag_commit" | grep '"alpha"' > /dev/null ||
+      fail "$tag's note is not on the alpha channel."
+    git update-ref "refs/tags/$tag" "$anchor"
+    git notes --ref "semantic-release-$tag" add -f -m '{"channels":["alpha"]}' "$anchor"
+    args+=("--force-with-lease=refs/tags/$tag:$tag_value" "--force-with-lease=$note_ref:$old_note")
+    refs+=("refs/tags/$tag" "$note_ref")
+    archive=refs/archive/$tag
+    if [ -z "$(remote_ref "$archive")" ]; then
+      args+=("--force-with-lease=$archive:")
+      refs+=("$tag_commit:$archive")
+    fi
+  fi
+  git push "${args[@]}" origin "${refs[@]}"
+}
+
+# Paths the reviewed resolution changed; empty for a clean rebase
+resolved=()
+
+mode=${1:-}
+case $mode in
+sync)
+  main_sha=${2:-}
+  is_sha "$main_sha" || fail "Expected a full main commit sha, got '$main_sha'."
+  fetch
+  git merge-base --is-ancestor "$main_sha" origin/main || fail "$main_sha is not on main."
+  if git merge-base --is-ancestor "$main_sha" "$old"; then
+    echo "next-major already contains main."
+    exit 0
+  fi
+  # Once the major has landed on main, next-major has nothing main lacks: start it over from main
+  if git diff --quiet "$main_sha" "$old"; then
+    git push --force-with-lease="refs/heads/next-major:$old" origin "$main_sha:refs/heads/next-major"
+    exit 0
+  fi
+  if [ -n "$(git ls-remote --heads origin 'sync/conflict-*-base')" ]; then
+    fail "A sync conflict is waiting for its resolution pull request; finish that first."
+  fi
+  git checkout --quiet --detach "$old"
+  if git rebase --quiet "$main_sha"; then
+    publish
+    exit 0
+  fi
+  git rebase --abort
+  # A resolution pull request into this branch contains nothing but the hand-resolved hunks
+  show_conflicts
+  base_branch=sync/conflict-$main_sha-base
+  git push --force-with-lease="refs/heads/$base_branch:" origin "HEAD:refs/heads/$base_branch"
+  fail "next-major does not rebase cleanly onto main ${main_sha:0:7}. Resolve it in a pull request into $base_branch and push the rebased next-major to sync/next-major-rebased (see RELEASING.md)."
+  ;;
+apply)
+  pr=${2:-} merge_sha=${3:-} expected_rebased=${4:-}
+  [[ $pr =~ ^[0-9]+$ ]] || fail "Expected a pull request number, got '$pr'."
+  is_sha "$merge_sha" || fail "Expected the full merge commit sha, got '$merge_sha'."
+  is_sha "$expected_rebased" || fail "Expected the full sha of sync/next-major-rebased, got '$expected_rebased'."
+  IFS=$'\t' read -r merged same_repo base_ref head_ref pr_merge_sha < <(gh api "repos/$repo/pulls/$pr" --jq \
+    '[.merged, (.head.repo.full_name == .base.repo.full_name), .base.ref, .head.ref, .merge_commit_sha] | @tsv') ||
+    fail "Could not read #$pr."
+  [ "$merged" = true ] && [ "$same_repo" = true ] || fail "#$pr is not a merged pull request from this repository."
+  [ "$pr_merge_sha" = "$merge_sha" ] || fail "#$pr was merged as $pr_merge_sha, not $merge_sha."
+  [[ $base_ref =~ ^sync/conflict-([0-9a-f]{40})-base$ ]] || fail "#$pr does not target a sync/conflict-<main sha>-base branch."
+  main_sha=${BASH_REMATCH[1]}
+  fetch "+refs/heads/$base_ref:refs/remotes/origin/conflict-base" \
+    '+refs/heads/sync/next-major-rebased:refs/remotes/origin/rebased'
+  rebased=$(git rev-parse origin/rebased)
+  [ "$rebased" = "$expected_rebased" ] || fail "sync/next-major-rebased is $rebased, not the $expected_rebased given."
+  [ "$(git rev-parse origin/conflict-base)" = "$merge_sha" ] || fail "$base_ref has moved past the merge of #$pr."
+  git merge-base --is-ancestor "$main_sha" origin/main || fail "$main_sha is not on main."
+  # The pull request was merged into exactly the conflict this script shows for the current
+  # next-major and main_sha, regenerated here rather than trusted from the branch
+  conflict=$(git rev-parse "$merge_sha^1")
+  [ "$(git rev-list --parents -n 1 "$conflict")" = "$conflict $old $main_sha" ] ||
+    fail "#$pr was not merged into the conflict for the current next-major and main ${main_sha:0:7}; run the sync again."
+  show_conflicts
+  [ "$(git rev-parse "HEAD^{tree}")" = "$(git rev-parse "$conflict^{tree}")" ] ||
+    fail "$base_ref is not the conflict the sync shows for next-major and main ${main_sha:0:7}."
+  # Only in the paths the reviewed resolution changed may a rebased commit differ from its original
+  mapfile -d '' -t resolved < <(git diff -z --name-only "$conflict" "$merge_sha")
+  [ "$(git merge-base "$main_sha" "$rebased")" = "$main_sha" ] && [ -z "$(git rev-list --merges "$main_sha..$rebased")" ] &&
+    same_commits "$(git merge-base "$old" origin/main)..$old" "$main_sha..$rebased" "${resolved[@]}" ||
+    fail "sync/next-major-rebased must be next-major's own commits rebased onto ${main_sha:0:7}: the same authors, messages and changes, except in the resolved paths."
+  [ "$(git rev-parse "$rebased^{tree}")" = "$(git rev-parse "$merge_sha^{tree}")" ] ||
+    fail "sync/next-major-rebased differs from what #$pr merged."
+  git checkout --quiet --detach "$rebased"
+  publish
+  # Tidy up, each branch leased to what was checked; a branch already deleted is skipped
+  args=(--atomic "--force-with-lease=refs/heads/$base_ref:$merge_sha" "--force-with-lease=refs/heads/sync/next-major-rebased:$rebased")
+  refs=(":refs/heads/$base_ref" ":refs/heads/sync/next-major-rebased")
+  head_sha=$(remote_ref "refs/heads/$head_ref")
+  if [ "$head_ref" = "sync/conflict-$main_sha" ] && [ -n "$head_sha" ]; then
+    args+=("--force-with-lease=refs/heads/$head_ref:$head_sha")
+    refs+=(":refs/heads/$head_ref")
+  fi
+  git push "${args[@]}" origin "${refs[@]}" || echo "::warning::next-major is published, but the sync branches were not deleted."
+  ;;
+*)
+  fail "Usage: next-major-sync.sh sync <main sha> | apply <pull request number> <merge commit sha> <rebased sha>"
+  ;;
+esac

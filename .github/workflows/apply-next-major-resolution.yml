@@ -1,0 +1,56 @@
+name: Apply next-major resolution
+
+# A maintainer runs this after reviewing and merging the pull request that resolves
+# a sync conflict (into sync/conflict-<main sha>-base). It pushes
+# sync/next-major-rebased as next-major, but only if it has exactly the merged tree
+# and next-major's commits unchanged (see RELEASING.md).
+on:
+  workflow_dispatch:
+    inputs:
+      pull_request:
+        description: Number of the merged resolution pull request
+        required: true
+      merge_sha:
+        description: Its full merge commit sha, as shown on the pull request
+        required: true
+      rebased_sha:
+        description: The full sha of sync/next-major-rebased you reviewed
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  apply:
+    if: github.repository == 'rdfjs/N3.js' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: next-major-sync
+    # CI's release group for next-major, shared with the sync
+    concurrency:
+      group: release-refs/heads/next-major
+      cancel-in-progress: false
+    env:
+      # Reads only; the push uses NEXT_MAJOR_SYNC_TOKEN through the checkout
+      GH_TOKEN: ${{ github.token }}
+      PULL_REQUEST: ${{ inputs.pull_request }}
+      MERGE_SHA: ${{ inputs.merge_sha }}
+      REBASED_SHA: ${{ inputs.rebased_sha }}
+    steps:
+      # This run is the approval, whoever merged the pull request, so only an admin or
+      # maintainer may start it. The triggering actor is checked, since a re-run keeps the
+      # original actor.
+      - name: Check that a maintainer started this
+        run: |
+          role=$(gh api "repos/$GITHUB_REPOSITORY/collaborators/$GITHUB_TRIGGERING_ACTOR/permission" --jq .role_name)
+          if [ "$role" != admin ] && [ "$role" != maintain ]; then
+            echo "::error::Only an admin or maintainer can apply a next-major resolution; $GITHUB_TRIGGERING_ACTOR is '$role'."
+            exit 1
+          fi
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.NEXT_MAJOR_SYNC_TOKEN }}
+      - name: Push the approved resolution as next-major
+        run: .github/scripts/next-major-sync.sh apply "$PULL_REQUEST" "$MERGE_SHA" "$REBASED_SHA"
