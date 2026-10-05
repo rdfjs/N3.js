@@ -647,47 +647,11 @@ Pass a `format` option to the constructor with the name or MIME type of a form
 for strict, fault-intolerant behavior.
 
 ### Validation
-The **parser** validates the _syntax_ of the selected format's grammar, with the following exceptions:
-- IRIs are not checked for full [RFC 3987](https://www.rfc-editor.org/rfc/rfc3987) well-formedness
-  (`<http://example.org/%ZZ>` parses),
-  and relative IRIs remain relative when no `baseIRI` option is given;
-- literal values are not checked against their datatype (`"abc"^^xsd:integer` parses);
-- language tags are checked against the grammar, not against [BCP 47](https://www.rfc-editor.org/rfc/rfc5646).
-
-The **writer** trusts the terms it is given. Quads constructed with invalid term values are serialized as-is and can yield invalid documents.
-
-Validate terms after parsing if you need valid RDF,
-and validate quads your application builds before passing them to the writer,
-unless your application logic guarantees they are valid.
-
-N3.js leaves this validation to [@rdfjs/validate-quad](https://github.com/jeswr/validate-quad),
-which checks quads as a separate pipeline step, so you only pay for validation where you need it.
-It checks that each term is allowed in its position for the target format and RDF version,
-and that IRIs and blank node labels are well-formed.
-It also checks that literals have well-formed Unicode, well-formed BCP 47 language tags, and consistent language, direction and datatype,
-and checks literal values with [rdf-validate-datatype](https://github.com/zazuko/rdf-validate-datatype) where it has a validator for their datatype,
-only as strictly as that validator does (`"2020-13-01"^^xsd:date` passes).
-Literals of other datatypes are accepted.
-
-The package is an ES module and needs Node.js 20.19 or later. Add it after the parser, or before the writer:
-```JavaScript
-import fs from 'node:fs';
-import { pipeline } from 'node:stream/promises';
-import { StreamParser, StreamWriter } from 'n3';
-import { createValidationStream } from '@rdfjs/validate-quad';
-
-await pipeline(
-  fs.createReadStream('data.ttl'),
-  new StreamParser({ format: 'text/turtle' }),
-  createValidationStream({ format: 'application/n-triples', version: '1.2' }),
-  new StreamWriter({ format: 'application/n-triples' }),
-  process.stdout,
-).catch(error => console.error(error.message));
-```
-The first invalid quad fails the pipeline; output for earlier quads may already have been written.
-See its README for the options, for validating single quads, and for skipping invalid quads instead of failing.
-
-Parser-level opt-in validation modes were explored in [#634](https://github.com/rdfjs/N3.js/pull/634).
+The parser checks the format's syntax and some term constraints,
+but does not fully validate IRIs, language tags against BCP 47, or literal values against their datatypes:
+for example, `"abc"^^xsd:integer` (with `xsd:` declared) and `<http://example.org/%ZZ>` parse.
+The writer escapes and formats the terms it is given but does not validate them, so invalid terms can produce invalid documents.
+To validate quads after parsing or before writing, use [@rdfjs/validate-quad](https://github.com/jeswr/validate-quad).
 
 ### Interface specifications
 The N3.js submodules are compatible with the following [RDF.js](http://rdf.js.org) interfaces:
