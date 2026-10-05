@@ -40,15 +40,20 @@ jobs:
           keywords='(^|[^[:alnum:]_])(close[sd]?|fix(e[sd])?|resolve[sd]?):?[[:space:]]+(#|rdfjs/n3\.js#|https?://github\.com/rdfjs/n3\.js/issues/)[0-9]+'
           refs() { grep -ioE "$keywords" | grep -oE '[0-9]+$' || true; }
 
-          numbers=$(
-            for sha in $(gh api --paginate "repos/$REPO/compare/$BEFORE...$AFTER?per_page=100" --jq '.commits[].sha'); do
-              gh api "repos/$REPO/commits/$sha" --jq '.commit.message' | refs
-              # Keywords in the body of a pull request of this repository that was
-              # merged into next-major; open pull requests can contain the commit too.
-              gh api --paginate "repos/$REPO/commits/$sha/pulls?per_page=100" \
-                --jq '.[] | select(.base.ref == "next-major" and .base.repo.full_name == env.REPO and .merged_at != null) | .body // ""' | refs
-            done | sort -un
-          )
+          # Each lookup is assigned on its own, so any failed API call stops the job.
+          shopt -s inherit_errexit
+          shas=$(gh api --paginate "repos/$REPO/compare/$BEFORE...$AFTER?per_page=100" --jq '.commits[].sha')
+          found=$(mktemp)
+          for sha in $shas; do
+            message=$(gh api "repos/$REPO/commits/$sha" --jq '.commit.message')
+            refs <<<"$message" >>"$found"
+            # Keywords in the body of a pull request of this repository that was
+            # merged into next-major; open pull requests can contain the commit too.
+            bodies=$(gh api --paginate "repos/$REPO/commits/$sha/pulls?per_page=100" \
+              --jq '.[] | select(.base.ref == "next-major" and .base.repo.full_name == env.REPO and .merged_at != null) | .body // ""')
+            refs <<<"$bodies" >>"$found"
+          done
+          numbers=$(sort -un "$found")
 
           for number in $numbers; do
             issue=$(gh api "repos/$REPO/issues/$number" --jq '{state, pr: (.pull_request != null)}') || continue
