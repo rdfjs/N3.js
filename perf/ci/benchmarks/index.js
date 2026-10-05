@@ -23,6 +23,7 @@ module.exports = {
   ...require('./store'),
   ...require('./store-sets'),
   ...require('./datafactory'),
+  ...require('./equals'),
   ...require('./util'),
   ...require('./reasoner'),
   ...require('./large'),

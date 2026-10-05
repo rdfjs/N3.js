@@ -1,4 +1,4 @@
-import { NamedNode, DefaultGraph, Term } from '../src';
+import { NamedNode, DefaultGraph, Term, BlankNode, Literal, Variable } from '../src';
 
 describe('NamedNode', () => {
   describe('The NamedNode module', () => {
@@ -113,6 +113,26 @@ describe('NamedNode', () => {
 
     it('should provide a JSON representation', () => {
       expect(namedNode.toJSON()).toEqual({ termType: 'NamedNode', value: '' });
+    });
+  });
+
+  describe('A NamedNode instance whose IRI starts like the id of another term', () => {
+    it('should not equal a variable with the same id', () => {
+      expect(new NamedNode('?x').equals(new Variable('x'))).toBe(false);
+      expect(new Variable('x').equals(new NamedNode('?x'))).toBe(false);
+    });
+
+    it('should not equal a blank node with the same id', () => {
+      expect(new NamedNode('_:b').equals(new BlankNode('b'))).toBe(false);
+      expect(new BlankNode('b').equals(new NamedNode('_:b'))).toBe(false);
+    });
+
+    it('should not equal a literal with the same id', () => {
+      expect(new NamedNode('"a"').equals(new Literal('"a"'))).toBe(false);
+    });
+
+    it('should equal a named node with the same IRI', () => {
+      expect(new NamedNode('?x').equals(new NamedNode('?x'))).toBe(true);
     });
   });
 });

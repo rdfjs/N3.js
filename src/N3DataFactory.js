@@ -41,9 +41,10 @@ export class Term {
   // ### Returns whether this object represents the same term as the other
   equals(other) {
     // If both terms were created by this library,
-    // equality can be computed through ids
+    // equality can be computed through ids of the same term type,
+    // since IRIs such as `?x` have the same id as other terms
     if (other instanceof Term)
-      return this.id === other.id;
+      return this.id === other.id && this.termType === other.termType;
     // Otherwise, compare term type and value
     return !!other && this.termType === other.termType &&
                       this.value    === other.value;
