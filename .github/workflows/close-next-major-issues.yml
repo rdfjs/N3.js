@@ -38,12 +38,15 @@ jobs:
           # Closing keywords GitHub recognises, followed by #N, rdfjs/N3.js#N or this
           # repository's issue URL. References to other repositories don't match.
           keywords='(^|[^[:alnum:]_])(close[sd]?|fix(e[sd])?|resolve[sd]?):?[[:space:]]+(#|rdfjs/n3\.js#|https?://github\.com/rdfjs/n3\.js/issues/)[0-9]+'
-          refs() { grep -ioE "$keywords" | grep -oE '[0-9]+$' || true; }
+          # grep exits 1 when nothing matches; any other failure stops the job.
+          refs() { grep -ioE "$keywords" | grep -oE '[0-9]+$' || [ $? = 1 ]; }
 
           # Each lookup is assigned on its own, so any failed API call stops the job.
           shopt -s inherit_errexit
           shas=$(gh api --paginate "repos/$REPO/compare/$BEFORE...$AFTER?per_page=100" --jq '.commits[].sha')
           found=$(mktemp)
+          err=$(mktemp)
+          trap 'rm -f "$found" "$err"' EXIT
           for sha in $shas; do
             message=$(gh api "repos/$REPO/commits/$sha" --jq '.commit.message')
             refs <<<"$message" >>"$found"
@@ -55,11 +58,21 @@ jobs:
           done
           numbers=$(sort -un "$found")
 
+          # Look up every issue before closing any. A number that is not an issue in this
+          # repository (404) or was deleted (410) is skipped; any other error stops the job.
+          open_issues=()
           for number in $numbers; do
-            issue=$(gh api "repos/$REPO/issues/$number" --jq '{state, pr: (.pull_request != null)}') || continue
-            if [ "$(jq -r .pr <<<"$issue")" = true ] || [ "$(jq -r .state <<<"$issue")" != open ]; then
-              continue
+            if ! issue=$(gh api "repos/$REPO/issues/$number" --jq '{state, pr: (.pull_request != null)}' 2>"$err"); then
+              if grep -qE 'HTTP 404|HTTP 410' "$err"; then continue; fi
+              cat "$err" >&2
+              exit 1
             fi
+            if [ "$(jq -r .pr <<<"$issue")" = false ] && [ "$(jq -r .state <<<"$issue")" = open ]; then
+              open_issues+=("$number")
+            fi
+          done
+
+          for number in "${open_issues[@]}"; do
             echo "Closing #$number"
             gh api -X PATCH "repos/$REPO/issues/$number" -f state=closed -f state_reason=completed >/dev/null
           done
