@@ -652,55 +652,42 @@ The **parser** validates the _syntax_ of the selected format's grammar, with the
   (`<http://example.org/%ZZ>` parses),
   and relative IRIs remain relative when no `baseIRI` option is given;
 - literal values are not checked against their datatype (`"abc"^^xsd:integer` parses);
-- language tags are checked against the grammar, not against [BCP 47](https://www.rfc-editor.org/rfc/rfc5646);
+- language tags are checked against the grammar, not against [BCP 47](https://www.rfc-editor.org/rfc/rfc5646).
 
 The **writer** trusts the terms it is given. Quads constructed with invalid term values are serialized as-is and can yield invalid documents.
 
-Therefore, term validation should be done post-parsing to ensure that valid RDF terms should be produced.
+Validate terms after parsing if you need valid RDF,
+and validate quads your application builds before passing them to the writer,
+unless your application logic guarantees they are valid.
 
-One should also ensure that terms are valid prior to being passed into the writer; either by validation, or ensuring that valid RDF will always be produced by the application logic producing the terms.
+N3.js leaves this validation to [@rdfjs/validate-quad](https://github.com/jeswr/validate-quad),
+which checks quads as a separate pipeline step, so you only pay for validation where you need it.
+It checks that each term is allowed in its position for the target format and RDF version,
+and that IRIs and blank node labels are well-formed.
+It also checks that literals have well-formed Unicode, well-formed BCP 47 language tags, and consistent language, direction and datatype,
+and checks literal values with [rdf-validate-datatype](https://github.com/zazuko/rdf-validate-datatype) where it has a validator for their datatype,
+only as strictly as that validator does (`"2020-13-01"^^xsd:date` passes).
+Literals of other datatypes are accepted.
 
-The following code snipped shows how to validate that NamedNodes and Literals are validly formed. Depending on your application you may wish to apply further validation: such as ensuring that nested Quad terms are valid in RDF 1.2, and ensuring that `termTypes` are only occuring in the positions that is valid for RDF 1.1 and RDF 1.2.
+The package is an ES module and needs Node.js 20.19 or later. Add it after the parser, or before the writer:
 ```JavaScript
-const { Transform } = require('stream');
-const { validateIri, IriValidationStrategy } = require('validate-iri');
-const { validators } = require('rdf-validate-datatype');
-const { parse: parseLanguageTag } = require('bcp-47');
+import fs from 'node:fs';
+import { pipeline } from 'node:stream/promises';
+import { StreamParser, StreamWriter } from 'n3';
+import { createValidationStream } from '@rdfjs/validate-quad';
 
-function validateTerm(term) {
-  switch (term.termType) {
-  case 'NamedNode': // RDF requires absolute IRIs
-    return validateIri(term.value, IriValidationStrategy.Strict) || null;
-  case 'Literal':
-    if (term.language) {
-      let invalid = false;
-      parseLanguageTag(term.language, { warning: () => { invalid = true; } });
-      return invalid ? new Error(`Invalid language tag "${term.language}"`) : null;
-    }
-    const validate = validators.find(term.datatype);
-    return validate && !validate(term.value)
-      ? new Error(`Invalid value "${term.value}" for datatype ${term.datatype.value}`)
-      : null; // unknown datatypes cannot be judged
-  default:
-    return null;
-  }
-}
-
-const quadStream = fs.createReadStream('data.ttl')
-  .pipe(new N3.StreamParser())
-  .pipe(new Transform({
-    objectMode: true,
-    transform(quad, encoding, done) {
-      const error = validateTerm(quad.subject) || validateTerm(quad.predicate) ||
-                    validateTerm(quad.object) || validateTerm(quad.graph);
-      done(error, error ? undefined : quad); // or: skip/collect instead of failing
-    },
-  }));
+await pipeline(
+  fs.createReadStream('data.ttl'),
+  new StreamParser({ format: 'text/turtle' }),
+  createValidationStream({ format: 'application/n-triples', version: '1.2' }),
+  new StreamWriter({ format: 'application/n-triples' }),
+  process.stdout,
+).catch(error => console.error(error.message));
 ```
+The first invalid quad fails the pipeline; output for earlier quads may already have been written.
+See its README for the options, for validating single quads, and for skipping invalid quads instead of failing.
 
-
-Parser-level opt-in validation modes covering the term and version dimensions
-are proposed in [#634](https://github.com/rdfjs/N3.js/pull/634).
+Parser-level opt-in validation modes were explored in [#634](https://github.com/rdfjs/N3.js/pull/634).
 
 ### Interface specifications
 The N3.js submodules are compatible with the following [RDF.js](http://rdf.js.org) interfaces:
