@@ -17,6 +17,9 @@
 # note moved to the rebased commit, and the commit that alpha was published from kept under
 # refs/archive.
 set -euo pipefail
+# The commit check needs associative arrays and namerefs; an older bash would let it fail open
+((BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 3))) 2> /dev/null ||
+  { echo "::error::next-major-sync.sh needs bash 4.3 or later."; exit 1; }
 
 repo=${GITHUB_REPOSITORY:-rdfjs/N3.js}
 git config user.name 'github-actions[bot]'
@@ -43,29 +46,149 @@ commit_record() {
     print join("\n", grep { !/^(?:tree|parent|committer|gpgsig|gpgsig-sha256) / } split /\n(?! )/, $head), "\n\n", $body'
 }
 
-# The lines a commit adds and removes, byte for byte and in order, outside the given paths. Only
-# blob ids and hunk headers (line numbers and function context) are dropped, since a rebase onto
-# a newer main changes those.
-changes() {
-  local commit=$1
-  shift
-  git diff --unified=0 --no-color --no-ext-diff --no-renames "$commit^" "$commit" -- . "${@/#/:(exclude,literal)}" |
-    sed -E -e '/^index [0-9a-f]+\.\.[0-9a-f]+/d' -e 's/^@@ -[0-9]+(,[0-9]+)? \+[0-9]+(,[0-9]+)? @@.*/@@/'
+# Loads a commit's files into the associative array named by $1, as path to "<mode> <object>",
+# through the file $3; fails if git does
+files_of() {
+  local -n files=$1 || return 1
+  local line meta
+  git ls-tree -r -z --full-tree "$2" > "$3" || return 1
+  files=()
+  while IFS= read -r -d '' line; do
+    meta=${line%%$'\t'*}
+    files[${line#*$'\t'}]="${meta%% *} ${meta##* }"
+  done < "$3"
+}
+
+# Fails unless every commit listed in the file $2, its parent and their trees and files pass git's
+# object checks with no error or warning: ls-tree hides a malformed tree, showing an odd mode as
+# a normal one and keeping both copies of a duplicated entry. The objects are copied as a pack
+# into a fresh repository in $1, checked with no global or system configuration to relax it.
+# Those checks read a mode as 16 bits, so every tree's raw entries must also use exactly one of
+# git's five modes.
+well_formed() {
+  local c
+  while IFS= read -r c; do printf '%s\n%s^\n' "$c" "$c"; done < "$2" > "$1/heads" &&
+    git rev-list --objects --no-object-names --no-walk --stdin < "$1/heads" > "$1/objects" &&
+    git cat-file --batch-check='%(objecttype) %(objectname)' < "$1/objects" > "$1/types" &&
+    awk '$1 == "tree" { print $2; next } $1 != "commit" && $1 != "blob" { exit 1 }' "$1/types" > "$1/trees" &&
+    [ -s "$1/trees" ] &&
+    git cat-file --batch < "$1/trees" > "$1/raw-trees" &&
+    perl -e '
+      binmode STDIN;
+      while (defined(my $header = <STDIN>)) {
+        my ($oid, $type, $size) = $header =~ /\A([0-9a-f]+) (\S+) (\d+)\n\z/ or exit 1;
+        my ($tree, $nl);
+        $type eq "tree" && read(STDIN, $tree, $size) == $size && read(STDIN, $nl, 1) == 1 && $nl eq "\n" or exit 1;
+        my $length = length($oid) / 2;
+        while (length $tree) {
+          $tree =~ s/\A(100644|100755|120000|160000|40000) [^\0]+\0.{$length}//s or exit 1;
+        }
+      }' < "$1/raw-trees" &&
+    git pack-objects -q --stdout < "$1/objects" > "$1/pack" &&
+    git init --quiet --bare --object-format="$(git rev-parse --show-object-format)" "$1/check.git" &&
+    GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null \
+      git --git-dir="$1/check.git" index-pack --stdin --fsck-objects < "$1/pack" > /dev/null 2> "$1/fsck" &&
+    [ ! -s "$1/fsck" ]
+}
+
+# Fails if a commit's tree holds an empty directory, which no checkout makes and which the file
+# listings and an index cannot show; uses the file $2
+no_empty_tree() {
+  local line empty
+  empty=$(git hash-object -t tree /dev/null) && git ls-tree -r -t -z --full-tree "$1" > "$2" || return 1
+  while IFS= read -r -d '' line; do
+    [ "${line%%$'\t'*}" != "040000 tree $empty" ] || return 1
+  done < "$2"
+}
+
+# Succeeds if commit b is commit a's change carried onto b's parent, file by file, with a's
+# parent as the base: every path a changes merges cleanly with git merge-file (line by line, no
+# renames, no attributes) into exactly b's version, and b changes nothing else. Only the given
+# paths (the hand-resolved ones) are skipped. The three-way merge, not the diff text or patch
+# context, decides where a's change lands, so commit by commit from main the rebased history can
+# differ only in the resolved paths. Last, b's whole tree must be the tree those entries build
+# on b's parent, so nothing else the file listings leave out gets through. None of the four
+# trees may hold an empty directory, which neither the listings nor that tree can account for.
+same_change() {
+  local dir status
+  dir=$(mktemp -d)
+  compare_change "$dir" "$@"
+  status=$?
+  rm -rf "$dir"
+  return "$status"
+}
+compare_change() {
+  local dir=$1 a=$2 b=$3 path r base ours theirs want
+  local -A skip base_files theirs_files ours_files new_files changed || return 1
+  shift 3
+  for r in "$@"; do skip[$r]=1 || return 1; done
+  no_empty_tree "$a^" "$dir/list" && no_empty_tree "$a" "$dir/list" &&
+    no_empty_tree "$b^" "$dir/list" && no_empty_tree "$b" "$dir/list" &&
+    files_of base_files "$a^" "$dir/list" && files_of theirs_files "$a" "$dir/list" &&
+    files_of ours_files "$b^" "$dir/list" && files_of new_files "$b" "$dir/list" &&
+    git diff-tree -r -z --no-renames --ignore-submodules=none --name-only "$a^" "$a" > "$dir/a-paths" &&
+    git diff-tree -r -z --no-renames --ignore-submodules=none --name-only "$b^" "$b" > "$dir/b-paths" || return 1
+  while IFS= read -r -d '' path; do
+    [ -z "${skip[$path]:-}" ] || continue
+    changed[$path]=1 || return 1
+    base=${base_files[$path]:-} theirs=${theirs_files[$path]:-} ours=${ours_files[$path]:-}
+    if [ "$ours" = "$base" ]; then
+      want=$theirs
+    elif [ "$ours" = "$theirs" ]; then
+      want=$ours
+    elif [ -n "$base" ] && [ -n "$ours" ] && [ -n "$theirs" ] && [ "${base%% *}" = "${ours%% *}" ] &&
+      [ "${base%% *}" = "${theirs%% *}" ] && { [ "${base%% *}" = 100644 ] || [ "${base%% *}" = 100755 ]; }; then
+      # Both sides changed the same regular file's content: a line-by-line merge, which must be
+      # clean. Symlinks and submodules are only ever taken whole.
+      git cat-file blob "${base#* }" > "$dir/base" && git cat-file blob "${ours#* }" > "$dir/ours" &&
+        git cat-file blob "${theirs#* }" > "$dir/theirs" &&
+        git merge-file -p --quiet "$dir/ours" "$dir/base" "$dir/theirs" > "$dir/merged" &&
+        want="${base%% *} $(git hash-object --stdin < "$dir/merged")" || return 1
+    else
+      return 1
+    fi
+    [ "${new_files[$path]:-}" = "$want" ] || return 1
+    printf '%s\t%s\0' "${want:-0 0000000000000000000000000000000000000000}" "$path" >> "$dir/entries" || return 1
+  done < "$dir/a-paths"
+  while IFS= read -r -d '' path; do
+    [ -n "${skip[$path]:-}" ] || [ -n "${changed[$path]:-}" ] || return 1
+  done < "$dir/b-paths"
+  for r in "$@"; do
+    want=${new_files[$r]:-}
+    printf '%s\t%s\0' "${want:-0 0000000000000000000000000000000000000000}" "$r" >> "$dir/entries" || return 1
+  done
+  : >> "$dir/entries" &&
+    GIT_INDEX_FILE=$dir/index git read-tree "$b^" &&
+    GIT_INDEX_FILE=$dir/index git update-index -z --index-info < "$dir/entries" &&
+    GIT_INDEX_FILE=$dir/index git write-tree > "$dir/tree" &&
+    git rev-parse --verify "$b^{tree}" > "$dir/b-tree" &&
+    cmp -s "$dir/tree" "$dir/b-tree"
 }
 
 # Succeeds if two ranges hold the same number of commits and each pair, compared on its own, has
-# the same author, message and other raw fields, and changes the same lines outside the paths
-# given after the ranges (the hand-resolved ones)
+# the same author, message and other raw fields, and makes the same change outside the paths
+# given after the ranges (the hand-resolved ones). Every git command must succeed: outputs go to
+# files rather than through process substitutions, whose failures would go unseen.
 same_commits() {
+  local dir status
+  dir=$(mktemp -d)
+  compare_commits "$dir" "$@"
+  status=$?
+  rm -rf "$dir"
+  return "$status"
+}
+compare_commits() {
+  local dir=$1 i
   local -a a b
-  local i
-  mapfile -t a < <(git rev-list --reverse "$1")
-  mapfile -t b < <(git rev-list --reverse "$2")
-  shift 2
+  git rev-list --reverse "$2" > "$dir/a" && git rev-list --reverse "$3" > "$dir/b" &&
+    cat "$dir/a" "$dir/b" > "$dir/all" && well_formed "$dir" "$dir/all" || return 1
+  mapfile -t a < "$dir/a"
+  mapfile -t b < "$dir/b"
+  shift 3
   [ "${#a[@]}" -eq "${#b[@]}" ] || return 1
   for i in "${!a[@]}"; do
-    cmp -s <(commit_record "${a[$i]}") <(commit_record "${b[$i]}") &&
-      cmp -s <(changes "${a[$i]}" "$@") <(changes "${b[$i]}" "$@") || return 1
+    commit_record "${a[$i]}" > "$dir/record-a" && commit_record "${b[$i]}" > "$dir/record-b" &&
+      cmp -s "$dir/record-a" "$dir/record-b" && same_change "${a[$i]}" "${b[$i]}" "$@" || return 1
   done
 }
 
