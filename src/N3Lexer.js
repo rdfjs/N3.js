@@ -238,7 +238,9 @@ export default class N3Lexer {
         if (!/^[a-z]+$/i.test(name) || reservedWords.test(name))
           throw new Error(`Invalid directive name: "${name}"`);
       }
-      this._directive = new RegExp(`(?:${options.directives.join('|')})(?=[\\s#<])`, 'iy');
+      // Like VERSION, directives are case-sensitive in N-Triples and N-Quads
+      const names = this._lineMode ? options.directives.map(name => name.toUpperCase()) : options.directives;
+      this._directive = new RegExp(`(?:${names.join('|')})(?=[\\s#<])`, this._lineMode ? 'y' : 'iy');
       this._directiveMaxLength = Math.max(...options.directives.map(name => name.length));
       // The first characters of directive names, so other words skip the regular expression
       this._directiveStarts = options.directives.map(name => name[0].toLowerCase() + name[0].toUpperCase()).join('');
