@@ -1439,21 +1439,19 @@ function validateMatchSemantics(semantics = 'lazy') {
   return semantics;
 }
 
-// Returns whether two terms or term IDs are the same; triple terms are compared with `equals`.
-function sameTerm(left, right) {
-  if (left.termType !== 'Quad' && right.termType !== 'Quad')
-    return entityKey(left) === entityKey(right);
-  return left.termType === 'Quad' ? left.equals(right) : right.equals(left);
+// Returns the graph of a pattern, where the empty string also stands for the default graph
+function graphPattern(graph) {
+  return graph === '' ? N3DataFactory.defaultGraph() : graph;
 }
 
 // Returns the intersection of two quad patterns, or false if they conflict.
 function intersectMatchPatterns(left, right) {
   const result = new Array(4);
   for (let i = 0; i < 4; i++) {
-    const leftTerm = left[i], rightTerm = right[i];
+    const leftTerm = left[i], rightTerm = i === 3 ? graphPattern(right[i]) : right[i];
     if (leftTerm === null || leftTerm === undefined)
       result[i] = rightTerm;
-    else if (rightTerm === null || rightTerm === undefined || sameTerm(leftTerm, rightTerm))
+    else if (rightTerm === null || rightTerm === undefined || leftTerm.equals(rightTerm))
       result[i] = leftTerm;
     else
       return false;
@@ -1467,7 +1465,7 @@ function intersectMatchPatterns(left, right) {
 class DatasetCoreAndReadableStream extends Readable {
   constructor(n3Store, subject, predicate, object, graph, options) {
     super({ objectMode: true });
-    Object.assign(this, { n3Store, subject, predicate, object, graph, options });
+    Object.assign(this, { n3Store, subject, predicate, object, graph: graphPattern(graph), options });
     const semantics = this._semantics = validateMatchSemantics(options.matchSemantics);
 
     if (options.matchesNothing) {
@@ -1497,17 +1495,17 @@ class DatasetCoreAndReadableStream extends Readable {
       return false;
     return graph === null || graph === undefined ||
       graphId === (this._graphId || (this._graphId =
-        graph === '' || isDefaultGraph(graph) ? 1 : n3Store._termToNumericId(graph)));
+        isDefaultGraph(graph) ? 1 : n3Store._termToNumericId(graph)));
   }
 
   // ### `_matchesQuad` tests a Quad against this view.
   _matchesQuad(quad) {
     const { subject, predicate, object, graph } = this;
     return !this._matchesNothing &&
-      (subject === null || subject === undefined || sameTerm(subject, quad.subject)) &&
-      (predicate === null || predicate === undefined || sameTerm(predicate, quad.predicate)) &&
-      (object === null || object === undefined || sameTerm(object, quad.object)) &&
-      (graph === null || graph === undefined || sameTerm(graph, quad.graph));
+      (subject === null || subject === undefined || subject.equals(quad.subject)) &&
+      (predicate === null || predicate === undefined || predicate.equals(quad.predicate)) &&
+      (object === null || object === undefined || object.equals(quad.object)) &&
+      (graph === null || graph === undefined || graph.equals(quad.graph));
   }
 
   // ### `_assertMatchesPattern` rejects a Quad outside this view.
