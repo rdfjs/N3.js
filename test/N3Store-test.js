@@ -4110,6 +4110,20 @@ describe('Store', () => {
         expect(() => canonical(clique, { maxWorkFactor: 3 })).toThrow('Canonicalization exceeded its maximum amount of work');
       });
 
+      it('should fail on many permutations of related blank nodes that already have identifiers', () => {
+        // Once the urn:p quads give _:x and _:y identifiers, the urn:q quads relate them 20 times each
+        let nquads = '';
+        for (const subject of ['a', 'b']) {
+          for (const object of ['x', 'y']) {
+            nquads += `_:${subject} <urn:p> _:${object} .\n`;
+            for (let i = 0; i < 20; i++)
+              nquads += `_:${subject} <urn:q> _:${object} <urn:g${i}> .\n`;
+          }
+        }
+        expect(() => canonical(nquads, { maxWorkFactor: 3 }))
+          .toThrow('Canonicalization exceeded its maximum amount of work; a higher maxWorkFactor allows more');
+      });
+
       it('should fail on chains of blank nodes too long for the call stack', () => {
         let chain = '';
         for (let i = 0; i < 20000; i++)

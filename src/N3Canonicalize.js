@@ -70,11 +70,13 @@ export default function canonicalize(quads, { hashAlgorithm = 'SHA-256', maxWork
       id ? `_:${id}` : hashFirstDegree(related)}`);
   }
 
-  // Hash N-Degree Quads (4.8)
-  let deepIterations = nonUniqueCount ** maxWorkFactor;
+  // Hash N-Degree Quads (4.8), with separate budgets for its runs and for the permutations of
+  // two or more related blank nodes, since related blank nodes that already have identifiers need no runs
+  const workError = 'Canonicalization exceeded its maximum amount of work; a higher maxWorkFactor allows more';
+  let deepIterations = nonUniqueCount ** maxWorkFactor, permutationSteps = deepIterations;
   function hashNDegree(id, issuer) {
     if (deepIterations-- <= 0)
-      throw new Error('Canonicalization exceeded its maximum amount of work');
+      throw new Error(workError);
     const hashToRelated = new Map();
     for (const quad of quadsOf.get(id)) {
       for (const [related, position] of blankNodesOf(quad)) {
@@ -88,7 +90,10 @@ export default function canonicalize(quads, { hashAlgorithm = 'SHA-256', maxWork
     for (const hash of [...hashToRelated.keys()].sort()) {
       data += hash;
       let chosenPath = '', chosenIssuer;
-      for (const permutation of permutations(hashToRelated.get(hash))) {
+      const related = hashToRelated.get(hash);
+      for (const permutation of permutations(related)) {
+        if (related.length > 1 && permutationSteps-- <= 0)
+          throw new Error(workError);
         const result = permutationPath(permutation, issuer.copy(), chosenPath);
         if (result && (!chosenPath || result.path < chosenPath))
           chosenPath = result.path, chosenIssuer = result.issuer;
@@ -135,7 +140,7 @@ export default function canonicalize(quads, { hashAlgorithm = 'SHA-256', maxWork
     issueRemaining();
   }
   catch (error) {
-    throw error instanceof RangeError ? new Error('Canonicalization exceeded its maximum amount of work') : error;
+    throw error instanceof RangeError ? new Error(workError) : error;
   }
   function issueRemaining() {
     for (const list of nonUnique) {
