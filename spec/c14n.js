@@ -54,6 +54,21 @@ async function canonicalForm(document, format) {
   return write(new Parser({ format, blankNodePrefix: '' }).parse(document), format);
 }
 
+// Returns the error of the test, or false if it passes
+async function runTest(manifest, subject, format, negative) {
+  try {
+    const actual = await canonicalForm(await load(objectOf(manifest, subject, `${MF}action`)), format);
+    const expected = negative ? null : await load(objectOf(manifest, subject, `${MF}result`));
+    if (actual !== expected)
+      return new Error(negative ? 'Expected an error' : `Expected:\n${expected}Actual:\n${actual}`);
+  }
+  catch (error) {
+    if (!negative)
+      return error;
+  }
+  return false;
+}
+
 async function run() {
   fs.mkdirSync(FETCH_OPTIONS.cachePath, { recursive: true });
   let passed = 0, failed = 0;
@@ -61,24 +76,14 @@ async function run() {
     const manifest = new Parser({ baseIRI: manifestUrl }).parse(await load(manifestUrl));
     const types = format === 'RDFC-1.0' ? [`${RDFC}RDFC10EvalTest`, `${RDFC}RDFC10NegativeEvalTest`] :
       [`${RDFT}Test${format.replace('-', '')}PositiveC14N`];
-    // Only SHA-256, the default hash algorithm, is supported
-    const tests = manifest.filter(q => types.includes(q.object.value) &&
-      !manifest.some(({ subject, predicate }) => subject.equals(q.subject) && predicate.value === `${RDFC}hashAlgorithm`));
-    for (const { subject, object } of tests) {
+    for (const { subject, object } of manifest.filter(q => types.includes(q.object.value))) {
       const id = subject.value.slice(subject.value.indexOf('#') + 1);
       const negative = object.value === types[1];
-      let error = null;
-      try {
-        const actual = await canonicalForm(await load(objectOf(manifest, subject, `${MF}action`)), format);
-        const expected = negative ? null : await load(objectOf(manifest, subject, `${MF}result`));
-        if (actual !== expected)
-          error = new Error(negative ? 'Expected an error' : `Expected:\n${expected}Actual:\n${actual}`);
-      }
-      catch (testError) {
-        if (!negative)
-          error = testError;
-      }
-      if (error) {
+      const error = manifest.some(q => q.subject.equals(subject) && q.predicate.value === `${RDFC}hashAlgorithm`) ?
+        null : await runTest(manifest, subject, format, negative);
+      if (error === null)
+        console.log(`- ${id} (${subject.value}) skipped: only the SHA-256 hash algorithm is supported`);
+      else if (error) {
         failed++;
         console.log(`✖ ${id} (${subject.value})\n  ${error.message.replace(/\n/g, '\n  ')}`);
       }

@@ -1,9 +1,13 @@
-// **N3Canonicalize** serializes quads as canonical N-Quads with the RDFC-1.0 algorithm.
+// **N3Canonicalize** serializes quads as canonical N-Quads with the RDFC-1.0 algorithm and SHA-256.
 // See https://www.w3.org/TR/rdf-canon/
 import N3Writer from './N3Writer';
 
-// Canonicalizes the quads, which must not contain duplicates, into a sorted N-Quads string
-export default function canonicalize(quads) {
+// Canonicalizes the quads, which must not contain duplicates, into a sorted N-Quads string.
+// For n blank nodes without unique first-degree hashes, the work is limited to (2n)^`maxWorkFactor` steps,
+// so poison graphs fail instead of running indefinitely.
+export default function canonicalize(quads, { hashAlgorithm = 'SHA-256', maxWorkFactor = 3 }) {
+  if (hashAlgorithm !== 'SHA-256')
+    throw new Error(`Unsupported canonicalization hash algorithm: ${hashAlgorithm}`);
   // Serializes quads in canonical N-Quads, labeling each blank node through the current `label` function
   const writer = new N3Writer({ format: 'N-Quads' }), encode = writer._encodeIriOrBlank;
   let label;
@@ -18,6 +22,8 @@ export default function canonicalize(quads) {
   // Map each blank node to the quads that mention it (4.4.3 step 2)
   const quadsOf = new Map();
   for (const quad of quads) {
+    if (quad.subject.termType === 'Quad' || quad.object.termType === 'Quad')
+      throw new Error('RDFC-1.0 does not define the canonicalization of triple terms');
     for (const [id] of blankNodesOf(quad)) {
       const list = quadsOf.get(id);
       if (!list)
@@ -36,7 +42,7 @@ export default function canonicalize(quads) {
         return value === id ? 'a' : 'z';
       }
       const lines = quadsOf.get(id).map(quad => serialize(quad, labelReference));
-      firstDegreeHashes.set(id, hash = sha256(lines.sort().join('')));
+      firstDegreeHashes.set(id, hash = sha256(lines.sort(codePointOrder).join('')));
     }
     return hash;
   }
@@ -64,12 +70,16 @@ export default function canonicalize(quads) {
       id ? `_:${id}` : hashFirstDegree(related)}`);
   }
 
-  // Hash N-Degree Quads (4.8), bounded to a number of runs cubic in the non-unique blank nodes,
-  // so poison graphs fail instead of running indefinitely
-  let deepIterations = nonUniqueCount ** 3;
+  // Counts each run of Hash N-Degree Quads and each permutation it tries against the work limit
+  let work = (2 * nonUniqueCount) ** maxWorkFactor;
+  function countWork() {
+    if (work-- <= 0)
+      throw new Error('Canonicalization exceeded its maximum amount of work');
+  }
+
+  // Hash N-Degree Quads (4.8)
   function hashNDegree(id, issuer) {
-    if (deepIterations-- === 0)
-      throw new Error('Canonicalization exceeded its maximum number of deep iterations');
+    countWork();
     const hashToRelated = new Map();
     for (const quad of quadsOf.get(id)) {
       for (const [related, position] of blankNodesOf(quad)) {
@@ -84,6 +94,7 @@ export default function canonicalize(quads) {
       data += hash;
       let chosenPath = '', chosenIssuer;
       for (const permutation of permutations(hashToRelated.get(hash))) {
+        countWork();
         const result = permutationPath(permutation, issuer.copy(), chosenPath);
         if (result && (!chosenPath || result.path < chosenPath))
           chosenPath = result.path, chosenIssuer = result.issuer;
@@ -142,7 +153,22 @@ export default function canonicalize(quads) {
 
   // Serialize the quads with their canonical labels (4.4.3 step 7)
   const lines = quads.map(quad => serialize(quad, canonical.get.bind(canonical)));
-  return lines.sort().join('');
+  return lines.sort(codePointOrder).join('');
+}
+
+// Compares strings by Unicode code point, which differs from UTF-16 order for surrogate pairs
+function codePointOrder(a, b) {
+  let i = 0;
+  while (i < a.length && a.charCodeAt(i) === b.charCodeAt(i))
+    i++;
+  if (i === a.length || i === b.length)
+    return a.length - b.length;
+  return codePointRank(a.charCodeAt(i)) - codePointRank(b.charCodeAt(i));
+}
+
+// Moves surrogates above the other UTF-16 code units, since they encode code points above U+FFFF
+function codePointRank(unit) {
+  return unit >= 0xE000 ? unit - 0x800 : unit >= 0xD800 ? unit + 0x2000 : unit;
 }
 
 // Issues sequential identifiers with a prefix (4.5)
@@ -168,29 +194,31 @@ class IdentifierIssuer {
   }
 }
 
-// Yields the blank node identifiers in the subject, object and graph of the quad with their position,
-// including those nested in triple terms
-function* blankNodesOf(quad) {
-  for (const position of ['s', 'o', 'g']) {
-    const term = quad[position === 's' ? 'subject' : position === 'o' ? 'object' : 'graph'];
-    if (term.termType === 'BlankNode')
-      yield [term.value, position];
-    else if (term.termType === 'Quad')
-      for (const [id] of blankNodesOf(term))
-        yield [id, position];
-  }
+// Yields the blank node identifiers in the subject, object and graph of the quad with their position
+function* blankNodesOf({ subject, object, graph }) {
+  if (subject.termType === 'BlankNode')
+    yield [subject.value, 's'];
+  if (object.termType === 'BlankNode')
+    yield [object.value, 'o'];
+  if (graph.termType === 'BlankNode')
+    yield [graph.value, 'g'];
 }
 
-// Yields every ordering of the list
+// Yields every distinct ordering of the list in lexicographic order, reusing one array
 function* permutations(list) {
-  if (list.length <= 1)
-    yield list;
-  else {
-    for (let i = 0; i < list.length; i++) {
-      const rest = list.slice(0, i).concat(list.slice(i + 1));
-      for (const permutation of permutations(rest))
-        yield [list[i], ...permutation];
-    }
+  const items = list.slice().sort();
+  for (;;) {
+    yield items;
+    let i = items.length - 2, j = items.length - 1;
+    while (i >= 0 && items[i] >= items[i + 1])
+      i--;
+    if (i < 0)
+      return;
+    while (items[j] <= items[i])
+      j--;
+    [items[i], items[j]] = [items[j], items[i]];
+    for (j = items.length - 1, i++; i < j; i++, j--)
+      [items[i], items[j]] = [items[j], items[i]];
   }
 }
 

@@ -1257,10 +1257,13 @@ export default class N3Store {
 
   /**
    * Returns an N-Quads string representation of the dataset, preprocessed with the
-   * {@link https://www.w3.org/TR/rdf-canon/|RDF Dataset Canonicalization (RDFC-1.0)} algorithm.
+   * {@link https://www.w3.org/TR/rdf-canon/|RDF Dataset Canonicalization (RDFC-1.0)} algorithm with SHA-256.
+   *
+   * Throws on triple terms, which RDFC-1.0 does not cover, and on poison graphs: datasets whose canonicalization
+   * needs more than (2n)^`maxWorkFactor` steps (3 by default), for n blank nodes without a unique first-degree hash.
    */
-  toCanonical() {
-    return canonicalize(this.getQuads());
+  toCanonical({ hashAlgorithm, maxWorkFactor } = {}) {
+    return canonicalize(this.getQuads(), { hashAlgorithm, maxWorkFactor });
   }
 
   /**
@@ -1699,8 +1702,8 @@ class DatasetCoreAndReadableStream extends Readable {
       quad => callback(quad, this) : callback, subject, predicate, object, graph);
   }
 
-  toCanonical() {
-    return this.filtered.toCanonical();
+  toCanonical(options) {
+    return this.filtered.toCanonical(options);
   }
 
   toStream() {

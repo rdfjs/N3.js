@@ -506,6 +506,7 @@ Methods:
  - `has` — Determines whether a dataset includes a certain quad.
  - `match` — Returns a new dataset that is comprised of all quads in the current instance matching the given arguments.
  - `[Symbol.iterator]` — Implements the iterator protocol to allow iteration over all `quads` in the dataset as in the example above.
+ - `toCanonical` — Returns the dataset as canonical N-Quads, labeling blank nodes with [RDFC-1.0](https://www.w3.org/TR/rdf-canon/) and SHA-256. It throws on triple terms and on poison graphs; `toCanonical({ maxWorkFactor })` raises the work limit from its default of 3.
 
 ### Addition and deletion of quads
 The store implements the following manipulation methods in addition to the standard [`Dataset` Interface](https://rdf.js.org/dataset-spec/#dataset-interface)

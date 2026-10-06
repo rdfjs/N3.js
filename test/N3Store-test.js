@@ -4068,22 +4068,45 @@ describe('Store', () => {
           expect(canonical(relabel(nquads))).toEqual(canonical(nquads));
       });
 
-      it('should label blank nodes inside triple terms', () => {
-        expect(canonical('_:x <urn:p> <<( _:y <urn:q> _:x )>> .\n'))
-          .toEqual(canonical('_:a <urn:p> <<( _:b <urn:q> _:a )>> .\n'));
+      it('should try each distinct permutation of repeated related blank nodes once', () => {
+        let nquads = '';
+        for (let i = 0; i < 20; i++)
+          nquads += `_:a <urn:p> _:x <urn:g${i}> .\n_:b <urn:p> _:x <urn:g${i}> .\n`;
+        expect(canonical(nquads)).toMatch(/^_:c14n\d <urn:p> _:c14n\d <urn:g0> \.\n/);
+      });
+
+      it('should sort by code point', () => {
+        expect(canonical('<urn:s> <urn:p> "\uE000" .\n<urn:s> <urn:p> "\u{10000}" .\n<urn:s> <urn:p> "" .\n'))
+          .toEqual('<urn:s> <urn:p> "" .\n<urn:s> <urn:p> "\uE000" .\n<urn:s> <urn:p> "\u{10000}" .\n');
+      });
+
+      it('should reject triple terms', () => {
+        expect(() => canonical('<urn:s> <urn:p> <<( _:a <urn:q> _:b )>> .\n'))
+          .toThrow('RDFC-1.0 does not define the canonicalization of triple terms');
+      });
+
+      it('should reject hash algorithms other than SHA-256', () => {
+        expect(store1.toCanonical({ hashAlgorithm: 'SHA-256' })).toEqual(store1.toCanonical());
+        expect(() => store1.toCanonical({ hashAlgorithm: 'SHA-384' }))
+          .toThrow('Unsupported canonicalization hash algorithm: SHA-384');
       });
 
       it('should fail on poison graphs', () => {
-        // A clique of blank nodes needs a number of iterations factorial in its size
+        // A clique of blank nodes needs work factorial in its size
         let clique = '';
         for (let i = 0; i < 6; i++)
           for (let j = 0; j < 6; j++)
             clique += i === j ? '' : `_:n${i} <urn:p> _:n${j} .\n`;
-        expect(() => canonical(clique)).toThrow('Canonicalization exceeded its maximum number of deep iterations');
+        expect(() => canonical(clique)).toThrow('Canonicalization exceeded its maximum amount of work');
+        const cycle = '_:a <urn:p> _:b .\n_:b <urn:p> _:a .\n';
+        expect(() => new Store(new Parser({ format: 'N-Quads' }).parse(cycle)).toCanonical({ maxWorkFactor: 0 }))
+          .toThrow('Canonicalization exceeded its maximum amount of work');
       });
 
       it('should canonicalize a view', () => {
         expect(store1.match(null, null, new NamedNode('o2')).toCanonical()).toEqual('<s1> <p1> <o2> .\n');
+        expect(() => store1.match(null, null, new NamedNode('o2')).toCanonical({ hashAlgorithm: 'MD5' }))
+          .toThrow('Unsupported canonicalization hash algorithm: MD5');
       });
     });
 
