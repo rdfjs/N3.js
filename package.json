@@ -134,7 +134,7 @@
       [
         "@semantic-release/github",
         {
-          "successCommentCondition": "<% return !branch.prerelease; %>"
+          "successCommentCondition": "<% return !branch.prerelease && !(issue.labels || []).some(function (label) { return /^released( on @|$)/.test(label.name); }) %>"
         }
       ]
     ]

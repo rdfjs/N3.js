@@ -110,3 +110,16 @@ and only fix what the alphas turn up.
 4. `next-major` is now the same as `main`, so it is ready for the following major. If the major
    was squashed after all, the sync sees that `next-major` has nothing `main` lacks and resets it
    to `main`.
+
+## Issues and announcements
+
+- **Closing.** An issue closes as soon as a pull request with a closing keyword
+  (`Closes #123`) lands on `main` or `next-major`. GitHub handles `main`;
+  [`close-next-major-issues.yml`](.github/workflows/close-next-major-issues.yml) handles
+  new changes on `next-major`, and skips force pushes such as the sync, which only
+  replay changes that already landed.
+- **Announcing.** semantic-release comments once on each issue and pull request, from the
+  stable release that ships it, and labels it `released`. Alphas never comment, so a change
+  made on `next-major` is announced by the major. Later releases skip anything that already
+  carries a `released` or `released on @alpha` label, such as a squashed stacked pull
+  request repeating its parent's `Closes #123`.
