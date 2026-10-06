@@ -3,7 +3,7 @@ const path = require('path');
 
 // Runs every W3C RDF 1.1 and RDF 1.2 syntax and evaluation suite through the parser
 // and through a write round trip, the canonical N-Triples and N-Quads suites through the Writer,
-// and the N3 suites through the parser. Extra arguments, such as `-m "url~path"`
+// the RDF Dataset Canonicalization suite through the Store, and the N3 suites through the parser. Extra arguments, such as `-m "url~path"`
 // to read the RDF suites from a local checkout, are passed to every RDF run.
 // The RDF 1.2 XML and semantics suites are out of scope: N3.js has no RDF/XML parser or entailment.
 const RDF_TESTS = 'https://w3c.github.io/rdf-tests/rdf/';

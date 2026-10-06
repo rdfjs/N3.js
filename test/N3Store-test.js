@@ -4030,8 +4030,60 @@ describe('Store', () => {
     });
 
     describe('#toCanonical', () => {
+      function canonical(nquads) {
+        return new Store(new Parser({ format: 'N-Quads' }).parse(nquads)).toCanonical();
+      }
+
       it('should convert to a canonical string', () => {
-        expect(() => store1.toCanonical()).toThrow('not implemented');
+        expect(store1.toCanonical()).toEqual('<s1> <p1> <o1> .\n<s1> <p1> <o2> .\n');
+        expect(new Store().toCanonical()).toEqual('');
+      });
+
+      it('should label isomorphic datasets identically', () => {
+        const expected = '<urn:s> <urn:p> _:c14n0 .\n_:c14n0 <urn:p> _:c14n2 _:c14n1 .\n_:c14n2 <urn:q> "a"@en .\n';
+        expect(canonical('<urn:s> <urn:p> _:x .\n_:x <urn:p> _:y _:g .\n_:y <urn:q> "a"@en .\n')).toEqual(expected);
+        expect(canonical('_:b <urn:q> "a"@en .\n_:a <urn:p> _:b _:c .\n<urn:s> <urn:p> _:a .\n')).toEqual(expected);
+      });
+
+      it('should distinguish blank nodes with identical first-degree hashes', () => {
+        // A cycle of four blank nodes with alternating predicates (W3C rdf-canon test021)
+        const cycle = '_:a <urn:p> _:b .\n_:b <urn:q> _:c .\n_:c <urn:p> _:d .\n_:d <urn:q> _:a .\n';
+        const expected = '_:c14n0 <urn:q> _:c14n3 .\n_:c14n1 <urn:p> _:c14n0 .\n_:c14n2 <urn:q> _:c14n1 .\n_:c14n3 <urn:p> _:c14n2 .\n';
+        expect(canonical(cycle)).toEqual(expected);
+        expect(canonical(cycle.split('\n').reverse().join('\n'))).toEqual(expected);
+      });
+
+      it('should label isomorphic datasets that need permutations identically', () => {
+        function relabel(nquads) {
+          return nquads.split('\n').reverse().join('\n').replace(/_:n(\d)/g, '_:m$1');
+        }
+        for (const nquads of [
+          '_:n0 <urn:q> _:n1 .\n_:n0 <urn:q> _:n2 .\n',
+          '_:n0 <urn:p> <urn:o> _:n1 .\n_:n1 <urn:p> <urn:o> _:n0 .\n',
+          '_:n2 <urn:p> _:n1 .\n_:n3 <urn:p> _:n1 .\n_:n0 <urn:p> _:n2 .\n_:n1 <urn:p> _:n0 .\n_:n2 <urn:p> _:n3 .\n' +
+            '_:n0 <urn:p> _:n3 .\n',
+          '_:n5 <urn:q> _:n4 .\n_:n3 <urn:q> _:n0 .\n_:n2 <urn:q> _:n3 .\n_:n5 <urn:p> _:n1 .\n_:n5 <urn:q> _:n3 .\n' +
+            '_:n4 <urn:q> _:n2 .\n_:n0 <urn:q> _:n2 .\n_:n1 <urn:q> _:n1 .\n',
+        ])
+          expect(canonical(relabel(nquads))).toEqual(canonical(nquads));
+      });
+
+      it('should label blank nodes inside triple terms', () => {
+        expect(canonical('_:x <urn:p> <<( _:y <urn:q> _:x )>> .\n'))
+          .toEqual(canonical('_:a <urn:p> <<( _:b <urn:q> _:a )>> .\n'));
+      });
+
+      it('should fail on poison graphs', () => {
+        // A clique of blank nodes needs a number of iterations factorial in its size
+        let clique = '';
+        for (let i = 0; i < 6; i++)
+          for (let j = 0; j < 6; j++)
+            clique += i === j ? '' : `_:n${i} <urn:p> _:n${j} .\n`;
+        expect(() => canonical(clique)).toThrow('Canonicalization exceeded its maximum number of deep iterations');
+      });
+
+      it('should canonicalize a view', () => {
+        expect(store1.match(null, null, new NamedNode('o2')).toCanonical()).toEqual('<s1> <p1> <o2> .\n');
       });
     });
 

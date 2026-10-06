@@ -1,16 +1,19 @@
 const fs = require('fs');
 const { Util } = require('rdf-test-suite');
-const { Parser, Writer } = require('..');
+const { Parser, Store, Writer } = require('..');
 
-// Runs the RDF 1.2 canonical N-Triples and N-Quads suites, which rdf-test-suite does not support:
-// each document is parsed and written again, and the output must equal the canonical form exactly.
+// Runs the RDF 1.2 canonical N-Triples and N-Quads suites and the RDF Dataset Canonicalization suite,
+// which rdf-test-suite does not support: each document is parsed and written again, or canonicalized,
+// and the output must equal the canonical form exactly.
 // Accepts rdf-test-suite's `-m "url~path"` option to read the suites from a local checkout.
 const MANIFESTS = {
   'https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-n-triples/c14n/manifest.ttl': 'N-Triples',
   'https://w3c.github.io/rdf-tests/rdf/rdf12/rdf-n-quads/c14n/manifest.ttl': 'N-Quads',
+  'https://w3c.github.io/rdf-canon/tests/manifest.ttl': 'RDFC-1.0',
 };
 const MF = 'http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#';
 const RDFT = 'http://www.w3.org/ns/rdftest#';
+const RDFC = 'https://w3c.github.io/rdf-canon/tests/vocab#';
 
 // Documents are read through rdf-test-suite's own cached fetch, so they share the fixture cache
 // of the other suites, which rotates with spec/cache-key.txt.
@@ -43,24 +46,37 @@ function write(quads, format) {
   });
 }
 
+// Writes the document again in its canonical form
+async function canonicalForm(document, format) {
+  if (format === 'RDFC-1.0')
+    return new Store(new Parser({ format: 'N-Quads' }).parse(document)).toCanonical();
+  // Blank node labels are kept, so the output can match the canonical labels
+  return write(new Parser({ format, blankNodePrefix: '' }).parse(document), format);
+}
+
 async function run() {
   fs.mkdirSync(FETCH_OPTIONS.cachePath, { recursive: true });
   let passed = 0, failed = 0;
   for (const [manifestUrl, format] of Object.entries(MANIFESTS)) {
     const manifest = new Parser({ baseIRI: manifestUrl }).parse(await load(manifestUrl));
-    const tests = manifest.filter(q => q.object.value === `${RDFT}Test${format.replace('-', '')}PositiveC14N`);
-    for (const { subject } of tests) {
+    const types = format === 'RDFC-1.0' ? [`${RDFC}RDFC10EvalTest`, `${RDFC}RDFC10NegativeEvalTest`] :
+      [`${RDFT}Test${format.replace('-', '')}PositiveC14N`];
+    // Only SHA-256, the default hash algorithm, is supported
+    const tests = manifest.filter(q => types.includes(q.object.value) &&
+      !manifest.some(({ subject, predicate }) => subject.equals(q.subject) && predicate.value === `${RDFC}hashAlgorithm`));
+    for (const { subject, object } of tests) {
       const id = subject.value.slice(subject.value.indexOf('#') + 1);
+      const negative = object.value === types[1];
       let error = null;
       try {
-        // Blank node labels are kept, so the output can match the canonical labels
-        const quads = new Parser({ format, blankNodePrefix: '' }).parse(await load(objectOf(manifest, subject, `${MF}action`)));
-        const [actual, expected] = await Promise.all([write(quads, format), load(objectOf(manifest, subject, `${MF}result`))]);
+        const actual = await canonicalForm(await load(objectOf(manifest, subject, `${MF}action`)), format);
+        const expected = negative ? null : await load(objectOf(manifest, subject, `${MF}result`));
         if (actual !== expected)
-          error = new Error(`Expected:\n${expected}Actual:\n${actual}`);
+          error = new Error(negative ? 'Expected an error' : `Expected:\n${expected}Actual:\n${actual}`);
       }
-      catch (parseError) {
-        error = parseError;
+      catch (testError) {
+        if (!negative)
+          error = testError;
       }
       if (error) {
         failed++;

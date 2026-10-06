@@ -4,6 +4,7 @@ import { default as N3DataFactory, termToId, termFromId } from './N3DataFactory'
 import namespaces from './IRIs';
 import { isDefaultGraph } from './N3Util';
 import N3Writer from './N3Writer';
+import canonicalize from './N3Canonicalize';
 
 const ITERATOR = Symbol('iter');
 const SIZE = Symbol('size');
@@ -1256,10 +1257,10 @@ export default class N3Store {
 
   /**
    * Returns an N-Quads string representation of the dataset, preprocessed with the
-   * {@link https://json-ld.github.io/normalization/spec/|RDF Dataset Normalization} algorithm.
+   * {@link https://www.w3.org/TR/rdf-canon/|RDF Dataset Canonicalization (RDFC-1.0)} algorithm.
    */
   toCanonical() {
-    throw new Error('not implemented');
+    return canonicalize(this.getQuads());
   }
 
   /**
