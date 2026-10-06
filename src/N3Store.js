@@ -1439,15 +1439,11 @@ function validateMatchSemantics(semantics = 'lazy') {
   return semantics;
 }
 
-// Returns whether two terms or term IDs are the same; triple terms are compared by their components.
+// Returns whether two terms or term IDs are the same; triple terms are compared with `equals`.
 function sameTerm(left, right) {
   if (left.termType !== 'Quad' && right.termType !== 'Quad')
     return entityKey(left) === entityKey(right);
-  // Compare components rather than with `equals`, which compares N3 term ids,
-  // and those collide for IRIs such as `?x` that start like other term ids
-  return left.termType === right.termType &&
-    sameTerm(left.subject, right.subject) && sameTerm(left.predicate, right.predicate) &&
-    sameTerm(left.object, right.object) && sameTerm(left.graph, right.graph);
+  return left.termType === 'Quad' ? left.equals(right) : right.equals(left);
 }
 
 // Returns the intersection of two quad patterns, or false if they conflict.
