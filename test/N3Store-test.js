@@ -4761,12 +4761,22 @@ describe('Store#has with a quoted triple as subject pattern', () => {
   it('should match the pattern, not the quoted triple', () => {
     expect(store.getQuads(quoted, missing, missing)).toHaveLength(0);
     expect(store.has(quoted, missing, missing)).toBe(false);
-    expect(store.has(quoted, null, null)).toBe(true);
+    expect(store.has(quoted, t, null)).toBe(true);
     expect(store.has(quoted, t, t)).toBe(true);
+    expect(store.has(quoted, null, null, new DefaultGraph())).toBe(true);
   });
 
-  it('should still treat a quad on its own as the whole quad', () => {
-    expect(store.has(new Quad(quoted, t, t))).toBe(true);
+  it('should still treat a quad with no other bound terms as the whole quad', () => {
+    const whole = new Quad(quoted, t, t);
+    expect(store.has(whole)).toBe(true);
+    expect(store.has(whole, null)).toBe(true);
+    expect(store.has(whole, null, null, null)).toBe(true);
     expect(store.has(quoted)).toBe(false);
+    expect(store.has(quoted, null, null)).toBe(false);
+  });
+
+  it('should accept a plain-object quad with trailing nulls', () => {
+    const plain = { subject: quoted, predicate: t, object: t, graph: new DefaultGraph() };
+    expect(store.has(plain, null, null, null)).toBe(true);
   });
 });
