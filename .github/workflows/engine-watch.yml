@@ -1,0 +1,41 @@
+name: Engine watch
+
+on:
+  schedule:
+    # Monthly; Node.js majors and V8 updates land far less often.
+    - cron: '0 6 1 * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: engine-watch
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    if: github.repository == 'rdfjs/N3.js'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: latest
+      # Reopens each issue whose engine change seems to have landed, once.
+      - name: Reopen issues the newest engine unblocks
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MARKER: '<!-- engine-watch -->'
+        run: |
+          node perf/engine-watch.js | while read -r issue message; do
+            seen=$(gh issue view "$issue" --json comments \
+              --jq "any(.comments[]; .author.login == \"github-actions\" and (.body | contains(\"$MARKER\")))")
+            [ "$seen" = false ] || continue
+            gh issue reopen "$issue"
+            gh issue comment "$issue" --body "$MARKER
+          $message
+
+          Found by [this Engine watch run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID); benchmark the change the issue describes before acting on it."
+          done
