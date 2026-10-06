@@ -4030,8 +4030,8 @@ describe('Store', () => {
     });
 
     describe('#toCanonical', () => {
-      function canonical(nquads) {
-        return new Store(new Parser({ format: 'N-Quads' }).parse(nquads)).toCanonical();
+      function canonical(nquads, options) {
+        return new Store(new Parser({ format: 'N-Quads' }).parse(nquads)).toCanonical(options);
       }
 
       it('should convert to a canonical string', () => {
@@ -4049,8 +4049,10 @@ describe('Store', () => {
         // A cycle of four blank nodes with alternating predicates (W3C rdf-canon test021)
         const cycle = '_:a <urn:p> _:b .\n_:b <urn:q> _:c .\n_:c <urn:p> _:d .\n_:d <urn:q> _:a .\n';
         const expected = '_:c14n0 <urn:q> _:c14n3 .\n_:c14n1 <urn:p> _:c14n0 .\n_:c14n2 <urn:q> _:c14n1 .\n_:c14n3 <urn:p> _:c14n2 .\n';
-        expect(canonical(cycle)).toEqual(expected);
-        expect(canonical(cycle.split('\n').reverse().join('\n'))).toEqual(expected);
+        expect(canonical(cycle, { maxWorkFactor: 3 })).toEqual(expected);
+        expect(canonical(cycle.split('\n').reverse().join('\n'), { maxWorkFactor: 3 })).toEqual(expected);
+        // As in rdf-canonize, the default work limit does not cover the cycle
+        expect(() => canonical(cycle)).toThrow('Canonicalization exceeded its maximum amount of work');
       });
 
       it('should label isomorphic datasets that need permutations identically', () => {
@@ -4065,7 +4067,7 @@ describe('Store', () => {
           '_:n5 <urn:q> _:n4 .\n_:n3 <urn:q> _:n0 .\n_:n2 <urn:q> _:n3 .\n_:n5 <urn:p> _:n1 .\n_:n5 <urn:q> _:n3 .\n' +
             '_:n4 <urn:q> _:n2 .\n_:n0 <urn:q> _:n2 .\n_:n1 <urn:q> _:n1 .\n',
         ])
-          expect(canonical(relabel(nquads))).toEqual(canonical(nquads));
+          expect(canonical(relabel(nquads), { maxWorkFactor: 3 })).toEqual(canonical(nquads, { maxWorkFactor: 3 }));
       });
 
       it('should try each distinct permutation of repeated related blank nodes once', () => {
@@ -4073,6 +4075,13 @@ describe('Store', () => {
         for (let i = 0; i < 20; i++)
           nquads += `_:a <urn:p> _:x <urn:g${i}> .\n_:b <urn:p> _:x <urn:g${i}> .\n`;
         expect(canonical(nquads)).toMatch(/^_:c14n\d <urn:p> _:c14n\d <urn:g0> \.\n/);
+      });
+
+      it('should accept work linear in the blank nodes with the default limit', () => {
+        let nquads = '';
+        for (let i = 0; i < 32; i++)
+          nquads += `_:a <urn:p> _:x${i} .\n_:b <urn:p> _:x${i} .\n_:x${i} <urn:q> "${i}" .\n`;
+        expect(canonical(nquads).split('\n')).toHaveLength(97);
       });
 
       it('should sort by code point', () => {
@@ -4098,9 +4107,14 @@ describe('Store', () => {
           for (let j = 0; j < 6; j++)
             clique += i === j ? '' : `_:n${i} <urn:p> _:n${j} .\n`;
         expect(() => canonical(clique)).toThrow('Canonicalization exceeded its maximum amount of work');
-        const cycle = '_:a <urn:p> _:b .\n_:b <urn:p> _:a .\n';
-        expect(() => new Store(new Parser({ format: 'N-Quads' }).parse(cycle)).toCanonical({ maxWorkFactor: 0 }))
-          .toThrow('Canonicalization exceeded its maximum amount of work');
+        expect(() => canonical(clique, { maxWorkFactor: 3 })).toThrow('Canonicalization exceeded its maximum amount of work');
+      });
+
+      it('should fail on chains of blank nodes too long for the call stack', () => {
+        let chain = '';
+        for (let i = 0; i < 20000; i++)
+          chain += `_:b${i} <urn:p> _:b${i + 1} .\n`;
+        expect(() => canonical(chain, { maxWorkFactor: 3 })).toThrow('Canonicalization exceeded its maximum amount of work');
       });
 
       it('should canonicalize a view', () => {

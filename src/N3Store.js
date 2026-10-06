@@ -1260,7 +1260,8 @@ export default class N3Store {
    * {@link https://www.w3.org/TR/rdf-canon/|RDF Dataset Canonicalization (RDFC-1.0)} algorithm with SHA-256.
    *
    * Throws on triple terms, which RDFC-1.0 does not cover, and on poison graphs: datasets whose canonicalization
-   * needs more than (2n)^`maxWorkFactor` steps (3 by default), for n blank nodes without a unique first-degree hash.
+   * runs Hash N-Degree Quads more than n^`maxWorkFactor` times (1 by default, as in rdf-canonize), for n blank nodes
+   * without a unique first-degree hash, or recurses deeper than the call stack allows.
    */
   toCanonical({ hashAlgorithm, maxWorkFactor } = {}) {
     return canonicalize(this.getQuads(), { hashAlgorithm, maxWorkFactor });

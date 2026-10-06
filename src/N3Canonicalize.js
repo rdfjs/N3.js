@@ -3,9 +3,9 @@
 import N3Writer from './N3Writer';
 
 // Canonicalizes the quads, which must not contain duplicates, into a sorted N-Quads string.
-// For n blank nodes without unique first-degree hashes, the work is limited to (2n)^`maxWorkFactor` steps,
-// so poison graphs fail instead of running indefinitely.
-export default function canonicalize(quads, { hashAlgorithm = 'SHA-256', maxWorkFactor = 3 }) {
+// As in rdf-canonize, Hash N-Degree Quads runs at most n^`maxWorkFactor` times (n times by default) for n blank nodes
+// without unique first-degree hashes, so poison graphs fail instead of running indefinitely.
+export default function canonicalize(quads, { hashAlgorithm = 'SHA-256', maxWorkFactor = 1 }) {
   if (hashAlgorithm !== 'SHA-256')
     throw new Error(`Unsupported canonicalization hash algorithm: ${hashAlgorithm}`);
   // Serializes quads in canonical N-Quads, labeling each blank node through the current `label` function
@@ -70,16 +70,11 @@ export default function canonicalize(quads, { hashAlgorithm = 'SHA-256', maxWork
       id ? `_:${id}` : hashFirstDegree(related)}`);
   }
 
-  // Counts each run of Hash N-Degree Quads and each permutation it tries against the work limit
-  let work = (2 * nonUniqueCount) ** maxWorkFactor;
-  function countWork() {
-    if (work-- <= 0)
-      throw new Error('Canonicalization exceeded its maximum amount of work');
-  }
-
   // Hash N-Degree Quads (4.8)
+  let deepIterations = nonUniqueCount ** maxWorkFactor;
   function hashNDegree(id, issuer) {
-    countWork();
+    if (deepIterations-- <= 0)
+      throw new Error('Canonicalization exceeded its maximum amount of work');
     const hashToRelated = new Map();
     for (const quad of quadsOf.get(id)) {
       for (const [related, position] of blankNodesOf(quad)) {
@@ -94,7 +89,6 @@ export default function canonicalize(quads, { hashAlgorithm = 'SHA-256', maxWork
       data += hash;
       let chosenPath = '', chosenIssuer;
       for (const permutation of permutations(hashToRelated.get(hash))) {
-        countWork();
         const result = permutationPath(permutation, issuer.copy(), chosenPath);
         if (result && (!chosenPath || result.path < chosenPath))
           chosenPath = result.path, chosenIssuer = result.issuer;
@@ -135,20 +129,29 @@ export default function canonicalize(quads, { hashAlgorithm = 'SHA-256', maxWork
     return { path, issuer };
   }
 
-  // Issue canonical identifiers to the remaining blank nodes (4.4.3 step 6)
-  for (const list of nonUnique) {
-    const results = [];
-    for (const id of list) {
-      if (!canonical.get(id)) {
-        const issuer = new IdentifierIssuer('b');
-        issuer.issue(id);
-        results.push(hashNDegree(id, issuer));
+  // Issue canonical identifiers to the remaining blank nodes (4.4.3 step 6).
+  // Hash N-Degree Quads recurses along chains of such blank nodes, so very long chains overflow the stack.
+  try {
+    issueRemaining();
+  }
+  catch (error) {
+    throw error instanceof RangeError ? new Error('Canonicalization exceeded its maximum amount of work') : error;
+  }
+  function issueRemaining() {
+    for (const list of nonUnique) {
+      const results = [];
+      for (const id of list) {
+        if (!canonical.get(id)) {
+          const issuer = new IdentifierIssuer('b');
+          issuer.issue(id);
+          results.push(hashNDegree(id, issuer));
+        }
       }
+      results.sort((a, b) => a.hash < b.hash ? -1 : a.hash > b.hash ? 1 : 0);
+      for (const { issuer } of results)
+        for (const id of issuer.ids.keys())
+          canonical.issue(id);
     }
-    results.sort((a, b) => a.hash < b.hash ? -1 : a.hash > b.hash ? 1 : 0);
-    for (const { issuer } of results)
-      for (const id of issuer.ids.keys())
-        canonical.issue(id);
   }
 
   // Serialize the quads with their canonical labels (4.4.3 step 7)

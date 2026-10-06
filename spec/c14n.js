@@ -49,7 +49,8 @@ function write(quads, format) {
 // Writes the document again in its canonical form
 async function canonicalForm(document, format) {
   if (format === 'RDFC-1.0')
-    return new Store(new Parser({ format: 'N-Quads' }).parse(document)).toCanonical();
+    // The suite's computable poison graphs need more work than the default allows
+    return new Store(new Parser({ format: 'N-Quads' }).parse(document)).toCanonical({ maxWorkFactor: 3 });
   // Blank node labels are kept, so the output can match the canonical labels
   return write(new Parser({ format, blankNodePrefix: '' }).parse(document), format);
 }
