@@ -4752,3 +4752,21 @@ describe('Set operations between stores sharing an EntityIndex', () => {
     expect(contents(a.difference(new Store({ entityIndex })))).toEqual(ids([q('s1', 'p', 'o1'), q('s2', 'p', 'o2', 'g'), q('s3', 'p', 'o3')]));
   });
 });
+
+describe('Store#has with a quoted triple as subject pattern', () => {
+  const t = new NamedNode('t'), missing = new NamedNode('missing');
+  const quoted = new Quad(t, t, t);
+  const store = new Store([new Quad(quoted, t, t)]);
+
+  it('should match the pattern, not the quoted triple', () => {
+    expect(store.getQuads(quoted, missing, missing)).toHaveLength(0);
+    expect(store.has(quoted, missing, missing)).toBe(false);
+    expect(store.has(quoted, null, null)).toBe(true);
+    expect(store.has(quoted, t, t)).toBe(true);
+  });
+
+  it('should still treat a quad on its own as the whole quad', () => {
+    expect(store.has(new Quad(quoted, t, t))).toBe(true);
+    expect(store.has(quoted)).toBe(false);
+  });
+});
