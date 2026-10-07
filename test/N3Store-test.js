@@ -1855,6 +1855,26 @@ describe('Store', () => {
           expect(view.graph.termType).toBe('DefaultGraph');
         });
 
+        it('should reject string term ids in patterns', () => {
+          const error = 'Patterns of forwarded views must be RDF/JS terms, not string term ids';
+          expect(() => store.match('s1', null, null, null, opts)).toThrow(new TypeError(error));
+          view = store.match(namedNode('s1'), null, null, null, opts);
+          expect(() => view.match('s1')).toThrow(new TypeError(error));
+          expect(() => view.deleteMatches(null, 'p1')).toThrow(new TypeError(error));
+          expect(() => view.add({ subject: 's1', predicate: 'p1', object: 'o9', graph: '' }))
+            .toThrow('Quad does not match the forwarded view pattern');
+          expect(store.has(q('s1', 'p1', 'o9'))).toBe(false);
+        });
+
+        it('should delete only default graph quads through an empty-string graph pattern', () => {
+          store.addQuad(q('s1', 'p1', 'oG', 'g1'));
+          const size = store.size;
+          store.match(null, null, null, '', opts).deleteMatches();
+          expect(store.size).toBe(1);
+          expect(store.has(q('s1', 'p1', 'oG', 'g1'))).toBe(true);
+          expect(size).toBeGreaterThan(1);
+        });
+
         it('should stay stable when a parent mutation lands as the source is exhausted', () => {
           const seen = [];
           for (const quad of view) {
