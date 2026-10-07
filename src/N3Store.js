@@ -28,9 +28,11 @@ function hasInIndex(index0, key0, key1, key2) {
 // that starts with such a marker (as relative IRIs can) is wrapped in < and >.
 const markedIRI = /^[?_"[.<]/;
 function entityKey(term) {
-  // Strings are term ids, which only need wrapping when they are IRIs starting with <
-  if (typeof term === 'string')
-    return term.charCodeAt(0) !== 0x3C || term === '<>' ? term : `<${term}>`;
+  // Strings are term ids, which only need wrapping when they are IRIs starting with < or .
+  if (typeof term === 'string') {
+    const first = term.charCodeAt(0);
+    return first !== 0x3C && first !== 0x2E || term === '<>' ? term : `<${term}>`;
+  }
   // IDs of IRIs usually start with a lowercase scheme letter, which never marks a term type
   const id = termToId(term);
   if (id.charCodeAt(0) >= 0x61 || !term)
@@ -102,10 +104,12 @@ export class N3EntityIndex {
 
   // Returns the numeric id of a term given as a string id
   _stringToNumericId(term) {
-    // The string is the key unless it is an IRI starting with <. Read the first character
-    // from the stored key after a match, which is cheaper than from a concatenated string.
+    // The string is the key unless it is an IRI starting with < or . (which also starts
+    // the keys of quoted triples). Read the first character from the stored key after
+    // a match, which is cheaper than from a concatenated string.
     const id = this._ids[term];
-    if (id ? this._entities[id].charCodeAt(0) !== 0x3C : term.charCodeAt(0) !== 0x3C)
+    const first = id ? this._entities[id].charCodeAt(0) : term.charCodeAt(0);
+    if (first !== 0x3C && first !== 0x2E)
       return id;
     return term === '<>' ? id : this._ids[`<${term}>`];
   }
