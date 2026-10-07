@@ -548,7 +548,11 @@ export default class N3Store {
 
   // ### `has` determines whether a dataset includes a certain quad or quad pattern.
   has(subjectOrQuad, predicate, object, graph) {
-    if (subjectOrQuad && subjectOrQuad.subject)
+    // A quad with no other bound terms is the whole quad; otherwise it is a quoted subject
+    if (subjectOrQuad && subjectOrQuad.subject &&
+        (predicate === undefined || predicate === null) &&
+        (object === undefined || object === null) &&
+        (graph === undefined || graph === null))
       ({ subject: subjectOrQuad, predicate, object, graph } = subjectOrQuad);
     // Fully bound quads can bypass the generator machinery of `readQuads`.
     if (subjectOrQuad && predicate && object && graph !== undefined && graph !== null) {
