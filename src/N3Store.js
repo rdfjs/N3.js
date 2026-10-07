@@ -104,7 +104,7 @@ export class N3EntityIndex {
 
   // Returns the numeric id of a term given as a string id
   _stringToNumericId(term) {
-    // The string is the key unless it is an IRI starting with < or . (which also starts
+    // The string is the key unless it is an IRI starting with < or . (which also start
     // the keys of quoted triples). Read the first character from the stored key after
     // a match, which is cheaper than from a concatenated string.
     const id = this._ids[term];
