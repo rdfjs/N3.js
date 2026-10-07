@@ -1439,16 +1439,16 @@ function validateMatchSemantics(semantics = 'lazy') {
   return semantics;
 }
 
-// Returns the term of a pattern or quad component, which may be given as a string term ID
-function toTerm(term) {
-  return typeof term === 'string' ? termFromId(term) : term;
+// Returns the graph of a pattern, where the empty string also stands for the default graph
+function graphPattern(graph) {
+  return graph === '' ? N3DataFactory.defaultGraph() : graph;
 }
 
 // Returns the intersection of two quad patterns, or false if they conflict.
 function intersectMatchPatterns(left, right) {
   const result = new Array(4);
   for (let i = 0; i < 4; i++) {
-    const leftTerm = left[i], rightTerm = toTerm(right[i]);
+    const leftTerm = left[i], rightTerm = i === 3 ? graphPattern(right[i]) : right[i];
     if (leftTerm === null || leftTerm === undefined)
       result[i] = rightTerm;
     else if (rightTerm === null || rightTerm === undefined || leftTerm.equals(rightTerm))
@@ -1465,7 +1465,7 @@ function intersectMatchPatterns(left, right) {
 class DatasetCoreAndReadableStream extends Readable {
   constructor(n3Store, subject, predicate, object, graph, options) {
     super({ objectMode: true });
-    Object.assign(this, { n3Store, subject: toTerm(subject), predicate: toTerm(predicate), object: toTerm(object), graph: toTerm(graph), options });
+    Object.assign(this, { n3Store, subject, predicate, object, graph: graphPattern(graph), options });
     const semantics = this._semantics = validateMatchSemantics(options.matchSemantics);
 
     if (options.matchesNothing) {
@@ -1502,10 +1502,10 @@ class DatasetCoreAndReadableStream extends Readable {
   _matchesQuad(quad) {
     const { subject, predicate, object, graph } = this;
     return !this._matchesNothing &&
-      (subject === null || subject === undefined || subject.equals(toTerm(quad.subject))) &&
-      (predicate === null || predicate === undefined || predicate.equals(toTerm(quad.predicate))) &&
-      (object === null || object === undefined || object.equals(toTerm(quad.object))) &&
-      (graph === null || graph === undefined || graph.equals(toTerm(quad.graph)));
+      (subject === null || subject === undefined || subject.equals(quad.subject)) &&
+      (predicate === null || predicate === undefined || predicate.equals(quad.predicate)) &&
+      (object === null || object === undefined || object.equals(quad.object)) &&
+      (graph === null || graph === undefined || graph.equals(quad.graph));
   }
 
   // ### `_assertMatchesPattern` rejects a Quad outside this view.

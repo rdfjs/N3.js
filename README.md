@@ -569,7 +569,7 @@ Supported values:
 
 A sub-view inherits its parent's `matchSemantics`.
 
-A view keeps its pattern as RDF/JS terms: string term IDs are turned into terms, and an empty-string graph becomes the default graph, so `view.graph` is then a `DefaultGraph` term.
+A view compares quads with its pattern through `equals`, so its pattern, and quads written through a forwarded view, must use RDF/JS terms rather than string term IDs. An empty-string graph still stands for the default graph, so `view.graph` is then a `DefaultGraph` term.
 
 For `'snapshot'` and `'forwarded'`, an iteration (synchronous or via the
 stream) that is already in progress keeps a stable view of the quads as of when it started.

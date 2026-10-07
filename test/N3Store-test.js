@@ -1855,24 +1855,6 @@ describe('Store', () => {
           expect(view.graph.termType).toBe('DefaultGraph');
         });
 
-        it('should accept string term ids in patterns and in written quads', () => {
-          const byId = store.match('s1', null, null, null, opts);
-          expect(byId.subject.equals(namedNode('s1'))).toBe(true);
-          expect([...byId.match(namedNode('s1'))]).toHaveLength(5);
-          const byTerm = store.match(namedNode('s1'), null, null, null, opts);
-          expect([...byTerm.match('s1')]).toHaveLength(5);
-          expect([...byTerm.match('s2')]).toHaveLength(0);
-          expect(byTerm.add({ subject: 's1', predicate: 'p1', object: 'oID', graph: '' })).toBe(byTerm);
-          expect(store.has(q('s1', 'p1', 'oID'))).toBe(true);
-          expect(() => byTerm.add({ subject: 's2', predicate: 'p1', object: 'oID', graph: '' }))
-            .toThrow('Quad does not match the forwarded view pattern');
-          expect(byTerm.deleteMatches('s1', 'p1', 'oID')).toBe(byTerm);
-          expect(store.has(q('s1', 'p1', 'oID'))).toBe(false);
-          const defaultGraph = store.match(null, null, null, new DefaultGraph(), opts);
-          expect(defaultGraph.add({ subject: 's1', predicate: 'p1', object: 'oDG', graph: '' })).toBe(defaultGraph);
-          expect(store.has(q('s1', 'p1', 'oDG'))).toBe(true);
-        });
-
         it('should stay stable when a parent mutation lands as the source is exhausted', () => {
           const seen = [];
           for (const quad of view) {
