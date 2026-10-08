@@ -1,4 +1,4 @@
-import { NamedNode, DefaultGraph, Term, BlankNode, Literal, Variable } from '../src';
+import { NamedNode, DefaultGraph, Term, BlankNode, Literal, Variable } from '../src/N3DataFactory';
 
 describe('NamedNode', () => {
   describe('The NamedNode module', () => {

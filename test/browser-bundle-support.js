@@ -3,15 +3,29 @@ import { promisify } from 'util';
 const browserBundleMembers = [
   'Lexer', 'Parser', 'Writer', 'Store', 'StoreFactory', 'EntityIndex',
   'StreamParser', 'StreamWriter', 'Util', 'Reasoner', 'BaseIRI',
-  'DataFactory', 'Term', 'NamedNode', 'Literal', 'BlankNode', 'Variable',
-  'DefaultGraph', 'Quad', 'Triple', 'termFromId', 'termToId',
+  'DataFactory', 'termFromId', 'termToId',
   'getRulesFromDataset',
+];
+
+// The term classes are internal: their constructors take N3.js's own id strings
+const internalMembers = [
+  'Term', 'NamedNode', 'Literal', 'BlankNode', 'Variable',
+  'DefaultGraph', 'Quad', 'Triple',
 ];
 
 export function expectBrowserBundleMembers(N3) {
   expect(N3).toBeDefined();
   for (const name of browserBundleMembers)
     expect(N3[name]).toBeDefined();
+  expectNoInternalMembers(N3);
+}
+
+export function expectNoInternalMembers(N3) {
+  for (const exports of [N3, N3.default]) {
+    expect(exports).toBeDefined();
+    for (const name of internalMembers)
+      expect(exports).not.toHaveProperty(name);
+  }
 }
 
 export function expectBrowserBundleParser(N3) {
