@@ -12,15 +12,6 @@ import BaseIRI from './BaseIRI';
 import {
   default as DataFactory,
 
-  Term,
-  NamedNode,
-  Literal,
-  BlankNode,
-  Variable,
-  DefaultGraph,
-  Quad,
-  Triple,
-
   termFromId,
   termToId,
 } from './N3DataFactory';
@@ -40,15 +31,6 @@ export {
   BaseIRI,
 
   DataFactory,
-
-  Term,
-  NamedNode,
-  Literal,
-  BlankNode,
-  Variable,
-  DefaultGraph,
-  Quad,
-  Triple,
 
   termFromId,
   termToId,
@@ -70,15 +52,6 @@ export default {
   BaseIRI,
 
   DataFactory,
-
-  Term,
-  NamedNode,
-  Literal,
-  BlankNode,
-  Variable,
-  DefaultGraph,
-  Quad,
-  Triple,
 
   termFromId,
   termToId,
