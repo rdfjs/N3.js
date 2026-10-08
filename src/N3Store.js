@@ -1830,7 +1830,7 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   has(quad) {
-    const { n3Store } = this, { subject, predicate, object, graph } = quad;
+    const { n3Store } = this, { subject, predicate, object, graph } = quad || {};
     if (this._semantics !== 'lazy' || !subject || !predicate || !object || graph === undefined || graph === null)
       return this.filtered.has(quad);
     // Look a lazy view's fully bound quad up by id without copying its source

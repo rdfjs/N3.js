@@ -985,6 +985,11 @@ describe('Store', () => {
         const [subject, predicate, object] = [namedNode('s1'), namedNode('p1'), namedNode('oG')];
         for (const pattern of [{ subject, predicate, object, graph: null }, { subject, predicate, object }])
           expect(view.has(pattern)).toBe(true);
+        for (const matchSemantics of ['lazy', 'snapshot', 'forwarded']) {
+          const other = store.match(null, null, null, null, { matchSemantics });
+          expect(other.has(null)).toBe(store.has(null));
+          expect(other.has()).toBe(store.has());
+        }
       });
 
       it('should accept pattern terms without equals', () => {
