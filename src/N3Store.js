@@ -37,21 +37,7 @@ function entityKey(term) {
   const id = termToId(term);
   if (id.charCodeAt(0) >= 0x61 || !term)
     return id;
-  // Keys of quoted triples are built from the keys of their components
-  if (term.termType === 'Quad')
-    return JSON.stringify(quadKeyParts(term));
   return term.termType !== 'NamedNode' || !markedIRI.test(term.value) ? id : `<${term.value}>`;
-}
-
-// Returns the keys of the components of a quad, nested like the parts of its internal id
-function quadKeyParts(quad) {
-  const parts = [nestedKey(quad.subject), nestedKey(quad.predicate), nestedKey(quad.object)];
-  if (quad.graph && !isDefaultGraph(quad.graph))
-    parts.push(nestedKey(quad.graph));
-  return parts;
-}
-function nestedKey(term) {
-  return term.termType === 'Quad' ? quadKeyParts(term) : entityKey(term);
 }
 
 // ## Constructor
@@ -1457,14 +1443,20 @@ function validateMatchSemantics(semantics = 'lazy') {
   return semantics;
 }
 
+// Returns the term of a pattern component given as a string term ID,
+// where '' is a wildcard, or the default graph in the graph position
+function toTerm(term, isGraph) {
+  return typeof term !== 'string' ? term : term || isGraph ? termFromId(term) : null;
+}
+
 // Returns the intersection of two quad patterns, or false if they conflict.
 function intersectMatchPatterns(left, right) {
   const result = new Array(4);
   for (let i = 0; i < 4; i++) {
-    const leftTerm = left[i], rightTerm = right[i];
+    const leftTerm = left[i], rightTerm = toTerm(right[i], i === 3);
     if (leftTerm === null || leftTerm === undefined)
       result[i] = rightTerm;
-    else if (rightTerm === null || rightTerm === undefined || entityKey(leftTerm) === entityKey(rightTerm))
+    else if (rightTerm === null || rightTerm === undefined || leftTerm.equals(rightTerm))
       result[i] = leftTerm;
     else
       return false;
@@ -1478,7 +1470,7 @@ function intersectMatchPatterns(left, right) {
 class DatasetCoreAndReadableStream extends Readable {
   constructor(n3Store, subject, predicate, object, graph, options) {
     super({ objectMode: true });
-    Object.assign(this, { n3Store, subject, predicate, object, graph, options });
+    Object.assign(this, { n3Store, subject: toTerm(subject), predicate: toTerm(predicate), object: toTerm(object), graph: toTerm(graph, true), options });
     const semantics = this._semantics = validateMatchSemantics(options.matchSemantics);
 
     if (options.matchesNothing) {
@@ -1507,18 +1499,17 @@ class DatasetCoreAndReadableStream extends Readable {
     if (object && objectId !== (this._objectId || (this._objectId = n3Store._termToNumericId(object))))
       return false;
     return graph === null || graph === undefined ||
-      graphId === (this._graphId || (this._graphId =
-        graph === '' || isDefaultGraph(graph) ? 1 : n3Store._termToNumericId(graph)));
+      graphId === (this._graphId || (this._graphId = n3Store._termToNumericId(graph)));
   }
 
   // ### `_matchesQuad` tests a Quad against this view.
   _matchesQuad(quad) {
     const { subject, predicate, object, graph } = this;
     return !this._matchesNothing &&
-      (subject === null || subject === undefined || entityKey(subject) === entityKey(quad.subject)) &&
-      (predicate === null || predicate === undefined || entityKey(predicate) === entityKey(quad.predicate)) &&
-      (object === null || object === undefined || entityKey(object) === entityKey(quad.object)) &&
-      (graph === null || graph === undefined || entityKey(graph) === entityKey(quad.graph));
+      (subject === null || subject === undefined || subject.equals(quad.subject)) &&
+      (predicate === null || predicate === undefined || predicate.equals(quad.predicate)) &&
+      (object === null || object === undefined || object.equals(quad.object)) &&
+      (graph === null || graph === undefined || graph.equals(quad.graph));
   }
 
   // ### `_assertMatchesPattern` rejects a Quad outside this view.
