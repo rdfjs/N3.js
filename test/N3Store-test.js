@@ -922,6 +922,12 @@ describe('Store', () => {
         expect(store.match(null, null, null, namedNode('g')).has(q('s1', 'p1', 'o1'))).toBe(false);
         store.addQuad(q('s1', 'p1', 'oNEW'));
         expect(view.contains([q('s1', 'p1', 'oNEW')])).toBe(true);
+        expect(view.contains(view)).toBe(true);
+        expect(store.match(namedNode('s2')).contains(view)).toBe(false);
+        expect(view.contains(store.match(null, namedNode('p1'), namedNode('oNEW')))).toBe(true);
+        expect(store.contains(view)).toBe(true);
+        expect(new Store().contains(view)).toBe(false);
+        expect(store.contains(store.match(null, null, null, null, { matchSemantics: 'snapshot' }))).toBe(true);
         view.delete(q('s1', 'p1', 'oNEW'));
         expect(view.contains([q('s1', 'p1', 'oNEW')])).toBe(false);
         expect(store.match().size).toBe(7);

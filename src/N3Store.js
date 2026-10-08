@@ -1125,7 +1125,8 @@ export default class N3Store {
    * Blank Nodes will be normalized.
    */
   contains(other) {
-    if (other instanceof DatasetCoreAndReadableStream)
+    // Check a live view's quads directly rather than copying them
+    if (other instanceof DatasetCoreAndReadableStream && !other._live())
       other = other.filtered;
 
     if (other === this)
@@ -1706,9 +1707,7 @@ class DatasetCoreAndReadableStream extends Readable {
   contains(other) {
     if (!this._live())
       return this.filtered.contains(other);
-    if (other instanceof DatasetCoreAndReadableStream)
-      other = other.filtered;
-    return other.every(quad => this.has(quad));
+    return other === this || other.every(quad => this.has(quad));
   }
 
   deleteMatches(subject, predicate, object, graph) {
