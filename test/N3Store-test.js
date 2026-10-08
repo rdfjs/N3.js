@@ -4253,10 +4253,30 @@ describe('Store', () => {
       expect(store.getQuads('a')).toHaveLength(0);
       store.addQuad(namedNode('.x'), p, p);
       expect(store.getQuads('<.x>')).toHaveLength(0);
-      expect(store.getQuads('.x')).toHaveLength(0);
+      expect(store.getQuads('.x')).toHaveLength(1);
       store.addQuad('<.x>', p, p);
       expect(store.getQuads().map(q => q.subject.value).sort()).toEqual(['.x', '<.x>', '<a>']);
       expect(store.has(quad(namedNode('<a>'), p, namedNode('<b>')))).toBe(true);
+    });
+
+    it('should treat a string id starting with . as the same IRI', () => {
+      const store = new Store();
+      const s = namedNode('http://example.org/s'), o = namedNode('http://example.org/o');
+      store.addQuad(s, p, o);
+      store.addQuad(quad(s, p, o), p, s);
+      // The quoted triple's key is .2.3.4, which the string id of the IRI .2.3.4 must not match
+      expect(store.getQuads('.2.3.4')).toHaveLength(0);
+      store.addQuad('.2.3.4', p, '.x');
+      store.addQuad({ subject: '.x', predicate: p, object: s, graph: '' });
+      expect(store.has(quad(namedNode('.2.3.4'), p, namedNode('.x')))).toBe(true);
+      expect(store.getQuads(namedNode('.x'))).toHaveLength(1);
+      expect(store.getQuads('.x', null, s)).toHaveLength(1);
+      expect(store.getQuads(null, null, '.x')).toHaveLength(1);
+      expect(store.getQuads().map(q => [q.subject.termType, q.subject.value]).sort()).toEqual([
+        ['NamedNode', '.2.3.4'], ['NamedNode', '.x'], ['NamedNode', 'http://example.org/s'], ['Quad', ''],
+      ]);
+      store.removeQuad('.x', p, s);
+      expect(store.getQuads(namedNode('.x'))).toHaveLength(0);
     });
 
     it('should keep the string id <> as the empty IRI', () => {
