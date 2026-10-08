@@ -1,4 +1,5 @@
 import DF from './N3DataFactory';
+import { indexFor } from './N3Store';
 
 /**
  * Gets rules from a dataset. This will only collect horn rules declared using log:implies.
@@ -256,9 +257,8 @@ function getIndex({ subject, predicate, object }, set) {
   const p = predicate.value || set.has(predicate) || (set.add(predicate), false);
   const o = object.value    || set.has(object)    || (set.add(object), false);
 
-  return (!s && p) ? { content: 'predicates', value: [predicate, object, subject] } :
-    o ? { content: 'objects', value: [object, subject, predicate] } :
-        { content: 'subjects', value: [subject, predicate, object] };
+  const { name, order } = indexFor(s, p, o), terms = [subject, predicate, object];
+  return { content: name, value: order.map(i => terms[i]) };
 }
 
 function termEq(t1, t2) {
