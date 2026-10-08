@@ -872,7 +872,59 @@ describe('Store', () => {
         expect(view.some(() => true, namedNode('s2'))).toBe(false);
         expect(view.every(quad => quad.subject.value === 's1')).toBe(true);
         expect(view.reduce(count => count + 1, 0)).toBe(6);
+        expect(view.filter(() => true).size).toBe(6);
+        expect(view.map(quad => quad).size).toBe(6);
         expect(view.reduce(first => first).subject.value).toBe('s1');
+      });
+
+      it('should let a lazy sub-view see quads its parent adds outside its pattern', () => {
+        const store = buildStore();
+        const parent = store.match(namedNode('s1'), null, null);
+        const child = parent.match();
+        const other = parent.match(namedNode('s2'));
+        expect(other.size).toBe(0);
+        expect(other.has(q('s2', 'p1', 'oX'))).toBe(false);
+        expect([...other]).toHaveLength(0);
+        expect(other.filter(() => true).size).toBe(0);
+        expect(other.equals(new Store())).toBe(true);
+        parent.add(q('s2', 'p1', 'oPARENT'));
+        expect(child.has(q('s2', 'p1', 'oPARENT'))).toBe(true);
+        expect(child.size).toBe(6);
+        expect(other.size).toBe(1);
+        expect(other.has(q('s2', 'p1', 'oPARENT'))).toBe(true);
+      });
+
+      it('should pass a lazy view to its filter and map callbacks', () => {
+        const store = buildStore();
+        const view = store.match(namedNode('s1'), null, null);
+        const deleted = view.filter((quad, dataset) => {
+          expect(dataset).toBe(view);
+          dataset.delete(quad);
+          return true;
+        });
+        expect(deleted.size).toBe(5);
+        expect(view.size).toBe(0);
+        expect(store.size).toBe(6);
+        const mapped = store.match(namedNode('s1')).map((quad, dataset) => {
+          expect(dataset.has(quad)).toBe(true);
+          return q('s3', 'p1', quad.object.value);
+        });
+        expect([...mapped].every(quad => quad.subject.value === 's3')).toBe(true);
+        expect(mapped.size).toBe(5);
+      });
+
+      it('should check containment against a live lazy view', () => {
+        const store = buildStore();
+        const view = store.match(namedNode('s1'), null, null);
+        expect(view.contains(store.match(namedNode('s1'), namedNode('p1'), namedNode('o1')))).toBe(true);
+        expect(view.contains([q('s1', 'p1', 'oNEW')])).toBe(false);
+        expect(store.match(null, null, null, new DefaultGraph()).has(q('s1', 'p1', 'o1'))).toBe(true);
+        expect(store.match(null, null, null, namedNode('g')).has(q('s1', 'p1', 'o1'))).toBe(false);
+        store.addQuad(q('s1', 'p1', 'oNEW'));
+        expect(view.contains([q('s1', 'p1', 'oNEW')])).toBe(true);
+        view.delete(q('s1', 'p1', 'oNEW'));
+        expect(view.contains([q('s1', 'p1', 'oNEW')])).toBe(false);
+        expect(store.match().size).toBe(7);
       });
 
       it('should materialize a lazy view when it is mutated', async () => {
@@ -889,6 +941,8 @@ describe('Store', () => {
         expect(view.toArray()).toHaveLength(6);
         expect(view.every(quad => quad.subject.value === 's1')).toBe(true);
         expect(view.reduce(count => count + 1, 0)).toBe(6);
+        expect(view.filter(() => true).size).toBe(6);
+        expect(view.map(quad => quad).size).toBe(6);
         expect(view.union([q('s1', 'p1', 'oUNION')]).size).toBe(7);
         expect(await arrayifyStream(view.toStream())).toHaveLength(6);
       });
