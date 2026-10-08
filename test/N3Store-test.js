@@ -4709,6 +4709,16 @@ describe('Store', () => {
       expect(store.getQuads(namedNode('.x'))).toHaveLength(0);
     });
 
+    it('should treat a string id starting with [ as the same IRI', () => {
+      const store = new Store();
+      store.addQuad('[x', p, '[y');
+      store.addQuad(namedNode('[x'), p, namedNode('[y'));
+      expect(store.size).toBe(1);
+      expect(store.getQuads(namedNode('[x'), null, '[y')).toHaveLength(1);
+      expect(store.getQuads('[x', null, namedNode('[y'))).toHaveLength(1);
+      expect(store.getQuads().map(q => [q.subject.termType, q.subject.value])).toEqual([['NamedNode', '[x']]);
+    });
+
     it('should keep the string id <> as the empty IRI', () => {
       const store = new Store();
       store.addQuad('<>', p, p);
