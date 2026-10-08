@@ -1,4 +1,5 @@
-import { Quad, NamedNode, Variable, Store, Reasoner, getRulesFromDataset, Parser } from '../src';
+import { Store, Reasoner, getRulesFromDataset, Parser } from '../src';
+import { Quad, NamedNode, Variable } from '../src/N3DataFactory';
 import { getTimblAndFoaf, generateDeepTaxonomy, getRdfs, TARGET_RESULT } from 'deep-taxonomy-benchmark';
 
 describe('Reasoner', () => {
