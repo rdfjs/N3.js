@@ -733,6 +733,8 @@ The N3.js submodules are compatible with the following [RDF.js](http://rdf.js.or
     [`Triple`](http://rdf.js.org/data-model-spec/#triple-interface)
     and
     [`Quad`](http://rdf.js.org/data-model-spec/#quad-interface)
+  - the term classes themselves are internal and not exported:
+    create terms with `N3.DataFactory`, and check them by `termType` rather than with `instanceof`
 - `N3.StreamParser` implements
   [`Stream`](http://rdf.js.org/stream-spec/#stream-interface)
   and
