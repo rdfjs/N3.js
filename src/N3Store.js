@@ -1265,7 +1265,7 @@ export default class N3Store {
    * or recurses deeper than the call stack allows.
    */
   toCanonical({ hashAlgorithm, maxWorkFactor } = {}) {
-    return canonicalize(this.getQuads(), { hashAlgorithm, maxWorkFactor });
+    return canonicalize(this, { hashAlgorithm, maxWorkFactor });
   }
 
   /**

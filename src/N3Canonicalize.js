@@ -2,34 +2,74 @@
 // See https://www.w3.org/TR/rdf-canon/
 import N3Writer from './N3Writer';
 
-// Canonicalizes the quads, which must not contain duplicates, into a sorted N-Quads string.
+// Canonicalizes the quads of the store into a sorted N-Quads string, reading its indexes directly.
 // As in rdf-canonize, Hash N-Degree Quads runs at most n^`maxWorkFactor` times (n times by default) for n blank nodes
 // without unique first-degree hashes, so poison graphs fail instead of running indefinitely.
-export default function canonicalize(quads, { hashAlgorithm = 'SHA-256', maxWorkFactor = 1 }) {
+export default function canonicalize(store, { hashAlgorithm = 'SHA-256', maxWorkFactor = 1 }) {
   if (hashAlgorithm !== 'SHA-256')
     throw new Error(`Unsupported canonicalization hash algorithm: ${hashAlgorithm}`);
-  // Serializes quads in canonical N-Quads, labeling each blank node through the current `label` function
-  const writer = new N3Writer({ format: 'N-Quads' }), encode = writer._encodeIriOrBlank;
-  let label;
-  writer._encodeIriOrBlank = function (entity) {
-    return entity.termType === 'BlankNode' ? `_:${label(entity.value)}` : encode.call(this, entity);
-  };
-  function serialize(quad, labeler) {
-    label = labeler;
-    return writer.quadToString(quad.subject, quad.predicate, quad.object, quad.graph);
+
+  // Serialize each term of the entity index in canonical N-Quads once, as null for blank nodes,
+  // and keep the IRIs of predicates for Hash Related Blank Node
+  const writer = new N3Writer({ format: 'N-Quads' }), entities = store._entities;
+  const terms = Object.create(null), iris = Object.create(null);
+  function termOf(id) {
+    let term = terms[id];
+    if (term === undefined) {
+      const entity = store._termFromId(entities[id]);
+      if (entity.termType === 'Quad')
+        throw new Error('RDFC-1.0 does not define the canonicalization of triple terms');
+      iris[id] = entity.value;
+      term = terms[id] = entity.termType === 'DefaultGraph' ? '' :
+        entity.termType === 'BlankNode' ? null : writer._encodeObject(entity);
+    }
+    return term;
+  }
+  // Serializes a quad of numeric ids, labeling each blank node through the `label` function
+  function serialize([subject, predicate, object, graph], label) {
+    const s = terms[subject], o = terms[object], g = terms[graph];
+    return `${s === null ? `_:${label(subject)}` : s} ${terms[predicate]} ${o === null ? `_:${label(object)}` : o}${
+      g === '' ? '' : ` ${g === null ? `_:${label(graph)}` : g}`} .\n`;
   }
 
-  // Map each blank node to the quads that mention it (4.4.3 step 2)
-  const quadsOf = new Map();
-  for (const quad of quads) {
-    if (quad.subject.termType === 'Quad' || quad.object.termType === 'Quad')
-      throw new Error('RDFC-1.0 does not define the canonicalization of triple terms');
-    for (const [id] of blankNodesOf(quad)) {
-      const list = quadsOf.get(id);
-      if (!list)
-        quadsOf.set(id, [quad]);
-      else if (list[list.length - 1] !== quad)
-        list.push(quad);
+  // Yields the numeric ids of the blank nodes in the subject, object and graph of the quad with their position
+  function* blankNodesOf([subject, , object, graph]) {
+    if (terms[subject] === null)
+      yield [subject, 's'];
+    if (terms[object] === null)
+      yield [object, 'o'];
+    if (terms[graph] === null)
+      yield [graph, 'g'];
+  }
+
+  // Read the quads from the subject indexes as numeric ids. Quads without blank nodes are written at once;
+  // the others are kept, and each blank node is mapped to the quads that mention it (4.4.3 step 2).
+  const lines = [], blankQuads = [], quadsOf = new Map();
+  for (const graph in store._graphs) {
+    const subjects = store._graphs[graph].subjects, g = termOf(graph);
+    for (const subject in subjects) {
+      const predicates = subjects[subject], s = termOf(subject);
+      for (const predicate in predicates) {
+        const p = termOf(predicate);
+        if (p === null)
+          throw new Error('RDFC-1.0 does not define the canonicalization of blank node predicates');
+        for (const object in predicates[predicate]) {
+          const o = termOf(object);
+          if (s !== null && o !== null && g !== null)
+            lines.push(`${s} ${p} ${o}${g === '' ? '' : ` ${g}`} .\n`);
+          else {
+            const quad = [subject, predicate, object, graph];
+            blankQuads.push(quad);
+            for (const [id] of blankNodesOf(quad)) {
+              const list = quadsOf.get(id);
+              if (!list)
+                quadsOf.set(id, [quad]);
+              else if (list[list.length - 1] !== quad)
+                list.push(quad);
+            }
+          }
+        }
+      }
     }
   }
 
@@ -42,7 +82,7 @@ export default function canonicalize(quads, { hashAlgorithm = 'SHA-256', maxWork
         return value === id ? 'a' : 'z';
       }
       const lines = quadsOf.get(id).map(quad => serialize(quad, labelReference));
-      firstDegreeHashes.set(id, hash = sha256(lines.sort(codePointOrder).join('')));
+      firstDegreeHashes.set(id, hash = sha256(sortByCodePoint(lines).join('')));
     }
     return hash;
   }
@@ -66,7 +106,7 @@ export default function canonicalize(quads, { hashAlgorithm = 'SHA-256', maxWork
   // Hash Related Blank Node (4.7)
   function hashRelated(related, quad, issuer, position) {
     const id = canonical.get(related) || issuer.get(related);
-    return sha256(`${position}${position === 'g' ? '' : `<${quad.predicate.value}>`}${
+    return sha256(`${position}${position === 'g' ? '' : `<${iris[quad[1]]}>`}${
       id ? `_:${id}` : hashFirstDegree(related)}`);
   }
 
@@ -160,8 +200,14 @@ export default function canonicalize(quads, { hashAlgorithm = 'SHA-256', maxWork
   }
 
   // Serialize the quads with their canonical labels (4.4.3 step 7)
-  const lines = quads.map(quad => serialize(quad, canonical.get.bind(canonical)));
-  return lines.sort(codePointOrder).join('');
+  for (const quad of blankQuads)
+    lines.push(serialize(quad, canonical.get.bind(canonical)));
+  return sortByCodePoint(lines).join('');
+}
+
+// Sorts the strings by Unicode code point, which only differs from the faster UTF-16 order for surrogate pairs
+function sortByCodePoint(strings) {
+  return strings.some(string => /[\uD800-\uDFFF]/.test(string)) ? strings.sort(codePointOrder) : strings.sort();
 }
 
 // Compares strings by Unicode code point, which differs from UTF-16 order for surrogate pairs
@@ -200,16 +246,6 @@ class IdentifierIssuer {
   copy() {
     return new IdentifierIssuer(this.prefix, new Map(this.ids));
   }
-}
-
-// Yields the blank node identifiers in the subject, object and graph of the quad with their position
-function* blankNodesOf({ subject, object, graph }) {
-  if (subject.termType === 'BlankNode')
-    yield [subject.value, 's'];
-  if (object.termType === 'BlankNode')
-    yield [object.value, 'o'];
-  if (graph.termType === 'BlankNode')
-    yield [graph.value, 'g'];
 }
 
 // Yields every distinct ordering of the list in lexicographic order, reusing one array

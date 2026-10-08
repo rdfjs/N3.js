@@ -4045,6 +4045,11 @@ describe('Store', () => {
         expect(canonical('_:b <urn:q> "a"@en .\n_:a <urn:p> _:b _:c .\n<urn:s> <urn:p> _:a .\n')).toEqual(expected);
       });
 
+      it('should label blank node graph names', () => {
+        expect(canonical('<urn:s> <urn:p> <urn:o> _:g .\n<urn:s> <urn:p> _:x _:g .\n<urn:s> <urn:p> <urn:o> <urn:g> .\n'))
+          .toEqual('<urn:s> <urn:p> <urn:o> <urn:g> .\n<urn:s> <urn:p> <urn:o> _:c14n1 .\n<urn:s> <urn:p> _:c14n0 _:c14n1 .\n');
+      });
+
       it('should distinguish blank nodes with identical first-degree hashes', () => {
         // A cycle of four blank nodes with alternating predicates (W3C rdf-canon test021)
         const cycle = '_:a <urn:p> _:b .\n_:b <urn:q> _:c .\n_:c <urn:p> _:d .\n_:d <urn:q> _:a .\n';
@@ -4089,9 +4094,20 @@ describe('Store', () => {
           .toEqual('<urn:s> <urn:p> "" .\n<urn:s> <urn:p> "\uE000" .\n<urn:s> <urn:p> "\u{10000}" .\n');
       });
 
+      it('should sort equal lines by code point', () => {
+        expect(canonical('_:a <urn:p> _:b .\n_:a <urn:p> _:c .\n_:a <urn:q> "\u{1F600}" .\n'))
+          .toEqual('_:c14n0 <urn:p> _:c14n1 .\n_:c14n0 <urn:p> _:c14n2 .\n_:c14n0 <urn:q> "\u{1F600}" .\n');
+      });
+
       it('should reject triple terms', () => {
         expect(() => canonical('<urn:s> <urn:p> <<( _:a <urn:q> _:b )>> .\n'))
           .toThrow('RDFC-1.0 does not define the canonicalization of triple terms');
+      });
+
+      it('should reject blank node predicates', () => {
+        const store = new Store([new Quad(new NamedNode('urn:s'), DataFactory.blankNode('p'), new NamedNode('urn:o'))]);
+        expect(() => store.toCanonical())
+          .toThrow('RDFC-1.0 does not define the canonicalization of blank node predicates');
       });
 
       it('should reject hash algorithms other than SHA-256', () => {
