@@ -468,7 +468,7 @@ describe('Store', () => {
                        ['s1', 'p2', 'o2'],
                        ['s2', 'p1', 'o1'],
                        ['s1', 'p1', 'o1', 'c4'],
-                       [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3'],
+                       [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3'],
                        ['s2', 'p2', 'o2']));
     });
 
@@ -499,7 +499,7 @@ describe('Store', () => {
                          ['s1', 'p1', 'o2'],
                          ['s2', 'p1', 'o1'],
                          ['s1', 'p1', 'o1', 'c4'],
-                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3']),
+                         [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3']),
       );
     });
 
@@ -583,7 +583,7 @@ describe('Store', () => {
                          ['s1', 'p1', 'o2'],
                          ['s1', 'p2', 'o2'],
                          ['s2', 'p1', 'o1'],
-                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3'],
+                         [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3'],
                          ['s2', 'p2', 'o2']),
       );
     });
@@ -672,7 +672,7 @@ describe('Store', () => {
             ['s1', 'p2', 'o2'],
             ['s2', 'p1', 'o1'],
             ['s1', 'p1', 'o1', 'c4'],
-            [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3'],
+            [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3'],
             ['s2', 'p2', 'o2']),
         );
       });
@@ -1006,7 +1006,7 @@ describe('Store', () => {
           state.mutate = true;
           expect([...view].map(({ subject, object }) =>
             `${subject.value}:${object.value}`).sort()).toEqual(['s1:o1', 's2:o2']);
-          expect(store.has(q('s1', 'p1', 'o1'))).toBe(false);
+          expect(store.has(namedNode('s1'), namedNode('p1'), namedNode('o1'))).toBe(false);
         },
       );
 
@@ -1227,7 +1227,7 @@ describe('Store', () => {
           expect(leaf.delete(q('s1', 'p1', 'o1'))).toBe(leaf);
 
           expect(store.has(q('s1', 'p1', 'oLEAF'))).toBe(true);
-          expect(store.has(q('s1', 'p1', 'o1'))).toBe(false);
+          expect(store.has(namedNode('s1'), namedNode('p1'), namedNode('o1'))).toBe(false);
           expect(values(parent).sort()).toEqual(['o2', 'oLEAF', 'oROOT']);
           expect(values(child).sort()).toEqual(['oLEAF', 'oROOT']);
           expect(values(leaf).sort()).toEqual(['oLEAF', 'oROOT']);
@@ -1282,7 +1282,7 @@ describe('Store', () => {
           expect(() => child.add(q('s1', 'p2', 'oNEW')))
             .toThrow('Quad does not match the forwarded view pattern');
           expect(child.deleteMatches()).toBe(child);
-          expect(store.has(q('s1', 'p1', 'o1'))).toBe(false);
+          expect(store.has(namedNode('s1'), namedNode('p1'), namedNode('o1'))).toBe(false);
           expect(store.has(q('s1', 'p2', 'o2'))).toBe(true);
           expect(store.has(q('s2', 'p1', 'o3'))).toBe(true);
         });
@@ -1852,6 +1852,48 @@ describe('Store', () => {
           expect([...view]).toHaveLength(7);
           expect(view.has(q('s3', 'p1', 'oG', 'g1'))).toBe(false);
           expect([...view]).toHaveLength(7);
+          expect(view.graph.termType).toBe('DefaultGraph');
+        });
+
+        it('should accept string term ids in patterns', () => {
+          const byId = store.match('s1', null, null, null, opts);
+          expect(byId.subject.equals(namedNode('s1'))).toBe(true);
+          expect([...byId.match(namedNode('s1'))]).toHaveLength(5);
+          const byTerm = store.match(namedNode('s1'), null, null, null, opts);
+          expect([...byTerm.match('s1')]).toHaveLength(5);
+          expect([...byTerm.match('s2')]).toHaveLength(0);
+          byTerm.add(q('s1', 'p1', 'oID'));
+          expect(byTerm.deleteMatches('s1', 'p1', 'oID')).toBe(byTerm);
+          expect(store.has(q('s1', 'p1', 'oID'))).toBe(false);
+        });
+
+        it('should treat an empty-string subject, predicate or object as a wildcard', () => {
+          const size = store.size;
+          expect([...store.match('', '', '', null, opts)]).toHaveLength(size);
+          expect([...store.match(namedNode('s1'), null, null, null, opts).match('', '', '')]).toHaveLength(5);
+          store.match('', '', '', null, opts).deleteMatches('', '', '');
+          expect(store.size).toBe(0);
+        });
+
+        it('should treat an empty-string pattern as a wildcard in lazy and snapshot views', () => {
+          for (const matchSemantics of ['lazy', 'snapshot']) {
+            const small = new Store([q('s1', 'p1', 'o1'), q('s1', 'p1', 'o1', 'g1')]);
+            expect([...small.match('', '', '', null, { matchSemantics })]).toHaveLength(2);
+            expect([...small.match('', '', '', '', { matchSemantics })]).toHaveLength(1);
+          }
+          const small = new Store([q('s1', 'p1', 'o1')]);
+          expect([...small.match('')]).toHaveLength(small.getQuads('').length);
+          small.deleteMatches('');
+          expect(small.size).toBe(0);
+        });
+
+        it('should delete only default graph quads through an empty-string graph pattern', () => {
+          store.addQuad(q('s1', 'p1', 'oG', 'g1'));
+          const size = store.size;
+          store.match(null, null, null, '', opts).deleteMatches();
+          expect(store.size).toBe(1);
+          expect(store.has(q('s1', 'p1', 'oG', 'g1'))).toBe(true);
+          expect(size).toBeGreaterThan(1);
         });
 
         it('should stay stable when a parent mutation lands as the source is exhausted', () => {
@@ -2337,7 +2379,7 @@ describe('Store', () => {
                              ['s1', 'p1', 'o1', ''],
                              ['s1', 'p1', 'o2', ''],
                              ['s2', 'p1', 'o1', ''],
-                             [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']),
+                             [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3', '']),
         );
       });
 
@@ -2367,7 +2409,7 @@ describe('Store', () => {
                            ['s1', 'p1', 'o2', ''],
                            ['s2', 'p1', 'o1', ''],
                            ['s1', 'p1', 'o1', 'c4'],
-                           [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']),
+                           [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3', '']),
         );
       });
 
@@ -2390,7 +2432,7 @@ describe('Store', () => {
                            ['s1', 'p2', 'o2'],
                            ['s2', 'p1', 'o1'],
                            ['s2', 'p2', 'o2'],
-                           [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']),
+                           [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3', '']),
         );
       });
 
@@ -2404,7 +2446,7 @@ describe('Store', () => {
                            ['s2', 'p1', 'o1'],
                            ['s2', 'p2', 'o2'],
                            ['s1', 'p1', 'o1', 'c4'],
-                           [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']),
+                           [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3', '']),
         );
       });
     });
@@ -2600,7 +2642,7 @@ describe('Store', () => {
         ['s2', 'p1', 'o1'],
         ['s2', 'p2', 'o2'],
         ['s1', 'p1', 'o1', 'c4'],
-        [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3']));
+        [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3']));
     });
 
     describe('when iterated with for...of', () => {
@@ -2622,7 +2664,7 @@ describe('Store', () => {
         ['s1', 'p2', 'o2'],
         ['s2', 'p1', 'o1'],
         ['s1', 'p1', 'o1', 'c4'],
-        [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3'],
+        [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3'],
         ['s2', 'p2', 'o2']));
     });
 
@@ -2640,7 +2682,7 @@ describe('Store', () => {
         ['s2', 'p1', 'o1'],
         ['s2', 'p2', 'o2'],
         ['s1', 'p1', 'o1', 'c4'],
-        [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3']));
+        [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3']));
     });
 
     describe('when counted without parameters', () => {
@@ -2877,7 +2919,7 @@ describe('Store', () => {
                          ['s2', 'p1', 'o1'],
                          ['s2', 'p2', 'o2'],
                          ['s1', 'p1', 'o1', 'c4'],
-                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']),
+                         [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3', '']),
       );
     });
 
@@ -2909,7 +2951,7 @@ describe('Store', () => {
         shouldIncludeAll(() => { return store.getQuads(); },
                          ['s1', 'p1', 'o2'],
                          ['s2', 'p2', 'o2'],
-                         [termToId(new Quad('s2', 'p2', 'o2')), 'p1', 'o3', '']),
+                         [new Quad(new NamedNode('s2'), new NamedNode('p2'), new NamedNode('o2')), 'p1', 'o3', '']),
       );
     });
 
@@ -2981,6 +3023,56 @@ describe('Store', () => {
     it('should still match patterns with an unbound graph', () => {
       expect(store.has(new NamedNode('s1'), new NamedNode('p1'), new NamedNode('o1'))).toBe(true);
       expect(store.has(new NamedNode('s2'), new NamedNode('p1'), new NamedNode('o1'))).toBe(false);
+    });
+  });
+
+  describe('A forwarded view with a triple term in its pattern', () => {
+    const triple = quad(namedNode('s'), namedNode('p'), literal('o'));
+    const store = new Store([
+      quad(triple, namedNode('says'), namedNode('x')),
+      quad(namedNode('s'), namedNode('says'), triple),
+    ], { matchSemantics: 'forwarded' });
+
+    it('should only accept quads with an equal triple term', () => {
+      const view = store.match(triple);
+      expect(view.size).toBe(1);
+      view.add(quad(quad(namedNode('s'), namedNode('p'), literal('o')), namedNode('says'), namedNode('y')));
+      expect(view.size).toBe(2);
+      expect(() => view.add(quad(namedNode('s'), namedNode('says'), namedNode('y'))))
+        .toThrow('Quad does not match the forwarded view pattern');
+      expect(() => store.match(namedNode('s')).add(quad(triple, namedNode('says'), namedNode('y'))))
+        .toThrow('Quad does not match the forwarded view pattern');
+    });
+
+    it('should intersect triple terms in nested patterns', () => {
+      expect(store.match(null, null, triple).match(null, null, triple).size).toBe(1);
+      expect(store.match(null, null, triple).match(null, null, namedNode('x')).size).toBe(0);
+      expect(store.match(null, null, namedNode('x')).match(null, null, triple).size).toBe(0);
+    });
+
+    it('should accept triple terms from other libraries', () => {
+      const foreign = {
+        termType: 'Quad',
+        subject: { termType: 'NamedNode', value: 's' },
+        predicate: { termType: 'NamedNode', value: 'p' },
+        object: { termType: 'Literal', value: 'o', language: '', datatype: { termType: 'NamedNode', value: namespaces.xsd.string } },
+        graph: { termType: 'DefaultGraph', value: '' },
+        equals(other) { return triple.equals(other); },
+      };
+      const other = new Store([
+        quad(triple, namedNode('says'), namedNode('x')),
+        quad(namedNode('s'), namedNode('says'), triple),
+      ], { matchSemantics: 'forwarded' });
+      const view = other.match(foreign);
+      expect(view.size).toBe(1);
+      view.add(quad(triple, namedNode('says'), namedNode('y')));
+      expect(view.size).toBe(2);
+      expect(() => view.add(quad(quad(namedNode('s'), namedNode('p'), literal('other')), namedNode('says'), namedNode('z'))))
+        .toThrow('Quad does not match the forwarded view pattern');
+      expect(view.match(triple).size).toBe(2);
+      expect(other.match(null, null, foreign).match(null, null, triple).size).toBe(1);
+      view.deleteMatches(foreign, namedNode('says'), namedNode('y'));
+      expect(view.size).toBe(1);
     });
   });
 
@@ -4554,7 +4646,7 @@ describe('Store', () => {
       const nestedView = store.match(nested(quoted), null, null, null, { matchSemantics: 'forwarded' });
       expect([...nestedView.match(nested(other))]).toHaveLength(0);
       expect(() => nestedView.add(quad(nested(other), p, p))).toThrow('Quad does not match the forwarded view pattern');
-      const foreign = { termType: 'Quad', subject: namedNode('?x'), predicate: p, object: o };
+      const foreign = { termType: 'Quad', subject: namedNode('?x'), predicate: p, object: o, graph: DataFactory.defaultGraph() };
       expect([...store.match(quad(namedNode('?x'), p, o), null, null, null, { matchSemantics: 'forwarded' })
         .match(foreign)]).toHaveLength(0);
       view.add(quad(quoted, p, p));
@@ -4938,9 +5030,14 @@ function itShouldBeEmpty(result) {
   });
 }
 
+// Test fixtures write terms as IDs, except for triple terms, which have no ID
+function toTerm(term) {
+  return typeof term === 'string' ? termFromId(term) : term;
+}
+
 function shouldIncludeAll(result) {
   const items = Array.prototype.slice.call(arguments, 1).map(arg => {
-    return new Quad(termFromId(arg[0]), termFromId(arg[1]), termFromId(arg[2]), termFromId(arg[3] || ''));
+    return new Quad(toTerm(arg[0]), toTerm(arg[1]), toTerm(arg[2]), toTerm(arg[3] || ''));
   });
   return function () {
     if (typeof result === 'function') result = result();
@@ -5000,8 +5097,9 @@ describe('Set operations between stores sharing an EntityIndex', () => {
   function q(s, p, o, g) {
     return DataFactory.quad(ex(s), ex(p), ex(o), g ? ex(g) : DataFactory.defaultGraph());
   }
+  // Quads have no string id, so they are keyed on the ids of their components
   function ids(quads) {
-    return quads.map(quad => termToId(quad)).sort();
+    return quads.map(quad => [quad.subject, quad.predicate, quad.object, quad.graph].map(termToId).join(' ')).sort();
   }
   let entityIndex, a, b;
   beforeEach(() => {
