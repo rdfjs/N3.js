@@ -249,11 +249,8 @@ export class DefaultGraph extends Term {
 DEFAULTGRAPH = new DefaultGraph();
 
 // ### Constructs a term from the given internal string ID
-// The third 'nested' parameter of this function is to aid
-// with recursion over nested terms. It should not be used
-// by consumers of this library.
-// See https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725
-export function termFromId(id, factory, nested) {
+// Triple terms have no string ID; the Store indexes them by their components.
+export function termFromId(id, factory) {
   factory = factory || DataFactory;
 
   // Falsy value or empty string indicate the default graph
@@ -291,32 +288,18 @@ export function termFromId(id, factory, nested) {
     }
     return factory.literal(id.substr(1, endPos - 1),
             languageOrDatatype);
-  case '[':
-    id = JSON.parse(id);
-    break;
   case '<':
     if (id === EMPTY_IRI_ID)
       return factory.namedNode('');
     // falls through
   default:
-    if (!nested || !Array.isArray(id)) {
-      return factory.namedNode(id);
-    }
+    return factory.namedNode(id);
   }
-  return factory.quad(
-    termFromId(id[0], factory, true),
-    termFromId(id[1], factory, true),
-    termFromId(id[2], factory, true),
-    id[3] && termFromId(id[3], factory, true),
-  );
 }
 
 // ### Constructs an internal string ID from the given term or ID string
-// The third 'nested' parameter of this function is to aid
-// with recursion over nested terms. It should not be used
-// by consumers of this library.
-// See https://github.com/rdfjs/N3.js/pull/311#discussion_r1061042725
-export function termToId(term, nested) {
+// Triple terms have no string ID; the Store indexes them by their components.
+export function termToId(term) {
   if (typeof term === 'string')
     return term;
   if (term instanceof Term && term.termType !== 'Quad')
@@ -336,16 +319,7 @@ export function termToId(term, nested) {
   case 'Literal':      return `"${term.value}"${
     term.language ? `@${term.language}${term.direction ? `--${term.direction}` : ''}` :
       (term.datatype && term.datatype.value !== xsd.string ? `^^${term.datatype.value}` : '')}`;
-  case 'Quad':
-    const res = [
-      termToId(term.subject, true),
-      termToId(term.predicate, true),
-      termToId(term.object, true),
-    ];
-    if (term.graph && term.graph.termType !== 'DefaultGraph') {
-      res.push(termToId(term.graph, true));
-    }
-    return nested ? res : JSON.stringify(res);
+  case 'Quad': throw new Error('Triple terms have no string ID');
   default: throw new Error(`Unexpected termType: ${term.termType}`);
   }
 }
