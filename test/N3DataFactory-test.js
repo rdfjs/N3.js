@@ -1,12 +1,5 @@
-import {
-  DataFactory,
-  NamedNode,
-  Literal,
-  BlankNode,
-  Variable,
-  DefaultGraph,
-  Quad,
-} from '../src';
+import { DataFactory } from '../src';
+import { NamedNode, Literal, BlankNode, Variable, DefaultGraph, Quad } from '../src/N3DataFactory';
 import * as DM from '@rdfjs/data-model';
 
 describe('DataFactory', () => {
