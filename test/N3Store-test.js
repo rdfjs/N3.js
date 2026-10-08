@@ -933,6 +933,51 @@ describe('Store', () => {
         expect(store.match().size).toBe(7);
       });
 
+      it('should reuse the copy of a lazy view until its source changes', () => {
+        const store = buildStore();
+        const view = store.match(namedNode('s1'), null, null);
+        const child = view.match(null, namedNode('p1'));
+        const copy = view.filtered;
+        expect(view.filtered).toBe(copy);
+        expect(child.size).toBe(5);
+        store.removeQuad(q('s1', 'p1', 'o0'));
+        expect(view.filtered).not.toBe(copy);
+        expect(view.size).toBe(4);
+        expect(child.size).toBe(4);
+        store.removeQuad(q('s1', 'p1', 'o0'));
+        expect(child.size).toBe(4);
+      });
+
+      it('should pass a snapshot view\'s copy to its callbacks', () => {
+        const view = buildStore({ matchSemantics: 'snapshot' }).match(namedNode('s1'));
+        function isCopy(quad, dataset) {
+          return dataset === view.filtered;
+        }
+        expect(view.every(isCopy)).toBe(true);
+        expect(view.some(isCopy)).toBe(true);
+        expect(view.filter(isCopy).size).toBe(5);
+        expect(view.map(quad => quad).size).toBe(5);
+        let count = 0;
+        view.forEach((quad, dataset) => { count += isCopy(quad, dataset); });
+        expect(count).toBe(5);
+        expect(view.reduce((n, quad, dataset) => n + isCopy(quad, dataset), 0)).toBe(5);
+      });
+
+      it('should check containment of views over a store with a custom factory', () => {
+        const factory = { ...DataFactory, quad: (s, p, o, g) => ({ s, p, o, g }) };
+        const store = new Store([], { factory });
+        store.addQuad(namedNode('s'), namedNode('p'), namedNode('o'));
+        expect(store.contains(store.match())).toBe(true);
+        expect(store.match().contains(store)).toBe(true);
+      });
+
+      it('should accept pattern terms without equals', () => {
+        const store = buildStore();
+        const view = store.match({ termType: 'NamedNode', value: 's1' });
+        expect(view.has(q('s1', 'p1', 'o1'))).toBe(true);
+        expect(view.match(namedNode('s1')).size).toBe(5);
+      });
+
       it('should materialize a lazy view when it is mutated', async () => {
         const store = buildStore();
         const view = store.match(namedNode('s1'), null, null);
