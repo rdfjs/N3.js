@@ -1259,9 +1259,10 @@ export default class N3Store {
    * Returns an N-Quads string representation of the dataset, preprocessed with the
    * {@link https://www.w3.org/TR/rdf-canon/|RDF Dataset Canonicalization (RDFC-1.0)} algorithm with SHA-256.
    *
-   * A `hash` function that returns the hex digest of a string, such as
-   * `string => crypto.createHash('sha256').update(string).digest('hex')` in Node, replaces the built-in SHA-256,
-   * which is slower; with it, `hashAlgorithm` names its algorithm.
+   * A `hash` function replaces the built-in SHA-256, which is slower, such as
+   * `string => crypto.createHash('sha256').update(string).digest('hex')` in Node; with it, `hashAlgorithm` names
+   * its algorithm. It must synchronously and deterministically hash the UTF-8 encoding of the string,
+   * and return the full, fixed-length digest in lowercase hex.
    *
    * Throws on triple terms, which RDFC-1.0 does not cover, and on poison graphs: datasets whose canonicalization
    * runs Hash N-Degree Quads, or tries permutations of related blank nodes, more than n^`maxWorkFactor` times

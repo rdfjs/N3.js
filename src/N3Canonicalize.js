@@ -5,7 +5,8 @@ import N3Writer from './N3Writer';
 // Canonicalizes the quads of the store into a sorted N-Quads string, reading its indexes directly.
 // As in rdf-canonize, Hash N-Degree Quads runs at most n^`maxWorkFactor` times (n times by default) for n blank nodes
 // without unique first-degree hashes, so poison graphs fail instead of running indefinitely.
-// A `hash` function, such as one using Node's crypto module, returns the hex digest of a string with `hashAlgorithm`;
+// A `hash` function, such as one using Node's crypto module, returns the lowercase hex digest of the UTF-8 encoding
+// of a string with `hashAlgorithm`;
 // without one, the built-in SHA-256 is used.
 export default function canonicalize(store, { hashAlgorithm = 'SHA-256', hash: digest, maxWorkFactor = 1 }) {
   if (digest === undefined && hashAlgorithm === 'SHA-256')
