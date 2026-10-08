@@ -1470,7 +1470,7 @@ function intersectMatchPatterns(left, right) {
 class DatasetCoreAndReadableStream extends Readable {
   constructor(n3Store, subject, predicate, object, graph, options) {
     super({ objectMode: true });
-    Object.assign(this, { n3Store, subject: toTerm(subject), predicate: toTerm(predicate), object: toTerm(object), graph: toTerm(graph, true), options });
+    Object.assign(this, { _n3Store: n3Store, _parent: options.parent, subject: toTerm(subject), predicate: toTerm(predicate), object: toTerm(object), graph: toTerm(graph, true), options });
     const semantics = this._semantics = validateMatchSemantics(options.matchSemantics);
 
     if (options.matchesNothing) {
@@ -1487,6 +1487,13 @@ class DatasetCoreAndReadableStream extends Readable {
         this._observer = n3Store._addObserver(this);
       }
     }
+  }
+
+  // ### `n3Store` is the store this view reads from.
+  // A lazy view of a lazy view reads its parent's source until that parent is mutated.
+  get n3Store() {
+    const parent = this._parent;
+    return parent ? parent._filtered || parent.n3Store : this._n3Store;
   }
 
   // ### `_matchesPattern` tests quad ids against this view.
@@ -1557,12 +1564,16 @@ class DatasetCoreAndReadableStream extends Readable {
     this._filtered = this.filtered;
   }
 
+  // ### `filtered` returns the store backing this view.
+  // Lazy views copy the parent on each read until they are mutated.
   get filtered() {
     if (!this._filtered) {
       const { n3Store, graph, object, predicate, subject } = this;
-      if (this._semantics !== 'lazy')
+      const newStore = new N3Store({ factory: n3Store._factory, entityIndex: this.options.entityIndex });
+      if (this._semantics !== 'lazy') {
         this._freezeCurrentIterators();
-      const newStore = this._filtered = new N3Store({ factory: n3Store._factory, entityIndex: this.options.entityIndex });
+        this._filtered = newStore;
+      }
 
       if (this._semantics === 'snapshot')
         this._detachObserver();
@@ -1603,12 +1614,19 @@ class DatasetCoreAndReadableStream extends Readable {
         }
       }
       newStore._size = null;
+      return newStore;
     }
     return this._filtered;
   }
 
+  // ### `_materialized` returns the store backing this view, detaching a lazy view from its parent.
+  get _materialized() {
+    return this._filtered || (this._filtered = this.filtered);
+  }
+
   get size() {
-    return this.filtered.size;
+    return this._filtered || this._semantics !== 'lazy' ? this.filtered.size :
+      this.n3Store.countQuads(this.subject, this.predicate, this.object, this.graph);
   }
 
   _read(size) {
@@ -1661,7 +1679,7 @@ class DatasetCoreAndReadableStream extends Readable {
       }
       return this;
     }
-    return this.filtered.addAll(quads);
+    return this._materialized.addAll(quads);
   }
 
   contains(other) {
@@ -1682,7 +1700,7 @@ class DatasetCoreAndReadableStream extends Readable {
       this.n3Store.deleteMatches(...pattern);
       return this;
     }
-    return this.filtered.deleteMatches(subject, predicate, object, graph);
+    return this._materialized.deleteMatches(subject, predicate, object, graph);
   }
 
   difference(other) {
@@ -1694,8 +1712,7 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   every(callback, subject, predicate, object, graph) {
-    return this.filtered.every(this._semantics === 'forwarded' ?
-      quad => callback(quad, this) : callback, subject, predicate, object, graph);
+    return !this.some((quad, dataset) => !callback(quad, dataset), subject, predicate, object, graph);
   }
 
   filter(iteratee) {
@@ -1704,13 +1721,15 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   forEach(callback, subject, predicate, object, graph) {
-    return this.filtered.forEach(this._semantics === 'forwarded' ?
-      quad => callback(quad, this) : callback, subject, predicate, object, graph);
+    this.some((quad, dataset) => {
+      callback(quad, dataset);
+      return false;
+    }, subject, predicate, object, graph);
   }
 
   import(stream) {
     if (this._semantics !== 'forwarded')
-      return this.filtered.import(stream);
+      return this._materialized.import(stream);
 
     const view = this;
     function onData(quad) {
@@ -1741,8 +1760,14 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   some(callback, subject, predicate, object, graph) {
-    return this.filtered.some(this._semantics === 'forwarded' ?
-      quad => callback(quad, this) : callback, subject, predicate, object, graph);
+    if (this._semantics !== 'lazy' || this._filtered)
+      return this.filtered.some(this._semantics === 'forwarded' ?
+        quad => callback(quad, this) : callback, subject, predicate, object, graph);
+    // Read a lazy view live rather than copying its source
+    for (const quad of this.match(subject, predicate, object, graph))
+      if (callback(quad, this))
+        return true;
+    return false;
   }
 
   toCanonical() {
@@ -1771,6 +1796,13 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   reduce(callback, initialValue) {
+    if (this._semantics === 'lazy' && !this._filtered) {
+      const quads = this[Symbol.iterator]();
+      let accumulator = initialValue === undefined ? quads.next().value : initialValue;
+      for (const quad of quads)
+        accumulator = callback(accumulator, quad, this);
+      return accumulator;
+    }
     return this.filtered.reduce(this._semantics === 'forwarded' ?
       (accumulator, quad) => callback(accumulator, quad, this) : callback, initialValue);
   }
@@ -1785,7 +1817,7 @@ class DatasetCoreAndReadableStream extends Readable {
       this.n3Store.addQuad(quad);
       return this;
     }
-    return this.filtered.add(quad);
+    return this._materialized.add(quad);
   }
 
   delete(quad) {
@@ -1794,11 +1826,16 @@ class DatasetCoreAndReadableStream extends Readable {
       this.n3Store.removeQuad(quad);
       return this;
     }
-    return this.filtered.delete(quad);
+    return this._materialized.delete(quad);
   }
 
   has(quad) {
-    return this.filtered.has(quad);
+    if (this._filtered || this._semantics !== 'lazy')
+      return this.filtered.has(quad);
+    const { subject, predicate, object, graph } = quad;
+    const pattern = intersectMatchPatterns(
+      [this.subject, this.predicate, this.object, this.graph], [subject, predicate, object, graph]);
+    return !!pattern && this.n3Store.has(...pattern);
   }
 
   match(subject, predicate, object, graph, options = null) {
@@ -1809,7 +1846,8 @@ class DatasetCoreAndReadableStream extends Readable {
         throw new Error(`Cannot override matchSemantics on a view: inherited "${this._semantics}", received "${requestedSemantics}"`);
     }
 
-    if (this._semantics !== 'forwarded')
+    // Views over a copy match within that copy; others match the parent within this view's pattern
+    if (this._semantics === 'snapshot' || this._semantics === 'lazy' && this._filtered)
       return new DatasetCoreAndReadableStream(this.filtered, subject, predicate, object, graph, {
         entityIndex: this.options.entityIndex,
         matchSemantics: this._semantics,
@@ -1823,8 +1861,9 @@ class DatasetCoreAndReadableStream extends Readable {
     return new DatasetCoreAndReadableStream(
       this.n3Store, matchedSubject, matchedPredicate, matchedObject, matchedGraph, {
         entityIndex: this.options.entityIndex,
-        matchSemantics: 'forwarded',
+        matchSemantics: this._semantics,
         matchesNothing: !pattern,
+        parent: this._semantics === 'lazy' ? this : undefined,
       });
   }
 

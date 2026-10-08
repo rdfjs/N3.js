@@ -557,15 +557,13 @@ const forwarded = store.match(namedNode('s'), null, null, null, { matchSemantics
 Supported values:
 
 - `'lazy'` (default) — the view (return value of `Store#match`) reflects the
-  parent store until the first operation that materializes it (a mutation, or a
-  materializing read such as `size` or `has`), after which it is frozen to a
-  snapshot. Parent mutations made before that point remain visible in the view.
-  In the next major version, only mutating operations will materialize a lazy
-  view.
+  parent store until the view itself is first mutated (for example with `add`,
+  `delete` or `deleteMatches`), after which it is frozen to a snapshot of the
+  parent plus that mutation. Reads such as `size`, `has` or iteration never
+  freeze it. A lazy sub-view reflects its parent view in the same way.
 - `'snapshot'` — the view reflects the parent contents *at the time of*
   `match()`. Later parent mutations never affect it. This is the most
-  spec-correct interpretation of an RDF/JS dataset and will become the default
-  in the next major version.
+  spec-correct interpretation of an RDF/JS dataset.
 - `'forwarded'` — the view always reflects the parent state, and mutations to the view are written through to the parent. Attempts to mutate on the view which do not match the views `#match` pattern result in an error.
 
 A sub-view inherits its parent's `matchSemantics`.

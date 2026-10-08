@@ -830,7 +830,7 @@ describe('Store', () => {
         const store = buildStore();
         const view = store.match(namedNode('s1'), null, null);
         const iterator = view[Symbol.iterator]();
-        expect(view.size).toBe(5);
+        view.delete(q('s9', 'p9', 'o9'));
         store.addQuad(q('s1', 'p1', 'oNEW'));
         expect(values(iterator)).toEqual([...initialValues, 'oNEW']);
         expect(values(view)).toEqual(initialValues);
@@ -842,6 +842,55 @@ describe('Store', () => {
         view.add(q('s1', 'p1', 'oNEW'));
         expect([...view]).toHaveLength(6);
         expect([...nested]).toHaveLength(5);
+      });
+
+      it('should keep a lazy view live through reads', () => {
+        const store = buildStore();
+        const view = store.match(namedNode('s1'), null, null);
+        const child = view.match(null, namedNode('p1'));
+        const other = new Store([q('s1', 'p1', 'o0')]);
+        expect(view.size).toBe(5);
+        expect(view.has(q('s1', 'p1', 'oNEW'))).toBe(false);
+        expect(view.has(q('s2', 'p1', 'oX'))).toBe(false);
+        expect(view.contains(other)).toBe(true);
+        expect(view.every(() => true)).toBe(true);
+        expect(other.difference(view).size).toBe(0);
+        store.addQuad(q('s1', 'p1', 'oNEW'));
+        expect(view.size).toBe(6);
+        expect(view.has(q('s1', 'p1', 'oNEW'))).toBe(true);
+        expect(values(view)).toEqual([...initialValues, 'oNEW']);
+        expect(child.size).toBe(6);
+        expect(child.has(q('s1', 'p1', 'oNEW'))).toBe(true);
+        expect(values(child)).toEqual([...initialValues, 'oNEW']);
+        let seen = 0;
+        view.forEach((quad, dataset) => {
+          expect(dataset).toBe(view);
+          seen++;
+        });
+        expect(seen).toBe(6);
+        expect(view.some(quad => quad.object.value === 'oNEW', null, namedNode('p1'))).toBe(true);
+        expect(view.some(() => true, namedNode('s2'))).toBe(false);
+        expect(view.every(quad => quad.subject.value === 's1')).toBe(true);
+        expect(view.reduce(count => count + 1, 0)).toBe(6);
+        expect(view.reduce(first => first).subject.value).toBe('s1');
+      });
+
+      it('should materialize a lazy view when it is mutated', async () => {
+        const store = buildStore();
+        const view = store.match(namedNode('s1'), null, null);
+        const child = view.match(null, namedNode('p1'));
+        view.add(q('s1', 'p1', 'oVIEW'));
+        store.addQuad(q('s1', 'p1', 'oNEW'));
+        expect(view.size).toBe(6);
+        expect(view.has(q('s1', 'p1', 'oNEW'))).toBe(false);
+        expect(values(view)).toEqual([...initialValues, 'oVIEW']);
+        expect(values(child)).toEqual([...initialValues, 'oVIEW']);
+        expect(store.has(q('s1', 'p1', 'oVIEW'))).toBe(false);
+        expect(view.toArray()).toHaveLength(6);
+        expect(view.every(quad => quad.subject.value === 's1')).toBe(true);
+        expect(view.reduce(count => count + 1, 0)).toBe(6);
+        expect(view.union([q('s1', 'p1', 'oUNION')]).size).toBe(7);
+        expect(await arrayifyStream(view.toStream())).toHaveLength(6);
       });
 
       it.each(['bogus', '', false, 0, null])(
@@ -1190,9 +1239,9 @@ describe('Store', () => {
           parent.add(q('s1', 'p1', 'oPARENT'));
           child.add(q('s1', 'p1', 'oCHILD'));
 
-          expect(values(parent)).toEqual([...initialValues, 'oPARENT']);
-          expect(values(child)).toEqual([...initialValues, 'oCHILD']);
-          expect(values(leaf)).toEqual([...initialValues, 'oCHILD']);
+          expect(values(parent)).toEqual([...initialValues, 'oPARENT', 'oROOT']);
+          expect(values(child)).toEqual([...initialValues, 'oCHILD', 'oPARENT', 'oROOT']);
+          expect(values(leaf)).toEqual([...initialValues, 'oCHILD', 'oPARENT', 'oROOT']);
         });
 
         it('should preserve each snapshot boundary in a match chain', () => {
