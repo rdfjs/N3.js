@@ -505,6 +505,58 @@ describe('Reasoner', () => {
     ))).toEqual(true);
   });
 
+  describe('Premises whose terms are all bound', () => {
+    function ex(name) {
+      return new NamedNode(`http://example.org/${name}`);
+    }
+
+    it('Should not apply a rule without variables whose premise is absent', () => {
+      const store = new Store([new Quad(ex('a'), ex('p'), ex('b'))]);
+      new Reasoner(store).reason([{
+        premise: [new Quad(ex('a'), ex('r'), ex('b'))],
+        conclusion: [new Quad(ex('a'), ex('derived'), ex('b'))],
+      }]);
+      expect(store.size).toBe(1);
+    });
+
+    it('Should only apply a rule when a premise bound by earlier premises is present', () => {
+      const store = new Store([
+        new Quad(ex('a'), ex('p'), ex('b')),
+        new Quad(ex('a'), ex('q'), ex('c')),
+        new Quad(ex('c'), ex('p'), ex('d')),
+        new Quad(ex('c'), ex('r'), ex('d')),
+      ]);
+      new Reasoner(store).reason([{
+        premise: [new Quad(new Variable('x'), ex('p'), new Variable('y')), new Quad(new Variable('x'), ex('r'), new Variable('y'))],
+        conclusion: [new Quad(new Variable('x'), ex('derived'), new Variable('y'))],
+      }]);
+      expect(store.size).toBe(5);
+      expect(store.has(new Quad(ex('c'), ex('derived'), ex('d')))).toBe(true);
+      expect(store.has(new Quad(ex('a'), ex('derived'), ex('b')))).toBe(false);
+    });
+
+    it('Should only chain into a rule whose remaining premise is present', () => {
+      const store = new Store([
+        new Quad(ex('a'), ex('p'), ex('b')),
+        new Quad(ex('c'), ex('p'), ex('d')),
+        new Quad(ex('c'), ex('r'), ex('d')),
+      ]);
+      new Reasoner(store).reason([
+        {
+          premise: [new Quad(new Variable('x'), ex('p'), new Variable('y'))],
+          conclusion: [new Quad(new Variable('x'), ex('q'), new Variable('y'))],
+        },
+        {
+          premise: [new Quad(new Variable('x'), ex('q'), new Variable('y')), new Quad(new Variable('x'), ex('r'), new Variable('y'))],
+          conclusion: [new Quad(new Variable('x'), ex('derived'), new Variable('y'))],
+        },
+      ]);
+      expect(store.has(new Quad(ex('c'), ex('derived'), ex('d')))).toBe(true);
+      expect(store.has(new Quad(ex('a'), ex('derived'), ex('b')))).toBe(false);
+      expect(store.size).toBe(6);
+    });
+  });
+
   it.each(['snapshot', 'forwarded'])('Should notify observing %s views of derived quads', matchSemantics => {
     function ex(name) {
       return new NamedNode(`http://example.org/${name}`);

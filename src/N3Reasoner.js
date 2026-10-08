@@ -100,9 +100,11 @@ export default class N3Reasoner {
       }
       val2.value = null;
     }
-    // Bound leaves run once even when the key is absent
-    else if (last) this._emit(rule, content, cb);
-    else this._evaluatePremise(rule, content, cb, i + 1);
+    // A bound leaf only matches if the quad exists
+    else if (value in index2) {
+      if (last) this._emit(rule, content, cb);
+      else this._evaluatePremise(rule, content, cb, i + 1);
+    }
   }
 
   _evaluateRules(rules, content, cb) {
