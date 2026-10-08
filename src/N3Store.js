@@ -1439,25 +1439,16 @@ function validateMatchSemantics(semantics = 'lazy') {
   return semantics;
 }
 
-// Returns the graph of a pattern, where the empty string also stands for the default graph
-function graphPattern(graph) {
-  return graph === '' ? N3DataFactory.defaultGraph() : graph;
-}
-
-// Rejects string term ids in the pattern of a forwarded view, other than '' for the default graph
-function assertTermPattern(pattern) {
-  for (let i = 0; i < 4; i++) {
-    if (typeof pattern[i] === 'string' && !(i === 3 && pattern[i] === ''))
-      throw new TypeError('Patterns of forwarded views must be RDF/JS terms, not string term ids');
-  }
+// Returns the term of a pattern component, which may be given as a string term ID
+function toTerm(term) {
+  return typeof term === 'string' ? termFromId(term) : term;
 }
 
 // Returns the intersection of two quad patterns, or false if they conflict.
 function intersectMatchPatterns(left, right) {
-  assertTermPattern(right);
   const result = new Array(4);
   for (let i = 0; i < 4; i++) {
-    const leftTerm = left[i], rightTerm = i === 3 ? graphPattern(right[i]) : right[i];
+    const leftTerm = left[i], rightTerm = toTerm(right[i]);
     if (leftTerm === null || leftTerm === undefined)
       result[i] = rightTerm;
     else if (rightTerm === null || rightTerm === undefined || leftTerm.equals(rightTerm))
@@ -1474,10 +1465,8 @@ function intersectMatchPatterns(left, right) {
 class DatasetCoreAndReadableStream extends Readable {
   constructor(n3Store, subject, predicate, object, graph, options) {
     super({ objectMode: true });
-    Object.assign(this, { n3Store, subject, predicate, object, graph: graphPattern(graph), options });
+    Object.assign(this, { n3Store, subject: toTerm(subject), predicate: toTerm(predicate), object: toTerm(object), graph: toTerm(graph), options });
     const semantics = this._semantics = validateMatchSemantics(options.matchSemantics);
-    if (semantics === 'forwarded')
-      assertTermPattern([subject, predicate, object, graph]);
 
     if (options.matchesNothing) {
       this._matchesNothing = true;

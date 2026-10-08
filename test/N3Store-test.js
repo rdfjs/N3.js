@@ -1855,15 +1855,16 @@ describe('Store', () => {
           expect(view.graph.termType).toBe('DefaultGraph');
         });
 
-        it('should reject string term ids in patterns', () => {
-          const error = 'Patterns of forwarded views must be RDF/JS terms, not string term ids';
-          expect(() => store.match('s1', null, null, null, opts)).toThrow(new TypeError(error));
-          view = store.match(namedNode('s1'), null, null, null, opts);
-          expect(() => view.match('s1')).toThrow(new TypeError(error));
-          expect(() => view.deleteMatches(null, 'p1')).toThrow(new TypeError(error));
-          expect(() => view.add({ subject: 's1', predicate: 'p1', object: 'o9', graph: '' }))
-            .toThrow('Quad does not match the forwarded view pattern');
-          expect(store.has(q('s1', 'p1', 'o9'))).toBe(false);
+        it('should accept string term ids in patterns', () => {
+          const byId = store.match('s1', null, null, null, opts);
+          expect(byId.subject.equals(namedNode('s1'))).toBe(true);
+          expect([...byId.match(namedNode('s1'))]).toHaveLength(5);
+          const byTerm = store.match(namedNode('s1'), null, null, null, opts);
+          expect([...byTerm.match('s1')]).toHaveLength(5);
+          expect([...byTerm.match('s2')]).toHaveLength(0);
+          byTerm.add(q('s1', 'p1', 'oID'));
+          expect(byTerm.deleteMatches('s1', 'p1', 'oID')).toBe(byTerm);
+          expect(store.has(q('s1', 'p1', 'oID'))).toBe(false);
         });
 
         it('should delete only default graph quads through an empty-string graph pattern', () => {
