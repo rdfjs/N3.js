@@ -1830,10 +1830,10 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   has(quad) {
-    if (this._semantics !== 'lazy')
-      return this.filtered.has(quad);
-    // Look a lazy view's quad up by id without copying its source
     const { n3Store } = this, { subject, predicate, object, graph } = quad;
+    if (this._semantics !== 'lazy' || !subject || !predicate || !object || graph === undefined || graph === null)
+      return this.filtered.has(quad);
+    // Look a lazy view's fully bound quad up by id without copying its source
     return this._hasIds(n3Store._termToNumericId(subject), n3Store._termToNumericId(predicate),
       n3Store._termToNumericId(object), graph === '' || isDefaultGraph(graph) ? 1 : n3Store._termToNumericId(graph));
   }

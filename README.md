@@ -561,7 +561,7 @@ Supported values:
   `delete` or `deleteMatches`), after which it is frozen to a snapshot of the
   parent plus that mutation. Reads such as `size`, `has` or iteration never
   freeze it. A lazy sub-view reflects its parent view in the same way; an
-  iteration over a sub-view reads its parent's contents as they were when it started.
+  iteration over a sub-view does not see store changes made after it started.
 - `'snapshot'` — the view reflects the parent contents *at the time of*
   `match()`. Later parent mutations never affect it. This is the most
   spec-correct interpretation of an RDF/JS dataset.

@@ -982,6 +982,9 @@ describe('Store', () => {
         store.addQuad(q('s1', 'p1', 'oG2', 'g'));
         expect(child.has(q('s1', 'p1', 'oG2', 'g'))).toBe(true);
         expect(store.match(namedNode('s2')).has(q('s1', 'p1', 'oG2', 'g'))).toBe(false);
+        const [subject, predicate, object] = [namedNode('s1'), namedNode('p1'), namedNode('oG')];
+        for (const pattern of [{ subject, predicate, object, graph: null }, { subject, predicate, object }])
+          expect(view.has(pattern)).toBe(true);
       });
 
       it('should accept pattern terms without equals', () => {
