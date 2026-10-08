@@ -5097,9 +5097,13 @@ describe('Set operations between stores sharing an EntityIndex', () => {
   function q(s, p, o, g) {
     return DataFactory.quad(ex(s), ex(p), ex(o), g ? ex(g) : DataFactory.defaultGraph());
   }
-  // Quads have no string id, so they are keyed on the ids of their components
+  // Quads and triple terms have no string id, so they are keyed on the ids of their components
+  function key(term) {
+    return term.termType === 'Quad' ? `<<${[term.subject, term.predicate, term.object, term.graph].map(key).join(' ')}>>` :
+      termToId(term);
+  }
   function ids(quads) {
-    return quads.map(quad => [quad.subject, quad.predicate, quad.object, quad.graph].map(termToId).join(' ')).sort();
+    return quads.map(key).sort();
   }
   let entityIndex, a, b;
   beforeEach(() => {
@@ -5206,6 +5210,25 @@ describe('Set operations between stores sharing an EntityIndex', () => {
     expect(contents(a.difference(b))).toEqual(ids([q('s3', 'p', 'o3')]));
     expect(contents(b.difference(a))).toEqual(ids([q('s4', 'p', 'o4', 'g')]));
     expect(contents(a.difference(new Store({ entityIndex })))).toEqual(ids([q('s1', 'p', 'o1'), q('s2', 'p', 'o2', 'g'), q('s3', 'p', 'o3')]));
+  });
+
+  it('computes set operations on quads with distinct triple terms', () => {
+    const t1 = q('s1', 'p', 'o1'), t2 = q('s1', 'p', 'o2'), t3 = DataFactory.quad(t1, ex('p'), ex('o1'));
+    const shared = DataFactory.quad(t1, ex('says'), t2), nested = DataFactory.quad(ex('s'), ex('says'), t3, ex('g'));
+    // Identical to `shared` except that the triple term is replaced by its subject
+    const flat = DataFactory.quad(ex('s1'), ex('says'), t2);
+    const onlyR = DataFactory.quad(ex('s'), ex('says'), t3), onlyS = DataFactory.quad(t2, ex('says'), t1);
+    const r = new Store([shared, nested, onlyR], { entityIndex });
+    const s = new Store([shared, nested, onlyS, flat], { entityIndex });
+    expect(contents(r.intersection(s))).toEqual(ids([shared, nested]));
+    expect(contents(r.difference(s))).toEqual(ids([onlyR]));
+    expect(contents(s.difference(r))).toEqual(ids([onlyS, flat]));
+    expect(contents(r.union(s))).toEqual(ids([shared, nested, onlyR, onlyS, flat]));
+    expect(contents(s.union(r))).toEqual(ids([shared, nested, onlyR, onlyS, flat]));
+    expect(r.contains(new Store([shared, nested], { entityIndex }))).toBe(true);
+    expect(r.contains(new Store([shared, flat], { entityIndex }))).toBe(false);
+    expect(s.contains(new Store([flat, nested], { entityIndex }))).toBe(true);
+    expect(s.contains(r)).toBe(false);
   });
 });
 
