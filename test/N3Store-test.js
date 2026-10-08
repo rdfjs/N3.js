@@ -1867,6 +1867,26 @@ describe('Store', () => {
           expect(store.has(q('s1', 'p1', 'oID'))).toBe(false);
         });
 
+        it('should treat an empty-string subject, predicate or object as a wildcard', () => {
+          const size = store.size;
+          expect([...store.match('', '', '', null, opts)]).toHaveLength(size);
+          expect([...store.match(namedNode('s1'), null, null, null, opts).match('', '', '')]).toHaveLength(5);
+          store.match('', '', '', null, opts).deleteMatches('', '', '');
+          expect(store.size).toBe(0);
+        });
+
+        it('should treat an empty-string pattern as a wildcard in lazy and snapshot views', () => {
+          for (const matchSemantics of ['lazy', 'snapshot']) {
+            const small = new Store([q('s1', 'p1', 'o1'), q('s1', 'p1', 'o1', 'g1')]);
+            expect([...small.match('', '', '', null, { matchSemantics })]).toHaveLength(2);
+            expect([...small.match('', '', '', '', { matchSemantics })]).toHaveLength(1);
+          }
+          const small = new Store([q('s1', 'p1', 'o1')]);
+          expect([...small.match('')]).toHaveLength(small.getQuads('').length);
+          small.deleteMatches('');
+          expect(small.size).toBe(0);
+        });
+
         it('should delete only default graph quads through an empty-string graph pattern', () => {
           store.addQuad(q('s1', 'p1', 'oG', 'g1'));
           const size = store.size;

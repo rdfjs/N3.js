@@ -1439,16 +1439,17 @@ function validateMatchSemantics(semantics = 'lazy') {
   return semantics;
 }
 
-// Returns the term of a pattern component, which may be given as a string term ID
-function toTerm(term) {
-  return typeof term === 'string' ? termFromId(term) : term;
+// Returns the term of a pattern component given as a string term ID,
+// where '' is a wildcard, or the default graph in the graph position
+function toTerm(term, isGraph) {
+  return typeof term !== 'string' ? term : term || isGraph ? termFromId(term) : null;
 }
 
 // Returns the intersection of two quad patterns, or false if they conflict.
 function intersectMatchPatterns(left, right) {
   const result = new Array(4);
   for (let i = 0; i < 4; i++) {
-    const leftTerm = left[i], rightTerm = toTerm(right[i]);
+    const leftTerm = left[i], rightTerm = toTerm(right[i], i === 3);
     if (leftTerm === null || leftTerm === undefined)
       result[i] = rightTerm;
     else if (rightTerm === null || rightTerm === undefined || leftTerm.equals(rightTerm))
@@ -1465,7 +1466,7 @@ function intersectMatchPatterns(left, right) {
 class DatasetCoreAndReadableStream extends Readable {
   constructor(n3Store, subject, predicate, object, graph, options) {
     super({ objectMode: true });
-    Object.assign(this, { n3Store, subject: toTerm(subject), predicate: toTerm(predicate), object: toTerm(object), graph: toTerm(graph), options });
+    Object.assign(this, { n3Store, subject: toTerm(subject), predicate: toTerm(predicate), object: toTerm(object), graph: toTerm(graph, true), options });
     const semantics = this._semantics = validateMatchSemantics(options.matchSemantics);
 
     if (options.matchesNothing) {
@@ -1494,8 +1495,7 @@ class DatasetCoreAndReadableStream extends Readable {
     if (object && objectId !== (this._objectId || (this._objectId = n3Store._termToNumericId(object))))
       return false;
     return graph === null || graph === undefined ||
-      graphId === (this._graphId || (this._graphId =
-        isDefaultGraph(graph) ? 1 : n3Store._termToNumericId(graph)));
+      graphId === (this._graphId || (this._graphId = n3Store._termToNumericId(graph)));
   }
 
   // ### `_matchesQuad` tests a Quad against this view.
