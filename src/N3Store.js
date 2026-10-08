@@ -26,7 +26,7 @@ function hasInIndex(index0, key0, key1, key2) {
 // Returns the key of a term in the entity index.
 // Keys mark the term type by their first character, so the IRI of a named node
 // that starts with such a marker (as relative IRIs can) is wrapped in < and >.
-const markedIRI = /^[?_"[.<]/;
+const markedIRI = /^[?_".<]/;
 function entityKey(term) {
   // Strings are term ids, which only need wrapping when they are IRIs starting with < or .
   if (typeof term === 'string') {
