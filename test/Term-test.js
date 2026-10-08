@@ -80,6 +80,10 @@ describe('Term', () => {
   });
 
   describe('termFromId', () => {
+    it('should no longer parse JSON triple term IDs', () => {
+      expect(termFromId('["s","p","o"]')).toEqual(new NamedNode('["s","p","o"]'));
+    });
+
     it('should create a DefaultGraph from a falsy value', () => {
       expect(termFromId(null).toJSON()).toEqual({
         termType: 'DefaultGraph',
@@ -160,104 +164,6 @@ describe('Term', () => {
         },
     );
 
-    it(
-      'should create a Quad with the default graph if the id doesnt specify the graph',
-      () => {
-        const q = new Quad(
-          new NamedNode('http://ex.org/a'),
-          new NamedNode('http://ex.org/b'),
-          new Literal('"abc"@en-us'),
-          new DefaultGraph(),
-        );
-        expect(q.equals(termFromId(termToId(q)))).toBe(true);
-      },
-    );
-
-    it(
-      'should create a Quad with the correct graph if the id specifies a graph',
-      () => {
-        const id = '["http://ex.org/a", "http://ex.org/b", "\\"abc\\"@en-us", "http://ex.org/d"]';
-        expect(termFromId(id)).toEqual(new Quad(
-          new NamedNode('http://ex.org/a'),
-          new NamedNode('http://ex.org/b'),
-          new Literal('"abc"@en-us'),
-          new NamedNode('http://ex.org/d'),
-        ));
-      },
-    );
-
-    it('should create a Quad correctly with an implicit default graph', () => {
-      const id = '["http://ex.org/a", "http://ex.org/b", "http://ex.org/c"]';
-      expect(termFromId(id)).toEqual(new Quad(
-        new NamedNode('http://ex.org/a'),
-        new NamedNode('http://ex.org/b'),
-        new NamedNode('http://ex.org/c'),
-        new DefaultGraph(),
-      ));
-    });
-
-    it('should create a Quad correctly with a blank node graph', () => {
-      const id = '["_:n3-123", "?var-a", "?var-b", "_:n3-000"]';
-      expect(termFromId(id)).toEqual(new Quad(
-        new BlankNode('n3-123'),
-        new Variable('var-a'),
-        new Variable('var-b'),
-        new BlankNode('n3-000'),
-      ));
-    });
-
-    it('should create a Quad correctly with a literal object', () => {
-      const id = '["?var-a", "?var-b", "\\"abc\\"@en-us", "?var-d"]';
-      expect(termFromId(id)).toEqual(new Quad(
-        new Variable('var-a'),
-        new Variable('var-b'),
-        new Literal('"abc"@en-us'),
-        new Variable('var-d'),
-      ));
-    });
-
-    it('should create a Quad correctly with a named node graph', () => {
-      const id = '["_:n3-000", "?var-b", "_:n3-123", "http://ex.org/d"]';
-      expect(termFromId(id)).toEqual(new Quad(
-        new BlankNode('n3-000'),
-        new Variable('var-b'),
-        new BlankNode('n3-123'),
-        new NamedNode('http://ex.org/d'),
-      ));
-    });
-
-    it(
-      'should create a Quad correctly from literal containing escaped quotes',
-      () => {
-        const id = '["_:n3-000", "?var-b", "\\"Hello \\"W\\"orl\\"d!\\"@en-us", "http://ex.org/d"]';
-        expect(termFromId(id)).toEqual(new Quad(
-          new BlankNode('n3-000'),
-          new Variable('var-b'),
-          new Literal('"Hello "W"orl"d!"@en-us'),
-          new NamedNode('http://ex.org/d'),
-        ));
-      },
-    );
-
-    it(
-      'should round-trip a Quad with a subject literal containing escaped quotes',
-      () => {
-        const q = new Quad(
-          new Literal('"Hello "W"orl"d!"@en-us'),
-          new NamedNode('http://ex.org/b'),
-          new NamedNode('http://ex.org/c'),
-          new DefaultGraph(),
-        );
-
-        expect(termFromId(termToId(q))).toEqual(q);
-      },
-    );
-
-    it('should correctly handle deeply nested quads', () => {
-      expect(DEEP_TRIPLE.equals(termFromId(termToId(DEEP_TRIPLE)))).toBe(true);
-      expect(termFromId(termToId(DEEP_TRIPLE)).equals(DEEP_TRIPLE)).toBe(true);
-    });
-
     describe('with a custom factory', () => {
       const factory = {
         defaultGraph: function ()     { return ['d'];       },
@@ -312,6 +218,11 @@ describe('Term', () => {
   });
 
   describe('termToId', () => {
+    it('should throw on triple terms, which have no string ID', () => {
+      expect(() => termToId(DEEP_TRIPLE)).toThrow('Triple terms have no string ID');
+      expect(() => termToId(DEEP_TRIPLE.toJSON())).toThrow('Triple terms have no string ID');
+    });
+
     it('should create the empty string a falsy value', () => {
       expect(termToId(null)).toBe('');
       expect(termToId(false)).toBe('');
@@ -326,13 +237,6 @@ describe('Term', () => {
     it('should create a distinct id from the empty IRI', () => {
       expect(termToId(new NamedNode(''))).toBe('<>');
       expect(termToId(new NamedNode('').toJSON())).toBe('<>');
-    });
-
-    it('should distinguish the empty IRI from the DefaultGraph inside quads', () => {
-      const q = new Quad(new NamedNode(''), new NamedNode('p'), new NamedNode('o'), new NamedNode(''));
-      expect(termToId(q)).toBe('["<>","p","o","<>"]');
-      expect(termToId(q.toJSON())).toBe('["<>","p","o","<>"]');
-      expect(termFromId(termToId(q)).equals(q)).toBe(true);
     });
 
     it(
@@ -447,280 +351,6 @@ describe('Term', () => {
 
     it('should create an IRI from a NamedNode string', () => {
       expect(termToId('http://example.org/')).toBe('http://example.org/');
-    });
-
-    it('should create an id without graph if default graph is used', () => {
-      expect(termToId(new Quad(
-        new NamedNode('http://ex.org/a'),
-        new NamedNode('http://ex.org/b'),
-        new Literal('"abc"@en-us'),
-        new DefaultGraph(),
-      ))).toBe('["http://ex.org/a","http://ex.org/b","\\"abc\\"@en-us"]');
-    });
-
-    it('should create an id from a Quad', () => {
-      expect(termToId(new Quad(
-        new NamedNode('http://ex.org/a'),
-        new NamedNode('http://ex.org/b'),
-        new Literal('"abc"@en-us'),
-        new NamedNode('http://ex.org/d'),
-      ))).toBe(
-        '["http://ex.org/a","http://ex.org/b","\\"abc\\"@en-us","http://ex.org/d"]',
-      );
-    });
-
-    it('should create an id from a manually created Quad', () => {
-      expect(termToId({
-        subject: new NamedNode('http://ex.org/a'),
-        predicate: new NamedNode('http://ex.org/b'),
-        object: new Literal('"abc"@en-us'),
-        graph: new NamedNode('http://ex.org/d'),
-        termType: 'Quad',
-        value: '',
-      })).toBe(
-        '["http://ex.org/a","http://ex.org/b","\\"abc\\"@en-us","http://ex.org/d"]',
-      );
-    });
-
-    it('should create an id with escaped literals from a Quad', () => {
-      expect(termToId(new Quad(
-        new BlankNode('n3-000'),
-        new Variable('var-b'),
-        new Literal('"Hello "W"orl"d!"@en-us'),
-        new NamedNode('http://ex.org/d'),
-      ))).toBe(
-        '["_:n3-000","?var-b","\\"Hello \\"W\\"orl\\"d!\\"@en-us","http://ex.org/d"]',
-      );
-    });
-
-    it(
-      'should create an id without graph from a Quad with default graph and Quad as subject',
-      () => {
-        expect(termToId(new Quad(
-          new Quad(
-            new BlankNode('n3-000'),
-            new Variable('var-b'),
-            new Literal('"abc"@en-us'),
-            new NamedNode('http://ex.org/d'),
-          ),
-          new NamedNode('http://ex.org/b'),
-          new Literal('"abc"@en-us'),
-          new DefaultGraph(),
-        ))).toBe(
-          '[["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/b","\\"abc\\"@en-us"]',
-        );
-      },
-    );
-
-    it(
-      'should create an id without graph from a Quad with default graph and Quad as object',
-      () => {
-        expect(termToId(new Quad(
-          new Literal('"abc"@en-us'),
-          new NamedNode('http://ex.org/b'),
-          new Quad(
-            new BlankNode('n3-000'),
-            new Variable('var-b'),
-            new Literal('"abc"@en-us'),
-            new NamedNode('http://ex.org/d'),
-          ),
-          new DefaultGraph(),
-        ))).toBe(
-          '["\\"abc\\"@en-us","http://ex.org/b",["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"]]',
-        );
-      },
-    );
-
-    it(
-      'should create an id without graph from a Quad with default graph and Quad as subject and object',
-      () => {
-        expect(termToId(new Quad(
-          new Quad(
-            new BlankNode('n3-000'),
-            new Variable('var-b'),
-            new Literal('"abc"@en-us'),
-            new NamedNode('http://ex.org/d'),
-          ),
-          new NamedNode('http://ex.org/b'),
-          new Quad(
-            new BlankNode('n3-000'),
-            new Variable('var-b'),
-            new Literal('"abc"@en-us'),
-            new NamedNode('http://ex.org/d'),
-          ),
-          new DefaultGraph(),
-        ))).toBe(
-          '[["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/b",["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"]]',
-        );
-      },
-    );
-
-    it(
-      'should create an id without graph from a Quad with Quad as subject',
-      () => {
-        expect(termToId(new Quad(
-          new Quad(
-            new BlankNode('n3-000'),
-            new Variable('var-b'),
-            new Literal('"abc"@en-us'),
-            new NamedNode('http://ex.org/d'),
-          ),
-          new NamedNode('http://ex.org/b'),
-          new Literal('"abc"@en-us'),
-          new NamedNode('http://ex.org/d'),
-        ))).toBe(
-          '[["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/b","\\"abc\\"@en-us","http://ex.org/d"]',
-        );
-      },
-    );
-
-    it(
-      'should create an id without graph from a Quad with Quad as object',
-      () => {
-        expect(termToId(new Quad(
-          new Literal('"abc"@en-us'),
-          new NamedNode('http://ex.org/b'),
-          new Quad(
-            new BlankNode('n3-000'),
-            new Variable('var-b'),
-            new Literal('"abc"@en-us'),
-            new NamedNode('http://ex.org/d'),
-          ),
-          new NamedNode('http://ex.org/d'),
-        ))).toBe(
-          '["\\"abc\\"@en-us","http://ex.org/b",["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/d"]',
-        );
-      },
-    );
-
-    it('should create an id from a Quad with Quad as subject and object', () => {
-      expect(termToId(new Quad(
-        new Quad(
-          new BlankNode('n3-000'),
-          new Variable('var-b'),
-          new Literal('"abc"@en-us'),
-          new NamedNode('http://ex.org/d'),
-        ),
-        new NamedNode('http://ex.org/b'),
-        new Quad(
-          new BlankNode('n3-000'),
-          new Variable('var-b'),
-          new Literal('"abc"@en-us'),
-          new NamedNode('http://ex.org/d'),
-        ),
-        new NamedNode('http://ex.org/d'),
-      ))).toBe(
-        '[["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/b",["_:n3-000","?var-b","\\"abc\\"@en-us","http://ex.org/d"],"http://ex.org/d"]',
-      );
-    });
-
-    it('should escape literals in nested Quads', () => {
-      expect(termToId(new Quad(
-        new Quad(
-          new BlankNode('n3-000'),
-          new Variable('var-b'),
-          new Literal('"Hello "W"orl"d!"@en-us'),
-          new NamedNode('http://ex.org/d'),
-        ),
-        new NamedNode('http://ex.org/b'),
-        new Quad(
-          new BlankNode('n3-000'),
-          new Variable('var-b'),
-          new Literal('"Hello "W"orl"d!"@en-us'),
-          new NamedNode('http://ex.org/d'),
-        ),
-        new DefaultGraph(),
-      ))).toBe(
-        '[["_:n3-000","?var-b","\\"Hello \\"W\\"orl\\"d!\\"@en-us","http://ex.org/d"],"http://ex.org/b",["_:n3-000","?var-b","\\"Hello \\"W\\"orl\\"d!\\"@en-us","http://ex.org/d"]]',
-      );
-    });
-
-    it(
-      'should termToId <-> termFromId should roundtrip on deeply nested quad',
-      () => {
-        const q = new Quad(
-          new Quad(
-            new NamedNode('http://example.org/s1'),
-            new NamedNode('http://example.org/p1'),
-            new NamedNode('http://example.org/o1'),
-          ),
-          new NamedNode('http://example.org/p1'),
-          new Quad(
-            new Quad(
-              new Literal('"s1"'),
-              new NamedNode('http://example.org/p1'),
-              new BlankNode('o1'),
-            ),
-            new NamedNode('p2'),
-            new Quad(
-              new Quad(
-                new Literal('"s1"'),
-                new NamedNode('http://example.org/p1'),
-                new BlankNode('o1'),
-              ),
-              new NamedNode('http://example.org/p1'),
-              new NamedNode('http://example.org/o1'),
-            ),
-          ),
-        );
-
-        expect(q).toEqual(termFromId(termToId(q)));
-        expect(termFromId(termToId(q))).toEqual(q);
-        expect(q.equals(termFromId(termToId(q)))).toBe(true);
-        expect(termFromId(termToId(q)).equals(q)).toBe(true);
-        expect(termFromId(termToId(q)).equals(termFromId(termToId(q)))).toBe(true);
-      },
-    );
-
-    it('should correctly handle deeply nested quads', () => {
-      const q = new Quad(
-        new Quad(
-          new Quad(
-            new Quad(
-              new BlankNode('n3-000'),
-              new Variable('var-b'),
-              new Literal('"abc"@en-us'),
-              new NamedNode('http://ex.org/d'),
-            ),
-            new Variable('var-b'),
-            new Quad(
-              new BlankNode('n3-000'),
-              new Variable('var-b'),
-              new Literal('"abc"@en-us'),
-              new NamedNode('http://ex.org/d'),
-            ),
-            new NamedNode('http://ex.org/d'),
-          ),
-          new Variable('var-b'),
-          new Quad(
-            new BlankNode('n3-000'),
-            new Variable('var-b'),
-            new Literal('"abc"@en-us'),
-            new NamedNode('http://ex.org/d'),
-          ),
-          new NamedNode('http://ex.org/d'),
-        ),
-        new NamedNode('http://ex.org/b'),
-        new Quad(
-          new Quad(
-            new BlankNode('n3-000'),
-            new Variable('var-b'),
-            new Literal('"abc"@en-us'),
-            new NamedNode('http://ex.org/d'),
-          ),
-          new Variable('var-b'),
-          new Quad(
-            new BlankNode('n3-000'),
-            new Variable('var-b'),
-            new Literal('"abc"@en-us'),
-            new NamedNode('http://ex.org/d'),
-          ),
-          new NamedNode('http://ex.org/d'),
-        ),
-        new NamedNode('http://ex.org/d'),
-      );
-
-      expect(q.equals(termFromId(termToId(q)))).toBe(true);
     });
 
     it('should throw on an unknown type', () => {
