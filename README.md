@@ -506,6 +506,7 @@ Methods:
  - `has` — Determines whether a dataset includes a certain quad.
  - `match` — Returns a new dataset that is comprised of all quads in the current instance matching the given arguments.
  - `[Symbol.iterator]` — Implements the iterator protocol to allow iteration over all `quads` in the dataset as in the example above.
+ - `toCanonical` — Throws because it is not implemented. [n3-canon](https://github.com/jeswr/n3-canon) provides a `Store` subclass that implements it with [RDFC-1.0](https://www.w3.org/TR/rdf-canon/).
 
 ### Addition and deletion of quads
 The store implements the following manipulation methods in addition to the standard [`Dataset` Interface](https://rdf.js.org/dataset-spec/#dataset-interface)
@@ -624,6 +625,7 @@ They are maintained separately from N3.js; please report issues with them in the
 | [@jeswr/n3-provenance](https://github.com/jeswr/n3-provenance) | Experimental. Maps the terms of parsed quads back to their source positions in the input document. Terms that the parser generates, such as list nodes and reification scaffolding, have no position. It builds on the parser's `onToken` and `onTokenEnd` callbacks, but also subclasses private parser and index internals, so it is pinned to a specific N3.js revision. |
 | [n3-match-bgp](https://github.com/jeswr/n3-match-bgp) | Experimental. Matches basic graph patterns against a `Store`, or any RDF/JS dataset, and yields RDF/JS `Bindings`. It is being worked on as a consideration for the RDF/JS specifications, and will only move into N3.js if it lands there. On a `Store`, it joins on private index internals for speed. |
 | [n3-full-writer](https://github.com/jeswr/n3-full-writer) | Experimental. Writes complete N3 documents, including formulas, by holding back the statements that use formulas until the end. It was proposed for N3.js in [#822](https://github.com/rdfjs/N3.js/pull/822). It extends `N3.Writer` and overrides private writer methods. |
+| [n3-canon](https://github.com/jeswr/n3-canon) | Experimental. Writes a `Store`, any RDF/JS dataset, or an iterable of quads as canonical N-Quads with blank nodes labeled by [RDFC-1.0](https://www.w3.org/TR/rdf-canon/). It was proposed for N3.js in [#856](https://github.com/rdfjs/N3.js/pull/856). It exports `toCanonical()` and a `Store` that extends `N3.Store` with that method, and reads the Store's private index internals. |
 
 Features intended for N3.js itself are considered once their specification is settled.
 If you would like to see one of these packages in N3.js, please open an issue or discussion.
