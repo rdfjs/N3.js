@@ -23,6 +23,28 @@ function hasInIndex(index0, key0, key1, key2) {
   return !!index2 && key2 in index2;
 }
 
+// Each graph indexes its quads three times, by subject (position 0), predicate (1), and object (2).
+// The index at position k is keyed by the terms at positions k, k + 1, and k + 2 (modulo 3).
+export const INDEXES = ['subjects', 'predicates', 'objects'];
+const PARTS = ['subject', 'predicate', 'object'];
+
+// Returns the position of the index that is fastest for a pattern: the one whose leading keys are bound
+export function indexFor(subject, predicate, object) {
+  return !subject && predicate ? 1 : object ? 2 : 0;
+}
+
+// Returns the term at a position (modulo 3) of a pattern
+function termAt(position, subject, predicate, object) {
+  position %= 3;
+  return position === 0 ? subject : position === 1 ? predicate : object;
+}
+
+// Returns the terms of a pattern in the key order of the index at `position`
+export function indexKeys(position, subject, predicate, object) {
+  return [termAt(position, subject, predicate, object), termAt(position + 1, subject, predicate, object),
+    termAt(position + 2, subject, predicate, object)];
+}
+
 // Returns the key of a term in the entity index.
 // Keys mark the term type by their first character, so the IRI of a named node
 // that starts with such a marker (as relative IRIs can) is wrapped in < and >.
@@ -236,17 +258,15 @@ export default class N3Store {
     index0[SIZE]--;
   }
 
-  // ### `_findInIndex` finds a set of quads in a three-layered index.
-  // The index base is `index0` and the keys at each level are `key0`, `key1`, and `key2`.
-  // A key and any keys after it can be null or undefined, which is interpreted as a wildcard.
-  // `name0`, `name1`, and `name2` are the names of the keys at each level,
-  // used when reconstructing the resulting quad
-  // (for instance: _subject_, _predicate_, and _object_).
+  // ### `_findInIndex` finds a set of quads in the index at `position` of a graph.
+  // The pattern ids `subject`, `predicate`, and `object` can be null or undefined as wildcards,
+  // as long as each wildcard key in the index is followed only by wildcards.
   // Finally, `graphId` will be the graph of the created quads.
-  *_findInIndex(index0, key0, key1, key2, name0, name1, name2, graphId) {
-    const entityKeys = this._entities;
+  *_findInIndex(graphItem, position, subject, predicate, object, graphId) {
+    const entityKeys = this._entities, index0 = graphItem[INDEXES[position]];
     const graph = this._termFromId(entityKeys[graphId]);
-    const parts = { subject: null, predicate: null, object: null };
+    const key0 = termAt(position, subject, predicate, object), key1 = termAt(position + 1, subject, predicate, object),
+        key2 = termAt(position + 2, subject, predicate, object);
 
     // Exact matches avoid allocating key arrays or entering generic loops.
     if (key2) {
@@ -254,13 +274,17 @@ export default class N3Store {
       const index2 = index1 && index1[key1];
       if (!index2 || !(key2 in index2))
         return;
-      parts[name0] = this._termFromId(entityKeys[key0]);
-      parts[name1] = this._termFromId(entityKeys[key1]);
-      parts[name2] = this._termFromId(entityKeys[key2]);
-      yield this._factory.quad(parts.subject, parts.predicate, parts.object, graph);
+      // Create the terms in index order, then put them back in quad order
+      const term0 = this._termFromId(entityKeys[key0]), term1 = this._termFromId(entityKeys[key1]),
+          term2 = this._termFromId(entityKeys[key2]);
+      yield this._factory.quad(termAt(3 - position, term0, term1, term2),
+        termAt(4 - position, term0, term1, term2), termAt(5 - position, term0, term1, term2), graph);
       return;
     }
 
+    // Named parts keep the loops below as fast as with fixed names
+    const name0 = PARTS[position], name1 = PARTS[(position + 1) % 3], name2 = PARTS[(position + 2) % 3];
+    const parts = { subject: null, predicate: null, object: null };
     if (key0 && !(key0 in index0))
       return;
     // A null key list stops after visiting a bound key, avoiding a one-item array.
@@ -373,6 +397,44 @@ export default class N3Store {
   _getGraphs(graph) {
     graph = graph === '' ? 1 : (graph && (this._termToNumericId(graph) || -1));
     return typeof graph !== 'number' ? this._graphs : { [graph]: this._graphs[graph] };
+  }
+
+  // ### `_patternIds` returns the ids of a subject, predicate, and object pattern,
+  // where wildcards stay undefined, or null if a bound term is not in the store.
+  _patternIds(subject, predicate, object) {
+    let subjectId, predicateId, objectId;
+    if (subject   && !(subjectId   = this._termToNumericId(subject))   ||
+        predicate && !(predicateId = this._termToNumericId(predicate)) ||
+        object    && !(objectId    = this._termToNumericId(object)))
+      return null;
+    return [subjectId, predicateId, objectId];
+  }
+
+  // ### `_forEntities` calls `callback` once for every distinct term at `position`
+  // (0 subject, 1 predicate, 2 object) of the quads matching the ids at the other positions.
+  _forEntities(callback, position, ids, graph) {
+    const graphs = this._getGraphs(graph);
+    const next = (position + 1) % 3, last = (position + 2) % 3;
+    const nextId = ids[next], lastId = ids[last];
+    callback = this._uniqueEntities(callback);
+    for (graph in graphs) {
+      const content = graphs[graph];
+      // Only if the specified graph contains triples, there can be results
+      if (!content) continue; // eslint-disable-line no-continue
+      // With both other terms, the index that ends at `position` has the entities as leaves
+      if (nextId && lastId)
+        this._loopBy2Keys(content[INDEXES[next]], nextId, lastId, callback);
+      // The index that starts at the term before `position` has them as its second keys
+      else if (lastId)
+        this._loopByKey0(content[INDEXES[last]], lastId, callback);
+      // Descending the subject index visits only the subject's own quads
+      else if (nextId && position === 2)
+        this._loopByKey0Deep(content.subjects, nextId, callback);
+      else if (nextId)
+        this._loopByKey1(content[INDEXES[position]], nextId, callback);
+      else
+        this._loop(content[INDEXES[position]], callback);
+    }
   }
 
   // ### `_addObserver` registers a mutation observer.
@@ -668,41 +730,20 @@ export default class N3Store {
    */
   *readQuads(subject, predicate, object, graph) {
     const graphs = this._getGraphs(graph);
-    let content, subjectId, predicateId, objectId;
+    let subjectId, predicateId, objectId;
 
-    // Translate IRIs to internal index keys.
+    // Translate IRIs to internal index keys (inline, as an array of ids would cost an allocation).
     if (subject   && !(subjectId   = this._termToNumericId(subject))   ||
         predicate && !(predicateId = this._termToNumericId(predicate)) ||
         object    && !(objectId    = this._termToNumericId(object)))
       return;
 
+    const position = indexFor(subjectId, predicateId, objectId);
     for (const graphId in graphs) {
       // Only if the specified graph contains triples, there can be results
-      if (content = graphs[graphId]) {
-        // Choose the optimal index, based on what fields are present
-        if (subjectId) {
-          if (objectId)
-            // If subject and object are given, the object index will be the fastest
-            yield* this._findInIndex(content.objects, objectId, subjectId, predicateId,
-                              'object', 'subject', 'predicate', graphId);
-          else
-            // If only subject and possibly predicate are given, the subject index will be the fastest
-            yield* this._findInIndex(content.subjects, subjectId, predicateId, null,
-                              'subject', 'predicate', 'object', graphId);
-        }
-        else if (predicateId)
-          // If only predicate and possibly object are given, the predicate index will be the fastest
-          yield* this._findInIndex(content.predicates, predicateId, objectId, null,
-                            'predicate', 'object', 'subject', graphId);
-        else if (objectId)
-          // If only object is given, the object index will be the fastest
-          yield* this._findInIndex(content.objects, objectId, null, null,
-                            'object', 'subject', 'predicate', graphId);
-        else
-          // If nothing is given, iterate subjects and predicates first
-          yield* this._findInIndex(content.subjects, null, null, null,
-                            'subject', 'predicate', 'object', graphId);
-      }
+      const content = graphs[graphId];
+      if (content)
+        yield* this._findInIndex(content, position, subjectId, predicateId, objectId, graphId);
     }
   }
 
@@ -725,39 +766,23 @@ export default class N3Store {
   // Setting any field to `undefined` or `null` indicates a wildcard.
   countQuads(subject, predicate, object, graph) {
     const graphs = this._getGraphs(graph);
-    let count = 0, content, subjectId, predicateId, objectId;
+    let count = 0, subjectId, predicateId, objectId;
 
-    // Translate IRIs to internal index keys.
+    // Translate IRIs to internal index keys (inline, as an array of ids would cost an allocation).
     if (subject   && !(subjectId   = this._termToNumericId(subject))   ||
         predicate && !(predicateId = this._termToNumericId(predicate)) ||
         object    && !(objectId    = this._termToNumericId(object)))
       return 0;
 
+    const position = indexFor(subjectId, predicateId, objectId), name = INDEXES[position];
+    const key0 = termAt(position, subjectId, predicateId, objectId),
+        key1 = termAt(position + 1, subjectId, predicateId, objectId),
+        key2 = termAt(position + 2, subjectId, predicateId, objectId);
     for (const graphId in graphs) {
       // Only if the specified graph contains triples, there can be results
-      if (content = graphs[graphId]) {
-        // Choose the optimal index, based on what fields are present
-        if (subject) {
-          if (object)
-            // If subject and object are given, the object index will be the fastest
-            count += this._countInIndex(content.objects, objectId, subjectId, predicateId);
-          else
-            // If only subject and possibly predicate are given, the subject index will be the fastest
-            count += this._countInIndex(content.subjects, subjectId, predicateId, objectId);
-        }
-        else if (predicate) {
-          // If only predicate and possibly object are given, the predicate index will be the fastest
-          count += this._countInIndex(content.predicates, predicateId, objectId, subjectId);
-        }
-        else if (object) {
-          // If only object is given, the object index will be the fastest
-          count += this._countInIndex(content.objects, objectId, subjectId, predicateId);
-        }
-        else {
-          // Without a pattern, the subject index sums the fewest leaf counts
-          count += this._countInIndex(content.subjects);
-        }
-      }
+      const content = graphs[graphId];
+      if (content)
+        count += this._countInIndex(content[name], key0, key1, key2);
     }
     return count;
   }
@@ -799,35 +824,8 @@ export default class N3Store {
   // ### `forSubjects` executes the callback on all subjects that match the pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   forSubjects(callback, predicate, object, graph) {
-    const graphs = this._getGraphs(graph);
-    let content, predicateId, objectId;
-    callback = this._uniqueEntities(callback);
-
-    // Translate IRIs to internal index keys.
-    if (predicate && !(predicateId = this._termToNumericId(predicate)) ||
-        object    && !(objectId    = this._termToNumericId(object)))
-      return;
-
-    for (graph in graphs) {
-      // Only if the specified graph contains triples, there can be results
-      if (content = graphs[graph]) {
-        // Choose optimal index based on which fields are wildcards
-        if (predicateId) {
-          if (objectId)
-            // If predicate and object are given, the POS index is best.
-            this._loopBy2Keys(content.predicates, predicateId, objectId, callback);
-          else
-            // If only predicate is given, the SPO index is best.
-            this._loopByKey1(content.subjects, predicateId, callback);
-        }
-        else if (objectId)
-          // If only object is given, the OSP index is best.
-          this._loopByKey0(content.objects, objectId, callback);
-        else
-          // If no params given, iterate all the subjects
-          this._loop(content.subjects, callback);
-      }
-    }
+    const ids = this._patternIds(null, predicate, object);
+    if (ids) this._forEntities(callback, 0, ids, graph);
   }
 
   // ### `getPredicates` returns all predicates that match the pattern.
@@ -841,35 +839,8 @@ export default class N3Store {
   // ### `forPredicates` executes the callback on all predicates that match the pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   forPredicates(callback, subject, object, graph) {
-    const graphs = this._getGraphs(graph);
-    let content, subjectId, objectId;
-    callback = this._uniqueEntities(callback);
-
-    // Translate IRIs to internal index keys.
-    if (subject   && !(subjectId   = this._termToNumericId(subject))   ||
-        object    && !(objectId    = this._termToNumericId(object)))
-      return;
-
-    for (graph in graphs) {
-      // Only if the specified graph contains triples, there can be results
-      if (content = graphs[graph]) {
-        // Choose optimal index based on which fields are wildcards
-        if (subjectId) {
-          if (objectId)
-            // If subject and object are given, the OSP index is best.
-            this._loopBy2Keys(content.objects, objectId, subjectId, callback);
-          else
-            // If only subject is given, the SPO index is best.
-            this._loopByKey0(content.subjects, subjectId, callback);
-        }
-        else if (objectId)
-          // If only object is given, the POS index is best.
-          this._loopByKey1(content.predicates, objectId, callback);
-        else
-          // If no params given, iterate all the predicates.
-          this._loop(content.predicates, callback);
-      }
-    }
+    const ids = this._patternIds(subject, null, object);
+    if (ids) this._forEntities(callback, 1, ids, graph);
   }
 
   // ### `getObjects` returns all objects that match the pattern.
@@ -883,36 +854,8 @@ export default class N3Store {
   // ### `forObjects` executes the callback on all objects that match the pattern.
   // Setting any field to `undefined` or `null` indicates a wildcard.
   forObjects(callback, subject, predicate, graph) {
-    const graphs = this._getGraphs(graph);
-    let content, subjectId, predicateId;
-    callback = this._uniqueEntities(callback);
-
-    // Translate IRIs to internal index keys.
-    if (subject   && !(subjectId   = this._termToNumericId(subject))   ||
-        predicate && !(predicateId = this._termToNumericId(predicate)))
-      return;
-
-    for (graph in graphs) {
-      // Only if the specified graph contains triples, there can be results
-      if (content = graphs[graph]) {
-        // Choose optimal index based on which fields are wildcards
-        if (subjectId) {
-          if (predicateId)
-            // If subject and predicate are given, the SPO index is best.
-            this._loopBy2Keys(content.subjects, subjectId, predicateId, callback);
-          else
-            // If only subject is given, descending the SPO index
-            // visits only the subject's own quads.
-            this._loopByKey0Deep(content.subjects, subjectId, callback);
-        }
-        else if (predicateId)
-          // If only predicate is given, the POS index is best.
-          this._loopByKey0(content.predicates, predicateId, callback);
-        else
-          // If no params given, iterate all the objects.
-          this._loop(content.objects, callback);
-      }
-    }
+    const ids = this._patternIds(subject, predicate, null);
+    if (ids) this._forEntities(callback, 2, ids, graph);
   }
 
   // ### `getGraphs` returns all graphs that match the pattern.
@@ -1336,45 +1279,31 @@ function indexMatch(index, ids, depth = 0) {
 // A flat list avoids allocating a Quad (and its terms) for every unread result.
 function snapshotMatch(store, subject, predicate, object, graph) {
   const snapshot = { store, ids: [] };
+  // Only active reads are frozen: bound terms and graphs have already resolved,
+  // and notifications run before deletion. Entity IDs are never removed.
   const subjectId = subject && store._termToNumericId(subject);
   const predicateId = predicate && store._termToNumericId(predicate);
   const objectId = object && store._termToNumericId(object);
-  // Only active reads are frozen: bound terms and graphs have already resolved,
-  // and notifications run before deletion. Entity IDs are never removed.
 
   // Keep this choice aligned with readQuads: changing order would repeat or skip
   // results when an iterator resumes partway through its snapshot.
-  let indexName, key0, key1, key2, positions;
-  if (objectId && (subjectId || !predicateId)) {
-    indexName = 'objects';
-    [key0, key1, key2] = [objectId, subjectId, predicateId];
-    positions = [2, 0, 1];
-  }
-  else if (!subjectId && predicateId) {
-    indexName = 'predicates';
-    [key0, key1, key2] = [predicateId, objectId, subjectId];
-    positions = [1, 2, 0];
-  }
-  else {
-    indexName = 'subjects';
-    [key0, key1, key2] = [subjectId, predicateId, objectId];
-    positions = [0, 1, 2];
-  }
-
+  const position = indexFor(subjectId, predicateId, objectId);
+  const [key0, key1, key2] = indexKeys(position, subjectId, predicateId, objectId);
+  const p0 = position, p1 = (position + 1) % 3, p2 = (position + 2) % 3;
   const graphs = store._getGraphs(graph), parts = [];
   for (const graphId in graphs) {
-    const index = graphs[graphId][indexName];
+    const index = graphs[graphId][INDEXES[position]];
     const graphKey = Number(graphId);
     for (const value0 in (key0 ? { [key0]: index[key0] } : index)) {
       const index1 = index[value0];
       if (!index1) continue; // eslint-disable-line no-continue
-      parts[positions[0]] = Number(value0);
+      parts[p0] = Number(value0);
       for (const value1 in (key1 ? { [key1]: index1[key1] } : index1)) {
         const index2 = index1[value1];
         if (!index2) continue; // eslint-disable-line no-continue
-        parts[positions[1]] = Number(value1);
+        parts[p1] = Number(value1);
         for (const value2 in (key2 ? (key2 in index2 ? { [key2]: null } : {}) : index2)) {
-          parts[positions[2]] = Number(value2);
+          parts[p2] = Number(value2);
           snapshot.ids.push(parts[0], parts[1], parts[2], graphKey);
         }
       }
@@ -1528,39 +1457,22 @@ class DatasetCoreAndReadableStream extends Readable {
       if (this._semantics === 'snapshot')
         this._detachObserver();
 
-      let subjectId, predicateId, objectId;
-
-      // Translate IRIs to internal index keys.
-      if (subject   && !(subjectId   = newStore._termToNumericId(subject))   ||
-          predicate && !(predicateId = newStore._termToNumericId(predicate)) ||
-          object    && !(objectId    = newStore._termToNumericId(object)))
+      const ids = newStore._patternIds(subject, predicate, object);
+      if (!ids)
         return newStore;
 
+      // Match the fastest index first, and the other two only if it has matches
+      const first = indexFor(...ids);
       const graphs = n3Store._getGraphs(graph);
       for (const graphKey in graphs) {
-        let subjects, predicates, objects, content;
-        if (content = graphs[graphKey]) {
-          if (!subjectId && predicateId) {
-            if (predicates = indexMatch(content.predicates, [predicateId, objectId, subjectId])) {
-              subjects = indexMatch(content.subjects, [subjectId, predicateId, objectId]);
-              objects = indexMatch(content.objects, [objectId, subjectId, predicateId]);
-            }
-          }
-          else if (objectId) {
-            if (objects = indexMatch(content.objects, [objectId, subjectId, predicateId])) {
-              subjects = indexMatch(content.subjects, [subjectId, predicateId, objectId]);
-              predicates = indexMatch(content.predicates, [predicateId, objectId, subjectId]);
-            }
-          }
-          else if (subjects = indexMatch(content.subjects, [subjectId, predicateId, objectId])) {
-            predicates = indexMatch(content.predicates, [predicateId, objectId, subjectId]);
-            objects = indexMatch(content.objects, [objectId, subjectId, predicateId]);
-          }
-
-          if (subjects) {
-            newStore._graphs[graphKey] = { subjects, predicates, objects };
-            newStore._graphCount++;
-          }
+        const content = graphs[graphKey];
+        const matches = content && indexMatch(content[INDEXES[first]], indexKeys(first, ...ids));
+        if (matches) {
+          const indexes = newStore._graphs[graphKey] = {};
+          for (let position = 0; position < 3; position++)
+            indexes[INDEXES[position]] = position === first ? matches :
+              indexMatch(content[INDEXES[position]], indexKeys(position, ...ids));
+          newStore._graphCount++;
         }
       }
       newStore._size = null;
