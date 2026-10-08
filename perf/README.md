@@ -72,7 +72,8 @@ Every public class, function and method of the package, including:
   (`getQuads`, `readQuads`, `countQuads`, `match`, `forEach`, `every`, `some`,
   `getSubjects` and `forSubjects` and their siblings), `removeMatches`,
   `deleteMatches`, `deleteGraph`, `import`/`remove` streams, `size`,
-  `filter`/`map`/`reduce`, `toArray`/`toString`/`toStream`,
+  `filter`/`map`/`reduce`, `toArray`/`toString`/`toStream`, `toCanonical`
+  with the built-in SHA-256 and with Node's,
   `createBlankNode`, `extractLists`, RDF 1.2 triple terms, stores sharing an
   `EntityIndex`, `StoreFactory`, and `match()` views with each
   `matchSemantics`.

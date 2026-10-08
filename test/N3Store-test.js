@@ -17,6 +17,7 @@ import namespaces from '../src/IRIs';
 import { Readable } from 'readable-stream';
 import { arrayifyStream } from 'arrayify-stream';
 import { EventEmitter } from 'events';
+import { createHash } from 'crypto';
 
 const { namedNode, literal, quad } = DataFactory;
 
@@ -4114,6 +4115,22 @@ describe('Store', () => {
         expect(store1.toCanonical({ hashAlgorithm: 'SHA-256' })).toEqual(store1.toCanonical());
         expect(() => store1.toCanonical({ hashAlgorithm: 'SHA-384' }))
           .toThrow('Unsupported canonicalization hash algorithm: SHA-384');
+        expect(() => store1.toCanonical({ hash: 'sha256' }))
+          .toThrow('Unsupported canonicalization hash algorithm: SHA-256; a hash function can provide it');
+      });
+
+      it('should use a given hash function', () => {
+        const nquads = '<urn:s> <urn:p> _:x .\n_:x <urn:p> _:y _:g .\n_:y <urn:q> "a"@en .\n';
+        function hashWith(algorithm) {
+          return string => createHash(algorithm).update(string).digest('hex');
+        }
+        expect(canonical(nquads, { hash: hashWith('sha256') })).toEqual(canonical(nquads));
+        // W3C rdf-canon test075, whose labels differ with SHA-256
+        const v = 'http://example.org/vocab#';
+        const test075 = `<${v}test> <${v}A> _:e0 .\n<${v}test> <${v}B> _:e1 .\n_:e0 <${v}next> _:e2 .\n_:e1 <${v}next> _:e2 .\n`;
+        expect(canonical(test075, { hashAlgorithm: 'SHA-384', hash: hashWith('sha384') })).toEqual(
+          `<${v}test> <${v}A> _:c14n0 .\n<${v}test> <${v}B> _:c14n2 .\n_:c14n0 <${v}next> _:c14n1 .\n_:c14n2 <${v}next> _:c14n1 .\n`);
+        expect(canonical(test075)).not.toEqual(canonical(test075, { hashAlgorithm: 'SHA-384', hash: hashWith('sha384') }));
       });
 
       it('should fail on poison graphs', () => {

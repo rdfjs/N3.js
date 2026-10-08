@@ -5,9 +5,13 @@ import N3Writer from './N3Writer';
 // Canonicalizes the quads of the store into a sorted N-Quads string, reading its indexes directly.
 // As in rdf-canonize, Hash N-Degree Quads runs at most n^`maxWorkFactor` times (n times by default) for n blank nodes
 // without unique first-degree hashes, so poison graphs fail instead of running indefinitely.
-export default function canonicalize(store, { hashAlgorithm = 'SHA-256', maxWorkFactor = 1 }) {
-  if (hashAlgorithm !== 'SHA-256')
-    throw new Error(`Unsupported canonicalization hash algorithm: ${hashAlgorithm}`);
+// A `hash` function, such as one using Node's crypto module, returns the hex digest of a string with `hashAlgorithm`;
+// without one, the built-in SHA-256 is used.
+export default function canonicalize(store, { hashAlgorithm = 'SHA-256', hash: digest, maxWorkFactor = 1 }) {
+  if (digest === undefined && hashAlgorithm === 'SHA-256')
+    digest = sha256;
+  if (typeof digest !== 'function')
+    throw new Error(`Unsupported canonicalization hash algorithm: ${hashAlgorithm}; a hash function can provide it`);
 
   // Serialize each term of the entity index in canonical N-Quads once, as null for blank nodes,
   // and keep the IRIs of predicates for Hash Related Blank Node
@@ -82,7 +86,7 @@ export default function canonicalize(store, { hashAlgorithm = 'SHA-256', maxWork
         return value === id ? 'a' : 'z';
       }
       const lines = quadsOf.get(id).map(quad => serialize(quad, labelReference));
-      firstDegreeHashes.set(id, hash = sha256(sortByCodePoint(lines).join('')));
+      firstDegreeHashes.set(id, hash = digest(sortByCodePoint(lines).join('')));
     }
     return hash;
   }
@@ -106,7 +110,7 @@ export default function canonicalize(store, { hashAlgorithm = 'SHA-256', maxWork
   // Hash Related Blank Node (4.7)
   function hashRelated(related, quad, issuer, position) {
     const id = canonical.get(related) || issuer.get(related);
-    return sha256(`${position}${position === 'g' ? '' : `<${iris[quad[1]]}>`}${
+    return digest(`${position}${position === 'g' ? '' : `<${iris[quad[1]]}>`}${
       id ? `_:${id}` : hashFirstDegree(related)}`);
   }
 
@@ -141,7 +145,7 @@ export default function canonicalize(store, { hashAlgorithm = 'SHA-256', maxWork
       data += chosenPath;
       issuer = chosenIssuer;
     }
-    return { hash: sha256(data), issuer };
+    return { hash: digest(data), issuer };
   }
 
   // Builds the path of one permutation of related blank nodes (4.8.3 step 5.4),

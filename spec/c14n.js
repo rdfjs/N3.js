@@ -1,4 +1,5 @@
 const fs = require('fs');
+const crypto = require('crypto');
 const { Util } = require('rdf-test-suite');
 const { Parser, Store, Writer } = require('..');
 
@@ -47,10 +48,13 @@ function write(quads, format) {
 }
 
 // Writes the document again in its canonical form
-async function canonicalForm(document, format) {
-  if (format === 'RDFC-1.0')
+async function canonicalForm(document, format, hashAlgorithm) {
+  if (format === 'RDFC-1.0') {
+    // Other hash algorithms than the built-in SHA-256 come from Node's crypto module
+    const hash = hashAlgorithm && (string => crypto.createHash(hashAlgorithm.replace('-', '')).update(string).digest('hex'));
     // The suite's computable poison graphs need more work than the default allows
-    return new Store(new Parser({ format: 'N-Quads' }).parse(document)).toCanonical({ maxWorkFactor: 3 });
+    return new Store(new Parser({ format: 'N-Quads' }).parse(document)).toCanonical({ hashAlgorithm, hash, maxWorkFactor: 3 });
+  }
   // Blank node labels are kept, so the output can match the canonical labels
   return write(new Parser({ format, blankNodePrefix: '' }).parse(document), format);
 }
@@ -58,7 +62,9 @@ async function canonicalForm(document, format) {
 // Returns the error of the test, or false if it passes
 async function runTest(manifest, subject, format, negative) {
   try {
-    const actual = await canonicalForm(await load(objectOf(manifest, subject, `${MF}action`)), format);
+    const algorithm = manifest.find(q => q.subject.equals(subject) && q.predicate.value === `${RDFC}hashAlgorithm`);
+    const actual = await canonicalForm(await load(objectOf(manifest, subject, `${MF}action`)), format,
+      algorithm && algorithm.object.value);
     const expected = negative ? null : await load(objectOf(manifest, subject, `${MF}result`));
     if (actual !== expected)
       return new Error(negative ? 'Expected an error' : `Expected:\n${expected}Actual:\n${actual}`);
@@ -80,11 +86,8 @@ async function run() {
     for (const { subject, object } of manifest.filter(q => types.includes(q.object.value))) {
       const id = subject.value.slice(subject.value.indexOf('#') + 1);
       const negative = object.value === types[1];
-      const error = manifest.some(q => q.subject.equals(subject) && q.predicate.value === `${RDFC}hashAlgorithm`) ?
-        null : await runTest(manifest, subject, format, negative);
-      if (error === null)
-        console.log(`- ${id} (${subject.value}) skipped: only the SHA-256 hash algorithm is supported`);
-      else if (error) {
+      const error = await runTest(manifest, subject, format, negative);
+      if (error) {
         failed++;
         console.log(`✖ ${id} (${subject.value})\n  ${error.message.replace(/\n/g, '\n  ')}`);
       }

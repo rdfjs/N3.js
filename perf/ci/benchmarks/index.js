@@ -22,6 +22,7 @@ module.exports = {
   ...require('./writer'),
   ...require('./store'),
   ...require('./store-sets'),
+  ...require('./canonicalize'),
   ...require('./datafactory'),
   ...require('./equals'),
   ...require('./util'),
