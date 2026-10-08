@@ -1,4 +1,5 @@
-import { Quad, Triple, DefaultGraph, termFromId, Term } from '../src';
+import { termFromId } from '../src';
+import { Quad, Triple, DefaultGraph, Term } from '../src/N3DataFactory';
 
 describe('Quad', () => {
   describe('The Quad module', () => {
