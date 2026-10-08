@@ -125,10 +125,10 @@ export class Literal extends Term {
 
   // ### The direction of this literal
   get direction() {
-    // Find the last double dash after the closing quote (e.g., '"abc"@en-us--ltr')
+    // Find the last double dash after the closing quote and language tag (e.g., '"abc"@en-us--ltr')
     const id = this.id;
     const endPos = id.lastIndexOf('"');
-    const dirPos = id.lastIndexOf('--');
+    const dirPos = id[endPos + 1] === '@' ? id.lastIndexOf('--') : -1;
     return dirPos > endPos && dirPos + 2 < id.length ? id.substr(dirPos + 2).toLowerCase() : '';
   }
 

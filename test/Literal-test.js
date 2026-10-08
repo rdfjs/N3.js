@@ -663,6 +663,32 @@ describe('Literal', () => {
     });
   });
 
+  describe('A Literal instance created from a string with a datatype IRI containing "--"', () => {
+    let literal;
+    beforeAll(() => { literal = new Literal('"abc"^^http://example.org/types--ltr'); });
+
+    it('should have the empty string as language', () => {
+      expect(literal).toHaveProperty('language', '');
+    });
+
+    it('should have the empty string as direction', () => {
+      expect(literal).toHaveProperty('direction', '');
+    });
+
+    it('should have the datatype IRI as datatype', () => {
+      expect(literal.datatype.value).toBe('http://example.org/types--ltr');
+    });
+
+    it('should equal the same literal from another library', () => {
+      expect(literal.equals({
+        termType: 'Literal',
+        value: 'abc',
+        language: '',
+        datatype: { termType: 'NamedNode', value: 'http://example.org/types--ltr' },
+      })).toBe(true);
+    });
+  });
+
   describe('A Literal instance created from the empty string with a datatype', () => {
     let literal;
     beforeAll(() => { literal = new Literal('""^^http://example.org/types#type'); });
