@@ -252,6 +252,8 @@ export default class N3Reasoner {
       // budget was exceeded, so a caught budget error leaves the store consistent
       if (this._store._size !== null)
         this._store._size += this._indexed;
+      // Lazy views recopy a store whose version changed
+      this._store._version += this._indexed;
     }
   }
 }

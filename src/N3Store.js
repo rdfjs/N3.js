@@ -1830,7 +1830,24 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   has(quad) {
-    return this.filtered.has(quad);
+    if (this._semantics !== 'lazy')
+      return this.filtered.has(quad);
+    // Look a lazy view's quad up by id without copying its source
+    const { n3Store } = this, { subject, predicate, object, graph } = quad;
+    return this._hasIds(n3Store._termToNumericId(subject), n3Store._termToNumericId(predicate),
+      n3Store._termToNumericId(object), graph === '' || isDefaultGraph(graph) ? 1 : n3Store._termToNumericId(graph));
+  }
+
+  // ### `_hasIds` tests whether a lazy view contains a quad, given as ids of the shared entity index.
+  _hasIds(subject, predicate, object, graph) {
+    if (!this._filtered) {
+      if (!this._matchesPattern(subject, predicate, object, graph))
+        return false;
+      if (this._parent)
+        return this._parent._hasIds(subject, predicate, object, graph);
+    }
+    const graphItem = (this._filtered || this.n3Store)._graphs[graph];
+    return !!graphItem && hasInIndex(graphItem.subjects, subject, predicate, object);
   }
 
   match(subject, predicate, object, graph, options = null) {

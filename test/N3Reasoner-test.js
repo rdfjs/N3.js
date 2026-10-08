@@ -346,6 +346,16 @@ describe('Reasoner', () => {
         '@prefix : <http://example.org/>. { ?x :r ?y. ?y :r ?z } => { ?x :r ?z }.')));
     }
 
+    it('Should refresh lazy views of a store it adds to', () => {
+      const store = chainStore(10);
+      const view = store.match().match();
+      expect(view.size).toBe(10);
+      expect(() => new Reasoner(store, { maxDerivations: 5 }).reason(transitiveRule())).toThrow();
+      expect(view.size).toBe(16);
+      new Reasoner(store).reason(transitiveRule());
+      expect(view.size).toBe(55);
+    });
+
     it('Should keep the size of a store from another copy of N3', () => {
       let OtherStore;
       jest.isolateModules(() => { OtherStore = require('../src').Store; });

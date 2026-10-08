@@ -971,6 +971,19 @@ describe('Store', () => {
         expect(store.match().contains(store)).toBe(true);
       });
 
+      it('should look up quads of a lazy view in a named graph', () => {
+        const store = buildStore();
+        store.addQuad(q('s1', 'p1', 'oG', 'g'));
+        const view = store.match(namedNode('s1'));
+        const child = view.match(null, null, null, namedNode('g'));
+        expect(view.has(q('s1', 'p1', 'oG', 'g'))).toBe(true);
+        expect(child.has(q('s1', 'p1', 'oG', 'g'))).toBe(true);
+        expect(child.has(q('s1', 'p1', 'o1'))).toBe(false);
+        store.addQuad(q('s1', 'p1', 'oG2', 'g'));
+        expect(child.has(q('s1', 'p1', 'oG2', 'g'))).toBe(true);
+        expect(store.match(namedNode('s2')).has(q('s1', 'p1', 'oG2', 'g'))).toBe(false);
+      });
+
       it('should accept pattern terms without equals', () => {
         const store = buildStore();
         const view = store.match({ termType: 'NamedNode', value: 's1' });
