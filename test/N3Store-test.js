@@ -830,7 +830,7 @@ describe('Store', () => {
         const store = buildStore();
         const view = store.match(namedNode('s1'), null, null);
         const iterator = view[Symbol.iterator]();
-        expect(view.size).toBe(5);
+        view.delete(q('s9', 'p9', 'o9'));
         store.addQuad(q('s1', 'p1', 'oNEW'));
         expect(values(iterator)).toEqual([...initialValues, 'oNEW']);
         expect(values(view)).toEqual(initialValues);
@@ -842,6 +842,181 @@ describe('Store', () => {
         view.add(q('s1', 'p1', 'oNEW'));
         expect([...view]).toHaveLength(6);
         expect([...nested]).toHaveLength(5);
+      });
+
+      it('should keep a lazy view live through reads', () => {
+        const store = buildStore();
+        const view = store.match(namedNode('s1'), null, null);
+        const child = view.match(null, namedNode('p1'));
+        const other = new Store([q('s1', 'p1', 'o0')]);
+        expect(view.size).toBe(5);
+        expect(view.has(q('s1', 'p1', 'oNEW'))).toBe(false);
+        expect(view.has(q('s2', 'p1', 'oX'))).toBe(false);
+        expect(view.contains(other)).toBe(true);
+        expect(view.every(() => true)).toBe(true);
+        expect(other.difference(view).size).toBe(0);
+        store.addQuad(q('s1', 'p1', 'oNEW'));
+        expect(view.size).toBe(6);
+        expect(view.has(q('s1', 'p1', 'oNEW'))).toBe(true);
+        expect(values(view)).toEqual([...initialValues, 'oNEW']);
+        expect(child.size).toBe(6);
+        expect(child.has(q('s1', 'p1', 'oNEW'))).toBe(true);
+        expect(values(child)).toEqual([...initialValues, 'oNEW']);
+        let seen = 0;
+        view.forEach((quad, dataset) => {
+          expect(dataset).toBe(view);
+          seen++;
+        });
+        expect(seen).toBe(6);
+        expect(view.some(quad => quad.object.value === 'oNEW', null, namedNode('p1'))).toBe(true);
+        expect(view.some(() => true, namedNode('s2'))).toBe(false);
+        expect(view.every(quad => quad.subject.value === 's1')).toBe(true);
+        expect(view.reduce(count => count + 1, 0)).toBe(6);
+        expect(view.filter(() => true).size).toBe(6);
+        expect(view.map(quad => quad).size).toBe(6);
+        expect(view.reduce(first => first).subject.value).toBe('s1');
+      });
+
+      it('should let a lazy sub-view see quads its parent adds outside its pattern', () => {
+        const store = buildStore();
+        const parent = store.match(namedNode('s1'), null, null);
+        const child = parent.match();
+        const other = parent.match(namedNode('s2'));
+        expect(other.size).toBe(0);
+        expect(other.has(q('s2', 'p1', 'oX'))).toBe(false);
+        expect([...other]).toHaveLength(0);
+        expect(other.filter(() => true).size).toBe(0);
+        expect(other.equals(new Store())).toBe(true);
+        parent.add(q('s2', 'p1', 'oPARENT'));
+        expect(child.has(q('s2', 'p1', 'oPARENT'))).toBe(true);
+        expect(child.size).toBe(6);
+        expect(other.size).toBe(1);
+        expect(other.has(q('s2', 'p1', 'oPARENT'))).toBe(true);
+      });
+
+      it('should pass a lazy view to its filter and map callbacks', () => {
+        const store = buildStore();
+        const view = store.match(namedNode('s1'), null, null);
+        const deleted = view.filter((quad, dataset) => {
+          expect(dataset).toBe(view);
+          dataset.delete(quad);
+          return true;
+        });
+        expect(deleted.size).toBe(5);
+        expect(view.size).toBe(0);
+        expect(store.size).toBe(6);
+        const mapped = store.match(namedNode('s1')).map((quad, dataset) => {
+          expect(dataset.has(quad)).toBe(true);
+          return q('s3', 'p1', quad.object.value);
+        });
+        expect([...mapped].every(quad => quad.subject.value === 's3')).toBe(true);
+        expect(mapped.size).toBe(5);
+      });
+
+      it('should check containment against a live lazy view', () => {
+        const store = buildStore();
+        const view = store.match(namedNode('s1'), null, null);
+        expect(view.contains(store.match(namedNode('s1'), namedNode('p1'), namedNode('o1')))).toBe(true);
+        expect(view.contains([q('s1', 'p1', 'oNEW')])).toBe(false);
+        expect(store.match(null, null, null, new DefaultGraph()).has(q('s1', 'p1', 'o1'))).toBe(true);
+        expect(store.match(null, null, null, namedNode('g')).has(q('s1', 'p1', 'o1'))).toBe(false);
+        store.addQuad(q('s1', 'p1', 'oNEW'));
+        expect(view.contains([q('s1', 'p1', 'oNEW')])).toBe(true);
+        expect(view.contains(view)).toBe(true);
+        expect(store.match(namedNode('s2')).contains(view)).toBe(false);
+        expect(view.contains(store.match(null, namedNode('p1'), namedNode('oNEW')))).toBe(true);
+        expect(store.contains(view)).toBe(true);
+        expect(new Store().contains(view)).toBe(false);
+        expect(store.contains(store.match(null, null, null, null, { matchSemantics: 'snapshot' }))).toBe(true);
+        view.delete(q('s1', 'p1', 'oNEW'));
+        expect(view.contains([q('s1', 'p1', 'oNEW')])).toBe(false);
+        expect(store.match().size).toBe(7);
+      });
+
+      it('should reuse the copy of a lazy view until its source changes', () => {
+        const store = buildStore();
+        const view = store.match(namedNode('s1'), null, null);
+        const child = view.match(null, namedNode('p1'));
+        const copy = view.filtered;
+        expect(view.filtered).toBe(copy);
+        expect(child.size).toBe(5);
+        store.removeQuad(q('s1', 'p1', 'o0'));
+        expect(view.filtered).not.toBe(copy);
+        expect(view.size).toBe(4);
+        expect(child.size).toBe(4);
+        store.removeQuad(q('s1', 'p1', 'o0'));
+        expect(child.size).toBe(4);
+      });
+
+      it('should pass a snapshot view\'s copy to its callbacks', () => {
+        const view = buildStore({ matchSemantics: 'snapshot' }).match(namedNode('s1'));
+        function isCopy(quad, dataset) {
+          return dataset === view.filtered;
+        }
+        expect(view.every(isCopy)).toBe(true);
+        expect(view.some(isCopy)).toBe(true);
+        expect(view.filter(isCopy).size).toBe(5);
+        expect(view.map(quad => quad).size).toBe(5);
+        let count = 0;
+        view.forEach((quad, dataset) => { count += isCopy(quad, dataset); });
+        expect(count).toBe(5);
+        expect(view.reduce((n, quad, dataset) => n + isCopy(quad, dataset), 0)).toBe(5);
+      });
+
+      it('should check containment of views over a store with a custom factory', () => {
+        const factory = { ...DataFactory, quad: (s, p, o, g) => ({ s, p, o, g }) };
+        const store = new Store([], { factory });
+        store.addQuad(namedNode('s'), namedNode('p'), namedNode('o'));
+        expect(store.contains(store.match())).toBe(true);
+        expect(store.match().contains(store)).toBe(true);
+      });
+
+      it('should look up quads of a lazy view in a named graph', () => {
+        const store = buildStore();
+        store.addQuad(q('s1', 'p1', 'oG', 'g'));
+        const view = store.match(namedNode('s1'));
+        const child = view.match(null, null, null, namedNode('g'));
+        expect(view.has(q('s1', 'p1', 'oG', 'g'))).toBe(true);
+        expect(child.has(q('s1', 'p1', 'oG', 'g'))).toBe(true);
+        expect(child.has(q('s1', 'p1', 'o1'))).toBe(false);
+        store.addQuad(q('s1', 'p1', 'oG2', 'g'));
+        expect(child.has(q('s1', 'p1', 'oG2', 'g'))).toBe(true);
+        expect(store.match(namedNode('s2')).has(q('s1', 'p1', 'oG2', 'g'))).toBe(false);
+        const [subject, predicate, object] = [namedNode('s1'), namedNode('p1'), namedNode('oG')];
+        for (const pattern of [{ subject, predicate, object, graph: null }, { subject, predicate, object }])
+          expect(view.has(pattern)).toBe(true);
+        for (const matchSemantics of ['lazy', 'snapshot', 'forwarded']) {
+          const other = store.match(null, null, null, null, { matchSemantics });
+          expect(other.has(null)).toBe(store.has(null));
+          expect(other.has()).toBe(store.has());
+        }
+      });
+
+      it('should accept pattern terms without equals', () => {
+        const store = buildStore();
+        const view = store.match({ termType: 'NamedNode', value: 's1' });
+        expect(view.has(q('s1', 'p1', 'o1'))).toBe(true);
+        expect(view.match(namedNode('s1')).size).toBe(5);
+      });
+
+      it('should materialize a lazy view when it is mutated', async () => {
+        const store = buildStore();
+        const view = store.match(namedNode('s1'), null, null);
+        const child = view.match(null, namedNode('p1'));
+        view.add(q('s1', 'p1', 'oVIEW'));
+        store.addQuad(q('s1', 'p1', 'oNEW'));
+        expect(view.size).toBe(6);
+        expect(view.has(q('s1', 'p1', 'oNEW'))).toBe(false);
+        expect(values(view)).toEqual([...initialValues, 'oVIEW']);
+        expect(values(child)).toEqual([...initialValues, 'oVIEW']);
+        expect(store.has(q('s1', 'p1', 'oVIEW'))).toBe(false);
+        expect(view.toArray()).toHaveLength(6);
+        expect(view.every(quad => quad.subject.value === 's1')).toBe(true);
+        expect(view.reduce(count => count + 1, 0)).toBe(6);
+        expect(view.filter(() => true).size).toBe(6);
+        expect(view.map(quad => quad).size).toBe(6);
+        expect(view.union([q('s1', 'p1', 'oUNION')]).size).toBe(7);
+        expect(await arrayifyStream(view.toStream())).toHaveLength(6);
       });
 
       it.each(['bogus', '', false, 0, null])(
@@ -1190,9 +1365,9 @@ describe('Store', () => {
           parent.add(q('s1', 'p1', 'oPARENT'));
           child.add(q('s1', 'p1', 'oCHILD'));
 
-          expect(values(parent)).toEqual([...initialValues, 'oPARENT']);
-          expect(values(child)).toEqual([...initialValues, 'oCHILD']);
-          expect(values(leaf)).toEqual([...initialValues, 'oCHILD']);
+          expect(values(parent)).toEqual([...initialValues, 'oPARENT', 'oROOT']);
+          expect(values(child)).toEqual([...initialValues, 'oCHILD', 'oPARENT', 'oROOT']);
+          expect(values(leaf)).toEqual([...initialValues, 'oCHILD', 'oPARENT', 'oROOT']);
         });
 
         it('should preserve each snapshot boundary in a match chain', () => {

@@ -148,6 +148,8 @@ export default class N3Store {
   constructor(quads, options) {
     // The number of quads is initially zero
     this._size = 0;
+    // Counts mutations, so lazy views know when their cached copy is stale
+    this._version = 0;
     // `_graphs` contains subject, predicate, and object indexes per graph
     this._graphs = Object.create(null);
     this._graphCount = 0;
@@ -463,6 +465,7 @@ export default class N3Store {
     this._addToIndex(graphItem.objects,    object,    subject,   predicate);
 
     if (this._size !== null) this._size++;
+    this._version++;
     return true;
   }
 
@@ -640,6 +643,7 @@ export default class N3Store {
     this._removeFromIndex(graphItem.predicates, predicate, object,    subject);
     this._removeFromIndex(graphItem.objects,    object,    subject,   predicate);
     if (this._size !== null) this._size--;
+    this._version++;
 
     // Remove the graph if it is empty
     if (graphItem.subjects[SIZE] === 0) {
@@ -1470,7 +1474,7 @@ function intersectMatchPatterns(left, right) {
 class DatasetCoreAndReadableStream extends Readable {
   constructor(n3Store, subject, predicate, object, graph, options) {
     super({ objectMode: true });
-    Object.assign(this, { n3Store, subject: toTerm(subject), predicate: toTerm(predicate), object: toTerm(object), graph: toTerm(graph, true), options });
+    Object.assign(this, { n3Store, _parent: options.parent, subject: toTerm(subject), predicate: toTerm(predicate), object: toTerm(object), graph: toTerm(graph, true), options });
     const semantics = this._semantics = validateMatchSemantics(options.matchSemantics);
 
     if (options.matchesNothing) {
@@ -1521,7 +1525,7 @@ class DatasetCoreAndReadableStream extends Readable {
   // ### `_sourceIterator` returns an iterator over the current backing store.
   _sourceIterator() {
     return this._filtered ? this._filtered[Symbol.iterator]() :
-      this.n3Store.readQuads(this.subject, this.predicate, this.object, this.graph);
+      this._source.readQuads(this.subject, this.predicate, this.object, this.graph);
   }
 
   // ### `_freezeCurrentIterators` freezes only readers still using the live source.
@@ -1557,57 +1561,85 @@ class DatasetCoreAndReadableStream extends Readable {
     this._filtered = this.filtered;
   }
 
-  get filtered() {
-    if (!this._filtered) {
-      const { n3Store, graph, object, predicate, subject } = this;
-      if (this._semantics !== 'lazy')
-        this._freezeCurrentIterators();
-      const newStore = this._filtered = new N3Store({ factory: n3Store._factory, entityIndex: this.options.entityIndex });
+  // ### `_source` is the store that a lazy view reads until it is mutated:
+  // its parent store, or the contents of its parent view.
+  get _source() {
+    return this._parent ? this._parent.filtered : this.n3Store;
+  }
 
+  // ### `filtered` returns a store with the quads of this view.
+  // A lazy view caches a copy of its source until that source changes.
+  get filtered() {
+    if (this._filtered)
+      return this._filtered;
+    if (this._semantics !== 'lazy') {
+      this._freezeCurrentIterators();
       if (this._semantics === 'snapshot')
         this._detachObserver();
+      return this._filtered = this._copy(this.n3Store);
+    }
+    const source = this._source, cache = this._cache;
+    if (!cache || cache.source !== source || cache.version !== source._version)
+      this._cache = { source, version: source._version, store: this._copy(source) };
+    return this._cache.store;
+  }
 
-      let subjectId, predicateId, objectId;
+  // ### `_materialized` detaches a lazy view from its source before it is mutated.
+  get _materialized() {
+    return this._filtered || (this._filtered = this.filtered);
+  }
 
-      // Translate IRIs to internal index keys.
-      if (subject   && !(subjectId   = newStore._termToNumericId(subject))   ||
-          predicate && !(predicateId = newStore._termToNumericId(predicate)) ||
-          object    && !(objectId    = newStore._termToNumericId(object)))
-        return newStore;
+  // ### `_copy` copies the quads of the given store that match this view.
+  _copy(n3Store) {
+    const { graph, object, predicate, subject } = this;
+    const newStore = new N3Store({ factory: n3Store._factory, entityIndex: this.options.entityIndex });
 
-      const graphs = n3Store._getGraphs(graph);
-      for (const graphKey in graphs) {
-        let subjects, predicates, objects, content;
-        if (content = graphs[graphKey]) {
-          if (!subjectId && predicateId) {
-            if (predicates = indexMatch(content.predicates, [predicateId, objectId, subjectId])) {
-              subjects = indexMatch(content.subjects, [subjectId, predicateId, objectId]);
-              objects = indexMatch(content.objects, [objectId, subjectId, predicateId]);
-            }
-          }
-          else if (objectId) {
-            if (objects = indexMatch(content.objects, [objectId, subjectId, predicateId])) {
-              subjects = indexMatch(content.subjects, [subjectId, predicateId, objectId]);
-              predicates = indexMatch(content.predicates, [predicateId, objectId, subjectId]);
-            }
-          }
-          else if (subjects = indexMatch(content.subjects, [subjectId, predicateId, objectId])) {
-            predicates = indexMatch(content.predicates, [predicateId, objectId, subjectId]);
+    let subjectId, predicateId, objectId;
+
+    // Translate IRIs to internal index keys.
+    if (subject   && !(subjectId   = newStore._termToNumericId(subject))   ||
+        predicate && !(predicateId = newStore._termToNumericId(predicate)) ||
+        object    && !(objectId    = newStore._termToNumericId(object)))
+      return newStore;
+
+    const graphs = n3Store._getGraphs(graph);
+    for (const graphKey in graphs) {
+      let subjects, predicates, objects, content;
+      if (content = graphs[graphKey]) {
+        if (!subjectId && predicateId) {
+          if (predicates = indexMatch(content.predicates, [predicateId, objectId, subjectId])) {
+            subjects = indexMatch(content.subjects, [subjectId, predicateId, objectId]);
             objects = indexMatch(content.objects, [objectId, subjectId, predicateId]);
           }
-
-          if (subjects) {
-            newStore._graphs[graphKey] = { subjects, predicates, objects };
-            newStore._graphCount++;
+        }
+        else if (objectId) {
+          if (objects = indexMatch(content.objects, [objectId, subjectId, predicateId])) {
+            subjects = indexMatch(content.subjects, [subjectId, predicateId, objectId]);
+            predicates = indexMatch(content.predicates, [predicateId, objectId, subjectId]);
           }
         }
+        else if (subjects = indexMatch(content.subjects, [subjectId, predicateId, objectId])) {
+          predicates = indexMatch(content.predicates, [predicateId, objectId, subjectId]);
+          objects = indexMatch(content.objects, [objectId, subjectId, predicateId]);
+        }
+
+        if (subjects) {
+          newStore._graphs[graphKey] = { subjects, predicates, objects };
+          newStore._graphCount++;
+        }
       }
-      newStore._size = null;
     }
-    return this._filtered;
+    newStore._size = null;
+    return newStore;
   }
 
   get size() {
+    // Count a lazy view of a store without copying it
+    if (this._semantics === 'lazy' && !this._filtered && !this._parent) {
+      const { n3Store, subject, predicate, object, graph } = this;
+      return subject || predicate || object || graph ?
+        n3Store.countQuads(subject, predicate, object, graph) : n3Store.size;
+    }
     return this.filtered.size;
   }
 
@@ -1661,7 +1693,7 @@ class DatasetCoreAndReadableStream extends Readable {
       }
       return this;
     }
-    return this.filtered.addAll(quads);
+    return this._materialized.addAll(quads);
   }
 
   contains(other) {
@@ -1682,7 +1714,7 @@ class DatasetCoreAndReadableStream extends Readable {
       this.n3Store.deleteMatches(...pattern);
       return this;
     }
-    return this.filtered.deleteMatches(subject, predicate, object, graph);
+    return this._materialized.deleteMatches(subject, predicate, object, graph);
   }
 
   difference(other) {
@@ -1694,23 +1726,23 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   every(callback, subject, predicate, object, graph) {
-    return this.filtered.every(this._semantics === 'forwarded' ?
+    return this.filtered.every(this._semantics !== 'snapshot' ?
       quad => callback(quad, this) : callback, subject, predicate, object, graph);
   }
 
   filter(iteratee) {
-    return this.filtered.filter(this._semantics === 'forwarded' ?
+    return this.filtered.filter(this._semantics !== 'snapshot' ?
       quad => iteratee(quad, this) : iteratee);
   }
 
   forEach(callback, subject, predicate, object, graph) {
-    return this.filtered.forEach(this._semantics === 'forwarded' ?
+    return this.filtered.forEach(this._semantics !== 'snapshot' ?
       quad => callback(quad, this) : callback, subject, predicate, object, graph);
   }
 
   import(stream) {
     if (this._semantics !== 'forwarded')
-      return this.filtered.import(stream);
+      return this._materialized.import(stream);
 
     const view = this;
     function onData(quad) {
@@ -1736,12 +1768,12 @@ class DatasetCoreAndReadableStream extends Readable {
   }
 
   map(iteratee) {
-    return this.filtered.map(this._semantics === 'forwarded' ?
+    return this.filtered.map(this._semantics !== 'snapshot' ?
       quad => iteratee(quad, this) : iteratee);
   }
 
   some(callback, subject, predicate, object, graph) {
-    return this.filtered.some(this._semantics === 'forwarded' ?
+    return this.filtered.some(this._semantics !== 'snapshot' ?
       quad => callback(quad, this) : callback, subject, predicate, object, graph);
   }
 
@@ -1755,23 +1787,23 @@ class DatasetCoreAndReadableStream extends Readable {
       return Readable.from(this[Symbol.iterator]());
     return this._filtered ?
       this._filtered.toStream()
-      : this.n3Store.match(this.subject, this.predicate, this.object, this.graph, { matchSemantics: 'lazy' });
+      : this._source.match(this.subject, this.predicate, this.object, this.graph, { matchSemantics: 'lazy' });
   }
 
   union(quads) {
     return this._filtered ?
       this._filtered.union(quads)
-      : this.n3Store.match(this.subject, this.predicate, this.object, this.graph, { matchSemantics: 'lazy' }).addAll(quads);
+      : this._source.match(this.subject, this.predicate, this.object, this.graph, { matchSemantics: 'lazy' }).addAll(quads);
   }
 
   toArray() {
     if (this._semantics !== 'lazy')
       return [...this];
-    return this._filtered ? this._filtered.toArray() : this.n3Store.getQuads(this.subject, this.predicate, this.object, this.graph);
+    return this._filtered ? this._filtered.toArray() : this._source.getQuads(this.subject, this.predicate, this.object, this.graph);
   }
 
   reduce(callback, initialValue) {
-    return this.filtered.reduce(this._semantics === 'forwarded' ?
+    return this.filtered.reduce(this._semantics !== 'snapshot' ?
       (accumulator, quad) => callback(accumulator, quad, this) : callback, initialValue);
   }
 
@@ -1785,7 +1817,7 @@ class DatasetCoreAndReadableStream extends Readable {
       this.n3Store.addQuad(quad);
       return this;
     }
-    return this.filtered.add(quad);
+    return this._materialized.add(quad);
   }
 
   delete(quad) {
@@ -1794,11 +1826,28 @@ class DatasetCoreAndReadableStream extends Readable {
       this.n3Store.removeQuad(quad);
       return this;
     }
-    return this.filtered.delete(quad);
+    return this._materialized.delete(quad);
   }
 
   has(quad) {
-    return this.filtered.has(quad);
+    const { n3Store } = this, { subject, predicate, object, graph } = quad || {};
+    if (this._semantics !== 'lazy' || !subject || !predicate || !object || graph === undefined || graph === null)
+      return this.filtered.has(quad);
+    // Look a lazy view's fully bound quad up by id without copying its source
+    return this._hasIds(n3Store._termToNumericId(subject), n3Store._termToNumericId(predicate),
+      n3Store._termToNumericId(object), graph === '' || isDefaultGraph(graph) ? 1 : n3Store._termToNumericId(graph));
+  }
+
+  // ### `_hasIds` tests whether a lazy view contains a quad, given as ids of the shared entity index.
+  _hasIds(subject, predicate, object, graph) {
+    if (!this._filtered) {
+      if (!this._matchesPattern(subject, predicate, object, graph))
+        return false;
+      if (this._parent)
+        return this._parent._hasIds(subject, predicate, object, graph);
+    }
+    const graphItem = (this._filtered || this.n3Store)._graphs[graph];
+    return !!graphItem && hasInIndex(graphItem.subjects, subject, predicate, object);
   }
 
   match(subject, predicate, object, graph, options = null) {
@@ -1809,11 +1858,15 @@ class DatasetCoreAndReadableStream extends Readable {
         throw new Error(`Cannot override matchSemantics on a view: inherited "${this._semantics}", received "${requestedSemantics}"`);
     }
 
-    if (this._semantics !== 'forwarded')
-      return new DatasetCoreAndReadableStream(this.filtered, subject, predicate, object, graph, {
+    // A lazy sub-view reads this view's contents until it is mutated
+    if (this._semantics !== 'forwarded') {
+      const parent = this._semantics === 'lazy' && !this._filtered ? this : undefined;
+      return new DatasetCoreAndReadableStream(parent ? this.n3Store : this.filtered, subject, predicate, object, graph, {
         entityIndex: this.options.entityIndex,
         matchSemantics: this._semantics,
+        parent,
       });
+    }
 
     const pattern = !this._matchesNothing && intersectMatchPatterns(
       [this.subject, this.predicate, this.object, this.graph],
