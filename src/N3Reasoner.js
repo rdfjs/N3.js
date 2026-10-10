@@ -100,9 +100,11 @@ export default class N3Reasoner {
       }
       val2.value = null;
     }
-    // Bound leaves run once even when the key is absent
-    else if (last) this._emit(rule, content, cb);
-    else this._evaluatePremise(rule, content, cb, i + 1);
+    // A bound leaf only matches if the quad exists
+    else if (value in index2) {
+      if (last) this._emit(rule, content, cb);
+      else this._evaluatePremise(rule, content, cb, i + 1);
+    }
   }
 
   _evaluateRules(rules, content, cb) {
@@ -143,11 +145,14 @@ export default class N3Reasoner {
       const v3 = rule.basePremise.object.value;
       if (!v3) rule.basePremise.object.value = object;
 
-      if (rule.premise.length === 0) {
-        addConclusions(rule.conclusion);
-      }
-      else {
-        this._evaluatePremise(rule, content, addRule);
+      // A repeated variable or a constant in the triggering premise must match the derived quad
+      const { basePremise } = rule;
+      if (basePremise.subject.value === subject && basePremise.predicate.value === predicate &&
+          basePremise.object.value === object) {
+        if (rule.premise.length === 0)
+          addConclusions(rule.conclusion);
+        else
+          this._evaluatePremise(rule, content, addRule);
       }
 
       if (!v1) rule.basePremise.subject.value = null;
