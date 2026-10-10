@@ -26,6 +26,11 @@ function hasInIndex(index0, key0, key1, key2) {
 // Each graph indexes its quads three times, by subject (position 0), predicate (1), and object (2).
 // The index at position k is keyed by the terms at positions k, k + 1, and k + 2 (modulo 3).
 export const INDEXES = ['subjects', 'predicates', 'objects'];
+
+// Returns the indexes of a graph, under their names and under their positions
+function graphIndexes(subjects, predicates, objects) {
+  return Object.freeze({ subjects, predicates, objects, 0: subjects, 1: predicates, 2: objects });
+}
 const PARTS = ['subject', 'predicate', 'object'];
 
 // Returns the position of the index that is fastest for a pattern: the one whose leading keys are bound
@@ -263,7 +268,7 @@ export default class N3Store {
   // as long as each wildcard key in the index is followed only by wildcards.
   // Finally, `graphId` will be the graph of the created quads.
   *_findInIndex(graphItem, position, subject, predicate, object, graphId) {
-    const entityKeys = this._entities, index0 = graphItem[INDEXES[position]];
+    const entityKeys = this._entities, index0 = graphItem[position];
     const graph = this._termFromId(entityKeys[graphId]);
     const key0 = termAt(position, subject, predicate, object), key1 = termAt(position + 1, subject, predicate, object),
         key2 = termAt(position + 2, subject, predicate, object);
@@ -423,17 +428,17 @@ export default class N3Store {
       if (!content) continue; // eslint-disable-line no-continue
       // With both other terms, the index that ends at `position` has the entities as leaves
       if (nextId && lastId)
-        this._loopBy2Keys(content[INDEXES[next]], nextId, lastId, callback);
+        this._loopBy2Keys(content[next], nextId, lastId, callback);
       // The index that starts at the term before `position` has them as its second keys
       else if (lastId)
-        this._loopByKey0(content[INDEXES[last]], lastId, callback);
+        this._loopByKey0(content[last], lastId, callback);
       // Descending the subject index visits only the subject's own quads
       else if (nextId && position === 2)
         this._loopByKey0Deep(content.subjects, nextId, callback);
       else if (nextId)
-        this._loopByKey1(content[INDEXES[position]], nextId, callback);
+        this._loopByKey1(content[position], nextId, callback);
       else
-        this._loop(content[INDEXES[position]], callback);
+        this._loop(content[position], callback);
     }
   }
 
@@ -515,14 +520,9 @@ export default class N3Store {
     let graphItem = this._graphs[graph];
     // Create the graph if it doesn't exist yet
     if (!graphItem) {
-      graphItem = this._graphs[graph] = {
-        subjects: { [SIZE]: 0 },
-        predicates: { [SIZE]: 0 },
-        objects: { [SIZE]: 0 },
-      };
       // Freezing a graph helps subsequent `add` performance,
       // and properties will never be modified anyway
-      Object.freeze(graphItem);
+      graphItem = this._graphs[graph] = graphIndexes({ [SIZE]: 0 }, { [SIZE]: 0 }, { [SIZE]: 0 });
       this._graphCount++;
     }
 
@@ -774,7 +774,7 @@ export default class N3Store {
         object    && !(objectId    = this._termToNumericId(object)))
       return 0;
 
-    const position = indexFor(subjectId, predicateId, objectId), name = INDEXES[position];
+    const position = indexFor(subjectId, predicateId, objectId);
     const key0 = termAt(position, subjectId, predicateId, objectId),
         key1 = termAt(position + 1, subjectId, predicateId, objectId),
         key2 = termAt(position + 2, subjectId, predicateId, objectId);
@@ -782,7 +782,7 @@ export default class N3Store {
       // Only if the specified graph contains triples, there can be results
       const content = graphs[graphId];
       if (content)
-        count += this._countInIndex(content[name], key0, key1, key2);
+        count += this._countInIndex(content[position], key0, key1, key2);
     }
     return count;
   }
@@ -1292,7 +1292,7 @@ function snapshotMatch(store, subject, predicate, object, graph) {
   const p0 = position, p1 = (position + 1) % 3, p2 = (position + 2) % 3;
   const graphs = store._getGraphs(graph), parts = [];
   for (const graphId in graphs) {
-    const index = graphs[graphId][INDEXES[position]];
+    const index = graphs[graphId][position];
     const graphKey = Number(graphId);
     for (const value0 in (key0 ? { [key0]: index[key0] } : index)) {
       const index1 = index[value0];
@@ -1466,12 +1466,11 @@ class DatasetCoreAndReadableStream extends Readable {
       const graphs = n3Store._getGraphs(graph);
       for (const graphKey in graphs) {
         const content = graphs[graphKey];
-        const matches = content && indexMatch(content[INDEXES[first]], indexKeys(first, ...ids));
+        const matches = content && indexMatch(content[first], indexKeys(first, ...ids));
         if (matches) {
-          const indexes = newStore._graphs[graphKey] = {};
-          for (let position = 0; position < 3; position++)
-            indexes[INDEXES[position]] = position === first ? matches :
-              indexMatch(content[INDEXES[position]], indexKeys(position, ...ids));
+          const indexes = [0, 1, 2].map(position => position === first ? matches :
+            indexMatch(content[position], indexKeys(position, ...ids)));
+          newStore._graphs[graphKey] = graphIndexes(...indexes);
           newStore._graphCount++;
         }
       }
