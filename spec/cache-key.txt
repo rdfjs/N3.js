@@ -1,7 +1,7 @@
-rdf/rdf11/rdf-n-triples a4087116d5f1df52c0485ba5f0a7a7b0fbd662fd
+rdf/rdf11/rdf-n-triples a9fe7cf2a16230106989370903fe7ae3f2d0cc20
 rdf/rdf11/rdf-n-quads a4087116d5f1df52c0485ba5f0a7a7b0fbd662fd
-rdf/rdf11/rdf-turtle a4087116d5f1df52c0485ba5f0a7a7b0fbd662fd
-rdf/rdf11/rdf-trig d163beb0a59f82f501d07e793b55b9c12b498972
+rdf/rdf11/rdf-turtle a9fe7cf2a16230106989370903fe7ae3f2d0cc20
+rdf/rdf11/rdf-trig a9fe7cf2a16230106989370903fe7ae3f2d0cc20
 rdf/rdf12/rdf-n-triples/syntax b2c8fd9b9442e6f7f42cd570d8d693ad8c2bcfad
 rdf/rdf12/rdf-n-quads/syntax 2ec17135f24959cb10d5f7bac8bb685ecd379fb6
 rdf/rdf12/rdf-turtle/syntax 2ec17135f24959cb10d5f7bac8bb685ecd379fb6
