@@ -34,8 +34,10 @@ const localNameStart = 'A-Za-z\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02FF\\u03
                        '\\u200C\\u200D\\u2070-\\u218F\\u2C00-\\u2FEF\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD_:0-9',
     localNameChar = `${localNameStart}\\-\\u00B7\\u0300-\\u036F\\u203F\\u2040`,
     percent = '%[0-9A-Fa-f]{2}',
-    localName = new RegExp(`^(?:(?:[${localNameStart}]|${percent})` +
-                           `(?:(?:[${localNameChar}.]|${percent})*(?:[${localNameChar}]|${percent}))?)?$`);
+    // A nonempty local name, which can contain dots, but not start or end with one
+    localNamePattern = `(?:[${localNameStart}]|${percent})` +
+                       `(?:(?:[${localNameChar}.]|${percent})*(?:[${localNameChar}]|${percent}))?`,
+    localName = new RegExp(`^(?:${localNamePattern})?$`);
 
 // ## Placeholder class to represent already pretty-printed terms
 class SerializedTerm extends Term {
@@ -224,7 +226,7 @@ export default class N3Writer {
     const prefixMatch = this._hasPrefixes ? (this._prefixRegex || this._createPrefixRegex()).exec(iri) : null;
     if (!prefixMatch)
       return `<${iri}>`;
-    // An IRI that starts with a registered prefix IRI
+    // An IRI that is a registered prefix IRI followed by a nonempty valid local name
     if (prefixMatch[1])
       return this._prefixIRIs[prefixMatch[1]] + prefixMatch[2];
     // An IRI that already looks like a prefixed name, if the rest is a valid local name
@@ -385,7 +387,7 @@ export default class N3Writer {
       IRIlist += IRIlist ? `|${IRIpattern}` : IRIpattern;
       prefixList += prefixList ? `|${prefixPattern}` : prefixPattern;
     }
-    return this._prefixRegex = new RegExp(`^(${IRIlist})([_a-zA-Z0-9](?:\\.?[\\-_a-zA-Z0-9])*)$|` +
+    return this._prefixRegex = new RegExp(`^(${IRIlist})(${localNamePattern})$|` +
                                           `^(?:${prefixList})`);
   }
 
