@@ -1,11 +1,11 @@
-rdf/rdf11/rdf-n-triples a4087116d5f1df52c0485ba5f0a7a7b0fbd662fd
+rdf/rdf11/rdf-n-triples a9fe7cf2a16230106989370903fe7ae3f2d0cc20
 rdf/rdf11/rdf-n-quads a4087116d5f1df52c0485ba5f0a7a7b0fbd662fd
-rdf/rdf11/rdf-turtle a4087116d5f1df52c0485ba5f0a7a7b0fbd662fd
-rdf/rdf11/rdf-trig d163beb0a59f82f501d07e793b55b9c12b498972
+rdf/rdf11/rdf-turtle a743114a082a9f3763ed98dded96349359b11b0a
+rdf/rdf11/rdf-trig c71837d8c485f138f828a863c9aab138eb4f60f1
 rdf/rdf12/rdf-n-triples/syntax b2c8fd9b9442e6f7f42cd570d8d693ad8c2bcfad
-rdf/rdf12/rdf-n-quads/syntax 2ec17135f24959cb10d5f7bac8bb685ecd379fb6
-rdf/rdf12/rdf-turtle/syntax 2ec17135f24959cb10d5f7bac8bb685ecd379fb6
-rdf/rdf12/rdf-trig/syntax 2ec17135f24959cb10d5f7bac8bb685ecd379fb6
+rdf/rdf12/rdf-n-quads/syntax c71837d8c485f138f828a863c9aab138eb4f60f1
+rdf/rdf12/rdf-turtle/syntax c71837d8c485f138f828a863c9aab138eb4f60f1
+rdf/rdf12/rdf-trig/syntax c71837d8c485f138f828a863c9aab138eb4f60f1
 rdf/rdf12/rdf-turtle/eval 2ec17135f24959cb10d5f7bac8bb685ecd379fb6
 rdf/rdf12/rdf-trig/eval 2ec17135f24959cb10d5f7bac8bb685ecd379fb6
 rdf/rdf12/rdf-n-triples/c14n d20621fa03dc04e7b7d6c8a7acd06be4494d2741
