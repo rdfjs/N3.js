@@ -331,7 +331,7 @@ describe('Writer', () => {
                       '@prefix a: <http://a.org/>.\n' +
                       '@prefix b: <http://a.org/b#>.\n\n' +
                       'a:v1.0 b:a.b.c a:a-1.b-2.\n' +
-                      '<http://a.org/vocab.> <http://a.org/b#.a> <http://a.org/b#a..b>.\n'),
+                      '<http://a.org/vocab.> <http://a.org/b#.a> b:a..b.\n'),
     );
 
     it('should round-trip prefixed names with dots through the parser', async () => {
@@ -402,6 +402,55 @@ describe('Writer', () => {
                       'a:b..c <a:-b> <a:%2>.\n' +
                       'a:b\u00B7c a:%41.b a:b.-.\n'),
     );
+
+    it(
+      'should use prefixes when the rest is any valid local name',
+      shouldSerialize({ prefixes: { a: 'http://a.org/', b: 'http://a.org/b#' } },
+                      ['http://a.org/é', 'http://a.org/b#难度', 'http://a.org/b·c'],
+                      ['http://a.org/x́', 'http://a.org/b#b:c', 'http://a.org/b#:c'],
+                      ['http://a.org/b%20c', 'http://a.org/%41.b', 'http://a.org/b#a‿b'],
+                      '@prefix a: <http://a.org/>.\n' +
+                      '@prefix b: <http://a.org/b#>.\n\n' +
+                      'a:é b:难度 a:b·c.\n' +
+                      'a:x́ b:b:c b::c.\n' +
+                      'a:b%20c a:%41.b b:a‿b.\n'),
+    );
+
+    it(
+      'should not use prefixes when the rest is not a valid local name',
+      shouldSerialize({ prefixes: { a: 'http://a.org/' } },
+                      ['http://a.org/·b', 'http://a.org/̀b', 'http://a.org/a×b'],
+                      ['http://a.org/a　b', 'http://a.org/%2', 'http://a.org/b~c'],
+                      ['http://a.org/\u{1F600}', 'http://a.org/a\u{10000}', 'http://a.org/a￾'],
+                      '@prefix a: <http://a.org/>.\n\n' +
+                      '<http://a.org/·b> <http://a.org/̀b> <http://a.org/a×b>.\n' +
+                      '<http://a.org/a　b> <http://a.org/%2> <http://a.org/b~c>.\n' +
+                      '<http://a.org/\\U0001f600> <http://a.org/a\\U00010000> <http://a.org/a￾>.\n'),
+    );
+
+    it('should round-trip prefixed names with Unicode local names through the parser', async () => {
+      const writer = new Writer({ prefixes: { field: 'https://micheng.dev/ns/asciidoc-field#' } });
+      const quad = new Quad(new NamedNode('urn:x#heading-2'),
+                            new NamedNode('https://micheng.dev/ns/asciidoc-field#难度'),
+                            new Literal('"中"'));
+      writer.addQuad(quad);
+      const output = await end(writer);
+      expect(output).toBe('@prefix field: <https://micheng.dev/ns/asciidoc-field#>.\n\n' +
+                          '<urn:x#heading-2> field:难度 "中".\n');
+      expect(new Parser().parse(output)).toStrictEqual([quad]);
+    });
+
+    it('should write IRIs that start with a prefix IRI so that the parser reads them back', async () => {
+      const writer = new Writer({ prefixes: { a: 'http://a.org/' } });
+      const locals = ['é', '难度', 'b·c', 'x́', 'a⁀b', 'b:c', ':b', 'b%20c', '%41.b', 'b..c', '1b',
+        '·b', '̀b', '‿b', 'a×b', 'a　b', '%2', 'b.', '-b', 'b~c', '',
+        '\u{1F600}', 'a\u{10000}', 'a￾'];
+      const quads = locals.map(local => new Quad(new NamedNode('http://a.org/s'), new NamedNode('http://a.org/p'),
+                                                 new NamedNode(`http://a.org/${local}`)));
+      writer.addQuads(quads);
+      const output = await end(writer);
+      expect(new Parser().parse(output)).toStrictEqual(quads);
+    });
 
     it(
       'should not repeat the same subjects',
